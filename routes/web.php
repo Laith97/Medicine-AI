@@ -19,6 +19,10 @@ Route::middleware('auth')->group(function () {
 
 });
 
+Route::get('/contact', [UserSettingsController::class, 'contact'])->name('contact');
+Route::get('/about', [UserSettingsController::class, 'about'])->name('about');
+
+
 Route::get('/dashboard', function () {
     return view('main');
 })->middleware(['auth', 'verified'])->name('dashboard');

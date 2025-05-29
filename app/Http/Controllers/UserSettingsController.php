@@ -11,7 +11,8 @@ class UserSettingsController extends Controller
     public function index()
     {
         $setting = auth()->user()->setting;
-        return view('settings', compact('setting'));    }
+        return view('settings', compact('setting'));    
+    }
     
 
 
@@ -27,6 +28,14 @@ class UserSettingsController extends Controller
     );
 
     return back()->with('status', 'Settings updated!');
+    }
+
+    public function contact(){
+        return view('contact');
+    }
+
+    public function about(){
+        return view('about');
     }
 
 }

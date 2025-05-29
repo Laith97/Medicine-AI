@@ -102,7 +102,7 @@
                 </div>
 
                 <!-- Book Appointment -->
-                <a href="demo-medical.html#booking-appointment-form" class="btn btn-sm" style="background-color: #DE6262; color: white; border-radius: 30px;">
+                <a href="{{ route('contact') }}" class="btn btn-sm" style="background-color: #DE6262; color: white; border-radius: 30px;">
                     <i class="bi bi-calendar-check me-1"></i> Book Appointment
                 </a>
 
@@ -122,7 +122,7 @@
 						<!-- Logo
 						============================================= -->
 						<div id="logo">
-							<a href="index.html">
+							<a href="{{ url('/') }}">
 								<img class="logo-default" srcset="demos/medical/images/logo-medical.png, demos/medical/images/logo-medical@2x.png 2x" src="demos/medical/images/logo-medical@2x.png" alt="Canvas Logo">
 							</a>
 						</div><!-- #logo end -->
@@ -142,7 +142,7 @@
                                     <a class="menu-link" href="{{ url('/') }}"><div>Home</div></a>
                                 </li>
                                 <li class="menu-item {{ request()->is('about') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ url('about') }}"><div>About Us</div></a>
+                                    <a class="menu-link" href="{{ route('about') }}"><div>About Us</div></a>
                                 </li>
                                 @auth
                                 <li class="menu-item {{ request()->routeIs('ask-openai') ? 'current' : '' }}">
@@ -154,7 +154,7 @@
                                     <a class="menu-link" href="{{ route('cases') }}"><div>Cases</div></a>
                                 </li>
                                 <li class="menu-item {{ request()->is('contact') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ url('contact') }}"><div>Contact</div></a>
+                                    <a class="menu-link" href="{{ route('contact') }}"><div>Contact</div></a>
                                 </li>
                             </ul>
                             
