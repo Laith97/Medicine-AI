@@ -89,7 +89,6 @@
         </div>
         
         <div class="card-body">
-
             <div class="table-responsive">
                 <table id="recordsTable" class="table table-hover align-middle w-100">
                     <thead style="background-color: #f8d7da; color: #a94442;">
@@ -103,35 +102,38 @@
                             <th class="text-center">Date</th>
                             <th class="text-center">Recommendations</th>
                         </tr>
-                        
                     </thead>
                     <tbody>
+                        @php
+    $hasRecords = $records->count() > 0;
+@endphp
+
                         @forelse ($records as $record)
-                            <tr class="text-center">
-                                <td>{{ $record->id }}</td>
-                                <td>{{ $record->name }}</td>
-                                <td>{{ $record->age }}</td>
-                                <td>{{ ucfirst($record->gender) }}</td>
-                                <td>{{ $record->height ?? 'N/A' }}</td>
-                                <td>{{ $record->weight ?? 'N/A' }}</td>
-                                <td>{{ $record->created_at->format('Y-m-d') }}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-danger view-response-btn"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#responseModal"
-                                            data-response="{{ htmlentities($record->ai_response) }}">
-                                        View
-                                    </button>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="8" class="text-center">No records found.</td>
-                            </tr>
-                        @endforelse
+                        <tr class="text-center">
+                            <td>{{ $record->id }}</td>
+                            <td>{{ $record->name }}</td>
+                            <td>{{ $record->age }}</td>
+                            <td>{{ ucfirst($record->gender) }}</td>
+                            <td>{{ $record->height ?? 'N/A' }}</td>
+                            <td>{{ $record->weight ?? 'N/A' }}</td>
+                            <td>{{ $record->created_at->format('Y-m-d') }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-danger view-response-btn"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#responseModal"
+                                        data-response="{{ htmlentities($record->ai_response) }}">
+                                    View
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr class="text-center text-muted">
+                            <td colspan="8">No records found.</td>
+                        </tr>
+                    @endforelse
+                    
                     </tbody>
                 </table>
-                
             </div>
         </div>
     </div>
@@ -141,8 +143,8 @@
 <div class="modal fade" id="responseModal" tabindex="-1" aria-labelledby="responseModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content response-modal-content">
-            <div class="modal-header response-modal-header">
-                <h5 class="modal-title" id="responseModalLabel" style="color: aliceblue">{{ $record->name ?? 'OpenAI' }} Recommendations</h5>
+            <div class="modal-header response-modal-header" style="background-color: #DE6262;">
+                <h5 class="modal-title" id="responseModalLabel" style="color: aliceblue">Recommendations</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body response-modal-body">
@@ -156,8 +158,6 @@
 
 @endsection
 
-
-
 @push('scripts')
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -165,19 +165,26 @@
 
 <script>
     $(document).ready(function () {
-        $('#recordsTable').DataTable({
-            pageLength: 10,
-            language: {
-                search: "🔍 Search:",
-                lengthMenu: "Show _MENU_ entries",
-                info: "Showing _START_ to _END_ of _TOTAL_",
-                paginate: {
-                    previous: "← Prev",
-                    next: "Next →"
+        const hasRecords = @json($hasRecords);
+
+        if (hasRecords) {
+            $('#recordsTable').DataTable({
+                pageLength: 10,
+                language: {
+                    search: "🔍 Search:",
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_",
+                    paginate: {
+                        previous: "← Prev",
+                        next: "Next →"
+                    },
+                    emptyTable: "No records available",
+                    zeroRecords: "No matching records found"
                 },
-                emptyTable: "No records available"
-            }
-        });
+                responsive: true,
+                autoWidth: false
+            });
+        }
 
         $('.view-response-btn').on('click', function () {
             const raw = $(this).data('response') || 'No response';
@@ -191,4 +198,5 @@
         }
     });
 </script>
+
 @endpush
