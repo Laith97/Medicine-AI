@@ -81,7 +81,7 @@ class OpenAIController extends Controller
 
             $filteredMessage = $this->filterReponse($rawMessage);
             
-            $this->insertTotable($request,$rawMessage);
+            $this->insertTotable($request,$filteredMessage);
             return redirect()->back()->with([
                 'openai_result' => $filteredMessage,
             ]);
@@ -138,7 +138,7 @@ class OpenAIController extends Controller
         
         $filteredMessage = $this->filterReponse($rawMessage);
                             // ✅ Save to database
-                            $this->insertTotable($request,$rawMessage);
+                            $this->insertTotable($request,$filteredMessage);
 
         
         
@@ -284,6 +284,11 @@ class OpenAIController extends Controller
     {
         $records = PatientAnalysis::with('user')->get();
         return view('cases', compact('records'));
+    }
+    public function dashboard()
+    {
+        $records = PatientAnalysis::with('user')->get();
+        return view('dashboard', compact('records'));
     }
     
 }
