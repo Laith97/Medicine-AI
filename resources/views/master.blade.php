@@ -36,6 +36,15 @@
 .top-link:hover::after {
     width: 100%;
 }
+.dropdown-item:focus, .dropdown-item:active, 
+.dropdown-item:focus-visible, 
+.dropdown-item:focus-within {
+    outline: none !important;
+    box-shadow: 0 0 0 0.2rem rgba(222,98,98,0.25) !important;
+    background-color: rgba(222,98,98,0.08) !important;
+    color: #DE6262 !important;
+}
+
 </style>
     <!-- Font Imports -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -73,38 +82,46 @@
             <!-- Right Side: Auth + Appointment -->
             <div class="col-md-auto d-flex justify-content-end align-items-center gap-3">
 
-                <!-- Auth Links -->
+                @auth
                 <div class="dropdown">
-                    @auth
-                        <a class="btn btn-sm btn-outline-danger text-white dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="background-color: #DE6262;">
-                            👋 {{ Auth::user()->name }}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Profile</a></li>
-                            <li><a class="dropdown-item" href="{{ route('settings') }}">Settings</a></li> <!-- Settings link added -->
-                            <li>
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit" class="dropdown-item text-danger">Logout</button>
-                                </form>
-                            </li>
-                        </ul>
-                    @endauth
+                    <a class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle"
+                       href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                       style="background: linear-gradient(90deg, #DE6262 0%, #FFB88C 100%); color: #fff; border: none; font-weight: 500; box-shadow: 0 2px 6px rgba(222,98,98,0.15);">
+                        <i class="bi bi-person-circle"></i>
+                        <span>{{ Auth::user()->name }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
 
-                    @guest
-                        <a href="{{ route('login') }}" class="btn btn-sm btn-outline-danger text-white" style="border-color: #DE6262; background-color: #DE6262;">
-                            <i class="bi bi-box-arrow-in-right me-1"></i> Login
-                        </a>
-                        <a href="{{ route('register') }}" class="btn btn-sm btn-outline-danger text-white" style="border-color: #DE6262; background-color: #DE6262;">
-                            <i class="bi bi-person-plus me-1"></i> Register
-                        </a>
-                    @endguest
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('settings') }}">
+                                <i class="bi bi-gear"></i> Settings
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2">
+                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
                 </div>
-
-                <!-- Book Appointment -->
-                <a href="{{ route('contact') }}" class="btn btn-sm" style="background-color: #DE6262; color: white; border-radius: 30px;">
-                    <i class="bi bi-calendar-check me-1"></i> Book Appointment
-                </a>
+            @endauth
+        
+            @guest
+            <a href="{{ route('login') }}"
+            class="btn btn-sm px-4"
+            style="background: #DE6262; color: #fff; border: none; font-weight: 500; border-radius: 30px; height: 38px; line-height: 24px;">
+             <i class="bi bi-box-arrow-in-right me-1"></i> Login
+         </a>
+         <a href="{{ route('register') }}"
+            class="btn btn-sm px-4"
+            style="background: #fff; color: #DE6262; border: 2px solid #DE6262; font-weight: 500; border-radius: 30px; height: 38px; line-height: 24px;">
+             <i class="bi bi-person-plus me-1"></i> Register
+         </a>
+            @endguest
 
             </div>
         </div>
@@ -136,26 +153,30 @@
 						<!-- Primary Navigation
 						============================================= -->
 						<nav class="primary-menu style-3 menu-spacing-margin">
-
                             <ul class="menu-container">
-                                <li class="menu-item {{ request()->is('/') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ url('/') }}"><div>Home</div></a>
-                                </li>
-                                <li class="menu-item {{ request()->is('about') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('about') }}"><div>About Us</div></a>
-                                </li>
                                 @auth
-                                <li class="menu-item {{ request()->routeIs('ask-openai') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('ask-openai') }}"><div>Patients</div></a>
-                                </li>
-                            @endauth
+                                    <li class="menu-item {{ request()->routeIs('dashboard') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('dashboard') }}"><div>Dashboard</div></a>
+                                    </li>
+                                    <li class="menu-item {{ request()->routeIs('ask-openai') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('ask-openai') }}"><div>Patients</div></a>
+                                    </li>
+                                    <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('cases') }}"><div>Cases</div></a>
+                                    </li>
+                                @endauth
                             
-                                <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('cases') }}"><div>Cases</div></a>
-                                </li>
-                                <li class="menu-item {{ request()->is('contact') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('contact') }}"><div>Contact</div></a>
-                                </li>
+                                @guest
+                                    <li class="menu-item {{ request()->is('/') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ url('/') }}"><div>Home</div></a>
+                                    </li>
+                                    <li class="menu-item {{ request()->is('about') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('about') }}"><div>About Us</div></a>
+                                    </li>
+                                    <li class="menu-item {{ request()->is('contact') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('contact') }}"><div>Contact</div></a>
+                                    </li>
+                                @endguest
                             </ul>
                             
 

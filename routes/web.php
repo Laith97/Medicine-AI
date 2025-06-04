@@ -15,7 +15,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [UserSettingsController::class, 'index'])->name('settings');
     Route::put('/user/settings/update', [UserSettingsController::class, 'update'])->name('settings.update');
     Route::get('/cases', [OpenAIController::class, 'getCases'])->name('cases');
-
+    Route::get('/dashboard', [OpenAIController::class, 'dashboard'])->name('dashboard');
 
 });
 
@@ -23,9 +23,7 @@ Route::get('/contact', [UserSettingsController::class, 'contact'])->name('contac
 Route::get('/about', [UserSettingsController::class, 'about'])->name('about');
 
 
-Route::get('/dashboard', function () {
-    return view('main');
-})->middleware(['auth', 'verified'])->name('dashboard');
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
