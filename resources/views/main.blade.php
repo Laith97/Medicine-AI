@@ -1,457 +1,307 @@
 @extends('master')
 
-@section('title', 'Patients Page')
+@section('title', 'AI Medical Diagnosis - Smart Healthcare Solutions')
+
+@push('styles')
+<style>
+.theme-primary { background-color: #DE6262 !important; }
+.theme-primary-light { background-color: #E87777 !important; }
+.theme-primary-dark { background-color: #C55555 !important; }
+.theme-primary-darker { background-color: #B85555 !important; }
+.text-theme-primary { color: #DE6262 !important; }
+.border-theme-primary { border-color: #DE6262 !important; }
+.btn-theme-primary { 
+    background-color: #DE6262 !important; 
+    border-color: #DE6262 !important; 
+    color: white !important; 
+}
+.btn-theme-primary:hover { 
+    background-color: #C55555 !important; 
+    border-color: #C55555 !important; 
+}
+.btn-theme-outline { 
+    background-color: transparent !important; 
+    border-color: #DE6262 !important; 
+    color: #DE6262 !important; 
+}
+.btn-theme-outline:hover { 
+    background-color: #DE6262 !important; 
+    color: white !important; 
+}
+.hero-gradient {
+    background: linear-gradient(135deg, #DE6262 0%, #B85555 100%) !important;
+}
+.accent-color { color: #FFD700 !important; }
+</style>
+@endpush
 
 @section('content')
-		<!-- Slider
-		============================================= -->
-		<section id="slider" class="slider-element swiper_wrapper min-vh-50 min-vh-md-100" data-loop="true" data-autoplay="5000">
-			<div class="slider-inner">
-
-				<div class="swiper swiper-parent">
-					<div class="swiper-wrapper">
-						<div class="swiper-slide">
-							<div class="container">
-								<div class="slider-caption slider-caption-right" style="max-width: 700px;">
-									<div>
-										<h2 data-animate="flipInX">Team of Experts<span>.</span></h2>
-										<p class="d-none d-sm-block" data-animate="flipInX" data-delay="500">Our Team of Doctors are specialized in Various Disciplines to make sure you get the Best Treatment.</p>
-									</div>
-								</div>
+		<!-- Hero Section -->
+		<section id="hero" class="slider-element min-vh-75 d-flex align-items-center hero-gradient">
+			<div class="container">
+				<div class="row align-items-center">
+					<div class="col-lg-6">
+						<div class="text-white">
+							<h1 class="display-4 fw-bold mb-4" data-animate="fadeInUp">
+								AI-Powered Medical <span class="accent-color">Diagnosis</span>
+							</h1>
+							<p class="lead mb-4" data-animate="fadeInUp" data-delay="200">
+								Advanced artificial intelligence that assists doctors in diagnosing patient conditions with precision and speed. Submit patient information and receive comprehensive AI-generated medical insights.
+							</p>
+							<div data-animate="fadeInUp" data-delay="400">
+								<a href="#diagnosis-form" class="button button-white button-large button-rounded me-3">
+									Start Diagnosis
+								</a>
+								<a href="#how-it-works" class="button button-border button-white button-large button-rounded">
+									Learn More
+								</a>
 							</div>
-							<div class="swiper-slide-bg" style="background-image: url('demos/medical/images/slider/1.jpg');"></div>
-						</div>
-						<div class="swiper-slide">
-							<div class="container">
-								<div class="slider-caption">
-									<div>
-										<h2 data-animate="zoomIn">Heart<span>Beat</span>.</h2>
-										<p class="d-none d-sm-block" data-animate="zoomIn" data-delay="500">Care for your Loved Ones from the Experts in the Medical &amp; Hospitality Industry.</p>
-									</div>
-								</div>
-							</div>
-							<div class="swiper-slide-bg" style="background-image: url('demos/medical/images/slider/2.jpg');"></div>
 						</div>
 					</div>
-
+					<div class="col-lg-6 text-center">
+						<div class="position-relative" data-animate="fadeInRight">
+							<i class="icon-medical-i-cardiology" style="font-size: 200px; color: rgba(255,255,255,0.1);"></i>
+							<div class="position-absolute top-50 start-50 translate-middle">
+								<i class="icon-medical-i-social-services text-white" style="font-size: 80px;"></i>
+							</div>
+						</div>
+					</div>
 				</div>
-
 			</div>
-		</section><!-- #slider end -->
+		</section>
 
-		<!-- Content
-		============================================= -->
-		<section id="content">
-			<div class="content-wrap">
-				<div class="container">
-
-					<div class="row col-mb-50 mb-0">
-						<div class="col-sm-6 col-md-4">
-							<div class="feature-box fbox-plain">
-								<div class="fbox-icon" data-animate="bounceIn">
-									<a href="#"><i class="icon-medical-i-cardiology"></i></a>
-								</div>
-								<div class="fbox-content">
-									<h3>Intensive Care</h3>
-									<p>Powerful Layout with Responsive functionality that can be adapted to any screen size. Resize browser to view.</p>
-								</div>
-							</div>
-						</div>
-
-						<div class="col-sm-6 col-md-4">
-							<div class="feature-box fbox-plain">
-								<div class="fbox-icon" data-animate="bounceIn" data-delay="200">
-									<a href="#"><i class="icon-medical-i-social-services"></i></a>
-								</div>
-								<div class="fbox-content">
-									<h3>Family Planning</h3>
-									<p>Looks beautiful &amp; ultra-sharp on Retina Screen Displays. Retina Icons, Fonts &amp; all others graphics are optimized.</p>
-								</div>
-							</div>
-						</div>
-
-						<div class="col-sm-6 col-md-4">
-							<div class="feature-box fbox-plain">
-								<div class="fbox-icon" data-animate="bounceIn" data-delay="400">
-									<a href="#"><i class="icon-medical-i-neurology"></i></a>
-								</div>
-								<div class="fbox-content">
-									<h3>Expert Consultation</h3>
-									<p>Canvas includes tons of optimized code that are completely customizable and deliver unmatched fast performance.</p>
-								</div>
-							</div>
-						</div>
-
-						<div class="col-sm-6 col-md-4">
-							<div class="feature-box fbox-plain">
-								<div class="fbox-icon" data-animate="bounceIn">
-									<a href="#"><i class="icon-medical-i-dental"></i></a>
-								</div>
-								<div class="fbox-content">
-									<h3>Dental Sciences</h3>
-									<p>Powerful Layout with Responsive functionality that can be adapted to any screen size. Resize browser to view.</p>
-								</div>
-							</div>
-						</div>
-
-						<div class="col-sm-6 col-md-4">
-							<div class="feature-box fbox-plain">
-								<div class="fbox-icon" data-animate="bounceIn" data-delay="200">
-									<a href="#"><i class="icon-medical-i-imaging-root-category"></i></a>
-								</div>
-								<div class="fbox-content">
-									<h3>X-Ray Services</h3>
-									<p>Looks beautiful &amp; ultra-sharp on Retina Screen Displays. Retina Icons, Fonts &amp; all others graphics are optimized.</p>
-								</div>
-							</div>
-						</div>
-
-						<div class="col-sm-6 col-md-4">
-							<div class="feature-box fbox-plain">
-								<div class="fbox-icon" data-animate="bounceIn" data-delay="400">
-									<a href="#"><i class="icon-medical-i-ambulance"></i></a>
-								</div>
-								<div class="fbox-content">
-									<h3>24x7 Emergency</h3>
-									<p>Canvas includes tons of optimized code that are completely customizable and deliver unmatched fast performance.</p>
-								</div>
-							</div>
-						</div>
-					</div>
-
+		<!-- Features Section -->
+		<section id="features" class="py-5 bg-light">
+			<div class="container">
+				<div class="text-center mb-5">
+					<h2 class="display-5 fw-bold">Why Choose Our AI Diagnosis System?</h2>
+					<p class="lead text-muted">Cutting-edge technology meets medical expertise</p>
 				</div>
-
-				<div class="section row p-0 align-items-stretch dark mt-4">
-					<div class="col-lg-5" style="background: url('demos/medical/images/section-bg.jpg') center center no-repeat; background-size: cover; min-height: 250px;">
-						<div>&nbsp;</div>
+				
+				<div class="row g-4">
+					<div class="col-md-4">
+						<div class="feature-box text-center p-4 h-100 bg-white rounded shadow-sm">
+							<div class="fbox-icon mb-3">
+								<i class="icon-medical-i-neurology text-theme-primary" style="font-size: 3rem;"></i>
+							</div>
+							<h4>Advanced Analysis</h4>
+							<p class="text-muted">Machine learning algorithms trained on vast medical datasets provide accurate diagnostic suggestions.</p>
+						</div>
 					</div>
-					<div id="booking-appointment-form" class="col-lg-7 p-0">
-						<div class="bg-color form-widget col-padding" data-loader="button">
-							<h2>Book an Appointment.</h2>
-							<div class="form-result"></div>
-							<form class="row mb-0" id="template-medical-form" name="template-medical-form" action="include/form.php" method="post">
-								<div class="form-process">
-									<div class="css3-spinner">
-										<div class="css3-spinner-scaler"></div>
+					
+					<div class="col-md-4">
+						<div class="feature-box text-center p-4 h-100 bg-white rounded shadow-sm">
+							<div class="fbox-icon mb-3">
+								<i class="icon-medical-i-emergency text-theme-primary" style="font-size: 3rem;"></i>
+							</div>
+							<h4>Instant Results</h4>
+							<p class="text-muted">Get comprehensive diagnostic insights within seconds of submitting patient information.</p>
+						</div>
+					</div>
+					
+					<div class="col-md-4">
+						<div class="feature-box text-center p-4 h-100 bg-white rounded shadow-sm">
+							<div class="fbox-icon mb-3">
+								<i class="icon-medical-i-imaging-root-category text-theme-primary" style="font-size: 3rem;"></i>
+							</div>
+							<h4>HIPAA Compliant</h4>
+							<p class="text-muted">All patient data is encrypted and handled according to medical privacy standards.</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- How It Works Section -->
+		<section id="how-it-works" class="py-5">
+			<div class="container">
+				<div class="text-center mb-5">
+					<h2 class="display-5 fw-bold">How It Works</h2>
+					<p class="lead text-muted">Simple 3-step process for AI-powered diagnosis</p>
+				</div>
+				
+				<div class="row g-4">
+					<div class="col-md-4 text-center">
+						<div class="step-number text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 theme-primary" style="width: 60px; height: 60px;">
+							<span class="fw-bold">1</span>
+						</div>
+						<h4>Submit Patient Data</h4>
+						<p class="text-muted">Enter patient symptoms, medical history, and relevant information through our secure form.</p>
+					</div>
+					
+					<div class="col-md-4 text-center">
+						<div class="step-number text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 theme-primary-light" style="width: 60px; height: 60px;">
+							<span class="fw-bold">2</span>
+						</div>
+						<h4>AI Analysis</h4>
+						<p class="text-muted">Our advanced AI processes the information and analyzes it against medical knowledge databases.</p>
+					</div>
+					
+					<div class="col-md-4 text-center">
+						<div class="step-number text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 theme-primary-dark" style="width: 60px; height: 60px;">
+							<span class="fw-bold">3</span>
+						</div>
+						<h4>Get Results</h4>
+						<p class="text-muted">Receive detailed diagnostic suggestions, potential conditions, and recommended next steps.</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Diagnosis Form Section -->
+		<section id="diagnosis-form" class="py-5 bg-light">
+			<div class="container">
+				<div class="row justify-content-center">
+					<div class="col-lg-8">
+						<div class="bg-white p-5 rounded shadow">
+							<h2 class="text-center mb-4">Start AI Diagnosis</h2>
+							<p class="text-center text-muted mb-4">Fill out the patient information below to receive AI-powered diagnostic insights</p>
+							
+							<form id="ai-diagnosis-form"  method="POST">
+								@csrf
+								<div class="row">
+									<div class="col-md-6 mb-3">
+										<label for="patient_age" class="form-label">Patient Age</label>
+										<input type="number" class="form-control" id="patient_age" name="patient_age" required>
+									</div>
+									<div class="col-md-6 mb-3">
+										<label for="patient_gender" class="form-label">Gender</label>
+										<select class="form-control" id="patient_gender" name="patient_gender" required>
+											<option value="">Select Gender</option>
+											<option value="male">Male</option>
+											<option value="female">Female</option>
+											<option value="other">Other</option>
+										</select>
 									</div>
 								</div>
-								<div class="col-md-8 form-group">
-									<label for="template-medical-name">Name:</label>
-									<input type="text" id="template-medical-name" name="template-medical-name" class="form-control not-dark required" value="">
+								
+								<div class="mb-3">
+									<label for="chief_complaint" class="form-label">Chief Complaint</label>
+									<input type="text" class="form-control" id="chief_complaint" name="chief_complaint" placeholder="Primary reason for visit" required>
 								</div>
-								<div class="col-md-4 form-group">
-									<label for="template-medical-phone">Phone:</label>
-									<input type="text" id="template-medical-phone" name="template-medical-phone" class="form-control not-dark required" value="">
+								
+								<div class="mb-3">
+									<label for="symptoms" class="form-label">Symptoms</label>
+									<textarea class="form-control" id="symptoms" name="symptoms" rows="4" placeholder="Describe all symptoms in detail..." required></textarea>
 								</div>
-								<div class="w-100"></div>
-								<div class="col-md-8 form-group">
-									<label for="template-medical-email">Email Address:</label>
-									<input type="email" id="template-medical-email" name="template-medical-email" class="form-control not-dark required" value="">
+								
+								<div class="mb-3">
+									<label for="medical_history" class="form-label">Medical History</label>
+									<textarea class="form-control" id="medical_history" name="medical_history" rows="3" placeholder="Previous conditions, surgeries, medications..."></textarea>
 								</div>
-								<div class="col-md-4 form-group">
-									<label for="template-medical-dob">Date of Birth:</label>
-									<input type="text" id="template-medical-dob" name="template-medical-dob" class="form-control not-dark required" value="" placeholder="DD/MM/YYYY">
-								</div>
-								<div class="w-100"></div>
-								<div class="col-md-5">
-									<div class="row">
-										<div class="col-12 form-group">
-											<label for="template-medical-appoint-date">Appointment Date:</label>
-											<input type="text" id="template-medical-appoint-date" name="template-medical-appoint-date" class="form-control not-dark required" value="" placeholder="DD/MM/YYYY">
-										</div>
-										<div class="col-12 form-group">
-											<label for="template-medical-second-booking">Booked with us Before?</label><br>
-											<label class="me-4">
-												<input type="radio" id="template-medical-second-booking" name="template-medical-second-booking" value="yes">
-												Yes
-											</label>
-											<label>
-												<input type="radio" name="template-medical-second-booking" value="no" checked>
-												No
-											</label>
-										</div>
+								
+								<div class="row">
+									<div class="col-md-6 mb-3">
+										<label for="vital_signs" class="form-label">Vital Signs</label>
+										<textarea class="form-control" id="vital_signs" name="vital_signs" rows="2" placeholder="BP, HR, Temp, etc."></textarea>
+									</div>
+									<div class="col-md-6 mb-3">
+										<label for="duration" class="form-label">Symptom Duration</label>
+										<input type="text" class="form-control" id="duration" name="duration" placeholder="e.g., 3 days, 2 weeks">
 									</div>
 								</div>
-								<div class="col-md-7 form-group">
-									<label for="template-medical-message">Message:</label>
-									<textarea id="template-medical-message" name="template-medical-message" class="form-control not-dark required" cols="30" rows="5"></textarea>
+								
+								<div class="text-center">
+									<button type="submit" class="button button-large button-rounded btn-theme-primary px-5">
+										<i class="icon-medical-i-social-services me-2"></i>Generate AI Diagnosis
+									</button>
 								</div>
-								<div class="w-100"></div>
-								<div class="col-12 form-group d-none">
-									<input type="text" name="template-medical-botcheck" value="">
-								</div>
-								<div class="col-12 form-group text-end">
-									<button class="button button-white button-light button-rounded m-0" type="submit" value="submit">Confirm Booking</button>
-								</div>
-								<input type="hidden" name="prefix" value="template-medical-">
 							</form>
-
 						</div>
 					</div>
-				</div>
-
-
-
-				<div class="section mt-0">
-					<div class="container">
-
-						<div class="row">
-							<div class="col-lg-3 col-md-6">
-								<div class="feature-box fbox-outline fbox-dark fbox-effect">
-									<div class="fbox-icon">
-										<a href="#"><i class="bi-layers-half i-alt"></i></a>
-									</div>
-									<div class="fbox-content">
-										<div class="counter counter-small"><span data-from="100" data-to="23331" data-refresh-interval="200" data-speed="2500"></span>+</div>
-										<h5 class="m-0 color">Clients Served</h5>
-										<div class="d-block d-md-block d-lg-none mb-5"></div>
-									</div>
-								</div>
-							</div>
-
-							<div class="col-lg-3 col-md-6">
-								<div class="feature-box fbox-outline fbox-dark fbox-effect">
-									<div class="fbox-icon">
-										<a href="#"><i class="bi-droplet-half i-alt"></i></a>
-									</div>
-									<div class="fbox-content">
-										<div class="counter counter-small"><span data-from="100" data-to="56841" data-refresh-interval="250" data-speed="2000"></span>+</div>
-										<h5 class="m-0 color">X-Rays Done</h5>
-										<div class="d-block d-md-block d-lg-none mb-5"></div>
-									</div>
-								</div>
-							</div>
-
-							<div class="col-lg-3 col-md-6">
-								<div class="feature-box fbox-outline fbox-dark fbox-effect">
-									<div class="fbox-icon">
-										<a href="#"><i class="bi-droplet-half i-alt"></i></a>
-									</div>
-									<div class="fbox-content">
-										<div class="counter counter-small"><span data-from="100" data-to="332" data-refresh-interval="50" data-speed="3000"></span>+</div>
-										<h5 class="m-0 color">Worldwide Staff</h5>
-										<div class="d-block d-md-none mb-5"></div>
-									</div>
-								</div>
-							</div>
-
-							<div class="col-lg-3 col-md-6">
-								<div class="feature-box fbox-outline fbox-dark fbox-effect">
-									<div class="fbox-icon">
-										<a href="#"><i class="bi-textarea-t i-alt"></i></a>
-									</div>
-									<div class="fbox-content">
-										<div class="counter counter-small"><span data-from="100" data-to="2213" data-refresh-interval="110" data-speed="3500"></span>+</div>
-										<h5 class="m-0 color">Lives Saved</h5>
-									</div>
-								</div>
-							</div>
-						</div>
-
-					</div>
-				</div>
-
-				<div class="container">
-					<div class="heading-block text-center border-bottom-0">
-						<h3>Meet our Team of Specialists<span>.</span></h3>
-						<span>We make sure that your Life are in Good Hands.</span>
-					</div>
-
-					<div id="oc-team" class="owl-carousel team-carousel carousel-widget" data-margin="30" data-nav="true" data-pagi="true" data-items-xs="1" data-items-sm="2" data-items-lg="3" data-items-xl="4">
-
-						<div class="team">
-							<div class="team-image">
-								<img src="demos/medical/images/doctors/1.jpg" alt="Dr. John Doe">
-							</div>
-							<div class="team-desc">
-								<div class="team-title"><h4>Dr. John Doe</h4><span>Cardiologist</span></div>
-							</div>
-						</div>
-
-						<div class="team">
-							<div class="team-image">
-								<img src="demos/medical/images/doctors/2.jpg" alt="Dr. John Doe">
-							</div>
-							<div class="team-desc">
-								<div class="team-title"><h4>Dr. Bryan Mcguire</h4><span>Orthopedist</span></div>
-							</div>
-						</div>
-
-						<div class="team">
-							<div class="team-image">
-								<img src="demos/medical/images/doctors/3.jpg" alt="Dr. John Doe">
-							</div>
-							<div class="team-desc">
-								<div class="team-title"><h4>Dr. Mary Jane</h4><span>Neurologist</span></div>
-							</div>
-						</div>
-
-						<div class="team">
-							<div class="team-image">
-								<img src="demos/medical/images/doctors/4.jpg" alt="Dr. John Doe">
-							</div>
-							<div class="team-desc">
-								<div class="team-title"><h4>Dr. Silvia Bush</h4><span>Dentist</span></div>
-							</div>
-						</div>
-
-						<div class="team">
-							<div class="team-image">
-								<img src="demos/medical/images/doctors/6.jpg" alt="Dr. John Doe">
-							</div>
-							<div class="team-desc">
-								<div class="team-title"><h4>Dr. Hugh Baldwin</h4><span>Cardiologist</span></div>
-							</div>
-						</div>
-
-						<div class="team">
-							<div class="team-image">
-								<img src="demos/medical/images/doctors/7.jpg" alt="Dr. John Doe">
-							</div>
-							<div class="team-desc">
-								<div class="team-title"><h4>Dr. Erika Todd</h4><span>Neurologist</span></div>
-							</div>
-						</div>
-
-						<div class="team">
-							<div class="team-image">
-								<img src="demos/medical/images/doctors/8.jpg" alt="Dr. John Doe">
-							</div>
-							<div class="team-desc">
-								<div class="team-title"><h4>Dr. Randy Adams</h4><span>Dentist</span></div>
-							</div>
-						</div>
-
-						<div class="team">
-							<div class="team-image">
-								<img src="demos/medical/images/doctors/9.jpg" alt="Dr. John Doe">
-							</div>
-							<div class="team-desc">
-								<div class="team-title"><h4>Dr. Alan Freeman</h4><span>Eye Specialist</span></div>
-							</div>
-						</div>
-
-					</div>
-
 				</div>
 			</div>
-		</section><!-- #content end -->
+		</section>
 
-		<!-- Footer
-		============================================= -->
-		<footer id="footer" class="bg-contrast-100" style="border-top: 2px solid rgba(var(--cnvs-contrast-rgb),0.06);">
-			<div class="container" style="border-bottom: 1px solid rgba(var(--cnvs-contrast-rgb),0.06);">
+		<!-- Statistics Section -->
+	<!-- Statistics Section -->
+<!-- Statistics Section -->
+<section id="stats" class="py-5 text-white bg-dark">
+	<div class="container">
+		<div class="row text-center">
+			<div class="col-md-3 mb-4">
+				<div class="stat-item">
+					<i class="icon-medical-i-cardiology mb-3 text-white" style="font-size: 3rem;"></i>
+					<div class="counter h2 mb-2"><span data-from="0" data-to="15000" data-speed="2000">0</span></div>
+					<h5 class="text-white">Diagnoses Generated</h5>
+				</div>
+			</div>
+			<div class="col-md-3 mb-4">
+				<div class="stat-item">
+					<i class="icon-medical-i-imaging-root-category mb-3 text-white" style="font-size: 3rem;"></i>
+					<div class="counter h2 mb-2"><span data-from="0" data-to="98" data-speed="2000">0</span>%</div>
+					<h5 class="text-white">Accuracy Rate</h5>
+				</div>
+			</div>
+			<div class="col-md-3 mb-4">
+				<div class="stat-item">
+					<i class="icon-medical-i-social-services mb-3 text-white" style="font-size: 3rem;"></i>
+					<div class="counter h2 mb-2"><span data-from="0" data-to="500" data-speed="2000">0</span>+</div>
+					<h5 class="text-white">Doctors Using</h5>
+				</div>
+			</div>
+			<div class="col-md-3 mb-4">
+				<div class="stat-item">
+					<i class="icon-medical-i-emergency mb-3 text-white" style="font-size: 3rem;"></i>
+					<div class="counter h2 mb-2"><span data-from="0" data-to="24" data-speed="1000">0</span>/7</div>
+					<h5 class="text-white">Available</h5>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
 
-				<!-- Footer Widgets
-				============================================= -->
-				<div class="footer-widgets-wrap">
 
-					<div class="row gutter-50 col-mb-50">
-						<div class="col-md-8">
 
-							<div class="widget">
-								<div class="widget-subscribe-form-result"></div>
-								<form id="widget-subscribe-form" action="include/subscribe.php" method="post" class="mb-0 row">
-									<div class="col-lg-9">
-										<input type="email" id="widget-subscribe-form-email" name="widget-subscribe-form-email" class="form-control required email" placeholder="Enter your Email to Subscribe to our Newsletter">
-									</div>
-									<div class="col-lg-3">
-										<button class="button button-rounded m-0 text-center w-100" type="submit">Subscribe</button>
-									</div>
-								</form>
+		<!-- CTA Section -->
+		<section id="cta" class="py-5">
+			<div class="container text-center">
+				<h2 class="display-5 fw-bold mb-4">Ready to Experience AI-Powered Diagnosis?</h2>
+				<p class="lead text-muted mb-4">Join hundreds of medical professionals who trust our AI system for accurate diagnostic assistance.</p>
+				<a href="#diagnosis-form" class="button button-large button-rounded btn-theme-primary me-3">
+					Start Free Trial
+				</a>
+				<a href="{{ route('contact') }}" class="button button-border button-large button-rounded btn-theme-outline">
+					Contact Us
+				</a>
+			</div>
+		</section>
 
-								<div class="line line-sm"></div>
 
-								<div class="row col-mb-30">
-									<div class="col-lg-3 col-6 widget_links">
-										<ul>
-											<li><a href="#">Home</a></li>
-											<li><a href="#">About</a></li>
-											<li><a href="#">FAQs</a></li>
-											<li><a href="#">Support</a></li>
-											<li><a href="#">Contact</a></li>
-										</ul>
-									</div>
+		<script>
+			// Smooth scrolling for anchor links
+			document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+				anchor.addEventListener('click', function (e) {
+					e.preventDefault();
+					const target = document.querySelector(this.getAttribute('href'));
+					if (target) {
+						target.scrollIntoView({
+							behavior: 'smooth',
+							block: 'start'
+						});
+					}
+				});
+			});
 
-									<div class="col-lg-3 col-6 widget_links">
-										<ul>
-											<li><a href="#">Shop</a></li>
-											<li><a href="#">Portfolio</a></li>
-											<li><a href="#">Blog</a></li>
-											<li><a href="#">Events</a></li>
-											<li><a href="#">Forums</a></li>
-										</ul>
-									</div>
-
-									<div class="col-lg-3 col-6 widget_links">
-										<ul>
-											<li><a href="#">Corporate</a></li>
-											<li><a href="#">Agency</a></li>
-											<li><a href="#">eCommerce</a></li>
-											<li><a href="#">Personal</a></li>
-											<li><a href="#">One Page</a></li>
-										</ul>
-									</div>
-
-									<div class="col-lg-3 col-6 widget_links">
-										<ul>
-											<li><a href="#">Restaurant</a></li>
-											<li><a href="#">Wedding</a></li>
-											<li><a href="#">App Showcase</a></li>
-											<li><a href="#">Magazine</a></li>
-											<li><a href="#">Landing Page</a></li>
-										</ul>
-									</div>
-								</div>
-							</div>
-
-						</div>
-
-						<div class="col-md-4">
-
-							<div class="widget">
-
-								<div class="row col-mb-30">
-									<div class="col-lg-12">
-										<div class="footer-big-contacts">
-											<span>Call Us:</span>
-											(1) 22 55412474
-										</div>
-									</div>
-
-									<div class="col-lg-12">
-										<div class="footer-big-contacts">
-											<span>Send an Email:</span>
-											info@canvas.com
-										</div>
-									</div>
-								</div>
-
-							</div>
-
-							<div class="widget subscribe-widget">
-
-								<div class="row col-mb-30">
-									<div class="col-sm-6 col-md-12 col-lg-6">
-										<a href="#" class="social-icon bg-contrast-200 h-bg-facebook mb-0 me-3">
-											<i class="fa-brands fa-facebook-f"></i>
-											<i class="fa-brands fa-facebook-f"></i>
-										</a>
-										<a href="#"><small class="d-block"><strong>Like us</strong><br>on Facebook</small></a>
-									</div>
-									<div class="col-sm-6 col-md-12 col-lg-6">
-										<a href="#" class="social-icon bg-contrast-200 h-bg-rss mb-0 me-3">
-											<i class="fa-solid fa-rss"></i>
-											<i class="fa-solid fa-rss"></i>
-										</a>
-										<a href="#"><small class="d-block"><strong>Subscribe</strong><br>to RSS Feeds</small></a>
-									</div>
-								</div>
-
-							</div>
-
-						</div>
-					</div>
-
-				</div><!-- .footer-widgets-wrap end -->
-			@endsection
+			// Form submission handling
+			document.getElementById('ai-diagnosis-form').addEventListener('submit', function(e) {
+				e.preventDefault();
+				
+				// Show loading state
+				const submitBtn = this.querySelector('button[type="submit"]');
+				const originalText = submitBtn.innerHTML;
+				submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Analyzing...';
+				submitBtn.disabled = true;
+				
+				// Simulate API call (replace with actual form submission)
+				setTimeout(() => {
+					// Reset button
+					submitBtn.innerHTML = originalText;
+					submitBtn.disabled = false;
+					
+					// Show success message or redirect
+					alert('Diagnosis request submitted! You will receive results shortly.');
+				}, 3000);
+			});
+		</script>
+@endsection
