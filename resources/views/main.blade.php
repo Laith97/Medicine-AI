@@ -49,12 +49,13 @@
 								Advanced artificial intelligence that assists doctors in diagnosing patient conditions with precision and speed. Submit patient information and receive comprehensive AI-generated medical insights.
 							</p>
 							<div data-animate="fadeInUp" data-delay="400">
-								<a href="#diagnosis-form" class="button button-white button-large button-rounded me-3">
+								<a href="#diagnosis-form" class="btn btn-light btn-lg rounded-pill me-3 text-theme-primary fw-semibold shadow">
 									Start Diagnosis
 								</a>
-								<a href="#how-it-works" class="button button-border button-white button-large button-rounded">
+								<a href="#how-it-works" class="btn btn-outline-light btn-lg rounded-pill fw-semibold shadow-sm">
 									Learn More
 								</a>
+								
 							</div>
 						</div>
 					</div>
@@ -148,70 +149,7 @@
 			</div>
 		</section>
 
-		<!-- Diagnosis Form Section -->
-		<section id="diagnosis-form" class="py-5 bg-light">
-			<div class="container">
-				<div class="row justify-content-center">
-					<div class="col-lg-8">
-						<div class="bg-white p-5 rounded shadow">
-							<h2 class="text-center mb-4">Start AI Diagnosis</h2>
-							<p class="text-center text-muted mb-4">Fill out the patient information below to receive AI-powered diagnostic insights</p>
-							
-							<form id="ai-diagnosis-form"  method="POST">
-								@csrf
-								<div class="row">
-									<div class="col-md-6 mb-3">
-										<label for="patient_age" class="form-label">Patient Age</label>
-										<input type="number" class="form-control" id="patient_age" name="patient_age" required>
-									</div>
-									<div class="col-md-6 mb-3">
-										<label for="patient_gender" class="form-label">Gender</label>
-										<select class="form-control" id="patient_gender" name="patient_gender" required>
-											<option value="">Select Gender</option>
-											<option value="male">Male</option>
-											<option value="female">Female</option>
-											<option value="other">Other</option>
-										</select>
-									</div>
-								</div>
-								
-								<div class="mb-3">
-									<label for="chief_complaint" class="form-label">Chief Complaint</label>
-									<input type="text" class="form-control" id="chief_complaint" name="chief_complaint" placeholder="Primary reason for visit" required>
-								</div>
-								
-								<div class="mb-3">
-									<label for="symptoms" class="form-label">Symptoms</label>
-									<textarea class="form-control" id="symptoms" name="symptoms" rows="4" placeholder="Describe all symptoms in detail..." required></textarea>
-								</div>
-								
-								<div class="mb-3">
-									<label for="medical_history" class="form-label">Medical History</label>
-									<textarea class="form-control" id="medical_history" name="medical_history" rows="3" placeholder="Previous conditions, surgeries, medications..."></textarea>
-								</div>
-								
-								<div class="row">
-									<div class="col-md-6 mb-3">
-										<label for="vital_signs" class="form-label">Vital Signs</label>
-										<textarea class="form-control" id="vital_signs" name="vital_signs" rows="2" placeholder="BP, HR, Temp, etc."></textarea>
-									</div>
-									<div class="col-md-6 mb-3">
-										<label for="duration" class="form-label">Symptom Duration</label>
-										<input type="text" class="form-control" id="duration" name="duration" placeholder="e.g., 3 days, 2 weeks">
-									</div>
-								</div>
-								
-								<div class="text-center">
-									<button type="submit" class="button button-large button-rounded btn-theme-primary px-5">
-										<i class="icon-medical-i-social-services me-2"></i>Generate AI Diagnosis
-									</button>
-								</div>
-							</form>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
+
 
 		<!-- Statistics Section -->
 	<!-- Statistics Section -->
