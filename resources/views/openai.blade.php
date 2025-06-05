@@ -127,7 +127,7 @@
                 <!-- Submit -->
                 <div class="row mt-4">
                     <div class="col-md-12 text-end">
-                        <button type="submit" class="btn btn-deep-red btn-lg px-4 ">Get Results</button>
+                        <button type="submit" class="btn btn-deep-red btn-lg px-4 "><i class="fa-solid fa-robot me-2"></i>Get Results</button>
                     </div>
                 </div>
 

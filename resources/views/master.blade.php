@@ -198,27 +198,58 @@
     </div><!-- #wrapper end -->
 			</div>
 
-			<!-- Copyrights
-			============================================= -->
-			<div id="copyrights" class="bg-transparent">
-				<div class="container">
-
-					<div class="row col-mb-30">
-						<div class="col-md-6 text-center text-md-start">
-							Copyrights &copy; 2023 All Rights Reserved by Canvas Inc.<br>
-							<div class="copyright-links"><a href="#">Terms of Use</a> / <a href="#">Privacy Policy</a></div>
-						</div>
-
-						<div class="col-md-6 text-center text-md-end">
-							<div class="copyrights-menu copyright-links">
-								<a href="#">Home</a>/<a href="#">About Us</a>/<a href="#">Team</a>/<a href="#">Clients</a>/<a href="#">FAQs</a>/<a href="#">Contact</a>
-							</div>
-						</div>
-					</div>
-
-				</div>
-			</div><!-- #copyrights end -->
-		</footer><!-- #footer end -->
+		<!-- Footer -->
+ <!-- Footer -->
+<footer id="footer" class="bg-dark text-white py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="text-white">AI Medical Diagnosis</h5>
+                <p class="text-white">Revolutionizing healthcare with artificial intelligence. Providing doctors with powerful diagnostic tools for better patient care.</p>
+                <div class="social-links">
+                    <a href="#" class="text-white me-3" style="opacity: 0.9;"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="#" class="text-white me-3" style="opacity: 0.9;"><i class="fa-brands fa-twitter"></i></a>
+                    <a href="#" class="text-white me-3" style="opacity: 0.9;"><i class="fa-brands fa-linkedin"></i></a>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <h6 class="text-white">Quick Links</h6>
+                <ul class="list-unstyled">
+                    <li><a href="#" class="text-white text-decoration-none">Home</a></li>
+                    <li><a href="#how-it-works" class="text-white text-decoration-none">How It Works</a></li>
+                    <li><a href="#diagnosis-form" class="text-white text-decoration-none">Start Diagnosis</a></li>
+                    <li><a href="{{ route('about') }}" class="text-white text-decoration-none">About</a></li>
+                    <li><a href="{{ route('contact') }}" class="text-white text-decoration-none">Contact</a></li>
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h6 class="text-white">Contact Info</h6>
+                <p class="text-white mb-2">
+                    <i class="icon-mail me-2"></i>
+                    support@aimedicaldiagnosis.com
+                </p>
+                <p class="text-white mb-2">
+                    <i class="icon-phone me-2"></i>
+                    +1 (555) 123-4567
+                </p>
+                <p class="text-white">
+                    <i class="icon-clock me-2"></i>
+                    24/7 AI Support Available
+                </p>
+            </div>
+        </div>
+        <hr class="border-light my-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <p class="text-white mb-0">&copy; {{ date('Y') }} AI Medical Diagnosis. All rights reserved.</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="#" class="text-white text-decoration-none me-3">Privacy Policy</a>
+                <a href="#" class="text-white text-decoration-none">Terms of Service</a>
+            </div>
+        </div>
+    </div>
+</footer>
 
 	</div><!-- #wrapper end -->
 
