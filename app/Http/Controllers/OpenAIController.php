@@ -287,8 +287,25 @@ class OpenAIController extends Controller
     }
     public function dashboard()
     {
-        $records = PatientAnalysis::with('user')->get();
-        return view('dashboard', compact('records'));
+        $records = PatientAnalysis::with('user')->orderBy('created_at', 'desc')->get();
+        $weeklyCount = PatientAnalysis::where('created_at', '>=', now()->subDays(7))->count();
+        
+        // Prepare chart data safely in the controller
+        $chartData = [];
+        $chartLabels = [];
+        
+        if ($records->count() > 0) {
+            $casesOverTime = $records->groupBy(function($record) {
+                return $record->created_at->format('Y-m-d');
+            })->map(function($group) {
+                return $group->count();
+            })->sortKeys();
+            
+            $chartLabels = $casesOverTime->keys()->toArray();
+            $chartData = $casesOverTime->values()->toArray();
+        }
+        
+        return view('dashboard', compact('records', 'weeklyCount', 'chartLabels', 'chartData'));
     }
     
 }

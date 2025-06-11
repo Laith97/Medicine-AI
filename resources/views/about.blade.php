@@ -1,348 +1,171 @@
 @extends('master')
 
-@section('title', 'Settings')
+@section('title', 'About Us')
 
 @section('content')
 
-<section class="page-title dark dark page-title-center p-0">
+<!-- Hero Section with Image Slider -->
+<section class="page-title dark page-title-center p-0 position-relative" style="min-height: 350px; overflow: hidden;">
     <div class="fslider" data-arrows="false" data-pagi="false" data-animation="fade" data-hover="false">
         <div class="flexslider">
-
             <div class="slider-wrap">
-                <div class="slide"><img src="demos/medical/images/about-us/page-title/1.jpg" alt="Page Title Image"></div>
-                <div class="slide"><img src="demos/medical/images/about-us/page-title/2.jpg" alt="Page Title Image"></div>
-                <div class="slide"><img src="demos/medical/images/about-us/page-title/3.jpg" alt="Page Title Image"></div>
-                <div class="slide"><img src="demos/medical/images/about-us/page-title/4.jpg" alt="Page Title Image"></div>
+                <div class="slide"><img src="demos/medical/images/about-us/page-title/1.jpg" alt="Page Title Image" style="width:100%;height:350px;object-fit:cover;"></div>
+                <div class="slide"><img src="demos/medical/images/about-us/page-title/2.jpg" alt="Page Title Image" style="width:100%;height:350px;object-fit:cover;"></div>
+                <div class="slide"><img src="demos/medical/images/about-us/page-title/3.jpg" alt="Page Title Image" style="width:100%;height:350px;object-fit:cover;"></div>
+                <div class="slide"><img src="demos/medical/images/about-us/page-title/4.jpg" alt="Page Title Image" style="width:100%;height:350px;object-fit:cover;"></div>
             </div>
-
-            <div class="vertical-middle vertical-middle-overlay">
-                <div class="container">
-                    <div class="page-title-row">
-
+            <div class="vertical-middle vertical-middle-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(224,234,252,0.7);">
+                <div class="container py-5">
+                    <div class="page-title-row text-center">
                         <div class="page-title-content">
-                            <h1>About Us</h1>
-                            <span>A Short Page Title Tagline</span>
+                            <h1 class="display-4 fw-bold mb-2" style="color: #1b1b18;">{{ $aboutTitle }}</h1>
+                            <span class="lead" style="color: #444;">{{ $aboutTagline }}</span>
                         </div>
-
-                        <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb">
-                                <li class="breadcrumb-item"><a href="#">Home</a></li>
-                                <li class="breadcrumb-item active" aria-current="page">About-us</li>
+                        <nav aria-label="breadcrumb" class="mt-3">
+                            <ol class="breadcrumb justify-content-center">
+                                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">About Us</li>
                             </ol>
                         </nav>
-
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</section><!-- .page-title end -->
+</section>
 
-<!-- Content
-============================================= -->
-<section id="content">
-    <div class="content-wrap">
-        <div class="container">
-
-            <div class="row col-mb-50 mb-0">
-                <div class="col-sm-6 col-lg-4">
-                    <div class="feature-box fbox-plain">
-                        <div class="fbox-icon" data-animate="bounceIn">
-                            <a href="#"><i class="icon-medical-i-cardiology"></i></a>
-                        </div>
-                        <div class="fbox-content">
-                            <h3>Intensive Care</h3>
-                            <p>Powerful Layout with Responsive functionality that can be adapted to any screen size. Resize browser to view.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-sm-6 col-lg-4">
-                    <div class="feature-box fbox-plain">
-                        <div class="fbox-icon" data-animate="bounceIn" data-delay="200">
-                            <a href="#"><i class="icon-medical-i-social-services"></i></a>
-                        </div>
-                        <div class="fbox-content">
-                            <h3>Family Planning</h3>
-                            <p>Looks beautiful &amp; ultra-sharp on Retina Screen Displays. Retina Icons, Fonts &amp; all others graphics are optimized.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-sm-6 col-lg-4">
-                    <div class="feature-box fbox-plain">
-                        <div class="fbox-icon" data-animate="bounceIn" data-delay="400">
-                            <a href="#"><i class="icon-medical-i-neurology"></i></a>
-                        </div>
-                        <div class="fbox-content">
-                            <h3>Expert Consultation</h3>
-                            <p>Canvas includes tons of optimized code that are completely customizable and deliver unmatched fast performance.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-sm-6 col-lg-4">
-                    <div class="feature-box fbox-plain">
-                        <div class="fbox-icon" data-animate="bounceIn">
-                            <a href="#"><i class="icon-medical-i-dental"></i></a>
-                        </div>
-                        <div class="fbox-content">
-                            <h3>Dental Sciences</h3>
-                            <p>Powerful Layout with Responsive functionality that can be adapted to any screen size. Resize browser to view.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-sm-6 col-lg-4">
-                    <div class="feature-box fbox-plain">
-                        <div class="fbox-icon" data-animate="bounceIn" data-delay="200">
-                            <a href="#"><i class="icon-medical-i-imaging-root-category"></i></a>
-                        </div>
-                        <div class="fbox-content">
-                            <h3>X-Ray Services</h3>
-                            <p>Looks beautiful &amp; ultra-sharp on Retina Screen Displays. Retina Icons, Fonts &amp; all others graphics are optimized.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-sm-6 col-lg-4">
-                    <div class="feature-box fbox-plain">
-                        <div class="fbox-icon" data-animate="bounceIn" data-delay="400">
-                            <a href="#"><i class="icon-medical-i-ambulance"></i></a>
-                        </div>
-                        <div class="fbox-content">
-                            <h3>24x7 Emergency</h3>
-                            <p>Canvas includes tons of optimized code that are completely customizable and deliver unmatched fast performance.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+<!-- Features Section -->
+<section class="py-5" style="background: #f8f9fa;">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3">Key Features</h2>
+            <p class="text-muted">Discover what makes our platform unique for doctors and patients.</p>
         </div>
-
-        <div class="row counters mb-0 mt-4 align-items-stretch">
-
-            <div class="col-lg-3 col-md-6 dark text-center min-vh-40" style="background: url('demos/medical/images/about-us/counters/1.jpg') no-repeat center center; background-size: cover;">
-                <div class="bg-overlay">
-                    <div class="bg-overlay-content dark">
-                        <div>
-                            <i class="i-plain i-xlarge mx-auto icon-medical-i-surgery"></i>
-                            <div class="counter counter-lined"><span data-from="100" data-to="42762" data-refresh-interval="50" data-speed="2300"></span></div>
-                            <h5>of Treatments Made</h5>
+        <div class="row g-4 justify-content-center">
+            @foreach($features as $feature)
+            <div class="col-sm-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="{{ $feature['icon'] }}" style="font-size: 2.5rem; color: #DE6262;"></i>
                         </div>
+                        <h5 class="card-title fw-semibold">{{ $feature['title'] }}</h5>
+                        <p class="card-text text-muted">{{ $feature['description'] }}</p>
                     </div>
-                    <div class="bg-overlay-bg op-ts op-1" data-hover-animate="op-0" data-hover-animate-out="op-1" style="background-color: rgba(229, 57, 53, 0.8);"></div>
                 </div>
             </div>
-
-            <div class="col-lg-3 col-md-6 dark text-center min-vh-40" style="background: url('demos/medical/images/about-us/counters/2.jpg') no-repeat center center; background-size: cover;">
-                <div class="bg-overlay">
-                    <div class="bg-overlay-content dark">
-                        <div>
-                            <i class="i-plain i-xlarge mx-auto icon-medical-i-respiratory"></i>
-                            <div class="counter counter-lined"><span data-from="3000" data-to="21500" data-refresh-interval="100" data-speed="2500"></span></div>
-                            <h5>Cured Patients</h5>
-                        </div>
-                    </div>
-                    <div class="bg-overlay-bg op-ts op-1" data-hover-animate="op-0" data-hover-animate-out="op-1" style="background-color: rgba(211, 47, 47, 0.8);"></div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6 dark text-center min-vh-40" style="background: url('demos/medical/images/about-us/counters/3.jpg') no-repeat center center; background-size: cover;">
-                <div class="bg-overlay">
-                    <div class="bg-overlay-content dark">
-                        <div>
-                            <i class="i-plain i-xlarge mx-auto icon-medical-i-social-services"></i>
-                            <div class="counter counter-lined"><span data-from="20" data-to="408" data-refresh-interval="25" data-speed="3500"></span>K</div>
-                            <h5>Satisfied Customers</h5>
-                        </div>
-                    </div>
-                    <div class="bg-overlay-bg op-ts op-1" data-hover-animate="op-0" data-hover-animate-out="op-1" style="background-color: rgba(198, 40, 40, 0.8);"></div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6 dark text-center min-vh-40" style="background: url('demos/medical/images/about-us/counters/4.jpg') no-repeat center center; background-size: cover;">
-                <div class="bg-overlay">
-                    <div class="bg-overlay-content dark">
-                        <div>
-                            <i class="i-plain i-xlarge mx-auto icon-medical-i-ambulance"></i>
-                            <div class="counter counter-lined"><span data-from="60" data-to="140" data-refresh-interval="20" data-speed="2700"></span></div>
-                            <h5>Ambulance Available</h5>
-                        </div>
-                    </div>
-                    <div class="bg-overlay-bg op-ts op-1" data-hover-animate="op-0" data-hover-animate-out="op-1" style="background-color: rgba(183, 28, 28, 0.8);"></div>
-                </div>
-            </div>
-
-        </div>
-
-        <div class="section mt-0" style="background: #FFF url('demos/medical/images/about-us/1.jpg') right center no-repeat / cover;">
-
-            <div class="d-block d-md-block d-lg-none" style="background-color: rgba(238,238,238,0.9); position: absolute; top: 0;left: 0; z-index: 1;width: 100%; height: 100%;"></div>
-
-            <div class="container">
-
-                <div class="row justify-content-between">
-                    <div class="col-lg-6" data-lightbox="gallery">
-                        <div class="heading-block border-bottom-0 mb-4">
-                            <h3 class="text-transform-none ls-0">What We do Actually</h3>
-                        </div>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Consectetur necessitatibus placeat numquam enim adipisci nostrum facilis distinctio modi, cupiditate laborum ea eius repellendus? Obcaecati saepe numquam pariatur aliquid, aspernatur necessitatibus dolores harum quos eum esse, laudantium odit alias, iste dolorem!</p>
-                        <div class="feature-box fbox-plain fbox-sm mb-4">
-                            <div class="fbox-icon mt-2" data-animate="fadeIn">
-                                <a href="#"><i class="icon-medical-i-womens-health"></i></a>
-                            </div>
-                            <div class="fbox-content">
-                                <p class="mt-0">Powerful Layout with Responsive functionality that can be adapted to any screen size. Resize browser to view.</p>
-                            </div>
-                        </div>
-
-                        <div class="feature-box fbox-plain fbox-sm mb-4">
-                            <div class="fbox-icon mt-2" data-animate="fadeIn">
-                                <a href="#"><i class="icon-medical-i-ultrasound"></i></a>
-                            </div>
-                            <div class="fbox-content">
-                                <p class="mt-0">Powerful Layout with Responsive functionality that can be adapted to any screen size. Resize browser to view.</p>
-                            </div>
-                        </div>
-
-                        <div class="feature-box fbox-plain fbox-sm mb-4">
-                            <div class="fbox-icon mt-2" data-animate="fadeIn">
-                                <a href="#"><i class="icon-medical-i-cath-lab"></i></a>
-                            </div>
-                            <div class="fbox-content">
-                                <p class="mt-0">Powerful Layout with Responsive functionality that can be adapted to any screen size. Resize browser to view.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-5">
-                        <div class="opening-table">
-                            <div class="heading-block mb-4 border-bottom-0">
-                                <h4>Opening Hours</h4>
-                                <span>Lorem ipsum dolor sit amet, consecte adipisicing elit molestiae non.</span>
-                            </div>
-                            <div class="time-table-wrap">
-                                <div class="row time-table">
-                                    <h5 class="col-lg-5">Monday</h5>
-                                    <span class="col-lg-7">8:00am - 11:00pm</span>
-                                </div>
-                                <div class="row time-table">
-                                    <h5 class="col-lg-5">Tuesday</h5>
-                                    <span class="col-lg-7">8:00am - 11:00pm</span>
-                                </div>
-                                <div class="row time-table">
-                                    <h5 class="col-lg-5">Wednesday</h5>
-                                    <span class="col-lg-7">8:00am - 11:00pm</span>
-                                </div>
-                                <div class="row time-table">
-                                    <h5 class="col-lg-5">Thursday</h5>
-                                    <span class="col-lg-7">8:00am - 11:00pm</span>
-                                </div>
-                                <div class="row time-table">
-                                    <h5 class="col-lg-5">Friday</h5>
-                                    <span class="col-lg-7">8:00am - 11:00pm</span>
-                                </div>
-                                <div class="row time-table">
-                                    <h5 class="col-lg-5">Saturday</h5>
-                                    <span class="col-lg-7">8:00am - 1:30pm</span>
-                                </div>
-                                <div class="row time-table">
-                                    <h5 class="col-lg-5">Sunday</h5>
-                                    <span class="col-lg-7 color fw-semibold">Closed</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="container">
-            <div class="heading-block text-center border-bottom-0">
-                <h3>Meet our Team of Specialists<span>.</span></h3>
-                <span>We make sure that your Life are in Good Hands.</span>
-            </div>
-
-            <div id="oc-team" class="owl-carousel team-carousel carousel-widget" data-margin="30" data-nav="true" data-pagi="true" data-items-xs="1" data-items-sm="2" data-items-lg="3" data-items-xl="4">
-
-                <div class="team">
-                    <div class="team-image">
-                        <img src="demos/medical/images/doctors/1.jpg" alt="Dr. John Doe">
-                    </div>
-                    <div class="team-desc">
-                        <div class="team-title"><h4>Dr. John Doe</h4><span>Cardiologist</span></div>
-                    </div>
-                </div>
-
-                <div class="team">
-                    <div class="team-image">
-                        <img src="demos/medical/images/doctors/2.jpg" alt="Dr. John Doe">
-                    </div>
-                    <div class="team-desc">
-                        <div class="team-title"><h4>Dr. Bryan Mcguire</h4><span>Orthopedist</span></div>
-                    </div>
-                </div>
-
-                <div class="team">
-                    <div class="team-image">
-                        <img src="demos/medical/images/doctors/3.jpg" alt="Dr. John Doe">
-                    </div>
-                    <div class="team-desc">
-                        <div class="team-title"><h4>Dr. Mary Jane</h4><span>Neurologist</span></div>
-                    </div>
-                </div>
-
-                <div class="team">
-                    <div class="team-image">
-                        <img src="demos/medical/images/doctors/4.jpg" alt="Dr. John Doe">
-                    </div>
-                    <div class="team-desc">
-                        <div class="team-title"><h4>Dr. Silvia Bush</h4><span>Dentist</span></div>
-                    </div>
-                </div>
-
-                <div class="team">
-                    <div class="team-image">
-                        <img src="demos/medical/images/doctors/6.jpg" alt="Dr. John Doe">
-                    </div>
-                    <div class="team-desc">
-                        <div class="team-title"><h4>Dr. Hugh Baldwin</h4><span>Cardiologist</span></div>
-                    </div>
-                </div>
-
-                <div class="team">
-                    <div class="team-image">
-                        <img src="demos/medical/images/doctors/7.jpg" alt="Dr. John Doe">
-                    </div>
-                    <div class="team-desc">
-                        <div class="team-title"><h4>Dr. Erika Todd</h4><span>Neurologist</span></div>
-                    </div>
-                </div>
-
-                <div class="team">
-                    <div class="team-image">
-                        <img src="demos/medical/images/doctors/8.jpg" alt="Dr. John Doe">
-                    </div>
-                    <div class="team-desc">
-                        <div class="team-title"><h4>Dr. Randy Adams</h4><span>Dentist</span></div>
-                    </div>
-                </div>
-
-                <div class="team">
-                    <div class="team-image">
-                        <img src="demos/medical/images/doctors/9.jpg" alt="Dr. John Doe">
-                    </div>
-                    <div class="team-desc">
-                        <div class="team-title"><h4>Dr. Alan Freeman</h4><span>Eye Specialist</span></div>
-                    </div>
-                </div>
-
-            </div>
-
+            @endforeach
         </div>
     </div>
-</section><!-- #content end -->
+</section>
+
+<!-- Counters Section -->
+<section class="py-5" style="background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);">
+    <div class="container">
+        <div class="row text-center g-4">
+            <div class="col-md-3">
+                <div class="p-4 rounded shadow-sm bg-white">
+                    <i class="i-plain i-xlarge icon-medical-i-surgery mb-2" style="color: #DE6262;"></i>
+                    <h2 class="fw-bold mb-0">42,762+</h2>
+                    <p class="mb-0 text-muted">Treatments Made</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-4 rounded shadow-sm bg-white">
+                    <i class="i-plain i-xlarge icon-medical-i-respiratory mb-2" style="color: #DE6262;"></i>
+                    <h2 class="fw-bold mb-0">21,500+</h2>
+                    <p class="mb-0 text-muted">Cured Patients</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-4 rounded shadow-sm bg-white">
+                    <i class="i-plain i-xlarge icon-medical-i-social-services mb-2" style="color: #DE6262;"></i>
+                    <h2 class="fw-bold mb-0">408K</h2>
+                    <p class="mb-0 text-muted">Satisfied Customers</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-4 rounded shadow-sm bg-white">
+                    <i class="i-plain i-xlarge icon-medical-i-ambulance mb-2" style="color: #DE6262;"></i>
+                    <h2 class="fw-bold mb-0">140</h2>
+                    <p class="mb-0 text-muted">Ambulance Available</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- What We Do Section -->
+<section class="py-5" style="background: #fff;">
+    <div class="container">
+        <div class="row align-items-center justify-content-between">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <div class="mb-4">
+                    <h2 class="fw-bold mb-3">{{ $whatWeDoTitle }}</h2>
+                    <p class="lead text-muted">{{ $whatWeDoDescription }}</p>
+                </div>
+                <div class="row g-3">
+                    @foreach($whatWeDoFeatures as $wwdFeature)
+                    <div class="col-12">
+                        <div class="d-flex align-items-start">
+                            <i class="{{ $wwdFeature['icon'] }} me-3" style="font-size: 1.5rem; color: #DE6262;"></i>
+                            <span class="text-muted">{{ $wwdFeature['description'] }}</span>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <!-- How It Works Section (Stepper Style) -->
+                <div class="how-it-works p-4 rounded shadow-sm bg-white mb-4">
+                    <div class="heading-block mb-3 border-bottom-0 text-center">
+                        <h4 class="fw-bold mb-2" style="color: #DE6262;"><i class="icon-line-clipboard me-2"></i>How It Works</h4>
+                        <span class="text-muted">A simple, guided process for doctors</span>
+                    </div>
+                    <div class="row text-center align-items-center justify-content-center g-0 mb-3">
+                        <div class="col-3 col-md-3">
+                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="icon-user"></i></div>
+                            <div class="fw-semibold">Login</div>
+                            <div class="small text-muted">Access your account</div>
+                        </div>
+                        <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
+                        <div class="col-3 col-md-3">
+                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="icon-edit"></i></div>
+                            <div class="fw-semibold">Fill Form</div>
+                            <div class="small text-muted">Enter patient data</div>
+                        </div>
+                        <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
+                        <div class="col-3 col-md-3">
+                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="icon-line-paper-plane"></i></div>
+                            <div class="fw-semibold">Submit</div>
+                            <div class="small text-muted">Send for AI analysis</div>
+                        </div>
+                        <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
+                        <div class="col-3 col-md-3">
+                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="icon-medical-i-bar-graph"></i></div>
+                            <div class="fw-semibold">Get Results</div>
+                            <div class="small text-muted">View instant diagnosis</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <a href="/login" class="btn btn-lg rounded-pill px-4 shadow" style="background:#DE6262;color:#fff;border:none;">Start Diagnosis</a>
+                    </div>
+                </div>
+                <!-- Core Principles Section -->
+                <div class="core-principles p-4 rounded shadow-sm bg-white mt-4">
+                    <div class="heading-block mb-3 border-bottom-0">
+                        <h4 class="fw-bold mb-2"><i class="icon-line-heart me-2" style="color: #DE6262;"></i>Core Principles</h4>
+                        <span class="text-muted">What drives Choose Wisely for Doctors</span>
+                    </div>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2"><i class="icon-line-check text-success me-2"></i> Evidence-based practice</li>
+                        <li class="mb-2"><i class="icon-line-check text-success me-2"></i> Patient-centered care</li>
+                        <li class="mb-2"><i class="icon-line-check text-success me-2"></i> Reducing unnecessary interventions</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
 @endsection
