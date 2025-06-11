@@ -1,30 +1,45 @@
 .medical-form-container {
-    background: linear-gradient(to right, #fdfbfb, #ebedee);
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
     padding: 3rem 2rem;
-    border-radius: 20px;
-    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.05);
 }
 
 .medical-form-card {
-    background-color: #ffffff;
-    border-radius: 16px;
-    padding: 2.5rem;
-    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.06);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 25px;
+    padding: 3rem;
+    box-shadow: 0 15px 50px rgba(44, 62, 80, 0.1);
     margin-bottom: 2rem;
-    transition: box-shadow 0.3s ease;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(222, 98, 98, 0.1);
 }
 
 .medical-form-card:hover {
-    box-shadow: 0 8px 35px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 20px 60px rgba(44, 62, 80, 0.15);
+    transform: translateY(-2px);
 }
 
 .medical-form-section h4 {
-    color: #DE6262;
-    margin-bottom: 1.2rem;
-    border-left: 5px solid #DE6262;
-    padding-left: 15px;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    margin-bottom: 2rem;
+    padding: 1rem 1.5rem;
+    border-radius: 15px;
     font-weight: 700;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
+    box-shadow: 0 4px 15px rgba(44, 62, 80, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.medical-form-section h4::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #DE6262;
 }
 
 .form-label {
@@ -35,34 +50,57 @@
 }
 
 .form-control, .form-select {
-    border-radius: 0.6rem;
-    border: 1px solid #ddd;
-    padding: 0.6rem 1rem;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    padding: 0.8rem 1.2rem;
     font-size: 1rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: all 0.3s ease;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .form-control:focus, .form-select:focus, #current_symptoms {
     border-color: #DE6262;
-    box-shadow: 0 0 0 0.15rem rgba(92, 106, 196, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.15);
+    transform: translateY(-1px);
 }
 
 .choices__list--multiple .choices__item {
-    background-color: #de6262 !important; /* Your brand color */
-    
+    background: linear-gradient(135deg, #DE6262 0%, #c55252 100%) !important;
+    border: none !important;
+    border-radius: 20px !important;
+    color: white !important;
+    font-weight: 500 !important;
+}
+
+.choices__inner {
+    border: 2px solid #e9ecef !important;
+    border-radius: 12px !important;
+    padding: 0.5rem !important;
+    background: white !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+.choices__inner:focus {
+    border-color: #DE6262 !important;
+    box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.15) !important;
 }
 
 .btn-secondary {
-    background-color: #DE6262;
-    border-color: #DE6262;
+    background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
+    border: none;
+    color: white;
     font-weight: 600;
-    padding: 0.6rem 1.4rem;
-    border-radius: 0.6rem;
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(222, 98, 98, 0.3);
+    transition: all 0.3s ease;
 }
 
 .btn-secondary:hover {
-    background-color: #ec4a4a;
-    border-color: #ec4a4a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(222, 98, 98, 0.4);
+    background: linear-gradient(135deg, #c55252 0%, #b04848 100%);
 }
 
 #errorMessages {
@@ -72,40 +110,68 @@
 }
 
 .form-check-label {
-    margin-left: 6px;
-    color: #555;
+    margin-left: 8px;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.form-check-input:checked {
+    background-color: #DE6262;
+    border-color: #DE6262;
+}
+
+.form-check-input {
+    border-radius: 6px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.15);
 }
 
 /* Full-width and centered modal */
 .modal-xl {
     max-width: 95vw;
-  }
+}
   
-  /* Modal content styling */
-  .response-modal-content {
-    border-radius: 18px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+/* Modal content styling */
+.response-modal-content {
+    border-radius: 25px;
+    box-shadow: 0 20px 60px rgba(44, 62, 80, 0.2);
     overflow: hidden;
-  }
+    border: none;
+}
   
-  /* Modal header with gradient and padding */
-  .response-modal-header {
-    background: linear-gradient(135deg, #DE6262, #FFB88C);
+/* Modal header with gradient and padding */
+.response-modal-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
     color: #fff;
-    padding: 1.5rem 2rem;
+    padding: 2rem 2.5rem;
     border-bottom: none;
-  }
+    position: relative;
+}
+
+.response-modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
+}
   
-  /* Modal body for long responses */
-  .response-modal-body {
-    background-color: #f9f9fb;
-    padding: 2rem;
+/* Modal body for long responses */
+.response-modal-body {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    padding: 2.5rem;
     max-height: 70vh;
     overflow-y: auto;
     font-size: 1rem;
     line-height: 1.8;
     letter-spacing: 0.3px;
-  }
+}
   
   /* Label above response */
   .response-label {
@@ -117,18 +183,19 @@
   }
   
   /* Styled response text */
-  .response-text {
+.response-text {
     white-space: pre-wrap;
     word-break: break-word;
-    background-color: #ffffff;
-    padding: 1.25rem 1.5rem;
-    border-left: 5px solid #DE6262;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    padding: 2rem;
+    border-left: 6px solid #DE6262;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
     font-family: "Segoe UI", Roboto, sans-serif;
     font-size: 1rem;
-    color: #333;
-  }
+    color: #2c3e50;
+    border: 1px solid rgba(222, 98, 98, 0.1);
+}
   
   /* Optional: prettier scrollbar */
   .response-modal-body::-webkit-scrollbar {
@@ -173,41 +240,57 @@
 
 /* Custom button style for deep red with enhancements */
 .btn-deep-red {
-background-color: #DE6262; 
-border-color: #DE6262;
-color: #fff;
-font-size: 18px;
-font-weight: bold;
-padding: 12px 30px;
-border-radius: 50px;
-box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
+    border: none;
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 15px 40px;
+    border-radius: 50px;
+    box-shadow: 0 8px 25px rgba(222, 98, 98, 0.3);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-deep-red::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-deep-red:hover::before {
+    left: 100%;
 }
 
 #page-loader {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;           /* Full width */
-    height: 100vh;          /* Full height */
-    background-color: rgba(255, 255, 255, 0.8); /* Optional: dim background */
-    z-index: 99999;         /* Ensure it's above everything */
-    display: flex;          /* Center content */
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, rgba(44, 62, 80, 0.9) 0%, rgba(52, 73, 94, 0.9) 100%);
+    z-index: 99999;
+    display: flex;
     justify-content: center;
     align-items: center;
+    backdrop-filter: blur(10px);
 }
 
-
 .btn-deep-red:hover {
-background-color: #c55252;
-border-color: #c55252;
-transform: translateY(-2px);  /* Subtle lift effect */
-box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(222, 98, 98, 0.4);
+    background: linear-gradient(135deg, #c55252 0%, #b04848 100%);
 }
 
 .btn-deep-red:focus, .btn-deep-red:active {
-background-color: #a23f3f;
-border-color: #a23f3f;
-box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(222, 98, 98, 0.5);
+    background: linear-gradient(135deg, #b04848 0%, #9e3f3f 100%);
 }
 

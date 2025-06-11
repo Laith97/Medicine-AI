@@ -52,6 +52,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Montserrat:wght@400;700&family=Crete+Round:ital@0;1&display=swap" rel="stylesheet">
     <!-- Stylesheets -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/font-icons.css') }}">
     <link rel="stylesheet" href="{{ asset('demos/medical/css/medical-icons.css') }}">
@@ -68,30 +69,51 @@
     <div id="wrapper">
 
 <!-- Top Bar Start -->
-<div id="top-bar" class="bg-light py-2 border-bottom" style="background-color: #f8f9fa;">
+<div id="top-bar" class="py-2 border-bottom" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white;">
     <div class="container">
         <div class="row justify-content-between align-items-center">
 
-            <!-- Left Side: Contact Info -->
-            <div class="col-md-auto d-none d-md-flex align-items-center gap-4 text-muted small">
-                <div><i class="bi bi-clock me-1"></i> Mon–Fri: 9am–6pm</div>
-                <div><i class="bi bi-telephone me-1"></i> +1-800-9876-221</div>
-                <div><i class="bi bi-envelope me-1"></i> <a href="mailto:medical@canvas.com" class="text-decoration-none text-muted">medical@canvas.com</a></div>
+            <!-- Left Side: Quick Info & Status -->
+            <div class="col-md-auto d-none d-md-flex align-items-center gap-4 small">
+                <div class="d-flex align-items-center">
+                    <div class="status-indicator bg-success rounded-circle me-2" style="width: 8px; height: 8px;"></div>
+                    <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
+                </div>
+                <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
+                <div><i class="bi bi-envelope me-1"></i> <a href="mailto:support@aimedical.com" class="text-decoration-none text-white-50">support@aimedical.com</a></div>
             </div>
 
-            <!-- Right Side: Auth + Appointment -->
+            <!-- Right Side: Auth + Quick Actions -->
             <div class="col-md-auto d-flex justify-content-end align-items-center gap-3">
 
                 @auth
+                <!-- Quick Action Button for Emergency -->
+                <a href="{{ route('ask-openai') }}" class="btn btn-sm px-3 py-1 me-2" 
+                   style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; font-size: 12px;">
+                    <i class="bi bi-lightning-charge me-1"></i> Quick Diagnosis
+                </a>
+                
                 <div class="dropdown">
                     <a class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle"
                        href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
-                       style="background: linear-gradient(90deg, #DE6262 0%, #FFB88C 100%); color: #fff; border: none; font-weight: 500; box-shadow: 0 2px 6px rgba(222,98,98,0.15);">
+                       style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
                         <i class="bi bi-person-circle"></i>
                         <span>{{ Auth::user()->name }}</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow">
-
+                        @if(Auth::user()->isAdmin())
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.dashboard') }}">
+                                    <i class="bi bi-shield-check"></i> Admin Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.users.index') }}">
+                                    <i class="bi bi-people"></i> Manage Users
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                        @endif
                         <li>
                             <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('settings') }}">
                                 <i class="bi bi-gear"></i> Settings
@@ -112,15 +134,15 @@
         
             @guest
             <a href="{{ route('login') }}"
-            class="btn btn-sm px-4"
-            style="background: #DE6262; color: #fff; border: none; font-weight: 500; border-radius: 30px; height: 38px; line-height: 24px;">
-             <i class="bi bi-box-arrow-in-right me-1"></i> Login
-         </a>
-         <a href="{{ route('register') }}"
-            class="btn btn-sm px-4"
-            style="background: #fff; color: #DE6262; border: 2px solid #DE6262; font-weight: 500; border-radius: 30px; height: 38px; line-height: 24px;">
-             <i class="bi bi-person-plus me-1"></i> Register
-         </a>
+               class="btn btn-sm px-4"
+               style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+            </a>
+            <a href="{{ route('register') }}"
+               class="btn btn-sm px-4"
+               style="background: white; color: #DE6262; border: none; font-weight: 500; border-radius: 25px;">
+                <i class="bi bi-person-plus me-1"></i> Register
+            </a>
             @endguest
 
             </div>
@@ -199,57 +221,155 @@
 			</div>
 
 		<!-- Footer -->
- <!-- Footer -->
-<footer id="footer" class="bg-dark text-white py-5">
+<footer id="footer" class="text-white py-5" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
     <div class="container">
-        <div class="row">
-            <div class="col-md-6">
-                <h5 class="text-white">AI Medical Diagnosis</h5>
-                <p class="text-white">Revolutionizing healthcare with artificial intelligence. Providing doctors with powerful diagnostic tools for better patient care.</p>
-                <div class="social-links">
-                    <a href="#" class="text-white me-3" style="opacity: 0.9;"><i class="fa-brands fa-facebook"></i></a>
-                    <a href="#" class="text-white me-3" style="opacity: 0.9;"><i class="fa-brands fa-twitter"></i></a>
-                    <a href="#" class="text-white me-3" style="opacity: 0.9;"><i class="fa-brands fa-linkedin"></i></a>
+        <div class="row g-4">
+            <!-- Company Info -->
+            <div class="col-lg-4 col-md-6">
+                <div class="footer-brand mb-4">
+                    <h4 class="text-white mb-3" style="color: #DE6262 !important;">
+                        <i class="bi bi-heart-pulse me-2" style="color: #DE6262;"></i>
+                        AI Medical Diagnosis
+                    </h4>
+                    <p class="text-white-50 mb-4">Revolutionizing healthcare with cutting-edge artificial intelligence. Empowering medical professionals with advanced diagnostic tools for superior patient care and outcomes.</p>
+                    
+                    <!-- Social Links -->
+                    <div class="social-links">
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                            <i class="bi bi-facebook"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                            <i class="bi bi-twitter"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                            <i class="bi bi-linkedin"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                            <i class="bi bi-instagram"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <h6 class="text-white">Quick Links</h6>
-                <ul class="list-unstyled">
-                    <li><a href="#" class="text-white text-decoration-none">Home</a></li>
-                    <li><a href="#how-it-works" class="text-white text-decoration-none">How It Works</a></li>
-                    <li><a href="#diagnosis-form" class="text-white text-decoration-none">Start Diagnosis</a></li>
-                    <li><a href="{{ route('about') }}" class="text-white text-decoration-none">About</a></li>
-                    <li><a href="{{ route('contact') }}" class="text-white text-decoration-none">Contact</a></li>
+
+            <!-- Quick Links -->
+            <div class="col-lg-2 col-md-6">
+                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Platform</h6>
+                <ul class="list-unstyled footer-links">
+                    @auth
+                        <li class="mb-2"><a href="{{ route('dashboard') }}" class="text-white-50 text-decoration-none hover-link">Dashboard</a></li>
+                        <li class="mb-2"><a href="{{ route('ask-openai') }}" class="text-white-50 text-decoration-none hover-link">AI Diagnosis</a></li>
+                        <li class="mb-2"><a href="{{ route('cases') }}" class="text-white-50 text-decoration-none hover-link">Case Studies</a></li>
+                        <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Settings</a></li>
+                    @else
+                        <li class="mb-2"><a href="{{ url('/') }}" class="text-white-50 text-decoration-none hover-link">Home</a></li>
+                        <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Us</a></li>
+                        <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact</a></li>
+                        <li class="mb-2"><a href="{{ route('login') }}" class="text-white-50 text-decoration-none hover-link">Login</a></li>
+                    @endauth
                 </ul>
             </div>
-            <div class="col-md-3">
-                <h6 class="text-white">Contact Info</h6>
-                <p class="text-white mb-2">
-                    <i class="icon-mail me-2"></i>
-                    support@aimedicaldiagnosis.com
-                </p>
-                <p class="text-white mb-2">
-                    <i class="icon-phone me-2"></i>
-                    +1 (555) 123-4567
-                </p>
-                <p class="text-white">
-                    <i class="icon-clock me-2"></i>
-                    24/7 AI Support Available
-                </p>
+
+            <!-- Resources -->
+            <div class="col-lg-2 col-md-6">
+                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Support</h6>
+                <ul class="list-unstyled footer-links">
+                    <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Platform</a></li>
+                    <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact Support</a></li>
+                    @auth
+                        <li class="mb-2"><a href="{{ route('profile.edit') }}" class="text-white-50 text-decoration-none hover-link">Profile Settings</a></li>
+                    @endauth
+                </ul>
+            </div>
+
+            <!-- Contact & Support -->
+            <div class="col-lg-4 col-md-6">
+                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Contact & Support</h6>
+                
+                <div class="contact-info mb-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-envelope" style="color: #DE6262;"></i>
+                        </div>
+                        <div>
+                            <small class="text-white-50 d-block">Email Support</small>
+                            <a href="mailto:support@aimedical.com" class="text-white text-decoration-none">support@aimedical.com</a>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-headset" style="color: #DE6262;"></i>
+                        </div>
+                        <div>
+                            <small class="text-white-50 d-block">24/7 Support</small>
+                            <span class="text-white">AI-Powered Help Available</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center">
+                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-shield-check" style="color: #DE6262;"></i>
+                        </div>
+                        <div>
+                            <small class="text-white-50 d-block">Security & Privacy</small>
+                            <span class="text-white">HIPAA Compliant Platform</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Contact -->
+                <div class="quick-contact">
+                    <h6 class="text-white mb-2">Need Help?</h6>
+                    <p class="text-white-50 small mb-3">Our AI-powered support is here to assist you</p>
+                    <a href="{{ route('contact') }}" class="btn btn-sm" style="background: #DE6262; color: white; border: none; border-radius: 25px;">
+                        <i class="bi bi-chat-dots me-2"></i>Contact Support
+                    </a>
+                </div>
             </div>
         </div>
-        <hr class="border-light my-4">
+
+        <!-- Footer Bottom -->
+        <hr class="my-4" style="border-color: rgba(222,98,98,0.2);">
         <div class="row align-items-center">
             <div class="col-md-6">
-                <p class="text-white mb-0">&copy; {{ date('Y') }} AI Medical Diagnosis. All rights reserved.</p>
+                <p class="text-white-50 mb-0">
+                    &copy; {{ date('Y') }} AI Medical Diagnosis Platform. All rights reserved.
+                </p>
             </div>
             <div class="col-md-6 text-md-end">
-                <a href="#" class="text-white text-decoration-none me-3">Privacy Policy</a>
-                <a href="#" class="text-white text-decoration-none">Terms of Service</a>
+                <div class="footer-legal-links">
+                    <span class="text-white-50 me-3">Secure & HIPAA Compliant</span>
+                    <a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact Us</a>
+                </div>
             </div>
         </div>
     </div>
 </footer>
+
+<style>
+.hover-link:hover {
+    color: #DE6262 !important;
+    transition: color 0.3s ease;
+}
+
+.social-links a:hover {
+    background-color: #DE6262 !important;
+    border-color: #DE6262 !important;
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
+
+.newsletter-signup input::placeholder {
+    color: rgba(255,255,255,0.6);
+}
+
+.newsletter-signup input:focus {
+    background: rgba(255,255,255,0.15);
+    border-color: #DE6262;
+    box-shadow: 0 0 0 0.2rem rgba(222,98,98,0.25);
+    color: white;
+}
+</style>
 
 	</div><!-- #wrapper end -->
 

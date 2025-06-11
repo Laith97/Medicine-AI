@@ -161,7 +161,7 @@
             </div>
             <div class="modal-body response-modal-body">
                 <div class="response-block">
-                    <pre id="openaiReply" class="response-text"></pre>
+                    <div id="openaiReply" class="response-text"></div>
                 </div>
             </div>
         </div>
