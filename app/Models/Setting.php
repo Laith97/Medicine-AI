@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
 {
-    protected $fillable = ['user_id', 'criterion'];
+    protected $fillable = ['user_id', 'criterion', 'specialty'];
 
     public function user()
     {
