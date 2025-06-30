@@ -12,6 +12,8 @@ Route::get('/', function () {
 Route::middleware('auth')->group(function () {
     Route::get('/ask-openai', [OpenAIController::class, 'showForm'])->name('ask-openai');
     Route::post('/openai/respond', [OpenAIController::class, 'getResponse'])->name('openai.respond');
+    Route::post('/openai/follow-up', [OpenAIController::class, 'followUp'])->name('openai.follow-up');
+    Route::post('/patient/summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient.summary');
    
     Route::get('/settings', [UserSettingsController::class, 'index'])->name('settings');
     Route::put('/user/settings/update', [UserSettingsController::class, 'update'])->name('settings.update');

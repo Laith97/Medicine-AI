@@ -18,16 +18,20 @@ class UserSettingsController extends Controller
 
     public function update(Request $request)
     {
-    $request->validate([
-        'criterion' => ['required', Rule::in(['NICE', 'CDC', 'Mayo Clinic'])],
-    ]);
+        $request->validate([
+            'criterion' => ['required', Rule::in(['NICE', 'CDC', 'Mayo Clinic'])],
+            'specialty' => ['nullable', 'string', 'max:255'],
+        ]);
 
-    auth()->user()->setting()->updateOrCreate(
-        ['user_id' => auth()->id()],
-        ['criterion' => $request->criterion]
-    );
+        auth()->user()->setting()->updateOrCreate(
+            ['user_id' => auth()->id()],
+            [
+                'criterion' => $request->criterion,
+                'specialty' => $request->specialty
+            ]
+        );
 
-    return back()->with('status', 'Settings updated!');
+        return back()->with('status', 'Settings updated!');
     }
 
     public function contact(){
