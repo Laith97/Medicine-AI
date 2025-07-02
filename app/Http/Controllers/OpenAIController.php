@@ -10,13 +10,21 @@ use OpenAI\Laravel\Facades\OpenAI;
 class OpenAIController extends Controller
 
 {
-    public function showForm()
+    public function showForm(Request $request)
     {
         $symptoms = Symptom::all();
         
+        // Check if we're editing an existing patient
+        $patientToEdit = null;
+        if ($request->has('edit_patient')) {
+            $patientToEdit = PatientAnalysis::where('id', $request->edit_patient)
+                ->where('user_id', auth()->id())
+                ->first();
+        }
+        
         // Get all patient records for the current user
         $allPatientRecords = PatientAnalysis::where('user_id', auth()->id())
-            ->select('id', 'name', 'age', 'gender', 'created_at', 'patient_key', 'visit_number')
+            ->select('id', 'name', 'age', 'gender', 'created_at', 'patient_key', 'visit_number', 'weight', 'height', 'symptoms', 'test_results')
             ->orderBy('created_at', 'desc')
             ->get();
             
@@ -64,7 +72,7 @@ class OpenAIController extends Controller
         }
 
         // Pass both simplifiedVisits and patientVisits to the view for backward compatibility
-        return view('openai', compact('symptoms', 'existingPatients', 'simplifiedVisits', 'patientVisits'));
+        return view('openai', compact('symptoms', 'existingPatients', 'simplifiedVisits', 'patientVisits', 'patientToEdit'));
     }
 
     
@@ -321,9 +329,9 @@ class OpenAIController extends Controller
                     'symptoms' => $request->current_symptoms,
                     'test_results' => $request->test_results,
                     'clinical_status' => [
-                        'temperature' => $request->temperature,
+                        'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
                         'blood_pressure' => $request->blood_pressure,
-                        'blood_sugar' => $request->blood_sugar,
+                        'blood_sugar' => is_numeric($request->blood_sugar) ? $request->blood_sugar : null,
                     ],
                     'reports' => $request->file('reports') ?? null,
                     'preliminary_diagnosis' => $request->preliminary_diagnosis,
@@ -347,9 +355,9 @@ class OpenAIController extends Controller
             'symptoms' => $request->current_symptoms,
             'test_results' => $request->test_results,
             'clinical_status' => [
-                'temperature' => $request->temperature,
+                'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
                 'blood_pressure' => $request->blood_pressure,
-                'blood_sugar' => $request->blood_sugar,
+                'blood_sugar' => is_numeric($request->blood_sugar) ? $request->blood_sugar : null,
             ],
             'reports' => $request->file('reports') ?? null,
             'preliminary_diagnosis' => $request->preliminary_diagnosis,
@@ -365,6 +373,15 @@ class OpenAIController extends Controller
         // Check if the text contains a Patient Information section
         if (preg_match('/Patient Information:[\s\S]*?---/i', $text, $matches)) {
             // Remove the entire section including the separator line
+            $text = str_replace($matches[0], '', $text);
+            
+            // Clean up any extra newlines that might be left
+            $text = preg_replace("/\n{3,}/", "\n\n", $text);
+        }
+        
+        // Also check for the specific format with Age, Gender, Total Visits
+        if (preg_match('/Age:\s*\d+\s*\n+Gender:\s*[a-zA-Z]+\s*\n+Total Visits:\s*\d+/i', $text, $matches)) {
+            // Remove this section as well
             $text = str_replace($matches[0], '', $text);
             
             // Clean up any extra newlines that might be left
@@ -405,18 +422,55 @@ class OpenAIController extends Controller
         }, $lastMessage);
         
     
+        // Check if there's a Current Symptoms section before saving it
+        $currentSymptomsPattern = '/Current\s+Symptoms:.*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS:?|$)/is';
+        $currentSymptomsMatch = null;
+        if (preg_match($currentSymptomsPattern, $lastMessage, $currentSymptomsMatch)) {
+            $currentSymptoms = trim($currentSymptomsMatch[0]);
+        }
+        
         // Trim content before "A) POSSIBLE DIAGNOSIS:"
         $pattern = '/A\)\s*POSSIBLE\s*DIAGNOSIS:?/i';
         if (preg_match($pattern, $lastMessage, $match, PREG_OFFSET_CAPTURE)) {
             $startPos = $match[0][1];
             $lastMessage = substr($lastMessage, $startPos);
+            
+            // If we found Current Symptoms, add it back at the beginning
+            if (!empty($currentSymptoms)) {
+                $lastMessage = $currentSymptoms . "\n\n" . $lastMessage;
+            }
         }
     
         // Final trim
         return trim($lastMessage);
     }
     private function insertTotable($request, $aiResponse){
-        // Check if we're using an existing patient
+        // Check if we're editing an existing patient
+        if ($request->edit_patient_id) {
+            $patientToEdit = PatientAnalysis::find($request->edit_patient_id);
+            
+            if ($patientToEdit && $patientToEdit->user_id == auth()->id()) {
+                // Update the existing patient record
+                $patientToEdit->update([
+                    'name' => $request->name,
+                    'age' => $request->age,
+                    'gender' => $request->gender,
+                    'weight' => is_numeric($request->weight) ? $request->weight : null,
+                    'height' => is_numeric($request->height) ? $request->height : null,
+                    'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
+                    'blood_pressure' => $request->blood_pressure,
+                    'blood_sugar' => is_numeric($request->blood_sugar) ? $request->blood_sugar : null,
+                    'symptoms' => $request->current_symptoms ? json_encode($request->current_symptoms) : null,
+                    'test_results' => $request->test_results,
+                    'preliminary_diagnosis' => $request->preliminary_diagnosis,
+                    'ai_response' => $aiResponse
+                ]);
+                
+                return;
+            }
+        }
+        
+        // Check if we're using an existing patient for a new visit
         if ($request->patient_selection && $request->patient_selection != 'new') {
             // Get the existing patient data
             $existingPatient = PatientAnalysis::find($request->patient_selection);
@@ -451,11 +505,11 @@ class OpenAIController extends Controller
                     'name' => $existingPatient->name,
                     'age' => $existingPatient->age,
                     'gender' => $existingPatient->gender,
-                    'weight' => $request->weight ?: $existingPatient->weight,
-                    'height' => $request->height ?: $existingPatient->height,
-                    'temperature' => $request->temperature,
+                    'weight' => is_numeric($request->weight) ? $request->weight : $existingPatient->weight,
+                    'height' => is_numeric($request->height) ? $request->height : $existingPatient->height,
+                    'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
                     'blood_pressure' => $request->blood_pressure,
-                    'blood_sugar' => $request->blood_sugar,
+                    'blood_sugar' => is_numeric($request->blood_sugar) ? $request->blood_sugar : null,
                     'symptoms' => $request->current_symptoms ? json_encode($request->current_symptoms) : null,
                     'test_results' => $request->test_results,
                     'preliminary_diagnosis' => $request->preliminary_diagnosis,
@@ -482,11 +536,11 @@ class OpenAIController extends Controller
             'name' => $request->name,
             'age' => $request->age,
             'gender' => $request->gender,
-            'weight' => $request->weight,
-            'height' => $request->height,
-            'temperature' => $request->temperature,
+            'weight' => is_numeric($request->weight) ? $request->weight : null,
+            'height' => is_numeric($request->height) ? $request->height : null,
+            'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
             'blood_pressure' => $request->blood_pressure,
-            'blood_sugar' => $request->blood_sugar,
+            'blood_sugar' => is_numeric($request->blood_sugar) ? $request->blood_sugar : null,
             'symptoms' => $request->current_symptoms ? json_encode($request->current_symptoms) : null,
             'test_results' => $request->test_results,
             'preliminary_diagnosis' => $request->preliminary_diagnosis,
@@ -540,19 +594,21 @@ class OpenAIController extends Controller
             ";
         }
 
-        return "Based on the provided symptoms and test results and considering the evaluation criteria from the selected source ($criterion), provide the following:
+        return "Based on the provided symptoms and test results and considering the evaluation criteria from the selected source ($criterion), provide the following sections ONLY, with NO introduction and NO conclusion:
             $specialtyInstruction
             
             $patientHistoryContext
             
-            A) Possible diagnosis:
+            IMPORTANT: Start your response directly with 'A) POSSIBLE DIAGNOSIS:' and end with the last item in section D. Do not add any introduction before section A or any conclusion/summary after section D.
+            
+            A) POSSIBLE DIAGNOSIS:
             • A list of potential diseases ranked by priority.
             • Display probability percentages (e.g., 70% viral infection, 20% bacterial).
-            B) Recommendations for tests or imaging:
+            B) RECOMMENDATIONS FOR TESTS OR IMAGING:
             • A list of tests or procedures that can help confirm the diagnosis.
-            C) Treatment recommendations:
+            C) TREATMENT RECOMMENDATIONS:
             • Tips on initial treatments or procedures (if necessary).
-            D) Warnings:
+            D) WARNING SIGNS:
             • About unnecessary procedures (to avoid over-treatment).
 
             $fileSearchInstruction
@@ -750,6 +806,9 @@ class OpenAIController extends Controller
             $prompt .= "Gender: " . $summaryData['patient_gender'] . "\n";
             $prompt .= "Total Visits: " . $summaryData['visit_count'] . "\n\n";
             $prompt .= "Visit History:\n";
+            
+            // Add instruction to not repeat patient information in the response
+            $prompt .= "\nIMPORTANT: Do not include a 'Patient Information' section in your response. The patient's name, age, gender, and visit count are already displayed in the UI and should not be repeated in your summary. However, DO include the 'Current Symptoms' section as it contains important clinical information.\n";
             
             foreach ($summaryData['visits'] as $visit) {
                 $prompt .= "Visit #" . $visit['visit_number'] . " (" . $visit['date'] . "):\n";

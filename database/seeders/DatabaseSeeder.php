@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
     ]);
 
         $this->call([
-            SymptomsTableSeeder::class, // Add this line
+            SymptomsTableSeeder::class, // Using the original symptoms seeder
         ]);
     }
 }

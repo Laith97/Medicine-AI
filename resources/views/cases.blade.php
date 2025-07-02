@@ -291,45 +291,79 @@
         white-space: pre-wrap;
         word-break: break-word;
         font-family: "Segoe UI", Roboto, sans-serif;
-        font-size: 1rem;
+        font-size: 1.05rem;
         color: #2c3e50;
         line-height: 1.8;
+        padding: 10px;
     }
     
     /* Apply AI summary styling to response text */
     .response-text h1, .response-text h2, .response-text h3, .response-text h4 {
         color: #2c3e50;
-        margin-top: 20px;
-        margin-bottom: 10px;
+        margin-top: 25px;
+        margin-bottom: 15px;
         font-weight: 600;
-        border-bottom: 1px solid #e9ecef;
-        padding-bottom: 8px;
+        border-bottom: 2px solid #DE6262;
+        padding-bottom: 10px;
+        font-size: 1.4rem;
     }
     
     /* Simple styling for section headers like A) POSSIBLE DIAGNOSIS */
     .response-text p strong, .ai-content p strong {
         display: block;
-        font-size: 1.1rem;
+        font-size: 1.25rem;
         color: #2c3e50;
-        margin-top: 20px;
-        margin-bottom: 10px;
+        margin-top: 25px;
+        margin-bottom: 15px;
         font-weight: 600;
-        border-bottom: 1px solid #e9ecef;
-        padding-bottom: 8px;
+        border-left: 4px solid #DE6262;
+        padding: 8px 0 8px 15px;
+        background-color: rgba(222, 98, 98, 0.05);
+        border-radius: 0 5px 5px 0;
     }
     
-    /* Simple styling for specific section headers - no special effects */
-    .section-diagnosis, .section-recommendations, .section-treatment, .section-warnings {
-        /* No special styling - keep it simple like the summary */
+    /* Specific styling for different section headers */
+    .section-diagnosis {
+        border-left-color: #DE6262; /* Red for diagnosis */
+        background-color: rgba(222, 98, 98, 0.05);
+    }
+    
+    .section-recommendations {
+        border-left-color: #3498db; /* Blue for recommendations */
+        background-color: rgba(52, 152, 219, 0.05);
+    }
+    
+    .section-treatment {
+        border-left-color: #2ecc71; /* Green for treatment */
+        background-color: rgba(46, 204, 113, 0.05);
+    }
+    
+    .section-warnings {
+        border-left-color: #f39c12; /* Orange for warnings */
+        background-color: rgba(243, 156, 18, 0.05);
+    }
+    
+    .response-text p {
+        margin-bottom: 12px;
+        padding: 0 5px;
     }
     
     .response-text ul, .response-text ol {
-        padding-left: 20px;
-        margin-bottom: 15px;
+        padding-left: 25px;
+        margin-bottom: 20px;
+        background-color: rgba(236, 240, 241, 0.3);
+        padding-top: 10px;
+        padding-bottom: 10px;
+        border-radius: 5px;
     }
     
     .response-text li {
-        margin-bottom: 8px;
+        margin-bottom: 10px;
+        padding-left: 5px;
+    }
+    
+    .response-text li:last-child {
+        margin-bottom: 0;
     }
     
     /* Enhanced AI content styling */
@@ -476,6 +510,9 @@
                                                     data-patient-key="{{ $record->patient_key }}">
                                                 <i class="fas fa-history me-1"></i>Summary
                                             </button>
+                                            <a href="{{ route('ask-openai', ['edit_patient' => $record->id]) }}" class="btn btn-warning" style="color: white; font-weight: 500; padding: 0.5rem 1rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3); font-size: 0.85rem;">
+                                                <i class="fas fa-edit me-1"></i>Edit
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -507,7 +544,12 @@
                     <i class="fas fa-stethoscope me-2"></i><span id="patientNameTitle">Medical Recommendations</span>
                     <span id="visitBadge" class="badge bg-light text-dark ms-2" style="display: none;">Visit #<span id="visitNumber"></span></span>
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div>
+                    <button type="button" class="btn btn-sm btn-light me-2" id="printResponseBtn">
+                        <i class="fas fa-print me-1"></i>Print
+                    </button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
             </div>
             <div class="modal-body response-modal-body">
                 <div id="patientHistorySection" class="mb-4" style="display: none;">
@@ -525,7 +567,7 @@
                         <h6 class="mb-0 me-2"><i class="fas fa-robot me-2"></i>AI Recommendations</h6>
                         <hr class="flex-grow-1 ms-2">
                     </div>
-                    <div class="ai-summary">
+                    <div class="ai-summary" style="background-color: #f8f9fa; border-radius: 15px; padding: 20px; box-shadow: 0 3px 15px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05);">
                         <div id="openaiReply" class="response-text"></div>
                     </div>
                 </div>
@@ -836,8 +878,9 @@
                         formatted += listType === 'ul' ? '</ul>' : '</ol>';
                         inList = false;
                     }
+                    const headerLevel = line.match(/^(#{1,6})\s+/)[1].length;
                     const headerText = line.replace(/^#{1,6}\s+(.+)$/, '$1');
-                    formatted += `<h4>${headerText}</h4>`;
+                    formatted += `<h${headerLevel}>${headerText}</h${headerLevel}>`;
                 }
                 // Check for bullet points (* Item or - Item)
                 else if (/^[\s]*[\*\-]\s+(.+)$/.test(line)) {
@@ -875,22 +918,34 @@
                     }
                     
                     // Check for section headers with multiple patterns
-                    if (/^[A-Z][\)\.]?\s+.*?(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS).*?$/i.test(line) || 
-                        /^(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS).*?$/i.test(line) ||
-                        /^[A-Z]\)\s+(POSSIBLE\s+DIAGNOS[IE]S|RECOMMENDATIONS\s+FOR\s+TESTS|TREATMENT\s+RECOMMENDATIONS|WARNINGS)$/i.test(line)) {
+                    const diagnosisPattern = /(DIAGNOS[IE]S|POSSIBLE\s+DIAGNOS[IE]S|DIFFERENTIAL\s+DIAGNOS[IE]S)/i;
+                    const recommendationsPattern = /(RECOMMENDATIONS|RECOMMENDATIONS\s+FOR\s+TESTS|SUGGESTED\s+TESTS)/i;
+                    const treatmentPattern = /(TREATMENT|TREATMENT\s+RECOMMENDATIONS|TREATMENT\s+PLAN|MANAGEMENT)/i;
+                    const warningsPattern = /(WARNINGS|PRECAUTIONS|RED\s+FLAGS|FOLLOW\-UP)/i;
+                    
+                    if (/^[A-Z][\)\.]?\s+.*?(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS|PRECAUTIONS|MANAGEMENT|FOLLOW).*?$/i.test(line) || 
+                        /^(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS|PRECAUTIONS|MANAGEMENT|FOLLOW).*?$/i.test(line) ||
+                        /^[A-Z]\)\s+(POSSIBLE\s+DIAGNOS[IE]S|RECOMMENDATIONS\s+FOR\s+TESTS|TREATMENT\s+RECOMMENDATIONS|WARNINGS|PRECAUTIONS)$/i.test(line)) {
+                        
                         let className = '';
-                        if (/DIAGNOS[IE]S/i.test(line)) {
+                        
+                        if (diagnosisPattern.test(line)) {
                             className = 'section-diagnosis';
-                        } else if (/RECOMMENDATIONS/i.test(line)) {
+                        } else if (recommendationsPattern.test(line)) {
                             className = 'section-recommendations';
-                        } else if (/TREATMENT/i.test(line)) {
+                        } else if (treatmentPattern.test(line)) {
                             className = 'section-treatment';
-                        } else if (/WARNINGS/i.test(line)) {
+                        } else if (warningsPattern.test(line)) {
                             className = 'section-warnings';
                         }
                         
                         formatted += `<p><strong class="${className}">${line}</strong></p>`;
-                    } else {
+                    } 
+                    // Check for subsection headers (often in ALL CAPS or with trailing colon)
+                    else if (/^[A-Z][A-Z\s\d\-\(\)]{5,}:?$/.test(line)) {
+                        formatted += `<p><strong style="font-size: 1.15rem; color: #34495e;">${line}</strong></p>`;
+                    }
+                    else {
                         // All other text is formatted as regular paragraphs
                         formatted += `<p>${line}</p>`;
                     }
@@ -912,7 +967,12 @@
             formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
             formatted = formatted.replace(/_([^_]+)_/g, '<em>$1</em>');
             
-            // Section headers are now handled during line processing
+            // Highlight important information
+            formatted = formatted.replace(/\!\!(.+?)\!\!/g, '<span style="background-color: #ffffcc; padding: 0 3px;">$1</span>');
+            
+            // Add some spacing between sections for better readability
+            formatted = formatted.replace(/<\/h[1-6]>/g, '</h$&><div style="height: 10px;"></div>');
+            formatted = formatted.replace(/<\/strong><\/p>/g, '</strong></p><div style="height: 5px;"></div>');
             
             return formatted;
         }
@@ -1070,9 +1130,28 @@
                             // Get the HTML content as text
                             let aiContentText = aiContentDiv.innerHTML;
                             
+                            // Check if there's a Current Symptoms section before removing Patient Information
+                            let currentSymptoms = null;
+                            const currentSymptomsRegex = /<p>Current\s+Symptoms:[\s\S]*?(?=<p>A\)\s*POSSIBLE\s*DIAGNOSIS|<\/div>)/i;
+                            const currentSymptomsMatch = aiContentText.match(currentSymptomsRegex);
+                            
+                            if (currentSymptomsMatch) {
+                                currentSymptoms = currentSymptomsMatch[0];
+                                console.log('Found Current Symptoms in summary:', currentSymptoms);
+                            }
+                            
                             // Remove Patient Information section using regex
                             const patientInfoRegex = /<p>Patient Information:[\s\S]*?<p>---<\/p>/i;
                             aiContentText = aiContentText.replace(patientInfoRegex, '');
+                            
+                            // Also check for the specific format with Age, Gender, Total Visits
+                            const patientDetailsRegex = /<p>Age:[\s\S]*?<p>Gender:[\s\S]*?<p>Total Visits:[\s\S]*?<\/p>/i;
+                            aiContentText = aiContentText.replace(patientDetailsRegex, '');
+                            
+                            // If we found Current Symptoms and it was removed, add it back at the beginning
+                            if (currentSymptoms && !aiContentText.includes(currentSymptoms)) {
+                                aiContentText = currentSymptoms + aiContentText;
+                            }
                             
                             // Update the AI content div
                             aiContentDiv.innerHTML = aiContentText;
@@ -1118,6 +1197,18 @@
                 text = text.replace(/\n{3,}/g, '\n\n');
             }
             
+            // Also check for the specific format with Age, Gender, Total Visits
+            const patientDetailsRegex = /Age:\s*\d+\s*\n+Gender:\s*[a-zA-Z]+\s*\n+Total Visits:\s*\d+/i;
+            const detailsMatch = text.match(patientDetailsRegex);
+            
+            if (detailsMatch) {
+                // Remove this section as well
+                text = text.replace(detailsMatch[0], '');
+                
+                // Clean up any extra newlines that might be left
+                text = text.replace(/\n{3,}/g, '\n\n');
+            }
+            
             return text;
         }
         
@@ -1128,6 +1219,16 @@
             // First remove Patient Information section
             text = removePatientInfoSection(text);
             
+            // Check if there's a Current Symptoms section before processing
+            let currentSymptoms = null;
+            const currentSymptomsRegex = /Current\s+Symptoms:.*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS:?|$)/is;
+            const currentSymptomsMatch = text.match(currentSymptomsRegex);
+            
+            if (currentSymptomsMatch) {
+                currentSymptoms = currentSymptomsMatch[0].trim();
+                console.log('Found Current Symptoms section:', currentSymptoms);
+            }
+            
             // Split the text into lines
             const lines = text.split('\n');
             let startIndex = 0;
@@ -1135,7 +1236,9 @@
             
             // Find the first section header (likely A) DIAGNOSIS)
             for (let i = 0; i < lines.length; i++) {
-                if (/^[A-Z][\)\.]?\s+.*?(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS).*?$/i.test(lines[i]) || 
+                if (/^A\)\s*POSSIBLE\s*DIAGNOSIS/i.test(lines[i]) || 
+                    /^A\)\s*DIAGNOS[IE]S/i.test(lines[i]) ||
+                    /^[A-Z][\)\.]?\s+.*?(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS).*?$/i.test(lines[i]) || 
                     /^(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS).*?$/i.test(lines[i])) {
                     startIndex = i;
                     break;
@@ -1144,12 +1247,23 @@
             
             // Find the last section header and include all content after it
             for (let i = lines.length - 1; i >= 0; i--) {
-                if (/^[A-Z][\)\.]?\s+.*?(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS).*?$/i.test(lines[i]) || 
+                if (/^D\)\s*WARNING\s*SIGNS/i.test(lines[i]) || 
+                    /^D\)\s*WARNINGS/i.test(lines[i]) ||
+                    /^[A-Z][\)\.]?\s+.*?(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS).*?$/i.test(lines[i]) || 
                     /^(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS).*?$/i.test(lines[i])) {
                     // Find the end of this section (next empty line or end of text)
                     for (let j = i + 1; j < lines.length; j++) {
-                        if (j === lines.length - 1 || (lines[j].trim() === '' && j > i + 5)) {
+                        // Stop at conclusion or summary
+                        if (j === lines.length - 1 || 
+                            (lines[j].trim() === '' && j > i + 5) ||
+                            /^In\s+summary/i.test(lines[j]) ||
+                            /^Summary/i.test(lines[j]) ||
+                            /^Conclusion/i.test(lines[j])) {
                             endIndex = j;
+                            // If we found a conclusion/summary, don't include it
+                            if (/^In\s+summary/i.test(lines[j]) || /^Summary/i.test(lines[j]) || /^Conclusion/i.test(lines[j])) {
+                                endIndex = j - 1;
+                            }
                             break;
                         }
                     }
@@ -1157,8 +1271,18 @@
                 }
             }
             
-            // Return only the content between the first section header and the end of the last section
-            return lines.slice(startIndex, endIndex + 1).join('\n');
+            // Get the content between the first section header and the end of the last section
+            let result = lines.slice(startIndex, endIndex + 1).join('\n');
+            
+            // Do one final check for any patient information that might be in the result
+            result = removePatientInfoSection(result);
+            
+            // If we found Current Symptoms, add it back at the beginning
+            if (currentSymptoms) {
+                result = currentSymptoms + '\n\n' + result;
+            }
+            
+            return result;
         }
     });
 </script>
