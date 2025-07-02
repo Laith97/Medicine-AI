@@ -6,15 +6,18 @@
 @section('content')
 
 <link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
-<!-- Include CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+<!-- Include Choices.js CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@9.0.1/public/assets/styles/choices.min.css" />
 
-<!-- Include JS -->
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<!-- Include Choices.js JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/choices.js@9.0.1/public/assets/scripts/choices.min.js"></script>
 
         <div class="container medical-form-container ">
             <form id="openaiForm" action="{{ url('/openai/respond') }}" method="POST" enctype="multipart/form-data">
                 @csrf
+                @if(isset($patientToEdit))
+                    <input type="hidden" name="edit_patient_id" value="{{ $patientToEdit->id }}">
+                @endif
 
                 <div class="medical-form-card">
         
@@ -43,11 +46,17 @@
                                         </option>
                                     @endforeach
                                 </select>
+                                <small class="form-text text-muted mt-1">
+                                    <i class="fas fa-info-circle"></i> Select "New Patient" for first-time visits or choose an existing patient to access their medical history.
+                                </small>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Upload Medical Reports:</label>
                                 <input type="file" id="reports" name="reports[]" multiple class="form-control">
                                 <div id="upload-status" class="mt-2"></div>
+                                <small class="form-text text-muted mt-1">
+                                    <i class="fas fa-file-medical"></i> Supported formats: JPG, PNG, PDF (max 10MB each)
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -58,17 +67,17 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <label for="name" class="form-label required">Name:</label>
-                                <input type="text" id="name" name="name" class="form-control" required>
+                                <input type="text" id="name" name="name" class="form-control" value="{{ $patientToEdit->name ?? '' }}" required>
                             </div>
                             <div class="col-md-2">
                                 <label for="age" class="form-label required">Age:</label>
-                                <input type="number" id="age" name="age" class="form-control" required>
+                                <input type="number" id="age" name="age" class="form-control" value="{{ $patientToEdit->age ?? '' }}" required>
                             </div>
                             <div class="col-md-2">
                                 <label for="gender" class="form-label required">Gender:</label>
                                 <select name="gender" id="gender" class="form-select">
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
+                                    <option value="male" {{ isset($patientToEdit) && $patientToEdit->gender == 'male' ? 'selected' : '' }}>Male</option>
+                                    <option value="female" {{ isset($patientToEdit) && $patientToEdit->gender == 'female' ? 'selected' : '' }}>Female</option>
                                 </select>
                             </div>
                         </div>
@@ -91,24 +100,43 @@
                         <h4>Physical Attributes / Vitals</h4>
                         <div class="row">
                             <div class="col-md-2">
-                                <label class="form-label">Weight (kg):</label>
-                                <input type="text" name="weight" class="form-control">
+                                <label class="form-label">Weight:</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" name="weight" class="form-control" value="{{ $patientToEdit->weight ?? '' }}" placeholder="e.g., 70.5">
+                                    <span class="input-group-text">kg</span>
+                                </div>
+                                <small class="form-text text-muted">Numeric value only</small>
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">Height (cm):</label>
-                                <input type="text" name="height" class="form-control">
+                                <label class="form-label">Height:</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" name="height" class="form-control" value="{{ $patientToEdit->height ?? '' }}" placeholder="e.g., 175">
+                                    <span class="input-group-text">cm</span>
+                                </div>
+                                <small class="form-text text-muted">Numeric value only</small>
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">Temperature (°C):</label>
-                                <input type="text" name="temperature" class="form-control">
+                                <label class="form-label">Temperature:</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.1" name="temperature" class="form-control" placeholder="e.g., 37.2">
+                                    <span class="input-group-text">°C</span>
+                                </div>
+                                <small class="form-text text-muted">Numeric value only</small>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Blood Pressure:</label>
-                                <input type="text" name="blood_pressure" class="form-control">
+                                <div class="input-group">
+                                    <input type="text" name="blood_pressure" class="form-control" placeholder="e.g., 120/80">
+                                    <span class="input-group-text">mmHg</span>
+                                </div>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Blood Sugar:</label>
-                                <input type="text" name="blood_sugar" class="form-control">
+                                <div class="input-group">
+                                    <input type="number" step="0.01" name="blood_sugar" class="form-control" placeholder="e.g., 85">
+                                    <span class="input-group-text">mg/dL</span>
+                                </div>
+                                <small class="form-text text-muted">Enter numeric value only (without units)</small>
                             </div>
                         </div>
                     </div>
@@ -121,7 +149,10 @@
                                 <label class="form-label">Current Symptoms:</label>
                                 <select id="current_symptoms" name="current_symptoms[]" multiple>
                                     @foreach($symptoms as $symptom)
-                                        <option value="{{ $symptom->id }}">{{ $symptom->name }}</option>
+                                        <option value="{{ $symptom->id }}" 
+                                            {{ isset($patientToEdit) && $patientToEdit->symptoms && in_array($symptom->id, json_decode($patientToEdit->symptoms, true) ?: []) ? 'selected' : '' }}>
+                                            {{ $symptom->name }}
+                                        </option>
                                     @endforeach
                                 </select>
                                 
@@ -155,11 +186,14 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <label class="form-label">Test Results:</label>
-                                <textarea name="test_results" class="form-control" placeholder="e.g., CRP: Elevated at 15 mg/L."></textarea>
+                                <textarea name="test_results" class="form-control" rows="4" placeholder="e.g., CRP: Elevated at 15 mg/L.
+CBC: WBC 12,000/μL, Hgb 13.5 g/dL, Plt 250,000/μL
+Urinalysis: Negative for protein, glucose, and blood
+X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</textarea>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Preliminary Diagnosis:</label>
-                                <textarea name="preliminary_diagnosis" class="form-control"></textarea>
+                                <textarea name="preliminary_diagnosis" class="form-control" rows="4" placeholder="Enter your initial assessment or suspected diagnosis based on the patient's symptoms and test results."></textarea>
                             </div>
                         </div>
                     </div>
@@ -345,24 +379,6 @@
 
 <!-- Include Select2 CSS and JS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const element = document.getElementById('current_symptoms');
-        new Choices(element, {
-            removeItemButton: true,
-            placeholderValue: 'Select symptoms...',
-            searchPlaceholderValue: 'Search...',
-            classNames: {
-                containerInner: 'form-control',
-                 // Applies your custom styles
-            }
-        });
-    });
-</script>
-
-</script>
 
 
 <script>
@@ -397,9 +413,13 @@
                 // Remove introduction and conclusion sections
                 .replace(/^Based on the provided.*?guidelines,.*?\n\n/s, '')  // Remove intro
                 .replace(/^As a.*?specialist:.*?\n\n/s, '')                  // Remove specialty intro
+                .replace(/^.*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS)/s, '')          // Remove everything before section A
+                .replace(/^.*?(?=A\)\s*DIAGNOS[IE]S)/s, '')                  // Alternative section A format
                 .replace(/\n\nConclusion:.*$/s, '')                          // Remove conclusion
                 .replace(/\n\nNote:.*$/s, '')                                // Remove notes at the end
                 .replace(/^Note:.*\n\n/s, '')                                // Remove notes at the beginning
+                .replace(/\n\nIn summary.*$/s, '')                           // Remove summary
+                .replace(/\n\nSummary.*$/s, '')
                 
                 // Clean up any remaining formatting issues
                 .replace(/\n{3,}/g, '\n\n')                                  // Replace multiple newlines with double newlines
@@ -556,9 +576,13 @@
                 // Remove introduction and conclusion sections
                 .replace(/^Based on the provided.*?guidelines,.*?\n\n/s, '')  // Remove intro
                 .replace(/^As a.*?specialist:.*?\n\n/s, '')                  // Remove specialty intro
+                .replace(/^.*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS)/s, '')          // Remove everything before section A
+                .replace(/^.*?(?=A\)\s*DIAGNOS[IE]S)/s, '')                  // Alternative section A format
                 .replace(/\n\nConclusion:.*$/s, '')                          // Remove conclusion
                 .replace(/\n\nNote:.*$/s, '')                                // Remove notes at the end
                 .replace(/^Note:.*\n\n/s, '')                                // Remove notes at the beginning
+                .replace(/\n\nIn summary.*$/s, '')                           // Remove summary
+                .replace(/\n\nSummary.*$/s, '')                                // Remove notes at the beginning
                 
                 // Clean up any remaining formatting issues
                 .replace(/\n{3,}/g, '\n\n')                                  // Replace multiple newlines with double newlines
@@ -721,9 +745,9 @@
                     
                     // Update history text
                     if (visitCount > 1) {
-                        patientHistoryText.innerHTML = `<strong>${selectedPatient.name}</strong> has been seen ${visitCount-1} time(s) before. This will be visit #${visitCount}. Previous medical history will be considered in the analysis.`;
+                        patientHistoryText.innerHTML = `<strong>${selectedPatient.name}</strong> has been seen ${visitCount} time(s) before. This will be visit #${visitCount+1}. Previous medical history will be considered in the analysis.`;
                     } else {
-                        patientHistoryText.innerHTML = `This is the first visit for <strong>${selectedPatient.name}</strong>.`;
+                        patientHistoryText.innerHTML = `This is the second visit for <strong>${selectedPatient.name}</strong>.`;
                     }
                     
                     console.log('Patient history updated successfully');
@@ -737,6 +761,43 @@
             
             // Add event listener
             patientSelection.addEventListener('change', togglePatientInfo);
+        });
+    </script>
+    
+    <!-- Initialize Choices.js for symptoms dropdown -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('DOM Content Loaded - Initializing Choices.js');
+            const element = document.getElementById('current_symptoms');
+            
+            if (!element) {
+                console.error('Could not find element with ID "current_symptoms"');
+                return;
+            }
+            
+            console.log('Found current_symptoms element:', element);
+            
+            try {
+                if (typeof Choices === 'undefined') {
+                    console.error('Choices.js is not loaded');
+                    return;
+                }
+                
+                console.log('Choices.js is loaded, initializing...');
+                
+                const choices = new Choices(element, {
+                    removeItemButton: true,
+                    placeholderValue: 'Select symptoms...',
+                    searchPlaceholderValue: 'Search...',
+                    classNames: {
+                        containerInner: 'form-control',
+                    }
+                });
+                
+                console.log('Choices.js initialized successfully');
+            } catch (error) {
+                console.error('Error initializing Choices.js:', error);
+            }
         });
     </script>
     @endsection
