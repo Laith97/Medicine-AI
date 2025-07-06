@@ -20,7 +20,21 @@
                 @endif
 
                 <div class="medical-form-card">
-        
+                    
+                    @if(session('openai_api_error'))
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong><i class="fas fa-exclamation-triangle"></i> API Key Error:</strong> {{ session('openai_api_error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    @endif
+                    
+                    @if(session('openai_error'))
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <strong><i class="fas fa-exclamation-circle"></i> Error:</strong> {{ session('openai_error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    @endif
+                    
                     <div id="errorMessages"></div>
                     
                     <!-- Patient Selection -->
@@ -229,14 +243,36 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         <div class="modal-content response-modal-content">
             <div class="modal-header response-modal-header">
                 <h5 class="modal-title" id="responseModalLabel" style="color: #fff">
-                    <i class="fas fa-stethoscope me-2"></i>Medical Recommendations
+                    <i class="fas fa-stethoscope me-2"></i>AI Recommendations
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div>
+                    <button type="button" class="btn btn-sm btn-light me-2" id="printResponseBtn">
+                        <i class="fas fa-print me-1"></i>Print
+                    </button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
             </div>
             <div class="modal-body response-modal-body">
-                <!-- Initial AI response -->
-                <div class="response-block mb-4">
-                    <pre id="openaiReply" class="response-text"></pre>
+                <!-- AI Response Section -->
+                <div class="ai-response-section mb-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <h6 class="mb-0 me-2"><i class="fas fa-robot me-2"></i>AI Analysis</h6>
+                        <hr class="flex-grow-1 ms-2">
+                    </div>
+                    <div class="ai-summary" style="background-color: #f8f9fa; border-radius: 15px; padding: 20px; box-shadow: 0 3px 15px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05);">
+                        <div id="openaiReply" class="response-text"></div>
+                    </div>
+                </div>
+                
+                <!-- Sources Section -->
+                <div id="sourcesCitation" class="mt-4" style="display: none;">
+                    <div class="d-flex align-items-center mb-3">
+                        <h6 class="mb-0 me-2"><i class="fas fa-book me-2"></i>Referenced From</h6>
+                        <hr class="flex-grow-1 ms-2">
+                    </div>
+                    <div id="sourcesContent" class="sources-list">
+                        <!-- Source logos will be populated here -->
+                    </div>
                 </div>
                 
                 <!-- Chat continuation section -->
@@ -425,7 +461,19 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                 .replace(/\n{3,}/g, '\n\n')                                  // Replace multiple newlines with double newlines
                 .trim();                                                     // Remove leading/trailing whitespace
                 
-            document.getElementById('openaiReply').textContent = formattedResponse;
+            // Format the response with proper HTML formatting
+            const formattedHTML = formatAIResponse(formattedResponse);
+            document.getElementById('openaiReply').innerHTML = formattedHTML;
+            
+            // Extract and display sources if they exist
+            const sourcesMatch = formattedResponse.match(/Sources:([\s\S]*?)(?:$|(?=\n\n\w))/i);
+            if (sourcesMatch && sourcesMatch[1].trim()) {
+                const sourcesContent = sourcesMatch[1].trim();
+                document.getElementById('sourcesContent').innerHTML = formatSources(sourcesContent);
+                document.getElementById('sourcesCitation').style.display = 'block';
+            } else {
+                document.getElementById('sourcesCitation').style.display = 'none';
+            }
             
             // Set the conversation ID for follow-up messages
             if (document.getElementById('conversation-id')) {
@@ -476,7 +524,17 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                         conversation_id: conversationId
                     })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    // Check if response is ok before parsing JSON
+                    if (!response.ok) {
+                        // If it's an API key error (401 Unauthorized)
+                        if (response.status === 401) {
+                            throw new Error('API_KEY_ERROR');
+                        }
+                        throw new Error('SERVER_ERROR');
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     // Remove typing indicator
                     removeTypingIndicator(typingIndicator);
@@ -489,8 +547,14 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                         if (data.conversation_id) {
                             document.getElementById('conversation-id').value = data.conversation_id;
                         }
+                    } else if (data.api_key_error) {
+                        // Show API key error with special styling
+                        addErrorMessage(data.message || 'OpenAI API key is invalid or expired. Please contact the administrator.', true);
+                        
+                        // Also show a modal with more information
+                        showApiKeyErrorModal();
                     } else {
-                        // Show error
+                        // Show regular error
                         addErrorMessage(data.message || 'An error occurred');
                     }
                 })
@@ -498,8 +562,16 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                     // Remove typing indicator
                     removeTypingIndicator(typingIndicator);
                     
-                    // Show error
-                    addErrorMessage('Failed to connect to the server');
+                    if (error.message === 'API_KEY_ERROR') {
+                        // Show API key error with special styling
+                        addErrorMessage('OpenAI API key is invalid or expired. Please contact the administrator.', true);
+                        
+                        // Also show a modal with more information
+                        showApiKeyErrorModal();
+                    } else {
+                        // Show regular error
+                        addErrorMessage('Failed to connect to the server. Please try again later.');
+                    }
                     console.error('Error:', error);
                 });
             });
@@ -635,21 +707,443 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         }
     }
     
-    function addErrorMessage(message) {
+    function addErrorMessage(message, isApiKeyError = false) {
         const errorDiv = document.createElement('div');
-        errorDiv.className = 'alert alert-danger';
-        errorDiv.textContent = message;
+        errorDiv.className = isApiKeyError ? 'alert alert-danger' : 'alert alert-warning';
+        
+        if (isApiKeyError) {
+            // Create icon element
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-exclamation-triangle me-2';
+            errorDiv.appendChild(icon);
+            
+            // Create strong element for the title
+            const strong = document.createElement('strong');
+            strong.textContent = 'API Key Error: ';
+            errorDiv.appendChild(strong);
+            
+            // Add the message text
+            const textNode = document.createTextNode(message);
+            errorDiv.appendChild(textNode);
+        } else {
+            errorDiv.textContent = message;
+        }
         
         document.getElementById('chat-messages').appendChild(errorDiv);
         
         // Scroll to bottom
         document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
         
-        // Remove after 5 seconds
-        setTimeout(() => {
-            errorDiv.remove();
-        }, 5000);
+        // Only auto-remove regular errors, not API key errors
+        if (!isApiKeyError) {
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
     }
+    
+    function showApiKeyErrorModal() {
+        // Create modal if it doesn't exist
+        if (!document.getElementById('apiKeyErrorModal')) {
+            const modalHtml = `
+                <div class="modal fade" id="apiKeyErrorModal" tabindex="-1" aria-labelledby="apiKeyErrorModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title" id="apiKeyErrorModalLabel">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    OpenAI API Key Error
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>The OpenAI API key appears to be invalid or expired. This means:</p>
+                                <ul>
+                                    <li>You won't be able to get AI-powered responses</li>
+                                    <li>Medical analysis features will be unavailable</li>
+                                    <li>Chat functionality will not work</li>
+                                </ul>
+                                <p>Please contact the system administrator to update the API key.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Append modal to body
+            const modalContainer = document.createElement('div');
+            modalContainer.innerHTML = modalHtml;
+            document.body.appendChild(modalContainer);
+        }
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('apiKeyErrorModal'));
+        modal.show();
+    }
+    
+    /**
+     * Format AI response text with proper HTML formatting
+     */
+    function formatAIResponse(text) {
+        if (!text) return '';
+        
+        // Remove the Sources section from the text before formatting
+        const sourcesMatch = text.match(/Sources:([\s\S]*?)(?:$|(?=\n\n\w))/i);
+        let cleanedText = text;
+        
+        if (sourcesMatch) {
+            cleanedText = text.replace(sourcesMatch[0], '').trim();
+        }
+        
+        // First, enhance the main section headers to make them more prominent
+        // This will convert A) POSSIBLE DIAGNOSIS: etc. to proper h4 headers
+        const enhancedText = cleanedText
+            .replace(/^(A\)\s*POSSIBLE\s*DIAGNOSIS:.*$)/gm, '<h4 class="mt-4 section-diagnosis">$1</h4>')
+            .replace(/^(B\)\s*RECOMMENDATIONS\s*FOR\s*TESTS\s*OR\s*IMAGING:.*$)/gm, '<h4 class="mt-4 section-recommendations">$1</h4>')
+            .replace(/^(C\)\s*TREATMENT\s*RECOMMENDATIONS:.*$)/gm, '<h4 class="mt-4 section-treatment">$1</h4>')
+            .replace(/^(D\)\s*WARNING\s*SIGNS:.*$)/gm, '<h4 class="mt-4 section-warnings">$1</h4>');
+        
+        // Split the text into lines
+        let lines = enhancedText.split('\n');
+        let formatted = '';
+        let inList = false;
+        let listType = '';
+        
+        // Process each line
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+            
+            // Skip processing if line is already an HTML header (from our replacement above)
+            if (line.startsWith('<h4')) {
+                if (inList) {
+                    formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                    inList = false;
+                }
+                formatted += line;
+                continue;
+            }
+            
+            // Check for headers (# Header)
+            if (/^#{1,6}\s+(.+)$/.test(line)) {
+                if (inList) {
+                    formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                    inList = false;
+                }
+                const headerLevel = line.match(/^(#{1,6})\s+/)[1].length;
+                const headerText = line.replace(/^#{1,6}\s+(.+)$/, '$1');
+                formatted += `<h${headerLevel}>${headerText}</h${headerLevel}>`;
+            }
+            // Check for bullet points (* Item or - Item or • Item)
+            else if (/^[\s]*[\*\-•]\s+(.+)$/.test(line)) {
+                if (!inList || listType !== 'ul') {
+                    if (inList) formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                    formatted += '<ul class="mb-3">';
+                    inList = true;
+                    listType = 'ul';
+                }
+                const itemText = line.replace(/^[\s]*[\*\-•]\s+(.+)$/, '$1');
+                formatted += `<li>${itemText}</li>`;
+            }
+            // Check for numbered lists (1. Item)
+            else if (/^[\s]*\d+\.\s+(.+)$/.test(line)) {
+                if (!inList || listType !== 'ol') {
+                    if (inList) formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                    formatted += '<ol class="mb-3">';
+                    inList = true;
+                    listType = 'ol';
+                }
+                const itemText = line.replace(/^[\s]*\d+\.\s+(.+)$/, '$1');
+                formatted += `<li>${itemText}</li>`;
+            }
+            // Regular text
+            else {
+                if (inList) {
+                    formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                    inList = false;
+                }
+                
+                // Skip empty lines
+                if (line.trim() === '') {
+                    formatted += '<br>';
+                    continue;
+                }
+                
+                // Check for section headers with multiple patterns
+                const diagnosisPattern = /(DIAGNOS[IE]S|POSSIBLE\s+DIAGNOS[IE]S|DIFFERENTIAL\s+DIAGNOS[IE]S)/i;
+                const recommendationsPattern = /(RECOMMENDATIONS|RECOMMENDATIONS\s+FOR\s+TESTS|SUGGESTED\s+TESTS)/i;
+                const treatmentPattern = /(TREATMENT|TREATMENT\s+RECOMMENDATIONS|TREATMENT\s+PLAN|MANAGEMENT)/i;
+                const warningsPattern = /(WARNINGS|PRECAUTIONS|RED\s+FLAGS|FOLLOW\-UP)/i;
+                
+                if (/^[A-Z][\)\.]?\s+.*?(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS|PRECAUTIONS|MANAGEMENT|FOLLOW).*?$/i.test(line) || 
+                    /^(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS|PRECAUTIONS|MANAGEMENT|FOLLOW).*?$/i.test(line) ||
+                    /^[A-Z]\)\s+(POSSIBLE\s+DIAGNOS[IE]S|RECOMMENDATIONS\s+FOR\s+TESTS|TREATMENT\s+RECOMMENDATIONS|WARNINGS|PRECAUTIONS)$/i.test(line)) {
+                    
+                    let className = '';
+                    
+                    if (diagnosisPattern.test(line)) {
+                        className = 'section-diagnosis';
+                    } else if (recommendationsPattern.test(line)) {
+                        className = 'section-recommendations';
+                    } else if (treatmentPattern.test(line)) {
+                        className = 'section-treatment';
+                    } else if (warningsPattern.test(line)) {
+                        className = 'section-warnings';
+                    }
+                    
+                    formatted += `<h4 class="mt-4 ${className}">${line}</h4>`;
+                } 
+                // Check for subsection headers (often in ALL CAPS or with trailing colon)
+                else if (/^[A-Z][A-Z\s\d\-\(\)]{5,}:?$/.test(line)) {
+                    formatted += `<p><strong style="font-size: 1.15rem; color: #34495e;">${line}</strong></p>`;
+                }
+                else {
+                    // All other text is formatted as regular paragraphs
+                    formatted += `<p>${line}</p>`;
+                }
+            }
+        }
+        
+        // Close any open lists
+        if (inList) {
+            formatted += listType === 'ul' ? '</ul>' : '</ol>';
+        }
+        
+        // Process inline formatting
+        
+        // Bold text between ** or __
+        formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        formatted = formatted.replace(/__(.+?)__/g, '<strong>$1</strong>');
+        
+        // Italic text between * or _
+        formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        formatted = formatted.replace(/_([^_]+)_/g, '<em>$1</em>');
+        
+        // Highlight important information
+        formatted = formatted.replace(/\!\!(.+?)\!\!/g, '<span style="background-color: #ffffcc; padding: 0 3px;">$1</span>');
+        
+        // Add some spacing between sections for better readability
+        formatted = formatted.replace(/<\/h[1-6]>/g, '$&<div style="height: 10px;"></div>');
+        
+        // Enhance the styling of the main sections
+        formatted = formatted.replace(/<h4 class="mt-4 section-diagnosis">/g, 
+            '<h4 class="mt-4 section-diagnosis" style="color: #DE6262; border-left: 4px solid #DE6262; padding: 8px 0 8px 15px; background-color: rgba(222, 98, 98, 0.05); border-radius: 0 5px 5px 0;">');
+            
+        formatted = formatted.replace(/<h4 class="mt-4 section-recommendations">/g, 
+            '<h4 class="mt-4 section-recommendations" style="color: #3498db; border-left: 4px solid #3498db; padding: 8px 0 8px 15px; background-color: rgba(52, 152, 219, 0.05); border-radius: 0 5px 5px 0;">');
+            
+        formatted = formatted.replace(/<h4 class="mt-4 section-treatment">/g, 
+            '<h4 class="mt-4 section-treatment" style="color: #2ecc71; border-left: 4px solid #2ecc71; padding: 8px 0 8px 15px; background-color: rgba(46, 204, 113, 0.05); border-radius: 0 5px 5px 0;">');
+            
+        formatted = formatted.replace(/<h4 class="mt-4 section-warnings">/g, 
+            '<h4 class="mt-4 section-warnings" style="color: #f39c12; border-left: 4px solid #f39c12; padding: 8px 0 8px 15px; background-color: rgba(243, 156, 18, 0.05); border-radius: 0 5px 5px 0;">');
+        
+        return formatted;
+    }
+    
+    // Format sources to just show the logos of the sites
+    function formatSources(sourcesText) {
+        if (!sourcesText || sourcesText.trim() === '') {
+            return '';
+        }
+        
+        // Create a simple logo grid
+        let html = '<div class="d-flex flex-wrap justify-content-center mt-3">';
+        
+        // Add PubMed logo
+        if (sourcesText.match(/pubmed|ncbi|nlm|nih\.gov/i)) {
+            html += `
+                <div class="m-2">
+                    <img src="https://cdn.ncbi.nlm.nih.gov/pubmed/images/pubmed-logo.png" 
+                         alt="PubMed" 
+                         title="PubMed" 
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                </div>
+            `;
+        }
+        
+        // Add NEJM logo
+        if (sourcesText.match(/nejm|new england journal/i)) {
+            html += `
+                <div class="m-2">
+                    <img src="https://www.nejm.org/pb-assets/images/global/social-share/NEJM-Logo-Social-Share.jpg" 
+                         alt="NEJM" 
+                         title="New England Journal of Medicine" 
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                </div>
+            `;
+        }
+        
+        // Add JAMA logo
+        if (sourcesText.match(/jama|american medical association/i)) {
+            html += `
+                <div class="m-2">
+                    <img src="https://jamanetwork.com/images/logos/jama-logo.svg" 
+                         alt="JAMA" 
+                         title="Journal of the American Medical Association" 
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                </div>
+            `;
+        }
+        
+        // Add The Lancet logo
+        if (sourcesText.match(/lancet/i)) {
+            html += `
+                <div class="m-2">
+                    <img src="https://www.thelancet.com/cms/asset/f4e2c7e5-9c1e-4d7c-b0c3-a4b8519eb0c3/lancet-logo.jpg" 
+                         alt="The Lancet" 
+                         title="The Lancet" 
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                </div>
+            `;
+        }
+        
+        // Add BMJ logo
+        if (sourcesText.match(/bmj|british medical journal/i)) {
+            html += `
+                <div class="m-2">
+                    <img src="https://www.bmj.com/sites/default/files/attachments/bmj-logo.jpg" 
+                         alt="BMJ" 
+                         title="British Medical Journal" 
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                </div>
+            `;
+        }
+        
+        // Add CDC logo
+        if (sourcesText.match(/cdc|centers for disease control/i)) {
+            html += `
+                <div class="m-2">
+                    <img src="https://www.cdc.gov/homepage/images/cdc-logo.png" 
+                         alt="CDC" 
+                         title="Centers for Disease Control and Prevention" 
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                </div>
+            `;
+        }
+        
+        // Add WHO logo
+        if (sourcesText.match(/who|world health/i)) {
+            html += `
+                <div class="m-2">
+                    <img src="https://www.who.int/images/default-source/default-album/who-emblem.jpg" 
+                         alt="WHO" 
+                         title="World Health Organization" 
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                </div>
+            `;
+        }
+        
+        // Add Mayo Clinic logo
+        if (sourcesText.match(/mayo|clinic/i)) {
+            html += `
+                <div class="m-2">
+                    <img src="https://www.mayoclinic.org/-/media/web/gbs/shared/images/socialmedia/mayo-clinic-logo-socialmedia.jpg" 
+                         alt="Mayo Clinic" 
+                         title="Mayo Clinic" 
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                </div>
+            `;
+        }
+        
+        // Add UpToDate logo
+        if (sourcesText.match(/uptodate|wolters kluwer/i)) {
+            html += `
+                <div class="m-2">
+                    <img src="https://www.uptodate.com/sites/default/files/styles/large/public/2022-10/UpToDate_Logo_RGB.png" 
+                         alt="UpToDate" 
+                         title="UpToDate" 
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                </div>
+            `;
+        }
+        
+        // Always add a generic medical source logo
+        html += `
+            <div class="m-2">
+                <img src="https://cdn-icons-png.flaticon.com/512/3022/3022339.png" 
+                     alt="Medical Source" 
+                     title="Medical Source" 
+                     style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+            </div>
+        `;
+        
+        html += '</div>';
+        
+        return html;
+    }
+    
+    // Print functionality for response modal
+    document.addEventListener('DOMContentLoaded', function() {
+        const printResponseBtn = document.getElementById('printResponseBtn');
+        if (printResponseBtn) {
+            printResponseBtn.addEventListener('click', function() {
+                let responseContent = document.getElementById('openaiReply').innerHTML;
+                const sourcesElement = document.getElementById('sourcesCitation');
+                const sourcesContent = sourcesElement && sourcesElement.style.display !== 'none' ? 
+                    document.getElementById('sourcesContent').innerHTML : '';
+                
+                // The content is already formatted with proper HTML, no need for additional formatting
+                
+                // Create a new window for printing
+                const printWindow = window.open('', '_blank');
+                
+                // Add content to the print window
+                printWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Medical Recommendations</title>
+                        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+                        <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; }
+                            .header { text-align: center; margin-bottom: 30px; }
+                            .content { margin-bottom: 30px; line-height: 1.6; }
+                            .sources { margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px; }
+                            h4 { color: #2c3e50; margin-top: 25px; margin-bottom: 15px; }
+                            ul, ol { margin-bottom: 20px; }
+                            li { margin-bottom: 8px; }
+                            @media print {
+                                .no-print { display: none; }
+                                a { text-decoration: none; color: #000; }
+                                h4 { page-break-after: avoid; }
+                                ul, ol { page-break-inside: avoid; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h2>Medical Recommendations</h2>
+                            <p>${new Date().toLocaleDateString()}</p>
+                        </div>
+                        
+                        <div class="content">
+                            ${responseContent}
+                        </div>
+                        
+                        ${sourcesContent ? `
+                        <div class="sources">
+                            <h5>Sources</h5>
+                            ${sourcesContent}
+                        </div>
+                        ` : ''}
+                        
+                        <div class="text-center mt-4 no-print">
+                            <button class="btn btn-primary" onclick="window.print()">Print</button>
+                            <button class="btn btn-secondary ms-2" onclick="window.close()">Close</button>
+                        </div>
+                    </body>
+                    </html>
+                `);
+                
+                // Focus the new window
+                printWindow.document.close();
+                printWindow.focus();
+            });
+        }
+    });
 </script>
 
 

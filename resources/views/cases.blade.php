@@ -414,6 +414,72 @@
         font-weight: 700;
         margin-bottom: 1rem;
     }
+    
+    /* Recent Patients Section */
+    .recent-patients-card {
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(44, 62, 80, 0.1);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .recent-patients-card .card-header {
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        border-radius: 15px 15px 0 0;
+    }
+    
+    .recent-patients-card .badge {
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+    }
+    
+    .recent-patient-item {
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .recent-patient-item:hover {
+        background-color: rgba(222, 98, 98, 0.03);
+    }
+    
+    .col-lg-2-4 {
+        flex: 0 0 auto;
+        width: 20%;
+    }
+    
+    .btn-sm.btn-view-response {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Improved DataTables styling */
+    .dataTables_wrapper .dataTables_filter {
+        margin-bottom: 1rem;
+    }
+    
+    .dataTables_wrapper .dataTables_filter input {
+        min-width: 250px;
+    }
+    
+    .dataTables_wrapper .dataTables_length select {
+        min-width: 80px;
+    }
+    
+    .dataTables_processing {
+        background: rgba(255,255,255,0.9) !important;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        border-radius: 10px;
+        padding: 15px !important;
+        z-index: 100;
+    }
+
+    @media (max-width: 992px) {
+        .col-lg-2-4 {
+            width: 33.33%;
+        }
+    }
 
     @media (max-width: 768px) {
         .cases-header h5 {
@@ -423,12 +489,30 @@
         .cases-card-body {
             padding: 1rem;
         }
+        
+        .col-lg-2-4 {
+            width: 50%;
+        }
+        
+        .dataTables_wrapper .dataTables_filter input {
+            min-width: 180px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .col-lg-2-4 {
+            width: 100%;
+        }
     }
 </style>
 @endpush
 
 <div class="cases-container">
     <div class="container-fluid">
+        @php
+            $hasRecords = $records->count() > 0;
+        @endphp
+        
         <!-- Cases Header -->
         <div class="cases-header">
             <div class="d-flex justify-content-between align-items-center">
@@ -442,13 +526,47 @@
             </div>
         </div>
         
+        <!-- Recent Patients Section -->
+        @if($hasRecords)
+        <div class="recent-patients-card mb-4">
+            <div class="card-header bg-white p-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Patients</h6>
+                <span class="badge bg-primary">Last 5 patients</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    @foreach($records->sortByDesc('created_at')->take(5) as $recentRecord)
+                    <div class="col-md-4 col-lg-2-4 border-end border-bottom">
+                        <div class="recent-patient-item p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="mb-0 text-truncate" style="max-width: 150px;">{{ $recentRecord->name }}</h6>
+                                <span class="badge bg-light text-dark">{{ $recentRecord->gender }}</span>
+                            </div>
+                            <div class="small text-muted mb-2">
+                                <i class="fas fa-calendar-alt me-1"></i> {{ \Carbon\Carbon::parse($recentRecord->created_at)->format('M d, Y') }}
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-light text-dark">{{ $recentRecord->age }} years</span>
+                                <button class="btn btn-sm btn-view-response" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#responseModal" 
+                                        data-record-id="{{ $recentRecord->id }}"
+                                        data-patient-name="{{ $recentRecord->name }}"
+                                        data-patient-key="{{ $recentRecord->patient_key }}">
+                                    <i class="fas fa-eye me-1"></i>View
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        @endif
+        
         <!-- Cases Card -->
         <div class="cases-card">
             <div class="cases-card-body">
-                @php
-                    $hasRecords = $records->count() > 0;
-                @endphp
-
                 @if($hasRecords)
                     <div class="table-responsive">
                         <table id="recordsTable" class="table custom-table align-middle w-100">
@@ -569,6 +687,17 @@
                     </div>
                     <div class="ai-summary" style="background-color: #f8f9fa; border-radius: 15px; padding: 20px; box-shadow: 0 3px 15px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05);">
                         <div id="openaiReply" class="response-text"></div>
+                        
+                        <!-- Sources Section -->
+                        <div id="sourcesCitation" class="mt-4" style="display: none;">
+                            <div class="d-flex align-items-center mb-3">
+                                <h6 class="mb-0 me-2"><i class="fas fa-book me-2"></i>Referenced From</h6>
+                                <hr class="flex-grow-1 ms-2">
+                            </div>
+                            <div id="sourcesContent" class="sources-list">
+                                <!-- Source logos will be populated here -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -584,7 +713,12 @@
                 <h5 class="modal-title" id="summaryModalLabel" style="color: #fff">
                     <i class="fas fa-user-md me-2"></i><span id="patientSummaryTitle">Patient Summary</span>
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div>
+                    <button type="button" class="btn btn-sm btn-light me-2" id="printSummaryBtn">
+                        <i class="fas fa-print me-1"></i>Print
+                    </button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
             </div>
             <div class="modal-body response-modal-body">
                 <!-- Patient Info Section -->
@@ -636,6 +770,17 @@
                             <p class="mt-2">Generating AI summary...</p>
                         </div>
                     </div>
+                    
+                    <!-- Sources Section for Summary -->
+                    <div id="summarySourcesCitation" class="mt-4" style="display: none;">
+                        <div class="d-flex align-items-center mb-3">
+                            <h6 class="mb-0 me-2"><i class="fas fa-book me-2"></i>Sources</h6>
+                            <hr class="flex-grow-1 ms-2">
+                        </div>
+                        <div id="summarySourcesContent" class="sources-list p-3 bg-light border rounded">
+                            <!-- Sources will be populated here -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -655,20 +800,44 @@
 
         if (hasRecords) {
             $('#recordsTable').DataTable({
-                pageLength: 10,
+                pageLength: 25,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                processing: true,
+                deferRender: true,
+                stateSave: true,
+                stateDuration: 60 * 60 * 24, // 1 day
                 language: {
                     search: "🔍 Search:",
-                    lengthMenu: "Show _MENU_ entries",
-                    info: "Showing _START_ to _END_ of _TOTAL_",
+                    lengthMenu: "Show _MENU_ patients",
+                    info: "Showing _START_ to _END_ of _TOTAL_ patients",
                     paginate: {
                         previous: "← Prev",
                         next: "Next →"
                     },
                     emptyTable: "No records available",
-                    zeroRecords: "No matching records found"
+                    zeroRecords: "No matching records found",
+                    processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>'
                 },
+                dom: '<"d-flex justify-content-between align-items-center mb-3"<"d-flex align-items-center"l><"d-flex"f>>rtip',
+                order: [[6, 'desc']], // Sort by date column (index 6) by default
                 responsive: true,
-                autoWidth: false
+                autoWidth: false,
+                initComplete: function() {
+                    // Add a select filter for gender
+                    this.api().columns(3).every(function() {
+                        let column = this;
+                        let select = $('<select class="form-select form-select-sm ms-2"><option value="">All Genders</option></select>')
+                            .appendTo($('.dataTables_filter'))
+                            .on('change', function() {
+                                let val = $.fn.dataTable.util.escapeRegex($(this).val());
+                                column.search(val ? '^'+val+'$' : '', true, false).draw();
+                            });
+                        
+                        column.data().unique().sort().each(function(d, j) {
+                            select.append('<option value="'+d+'">'+d+'</option>');
+                        });
+                    });
+                }
             });
         }
 
@@ -722,6 +891,16 @@
             console.log('Formatted response:', formattedResponse);
             
             $('#openaiReply').html(formattedResponse);
+            
+            // Extract and display sources if they exist
+            const sourcesMatch = decodedResponse.match(/Sources:([\s\S]*?)(?:$|(?=\n\n\w))/i);
+            if (sourcesMatch && sourcesMatch[1].trim()) {
+                const sourcesContent = sourcesMatch[1].trim();
+                $('#sourcesContent').html(formatSources(sourcesContent));
+                $('#sourcesCitation').show();
+            } else {
+                $('#sourcesCitation').hide();
+            }
             
             // Get the patient_key from the current record
             const patientKey = $(this).data('patient-key');
@@ -862,8 +1041,24 @@
         function formatAIResponse(text) {
             if (!text) return '';
             
+            // Remove the Sources section from the text before formatting
+            const sourcesMatch = text.match(/Sources:([\s\S]*?)(?:$|(?=\n\n\w))/i);
+            let cleanedText = text;
+            
+            if (sourcesMatch) {
+                cleanedText = text.replace(sourcesMatch[0], '').trim();
+            }
+            
+            // First, enhance the main section headers to make them more prominent
+            // This will convert A) POSSIBLE DIAGNOSIS: etc. to proper h4 headers
+            const enhancedText = cleanedText
+                .replace(/^(A\)\s*POSSIBLE\s*DIAGNOSIS:.*$)/gm, '<h4 class="mt-4 section-diagnosis">$1</h4>')
+                .replace(/^(B\)\s*RECOMMENDATIONS\s*FOR\s*TESTS\s*OR\s*IMAGING:.*$)/gm, '<h4 class="mt-4 section-recommendations">$1</h4>')
+                .replace(/^(C\)\s*TREATMENT\s*RECOMMENDATIONS:.*$)/gm, '<h4 class="mt-4 section-treatment">$1</h4>')
+                .replace(/^(D\)\s*WARNING\s*SIGNS:.*$)/gm, '<h4 class="mt-4 section-warnings">$1</h4>');
+            
             // Split the text into lines
-            let lines = text.split('\n');
+            let lines = enhancedText.split('\n');
             let formatted = '';
             let inList = false;
             let listType = '';
@@ -871,6 +1066,16 @@
             // Process each line
             for (let i = 0; i < lines.length; i++) {
                 let line = lines[i];
+                
+                // Skip processing if line is already an HTML header (from our replacement above)
+                if (line.startsWith('<h4')) {
+                    if (inList) {
+                        formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                        inList = false;
+                    }
+                    formatted += line;
+                    continue;
+                }
                 
                 // Check for headers (# Header)
                 if (/^#{1,6}\s+(.+)$/.test(line)) {
@@ -882,22 +1087,22 @@
                     const headerText = line.replace(/^#{1,6}\s+(.+)$/, '$1');
                     formatted += `<h${headerLevel}>${headerText}</h${headerLevel}>`;
                 }
-                // Check for bullet points (* Item or - Item)
-                else if (/^[\s]*[\*\-]\s+(.+)$/.test(line)) {
+                // Check for bullet points (* Item or - Item or • Item)
+                else if (/^[\s]*[\*\-•]\s+(.+)$/.test(line)) {
                     if (!inList || listType !== 'ul') {
                         if (inList) formatted += listType === 'ul' ? '</ul>' : '</ol>';
-                        formatted += '<ul>';
+                        formatted += '<ul class="mb-3">';
                         inList = true;
                         listType = 'ul';
                     }
-                    const itemText = line.replace(/^[\s]*[\*\-]\s+(.+)$/, '$1');
+                    const itemText = line.replace(/^[\s]*[\*\-•]\s+(.+)$/, '$1');
                     formatted += `<li>${itemText}</li>`;
                 }
                 // Check for numbered lists (1. Item)
                 else if (/^[\s]*\d+\.\s+(.+)$/.test(line)) {
                     if (!inList || listType !== 'ol') {
                         if (inList) formatted += listType === 'ul' ? '</ul>' : '</ol>';
-                        formatted += '<ol>';
+                        formatted += '<ol class="mb-3">';
                         inList = true;
                         listType = 'ol';
                     }
@@ -939,7 +1144,7 @@
                             className = 'section-warnings';
                         }
                         
-                        formatted += `<p><strong class="${className}">${line}</strong></p>`;
+                        formatted += `<h4 class="mt-4 ${className}">${line}</h4>`;
                     } 
                     // Check for subsection headers (often in ALL CAPS or with trailing colon)
                     else if (/^[A-Z][A-Z\s\d\-\(\)]{5,}:?$/.test(line)) {
@@ -971,8 +1176,20 @@
             formatted = formatted.replace(/\!\!(.+?)\!\!/g, '<span style="background-color: #ffffcc; padding: 0 3px;">$1</span>');
             
             // Add some spacing between sections for better readability
-            formatted = formatted.replace(/<\/h[1-6]>/g, '</h$&><div style="height: 10px;"></div>');
-            formatted = formatted.replace(/<\/strong><\/p>/g, '</strong></p><div style="height: 5px;"></div>');
+            formatted = formatted.replace(/<\/h[1-6]>/g, '$&<div style="height: 10px;"></div>');
+            
+            // Enhance the styling of the main sections
+            formatted = formatted.replace(/<h4 class="mt-4 section-diagnosis">/g, 
+                '<h4 class="mt-4 section-diagnosis" style="color: #DE6262; border-left: 4px solid #DE6262; padding: 8px 0 8px 15px; background-color: rgba(222, 98, 98, 0.05); border-radius: 0 5px 5px 0;">');
+                
+            formatted = formatted.replace(/<h4 class="mt-4 section-recommendations">/g, 
+                '<h4 class="mt-4 section-recommendations" style="color: #3498db; border-left: 4px solid #3498db; padding: 8px 0 8px 15px; background-color: rgba(52, 152, 219, 0.05); border-radius: 0 5px 5px 0;">');
+                
+            formatted = formatted.replace(/<h4 class="mt-4 section-treatment">/g, 
+                '<h4 class="mt-4 section-treatment" style="color: #2ecc71; border-left: 4px solid #2ecc71; padding: 8px 0 8px 15px; background-color: rgba(46, 204, 113, 0.05); border-radius: 0 5px 5px 0;">');
+                
+            formatted = formatted.replace(/<h4 class="mt-4 section-warnings">/g, 
+                '<h4 class="mt-4 section-warnings" style="color: #f39c12; border-left: 4px solid #f39c12; padding: 8px 0 8px 15px; background-color: rgba(243, 156, 18, 0.05); border-radius: 0 5px 5px 0;">');
             
             return formatted;
         }
@@ -1161,6 +1378,16 @@
                         }
                         
                         $('#aiSummaryContainer').html(summaryHtml);
+                        
+                        // Extract and display sources if they exist
+                        const sourcesMatch = response.summary.match(/Sources:([\s\S]*?)(?:$|(?=\n\n\w))/i);
+                        if (sourcesMatch && sourcesMatch[1].trim()) {
+                            const sourcesContent = sourcesMatch[1].trim();
+                            $('#summarySourcesContent').html(formatSources(sourcesContent));
+                            $('#summarySourcesCitation').show();
+                        } else {
+                            $('#summarySourcesCitation').hide();
+                        }
                     } else {
                         $('#aiSummaryContainer').html(`
                             <div class="alert alert-warning">
@@ -1284,6 +1511,314 @@
             
             return result;
         }
+        
+        /**
+         * Format sources to just show the logos of the sites
+         */
+        function formatSources(sourcesText) {
+            if (!sourcesText || sourcesText.trim() === '') {
+                return '';
+            }
+            
+            // Create a simple logo grid
+            let html = '<div class="d-flex flex-wrap justify-content-center mt-3">';
+            
+            // Add PubMed logo
+            if (sourcesText.match(/pubmed|ncbi|nlm|nih\.gov/i)) {
+                html += `
+                    <div class="m-2">
+                        <img src="https://cdn.ncbi.nlm.nih.gov/pubmed/images/pubmed-logo.png" 
+                             alt="PubMed" 
+                             title="PubMed" 
+                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                    </div>
+                `;
+            }
+            
+            // Add NEJM logo
+            if (sourcesText.match(/nejm|new england journal/i)) {
+                html += `
+                    <div class="m-2">
+                        <img src="https://www.nejm.org/pb-assets/images/global/social-share/NEJM-Logo-Social-Share.jpg" 
+                             alt="NEJM" 
+                             title="New England Journal of Medicine" 
+                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                    </div>
+                `;
+            }
+            
+            // Add JAMA logo
+            if (sourcesText.match(/jama|american medical association/i)) {
+                html += `
+                    <div class="m-2">
+                        <img src="https://jamanetwork.com/images/logos/jama-logo.svg" 
+                             alt="JAMA" 
+                             title="Journal of the American Medical Association" 
+                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                    </div>
+                `;
+            }
+            
+            // Add The Lancet logo
+            if (sourcesText.match(/lancet/i)) {
+                html += `
+                    <div class="m-2">
+                        <img src="https://www.thelancet.com/cms/asset/f4e2c7e5-9c1e-4d7c-b0c3-a4b8519eb0c3/lancet-logo.jpg" 
+                             alt="The Lancet" 
+                             title="The Lancet" 
+                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                    </div>
+                `;
+            }
+            
+            // Add BMJ logo
+            if (sourcesText.match(/bmj|british medical journal/i)) {
+                html += `
+                    <div class="m-2">
+                        <img src="https://www.bmj.com/sites/default/files/attachments/bmj-logo.jpg" 
+                             alt="BMJ" 
+                             title="British Medical Journal" 
+                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                    </div>
+                `;
+            }
+            
+            // Add CDC logo
+            if (sourcesText.match(/cdc|centers for disease control/i)) {
+                html += `
+                    <div class="m-2">
+                        <img src="https://www.cdc.gov/homepage/images/cdc-logo.png" 
+                             alt="CDC" 
+                             title="Centers for Disease Control and Prevention" 
+                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                    </div>
+                `;
+            }
+            
+            // Add WHO logo
+            if (sourcesText.match(/who|world health/i)) {
+                html += `
+                    <div class="m-2">
+                        <img src="https://www.who.int/images/default-source/default-album/who-emblem.jpg" 
+                             alt="WHO" 
+                             title="World Health Organization" 
+                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                    </div>
+                `;
+            }
+            
+            // Add Mayo Clinic logo
+            if (sourcesText.match(/mayo|clinic/i)) {
+                html += `
+                    <div class="m-2">
+                        <img src="https://www.mayoclinic.org/-/media/web/gbs/shared/images/socialmedia/mayo-clinic-logo-socialmedia.jpg" 
+                             alt="Mayo Clinic" 
+                             title="Mayo Clinic" 
+                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                    </div>
+                `;
+            }
+            
+            // Add UpToDate logo
+            if (sourcesText.match(/uptodate|wolters kluwer/i)) {
+                html += `
+                    <div class="m-2">
+                        <img src="https://www.uptodate.com/sites/default/files/styles/large/public/2022-10/UpToDate_Logo_RGB.png" 
+                             alt="UpToDate" 
+                             title="UpToDate" 
+                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                    </div>
+                `;
+            }
+            
+            // Always add a generic medical source logo
+            html += `
+                <div class="m-2">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3022/3022339.png" 
+                         alt="Medical Source" 
+                         title="Medical Source" 
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                </div>
+            `;
+            
+            html += '</div>';
+            
+            return html;
+        }
+        
+        // Print functionality for response modal
+        $('#printResponseBtn').on('click', function() {
+            const patientName = $('#patientNameTitle').text();
+            const visitNumber = $('#visitNumber').text();
+            let responseContent = $('#openaiReply').html();
+            const sourcesContent = $('#sourcesCitation').is(':visible') ? $('#sourcesContent').html() : '';
+            
+            // Improve formatting for print by adding spacing between sections
+            responseContent = responseContent
+                .replace(/(A\)\s*POSSIBLE\s*DIAGNOSIS:)/g, '<h4 class="mt-4">$1</h4>')
+                .replace(/(B\)\s*RECOMMENDATIONS\s*FOR\s*TESTS\s*OR\s*IMAGING:)/g, '<h4 class="mt-4">$1</h4>')
+                .replace(/(C\)\s*TREATMENT\s*RECOMMENDATIONS:)/g, '<h4 class="mt-4">$1</h4>')
+                .replace(/(D\)\s*WARNING\s*SIGNS:)/g, '<h4 class="mt-4">$1</h4>');
+            
+            // Create a new window for printing
+            const printWindow = window.open('', '_blank');
+            
+            // Add content to the print window
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Medical Recommendations - ${patientName}</title>
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .content { margin-bottom: 30px; line-height: 1.6; }
+                        .sources { margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px; }
+                        h4 { color: #2c3e50; margin-top: 25px; margin-bottom: 15px; }
+                        ul, ol { margin-bottom: 20px; }
+                        li { margin-bottom: 8px; }
+                        @media print {
+                            .no-print { display: none; }
+                            a { text-decoration: none; color: #000; }
+                            h4 { page-break-after: avoid; }
+                            ul, ol { page-break-inside: avoid; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>Medical Recommendations</h2>
+                        <h4>${patientName}</h4>
+                        ${visitNumber ? `<p>Visit #${visitNumber}</p>` : ''}
+                        <p>${new Date().toLocaleDateString()}</p>
+                    </div>
+                    
+                    <div class="content">
+                        ${responseContent}
+                    </div>
+                    
+                    ${sourcesContent ? `
+                    <div class="sources">
+                        <h5>Sources</h5>
+                        ${sourcesContent}
+                    </div>
+                    ` : ''}
+                    
+                    <div class="text-center mt-4 no-print">
+                        <button class="btn btn-primary" onclick="window.print()">Print</button>
+                        <button class="btn btn-secondary ms-2" onclick="window.close()">Close</button>
+                    </div>
+                </body>
+                </html>
+            `);
+            
+            // Focus the new window
+            printWindow.document.close();
+            printWindow.focus();
+        });
+        
+        // Print functionality for summary modal
+        $('#printSummaryBtn').on('click', function() {
+            const patientName = $('#patientSummaryTitle').text();
+            const patientInfo = {
+                name: $('#summaryPatientName').text(),
+                age: $('#summaryPatientAge').text(),
+                gender: $('#summaryPatientGender').text(),
+                height: $('#summaryPatientHeight').text(),
+                weight: $('#summaryPatientWeight').text()
+            };
+            
+            let summaryContent = $('#aiSummaryContainer').html();
+            const sourcesContent = $('#summarySourcesCitation').is(':visible') ? $('#summarySourcesContent').html() : '';
+            const visitHistoryContent = $('#visitSummaryContainer').html();
+            
+            // Improve formatting for print by adding spacing between sections
+            summaryContent = summaryContent
+                .replace(/(A\)\s*POSSIBLE\s*DIAGNOSIS:)/g, '<h4 class="mt-4">$1</h4>')
+                .replace(/(B\)\s*RECOMMENDATIONS\s*FOR\s*TESTS\s*OR\s*IMAGING:)/g, '<h4 class="mt-4">$1</h4>')
+                .replace(/(C\)\s*TREATMENT\s*RECOMMENDATIONS:)/g, '<h4 class="mt-4">$1</h4>')
+                .replace(/(D\)\s*WARNING\s*SIGNS:)/g, '<h4 class="mt-4">$1</h4>');
+            
+            // Create a new window for printing
+            const printWindow = window.open('', '_blank');
+            
+            // Add content to the print window
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Patient Summary - ${patientInfo.name}</title>
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .patient-info { margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 10px; }
+                        .content { margin-bottom: 30px; line-height: 1.6; }
+                        .sources { margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px; }
+                        h4 { color: #2c3e50; margin-top: 25px; margin-bottom: 15px; }
+                        h5 { color: #2c3e50; margin-top: 30px; margin-bottom: 15px; font-weight: 600; }
+                        ul, ol { margin-bottom: 20px; }
+                        li { margin-bottom: 8px; }
+                        .table { margin-top: 15px; }
+                        @media print {
+                            .no-print { display: none; }
+                            a { text-decoration: none; color: #000; }
+                            h4, h5 { page-break-after: avoid; }
+                            ul, ol { page-break-inside: avoid; }
+                            .table { border-collapse: collapse; }
+                            .table td, .table th { border: 1px solid #ddd; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>Patient Summary</h2>
+                        <h4>${patientInfo.name}</h4>
+                        <p>${new Date().toLocaleDateString()}</p>
+                    </div>
+                    
+                    <div class="patient-info">
+                        <div class="row">
+                            <div class="col-md-4"><strong>Name:</strong> ${patientInfo.name}</div>
+                            <div class="col-md-4"><strong>Age:</strong> ${patientInfo.age}</div>
+                            <div class="col-md-4"><strong>Gender:</strong> ${patientInfo.gender}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-4"><strong>Height:</strong> ${patientInfo.height}</div>
+                            <div class="col-md-4"><strong>Weight:</strong> ${patientInfo.weight}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="content">
+                        <h5>Visit History</h5>
+                        ${visitHistoryContent}
+                    </div>
+                    
+                    <div class="content">
+                        <h5>AI Generated Summary</h5>
+                        ${summaryContent}
+                    </div>
+                    
+                    ${sourcesContent ? `
+                    <div class="sources">
+                        <h5>Sources</h5>
+                        ${sourcesContent}
+                    </div>
+                    ` : ''}
+                    
+                    <div class="text-center mt-4 no-print">
+                        <button class="btn btn-primary" onclick="window.print()">Print</button>
+                        <button class="btn btn-secondary ms-2" onclick="window.close()">Close</button>
+                    </div>
+                </body>
+                </html>
+            `);
+            
+            // Focus the new window
+            printWindow.document.close();
+            printWindow.focus();
+        });
     });
 </script>
 

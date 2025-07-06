@@ -205,6 +205,17 @@
         margin-bottom: 1rem;
     }
     
+    /* Custom button sizing for dashboard */
+    .btn-primary-custom.btn-sm {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.875rem;
+    }
+    
+    .btn-secondary-custom.btn-sm {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.875rem;
+    }
+    
     /* Remove any potential infinite loop causing styles */
     * {
         box-sizing: border-box;
@@ -257,7 +268,7 @@
 
         <!-- Statistics Section -->
         <div class="row mb-4">
-            <div class="col-md-6 mb-4">
+            <div class="col-md-3 mb-4">
                 <div class="stats-card">
                     <div class="stats-icon">
                         <i class="fas fa-users"></i>
@@ -267,7 +278,7 @@
                 </div>
             </div>
 
-            <div class="col-md-6 mb-4">
+            <div class="col-md-3 mb-4">
                 <div class="stats-card">
                     <div class="stats-icon">
                         <i class="fas fa-calendar-alt"></i>
@@ -280,6 +291,38 @@
                         @endif
                     </p>
                     <p class="stats-label">Latest Case</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-venus-mars"></i>
+                    </div>
+                    <p class="stats-number">
+                        @php
+                            $maleCount = $records->where('gender', 'male')->count();
+                            $femaleCount = $records->where('gender', 'female')->count();
+                            $ratio = $records->count() > 0 ? round(($maleCount / $records->count()) * 100) : 0;
+                        @endphp
+                        {{ $ratio }}%
+                    </p>
+                    <p class="stats-label">Male Patients</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <p class="stats-number">
+                        @php
+                            $avgAge = $records->count() > 0 ? round($records->avg('age')) : 0;
+                        @endphp
+                        {{ $avgAge }}
+                    </p>
+                    <p class="stats-label">Avg. Patient Age</p>
                 </div>
             </div>
         </div>
@@ -307,7 +350,13 @@
 
         <!-- Recent Cases Table -->
         <div class="table-card">
-            <h6 class="table-title">Recent Cases</h6>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="table-title mb-0">Recent Cases</h6>
+                <a href="{{ route('cases') }}" class="btn-secondary-custom btn-sm">
+                    <i class="fas fa-external-link-alt me-1"></i> View All
+                </a>
+            </div>
+            
             @if(count($records) > 0)
                 <div class="table-responsive">
                     <table class="table custom-table mb-0">
@@ -318,11 +367,16 @@
                                 <th>Age</th>
                                 <th>Gender</th>
                                 <th>Date Added</th>
-                                <th>Status</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($records->take(10) as $record)
+                            @php
+                                // Only take the 5 most recent records for better performance
+                                $recentRecords = $records->sortByDesc('created_at')->take(5);
+                            @endphp
+                            
+                            @foreach($recentRecords as $record)
                                 <tr>
                                     <td><strong>#{{ $record->id }}</strong></td>
                                     <td>{{ $record->name ?? 'N/A' }}</td>
@@ -334,9 +388,9 @@
                                     </td>
                                     <td>{{ $record->created_at->format('M d, Y') }}</td>
                                     <td>
-                                        <span class="badge" style="background-color: #27ae60; color: white;">
-                                            Completed
-                                        </span>
+                                        <a href="{{ route('cases') }}" class="btn-primary-custom btn-sm py-1 px-2">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
                                     </td>
                                 </tr>
                             @endforeach
