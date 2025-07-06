@@ -184,17 +184,46 @@
   
   /* Styled response text */
 .response-text {
-    white-space: pre-wrap;
     word-break: break-word;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    padding: 2rem;
-    border-left: 6px solid #DE6262;
-    border-radius: 15px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
     font-family: "Segoe UI", Roboto, sans-serif;
     font-size: 1rem;
-    color: #2c3e50;
-    border: 1px solid rgba(222, 98, 98, 0.1);
+    line-height: 1.6;
+}
+
+.response-text h4 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.response-text p {
+    margin-bottom: 1rem;
+}
+
+.response-text ul, .response-text ol {
+    margin-bottom: 1.5rem;
+    padding-left: 2rem;
+}
+
+.response-text li {
+    margin-bottom: 0.5rem;
+}
+
+/* Section styling */
+.response-text .section-diagnosis {
+    color: #DE6262;
+}
+
+.response-text .section-recommendations {
+    color: #3498db;
+}
+
+.response-text .section-treatment {
+    color: #2ecc71;
+}
+
+.response-text .section-warnings {
+    color: #f39c12;
 }
   
   /* Optional: prettier scrollbar */

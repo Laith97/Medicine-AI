@@ -78,97 +78,140 @@ class OpenAIController extends Controller
     
     public function getResponse(Request $request)
     {
-        $files = $request->file('reports');
-    
-        $uploadedFileIds = [];
-        $imageMessages = [];
-    
-        $inputData = $this->collectPatientData($request);
-        $criterion = auth()->user()->setting->criterion ?? 'CDC';
+        try {
+            $files = $request->file('reports');
         
-        if ($files && is_array($files)) {
-            foreach ($files as $file) {
-                $originalName = $file->getClientOriginalName();
-                $extension = strtolower($file->getClientOriginalExtension());
-                $tempPath = storage_path('app/tmp/' . $originalName);
-    
-                // Move file to temp path
-                $file->move(storage_path('app/tmp'), $originalName);
-    
-                if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])) {
-                    // Process as image for GPT-4 Vision
-                    $base64 = base64_encode(file_get_contents($tempPath));
-                    $mimeType = mime_content_type($tempPath);
-    
-                    $imageMessages[] = [
-                        "type" => "image_url",
-                        "image_url" => [
-                            "url" => "data:$mimeType;base64,$base64"
-                        ]
-                    ];
-                } else {
-                    // Upload as file for file_search    
-                    $uploaded = OpenAI::files()->upload([
-                        'purpose' => 'assistants',
-                        'file' => fopen($tempPath, 'r'),
-                    ]);
-    
-                    $uploadedFileIds[] = $uploaded['id'];
+            $uploadedFileIds = [];
+            $imageMessages = [];
+        
+            $inputData = $this->collectPatientData($request);
+            $criterion = auth()->user()->setting->criterion ?? 'CDC';
+            
+            if ($files && is_array($files)) {
+                foreach ($files as $file) {
+                    $originalName = $file->getClientOriginalName();
+                    $extension = strtolower($file->getClientOriginalExtension());
+                    $tempPath = storage_path('app/tmp/' . $originalName);
+        
+                    // Move file to temp path
+                    $file->move(storage_path('app/tmp'), $originalName);
+        
+                    if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])) {
+                        // Process as image for GPT-4 Vision
+                        $base64 = base64_encode(file_get_contents($tempPath));
+                        $mimeType = mime_content_type($tempPath);
+        
+                        $imageMessages[] = [
+                            "type" => "image_url",
+                            "image_url" => [
+                                "url" => "data:$mimeType;base64,$base64"
+                            ]
+                        ];
+                    } else {
+                        // Upload as file for file_search    
+                        $uploaded = OpenAI::files()->upload([
+                            'purpose' => 'assistants',
+                            'file' => fopen($tempPath, 'r'),
+                        ]);
+        
+                        $uploadedFileIds[] = $uploaded['id'];
+                    }
                 }
             }
-        }
+        
+            // GPT-4 Vision
+            if (!empty($imageMessages)) {
+                $response = OpenAI::chat()->create([
+                   'model' => 'gpt-4o-mini',
     
-        // GPT-4 Vision
-        if (!empty($imageMessages)) {
+                    'messages' => [
+                        [
+                            'role' => 'user',
+                            'content' => array_merge(
+                                [['type' => 'text', 'text' => $this->preparePrompt($inputData, $criterion, false)]],
+                                $imageMessages
+                            )
+                        ]
+                    ]
+                ]);
+                
+                $rawMessage = $response['choices'][0]['message']['content'] ?? '';
+    
+                $filteredMessage = $this->filterReponse($rawMessage);
+                
+                $this->insertTotable($request,$filteredMessage);
+                return redirect()->back()->with([
+                    'openai_result' => $filteredMessage,
+                ]);
+                
+            }
+        
+            // File Search
+            if (!empty($uploadedFileIds)) {
+                $vectorStore = OpenAI::vectorStores()->create([
+                    'file_ids' => $uploadedFileIds,
+                ]);
+                $vectorStoreId = $vectorStore['id'];
+        
+                $assistant = OpenAI::assistants()->create([
+                    'name' => 'Medical Report Analyzer',
+                    'instructions' => 'You are a helpful assistant that analyzes medical reports.',
+                    'tools' => [['type' => 'file_search']],
+                    'tool_resources' => [
+                        'file_search' => [
+                            'vector_store_ids' => [$vectorStoreId],
+                        ],
+                    ],
+                    'model' => 'gpt-4o-mini',
+                ]);
+        
+                $thread = OpenAI::threads()->create([]);
+                $threadId = $thread['id'];
+                
+                // Store thread ID in session for follow-up messages
+                session(['thread_id' => $threadId]);
+                
+                // Create a conversation ID for follow-up messages
+                $conversationId = uniqid('conv_');
+                session(['conversation_id' => $conversationId]);
+                
+                // Store the initial conversation in the session
+                $specialty = auth()->user()->setting->specialty ?? null;
+                $initialPrompt = $this->preparePrompt($inputData, $criterion, true);
+                session(['conversation_history_' . $conversationId => [
+                    ['role' => 'system', 'content' => $this->getSystemPrompt($specialty, $criterion)],
+                    ['role' => 'user', 'content' => $initialPrompt]
+                ]]);
+        
+                OpenAI::threads()->messages()->create($threadId, [
+                    'role' => 'user',
+                    'content' => $initialPrompt,
+                ]);
+        
+                $run = OpenAI::threads()->runs()->create($threadId, [
+                    'assistant_id' => $assistant['id'],
+                ]);
+                $runId = $run['id'];
+                
+    
+                return $this->checkRunStatus($request, $threadId, $runId);
+            }
+        
+            // No files provided: still try to respond based on inputData alone
             $response = OpenAI::chat()->create([
-               'model' => 'gpt-4o-mini',
-
+                'model' => 'gpt-4o-mini',
                 'messages' => [
                     [
                         'role' => 'user',
-                        'content' => array_merge(
-                            [['type' => 'text', 'text' => $this->preparePrompt($inputData, $criterion, false)]],
-                            $imageMessages
-                        )
+                        'content' => $this->preparePrompt($inputData, $criterion, false),
                     ]
                 ]
             ]);
-            
             $rawMessage = $response['choices'][0]['message']['content'] ?? '';
-
+            
             $filteredMessage = $this->filterReponse($rawMessage);
-            
-            $this->insertTotable($request,$filteredMessage);
-            return redirect()->back()->with([
-                'openai_result' => $filteredMessage,
-            ]);
-            
-        }
-    
-        // File Search
-        if (!empty($uploadedFileIds)) {
-            $vectorStore = OpenAI::vectorStores()->create([
-                'file_ids' => $uploadedFileIds,
-            ]);
-            $vectorStoreId = $vectorStore['id'];
-    
-            $assistant = OpenAI::assistants()->create([
-                'name' => 'Medical Report Analyzer',
-                'instructions' => 'You are a helpful assistant that analyzes medical reports.',
-                'tools' => [['type' => 'file_search']],
-                'tool_resources' => [
-                    'file_search' => [
-                        'vector_store_ids' => [$vectorStoreId],
-                    ],
-                ],
-                'model' => 'gpt-4o-mini',
-            ]);
-    
-            $thread = OpenAI::threads()->create([]);
-            $threadId = $thread['id'];
-            
-            // Store thread ID in session for follow-up messages
-            session(['thread_id' => $threadId]);
+            // ✅ Save to database
+            $this->insertTotable($request, $filteredMessage);
             
             // Create a conversation ID for follow-up messages
             $conversationId = uniqid('conv_');
@@ -176,59 +219,35 @@ class OpenAIController extends Controller
             
             // Store the initial conversation in the session
             $specialty = auth()->user()->setting->specialty ?? null;
-            $initialPrompt = $this->preparePrompt($inputData, $criterion, true);
             session(['conversation_history_' . $conversationId => [
                 ['role' => 'system', 'content' => $this->getSystemPrompt($specialty, $criterion)],
-                ['role' => 'user', 'content' => $initialPrompt]
+                ['role' => 'user', 'content' => $this->preparePrompt($inputData, $criterion, false)],
+                ['role' => 'assistant', 'content' => $rawMessage]
             ]]);
-    
-            OpenAI::threads()->messages()->create($threadId, [
-                'role' => 'user',
-                'content' => $initialPrompt,
-            ]);
-    
-            $run = OpenAI::threads()->runs()->create($threadId, [
-                'assistant_id' => $assistant['id'],
-            ]);
-            $runId = $run['id'];
             
-
-            return $this->checkRunStatus($request, $threadId, $runId);
+            return redirect()->back()->with([
+                'openai_result' => $filteredMessage,
+                'conversation_id' => $conversationId,
+            ]);
+        } catch (\Exception $e) {
+            // Check if it's an API key issue
+            $message = $e->getMessage();
+            if (strpos($message, 'API key') !== false || 
+                strpos($message, 'authentication') !== false || 
+                strpos($message, '401') !== false || 
+                strpos($message, 'Unauthorized') !== false) {
+                
+                // It's likely an API key issue
+                return redirect()->back()->with([
+                    'openai_api_error' => 'Your OpenAI API key appears to be invalid or expired. Please contact the administrator to update the API key.',
+                ]);
+            }
+            
+            // For other errors
+            return redirect()->back()->with([
+                'openai_error' => 'An error occurred while processing your request: ' . $e->getMessage(),
+            ]);
         }
-    
-        // No files provided: still try to respond based on inputData alone
-        $response = OpenAI::chat()->create([
-            'model' => 'gpt-4o-mini',
-            'messages' => [
-                [
-                    'role' => 'user',
-                    'content' => $this->preparePrompt($inputData, $criterion, false),
-                ]
-            ]
-        ]);
-        $rawMessage = $response['choices'][0]['message']['content'] ?? '';
-        
-        $filteredMessage = $this->filterReponse($rawMessage);
-        // ✅ Save to database
-        $this->insertTotable($request, $filteredMessage);
-        
-        // Create a conversation ID for follow-up messages
-        $conversationId = uniqid('conv_');
-        session(['conversation_id' => $conversationId]);
-        
-        // Store the initial conversation in the session
-        $specialty = auth()->user()->setting->specialty ?? null;
-        session(['conversation_history_' . $conversationId => [
-            ['role' => 'system', 'content' => $this->getSystemPrompt($specialty, $criterion)],
-            ['role' => 'user', 'content' => $this->preparePrompt($inputData, $criterion, false)],
-            ['role' => 'assistant', 'content' => $rawMessage]
-        ]]);
-        
-        return redirect()->back()->with([
-            'openai_result' => $filteredMessage,
-            'conversation_id' => $conversationId,
-        ]);
-        
     }
 
     
@@ -599,7 +618,7 @@ class OpenAIController extends Controller
             
             $patientHistoryContext
             
-            IMPORTANT: Start your response directly with 'A) POSSIBLE DIAGNOSIS:' and end with the last item in section D. Do not add any introduction before section A or any conclusion/summary after section D.
+            IMPORTANT: Start your response directly with 'A) POSSIBLE DIAGNOSIS:' and end with the Sources section. Do not add any introduction before section A.
             
             A) POSSIBLE DIAGNOSIS:
             • A list of potential diseases ranked by priority.
@@ -610,6 +629,14 @@ class OpenAIController extends Controller
             • Tips on initial treatments or procedures (if necessary).
             D) WARNING SIGNS:
             • About unnecessary procedures (to avoid over-treatment).
+            
+            Sources:
+            • Include 3-5 relevant medical sources that support your recommendations.
+            • For each source, provide the title, author(s), publication year, and journal/source name.
+            • Include the URL to the source whenever possible (e.g., PubMed link, DOI, or journal website).
+            • Focus on high-quality, peer-reviewed sources from reputable medical journals.
+            • Prioritize recent publications (within the last 5 years when possible).
+            • Include at least one source specific to the primary diagnosis.
 
             $fileSearchInstruction
 
@@ -772,6 +799,21 @@ class OpenAIController extends Controller
                 'conversation_id' => $conversationId
             ]);
         } catch (\Exception $e) {
+            // Check if it's an API key issue
+            $message = $e->getMessage();
+            if (strpos($message, 'API key') !== false || 
+                strpos($message, 'authentication') !== false || 
+                strpos($message, '401') !== false || 
+                strpos($message, 'Unauthorized') !== false) {
+                
+                // It's likely an API key issue
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your OpenAI API key appears to be invalid or expired. Please contact the administrator to update the API key.',
+                    'api_key_error' => true
+                ], 401);
+            }
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error: ' . $e->getMessage()
@@ -975,6 +1017,13 @@ class OpenAIController extends Controller
         $specialtyInstruction
         
         Respond in a concise, structured format appropriate for a medical professional. 
-        Avoid unnecessary explanations of basic medical concepts.";
+        Avoid unnecessary explanations of basic medical concepts.
+        
+        For all responses, include a 'Sources:' section at the end with 3-5 relevant medical sources that support your recommendations.
+        For each source, provide the title, author(s), publication year, and journal/source name.
+        Include the URL to the source whenever possible (e.g., PubMed link, DOI, or journal website).
+        Focus on high-quality, peer-reviewed sources from reputable medical journals.
+        Prioritize recent publications (within the last 5 years when possible).
+        Include at least one source specific to the primary diagnosis or recommendation.";
     }
 }
