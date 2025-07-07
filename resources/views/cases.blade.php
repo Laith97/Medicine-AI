@@ -520,7 +520,7 @@
                     <h5>Patient Records</h5>
                     <p class="mb-0 opacity-75">Manage and view all patient cases</p>
                 </div>
-                <a href="{{ route('ask-openai') }}" class="btn-add-patient">
+                <a href="{{ route('ask-ai') }}" class="btn-add-patient">
                     <i class="fas fa-plus me-2"></i>Add New Patient
                 </a>
             </div>
@@ -552,7 +552,8 @@
                                         data-bs-target="#responseModal" 
                                         data-record-id="{{ $recentRecord->id }}"
                                         data-patient-name="{{ $recentRecord->name }}"
-                                        data-patient-key="{{ $recentRecord->patient_key }}">
+                                        data-patient-key="{{ $recentRecord->patient_key }}"
+                                        style="background: linear-gradient(135deg, #DE6262 0%, #c55252 100%); border: none; color: white; font-weight: 500; padding: 0.25rem 0.75rem; border-radius: 15px; box-shadow: 0 2px 8px rgba(222, 98, 98, 0.3); font-size: 0.75rem;">
                                     <i class="fas fa-eye me-1"></i>View
                                 </button>
                             </div>
@@ -609,26 +610,29 @@
                                     </td>
                                     <td>
                                         <div class="btn-group">
-                                            <button class="btn btn-view-response view-response-btn"
+                                            <button class="btn view-response-btn"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#responseModal"
                                                     data-response="{{ htmlentities($record->ai_response) }}"
                                                     data-patient-name="{{ $record->name }}"
                                                     data-visit-number="{{ $record->visit_number ?? 1 }}"
                                                     data-record-id="{{ $record->id }}"
-                                                    data-patient-key="{{ $record->patient_key }}">
+                                                    data-patient-key="{{ $record->patient_key }}"
+                                                    style="background: linear-gradient(135deg, #DE6262 0%, #c55252 100%); border: none; color: white; font-weight: 500; padding: 0.5rem 1rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(222, 98, 98, 0.3); font-size: 0.85rem; margin-right: 5px;">
                                                 <i class="fas fa-eye me-1"></i>View
                                             </button>
-                                            <button class="btn btn-info patient-summary-btn"
+                                            <button class="btn patient-summary-btn"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#summaryModal"
                                                     data-patient-name="{{ $record->name }}"
                                                     data-patient-age="{{ $record->age }}"
                                                     data-patient-gender="{{ $record->gender }}"
-                                                    data-patient-key="{{ $record->patient_key }}">
+                                                    data-patient-key="{{ $record->patient_key }}"
+                                                    style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); border: none; color: white; font-weight: 500; padding: 0.5rem 1rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3); font-size: 0.85rem; margin-right: 5px;">
                                                 <i class="fas fa-history me-1"></i>Summary
                                             </button>
-                                            <a href="{{ route('ask-openai', ['edit_patient' => $record->id]) }}" class="btn btn-warning" style="color: white; font-weight: 500; padding: 0.5rem 1rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3); font-size: 0.85rem;">
+                                            <a href="{{ route('ask-ai', ['edit_patient' => $record->id]) }}" class="btn" 
+                                               style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); border: none; color: white; font-weight: 500; padding: 0.5rem 1rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3); font-size: 0.85rem;">
                                                 <i class="fas fa-edit me-1"></i>Edit
                                             </a>
                                         </div>
@@ -643,7 +647,7 @@
                         <i class="fas fa-user-md"></i>
                         <h5>No Patient Records Found</h5>
                         <p>Start building your patient database by adding your first case</p>
-                        <a href="{{ route('ask-openai') }}" class="btn-add-patient mt-3">
+                        <a href="{{ route('ask-ai') }}" class="btn-add-patient mt-3">
                             <i class="fas fa-plus me-2"></i>Add First Patient
                         </a>
                     </div>
@@ -822,21 +826,9 @@
                 order: [[6, 'desc']], // Sort by date column (index 6) by default
                 responsive: true,
                 autoWidth: false,
+                // No custom initialization needed
                 initComplete: function() {
-                    // Add a select filter for gender
-                    this.api().columns(3).every(function() {
-                        let column = this;
-                        let select = $('<select class="form-select form-select-sm ms-2"><option value="">All Genders</option></select>')
-                            .appendTo($('.dataTables_filter'))
-                            .on('change', function() {
-                                let val = $.fn.dataTable.util.escapeRegex($(this).val());
-                                column.search(val ? '^'+val+'$' : '', true, false).draw();
-                            });
-                        
-                        column.data().unique().sort().each(function(d, j) {
-                            select.append('<option value="'+d+'">'+d+'</option>');
-                        });
-                    });
+                    // Gender filter has been removed
                 }
             });
         }
@@ -852,12 +844,31 @@
             visit_number: r.visit_number
         })));
         
-        $('.view-response-btn').on('click', function () {
-            const raw = $(this).data('response') || 'No response';
-            const patientName = $(this).data('patient-name');
-            const visitNumber = $(this).data('visit-number');
-            const recordId = $(this).data('record-id');
+        // Common function to handle both Recent Patients and main table view buttons
+        function handleViewResponse(element) {
+            const raw = $(element).data('response') || '';
+            const patientName = $(element).data('patient-name');
+            const visitNumber = $(element).data('visit-number') || 1;
+            const recordId = $(element).data('record-id');
+            const patientKey = $(element).data('patient-key');
             
+            // For Recent Patients buttons, we need to get the response from the record
+            if (!raw) {
+                // Find the record by ID
+                const record = allRecords.find(r => r.id === recordId);
+                if (record && record.ai_response) {
+                    // Use the response from the record
+                    processResponse(record.ai_response, patientName, visitNumber, recordId, patientKey);
+                    return;
+                }
+            }
+            
+            // For main table buttons with response data
+            processResponse(raw, patientName, visitNumber, recordId, patientKey);
+        }
+        
+        // Process and display the response
+        function processResponse(raw, patientName, visitNumber, recordId, patientKey) {
             // Update the modal title and content
             $('#patientNameTitle').text(patientName);
             $('#visitNumber').text(visitNumber);
@@ -902,10 +913,22 @@
                 $('#sourcesCitation').hide();
             }
             
-            // Get the patient_key from the current record
-            const patientKey = $(this).data('patient-key');
-            const patientAge = parseInt($(this).closest('tr').find('td:eq(2)').text());
-            const patientGender = $(this).closest('tr').find('td:eq(3)').text().trim().toLowerCase();
+            // Get patient age and gender for history
+            let patientAge, patientGender;
+            
+            // Try to find the record in the table
+            const tableRow = $(`#recordsTable tr td:contains(${recordId})`).closest('tr');
+            if (tableRow.length) {
+                patientAge = parseInt(tableRow.find('td:eq(2)').text());
+                patientGender = tableRow.find('td:eq(3)').text().trim().toLowerCase();
+            } else {
+                // If not found in table, try to find in allRecords
+                const record = allRecords.find(r => r.id === recordId);
+                if (record) {
+                    patientAge = record.age;
+                    patientGender = record.gender;
+                }
+            }
             
             console.log('Looking for patient records with:', { patientName, patientAge, patientGender, patientKey });
             
@@ -971,7 +994,15 @@
             } else {
                 $('#patientHistorySection').hide();
             }
+        }
+        
+        // Attach event handler to both Recent Patients and main table view buttons
+        $('.view-response-btn, .btn-sm.btn-view-response').on('click', function() {
+            handleViewResponse(this);
         });
+        
+        // We've replaced the legacy handler with the unified one above
+        // No need for duplicate code here
         
         // Handle clicks on history buttons
         $(document).on('click', '.history-btn', function() {
@@ -1512,139 +1543,7 @@
             return result;
         }
         
-        /**
-         * Format sources to just show the logos of the sites
-         */
-        function formatSources(sourcesText) {
-            if (!sourcesText || sourcesText.trim() === '') {
-                return '';
-            }
-            
-            // Create a simple logo grid
-            let html = '<div class="d-flex flex-wrap justify-content-center mt-3">';
-            
-            // Add PubMed logo
-            if (sourcesText.match(/pubmed|ncbi|nlm|nih\.gov/i)) {
-                html += `
-                    <div class="m-2">
-                        <img src="https://cdn.ncbi.nlm.nih.gov/pubmed/images/pubmed-logo.png" 
-                             alt="PubMed" 
-                             title="PubMed" 
-                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
-                    </div>
-                `;
-            }
-            
-            // Add NEJM logo
-            if (sourcesText.match(/nejm|new england journal/i)) {
-                html += `
-                    <div class="m-2">
-                        <img src="https://www.nejm.org/pb-assets/images/global/social-share/NEJM-Logo-Social-Share.jpg" 
-                             alt="NEJM" 
-                             title="New England Journal of Medicine" 
-                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
-                    </div>
-                `;
-            }
-            
-            // Add JAMA logo
-            if (sourcesText.match(/jama|american medical association/i)) {
-                html += `
-                    <div class="m-2">
-                        <img src="https://jamanetwork.com/images/logos/jama-logo.svg" 
-                             alt="JAMA" 
-                             title="Journal of the American Medical Association" 
-                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
-                    </div>
-                `;
-            }
-            
-            // Add The Lancet logo
-            if (sourcesText.match(/lancet/i)) {
-                html += `
-                    <div class="m-2">
-                        <img src="https://www.thelancet.com/cms/asset/f4e2c7e5-9c1e-4d7c-b0c3-a4b8519eb0c3/lancet-logo.jpg" 
-                             alt="The Lancet" 
-                             title="The Lancet" 
-                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
-                    </div>
-                `;
-            }
-            
-            // Add BMJ logo
-            if (sourcesText.match(/bmj|british medical journal/i)) {
-                html += `
-                    <div class="m-2">
-                        <img src="https://www.bmj.com/sites/default/files/attachments/bmj-logo.jpg" 
-                             alt="BMJ" 
-                             title="British Medical Journal" 
-                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
-                    </div>
-                `;
-            }
-            
-            // Add CDC logo
-            if (sourcesText.match(/cdc|centers for disease control/i)) {
-                html += `
-                    <div class="m-2">
-                        <img src="https://www.cdc.gov/homepage/images/cdc-logo.png" 
-                             alt="CDC" 
-                             title="Centers for Disease Control and Prevention" 
-                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
-                    </div>
-                `;
-            }
-            
-            // Add WHO logo
-            if (sourcesText.match(/who|world health/i)) {
-                html += `
-                    <div class="m-2">
-                        <img src="https://www.who.int/images/default-source/default-album/who-emblem.jpg" 
-                             alt="WHO" 
-                             title="World Health Organization" 
-                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
-                    </div>
-                `;
-            }
-            
-            // Add Mayo Clinic logo
-            if (sourcesText.match(/mayo|clinic/i)) {
-                html += `
-                    <div class="m-2">
-                        <img src="https://www.mayoclinic.org/-/media/web/gbs/shared/images/socialmedia/mayo-clinic-logo-socialmedia.jpg" 
-                             alt="Mayo Clinic" 
-                             title="Mayo Clinic" 
-                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
-                    </div>
-                `;
-            }
-            
-            // Add UpToDate logo
-            if (sourcesText.match(/uptodate|wolters kluwer/i)) {
-                html += `
-                    <div class="m-2">
-                        <img src="https://www.uptodate.com/sites/default/files/styles/large/public/2022-10/UpToDate_Logo_RGB.png" 
-                             alt="UpToDate" 
-                             title="UpToDate" 
-                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
-                    </div>
-                `;
-            }
-            
-            // Always add a generic medical source logo
-            html += `
-                <div class="m-2">
-                    <img src="https://cdn-icons-png.flaticon.com/512/3022/3022339.png" 
-                         alt="Medical Source" 
-                         title="Medical Source" 
-                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
-                </div>
-            `;
-            
-            html += '</div>';
-            
-            return html;
-        }
+        // Sources section has been removed
         
         // Print functionality for response modal
         $('#printResponseBtn').on('click', function() {
@@ -1799,13 +1698,6 @@
                         <h5>AI Generated Summary</h5>
                         ${summaryContent}
                     </div>
-                    
-                    ${sourcesContent ? `
-                    <div class="sources">
-                        <h5>Sources</h5>
-                        ${sourcesContent}
-                    </div>
-                    ` : ''}
                     
                     <div class="text-center mt-4 no-print">
                         <button class="btn btn-primary" onclick="window.print()">Print</button>
