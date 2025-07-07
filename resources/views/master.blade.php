@@ -88,7 +88,7 @@
 
                 @auth
                 <!-- Quick Action Button for Emergency -->
-                <a href="{{ route('ask-openai') }}" class="btn btn-sm px-3 py-1 me-2" 
+                <a href="{{ route('ask-ai') }}" class="btn btn-sm px-3 py-1 me-2" 
                    style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; font-size: 12px;">
                     <i class="bi bi-lightning-charge me-1"></i> Quick Diagnosis
                 </a>
@@ -180,8 +180,8 @@
                                     <li class="menu-item {{ request()->routeIs('dashboard') ? 'current' : '' }}">
                                         <a class="menu-link" href="{{ route('dashboard') }}"><div>Dashboard</div></a>
                                     </li>
-                                    <li class="menu-item {{ request()->routeIs('ask-openai') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('ask-openai') }}"><div>Patients</div></a>
+                                    <li class="menu-item {{ request()->routeIs('ask-ai') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('ask-ai') }}"><div>Patients</div></a>
                                     </li>
                                     <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
                                         <a class="menu-link" href="{{ route('cases') }}"><div>Cases</div></a>
@@ -257,7 +257,7 @@
                 <ul class="list-unstyled footer-links">
                     @auth
                         <li class="mb-2"><a href="{{ route('dashboard') }}" class="text-white-50 text-decoration-none hover-link">Dashboard</a></li>
-                        <li class="mb-2"><a href="{{ route('ask-openai') }}" class="text-white-50 text-decoration-none hover-link">AI Diagnosis</a></li>
+                        <li class="mb-2"><a href="{{ route('ask-ai') }}" class="text-white-50 text-decoration-none hover-link">AI Diagnosis</a></li>
                         <li class="mb-2"><a href="{{ route('cases') }}" class="text-white-50 text-decoration-none hover-link">Case Studies</a></li>
                         <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Settings</a></li>
                     @else

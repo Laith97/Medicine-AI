@@ -258,7 +258,7 @@
 
         <!-- Quick Actions -->
         <div class="action-buttons">
-            <a href="{{ route('ask-openai') }}" class="btn-primary-custom">
+            <a href="{{ route('ask-ai') }}" class="btn-primary-custom">
                 <i class="fas fa-user-plus me-2"></i> Add New Patient
             </a>
             <a href="{{ route('cases') }}" class="btn-secondary-custom">
@@ -388,8 +388,8 @@
                                     </td>
                                     <td>{{ $record->created_at->format('M d, Y') }}</td>
                                     <td>
-                                        <a href="{{ route('cases') }}" class="btn-primary-custom btn-sm py-1 px-2">
-                                            <i class="fas fa-eye"></i>
+                                        <a href="{{ route('cases') }}" class="btn btn-view-response" style="background: linear-gradient(135deg, #DE6262 0%, #c55252 100%); border: none; color: white; font-weight: 500; padding: 0.5rem 1rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(222, 98, 98, 0.3); font-size: 0.85rem;">
+                                            <i class="fas fa-eye me-1"></i>View
                                         </a>
                                     </td>
                                 </tr>
@@ -402,7 +402,7 @@
                     <i class="fas fa-user-md"></i>
                     <h5>No cases yet</h5>
                     <p>Start by adding your first patient case</p>
-                    <a href="{{ route('ask-openai') }}" class="btn-primary-custom mt-3">
+                    <a href="{{ route('ask-ai') }}" class="btn-primary-custom mt-3">
                         <i class="fas fa-plus me-2"></i> Add First Patient
                     </a>
                 </div>

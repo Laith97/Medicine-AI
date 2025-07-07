@@ -10,7 +10,7 @@ Route::get('/', function () {
     return view('main');
 });
 Route::middleware('auth')->group(function () {
-    Route::get('/ask-openai', [OpenAIController::class, 'showForm'])->name('ask-openai');
+    Route::get('/ask-ai', [OpenAIController::class, 'showForm'])->name('ask-ai');
     Route::post('/openai/respond', [OpenAIController::class, 'getResponse'])->name('openai.respond');
     Route::post('/openai/follow-up', [OpenAIController::class, 'followUp'])->name('openai.follow-up');
     Route::post('/patient/summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient.summary');
