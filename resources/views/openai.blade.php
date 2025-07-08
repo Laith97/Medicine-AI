@@ -264,14 +264,10 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                     </div>
                 </div>
                 
-                <!-- Sources Section -->
+                <!-- Sources Section - Hidden as requested -->
                 <div id="sourcesCitation" class="mt-4" style="display: none;">
-                    <div class="d-flex align-items-center mb-3">
-                        <h6 class="mb-0 me-2"><i class="fas fa-book me-2"></i>Referenced From</h6>
-                        <hr class="flex-grow-1 ms-2">
-                    </div>
                     <div id="sourcesContent" class="sources-list">
-                        <!-- Source logos will be populated here -->
+                        <!-- Source logos will be populated here but not displayed -->
                     </div>
                 </div>
                 
@@ -465,12 +461,13 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             const formattedHTML = formatAIResponse(formattedResponse);
             document.getElementById('openaiReply').innerHTML = formattedHTML;
             
-            // Extract and display sources if they exist
+            // Sources section is hidden as requested
             const sourcesMatch = formattedResponse.match(/Sources:([\s\S]*?)(?:$|(?=\n\n\w))/i);
             if (sourcesMatch && sourcesMatch[1].trim()) {
                 const sourcesContent = sourcesMatch[1].trim();
                 document.getElementById('sourcesContent').innerHTML = formatSources(sourcesContent);
-                document.getElementById('sourcesCitation').style.display = 'block';
+                // Keep sources hidden
+                document.getElementById('sourcesCitation').style.display = 'none';
             } else {
                 document.getElementById('sourcesCitation').style.display = 'none';
             }
@@ -1081,9 +1078,8 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         if (printResponseBtn) {
             printResponseBtn.addEventListener('click', function() {
                 let responseContent = document.getElementById('openaiReply').innerHTML;
-                const sourcesElement = document.getElementById('sourcesCitation');
-                const sourcesContent = sourcesElement && sourcesElement.style.display !== 'none' ? 
-                    document.getElementById('sourcesContent').innerHTML : '';
+                // Sources are hidden as requested
+                const sourcesContent = '';
                 
                 // The content is already formatted with proper HTML, no need for additional formatting
                 
