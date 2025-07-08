@@ -692,14 +692,10 @@
                     <div class="ai-summary" style="background-color: #f8f9fa; border-radius: 15px; padding: 20px; box-shadow: 0 3px 15px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05);">
                         <div id="openaiReply" class="response-text"></div>
                         
-                        <!-- Sources Section -->
-                        <div id="sourcesCitation" class="mt-4" style="display: none;">
-                            <div class="d-flex align-items-center mb-3">
-                                <h6 class="mb-0 me-2"><i class="fas fa-book me-2"></i>Referenced From</h6>
-                                <hr class="flex-grow-1 ms-2">
-                            </div>
+                        <!-- Sources Section - Hidden as requested -->
+                        <div id="sourcesCitation" style="display: none;">
                             <div id="sourcesContent" class="sources-list">
-                                <!-- Source logos will be populated here -->
+                                <!-- Source logos will be populated here but not displayed -->
                             </div>
                         </div>
                     </div>
@@ -903,12 +899,13 @@
             
             $('#openaiReply').html(formattedResponse);
             
-            // Extract and display sources if they exist
+            // Sources section is hidden as requested
             const sourcesMatch = decodedResponse.match(/Sources:([\s\S]*?)(?:$|(?=\n\n\w))/i);
             if (sourcesMatch && sourcesMatch[1].trim()) {
                 const sourcesContent = sourcesMatch[1].trim();
                 $('#sourcesContent').html(formatSources(sourcesContent));
-                $('#sourcesCitation').show();
+                // Keep sources hidden
+                $('#sourcesCitation').hide();
             } else {
                 $('#sourcesCitation').hide();
             }
@@ -1550,7 +1547,7 @@
             const patientName = $('#patientNameTitle').text();
             const visitNumber = $('#visitNumber').text();
             let responseContent = $('#openaiReply').html();
-            const sourcesContent = $('#sourcesCitation').is(':visible') ? $('#sourcesContent').html() : '';
+            const sourcesContent = ''; // Sources are hidden as requested
             
             // Improve formatting for print by adding spacing between sections
             responseContent = responseContent
