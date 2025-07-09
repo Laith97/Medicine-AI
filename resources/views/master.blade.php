@@ -162,7 +162,7 @@
 						============================================= -->
 						<div id="logo">
 							<a href="{{ url('/') }}">
-								<img class="logo-default" srcset="demos/medical/images/logo-medical.jpeg, demos/medical/images/logo-medical@2x.png 2x" src="demos/medical/images/logo-medical@2x.jpeg" alt="Canvas Logo">
+								<img class="logo-default" srcset="demos/medical/images/logo-medical.jpeg, demos/medical/images/logo-medical@2x.png 2x" src="demos/medical/images/logo-medical.jpeg" alt="Canvas Logo">
 							</a>
 						</div><!-- #logo end -->
 
