@@ -81,7 +81,7 @@
                     <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
                 </div>
                 <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
-                <div><i class="bi bi-envelope me-1"></i> <a href="info@medcuraai.com" class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
+                <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com" class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
             </div>
 
             <!-- Right Side: Auth + Quick Actions -->
