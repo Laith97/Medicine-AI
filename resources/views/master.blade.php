@@ -163,7 +163,7 @@
 						============================================= -->
 						<div id="logo">
 							<a href="{{ url('/') }}">
-								<img class="logo-default" srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x" src="{{ asset('demos/medical/images/logo-medical.jpeg') }}" alt="Canvas Logo">
+								<img style="width: 140px" class="logo-default" srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x" src="{{ asset('demos/medical/images/logo-medical.jpeg') }}" alt="Canvas Logo">
 							</a>
 						</div><!-- #logo end -->
 
