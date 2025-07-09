@@ -59,6 +59,7 @@
     <link rel="stylesheet" href="{{ asset('css/swiper.css') }}">
     <link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
     @stack('styles')
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Medical Demo | Canvas')</title>
@@ -162,7 +163,7 @@
 						============================================= -->
 						<div id="logo">
 							<a href="{{ url('/') }}">
-								<img class="logo-default" srcset="demos/medical/images/logo-medical.jpeg, demos/medical/images/logo-medical@2x.png 2x" src="demos/medical/images/logo-medical.jpeg" alt="Canvas Logo">
+								<img class="logo-default" srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical@2x.png') }} 2x" src="{{ asset('demos/medical/images/logo-medical.jpeg') }}" alt="Canvas Logo">
 							</a>
 						</div><!-- #logo end -->
 

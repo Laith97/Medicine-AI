@@ -1,0 +1,24 @@
+/* Logo fixes for mobile devices */
+@media (max-width: 767.98px) {
+    #logo {
+        display: block !important;
+        margin: 0 auto !important;
+        text-align: center !important;
+    }
+    
+    #logo a {
+        display: inline-block !important;
+    }
+    
+    #logo img.logo-default {
+        max-height: 40px !important;
+        width: auto !important;
+        display: block !important;
+    }
+    
+    /* Fix for logo in header */
+    #header-wrap #logo img {
+        height: auto !important;
+        max-height: 40px !important;
+    }
+}
