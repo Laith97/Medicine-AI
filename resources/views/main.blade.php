@@ -343,7 +343,7 @@
                 <div class="testimonial-card">
                     <div class="mb-4">
                        <!-- <img src="https://via.placeholder.com/80x80/DE6262/FFFFFF?text=SA" alt="Dr. Sarah Ahmed" class="rounded-circle mb-3" width="80" height="80">-->
-                        <h5 class="mb-1">Dr. Sarah Ahmed</h5>
+                        <h5 class="mb-1">Dr. Saif Al-Zawahrah</h5>
                         <small class="text-muted">Internal Medicine</small>
                     </div>
                     <p class="text-muted">This AI system has revolutionized my practice. The accuracy and speed of diagnosis have improved patient outcomes significantly.</p>

@@ -80,7 +80,7 @@
                     <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
                 </div>
                 <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
-                <div><i class="bi bi-envelope me-1"></i> <a href="mailto:support@aimedical.com" class="text-decoration-none text-white-50">support@aimedical.com</a></div>
+                <div><i class="bi bi-envelope me-1"></i> <a href="info@medcuraai.com" class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
             </div>
 
             <!-- Right Side: Auth + Quick Actions -->
@@ -162,7 +162,7 @@
 						============================================= -->
 						<div id="logo">
 							<a href="{{ url('/') }}">
-								<img class="logo-default" srcset="demos/medical/images/logo-medical.png, demos/medical/images/logo-medical@2x.png 2x" src="demos/medical/images/logo-medical@2x.png" alt="Canvas Logo">
+								<img class="logo-default" srcset="demos/medical/images/logo-medical.jpeg, demos/medical/images/logo-medical@2x.png 2x" src="demos/medical/images/logo-medical@2x.jpeg" alt="Canvas Logo">
 							</a>
 						</div><!-- #logo end -->
 
@@ -292,7 +292,7 @@
                         </div>
                         <div>
                             <small class="text-white-50 d-block">Email Support</small>
-                            <a href="mailto:support@aimedical.com" class="text-white text-decoration-none">support@aimedical.com</a>
+                            <a href="info@medcuraai.com" class="text-white text-decoration-none">info@medcuraai.com</a>
                         </div>
                     </div>
                     

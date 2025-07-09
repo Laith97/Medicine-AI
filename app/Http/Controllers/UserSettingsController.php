@@ -39,7 +39,7 @@ class UserSettingsController extends Controller
     }
 
     public function about(){
-        $aboutTitle = 'About Choose Wisely for Doctors';
+        $aboutTitle = 'About MedCure AI for Doctors';
         $aboutTagline = 'Empowering doctors to make evidence-based decisions.';
         $features = [
             [
@@ -61,7 +61,7 @@ class UserSettingsController extends Controller
             ],
         ];
         $whatWeDoTitle = 'What We Do';
-        $whatWeDoDescription = 'Choose Wisely for Doctors provides a platform for clinicians to access, share, and discuss best practices, reducing unnecessary procedures and improving patient care.';
+        $whatWeDoDescription = 'MedCure AI for Doctors provides a platform for clinicians to access, share, and discuss best practices, reducing unnecessary procedures and improving patient care.';
         $whatWeDoFeatures = [
             [
                 'icon' => 'icon-medical-i-womens-health',

@@ -10,7 +10,7 @@
         <div class="page-title-row">
             <div class="page-title-content">
                 <div class="emphasis-title dark mb-0">
-                    <span class="before-heading text-white fst-italic">support@choosewisely.com</span>
+                    <span class="before-heading text-white fst-italic">info@medcuraai.com</span>
                     <h2 class="fw-bold ls-0 text-white">+1-555-AI-DIAGNOSIS</h2>
                 </div>
                 <a href="https://maps.google.com/maps?q=Silicon+Valley,+CA,+United+States" data-lightbox="iframe">
