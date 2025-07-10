@@ -72,11 +72,11 @@
                                     Remember me
                                 </label>
                             </div>
-                         <!--   @if (Route::has('password.request'))
+                            @if (Route::has('password.request'))
                                 <a href="{{ route('password.request') }}" class="auth-link">
                                     Forgot password?
                                 </a>
-                            @endif-->
+                            @endif
                         </div>
 
                         <!-- Login Button -->

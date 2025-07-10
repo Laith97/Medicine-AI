@@ -11,14 +11,10 @@
             <div class="page-title-content">
                 <div class="emphasis-title dark mb-0">
                     <span class="before-heading text-white fst-italic">info@medcuraai.com</span>
-                    <h2 class="fw-bold ls-0 text-white">+1-555-AI-DIAGNOSIS</h2>
+                    <h2 class="fw-bold ls-0 text-white">Contact Us</h2>
                 </div>
-                <a href="https://maps.google.com/maps?q=Silicon+Valley,+CA,+United+States" data-lightbox="iframe">
-                    <i class="bi-map i-large i-plain dark mx-auto"></i>
-                </a>
                 <span class="fw-semibold ls-1 text-uppercase" style="color: #EEE;">
-                    Silicon Valley Innovation Center<br>
-                    Palo Alto, CA 94301
+                    We're here to help with your medical AI needs
                 </span>
             </div>
         </div>

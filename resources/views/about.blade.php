@@ -155,7 +155,7 @@
                 <div class="core-principles p-4 rounded shadow-sm bg-white mt-4">
                     <div class="heading-block mb-3 border-bottom-0">
                         <h4 class="fw-bold mb-2"><i class="icon-line-heart me-2" style="color: #DE6262;"></i>Core Principles</h4>
-                        <span class="text-muted">What drives MedCure AI for Doctors</span>
+                        <span class="text-muted">What drives MedCura AI for Doctors</span>
                     </div>
                     <ul class="list-unstyled mb-0">
                         <li class="mb-2"><i class="icon-line-check text-success me-2"></i> Evidence-based practice</li>
