@@ -40,4 +40,17 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 
-// Test route for admin functionality
+// Test route for password reset
+Route::get('/test-password-reset', function () {
+    try {
+        // Use the actual password reset functionality
+        $status = \Illuminate\Support\Facades\Password::sendResetLink(['email' => 'test@example.com']);
+        
+        \Log::info('Password reset status: ' . $status);
+        
+        return 'Password reset link sent. Check the logs for details.';
+    } catch (\Exception $e) {
+        \Log::error('Error sending password reset link: ' . $e->getMessage());
+        return 'Error sending password reset link: ' . $e->getMessage();
+    }
+});
