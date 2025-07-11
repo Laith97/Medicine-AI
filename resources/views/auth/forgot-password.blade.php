@@ -96,7 +96,7 @@
 }
 
 .auth-title {
-    color: #2c3e50;
+    color: #fff;
     font-weight: 700;
     font-size: 2rem;
     margin-bottom: 0.5rem;

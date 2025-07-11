@@ -3,12 +3,11 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Lang;
 
-class ResetPasswordNotification extends Notification implements ShouldQueue
+class ResetPasswordNotification extends Notification
 {
     use Queueable;
 
@@ -48,16 +47,16 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
      */
     public function toMail($notifiable)
     {
+        $email = $notifiable->email;
+        
         $url = url(route('password.reset', [
             'token' => $this->token,
-            'email' => $notifiable->getEmailForPasswordReset(),
+            'email' => $email,
         ], false));
 
-        // Log the reset URL for debugging
-        \Log::info('Password reset URL: ' . $url);
-
+        // Use the custom email template
         return (new MailMessage)
-            ->subject(Lang::get('Reset Password Notification'))
+            ->subject('Reset Your MedCura AI Password')
             ->view('emails.reset-password', ['url' => $url]);
     }
 
