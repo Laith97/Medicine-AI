@@ -106,6 +106,103 @@
                             @enderror
                         </div>
 
+                        <!-- Medical Specialty Field -->
+                        <div class="form-group mb-3">
+                            <label for="specialty" class="form-label">
+                                <i class="bi bi-heart-pulse me-2"></i>Medical Specialty <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-control auth-input @error('specialty') is-invalid @enderror" name="specialty" id="specialty" required>
+                                <option value="">-- Select Your Specialty --</option>
+                                
+                                <optgroup label="🧠 General & Internal Medicine">
+                                    <option value="General Practitioner">General Practitioner (GP) / Family Medicine</option>
+                                    <option value="Internal Medicine">Internal Medicine (Internist)</option>
+                                </optgroup>
+                                
+                                <optgroup label="🩺 Internal Medicine Subspecialties">
+                                    <option value="Cardiology">Cardiology (Heart)</option>
+                                    <option value="Pulmonology">Pulmonology (Lungs)</option>
+                                    <option value="Gastroenterology">Gastroenterology (Digestive system)</option>
+                                    <option value="Nephrology">Nephrology (Kidneys)</option>
+                                    <option value="Endocrinology">Endocrinology (Hormones & glands)</option>
+                                    <option value="Hematology">Hematology (Blood)</option>
+                                    <option value="Hematology-Oncology">Hematology-Oncology (Blood cancers)</option>
+                                    <option value="Rheumatology">Rheumatology (Joints & autoimmune diseases)</option>
+                                    <option value="Infectious Disease">Infectious Disease</option>
+                                    <option value="Dermatology">Dermatology (Skin, hair, nails)</option>
+                                    <option value="Allergy & Immunology">Allergy & Immunology</option>
+                                    <option value="Reproductive Endocrinology">Reproductive Endocrinology (Fertility hormones)</option>
+                                </optgroup>
+                                
+                                <optgroup label="🧠 Emergency & Critical Care">
+                                    <option value="Emergency Medicine">Emergency Medicine</option>
+                                    <option value="Critical Care">Critical Care / Intensive Care Medicine</option>
+                                </optgroup>
+                                
+                                <optgroup label="💉 Anesthesia & Pain Management">
+                                    <option value="Anesthesiology">Anesthesiology</option>
+                                    <option value="Pain Management">Pain Management / Interventional Pain Medicine</option>
+                                </optgroup>
+                                
+                                <optgroup label="🧠 Neurology & Psychiatry">
+                                    <option value="Neurology">Neurology (Brain & nerves)</option>
+                                    <option value="Neurosurgery">Neurosurgery (Brain & spine surgery)</option>
+                                    <option value="Psychiatry">Psychiatry (Mental health)</option>
+                                    <option value="Child & Adolescent Psychiatry">Child & Adolescent Psychiatry</option>
+                                    <option value="Behavioral & Developmental Pediatrics">Behavioral & Developmental Pediatrics</option>
+                                </optgroup>
+                                
+                                <optgroup label="🦴 Surgical Specialties">
+                                    <option value="General Surgery">General Surgery</option>
+                                    <option value="Orthopedic Surgery">Orthopedic Surgery (Bones & joints)</option>
+                                    <option value="Cardiothoracic Surgery">Cardiothoracic Surgery (Heart & lungs)</option>
+                                    <option value="Vascular Surgery">Vascular Surgery (Blood vessels)</option>
+                                    <option value="Pediatric Vascular Surgery">Pediatric Vascular Surgery</option>
+                                    <option value="Plastic & Reconstructive Surgery">Plastic & Reconstructive Surgery</option>
+                                    <option value="Oral & Maxillofacial Surgery">Oral & Maxillofacial Surgery</option>
+                                    <option value="Surgical Oncology">Surgical Oncology (Cancer surgery)</option>
+                                    <option value="Colorectal Surgery">Colorectal Surgery</option>
+                                    <option value="Urology">Urology (Urinary & male reproductive system)</option>
+                                    <option value="ENT">ENT / Otolaryngology (Ear, Nose, Throat)</option>
+                                    <option value="Ophthalmic Surgery">Ophthalmic Surgery (Eye surgery)</option>
+                                    <option value="Pediatric Surgery">Pediatric Surgery</option>
+                                    <option value="Hand Surgery">Hand Surgery</option>
+                                </optgroup>
+                                
+                                <optgroup label="👶 Pediatrics & Women's Health">
+                                    <option value="Pediatrics">Pediatrics</option>
+                                    <option value="Neonatology">Neonatology (Newborn care)</option>
+                                    <option value="Pediatric Behavioral Medicine">Pediatric Behavioral Medicine</option>
+                                    <option value="Obstetrics & Gynecology">Obstetrics & Gynecology (OB/GYN)</option>
+                                    <option value="Gynecologic Oncology">Gynecologic Oncology</option>
+                                    <option value="Reproductive Endocrinology & Infertility">Reproductive Endocrinology & Infertility</option>
+                                    <option value="Maternal–Fetal Medicine">Maternal–Fetal Medicine</option>
+                                </optgroup>
+                                
+                                <optgroup label="🧬 Diagnostic & Support Specialties">
+                                    <option value="Pathology">Pathology (Laboratory medicine)</option>
+                                    <option value="Radiology">Radiology (Medical imaging)</option>
+                                    <option value="Interventional Radiology">Interventional Radiology</option>
+                                    <option value="Nuclear Medicine">Nuclear Medicine</option>
+                                    <option value="Endoscopy">Endoscopy / GI Endoscopy</option>
+                                    <option value="Electrodiagnostic Medicine">Electrodiagnostic Medicine (EMG, EEG)</option>
+                                </optgroup>
+                                
+                                <optgroup label="🏥 Other Medical Specialties">
+                                    <option value="Oncology">Oncology (Medical cancer care)</option>
+                                    <option value="Hepatology">Hepatology (Liver diseases)</option>
+                                    <option value="Genetic Hematology">Genetic Hematology</option>
+                                    <option value="Geriatrics">Geriatrics (Elderly care)</option>
+                                    <option value="Physical Medicine & Rehabilitation">Physical Medicine & Rehabilitation</option>
+                                    <option value="Occupational & Environmental Medicine">Occupational & Environmental Medicine</option>
+                                    <option value="Sports Medicine">Sports Medicine</option>
+                                </optgroup>
+                            </select>
+                            @error('specialty')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         <!-- Terms Agreement -->
                         <div class="form-check mb-4">
                             <input class="form-check-input" type="checkbox" id="terms" required>
@@ -200,6 +297,12 @@
     border-color: #DE6262;
     box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.25);
     background: white;
+}
+
+select.form-control.auth-input {
+    -webkit-appearance: menulist;
+    -moz-appearance: menulist;
+    appearance: menulist;
 }
 
 .password-input-wrapper {
