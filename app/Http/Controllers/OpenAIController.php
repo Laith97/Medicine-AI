@@ -96,6 +96,7 @@ class OpenAIController extends Controller
                     // Move file to temp path
                     $file->move(storage_path('app/tmp'), $originalName);
         
+                    // Check if it's an image file
                     if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])) {
                         // Process as image for GPT-4 Vision
                         $base64 = base64_encode(file_get_contents($tempPath));
@@ -108,27 +109,94 @@ class OpenAIController extends Controller
                             ]
                         ];
                     } else {
-                        // Upload as file for file_search    
-                        $uploaded = OpenAI::files()->upload([
-                            'purpose' => 'assistants',
-                            'file' => fopen($tempPath, 'r'),
-                        ]);
-        
-                        $uploadedFileIds[] = $uploaded['id'];
+                        try {
+                            // Try to upload any other file type for file_search
+                            $uploaded = OpenAI::files()->upload([
+                                'purpose' => 'assistants',
+                                'file' => fopen($tempPath, 'r'),
+                            ]);
+            
+                            $uploadedFileIds[] = $uploaded['id'];
+                        } catch (\Exception $e) {
+                            // If the file type is not supported by OpenAI, log the error
+                            \Log::warning("File type not supported by OpenAI: {$originalName}. Error: {$e->getMessage()}");
+                            
+                            // For unsupported file types, we'll try to extract text if possible
+                            $fileContent = $this->tryExtractTextFromFile($tempPath, $extension);
+                            
+                            if (!empty($fileContent)) {
+                                // Log the successful extraction
+                                \Log::info("Successfully extracted text from file: {$originalName}. Length: " . strlen($fileContent));
+                                
+                                // Create a temporary text file with the extracted content
+                                $textFilePath = storage_path('app/tmp/extracted_' . pathinfo($originalName, PATHINFO_FILENAME) . '.txt');
+                                file_put_contents($textFilePath, $fileContent);
+                                
+                                try {
+                                    // Upload the text file instead
+                                    $uploaded = OpenAI::files()->upload([
+                                        'purpose' => 'assistants',
+                                        'file' => fopen($textFilePath, 'r'),
+                                    ]);
+                                    
+                                    $uploadedFileIds[] = $uploaded['id'];
+                                    \Log::info("Successfully uploaded extracted text as file: {$uploaded['id']}");
+                                } catch (\Exception $e2) {
+                                    \Log::error("Failed to upload extracted text file: {$e2->getMessage()}");
+                                    
+                                    // If we can't upload the file, add the content directly to the prompt
+                                    // This is a fallback for when file upload fails
+                                    $fileExtractedContent = "Content from {$originalName}:\n\n" . $fileContent;
+                                    
+                                    // Add the extracted content to the image messages if it's not too long
+                                    if (strlen($fileExtractedContent) < 4000) {
+                                        $imageMessages[] = [
+                                            "type" => "text",
+                                            "text" => $fileExtractedContent
+                                        ];
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         
             // GPT-4 Vision
             if (!empty($imageMessages)) {
+                // Create a system message that instructs the model to analyze all images
+                $specialty = auth()->user()->setting->specialty ?? 'medicine';
+                $systemMessage = "You are an expert medical assistant specialized in {$specialty}. 
+                    You have extensive training in analyzing medical images and documents.
+                    
+                    IMPORTANT INSTRUCTIONS:
+                    1. Begin your response with a 'PATIENT INFORMATION' section that includes:
+                       - Basic patient details from the input data
+                       - A subsection called 'MEDICAL REPORTS ANALYSIS' with a concise summary of all uploaded images
+                    
+                    2. For each image in the MEDICAL REPORTS ANALYSIS:
+                       - Identify and describe what the image shows (brain scan, x-ray, ultrasound, etc.)
+                       - Identify any visible abnormalities, lesions, or notable findings
+                       - Extract any text visible in the images (lab values, measurements, annotations)
+                       - Keep descriptions concise even if there are many images
+                    
+                    3. After the PATIENT INFORMATION section, proceed with your diagnosis sections (A, B, C, D)
+                    
+                    DO NOT say you cannot analyze the image. If you can see the image at all, provide your best medical analysis.
+                    If the image is unclear, still describe what you can see and provide possible interpretations.";
+                
                 $response = OpenAI::chat()->create([
-                   'model' => 'gpt-4o-mini',
+                   'model' => 'gpt-4o',
     
                     'messages' => [
                         [
+                            'role' => 'system',
+                            'content' => $systemMessage
+                        ],
+                        [
                             'role' => 'user',
                             'content' => array_merge(
-                                [['type' => 'text', 'text' => $this->preparePrompt($inputData, $criterion, false)]],
+                                [['type' => 'text', 'text' => "I'm uploading " . count($imageMessages) . " medical image(s) for analysis. Please analyze these images thoroughly from an " . $specialty . " perspective. " . $this->preparePrompt($inputData, $criterion, false)]],
                                 $imageMessages
                             )
                         ]
@@ -153,16 +221,38 @@ class OpenAIController extends Controller
                 ]);
                 $vectorStoreId = $vectorStore['id'];
         
+                $specialty = auth()->user()->setting->specialty ?? 'Internal Medicine';
+                
                 $assistant = OpenAI::assistants()->create([
-                    'name' => 'Medical Report Analyzer',
-                    'instructions' => 'You are a helpful assistant that analyzes medical reports.',
+                    'name' => 'Medical Document Analyzer',
+                    'instructions' => "You are an expert medical assistant specialized in {$specialty}. Your task is to thoroughly analyze ALL uploaded medical documents to extract relevant clinical information.
+                    
+                    IMPORTANT INSTRUCTIONS:
+                    1. Begin your response with a 'PATIENT INFORMATION' section that includes:
+                       - Basic patient details from the input data
+                       - A subsection called 'MEDICAL REPORTS ANALYSIS' with a concise summary of all uploaded files
+                    
+                    2. For the MEDICAL REPORTS ANALYSIS:
+                       - Keep it concise even if there are many files (10+)
+                       - Group similar files together and summarize key findings
+                       - For images: Brief description and key findings
+                       - For text documents: Key medical information and relevance
+                    
+                    3. Examine EACH file thoroughly and extract ALL medical information:
+                       - For medical documents: Extract symptoms, diagnoses, test results, and treatments
+                       - For text documents about medical conditions: Summarize key information and connect to the patient's case
+                       - For images: Describe what they show and identify any abnormalities
+                    
+                    4. After the PATIENT INFORMATION section, proceed with your diagnosis sections (A, B, C, D)
+                    
+                    DO NOT say you cannot analyze the files. If you can access the file content at all, provide your best medical analysis based on what you can see.",
                     'tools' => [['type' => 'file_search']],
                     'tool_resources' => [
                         'file_search' => [
                             'vector_store_ids' => [$vectorStoreId],
                         ],
                     ],
-                    'model' => 'gpt-4o-mini',
+                    'model' => 'gpt-4o',
                 ]);
         
                 $thread = OpenAI::threads()->create([]);
@@ -183,9 +273,22 @@ class OpenAIController extends Controller
                     ['role' => 'user', 'content' => $initialPrompt]
                 ]]);
         
+                // Create a more detailed prompt that specifically mentions the files
+                $fileNames = [];
+                foreach ($files as $file) {
+                    $fileNames[] = $file->getClientOriginalName();
+                }
+                
+                $fileListText = "I've uploaded the following files for analysis:\n";
+                foreach ($fileNames as $index => $name) {
+                    $fileListText .= ($index + 1) . ". " . $name . "\n";
+                }
+                
+                $enhancedPrompt = $fileListText . "\n" . $initialPrompt . "\n\nPlease analyze ALL these files thoroughly from your {$specialty} perspective. Don't skip any files, and make sure to extract all relevant medical information.";
+                
                 OpenAI::threads()->messages()->create($threadId, [
                     'role' => 'user',
-                    'content' => $initialPrompt,
+                    'content' => $enhancedPrompt,
                 ]);
         
                 $run = OpenAI::threads()->runs()->create($threadId, [
@@ -255,16 +358,58 @@ class OpenAIController extends Controller
     
     public function checkRunStatus($request, $threadId, $runId)
     {
-        $maxAttempts = 20;
-        $delayMicroseconds = 500000; // 0.5 seconds
+        $maxAttempts = 30; // Increase max attempts
+        $delayMicroseconds = 1000000; // 1 second
+        
+        \Log::info("Checking run status for thread: $threadId, run: $runId");
     
         for ($i = 0; $i < $maxAttempts; $i++) {
             $runStatus = OpenAI::threads()->runs()->retrieve($threadId, $runId);
+            \Log::info("Run status: " . $runStatus['status'] . " (attempt $i)");
 
             if ($runStatus['status'] === 'completed') {
-                $messages = OpenAI::threads()->messages()->list($threadId);
-    
-                $lastMessage = $messages['data'][0]['content'][0]['text']['value'] ?? 'No content available';
+                // Get all messages from the thread
+                $messages = OpenAI::threads()->messages()->list($threadId, [
+                    'limit' => 10, // Get more messages to ensure we have the complete response
+                    'order' => 'desc' // Get newest first
+                ]);
+                
+                // Log the number of messages received
+                \Log::info("Retrieved " . count($messages['data']) . " messages from thread");
+                
+                // Get the assistant's response (should be the first message)
+                $assistantMessage = null;
+                foreach ($messages['data'] as $message) {
+                    if ($message['role'] === 'assistant') {
+                        $assistantMessage = $message;
+                        break;
+                    }
+                }
+                
+                if (!$assistantMessage) {
+                    \Log::error("No assistant message found in thread: $threadId");
+                    return redirect()->back()->with([
+                        'openai_error' => 'No response was generated. Please try again.',
+                    ]);
+                }
+                
+                // Combine all content parts (text, images, etc.)
+                $fullContent = '';
+                foreach ($assistantMessage['content'] as $contentPart) {
+                    if ($contentPart['type'] === 'text') {
+                        $fullContent .= $contentPart['text']['value'] . "\n\n";
+                    }
+                }
+                
+                $lastMessage = trim($fullContent);
+                \Log::info("Response length: " . strlen($lastMessage) . " characters");
+                
+                if (empty($lastMessage)) {
+                    \Log::error("Empty response from assistant in thread: $threadId");
+                    return redirect()->back()->with([
+                        'openai_error' => 'The response was empty. Please try again.',
+                    ]);
+                }
                 
                 $lastMessage = $this->filterReponse($lastMessage);
                 
@@ -287,13 +432,23 @@ class OpenAIController extends Controller
                     'openai_result' => $lastMessage,
                     'conversation_id' => $conversationId,
                 ]);
+            } else if ($runStatus['status'] === 'failed') {
+                \Log::error("Run failed: " . json_encode($runStatus));
+                return redirect()->back()->with([
+                    'openai_error' => 'The analysis failed. Error: ' . ($runStatus['last_error']['message'] ?? 'Unknown error'),
+                ]);
+            } else if ($runStatus['status'] === 'requires_action') {
+                \Log::info("Run requires action: " . json_encode($runStatus['required_action']));
+                // Handle required actions (like function calls)
+                // For now, we'll just continue waiting
             }
     
-            usleep($delayMicroseconds); // more responsive than sleep()
+            usleep($delayMicroseconds);
         }
     
+        \Log::warning("Run timed out after $maxAttempts attempts");
         return redirect()->back()->with([
-            'openai_error' => 'The analysis is still in progress. Please try again later.',
+            'openai_error' => 'The analysis is taking longer than expected. Please check back in a few minutes.',
         ]);
     }
     
@@ -389,7 +544,12 @@ class OpenAIController extends Controller
      */
     private function removePatientInfoSection($text)
     {
-        // Check if the text contains a Patient Information section
+        // Skip this function if the text contains our new PATIENT INFORMATION format
+        if (preg_match('/PATIENT\s+INFORMATION:[\s\S]*?MEDICAL\s+REPORTS\s+ANALYSIS/i', $text)) {
+            return $text;
+        }
+        
+        // Check if the text contains an old Patient Information section
         if (preg_match('/Patient Information:[\s\S]*?---/i', $text, $matches)) {
             // Remove the entire section including the separator line
             $text = str_replace($matches[0], '', $text);
@@ -412,8 +572,14 @@ class OpenAIController extends Controller
     
     private function filterReponse($lastMessage)
     {
-        // Remove Patient Information section
-        $lastMessage = $this->removePatientInfoSection($lastMessage);
+        // Extract the PATIENT INFORMATION section with MEDICAL REPORTS ANALYSIS
+        $patientInfoPattern = '/PATIENT\s+INFORMATION:[\s\S]*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS:)/i';
+        $patientInfoContent = '';
+        
+        if (preg_match($patientInfoPattern, $lastMessage, $matches)) {
+            $patientInfoContent = $matches[0];
+            // Don't remove it yet, we'll add it back later
+        }
         
         // Remove markdown bold and italic (**bold**, *italic*)
         $lastMessage = preg_replace('/\*\*(.*?)\*\*/', '$1', $lastMessage);
@@ -452,17 +618,128 @@ class OpenAIController extends Controller
         $pattern = '/A\)\s*POSSIBLE\s*DIAGNOSIS:?/i';
         if (preg_match($pattern, $lastMessage, $match, PREG_OFFSET_CAPTURE)) {
             $startPos = $match[0][1];
-            $lastMessage = substr($lastMessage, $startPos);
+            $diagnosisPart = substr($lastMessage, $startPos);
             
-            // If we found Current Symptoms, add it back at the beginning
-            if (!empty($currentSymptoms)) {
-                $lastMessage = $currentSymptoms . "\n\n" . $lastMessage;
+            // Construct the final message with PATIENT INFORMATION at the beginning
+            $finalMessage = '';
+            
+            // Add patient information section if we found it
+            if (!empty($patientInfoContent)) {
+                $finalMessage .= trim($patientInfoContent) . "\n\n";
             }
+            
+            // If we found Current Symptoms, add it after patient info
+            if (!empty($currentSymptoms)) {
+                $finalMessage .= trim($currentSymptoms) . "\n\n";
+            }
+            
+            // Add the diagnosis part
+            $finalMessage .= $diagnosisPart;
+            
+            $lastMessage = $finalMessage;
         }
     
         // Final trim
         return trim($lastMessage);
     }
+    /**
+     * Try to extract text from various file types
+     * 
+     * @param string $filePath Path to the file
+     * @param string $extension File extension
+     * @return string Extracted text or empty string if extraction failed
+     */
+    private function tryExtractTextFromFile($filePath, $extension)
+    {
+        try {
+            // For PDF files, use the PDF parser
+            if (strtolower($extension) === 'pdf') {
+                $parser = new \Smalot\PdfParser\Parser();
+                $pdf = $parser->parseFile($filePath);
+                return $pdf->getText();
+            }
+            
+            // For Office documents (.docx, .xlsx, .pptx)
+            if (in_array(strtolower($extension), ['docx', 'xlsx', 'pptx'])) {
+                // Try to use PhpOffice if available
+                if (class_exists('\\PhpOffice\\PhpWord\\IOFactory') && $extension === 'docx') {
+                    $phpWord = \PhpOffice\PhpWord\IOFactory::load($filePath);
+                    $text = '';
+                    foreach ($phpWord->getSections() as $section) {
+                        foreach ($section->getElements() as $element) {
+                            if (method_exists($element, 'getText')) {
+                                $text .= $element->getText() . "\n";
+                            }
+                        }
+                    }
+                    return $text;
+                }
+            }
+            
+            // For OpenDocument formats (.odt, .ods, .odp)
+            if (in_array(strtolower($extension), ['odt', 'ods', 'odp'])) {
+                // Try to extract as ZIP and read content.xml
+                $zip = new \ZipArchive();
+                if ($zip->open($filePath) === true) {
+                    if (($index = $zip->locateName('content.xml')) !== false) {
+                        $content = $zip->getFromIndex($index);
+                        $zip->close();
+                        
+                        // Better XML extraction for OpenDocument
+                        $text = '';
+                        
+                        // Remove XML namespaces to simplify parsing
+                        $content = preg_replace('/<[a-z0-9]+:[^>]+>/i', '', $content);
+                        $content = preg_replace('/<\/[a-z0-9]+:[^>]+>/i', '', $content);
+                        
+                        // Extract text content
+                        if (preg_match_all('/<text:p[^>]*>(.*?)<\/text:p>/s', $content, $matches)) {
+                            foreach ($matches[1] as $paragraph) {
+                                $text .= strip_tags($paragraph) . "\n";
+                            }
+                        }
+                        
+                        // If the above didn't work, fall back to simple stripping
+                        if (empty(trim($text))) {
+                            $text = strip_tags($content);
+                        }
+                        
+                        return $text;
+                    }
+                    $zip->close();
+                }
+                
+                // If the ZIP extraction failed, try to use external tools if available
+                if (function_exists('exec')) {
+                    // Try using LibreOffice to convert to text if available
+                    $outputPath = storage_path('app/tmp/extracted_' . pathinfo($filePath, PATHINFO_FILENAME) . '.txt');
+                    @exec("libreoffice --headless --convert-to txt:Text --outdir " . storage_path('app/tmp') . " " . escapeshellarg($filePath) . " 2>/dev/null", $output, $returnVar);
+                    
+                    if ($returnVar === 0 && file_exists($outputPath)) {
+                        return file_get_contents($outputPath);
+                    }
+                }
+            }
+            
+            // For plain text files
+            if (in_array(strtolower($extension), ['txt', 'csv', 'json', 'xml', 'html', 'htm', 'md', 'rtf'])) {
+                return file_get_contents($filePath);
+            }
+            
+            // For other file types, try to read as text if the file is not too large
+            if (filesize($filePath) < 1024 * 1024 * 5) { // 5MB limit
+                $content = file_get_contents($filePath);
+                if (mb_detect_encoding($content, 'UTF-8, ISO-8859-1', true)) {
+                    return $content;
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error("Error extracting text from file: " . $e->getMessage());
+        }
+        
+        return '';
+    }
+    
     private function insertTotable($request, $aiResponse){
         // Check if we're editing an existing patient
         if ($request->edit_patient_id) {
@@ -574,7 +851,20 @@ class OpenAIController extends Controller
     private function preparePrompt($inputData, $criterion, $useFileSearch = false)
     {
         $fileSearchInstruction = $useFileSearch
-            ? "Additionally, search through the provided files to gather any relevant information supporting the diagnosis or recommendations."
+            ? "CRITICAL INSTRUCTION: Thoroughly analyze ALL uploaded files before responding. 
+            
+            Add a 'PATIENT INFORMATION' section at the beginning of your response that includes:
+            
+            PATIENT INFORMATION:
+            • Basic patient details from the input data
+            • MEDICAL REPORTS ANALYSIS: A concise summary of all uploaded files
+              - For images: Brief description and key findings
+              - For text documents: Key medical information and relevance
+            
+            Keep this section concise even if there are many files (10+). Group similar files together and summarize.
+            
+            Your diagnosis and recommendations MUST be based primarily on the content of the uploaded files.
+            DO NOT provide a generic response - your analysis should directly reference specific findings from the uploaded files."
             : "";
             
         // Get the user's specialty
@@ -613,20 +903,34 @@ class OpenAIController extends Controller
             ";
         }
 
-        return "Based on the provided symptoms and test results and considering the evaluation criteria from the selected source ($criterion), provide the following sections ONLY, with NO introduction and NO conclusion:
+        return "Based on the provided information and considering the evaluation criteria from the selected source ($criterion), provide the following sections ONLY, with NO introduction and NO conclusion:
+            
+            $fileSearchInstruction
+            
             $specialtyInstruction
             
             $patientHistoryContext
             
-            IMPORTANT: Start your response directly with 'A) POSSIBLE DIAGNOSIS:' and end with the Sources section. Do not add any introduction before section A.
+            IMPORTANT: Your analysis MUST be based on the content of the uploaded files. Begin with a PATIENT INFORMATION section that includes a MEDICAL REPORTS ANALYSIS subsection.
+            
+            RESPONSE FORMAT:
+            
+            PATIENT INFORMATION:
+            • Basic patient details (name, age, gender)
+            • MEDICAL REPORTS ANALYSIS: A concise summary of all uploaded files
+              - For images: Brief description and key findings
+              - For text documents: Key medical information and relevance
             
             A) POSSIBLE DIAGNOSIS:
-            • A list of potential diseases ranked by priority.
+            • A list of potential diseases ranked by priority based on the file analysis.
             • Display probability percentages (e.g., 70% viral infection, 20% bacterial).
+            
             B) RECOMMENDATIONS FOR TESTS OR IMAGING:
             • A list of tests or procedures that can help confirm the diagnosis.
+            
             C) TREATMENT RECOMMENDATIONS:
             • Tips on initial treatments or procedures (if necessary).
+            
             D) WARNING SIGNS:
             • About unnecessary procedures (to avoid over-treatment).
             
@@ -637,8 +941,6 @@ class OpenAIController extends Controller
             • Focus on high-quality, peer-reviewed sources from reputable medical journals.
             • Prioritize recent publications (within the last 5 years when possible).
             • Include at least one source specific to the primary diagnosis.
-
-            $fileSearchInstruction
 
             Here is the input data: " . json_encode($inputData);
     }
@@ -1015,6 +1317,19 @@ class OpenAIController extends Controller
         return "You are a medical AI assistant providing help to healthcare professionals. 
         Based on the evaluation criteria from $criterion, provide precise clinical assessments.
         $specialtyInstruction
+        
+        IMPORTANT INSTRUCTIONS FOR ANALYZING UPLOADED FILES:
+        1. Begin your response with a 'PATIENT INFORMATION' section that includes:
+           - Basic patient details from the input data
+           - A subsection called 'MEDICAL REPORTS ANALYSIS' with a concise summary of all uploaded files
+        
+        2. For the MEDICAL REPORTS ANALYSIS:
+           - Keep it concise even if there are many files (10+)
+           - Group similar files together and summarize key findings
+           - For images: Brief description and key findings
+           - For text documents: Key medical information and relevance
+        
+        3. After the PATIENT INFORMATION section, proceed with your diagnosis sections (A, B, C, D)
         
         Respond in a concise, structured format appropriate for a medical professional. 
         Avoid unnecessary explanations of basic medical concepts.

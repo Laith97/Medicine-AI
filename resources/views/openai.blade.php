@@ -12,6 +12,75 @@
 <!-- Include Choices.js JavaScript -->
 <script src="https://cdn.jsdelivr.net/npm/choices.js@9.0.1/public/assets/scripts/choices.min.js"></script>
 
+<style>
+    .file-upload-wrapper {
+        position: relative;
+    }
+    
+    #selected-files {
+        margin-top: 10px;
+    }
+    
+    .selected-file {
+        display: flex;
+        align-items: center;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        padding: 6px 10px;
+        margin-bottom: 5px;
+        font-size: 0.85rem;
+    }
+    
+    .selected-file .file-icon {
+        margin-right: 8px;
+        color: #DE6262;
+    }
+    
+    .selected-file .file-name {
+        flex-grow: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .selected-file .file-remove {
+        cursor: pointer;
+        color: #6c757d;
+        margin-left: 8px;
+    }
+    
+    .selected-file .file-remove:hover {
+        color: #dc3545;
+    }
+    
+    .file-size {
+        color: #6c757d;
+        font-size: 0.75rem;
+        margin-left: 8px;
+    }
+    
+    .selected-file .file-remove {
+        opacity: 0.7;
+        transition: all 0.2s;
+    }
+    
+    .selected-file .file-remove:hover {
+        opacity: 1;
+        color: #dc3545;
+        transform: scale(1.2);
+    }
+    
+    .selected-files-list {
+        max-height: 200px;
+        overflow-y: auto;
+        padding-right: 5px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        padding: 8px;
+    }
+</style>
+
         <div class="container medical-form-container ">
             <form id="openaiForm" action="{{ url('/openai/respond') }}" method="POST" enctype="multipart/form-data">
                 @csrf
@@ -66,10 +135,22 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Upload Medical Reports:</label>
-                                <input type="file" id="reports" name="reports[]" multiple class="form-control">
+                                <div class="file-upload-wrapper">
+                                    <div class="input-group">
+                                        <input type="file" id="reports" name="reports[]" multiple class="form-control" accept="*/*">
+                                        <button class="btn btn-outline-secondary" type="button" id="add-more-files-btn" data-bs-toggle="tooltip" title="Add more files">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        <button class="btn btn-outline-secondary" type="button" id="file-info-btn" data-bs-toggle="tooltip" title="Upload instructions">
+                                            <i class="fas fa-question-circle"></i>
+                                        </button>
+                                    </div>
+                                    <div id="selected-files" class="mt-2"></div>
+                                    <div id="file-storage-container" style="display: none;"></div>
+                                </div>
                                 <div id="upload-status" class="mt-2"></div>
-                                <small class="form-text text-muted mt-1">
-                                    <i class="fas fa-file-medical"></i> Supported formats: JPG, PNG, PDF (max 10MB each)
+                                <small class="text-muted d-block mt-1">
+                                    <i class="fas fa-info-circle me-1"></i> Upload any file type. Click <i class="fas fa-plus"></i> to add more files.
                                 </small>
                             </div>
                         </div>
@@ -434,7 +515,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             // Get the AI response and display it immediately (no typing animation)
             const aiResponse = @json(session('openai_result'));
             
-            // Format the response to remove markdown symbols and unwanted sections
+            // Format the response to remove markdown symbols and preserve important sections
             let formattedResponse = aiResponse
                 // Remove markdown formatting
                 .replace(/#{1,6}\s/g, '')  // Remove heading markers
@@ -442,20 +523,38 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                 .replace(/\*/g, '')        // Remove italic markers
                 .replace(/- /g, '• ')      // Replace dashes with bullets
                 
-                // Remove introduction and conclusion sections
-                .replace(/^Based on the provided.*?guidelines,.*?\n\n/s, '')  // Remove intro
-                .replace(/^As a.*?specialist:.*?\n\n/s, '')                  // Remove specialty intro
-                .replace(/^.*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS)/s, '')          // Remove everything before section A
-                .replace(/^.*?(?=A\)\s*DIAGNOS[IE]S)/s, '')                  // Alternative section A format
-                .replace(/\n\nConclusion:.*$/s, '')                          // Remove conclusion
-                .replace(/\n\nNote:.*$/s, '')                                // Remove notes at the end
-                .replace(/^Note:.*\n\n/s, '')                                // Remove notes at the beginning
-                .replace(/\n\nIn summary.*$/s, '')                           // Remove summary
-                .replace(/\n\nSummary.*$/s, '')
+                // Extract PATIENT INFORMATION section if it exists
+                let patientInfoSection = '';
+                const patientInfoMatch = aiResponse.match(/PATIENT\s+INFORMATION:[\s\S]*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS:)/i);
+                if (patientInfoMatch) {
+                    patientInfoSection = patientInfoMatch[0];
+                }
+                
+                // Remove introduction and conclusion sections, but preserve PATIENT INFORMATION
+                let processedResponse = aiResponse
+                    .replace(/^Based on the provided.*?guidelines,.*?\n\n/s, '')  // Remove intro
+                    .replace(/^As a.*?specialist:.*?\n\n/s, '')                  // Remove specialty intro
+                    .replace(/\n\nConclusion:.*$/s, '')                          // Remove conclusion
+                    .replace(/\n\nNote:.*$/s, '')                                // Remove notes at the end
+                    .replace(/^Note:.*\n\n/s, '')                                // Remove notes at the beginning
+                    .replace(/\n\nIn summary.*$/s, '')                           // Remove summary
+                    .replace(/\n\nSummary.*$/s, '');
+                
+                // Extract the diagnosis part (everything from A) POSSIBLE DIAGNOSIS onwards)
+                const diagnosisMatch = processedResponse.match(/A\)\s*POSSIBLE\s*DIAGNOSIS:[\s\S]*$/i);
+                const diagnosisPart = diagnosisMatch ? diagnosisMatch[0] : processedResponse;
+                
+                // Combine the sections in the right order
+                formattedResponse = '';
+                if (patientInfoSection) {
+                    formattedResponse += patientInfoSection + "\n\n";
+                }
+                formattedResponse += diagnosisPart;
                 
                 // Clean up any remaining formatting issues
-                .replace(/\n{3,}/g, '\n\n')                                  // Replace multiple newlines with double newlines
-                .trim();                                                     // Remove leading/trailing whitespace
+                formattedResponse = formattedResponse
+                    .replace(/\n{3,}/g, '\n\n')  // Replace multiple newlines with double newlines
+                    .trim();                      // Remove leading/trailing whitespace
                 
             // Format the response with proper HTML formatting
             const formattedHTML = formatAIResponse(formattedResponse);
@@ -796,8 +895,10 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         }
         
         // First, enhance the main section headers to make them more prominent
-        // This will convert A) POSSIBLE DIAGNOSIS: etc. to proper h4 headers
+        // This will convert PATIENT INFORMATION, A) POSSIBLE DIAGNOSIS: etc. to proper headers
         const enhancedText = cleanedText
+            .replace(/^(PATIENT\s+INFORMATION:.*$)/gm, '<h4 class="mt-4 section-patient-info" style="color: #6c5ce7; border-left: 4px solid #6c5ce7; padding: 8px 0 8px 15px; background-color: rgba(108, 92, 231, 0.05); border-radius: 0 5px 5px 0;">$1</h4>')
+            .replace(/^(MEDICAL\s+REPORTS\s+ANALYSIS:.*$)/gm, '<h5 class="mt-3 section-reports" style="color: #6c5ce7; margin-left: 15px; border-left: 2px solid #6c5ce7; padding: 5px 0 5px 10px;">$1</h5>')
             .replace(/^(A\)\s*POSSIBLE\s*DIAGNOSIS:.*$)/gm, '<h4 class="mt-4 section-diagnosis">$1</h4>')
             .replace(/^(B\)\s*RECOMMENDATIONS\s*FOR\s*TESTS\s*OR\s*IMAGING:.*$)/gm, '<h4 class="mt-4 section-recommendations">$1</h4>')
             .replace(/^(C\)\s*TREATMENT\s*RECOMMENDATIONS:.*$)/gm, '<h4 class="mt-4 section-treatment">$1</h4>')
@@ -925,6 +1026,12 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         formatted = formatted.replace(/<\/h[1-6]>/g, '$&<div style="height: 10px;"></div>');
         
         // Enhance the styling of the main sections
+        formatted = formatted.replace(/<h4 class="mt-4 section-patient-info">/g, 
+            '<h4 class="mt-4 section-patient-info" style="color: #6c5ce7; border-left: 4px solid #6c5ce7; padding: 8px 0 8px 15px; background-color: rgba(108, 92, 231, 0.05); border-radius: 0 5px 5px 0;">');
+            
+        formatted = formatted.replace(/<h5 class="mt-3 section-reports">/g, 
+            '<h5 class="mt-3 section-reports" style="color: #6c5ce7; margin-left: 15px; border-left: 2px solid #6c5ce7; padding: 5px 0 5px 10px; background-color: rgba(108, 92, 231, 0.03); border-radius: 0 5px 5px 0;">');
+            
         formatted = formatted.replace(/<h4 class="mt-4 section-diagnosis">/g, 
             '<h4 class="mt-4 section-diagnosis" style="color: #DE6262; border-left: 4px solid #DE6262; padding: 8px 0 8px 15px; background-color: rgba(222, 98, 98, 0.05); border-radius: 0 5px 5px 0;">');
             
@@ -1290,4 +1397,349 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             }
         });
     </script>
+
+<!-- File Upload Handler Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('reports');
+        const selectedFilesContainer = document.getElementById('selected-files');
+        const fileStorageContainer = document.getElementById('file-storage-container');
+        const uploadStatus = document.getElementById('upload-status');
+        const addMoreFilesBtn = document.getElementById('add-more-files-btn');
+        
+        // Store all selected files
+        let selectedFiles;
+        let selectedFilesArray = []; // Fallback for browsers without DataTransfer support
+        
+        // Check if DataTransfer is supported
+        const isDataTransferSupported = (function() {
+            try {
+                return !!new DataTransfer();
+            } catch (e) {
+                return false;
+            }
+        })();
+        
+        if (isDataTransferSupported) {
+            selectedFiles = new DataTransfer();
+            console.log('Using DataTransfer API for file handling');
+        } else {
+            console.log('DataTransfer API not supported, using fallback');
+        }
+        
+        // Initialize tooltip
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Handle file info button click
+        const fileInfoBtn = document.getElementById('file-info-btn');
+        if (fileInfoBtn) {
+            fileInfoBtn.addEventListener('click', function() {
+                // Create modal for file upload instructions
+                const modalHtml = `
+                    <div class="modal fade" id="fileUploadInfoModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">File Upload Instructions</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <h6><i class="fas fa-info-circle text-primary me-2"></i>How to Add Multiple Files</h6>
+                                        <p>You can add files in two ways:</p>
+                                        <ul class="list-group list-group-flush mb-3">
+                                            <li class="list-group-item">
+                                                <strong>Method 1:</strong> Select multiple files at once
+                                                <ul class="mt-2">
+                                                    <li><strong>Windows:</strong> Hold <kbd>Ctrl</kbd> and click each file</li>
+                                                    <li><strong>Mac:</strong> Hold <kbd>⌘ Command</kbd> and click each file</li>
+                                                </ul>
+                                            </li>
+                                            <li class="list-group-item">
+                                                <strong>Method 2:</strong> Add files incrementally
+                                                <ul class="mt-2">
+                                                    <li>Select one or more files</li>
+                                                    <li>Click the <i class="fas fa-plus"></i> button to add more files</li>
+                                                    <li>Repeat as needed to add different file types</li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <h6><i class="fas fa-file-medical text-danger me-2"></i>Supported File Types</h6>
+                                        <ul class="list-group list-group-flush">
+                                            <li class="list-group-item"><strong>Images:</strong> JPG, JPEG, PNG, GIF, BMP, WEBP</li>
+                                            <li class="list-group-item"><strong>Documents:</strong> PDF, DOCX, DOC, TXT, RTF</li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-robot me-2"></i> The AI will analyze <strong>all uploaded files together</strong> to provide a comprehensive analysis.
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add modal to body if it doesn't exist
+                if (!document.getElementById('fileUploadInfoModal')) {
+                    const modalContainer = document.createElement('div');
+                    modalContainer.innerHTML = modalHtml;
+                    document.body.appendChild(modalContainer);
+                }
+                
+                // Show the modal
+                const modal = new bootstrap.Modal(document.getElementById('fileUploadInfoModal'));
+                modal.show();
+            });
+        }
+        
+        // Function to get all selected files
+        function getSelectedFiles() {
+            if (isDataTransferSupported) {
+                return selectedFiles.files;
+            } else {
+                return selectedFilesArray;
+            }
+        }
+        
+        // Function to get the count of selected files
+        function getSelectedFilesCount() {
+            if (isDataTransferSupported) {
+                return selectedFiles.files.length;
+            } else {
+                return selectedFilesArray.length;
+            }
+        }
+        
+        // Function to update the file list display
+        function updateFileListDisplay() {
+            selectedFilesContainer.innerHTML = '';
+            
+            const files = getSelectedFiles();
+            const filesCount = getSelectedFilesCount();
+            
+            if (filesCount > 0) {
+                // Create a simple header for selected files
+                const header = document.createElement('div');
+                header.className = 'mb-2 text-muted';
+                header.innerHTML = `<small>${filesCount} file(s) selected</small>`;
+                selectedFilesContainer.appendChild(header);
+                
+                // Check total size
+                let totalSize = 0;
+                for (let i = 0; i < filesCount; i++) {
+                    totalSize += files[i].size;
+                }
+                
+                // Display warning if total size is large
+                if (totalSize > 20 * 1024 * 1024) { // 20MB
+                    const warning = document.createElement('div');
+                    warning.className = 'alert alert-warning py-1 px-2 mb-2';
+                    warning.innerHTML = '<small><i class="fas fa-exclamation-triangle"></i> Large files may take longer to process</small>';
+                    selectedFilesContainer.appendChild(warning);
+                }
+                
+                // Create a container for file items
+                const fileList = document.createElement('div');
+                fileList.className = 'selected-files-list';
+                
+                // Function to create file item element
+                function createFileItem(file, index) {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'selected-file';
+                    
+                    // Determine file type and icon
+                    let fileIcon = 'fa-file';
+                    
+                    // Get file extension
+                    const fileExt = file.name.split('.').pop().toLowerCase();
+                    
+                    // Set icon based on file type
+                    if (file.type.match(/image\/.*/)) {
+                        fileIcon = 'fa-file-image';
+                    } else if (file.type === 'application/pdf' || fileExt === 'pdf') {
+                        fileIcon = 'fa-file-pdf';
+                    } else if (file.type.match(/.*word.*/) || ['doc', 'docx'].includes(fileExt)) {
+                        fileIcon = 'fa-file-word';
+                    } else if (file.type === 'text/plain' || fileExt === 'txt') {
+                        fileIcon = 'fa-file-lines';
+                    } else if (['xls', 'xlsx', 'csv'].includes(fileExt)) {
+                        fileIcon = 'fa-file-excel';
+                    } else if (['ppt', 'pptx'].includes(fileExt)) {
+                        fileIcon = 'fa-file-powerpoint';
+                    } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(fileExt)) {
+                        fileIcon = 'fa-file-archive';
+                    } else if (['mp3', 'wav', 'ogg'].includes(fileExt)) {
+                        fileIcon = 'fa-file-audio';
+                    } else if (['mp4', 'avi', 'mov', 'wmv'].includes(fileExt)) {
+                        fileIcon = 'fa-file-video';
+                    } else if (['html', 'htm', 'xml', 'json', 'js', 'css', 'php'].includes(fileExt)) {
+                        fileIcon = 'fa-file-code';
+                    }
+                    
+                    // Format file size
+                    const fileSize = file.size < 1024 * 1024 
+                        ? Math.round(file.size / 1024) + ' KB' 
+                        : Math.round(file.size / (1024 * 1024) * 10) / 10 + ' MB';
+                    
+                    // Create file item HTML
+                    fileItem.innerHTML = `
+                        <i class="fas ${fileIcon} file-icon"></i>
+                        <span class="file-name">${file.name}</span>
+                        <span class="file-size">${fileSize}</span>
+                        <span class="file-remove" data-index="${index}"><i class="fas fa-times"></i></span>
+                    `;
+                    
+                    // Add event listener to remove button
+                    const removeBtn = fileItem.querySelector('.file-remove');
+                    removeBtn.addEventListener('click', function() {
+                        const fileIndex = parseInt(this.getAttribute('data-index'));
+                        removeFile(fileIndex);
+                    });
+                    
+                    return fileItem;
+                }
+                
+                // Add all files to the list
+                Array.from(files).forEach((file, index) => {
+                    fileList.appendChild(createFileItem(file, index));
+                });
+                
+                selectedFilesContainer.appendChild(fileList);
+                
+                // Add a clear all button
+                const clearAllBtn = document.createElement('button');
+                clearAllBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
+                clearAllBtn.innerHTML = '<i class="fas fa-times me-1"></i> Clear';
+                clearAllBtn.addEventListener('click', function() {
+                    if (isDataTransferSupported) {
+                        selectedFiles = new DataTransfer();
+                        fileInput.files = selectedFiles.files;
+                    } else {
+                        selectedFilesArray = [];
+                        fileInput.value = '';
+                    }
+                    updateFileListDisplay();
+                });
+                selectedFilesContainer.appendChild(clearAllBtn);
+            } else {
+                selectedFilesContainer.innerHTML = '<div class="text-muted"><small><i class="fas fa-info-circle"></i> No files selected</small></div>';
+            }
+        }
+        
+        // Function to remove a file by index
+        function removeFile(index) {
+            if (isDataTransferSupported) {
+                const newFiles = new DataTransfer();
+                
+                Array.from(selectedFiles.files)
+                    .filter((_, i) => i !== index)
+                    .forEach(file => newFiles.items.add(file));
+                
+                selectedFiles = newFiles;
+                fileInput.files = selectedFiles.files;
+            } else {
+                selectedFilesArray = selectedFilesArray.filter((_, i) => i !== index);
+                
+                // We can't update the file input directly in this case
+                // The user will need to reselect files if they want to submit
+                if (selectedFilesArray.length === 0) {
+                    fileInput.value = '';
+                }
+            }
+            updateFileListDisplay();
+        }
+        
+        // Handle file input change
+        if (fileInput && selectedFilesContainer) {
+            fileInput.addEventListener('change', function() {
+                // Add newly selected files to our collection
+                if (this.files.length > 0) {
+                    if (isDataTransferSupported) {
+                        Array.from(this.files).forEach(file => {
+                            // Check if file with same name already exists
+                            const fileExists = Array.from(selectedFiles.files).some(f => f.name === file.name);
+                            if (!fileExists) {
+                                selectedFiles.items.add(file);
+                            }
+                        });
+                        
+                        // Update the file input with all files
+                        fileInput.files = selectedFiles.files;
+                    } else {
+                        // For browsers without DataTransfer support
+                        // We'll store the files in our array and display them
+                        // But we can't modify the file input directly
+                        Array.from(this.files).forEach(file => {
+                            // Check if file with same name already exists
+                            const fileExists = selectedFilesArray.some(f => f.name === file.name);
+                            if (!fileExists) {
+                                selectedFilesArray.push(file);
+                            }
+                        });
+                        
+                        // Show a warning for browsers without DataTransfer support
+                        if (!document.getElementById('dataTransferWarning')) {
+                            const warning = document.createElement('div');
+                            warning.id = 'dataTransferWarning';
+                            warning.className = 'alert alert-warning py-1 px-2 mt-2';
+                            warning.innerHTML = '<small><i class="fas fa-exclamation-triangle"></i> Your browser has limited support for file uploads. For best results, use Chrome, Edge, or Firefox.</small>';
+                            fileStorageContainer.parentNode.insertBefore(warning, fileStorageContainer);
+                        }
+                    }
+                    
+                    updateFileListDisplay();
+                }
+            });
+            
+            // Add "Add More Files" button handler
+            if (addMoreFilesBtn) {
+                addMoreFilesBtn.addEventListener('click', function() {
+                    // Reset the file input to allow selecting the same file again
+                    fileInput.value = '';
+                    fileInput.click();
+                });
+            }
+            
+            // Add form submit handler to show upload status
+            const form = document.getElementById('openaiForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const filesCount = getSelectedFilesCount();
+                    
+                    if (filesCount > 0) {
+                        // For browsers without DataTransfer support, we need to handle this differently
+                        if (!isDataTransferSupported && selectedFilesArray.length > 0) {
+                            // If the current file input doesn't match our stored files, we need to warn the user
+                            if (fileInput.files.length !== selectedFilesArray.length) {
+                                e.preventDefault();
+                                alert('Please reselect all files before submitting. Your browser requires selecting all files at once.');
+                                return;
+                            }
+                        }
+                        
+                        // Show loading indicator
+                        document.getElementById('page-loader').style.display = 'flex';
+                        
+                        // Update status
+                        uploadStatus.innerHTML = `
+                            <div class="alert alert-info py-1 px-2">
+                                <small><i class="fas fa-spinner fa-spin"></i> Uploading and analyzing ${filesCount} file(s)...</small>
+                            </div>
+                        `;
+                    }
+                });
+            }
+        }
+    });
+</script>
     @endsection
