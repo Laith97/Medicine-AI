@@ -153,4 +153,38 @@ class AdminController extends Controller
 
         return view('admin.dashboard', compact('stats', 'recentUsers'));
     }
+    
+    /**
+     * Display patient analyses for a specific user.
+     */
+    public function userPatientAnalyses(User $user)
+    {
+        $patientAnalyses = $user->patientAnalyses()
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+            
+        // Group patients by patient_key to count visits
+        $patientGroups = [];
+        $patientVisits = [];
+        
+        foreach ($user->patientAnalyses as $record) {
+            // If patient_key is not set, use the name-age-gender combination
+            $key = $record->patient_key ?? ($record->name . '-' . $record->age . '-' . $record->gender);
+            
+            if (!isset($patientGroups[$key])) {
+                $patientGroups[$key] = $record; // Store the most recent record
+                $patientVisits[$key] = ['count' => 0, 'patient' => $record];
+            }
+            
+            $patientVisits[$key]['count']++;
+        }
+        
+        // Add visit count to each record
+        foreach ($patientAnalyses as $analysis) {
+            $key = $analysis->patient_key ?? ($analysis->name . '-' . $analysis->age . '-' . $analysis->gender);
+            $analysis->total_visits = $patientVisits[$key]['count'] ?? 1;
+        }
+        
+        return view('admin.users.patient-analyses', compact('user', 'patientAnalyses'));
+    }
 }

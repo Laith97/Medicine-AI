@@ -166,21 +166,34 @@ class OpenAIController extends Controller
             if (!empty($imageMessages)) {
                 // Create a system message that instructs the model to analyze all images
                 $specialty = auth()->user()->setting->specialty ?? 'medicine';
-                $systemMessage = "You are an expert medical assistant specialized in {$specialty}. 
+                $systemMessage = "You are a senior consultant physician specialized in {$specialty} with 20+ years of clinical experience. 
                     You have extensive training in analyzing medical images and documents.
                     
+                    CRITICAL CLINICAL APPROACH:
+                    1. ALWAYS prioritize life-threatening conditions first in your differential diagnosis
+                    2. Assign specific probability percentages to each diagnosis (e.g., 70%, 25%, 5%)
+                    3. Provide clear clinical reasoning for each diagnosis
+                    4. Use proper medical terminology throughout your assessment
+                    5. Be specific and detailed in your recommendations
+                    6. NEVER be vague or overly reassuring about serious symptoms
+                    7. Flag cases as ROUTINE, URGENT, or EMERGENCY based on clinical presentation
+                    8. Include specific medication recommendations when appropriate
+                    9. Recommend specialist referrals when indicated
+                    
                     IMPORTANT INSTRUCTIONS:
-                    1. Begin your response with a 'PATIENT INFORMATION' section that includes:
+                    1. Begin your response with a 'CASE URGENCY' classification (ROUTINE/URGENT/EMERGENCY)
+                    
+                    2. Then provide a 'PATIENT INFORMATION' section that includes:
                        - Basic patient details from the input data
                        - A subsection called 'MEDICAL REPORTS ANALYSIS' with a concise summary of all uploaded images
                     
-                    2. For each image in the MEDICAL REPORTS ANALYSIS:
+                    3. For each image in the MEDICAL REPORTS ANALYSIS:
                        - Identify and describe what the image shows (brain scan, x-ray, ultrasound, etc.)
                        - Identify any visible abnormalities, lesions, or notable findings
                        - Extract any text visible in the images (lab values, measurements, annotations)
                        - Keep descriptions concise even if there are many images
                     
-                    3. After the PATIENT INFORMATION section, proceed with your diagnosis sections (A, B, C, D)
+                    4. After the PATIENT INFORMATION section, proceed with your diagnosis sections (A, B, C, D)
                     
                     DO NOT say you cannot analyze the image. If you can see the image at all, provide your best medical analysis.
                     If the image is unclear, still describe what you can see and provide possible interpretations.";
@@ -225,25 +238,39 @@ class OpenAIController extends Controller
                 
                 $assistant = OpenAI::assistants()->create([
                     'name' => 'Medical Document Analyzer',
-                    'instructions' => "You are an expert medical assistant specialized in {$specialty}. Your task is to thoroughly analyze ALL uploaded medical documents to extract relevant clinical information.
+                    'instructions' => "You are a senior consultant physician specialized in {$specialty} with 20+ years of clinical experience. Your task is to thoroughly analyze ALL uploaded medical documents to extract relevant clinical information.
+                    
+                    CRITICAL CLINICAL APPROACH:
+                    1. ALWAYS prioritize life-threatening conditions first in your differential diagnosis
+                    2. Assign specific probability percentages to each diagnosis (e.g., 70%, 25%, 5%)
+                    3. Provide clear clinical reasoning for each diagnosis
+                    4. Use proper medical terminology throughout your assessment
+                    5. Be specific and detailed in your recommendations
+                    6. NEVER be vague or overly reassuring about serious symptoms
+                    7. Flag cases as ROUTINE, URGENT, or EMERGENCY based on clinical presentation
+                    8. Include specific medication recommendations when appropriate
+                    9. Recommend specialist referrals when indicated
                     
                     IMPORTANT INSTRUCTIONS:
-                    1. Begin your response with a 'PATIENT INFORMATION' section that includes:
+                    1. Begin your response with a 'CASE URGENCY' classification (ROUTINE/URGENT/EMERGENCY)
+                    
+                    2. Then provide a 'PATIENT INFORMATION' section that includes:
                        - Basic patient details from the input data
+                       - Vital signs assessment (if provided)
                        - A subsection called 'MEDICAL REPORTS ANALYSIS' with a concise summary of all uploaded files
                     
-                    2. For the MEDICAL REPORTS ANALYSIS:
+                    3. For the MEDICAL REPORTS ANALYSIS:
                        - Keep it concise even if there are many files (10+)
                        - Group similar files together and summarize key findings
                        - For images: Brief description and key findings
                        - For text documents: Key medical information and relevance
                     
-                    3. Examine EACH file thoroughly and extract ALL medical information:
+                    4. Examine EACH file thoroughly and extract ALL medical information:
                        - For medical documents: Extract symptoms, diagnoses, test results, and treatments
                        - For text documents about medical conditions: Summarize key information and connect to the patient's case
                        - For images: Describe what they show and identify any abnormalities
                     
-                    4. After the PATIENT INFORMATION section, proceed with your diagnosis sections (A, B, C, D)
+                    5. After the PATIENT INFORMATION section, proceed with your diagnosis sections (A, B, C, D)
                     
                     DO NOT say you cannot analyze the files. If you can access the file content at all, provide your best medical analysis based on what you can see.",
                     'tools' => [['type' => 'file_search']],
@@ -481,17 +508,70 @@ class OpenAIController extends Controller
                 // Get previous medical history from past visits
                 $previousMedicalHistory = '';
                 if ($visitCount > 0) {
-                    $previousMedicalHistory = "Patient has " . $visitCount . " previous visit(s). ";
+                    $previousMedicalHistory = "PATIENT HISTORY SUMMARY:\n";
+                    $previousMedicalHistory .= "Total previous visits: " . $visitCount . "\n\n";
                     
-                    // Get the previous diagnoses
-                    $previousDiagnoses = $patientHistory->take(3)->map(function($record) {
+                    // Get the previous visits with more detailed information
+                    $previousVisits = $patientHistory->sortByDesc('created_at')->take(3)->map(function($record, $index) {
                         $date = $record->created_at->format('M d, Y');
-                        return "Visit on $date: " . substr($record->ai_response, 0, 150) . "...";
+                        $visitNum = $record->visit_number ?? ($index + 1);
+                        
+                        $visitSummary = "VISIT #$visitNum ($date):\n";
+                        
+                        // Add vital signs if available
+                        $vitalSigns = [];
+                        if ($record->temperature) $vitalSigns[] = "Temperature: " . $record->temperature;
+                        if ($record->blood_pressure) $vitalSigns[] = "BP: " . $record->blood_pressure;
+                        if ($record->blood_sugar) $vitalSigns[] = "Blood Sugar: " . $record->blood_sugar;
+                        if ($record->weight) $vitalSigns[] = "Weight: " . $record->weight;
+                        if ($record->height) $vitalSigns[] = "Height: " . $record->height;
+                        
+                        if (!empty($vitalSigns)) {
+                            $visitSummary .= "Vitals: " . implode(", ", $vitalSigns) . "\n";
+                        }
+                        
+                        // Add symptoms
+                        if ($record->symptoms) {
+                            $symptoms = is_string($record->symptoms) ? json_decode($record->symptoms, true) : $record->symptoms;
+                            
+                            // If symptoms are numeric IDs, try to get the actual symptom names
+                            if (is_array($symptoms) && !empty($symptoms) && is_numeric($symptoms[0])) {
+                                $processedSymptoms = $this->processSymptoms($symptoms);
+                                $symptomsText = implode(", ", $processedSymptoms);
+                            } else {
+                                $symptomsText = is_array($symptoms) ? implode(", ", $symptoms) : $symptoms;
+                            }
+                            
+                            $visitSummary .= "Symptoms: $symptomsText\n";
+                        }
+                        
+                        // Add test results if available
+                        if ($record->test_results) {
+                            $visitSummary .= "Test Results: " . $record->test_results . "\n";
+                        }
+                        
+                        // Extract diagnoses from AI response
+                        if ($record->ai_response) {
+                            // Try to extract differential diagnosis
+                            if (preg_match('/(?:A\)\s*POSSIBLE\s*DIAGNOSIS|A\)\s*DIFFERENTIAL\s*DIAGNOSIS)[\s\S]*?(?=B\)|$)/i', $record->ai_response, $matches)) {
+                                $diagnosis = trim(strip_tags($matches[0]));
+                                $visitSummary .= "Diagnosis: " . str_replace("\n", " ", $diagnosis) . "\n";
+                            }
+                            
+                            // Try to extract treatment recommendations
+                            if (preg_match('/(?:C\)\s*TREATMENT\s*RECOMMENDATIONS|C\)\s*MANAGEMENT\s*RECOMMENDATIONS)[\s\S]*?(?=D\)|$)/i', $record->ai_response, $matches)) {
+                                $treatment = trim(strip_tags($matches[0]));
+                                $visitSummary .= "Treatment: " . str_replace("\n", " ", $treatment) . "\n";
+                            }
+                        }
+                        
+                        return $visitSummary;
                     })->join("\n");
                     
-                    if (!empty($previousDiagnoses)) {
-                        $previousMedicalHistory .= "Previous diagnoses:\n" . $previousDiagnoses;
-                    }
+                    $previousMedicalHistory .= $previousVisits;
+                    
+                    // Add note about clinical progression
+                    $previousMedicalHistory .= "\nIMPORTANT: Consider the clinical progression across these visits when formulating your assessment.";
                 }
                 
                 return [
@@ -500,7 +580,7 @@ class OpenAIController extends Controller
                     'gender' => $patientRecord->gender,
                     'weight' => $request->weight ?: $patientRecord->weight,
                     'height' => $request->height ?: $patientRecord->height,
-                    'symptoms' => $request->current_symptoms,
+                    'symptoms' => $this->processSymptoms($request->current_symptoms, $request->custom_symptoms),
                     'test_results' => $request->test_results,
                     'clinical_status' => [
                         'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
@@ -526,7 +606,7 @@ class OpenAIController extends Controller
             'gender' => $request->gender,
             'weight' => $request->weight,
             'height' => $request->height,
-            'symptoms' => $request->current_symptoms,
+            'symptoms' => $this->processSymptoms($request->current_symptoms, $request->custom_symptoms),
             'test_results' => $request->test_results,
             'clinical_status' => [
                 'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
@@ -573,12 +653,20 @@ class OpenAIController extends Controller
     private function filterReponse($lastMessage)
     {
         // Extract the PATIENT INFORMATION section with MEDICAL REPORTS ANALYSIS
-        $patientInfoPattern = '/PATIENT\s+INFORMATION:[\s\S]*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS:)/i';
+        $patientInfoPattern = '/PATIENT\s+INFORMATION:[\s\S]*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS:|A\)\s*DIFFERENTIAL\s*DIAGNOSIS)/i';
         $patientInfoContent = '';
         
         if (preg_match($patientInfoPattern, $lastMessage, $matches)) {
             $patientInfoContent = $matches[0];
             // Don't remove it yet, we'll add it back later
+        }
+        
+        // Extract the CASE URGENCY section if it exists
+        $urgencyPattern = '/CASE\s+URGENCY:\s*(ROUTINE|URGENT|EMERGENCY).*?(?=PATIENT\s+INFORMATION:|$)/i';
+        $urgencyContent = '';
+        
+        if (preg_match($urgencyPattern, $lastMessage, $matches)) {
+            $urgencyContent = $matches[0];
         }
         
         // Remove markdown bold and italic (**bold**, *italic*)
@@ -606,22 +694,26 @@ class OpenAIController extends Controller
             return "\n\n" . strtoupper($matches[1] . ') ' . $matches[2]) . "\n";
         }, $lastMessage);
         
-    
         // Check if there's a Current Symptoms section before saving it
-        $currentSymptomsPattern = '/Current\s+Symptoms:.*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS:?|$)/is';
+        $currentSymptomsPattern = '/Current\s+Symptoms:.*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS:|A\)\s*DIFFERENTIAL\s*DIAGNOSIS|$)/is';
         $currentSymptomsMatch = null;
         if (preg_match($currentSymptomsPattern, $lastMessage, $currentSymptomsMatch)) {
             $currentSymptoms = trim($currentSymptomsMatch[0]);
         }
         
-        // Trim content before "A) POSSIBLE DIAGNOSIS:"
-        $pattern = '/A\)\s*POSSIBLE\s*DIAGNOSIS:?/i';
-        if (preg_match($pattern, $lastMessage, $match, PREG_OFFSET_CAPTURE)) {
+        // Look for either the old or new diagnosis section header
+        $diagnosisPattern = '/(A\)\s*POSSIBLE\s*DIAGNOSIS:|A\)\s*DIFFERENTIAL\s*DIAGNOSIS)/i';
+        if (preg_match($diagnosisPattern, $lastMessage, $match, PREG_OFFSET_CAPTURE)) {
             $startPos = $match[0][1];
             $diagnosisPart = substr($lastMessage, $startPos);
             
-            // Construct the final message with PATIENT INFORMATION at the beginning
+            // Construct the final message with proper sections
             $finalMessage = '';
+            
+            // Add urgency section if we found it
+            if (!empty($urgencyContent)) {
+                $finalMessage .= trim($urgencyContent) . "\n\n";
+            }
             
             // Add patient information section if we found it
             if (!empty($patientInfoContent)) {
@@ -639,6 +731,9 @@ class OpenAIController extends Controller
             $lastMessage = $finalMessage;
         }
     
+        // Apply our structured formatting
+        $lastMessage = $this->formatResponseStructure($lastMessage);
+        
         // Final trim
         return trim($lastMessage);
     }
@@ -806,7 +901,7 @@ class OpenAIController extends Controller
                     'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
                     'blood_pressure' => $request->blood_pressure,
                     'blood_sugar' => is_numeric($request->blood_sugar) ? $request->blood_sugar : null,
-                    'symptoms' => $request->current_symptoms ? json_encode($request->current_symptoms) : null,
+                    'symptoms' => json_encode($this->processSymptoms($request->current_symptoms, $request->custom_symptoms)),
                     'test_results' => $request->test_results,
                     'preliminary_diagnosis' => $request->preliminary_diagnosis,
                     'ai_response' => $aiResponse,
@@ -837,7 +932,7 @@ class OpenAIController extends Controller
             'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
             'blood_pressure' => $request->blood_pressure,
             'blood_sugar' => is_numeric($request->blood_sugar) ? $request->blood_sugar : null,
-            'symptoms' => $request->current_symptoms ? json_encode($request->current_symptoms) : null,
+            'symptoms' => json_encode($this->processSymptoms($request->current_symptoms, $request->custom_symptoms)),
             'test_results' => $request->test_results,
             'preliminary_diagnosis' => $request->preliminary_diagnosis,
             'ai_response' => $aiResponse,
@@ -875,16 +970,16 @@ class OpenAIController extends Controller
             // Ensure specialty is treated as a string
             $specialtyStr = (string)$specialty;
             
-            $specialtyInstruction = "You are a master doctor specialized in {$specialtyStr} with extensive clinical experience. Your expertise in this field should guide your analysis and recommendations. 
+            $specialtyInstruction = "You are a senior consultant physician specialized in {$specialtyStr} with 20+ years of clinical experience. Your expertise in this field should guide your analysis and recommendations. 
             
             As a {$specialtyStr} specialist:
-            1. Prioritize diagnoses that are most relevant to your specialty
+            1. Prioritize diagnoses that are most relevant to your specialty, with special attention to life-threatening conditions
             2. Provide specialty-specific insights that a general practitioner might miss
             3. Recommend specialized tests and procedures appropriate for your field
-            4. Suggest treatment approaches that reflect current best practices in {$specialtyStr}
+            4. Suggest evidence-based treatment approaches that reflect current best practices in {$specialtyStr}
             5. Highlight any red flags or warning signs particularly important in your specialty
-            6. Use terminology and references that would be familiar to specialists in your field
-            7. Be precise and concise in your recommendations, as expected from a specialist
+            6. Use precise medical terminology and references that would be familiar to specialists in your field
+            7. Be precise, specific, and actionable in your recommendations, as expected from a specialist
             
             Focus particularly on aspects of the case that relate to your specialty, but maintain a holistic view of the patient's condition.";
         }
@@ -902,6 +997,9 @@ class OpenAIController extends Controller
             Please consider this patient history in your analysis. Compare current symptoms with previous visits and note any changes or patterns.
             ";
         }
+        
+        // Generate dynamic clinical context based on vital signs and symptoms
+        $clinicalContext = $this->generateClinicalContext($inputData);
 
         return "Based on the provided information and considering the evaluation criteria from the selected source ($criterion), provide the following sections ONLY, with NO introduction and NO conclusion:
             
@@ -911,28 +1009,54 @@ class OpenAIController extends Controller
             
             $patientHistoryContext
             
-            IMPORTANT: Your analysis MUST be based on the content of the uploaded files. Begin with a PATIENT INFORMATION section that includes a MEDICAL REPORTS ANALYSIS subsection.
+            $clinicalContext
+            
+            IMPORTANT: Your analysis MUST be based on the content of the uploaded files and the clinical data provided. Begin with a PATIENT INFORMATION section that includes a MEDICAL REPORTS ANALYSIS subsection.
             
             RESPONSE FORMAT:
             
+            CASE URGENCY: [ROUTINE/URGENT/EMERGENCY]
+            • If URGENT or EMERGENCY, briefly explain why in 1-2 sentences using medical terminology.
+            
             PATIENT INFORMATION:
             • Basic patient details (name, age, gender)
+            • Vital signs assessment (if provided)
             • MEDICAL REPORTS ANALYSIS: A concise summary of all uploaded files
               - For images: Brief description and key findings
               - For text documents: Key medical information and relevance
             
-            A) POSSIBLE DIAGNOSIS:
-            • A list of potential diseases ranked by priority based on the file analysis.
-            • Display probability percentages (e.g., 70% viral infection, 20% bacterial).
+            A) DIFFERENTIAL DIAGNOSIS (PRIORITIZED):
+            • List the top 3-5 diagnoses in order of likelihood, with life-threatening conditions FIRST regardless of probability
+            • For each diagnosis:
+              - Specific probability percentage (e.g., 65%)
+              - Brief clinical reasoning using proper medical terminology
+              - Supporting evidence from patient data or uploaded files
+              - Pathophysiological explanation where relevant
             
-            B) RECOMMENDATIONS FOR TESTS OR IMAGING:
-            • A list of tests or procedures that can help confirm the diagnosis.
+            B) RECOMMENDED INVESTIGATIONS:
+            • List specific laboratory tests with normal ranges and expected findings
+            • Imaging studies with detailed specifications (e.g., \"Contrast-enhanced CT of the abdomen and pelvis with arterial and venous phases\")
+            • Other diagnostic procedures with clinical justification
+            • Prioritize investigations (STAT/Urgent/Routine)
             
-            C) TREATMENT RECOMMENDATIONS:
-            • Tips on initial treatments or procedures (if necessary).
+            C) MANAGEMENT RECOMMENDATIONS:
+            • Immediate interventions (if needed)
+            • Specific medication recommendations including:
+              - Drug names (generic and brand)
+              - Dosages
+              - Administration routes
+              - Duration
+              - Monitoring parameters
+            • Non-pharmacological interventions
+            • Specialist referrals with urgency level
+            • Follow-up timeline and parameters
             
-            D) WARNING SIGNS:
-            • About unnecessary procedures (to avoid over-treatment).
+            D) CLINICAL CONSIDERATIONS & PRECAUTIONS:
+            • Potential complications to monitor
+            • Contraindications for specific treatments
+            • Drug interactions or allergies to consider
+            • Red flag symptoms requiring immediate attention
+            • Differential diagnoses that must not be missed
             
             Sources:
             • Include 3-5 relevant medical sources that support your recommendations.
@@ -1300,23 +1424,34 @@ class OpenAIController extends Controller
             // Ensure specialty is treated as a string
             $specialtyStr = (string)$specialty;
             
-            $specialtyInstruction = "You are a master doctor specialized in {$specialtyStr} with extensive clinical experience. Your expertise in this field should guide your analysis and recommendations. 
+            $specialtyInstruction = "You are a senior consultant physician specialized in {$specialtyStr} with 20+ years of clinical experience. Your expertise in this field should guide your analysis and recommendations. 
             
             As a {$specialtyStr} specialist:
-            1. Prioritize diagnoses that are most relevant to your specialty
+            1. Prioritize diagnoses that are most relevant to your specialty, with special attention to life-threatening conditions
             2. Provide specialty-specific insights that a general practitioner might miss
             3. Recommend specialized tests and procedures appropriate for your field
-            4. Suggest treatment approaches that reflect current best practices in {$specialtyStr}
+            4. Suggest evidence-based treatment approaches that reflect current best practices in {$specialtyStr}
             5. Highlight any red flags or warning signs particularly important in your specialty
-            6. Use terminology and references that would be familiar to specialists in your field
-            7. Be precise and concise in your recommendations, as expected from a specialist
+            6. Use precise medical terminology and references that would be familiar to specialists in your field
+            7. Be precise, specific, and actionable in your recommendations, as expected from a specialist
             
             Focus particularly on aspects of the case that relate to your specialty, but maintain a holistic view of the patient's condition.";
         }
         
-        return "You are a medical AI assistant providing help to healthcare professionals. 
-        Based on the evaluation criteria from $criterion, provide precise clinical assessments.
+        return "You are a senior consultant physician providing clinical decision support to healthcare professionals. 
+        Based on the evaluation criteria from $criterion, provide precise, evidence-based clinical assessments.
         $specialtyInstruction
+        
+        CRITICAL CLINICAL APPROACH:
+        1. ALWAYS prioritize life-threatening conditions first in your differential diagnosis
+        2. Assign specific probability percentages to each diagnosis (e.g., 70%, 25%, 5%)
+        3. Provide clear clinical reasoning for each diagnosis
+        4. Use proper medical terminology throughout your assessment
+        5. Be specific and detailed in your recommendations
+        6. NEVER be vague or overly reassuring about serious symptoms
+        7. Flag cases as ROUTINE, URGENT, or EMERGENCY based on clinical presentation
+        8. Include specific medication recommendations when appropriate
+        9. Recommend specialist referrals when indicated
         
         IMPORTANT INSTRUCTIONS FOR ANALYZING UPLOADED FILES:
         1. Begin your response with a 'PATIENT INFORMATION' section that includes:
@@ -1332,7 +1467,7 @@ class OpenAIController extends Controller
         3. After the PATIENT INFORMATION section, proceed with your diagnosis sections (A, B, C, D)
         
         Respond in a concise, structured format appropriate for a medical professional. 
-        Avoid unnecessary explanations of basic medical concepts.
+        Use proper medical terminology and avoid unnecessary explanations of basic medical concepts.
         
         For all responses, include a 'Sources:' section at the end with 3-5 relevant medical sources that support your recommendations.
         For each source, provide the title, author(s), publication year, and journal/source name.
@@ -1340,5 +1475,297 @@ class OpenAIController extends Controller
         Focus on high-quality, peer-reviewed sources from reputable medical journals.
         Prioritize recent publications (within the last 5 years when possible).
         Include at least one source specific to the primary diagnosis or recommendation.";
+    }
+    
+    /**
+     * Process both regular and custom symptoms
+     * 
+     * @param array $symptoms Array of symptom IDs from the dropdown
+     * @param string|null $customSymptoms JSON string of custom symptoms
+     * @return array Processed symptoms array
+     */
+    private function processSymptoms($symptoms, $customSymptoms = null)
+    {
+        \Log::info("Processing symptoms: " . json_encode($symptoms));
+        \Log::info("Custom symptoms: " . $customSymptoms);
+        
+        $processedSymptoms = [];
+        
+        // Process regular symptoms (IDs from dropdown)
+        if (is_array($symptoms)) {
+            foreach ($symptoms as $symptom) {
+                \Log::info("Processing regular symptom: " . json_encode($symptom) . " (type: " . gettype($symptom) . ")");
+                
+                // Check if the symptom is a numeric ID (predefined symptom)
+                if (is_numeric($symptom)) {
+                    // Try to find the symptom in the database
+                    $symptomModel = \App\Models\Symptom::find($symptom);
+                    if ($symptomModel) {
+                        \Log::info("Found predefined symptom: " . $symptomModel->name);
+                        $processedSymptoms[] = $symptomModel->name;
+                    } else {
+                        // If not found, just add the ID as is
+                        \Log::warning("Symptom ID not found in database: " . $symptom);
+                        $processedSymptoms[] = $symptom;
+                    }
+                } else {
+                    // This is a custom symptom (text), add it directly
+                    \Log::info("Adding custom symptom from dropdown: " . $symptom);
+                    $processedSymptoms[] = $symptom;
+                }
+            }
+        }
+        
+        // Process custom symptoms (from the custom input)
+        if (!empty($customSymptoms)) {
+            try {
+                $customSymptomsArray = json_decode($customSymptoms, true);
+                
+                if (is_array($customSymptomsArray)) {
+                    foreach ($customSymptomsArray as $customSymptom) {
+                        \Log::info("Processing custom symptom: " . $customSymptom);
+                        
+                        // Add the custom symptom to the processed list
+                        $processedSymptoms[] = $customSymptom;
+                        
+                        // Save the new symptom to the database for future use
+                        try {
+                            $newSymptom = \App\Models\Symptom::firstOrCreate(['name' => $customSymptom]);
+                            \Log::info("Saved custom symptom to database with ID: " . $newSymptom->id);
+                        } catch (\Exception $e) {
+                            // Log the error but continue processing
+                            \Log::error("Error saving custom symptom: " . $e->getMessage());
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error("Error processing custom symptoms: " . $e->getMessage());
+            }
+        }
+        
+        \Log::info("Final processed symptoms: " . json_encode($processedSymptoms));
+        return $processedSymptoms;
+    }
+    
+    /**
+     * Generate dynamic clinical context based on vital signs and symptoms
+     * This enhances the prompt with specific medical considerations based on the patient's data
+     * 
+     * @param array $inputData Patient data including vital signs and symptoms
+     * @return string Clinical context for the prompt
+     */
+    private function generateClinicalContext($inputData)
+    {
+        $context = "CLINICAL CONTEXT:\n";
+        $abnormalFindings = [];
+        $redFlags = [];
+        
+        // Check vital signs for abnormalities
+        if (!empty($inputData['temperature'])) {
+            $temp = floatval($inputData['temperature']);
+            if ($temp > 38.0) {
+                $abnormalFindings[] = "Fever (T: {$temp}°C)";
+                if ($temp > 39.5) {
+                    $redFlags[] = "High-grade fever (T: {$temp}°C)";
+                }
+            } else if ($temp < 36.0) {
+                $abnormalFindings[] = "Hypothermia (T: {$temp}°C)";
+                if ($temp < 35.0) {
+                    $redFlags[] = "Significant hypothermia (T: {$temp}°C)";
+                }
+            }
+        }
+        
+        // Check blood pressure
+        if (!empty($inputData['blood_pressure'])) {
+            $bp = $inputData['blood_pressure'];
+            // Try to parse systolic/diastolic values
+            if (preg_match('/(\d+)[\/\s]+(\d+)/', $bp, $matches)) {
+                $systolic = intval($matches[1]);
+                $diastolic = intval($matches[2]);
+                
+                if ($systolic >= 180 || $diastolic >= 120) {
+                    $redFlags[] = "Hypertensive crisis (BP: {$bp})";
+                } else if ($systolic >= 140 || $diastolic >= 90) {
+                    $abnormalFindings[] = "Hypertension (BP: {$bp})";
+                } else if ($systolic < 90 || $diastolic < 60) {
+                    $abnormalFindings[] = "Hypotension (BP: {$bp})";
+                    if ($systolic < 80) {
+                        $redFlags[] = "Severe hypotension (BP: {$bp})";
+                    }
+                }
+            }
+        }
+        
+        // Check blood sugar
+        if (!empty($inputData['blood_sugar'])) {
+            $bs = floatval($inputData['blood_sugar']);
+            // Assuming mg/dL as the unit
+            if ($bs > 180) {
+                $abnormalFindings[] = "Hyperglycemia (BS: {$bs} mg/dL)";
+                if ($bs > 300) {
+                    $redFlags[] = "Severe hyperglycemia (BS: {$bs} mg/dL)";
+                }
+            } else if ($bs < 70) {
+                $abnormalFindings[] = "Hypoglycemia (BS: {$bs} mg/dL)";
+                if ($bs < 54) {
+                    $redFlags[] = "Severe hypoglycemia (BS: {$bs} mg/dL)";
+                }
+            }
+        }
+        
+        // Check symptoms for red flags
+        $emergencySymptoms = [
+            'chest pain', 'shortness of breath', 'difficulty breathing', 'severe headache', 
+            'sudden confusion', 'slurred speech', 'facial drooping', 'weakness in limbs',
+            'loss of consciousness', 'seizure', 'severe abdominal pain', 'vomiting blood',
+            'black stool', 'bloody stool', 'severe bleeding', 'trauma', 'head injury',
+            'suicidal', 'suicide', 'homicidal', 'homicide', 'psychosis', 'hallucinations',
+            'delusions', 'paralysis', 'unable to move', 'stroke', 'heart attack', 'cardiac arrest'
+        ];
+        
+        // Get symptoms from the input data
+        $symptoms = [];
+        if (!empty($inputData['symptoms'])) {
+            if (is_array($inputData['symptoms'])) {
+                $symptoms = $inputData['symptoms']; // Already processed
+            } else if (is_string($inputData['symptoms'])) {
+                // Handle case where symptoms might be a JSON string
+                $decodedSymptoms = json_decode($inputData['symptoms'], true);
+                if (is_array($decodedSymptoms)) {
+                    $symptoms = $decodedSymptoms;
+                }
+            }
+        }
+        
+        // Check for emergency symptoms
+        foreach ($symptoms as $symptom) {
+            foreach ($emergencySymptoms as $emergencySymptom) {
+                if (stripos($symptom, $emergencySymptom) !== false) {
+                    $redFlags[] = "Emergency symptom: {$symptom}";
+                    break;
+                }
+            }
+        }
+        
+        // Add abnormal findings to context
+        if (!empty($abnormalFindings)) {
+            $context .= "Abnormal clinical findings:\n";
+            foreach ($abnormalFindings as $finding) {
+                $context .= "• {$finding}\n";
+            }
+            $context .= "\n";
+        }
+        
+        // Add red flags with special emphasis
+        if (!empty($redFlags)) {
+            $context .= "RED FLAGS - REQUIRE IMMEDIATE ATTENTION:\n";
+            foreach ($redFlags as $flag) {
+                $context .= "• {$flag}\n";
+            }
+            $context .= "\nThese red flags must be addressed as high priority in your differential diagnosis and management plan.\n";
+        }
+        
+        // Add age-specific considerations
+        if (!empty($inputData['age'])) {
+            $age = intval($inputData['age']);
+            
+            if ($age < 2) {
+                $context .= "\nPEDIATRIC CONSIDERATIONS (Infant):\n";
+                $context .= "• Consider age-appropriate differential diagnoses\n";
+                $context .= "• Adjust medication dosages based on weight\n";
+                $context .= "• Be vigilant for congenital conditions\n";
+            } else if ($age < 12) {
+                $context .= "\nPEDIATRIC CONSIDERATIONS (Child):\n";
+                $context .= "• Consider age-appropriate differential diagnoses\n";
+                $context .= "• Adjust medication dosages based on weight\n";
+            } else if ($age > 65) {
+                $context .= "\nGERIATRIC CONSIDERATIONS:\n";
+                $context .= "• Consider polypharmacy and drug interactions\n";
+                $context .= "• Be vigilant for atypical presentations of common conditions\n";
+                $context .= "• Consider fall risk in medication recommendations\n";
+            }
+        }
+        
+        // If no specific context was generated, return empty string
+        if ($context === "CLINICAL CONTEXT:\n") {
+            return "";
+        }
+        
+        return $context;
+    }
+    
+    /**
+     * Format the AI response to ensure it follows our structured format
+     * This helps standardize the output and ensure all required sections are present
+     */
+    private function formatResponseStructure($response)
+    {
+        // Check if the response already has a CASE URGENCY section
+        if (!preg_match('/CASE URGENCY:\s*(ROUTINE|URGENT|EMERGENCY)/i', $response)) {
+            // Try to determine urgency based on content
+            $urgencyLevel = "ROUTINE";
+            
+            // Check for emergency keywords
+            if (preg_match('/(emergency|immediate attention|life-threatening|critical|severe|urgent intervention|stat)/i', $response)) {
+                $urgencyLevel = "EMERGENCY";
+            } 
+            // Check for urgent keywords
+            else if (preg_match('/(urgent|prompt attention|soon|timely|priority)/i', $response)) {
+                $urgencyLevel = "URGENT";
+            }
+            
+            // Add the urgency section at the beginning
+            $response = "CASE URGENCY: $urgencyLevel\n\n" . $response;
+        }
+        
+        // Ensure section headers are properly formatted
+        $sections = [
+            'PATIENT INFORMATION' => 'PATIENT INFORMATION:',
+            'DIFFERENTIAL DIAGNOSIS' => 'A) DIFFERENTIAL DIAGNOSIS (PRIORITIZED):',
+            'RECOMMENDED INVESTIGATIONS' => 'B) RECOMMENDED INVESTIGATIONS:',
+            'MANAGEMENT RECOMMENDATIONS' => 'C) MANAGEMENT RECOMMENDATIONS:',
+            'CLINICAL CONSIDERATIONS' => 'D) CLINICAL CONSIDERATIONS & PRECAUTIONS:'
+        ];
+        
+        foreach ($sections as $keyword => $formattedHeader) {
+            // Check if a section with this keyword exists but isn't properly formatted
+            if (preg_match('/(?:^|\n)(?!.*' . preg_quote($formattedHeader, '/') . ').*' . preg_quote($keyword, '/') . '.*(?:\n|:)/i', $response)) {
+                // Replace the improperly formatted header with the correct one
+                $response = preg_replace('/(?:^|\n)(?!.*' . preg_quote($formattedHeader, '/') . ').*' . preg_quote($keyword, '/') . '.*(?:\n|:)/i', "\n\n" . $formattedHeader . "\n", $response);
+            }
+            // If the section doesn't exist at all, we don't add it as it might not be applicable
+        }
+        
+        // Ensure the old A) POSSIBLE DIAGNOSIS section is renamed to our new format
+        if (preg_match('/(?:^|\n)A\)\s*POSSIBLE\s*DIAGNOSIS/i', $response) && !preg_match('/DIFFERENTIAL DIAGNOSIS/i', $response)) {
+            $response = preg_replace('/(?:^|\n)A\)\s*POSSIBLE\s*DIAGNOSIS.*(?:\n|:)/i', "\n\nA) DIFFERENTIAL DIAGNOSIS (PRIORITIZED):\n", $response);
+        }
+        
+        // Ensure the old B) RECOMMENDATIONS FOR TESTS section is renamed
+        if (preg_match('/(?:^|\n)B\)\s*RECOMMENDATIONS\s*FOR\s*TESTS/i', $response) && !preg_match('/RECOMMENDED INVESTIGATIONS/i', $response)) {
+            $response = preg_replace('/(?:^|\n)B\)\s*RECOMMENDATIONS\s*FOR\s*TESTS.*(?:\n|:)/i', "\n\nB) RECOMMENDED INVESTIGATIONS:\n", $response);
+        }
+        
+        // Ensure the old C) TREATMENT RECOMMENDATIONS section is renamed
+        if (preg_match('/(?:^|\n)C\)\s*TREATMENT\s*RECOMMENDATIONS/i', $response) && !preg_match('/MANAGEMENT RECOMMENDATIONS/i', $response)) {
+            $response = preg_replace('/(?:^|\n)C\)\s*TREATMENT\s*RECOMMENDATIONS.*(?:\n|:)/i', "\n\nC) MANAGEMENT RECOMMENDATIONS:\n", $response);
+        }
+        
+        // Ensure the old D) WARNING SIGNS section is renamed
+        if (preg_match('/(?:^|\n)D\)\s*WARNING\s*SIGNS/i', $response) && !preg_match('/CLINICAL CONSIDERATIONS/i', $response)) {
+            $response = preg_replace('/(?:^|\n)D\)\s*WARNING\s*SIGNS.*(?:\n|:)/i', "\n\nD) CLINICAL CONSIDERATIONS & PRECAUTIONS:\n", $response);
+        }
+        
+        // Add styling for probability percentages to make them stand out
+        $response = preg_replace('/(\d{1,3})%/i', '<strong>$1%</strong>', $response);
+        
+        // Highlight emergency warnings
+        $response = preg_replace('/(emergency|immediate attention needed|life-threatening|critical condition)/i', '<span style="color: red; font-weight: bold;">$1</span>', $response);
+        
+        // Highlight urgent/emergency case urgency
+        $response = preg_replace('/(CASE URGENCY:\s*)(URGENT|EMERGENCY)/i', '$1<span style="color: red; font-weight: bold;">$2</span>', $response);
+        
+        return $response;
     }
 }

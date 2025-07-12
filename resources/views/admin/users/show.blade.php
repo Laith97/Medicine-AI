@@ -165,19 +165,29 @@
 
                 <!-- Patient Analyses -->
                 <div class="info-card">
-                    <h5 class="mb-4">
-                        <i class="bi bi-file-medical me-2"></i>Patient Analyses
-                        <span class="badge bg-primary ms-2">{{ $user->patientAnalyses->count() }}</span>
-                    </h5>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-medical me-2"></i>Patient Analyses
+                            <span class="badge bg-primary ms-2">{{ $user->patientAnalyses->count() }}</span>
+                        </h5>
+                        @if($user->patientAnalyses->count() > 0)
+                            <a href="{{ route('admin.users.patient-analyses', $user) }}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-search me-1"></i>View All Patient Data
+                            </a>
+                        @endif
+                    </div>
                     
                     @if($user->patientAnalyses->count() > 0)
                         @foreach($user->patientAnalyses->take(5) as $analysis)
                             <div class="analysis-card">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
-                                        <h6 class="mb-1">Analysis #{{ $analysis->id }}</h6>
+                                        <h6 class="mb-1">
+                                            Patient: {{ $analysis->name }} 
+                                            <span class="badge bg-secondary ms-1">{{ $analysis->gender }}, {{ $analysis->age }} y/o</span>
+                                        </h6>
                                         <p class="text-muted mb-0 small">
-                                            {{ Str::limit($analysis->symptoms ?? 'No symptoms recorded', 100) }}
+                                            <strong>Symptoms:</strong> {{ Str::limit($analysis->symptoms ?? 'No symptoms recorded', 100) }}
                                         </p>
                                     </div>
                                     <small class="text-muted">{{ $analysis->created_at->diffForHumans() }}</small>
@@ -186,10 +196,10 @@
                         @endforeach
                         
                         @if($user->patientAnalyses->count() > 5)
-                            <div class="text-center">
-                                <small class="text-muted">
-                                    And {{ $user->patientAnalyses->count() - 5 }} more analyses...
-                                </small>
+                            <div class="text-center mt-3">
+                                <a href="{{ route('admin.users.patient-analyses', $user) }}" class="btn btn-outline-primary btn-sm">
+                                    View All {{ $user->patientAnalyses->count() }} Patient Records
+                                </a>
                             </div>
                         @endif
                     @else

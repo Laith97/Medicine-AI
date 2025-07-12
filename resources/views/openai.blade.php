@@ -315,8 +315,21 @@
                                     @endforeach
                                 </select>
                                 <small class="text-muted mt-1 d-block">
-                                    <i class="fas fa-info-circle me-1"></i> Type to search or select from the dropdown
+                                    <i class="fas fa-info-circle me-1"></i> Select from the dropdown or add custom symptoms below.
                                 </small>
+                                
+                                <!-- Custom Symptoms Input -->
+                                <div class="mt-2">
+                                    <label class="form-label">
+                                        <i class="fas fa-plus-circle me-1" style="color: #DE6262"></i> Add Custom Symptoms:
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" id="custom_symptom_input" class="form-control" placeholder="Type a custom symptom...">
+                                        <button type="button" id="add_custom_symptom" style="background-color: #DE6262; color: white;">Add</button>
+                                    </div>
+                                    <div id="custom_symptoms_container" class="mt-2"></div>
+                                    <input type="hidden" id="custom_symptoms_data" name="custom_symptoms" value="">
+                                </div>
                             </div>
                             
                             <div class="col-md-6">
@@ -1606,13 +1619,87 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                 const choices = new Choices(element, {
                     removeItemButton: true,
                     placeholderValue: 'Select symptoms...',
-                    searchPlaceholderValue: 'Search...',
+                    searchPlaceholderValue: 'Search symptoms...',
                     classNames: {
                         containerInner: 'form-control',
                     }
                 });
                 
                 console.log('Choices.js initialized successfully');
+                
+                // Custom Symptoms Handling
+                const customSymptomInput = document.getElementById('custom_symptom_input');
+                const addCustomSymptomBtn = document.getElementById('add_custom_symptom');
+                const customSymptomsContainer = document.getElementById('custom_symptoms_container');
+                const customSymptomsData = document.getElementById('custom_symptoms_data');
+                
+                // Array to store custom symptoms
+                let customSymptoms = [];
+                
+                // Function to add a custom symptom
+                function addCustomSymptom() {
+                    const symptomText = customSymptomInput.value.trim();
+                    
+                    if (symptomText.length < 3) {
+                        alert('Symptom must be at least 3 characters long');
+                        return;
+                    }
+                    
+                    if (customSymptoms.includes(symptomText)) {
+                        alert('This symptom has already been added');
+                        return;
+                    }
+                    
+                    // Add to array
+                    customSymptoms.push(symptomText);
+                    
+                    // Update hidden input
+                    customSymptomsData.value = JSON.stringify(customSymptoms);
+                    
+                    // Create visual representation
+                    const symptomBadge = document.createElement('span');
+                    symptomBadge.className = 'badge me-2 mb-2 p-2';
+                    symptomBadge.style.backgroundColor = '#DE6262';
+                    symptomBadge.style.color = 'white';
+                    symptomBadge.innerHTML = `${symptomText} <button type="button" class="btn-close btn-close-white ms-2" aria-label="Remove" style="font-size: 0.5rem;"></button>`;
+                    
+                    // Add remove functionality
+                    const closeBtn = symptomBadge.querySelector('.btn-close');
+                    closeBtn.addEventListener('click', function() {
+                        // Remove from array
+                        const index = customSymptoms.indexOf(symptomText);
+                        if (index > -1) {
+                            customSymptoms.splice(index, 1);
+                        }
+                        
+                        // Update hidden input
+                        customSymptomsData.value = JSON.stringify(customSymptoms);
+                        
+                        // Remove badge
+                        symptomBadge.remove();
+                    });
+                    
+                    // Add to container
+                    customSymptomsContainer.appendChild(symptomBadge);
+                    
+                    // Clear input
+                    customSymptomInput.value = '';
+                    customSymptomInput.focus();
+                    
+                    console.log('Added custom symptom:', symptomText);
+                    console.log('Current custom symptoms:', customSymptoms);
+                }
+                
+                // Add event listeners
+                addCustomSymptomBtn.addEventListener('click', addCustomSymptom);
+                
+                customSymptomInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault(); // Prevent form submission
+                        addCustomSymptom();
+                    }
+                });
+                
             } catch (error) {
                 console.error('Error initializing Choices.js:', error);
             }
