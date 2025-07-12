@@ -302,7 +302,7 @@ class OpenAIController extends Controller
         
             // No files provided: still try to respond based on inputData alone
             $response = OpenAI::chat()->create([
-                'model' => 'gpt-4o-mini',
+                'model' => 'gpt-4o',
                 'messages' => [
                     [
                         'role' => 'user',
@@ -1084,7 +1084,7 @@ class OpenAIController extends Controller
         try {
             // Call the OpenAI API with the full conversation history
             $response = OpenAI::chat()->create([
-                'model' => 'gpt-4o-mini',
+                'model' => 'gpt-4o',
                 'messages' => $messages
             ]);
             
@@ -1173,7 +1173,7 @@ class OpenAIController extends Controller
             
             // Call OpenAI API
             $response = OpenAI::chat()->create([
-                'model' => 'gpt-4o-mini',
+                'model' => 'gpt-4o',
                 'messages' => [
                     ['role' => 'system', 'content' => $this->getSystemPrompt($specialty, $criterion)],
                     ['role' => 'user', 'content' => $prompt]
