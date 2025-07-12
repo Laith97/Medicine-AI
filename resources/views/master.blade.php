@@ -276,8 +276,8 @@
                 <ul class="list-unstyled footer-links">
                     <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Platform</a></li>
                     <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact Support</a></li>
-                    @auth
-                        <li class="mb-2"><a href="{{ route('profile.edit') }}" class="text-white-50 text-decoration-none hover-link">Profile Settings</a></li>
+                    @auth 
+                        <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Profile Settings</a></li>
                     @endauth
                 </ul>
             </div>

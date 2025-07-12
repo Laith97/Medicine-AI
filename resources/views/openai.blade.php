@@ -81,12 +81,51 @@
     }
 </style>
 
-        <div class="container medical-form-container ">
+        <div class="container medical-form-container">
             <form id="openaiForm" action="{{ url('/openai/respond') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @if(isset($patientToEdit))
                     <input type="hidden" name="edit_patient_id" value="{{ $patientToEdit->id }}">
                 @endif
+                
+                <!-- Form Progress Indicator -->
+                <div class="form-progress-container mb-4">
+                    <div class="progress-steps d-flex justify-content-between">
+                        <div class="progress-step active" data-step="patient">
+                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="step-label mt-2">Patient</div>
+                        </div>
+                        <div class="progress-step" data-step="vitals">
+                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="fas fa-heartbeat"></i>
+                            </div>
+                            <div class="step-label mt-2">Vitals</div>
+                        </div>
+                        <div class="progress-step" data-step="symptoms">
+                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <div class="step-label mt-2">Symptoms</div>
+                        </div>
+                        <div class="progress-step" data-step="diagnosis">
+                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="fas fa-stethoscope"></i>
+                            </div>
+                            <div class="step-label mt-2">Diagnosis</div>
+                        </div>
+                        <div class="progress-step" data-step="analysis">
+                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="step-label mt-2">AI Analysis</div>
+                        </div>
+                    </div>
+                    <div class="progress mt-3">
+                        <div class="progress-bar bg-gradient" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
 
                 <div class="medical-form-card">
                     
@@ -110,7 +149,7 @@
                     <div class="medical-form-section">
                         <h4>Patient Selection</h4>
                         <div class="row">
-                            <div class="col-md-8">
+                            <div class="col-md-12">
                                 <label for="patient_selection" class="form-label">Select Patient:</label>
                                 <select id="patient_selection" name="patient_selection" class="form-select">
                                     <option value="new">New Patient</option>
@@ -131,26 +170,6 @@
                                 </select>
                                 <small class="form-text text-muted mt-1">
                                     <i class="fas fa-info-circle"></i> Select "New Patient" for first-time visits or choose an existing patient to access their medical history.
-                                </small>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Upload Medical Reports:</label>
-                                <div class="file-upload-wrapper">
-                                    <div class="input-group">
-                                        <input type="file" id="reports" name="reports[]" multiple class="form-control" accept="*/*">
-                                        <button class="btn btn-outline-secondary" type="button" id="add-more-files-btn" data-bs-toggle="tooltip" title="Add more files">
-                                            <i class="fas fa-plus"></i>
-                                        </button>
-                                        <button class="btn btn-outline-secondary" type="button" id="file-info-btn" data-bs-toggle="tooltip" title="Upload instructions">
-                                            <i class="fas fa-question-circle"></i>
-                                        </button>
-                                    </div>
-                                    <div id="selected-files" class="mt-2"></div>
-                                    <div id="file-storage-container" style="display: none;"></div>
-                                </div>
-                                <div id="upload-status" class="mt-2"></div>
-                                <small class="text-muted d-block mt-1">
-                                    <i class="fas fa-info-circle me-1"></i> Upload any file type. Click <i class="fas fa-plus"></i> to add more files.
                                 </small>
                             </div>
                         </div>
@@ -178,6 +197,39 @@
                         </div>
                     </div>
                     
+                    <!-- Enhanced File Upload Section (always visible) -->
+                    <div class="medical-form-section mt-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <h4 class="mb-0"><i class="fas fa-file-medical  me-2" ></i>Medical Reports</h4>
+                            <span class="badge bg-info ms-2">Optional</span>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                <p class="text-muted mb-2">
+                                    Upload lab results, imaging reports, or any medical documents to enhance the AI analysis.
+                                </p>
+                                <div class="input-group mb-2">
+                                    <input type="file" id="reports" name="reports[]" multiple class="form-control" accept="*/*">
+                                    <button class="btn btn-primary" type="button" id="add-more-files-btn">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                                <div id="file-storage-container" style="display: none;"></div>
+                                
+                                <div id="selected-files-container">
+                                    <div id="selected-files" class="selected-files-list">
+                                        <div class="text-center text-muted py-2">
+                                            <i class="fas fa-file-upload me-2"></i>No files selected yet
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div id="upload-status" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Patient History (only shown for existing patients) -->
                     <div class="medical-form-section" id="patient_history_info" style="display: none;">
                         <div class="d-flex align-items-center mb-3">
@@ -190,59 +242,71 @@
                         </div>
                     </div>
         
-                    <!-- Vitals --><br>
-                    <div class="medical-form-section">
+                    <!-- Vitals -->
+                    <div class="medical-form-section mt-4">
                         <h4>Physical Attributes / Vitals</h4>
                         <div class="row">
                             <div class="col-md-2">
-                                <label class="form-label">Weight:</label>
+                                <label class="form-label">
+                                    <i class="fas fa-weight text-primary me-1"></i> Weight:
+                                </label>
                                 <div class="input-group">
-                                    <input type="number" step="0.01" name="weight" class="form-control" value="{{ $patientToEdit->weight ?? '' }}" placeholder="e.g., 70.5">
+                                    <input type="number" step="0.01" name="weight" class="form-control" value="{{ $patientToEdit->weight ?? '' }}" placeholder="70.5">
                                     <span class="input-group-text">kg</span>
                                 </div>
                                 <small class="form-text text-muted">Numeric value only</small>
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">Height:</label>
+                                <label class="form-label">
+                                    <i class="fas fa-ruler-vertical text-success me-1"></i> Height:
+                                </label>
                                 <div class="input-group">
-                                    <input type="number" step="0.01" name="height" class="form-control" value="{{ $patientToEdit->height ?? '' }}" placeholder="e.g., 175">
+                                    <input type="number" step="0.01" name="height" class="form-control" value="{{ $patientToEdit->height ?? '' }}" placeholder="175">
                                     <span class="input-group-text">cm</span>
                                 </div>
                                 <small class="form-text text-muted">Numeric value only</small>
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">Temperature:</label>
+                                <label class="form-label">
+                                    <i class="fas fa-thermometer-half text-danger me-1"></i> Temperature:
+                                </label>
                                 <div class="input-group">
-                                    <input type="number" step="0.1" name="temperature" class="form-control" placeholder="e.g., 37.2">
+                                    <input type="number" step="0.1" name="temperature" class="form-control" placeholder="37.2">
                                     <span class="input-group-text">°C</span>
                                 </div>
                                 <small class="form-text text-muted">Numeric value only</small>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Blood Pressure:</label>
+                                <label class="form-label">
+                                    <i class="fas fa-heartbeat text-info me-1"></i> Blood Pressure:
+                                </label>
                                 <div class="input-group">
-                                    <input type="text" name="blood_pressure" class="form-control" placeholder="e.g., 120/80">
+                                    <input type="text" name="blood_pressure" class="form-control" placeholder="120/80">
                                     <span class="input-group-text">mmHg</span>
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Blood Sugar:</label>
+                                <label class="form-label">
+                                    <i class="fas fa-tint text-warning me-1"></i> Blood Sugar:
+                                </label>
                                 <div class="input-group">
-                                    <input type="number" step="0.01" name="blood_sugar" class="form-control" placeholder="e.g., 85">
+                                    <input type="number" step="0.01" name="blood_sugar" class="form-control" placeholder="85">
                                     <span class="input-group-text">mg/dL</span>
                                 </div>
-                                <small class="form-text text-muted">Enter numeric value only (without units)</small>
+                                <small class="form-text text-muted">Enter numeric value only</small>
                             </div>
                         </div>
                     </div>
         
-                    <!-- Symptoms --><br>
-                    <div class="medical-form-section">
+                    <!-- Symptoms -->
+                    <div class="medical-form-section mt-4">
                         <h4>Symptoms</h4>
                         <div class="row">
                             <div class="col-md-6">
-                                <label class="form-label">Current Symptoms:</label>
-                                <select id="current_symptoms" name="current_symptoms[]" multiple>
+                                <label class="form-label">
+                                    <i class="fas fa-search text-primary me-1"></i> Current Symptoms:
+                                </label>
+                                <select id="current_symptoms" name="current_symptoms[]" multiple class="form-select">
                                     @foreach($symptoms as $symptom)
                                         <option value="{{ $symptom->id }}" 
                                             {{ isset($patientToEdit) && $patientToEdit->symptoms && in_array($symptom->id, json_decode($patientToEdit->symptoms, true) ?: []) ? 'selected' : '' }}>
@@ -250,53 +314,87 @@
                                         </option>
                                     @endforeach
                                 </select>
-                                
+                                <small class="text-muted mt-1 d-block">
+                                    <i class="fas fa-info-circle me-1"></i> Type to search or select from the dropdown
+                                </small>
                             </div>
                             
                             <div class="col-md-6">
-                                <label class="form-label">Select Common Symptoms:</label>
-                                <div class="form-check">
-                                    <input type="checkbox" name="symptoms_checkboxes[]" value="fever" class="form-check-input" id="fever">
-                                    <label class="form-check-label" for="fever">Fever</label>
-                                </div>
-                                <div class="form-check">
-                                    <input type="checkbox" name="symptoms_checkboxes[]" value="cough" class="form-check-input" id="cough">
-                                    <label class="form-check-label" for="cough">Cough</label>
-                                </div>
-                                <div class="form-check">
-                                    <input type="checkbox" name="symptoms_checkboxes[]" value="headache" class="form-check-input" id="headache">
-                                    <label class="form-check-label" for="headache">Headache</label>
-                                </div>
-                                <div class="form-check">
-                                    <input type="checkbox" name="symptoms_checkboxes[]" value="fatigue" class="form-check-input" id="fatigue">
-                                    <label class="form-check-label" for="fatigue">Fatigue</label>
+                                <label class="form-label">
+                                    <i class="fas fa-clipboard-list text-danger me-1"></i> Common Symptoms:
+                                </label>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="symptoms_checkboxes[]" value="fever" class="form-check-input" id="fever">
+                                            <label class="form-check-label" for="fever">
+                                                <i class="fas fa-thermometer-three-quarters text-danger me-1"></i> Fever
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" name="symptoms_checkboxes[]" value="cough" class="form-check-input" id="cough">
+                                            <label class="form-check-label" for="cough">
+                                                <i class="fas fa-head-side-cough text-warning me-1"></i> Cough
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="symptoms_checkboxes[]" value="headache" class="form-check-input" id="headache">
+                                            <label class="form-check-label" for="headache">
+                                                <i class="fas fa-head-side-headache text-info me-1"></i> Headache
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" name="symptoms_checkboxes[]" value="fatigue" class="form-check-input" id="fatigue">
+                                            <label class="form-check-label" for="fatigue">
+                                                <i class="fas fa-battery-quarter text-secondary me-1"></i> Fatigue
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
         
-                    <!-- Tests and Diagnosis --><br>
-                    <div class="medical-form-section">
+                    <!-- Tests and Diagnosis -->
+                    <div class="medical-form-section mt-4">
                         <h4>Test Results & Preliminary Diagnosis</h4>
                         <div class="row">
                             <div class="col-md-6">
-                                <label class="form-label">Test Results:</label>
+                                <label class="form-label">
+                                    <i class="fas fa-flask text-info me-1"></i> Test Results:
+                                </label>
                                 <textarea name="test_results" class="form-control" rows="4" placeholder="e.g., CRP: Elevated at 15 mg/L.
 CBC: WBC 12,000/μL, Hgb 13.5 g/dL, Plt 250,000/μL
 Urinalysis: Negative for protein, glucose, and blood
 X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</textarea>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary quick-test" data-test="CBC">CBC</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary quick-test" data-test="CRP">CRP</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary quick-test" data-test="Urinalysis">Urinalysis</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary quick-test" data-test="X-ray">X-ray</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary quick-test" data-test="CT Scan">CT Scan</button>
+                                </div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Preliminary Diagnosis:</label>
+                                <label class="form-label">
+                                    <i class="fas fa-stethoscope text-success me-1"></i> Preliminary Diagnosis:
+                                </label>
                                 <textarea name="preliminary_diagnosis" class="form-control" rows="4" placeholder="Enter your initial assessment or suspected diagnosis based on the patient's symptoms and test results."></textarea>
+                                <small class="text-muted mt-2 d-block">
+                                    <i class="fas fa-info-circle me-1"></i> This will be analyzed by the AI to provide recommendations
+                                </small>
                             </div>
                         </div>
                     </div>
         
                 <!-- Submit -->
-                <div class="row mt-4">
+                <div class="row mt-5">
                     <div class="col-md-12 text-end">
-                        <button type="submit" class="btn btn-deep-red btn-lg px-4 "><i class="fa-solid fa-robot me-2"></i>Get Results</button>
+                        <button type="submit" class="btn btn-deep-red btn-lg px-4">
+                            <i class="fa-solid fa-robot me-2"></i>Get Results
+                        </button>
                     </div>
                 </div>
 
@@ -497,6 +595,129 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
 <script>
     document.getElementById('openaiForm').addEventListener('submit', function () {
         document.getElementById('page-loader').style.display = 'block';
+    });
+    
+    // Form progress indicator functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressSteps = document.querySelectorAll('.progress-step');
+        const progressBar = document.querySelector('.progress-bar');
+        
+        // Find sections by heading text
+        function findSectionByHeadingText(text) {
+            const headings = document.querySelectorAll('.medical-form-section h4');
+            for (let heading of headings) {
+                if (heading.textContent.includes(text)) {
+                    return heading.closest('.medical-form-section');
+                }
+            }
+            return null;
+        }
+        
+        const sections = {
+            'patient': findSectionByHeadingText('Patient'),
+            'vitals': findSectionByHeadingText('Vitals'),
+            'symptoms': findSectionByHeadingText('Symptoms'),
+            'diagnosis': findSectionByHeadingText('Diagnosis')
+        };
+        
+        // Function to update progress
+        function updateProgress(step) {
+            let progress = 0;
+            let activeFound = false;
+            
+            progressSteps.forEach((stepEl, index) => {
+                const stepName = stepEl.getAttribute('data-step');
+                
+                if (stepName === step) {
+                    stepEl.classList.add('active');
+                    activeFound = true;
+                    progress = (index + 1) * 20; // 20% per step
+                } else if (!activeFound) {
+                    stepEl.classList.add('completed');
+                    stepEl.classList.remove('active');
+                } else {
+                    stepEl.classList.remove('active', 'completed');
+                }
+            });
+            
+            progressBar.style.width = progress + '%';
+            progressBar.setAttribute('aria-valuenow', progress);
+        }
+        
+        // Add click event to step icons for navigation
+        progressSteps.forEach(step => {
+            step.addEventListener('click', function() {
+                const stepName = this.getAttribute('data-step');
+                updateProgress(stepName);
+                
+                // Scroll to the corresponding section
+                if (sections[stepName]) {
+                    sections[stepName].scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+        
+        // Initialize with first step active
+        updateProgress('patient');
+        
+        // Add scroll spy functionality
+        window.addEventListener('scroll', function() {
+            const scrollPosition = window.scrollY + 200; // Offset for better detection
+            
+            // Determine which section is currently in view
+            let currentSection = 'patient';
+            
+            Object.entries(sections).forEach(([name, section]) => {
+                if (section && section.offsetTop <= scrollPosition) {
+                    currentSection = name;
+                }
+            });
+            
+            updateProgress(currentSection);
+        });
+        
+        // Quick test buttons functionality
+        const quickTestButtons = document.querySelectorAll('.quick-test');
+        const testResultsTextarea = document.querySelector('textarea[name="test_results"]');
+        
+        if (quickTestButtons.length > 0 && testResultsTextarea) {
+            quickTestButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const testType = this.getAttribute('data-test');
+                    let template = '';
+                    
+                    // Add different templates based on test type
+                    switch(testType) {
+                        case 'CBC':
+                            template = 'CBC: WBC 7,500/μL, RBC 4.8 M/μL, Hgb 14.2 g/dL, Hct 42%, Plt 250,000/μL';
+                            break;
+                        case 'CRP':
+                            template = 'CRP: 0.8 mg/L (Normal range: 0-1.0 mg/L)';
+                            break;
+                        case 'Urinalysis':
+                            template = 'Urinalysis: Color - Yellow, Clarity - Clear, pH 6.0, Specific gravity 1.018, Negative for protein, glucose, ketones, blood, and nitrites';
+                            break;
+                        case 'X-ray':
+                            template = 'Chest X-ray: No acute cardiopulmonary process. Heart size normal. Lungs clear.';
+                            break;
+                        case 'CT Scan':
+                            template = 'CT Scan: No evidence of acute intracranial abnormality. No mass effect or midline shift.';
+                            break;
+                        default:
+                            template = testType + ': ';
+                    }
+                    
+                    // Add the template to the textarea
+                    const currentText = testResultsTextarea.value;
+                    if (currentText && !currentText.endsWith('\n')) {
+                        testResultsTextarea.value += '\n';
+                    }
+                    
+                    testResultsTextarea.value += (currentText ? '' : '') + template;
+                    testResultsTextarea.focus();
+                });
+            });
+        }
     });
 
 </script>
@@ -1398,7 +1619,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         });
     </script>
 
-<!-- File Upload Handler Script -->
+<!-- Enhanced File Upload Handler Script -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const fileInput = document.getElementById('reports');
@@ -1406,6 +1627,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         const fileStorageContainer = document.getElementById('file-storage-container');
         const uploadStatus = document.getElementById('upload-status');
         const addMoreFilesBtn = document.getElementById('add-more-files-btn');
+        const uploadZone = document.querySelector('.upload-zone');
         
         // Store all selected files
         let selectedFiles;
@@ -1425,6 +1647,88 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             console.log('Using DataTransfer API for file handling');
         } else {
             console.log('DataTransfer API not supported, using fallback');
+        }
+        
+        // Add drag and drop functionality to upload zone
+        if (uploadZone) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadZone.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            // Highlight drop zone when item is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadZone.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadZone.addEventListener(eventName, unhighlight, false);
+            });
+            
+            // Handle dropped files
+            uploadZone.addEventListener('drop', handleDrop, false);
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            function highlight() {
+                uploadZone.classList.add('border-primary');
+                uploadZone.style.backgroundColor = 'rgba(13, 110, 253, 0.05)';
+            }
+            
+            function unhighlight() {
+                uploadZone.classList.remove('border-primary');
+                uploadZone.style.backgroundColor = '';
+            }
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length > 0) {
+                    if (isDataTransferSupported) {
+                        Array.from(files).forEach(file => {
+                            // Check if file with same name already exists
+                            const fileExists = Array.from(selectedFiles.files).some(f => f.name === file.name);
+                            if (!fileExists) {
+                                selectedFiles.items.add(file);
+                            }
+                        });
+                        
+                        // Update the file input with all files
+                        fileInput.files = selectedFiles.files;
+                    } else {
+                        // For browsers without DataTransfer support
+                        Array.from(files).forEach(file => {
+                            // Check if file with same name already exists
+                            const fileExists = selectedFilesArray.some(f => f.name === file.name);
+                            if (!fileExists) {
+                                selectedFilesArray.push(file);
+                            }
+                        });
+                    }
+                    
+                    updateFileListDisplay();
+                    
+                    // Show success message
+                    uploadStatus.innerHTML = `
+                        <div class="alert alert-success py-2 px-3 fade show">
+                            <i class="fas fa-check-circle me-2"></i> Files added successfully!
+                            <button type="button" class="btn-close float-end" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    
+                    // Auto-dismiss after 3 seconds
+                    setTimeout(() => {
+                        const alert = uploadStatus.querySelector('.alert');
+                        if (alert) {
+                            const bsAlert = new bootstrap.Alert(alert);
+                            bsAlert.close();
+                        }
+                    }, 3000);
+                }
+            }
         }
         
         // Initialize tooltip
@@ -1528,37 +1832,17 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             const filesCount = getSelectedFilesCount();
             
             if (filesCount > 0) {
-                // Create a simple header for selected files
-                const header = document.createElement('div');
-                header.className = 'mb-2 text-muted';
-                header.innerHTML = `<small>${filesCount} file(s) selected</small>`;
-                selectedFilesContainer.appendChild(header);
-                
-                // Check total size
-                let totalSize = 0;
-                for (let i = 0; i < filesCount; i++) {
-                    totalSize += files[i].size;
-                }
-                
-                // Display warning if total size is large
-                if (totalSize > 20 * 1024 * 1024) { // 20MB
-                    const warning = document.createElement('div');
-                    warning.className = 'alert alert-warning py-1 px-2 mb-2';
-                    warning.innerHTML = '<small><i class="fas fa-exclamation-triangle"></i> Large files may take longer to process</small>';
-                    selectedFilesContainer.appendChild(warning);
-                }
-                
                 // Create a container for file items
                 const fileList = document.createElement('div');
-                fileList.className = 'selected-files-list';
                 
-                // Function to create file item element
+                // Function to create file item element with improved styling
                 function createFileItem(file, index) {
                     const fileItem = document.createElement('div');
                     fileItem.className = 'selected-file';
                     
                     // Determine file type and icon
                     let fileIcon = 'fa-file';
+                    let iconColor = 'text-secondary';
                     
                     // Get file extension
                     const fileExt = file.name.split('.').pop().toLowerCase();
@@ -1566,24 +1850,34 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                     // Set icon based on file type
                     if (file.type.match(/image\/.*/)) {
                         fileIcon = 'fa-file-image';
+                        iconColor = 'text-primary';
                     } else if (file.type === 'application/pdf' || fileExt === 'pdf') {
                         fileIcon = 'fa-file-pdf';
+                        iconColor = 'text-danger';
                     } else if (file.type.match(/.*word.*/) || ['doc', 'docx'].includes(fileExt)) {
                         fileIcon = 'fa-file-word';
+                        iconColor = 'text-info';
                     } else if (file.type === 'text/plain' || fileExt === 'txt') {
                         fileIcon = 'fa-file-lines';
+                        iconColor = 'text-secondary';
                     } else if (['xls', 'xlsx', 'csv'].includes(fileExt)) {
                         fileIcon = 'fa-file-excel';
+                        iconColor = 'text-success';
                     } else if (['ppt', 'pptx'].includes(fileExt)) {
                         fileIcon = 'fa-file-powerpoint';
+                        iconColor = 'text-warning';
                     } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(fileExt)) {
                         fileIcon = 'fa-file-archive';
+                        iconColor = 'text-secondary';
                     } else if (['mp3', 'wav', 'ogg'].includes(fileExt)) {
                         fileIcon = 'fa-file-audio';
+                        iconColor = 'text-info';
                     } else if (['mp4', 'avi', 'mov', 'wmv'].includes(fileExt)) {
                         fileIcon = 'fa-file-video';
+                        iconColor = 'text-danger';
                     } else if (['html', 'htm', 'xml', 'json', 'js', 'css', 'php'].includes(fileExt)) {
                         fileIcon = 'fa-file-code';
+                        iconColor = 'text-primary';
                     }
                     
                     // Format file size
@@ -1591,12 +1885,12 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                         ? Math.round(file.size / 1024) + ' KB' 
                         : Math.round(file.size / (1024 * 1024) * 10) / 10 + ' MB';
                     
-                    // Create file item HTML
+                    // Create file item HTML with improved styling
                     fileItem.innerHTML = `
-                        <i class="fas ${fileIcon} file-icon"></i>
+                        <span class="file-icon ${iconColor}"><i class="fas ${fileIcon}"></i></span>
                         <span class="file-name">${file.name}</span>
                         <span class="file-size">${fileSize}</span>
-                        <span class="file-remove" data-index="${index}"><i class="fas fa-times"></i></span>
+                        <span class="file-remove" data-index="${index}" title="Remove file"><i class="fas fa-times-circle"></i></span>
                     `;
                     
                     // Add event listener to remove button
@@ -1616,10 +1910,34 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                 
                 selectedFilesContainer.appendChild(fileList);
                 
-                // Add a clear all button
-                const clearAllBtn = document.createElement('button');
-                clearAllBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
-                clearAllBtn.innerHTML = '<i class="fas fa-times me-1"></i> Clear';
+                // Check total size
+                let totalSize = 0;
+                for (let i = 0; i < filesCount; i++) {
+                    totalSize += files[i].size;
+                }
+                
+                // Add file count and total size info
+                const fileInfo = document.createElement('div');
+                fileInfo.className = 'd-flex justify-content-between align-items-center mt-3';
+                
+                // Format total size
+                const formattedTotalSize = totalSize < 1024 * 1024 
+                    ? Math.round(totalSize / 1024) + ' KB' 
+                    : Math.round(totalSize / (1024 * 1024) * 10) / 10 + ' MB';
+                
+                fileInfo.innerHTML = `
+                    <div class="text-muted">
+                        <small>${filesCount} file(s) selected (${formattedTotalSize})</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary" type="button">
+                        <i class="fas fa-times me-1"></i> Clear All
+                    </button>
+                `;
+                
+                selectedFilesContainer.appendChild(fileInfo);
+                
+                // Add event listener to clear all button
+                const clearAllBtn = fileInfo.querySelector('button');
                 clearAllBtn.addEventListener('click', function() {
                     if (isDataTransferSupported) {
                         selectedFiles = new DataTransfer();
@@ -1629,10 +1947,39 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                         fileInput.value = '';
                     }
                     updateFileListDisplay();
+                    
+                    // Show status message
+                    uploadStatus.innerHTML = `
+                        <div class="alert alert-info py-2 px-3 fade show">
+                            <i class="fas fa-info-circle me-2"></i> All files cleared
+                            <button type="button" class="btn-close float-end" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    
+                    // Auto-dismiss after 3 seconds
+                    setTimeout(() => {
+                        const alert = uploadStatus.querySelector('.alert');
+                        if (alert) {
+                            const bsAlert = new bootstrap.Alert(alert);
+                            bsAlert.close();
+                        }
+                    }, 3000);
                 });
-                selectedFilesContainer.appendChild(clearAllBtn);
+                
+                // Display warning if total size is large
+                if (totalSize > 20 * 1024 * 1024) { // 20MB
+                    const warning = document.createElement('div');
+                    warning.className = 'alert alert-warning py-2 px-3 mt-2';
+                    warning.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i> Large files may take longer to process';
+                    selectedFilesContainer.appendChild(warning);
+                }
             } else {
-                selectedFilesContainer.innerHTML = '<div class="text-muted"><small><i class="fas fa-info-circle"></i> No files selected</small></div>';
+                // No files selected
+                selectedFilesContainer.innerHTML = `
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-file-upload me-2"></i>No files selected yet
+                    </div>
+                `;
             }
         }
         
