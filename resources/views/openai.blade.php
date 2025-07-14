@@ -146,7 +146,7 @@
     }
 
     .medical-form-section h4 {
-        color: #2c3e50;
+        /* color: #2c3e50; */
         border-bottom: 2px solid #DE6262;
         padding-bottom: 0.5rem;
         margin-bottom: 1.5rem;
@@ -170,6 +170,35 @@
         border-color: #ced4da;
         color: #6c757d;
         font-weight: 500;
+    }
+
+    /* Head-to-Toe Assessment Styling */
+    .assessment-subsection {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        border-left: 4px solid #DE6262;
+    }
+
+    .assessment-subsection h5 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .assessment-subsection .form-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .assessment-subsection .form-select,
+    .assessment-subsection .form-control {
+        font-size: 0.875rem;
+    }
+
+    .assessment-subsection .form-check-label {
+        font-size: 0.875rem;
     }
 </style>
 
@@ -613,6 +642,355 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                                 <small class="text-muted mt-2 d-block">
                                     <i class="fas fa-info-circle me-1"></i> This will be analyzed by the AI to provide recommendations
                                 </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Head-to-Toe Assessment Section -->
+                    <div class="medical-form-section mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4><i class="fas fa-user-check me-2"></i>Head-to-Toe Assessment</h4>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#headToToeAssessment" aria-expanded="false">
+                                <i class="fas fa-chevron-down me-1"></i> Toggle Assessment
+                            </button>
+                        </div>
+
+                        <div class="collapse" id="headToToeAssessment">
+                            <!-- General Appearance -->
+                            <div class="assessment-subsection mb-4">
+                                <h5 class="text-primary mb-3"><i class="fas fa-eye me-2"></i>General Appearance</h5>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="consciousness_level" class="form-label">Consciousness Level:</label>
+                                        <select name="consciousness_level" id="consciousness_level" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Alert" {{ isset($patientToEdit) && $patientToEdit->consciousness_level == 'Alert' ? 'selected' : '' }}>Alert</option>
+                                            <option value="Drowsy" {{ isset($patientToEdit) && $patientToEdit->consciousness_level == 'Drowsy' ? 'selected' : '' }}>Drowsy</option>
+                                            <option value="Unresponsive" {{ isset($patientToEdit) && $patientToEdit->consciousness_level == 'Unresponsive' ? 'selected' : '' }}>Unresponsive</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="mood_behavior" class="form-label">Mood/Behavior:</label>
+                                        <select name="mood_behavior" id="mood_behavior" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Calm" {{ isset($patientToEdit) && $patientToEdit->mood_behavior == 'Calm' ? 'selected' : '' }}>Calm</option>
+                                            <option value="Anxious" {{ isset($patientToEdit) && $patientToEdit->mood_behavior == 'Anxious' ? 'selected' : '' }}>Anxious</option>
+                                            <option value="Aggressive" {{ isset($patientToEdit) && $patientToEdit->mood_behavior == 'Aggressive' ? 'selected' : '' }}>Aggressive</option>
+                                            <option value="Confused" {{ isset($patientToEdit) && $patientToEdit->mood_behavior == 'Confused' ? 'selected' : '' }}>Confused</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="speech_clarity" class="form-label">Speech Clarity:</label>
+                                        <select name="speech_clarity" id="speech_clarity" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Clear" {{ isset($patientToEdit) && $patientToEdit->speech_clarity == 'Clear' ? 'selected' : '' }}>Clear</option>
+                                            <option value="Slurred" {{ isset($patientToEdit) && $patientToEdit->speech_clarity == 'Slurred' ? 'selected' : '' }}>Slurred</option>
+                                            <option value="Incoherent" {{ isset($patientToEdit) && $patientToEdit->speech_clarity == 'Incoherent' ? 'selected' : '' }}>Incoherent</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="hygiene_level" class="form-label">Hygiene Level:</label>
+                                        <select name="hygiene_level" id="hygiene_level" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Good" {{ isset($patientToEdit) && $patientToEdit->hygiene_level == 'Good' ? 'selected' : '' }}>Good</option>
+                                            <option value="Fair" {{ isset($patientToEdit) && $patientToEdit->hygiene_level == 'Fair' ? 'selected' : '' }}>Fair</option>
+                                            <option value="Poor" {{ isset($patientToEdit) && $patientToEdit->hygiene_level == 'Poor' ? 'selected' : '' }}>Poor</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- HEENT -->
+                            <div class="assessment-subsection mb-4">
+                                <h5 class="text-primary mb-3"><i class="fas fa-head-side-virus me-2"></i>Head, Eyes, Ears, Nose, Mouth (HEENT)</h5>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label for="scalp_condition" class="form-label">Scalp Condition:</label>
+                                        <input type="text" name="scalp_condition" id="scalp_condition" class="form-control"
+                                               placeholder="e.g., Normal, lesions, alopecia" value="{{ $patientToEdit->scalp_condition ?? '' }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="pupil_reactivity" class="form-label">Pupil Reactivity:</label>
+                                        <select name="pupil_reactivity" id="pupil_reactivity" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="PERRLA" {{ isset($patientToEdit) && $patientToEdit->pupil_reactivity == 'PERRLA' ? 'selected' : '' }}>PERRLA</option>
+                                            <option value="Unequal" {{ isset($patientToEdit) && $patientToEdit->pupil_reactivity == 'Unequal' ? 'selected' : '' }}>Unequal</option>
+                                            <option value="Non-reactive" {{ isset($patientToEdit) && $patientToEdit->pupil_reactivity == 'Non-reactive' ? 'selected' : '' }}>Non-reactive</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Issues:</label>
+                                        <div class="form-check">
+                                            <input type="checkbox" name="vision_issues" id="vision_issues" class="form-check-input" value="1"
+                                                   {{ isset($patientToEdit) && $patientToEdit->vision_issues ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="vision_issues">Vision Issues</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" name="hearing_issues" id="hearing_issues" class="form-check-input" value="1"
+                                                   {{ isset($patientToEdit) && $patientToEdit->hearing_issues ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="hearing_issues">Hearing Issues</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-12">
+                                        <label for="oral_findings" class="form-label">Oral Findings:</label>
+                                        <textarea name="oral_findings" id="oral_findings" class="form-control" rows="2"
+                                                  placeholder="e.g., Good dentition, dry mucous membranes, thrush">{{ $patientToEdit->oral_findings ?? '' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Neurological -->
+                            <div class="assessment-subsection mb-4">
+                                <h5 class="text-primary mb-3"><i class="fas fa-brain me-2"></i>Neurological</h5>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="orientation_level" class="form-label">Orientation:</label>
+                                        <select name="orientation_level" id="orientation_level" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Oriented x4" {{ isset($patientToEdit) && $patientToEdit->orientation_level == 'Oriented x4' ? 'selected' : '' }}>Oriented x4</option>
+                                            <option value="Oriented x3" {{ isset($patientToEdit) && $patientToEdit->orientation_level == 'Oriented x3' ? 'selected' : '' }}>Oriented x3</option>
+                                            <option value="Oriented x2" {{ isset($patientToEdit) && $patientToEdit->orientation_level == 'Oriented x2' ? 'selected' : '' }}>Oriented x2</option>
+                                            <option value="Disoriented" {{ isset($patientToEdit) && $patientToEdit->orientation_level == 'Disoriented' ? 'selected' : '' }}>Disoriented</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="limb_strength" class="form-label">Limb Strength:</label>
+                                        <select name="limb_strength" id="limb_strength" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Equal" {{ isset($patientToEdit) && $patientToEdit->limb_strength == 'Equal' ? 'selected' : '' }}>Equal</option>
+                                            <option value="Weak Left" {{ isset($patientToEdit) && $patientToEdit->limb_strength == 'Weak Left' ? 'selected' : '' }}>Weak Left</option>
+                                            <option value="Weak Right" {{ isset($patientToEdit) && $patientToEdit->limb_strength == 'Weak Right' ? 'selected' : '' }}>Weak Right</option>
+                                            <option value="Paralyzed" {{ isset($patientToEdit) && $patientToEdit->limb_strength == 'Paralyzed' ? 'selected' : '' }}>Paralyzed</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="reflexes" class="form-label">Reflexes:</label>
+                                        <select name="reflexes" id="reflexes" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Normal" {{ isset($patientToEdit) && $patientToEdit->reflexes == 'Normal' ? 'selected' : '' }}>Normal</option>
+                                            <option value="Hyperreflexia" {{ isset($patientToEdit) && $patientToEdit->reflexes == 'Hyperreflexia' ? 'selected' : '' }}>Hyperreflexia</option>
+                                            <option value="Hyporeflexia" {{ isset($patientToEdit) && $patientToEdit->reflexes == 'Hyporeflexia' ? 'selected' : '' }}>Hyporeflexia</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="sensation_findings" class="form-label">Sensation:</label>
+                                        <textarea name="sensation_findings" id="sensation_findings" class="form-control" rows="2"
+                                                  placeholder="e.g., Intact, decreased, numbness">{{ $patientToEdit->sensation_findings ?? '' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Neck and Chest -->
+                            <div class="assessment-subsection mb-4">
+                                <h5 class="text-primary mb-3"><i class="fas fa-lungs me-2"></i>Neck and Chest</h5>
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <label for="trachea_position" class="form-label">Trachea:</label>
+                                        <select name="trachea_position" id="trachea_position" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Midline" {{ isset($patientToEdit) && $patientToEdit->trachea_position == 'Midline' ? 'selected' : '' }}>Midline</option>
+                                            <option value="Deviated" {{ isset($patientToEdit) && $patientToEdit->trachea_position == 'Deviated' ? 'selected' : '' }}>Deviated</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">JVD:</label>
+                                        <div class="form-check mt-2">
+                                            <input type="checkbox" name="jvd_present" id="jvd_present" class="form-check-input" value="1"
+                                                   {{ isset($patientToEdit) && $patientToEdit->jvd_present ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="jvd_present">Present</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="lung_sounds" class="form-label">Lung Sounds:</label>
+                                        <select name="lung_sounds" id="lung_sounds" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Clear" {{ isset($patientToEdit) && $patientToEdit->lung_sounds == 'Clear' ? 'selected' : '' }}>Clear</option>
+                                            <option value="Crackles" {{ isset($patientToEdit) && $patientToEdit->lung_sounds == 'Crackles' ? 'selected' : '' }}>Crackles</option>
+                                            <option value="Wheezes" {{ isset($patientToEdit) && $patientToEdit->lung_sounds == 'Wheezes' ? 'selected' : '' }}>Wheezes</option>
+                                            <option value="Diminished" {{ isset($patientToEdit) && $patientToEdit->lung_sounds == 'Diminished' ? 'selected' : '' }}>Diminished</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="heart_sounds" class="form-label">Heart Sounds:</label>
+                                        <select name="heart_sounds" id="heart_sounds" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Normal" {{ isset($patientToEdit) && $patientToEdit->heart_sounds == 'Normal' ? 'selected' : '' }}>Normal</option>
+                                            <option value="Murmur" {{ isset($patientToEdit) && $patientToEdit->heart_sounds == 'Murmur' ? 'selected' : '' }}>Murmur</option>
+                                            <option value="Irregular" {{ isset($patientToEdit) && $patientToEdit->heart_sounds == 'Irregular' ? 'selected' : '' }}>Irregular</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="capillary_refill_time" class="form-label">Cap Refill:</label>
+                                        <select name="capillary_refill_time" id="capillary_refill_time" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="< 2s" {{ isset($patientToEdit) && $patientToEdit->capillary_refill_time == '< 2s' ? 'selected' : '' }}>< 2s</option>
+                                            <option value="2–3s" {{ isset($patientToEdit) && $patientToEdit->capillary_refill_time == '2–3s' ? 'selected' : '' }}>2–3s</option>
+                                            <option value="> 3s" {{ isset($patientToEdit) && $patientToEdit->capillary_refill_time == '> 3s' ? 'selected' : '' }}>> 3s</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Abdomen -->
+                            <div class="assessment-subsection mb-4">
+                                <h5 class="text-primary mb-3"><i class="fas fa-stomach me-2"></i>Abdomen</h5>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="abdominal_shape" class="form-label">Shape:</label>
+                                        <select name="abdominal_shape" id="abdominal_shape" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Flat" {{ isset($patientToEdit) && $patientToEdit->abdominal_shape == 'Flat' ? 'selected' : '' }}>Flat</option>
+                                            <option value="Distended" {{ isset($patientToEdit) && $patientToEdit->abdominal_shape == 'Distended' ? 'selected' : '' }}>Distended</option>
+                                            <option value="Scarred" {{ isset($patientToEdit) && $patientToEdit->abdominal_shape == 'Scarred' ? 'selected' : '' }}>Scarred</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="bowel_sounds" class="form-label">Bowel Sounds:</label>
+                                        <select name="bowel_sounds" id="bowel_sounds" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Normal" {{ isset($patientToEdit) && $patientToEdit->bowel_sounds == 'Normal' ? 'selected' : '' }}>Normal</option>
+                                            <option value="Hyperactive" {{ isset($patientToEdit) && $patientToEdit->bowel_sounds == 'Hyperactive' ? 'selected' : '' }}>Hyperactive</option>
+                                            <option value="Hypoactive" {{ isset($patientToEdit) && $patientToEdit->bowel_sounds == 'Hypoactive' ? 'selected' : '' }}>Hypoactive</option>
+                                            <option value="Absent" {{ isset($patientToEdit) && $patientToEdit->bowel_sounds == 'Absent' ? 'selected' : '' }}>Absent</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="appetite_level" class="form-label">Appetite:</label>
+                                        <select name="appetite_level" id="appetite_level" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Good" {{ isset($patientToEdit) && $patientToEdit->appetite_level == 'Good' ? 'selected' : '' }}>Good</option>
+                                            <option value="Poor" {{ isset($patientToEdit) && $patientToEdit->appetite_level == 'Poor' ? 'selected' : '' }}>Poor</option>
+                                            <option value="None" {{ isset($patientToEdit) && $patientToEdit->appetite_level == 'None' ? 'selected' : '' }}>None</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Symptoms:</label>
+                                        <div class="form-check">
+                                            <input type="checkbox" name="abdominal_tenderness" id="abdominal_tenderness" class="form-check-input" value="1"
+                                                   {{ isset($patientToEdit) && $patientToEdit->abdominal_tenderness ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="abdominal_tenderness">Tenderness</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" name="nausea_or_vomiting" id="nausea_or_vomiting" class="form-check-input" value="1"
+                                                   {{ isset($patientToEdit) && $patientToEdit->nausea_or_vomiting ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="nausea_or_vomiting">Nausea/Vomiting</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Genitourinary -->
+                            <div class="assessment-subsection mb-4">
+                                <h5 class="text-primary mb-3"><i class="fas fa-kidneys me-2"></i>Genitourinary</h5>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Issues:</label>
+                                        <div class="form-check">
+                                            <input type="checkbox" name="urination_issues" id="urination_issues" class="form-check-input" value="1"
+                                                   {{ isset($patientToEdit) && $patientToEdit->urination_issues ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="urination_issues">Urination Issues</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" name="catheter_present" id="catheter_present" class="form-check-input" value="1"
+                                                   {{ isset($patientToEdit) && $patientToEdit->catheter_present ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="catheter_present">Catheter Present</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label for="urine_characteristics" class="form-label">Urine Characteristics:</label>
+                                        <textarea name="urine_characteristics" id="urine_characteristics" class="form-control" rows="2"
+                                                  placeholder="e.g., Clear yellow, cloudy, hematuria">{{ $patientToEdit->urine_characteristics ?? '' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Musculoskeletal -->
+                            <div class="assessment-subsection mb-4">
+                                <h5 class="text-primary mb-3"><i class="fas fa-bone me-2"></i>Musculoskeletal</h5>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="range_of_motion" class="form-label">Range of Motion:</label>
+                                        <select name="range_of_motion" id="range_of_motion" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Full" {{ isset($patientToEdit) && $patientToEdit->range_of_motion == 'Full' ? 'selected' : '' }}>Full</option>
+                                            <option value="Limited" {{ isset($patientToEdit) && $patientToEdit->range_of_motion == 'Limited' ? 'selected' : '' }}>Limited</option>
+                                            <option value="None" {{ isset($patientToEdit) && $patientToEdit->range_of_motion == 'None' ? 'selected' : '' }}>None</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="gait_stability" class="form-label">Gait Stability:</label>
+                                        <select name="gait_stability" id="gait_stability" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Stable" {{ isset($patientToEdit) && $patientToEdit->gait_stability == 'Stable' ? 'selected' : '' }}>Stable</option>
+                                            <option value="Unsteady" {{ isset($patientToEdit) && $patientToEdit->gait_stability == 'Unsteady' ? 'selected' : '' }}>Unsteady</option>
+                                            <option value="Requires assistance" {{ isset($patientToEdit) && $patientToEdit->gait_stability == 'Requires assistance' ? 'selected' : '' }}>Requires assistance</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="assistive_devices" class="form-label">Assistive Devices:</label>
+                                        <input type="text" name="assistive_devices" id="assistive_devices" class="form-control"
+                                               placeholder="e.g., Walker, cane, wheelchair" value="{{ $patientToEdit->assistive_devices ?? '' }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Skin -->
+                            <div class="assessment-subsection mb-4">
+                                <h5 class="text-primary mb-3"><i class="fas fa-hand-paper me-2"></i>Skin</h5>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="skin_color" class="form-label">Color:</label>
+                                        <select name="skin_color" id="skin_color" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Pink" {{ isset($patientToEdit) && $patientToEdit->skin_color == 'Pink' ? 'selected' : '' }}>Pink</option>
+                                            <option value="Pale" {{ isset($patientToEdit) && $patientToEdit->skin_color == 'Pale' ? 'selected' : '' }}>Pale</option>
+                                            <option value="Cyanotic" {{ isset($patientToEdit) && $patientToEdit->skin_color == 'Cyanotic' ? 'selected' : '' }}>Cyanotic</option>
+                                            <option value="Jaundiced" {{ isset($patientToEdit) && $patientToEdit->skin_color == 'Jaundiced' ? 'selected' : '' }}>Jaundiced</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="skin_temperature" class="form-label">Temperature:</label>
+                                        <select name="skin_temperature" id="skin_temperature" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Warm" {{ isset($patientToEdit) && $patientToEdit->skin_temperature == 'Warm' ? 'selected' : '' }}>Warm</option>
+                                            <option value="Cool" {{ isset($patientToEdit) && $patientToEdit->skin_temperature == 'Cool' ? 'selected' : '' }}>Cool</option>
+                                            <option value="Cold" {{ isset($patientToEdit) && $patientToEdit->skin_temperature == 'Cold' ? 'selected' : '' }}>Cold</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Pressure Ulcers:</label>
+                                        <div class="form-check mt-2">
+                                            <input type="checkbox" name="pressure_ulcers" id="pressure_ulcers" class="form-check-input" value="1"
+                                                   {{ isset($patientToEdit) && $patientToEdit->pressure_ulcers ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="pressure_ulcers">Present</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="skin_lesions" class="form-label">Lesions:</label>
+                                        <textarea name="skin_lesions" id="skin_lesions" class="form-control" rows="2"
+                                                  placeholder="e.g., Rash, bruising, wounds">{{ $patientToEdit->skin_lesions ?? '' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pain Assessment -->
+                            <div class="assessment-subsection mb-4">
+                                <h5 class="text-primary mb-3"><i class="fas fa-exclamation-triangle me-2"></i>Pain Assessment</h5>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="pain_score" class="form-label">Pain Score (0-10):</label>
+                                        <input type="number" name="pain_score" id="pain_score" class="form-control" min="0" max="10"
+                                               placeholder="0-10" value="{{ $patientToEdit->pain_scale ?? '' }}">
+                                        <small class="text-muted">0 = no pain, 10 = worst pain</small>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <label for="pain_description" class="form-label">Pain Description:</label>
+                                        <textarea name="pain_description" id="pain_description" class="form-control" rows="2"
+                                                  placeholder="e.g., Sharp, stabbing pain in right lower quadrant, worse with movement">{{ $patientToEdit->pain_description ?? '' }}</textarea>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

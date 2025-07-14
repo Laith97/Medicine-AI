@@ -40,6 +40,59 @@ class PatientAnalysis extends Model
         'oxygen_saturation',
         'physician_notes',
         'additional_notes',
+
+        // Head-to-Toe Assessment fields
+        // General Appearance
+        'consciousness_level',
+        'mood_behavior',
+        'speech_clarity',
+        'hygiene_level',
+
+        // HEENT
+        'scalp_condition',
+        'pupil_reactivity',
+        'vision_issues',
+        'hearing_issues',
+        'oral_findings',
+
+        // Neurological
+        'orientation_level',
+        'limb_strength',
+        'reflexes',
+        'sensation_findings',
+
+        // Neck and Chest
+        'trachea_position',
+        'jvd_present',
+        'lung_sounds',
+        'heart_sounds',
+        'capillary_refill_time',
+
+        // Abdomen
+        'abdominal_shape',
+        'bowel_sounds',
+        'abdominal_tenderness',
+        'nausea_or_vomiting',
+        'appetite_level',
+
+        // Genitourinary
+        'urination_issues',
+        'catheter_present',
+        'urine_characteristics',
+
+        // Musculoskeletal
+        'range_of_motion',
+        'gait_stability',
+        'assistive_devices',
+
+        // Skin
+        'skin_color',
+        'skin_temperature',
+        'skin_lesions',
+        'pressure_ulcers',
+
+        // Pain Assessment
+        'pain_description',
     ];
 
 
