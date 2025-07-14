@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PatientAnalysis;
 use App\Models\Symptom;
 use Illuminate\Http\Request;
+use App\Http\Requests\PatientAnalysisRequest;
 use OpenAI\Laravel\Facades\OpenAI;
 
 class OpenAIController extends Controller
@@ -13,7 +14,7 @@ class OpenAIController extends Controller
     public function showForm(Request $request)
     {
         $symptoms = Symptom::all();
-        
+
         // Check if we're editing an existing patient
         $patientToEdit = null;
         if ($request->has('edit_patient')) {
@@ -21,45 +22,45 @@ class OpenAIController extends Controller
                 ->where('user_id', auth()->id())
                 ->first();
         }
-        
+
         // Get all patient records for the current user
         $allPatientRecords = PatientAnalysis::where('user_id', auth()->id())
             ->select('id', 'name', 'age', 'gender', 'created_at', 'patient_key', 'visit_number', 'weight', 'height', 'symptoms', 'test_results')
             ->orderBy('created_at', 'desc')
             ->get();
-            
+
         // Group patients by patient_key to count visits and get the most recent record
         $patientGroups = [];
         $patientVisits = [];
-        
+
         foreach ($allPatientRecords as $record) {
             // If patient_key is not set, use the name-age-gender combination
             $key = $record->patient_key ?? ($record->name . '-' . $record->age . '-' . $record->gender);
-            
+
             if (!isset($patientGroups[$key])) {
                 $patientGroups[$key] = $record; // Store the most recent record (first one due to ordering)
                 $patientVisits[$key] = ['count' => 0, 'patient' => $record];
             }
-            
+
             $patientVisits[$key]['count']++;
         }
-        
+
         // Convert the grouped patients back to a collection
         $existingPatients = collect(array_values($patientGroups));
-        
+
         // Create a simplified version of patientVisits for JavaScript
         // We'll use both patient_key and name-age-gender as keys to ensure compatibility
         $simplifiedVisits = [];
         foreach ($existingPatients as $patient) {
             $nameAgeGenderKey = $patient->name . '-' . $patient->age . '-' . $patient->gender;
             $patientKey = $patient->patient_key ?? $nameAgeGenderKey;
-            
+
             if (isset($patientVisits[$patientKey])) {
                 // Add entry with patient_key if it exists
                 if ($patient->patient_key) {
                     $simplifiedVisits[$patient->patient_key] = $patientVisits[$patientKey];
                 }
-                
+
                 // Also add entry with name-age-gender key for backward compatibility
                 $simplifiedVisits[$nameAgeGenderKey] = $patientVisits[$patientKey];
             } else {
@@ -75,33 +76,33 @@ class OpenAIController extends Controller
         return view('openai', compact('symptoms', 'existingPatients', 'simplifiedVisits', 'patientVisits', 'patientToEdit'));
     }
 
-    
-    public function getResponse(Request $request)
+
+    public function getResponse(PatientAnalysisRequest $request)
     {
         try {
             $files = $request->file('reports');
-        
+
             $uploadedFileIds = [];
             $imageMessages = [];
-        
+
             $inputData = $this->collectPatientData($request);
             $criterion = auth()->user()->setting->criterion ?? 'CDC';
-            
+
             if ($files && is_array($files)) {
                 foreach ($files as $file) {
                     $originalName = $file->getClientOriginalName();
                     $extension = strtolower($file->getClientOriginalExtension());
                     $tempPath = storage_path('app/tmp/' . $originalName);
-        
+
                     // Move file to temp path
                     $file->move(storage_path('app/tmp'), $originalName);
-        
+
                     // Check if it's an image file
                     if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])) {
                         // Process as image for GPT-4 Vision
                         $base64 = base64_encode(file_get_contents($tempPath));
                         $mimeType = mime_content_type($tempPath);
-        
+
                         $imageMessages[] = [
                             "type" => "image_url",
                             "image_url" => [
@@ -115,39 +116,39 @@ class OpenAIController extends Controller
                                 'purpose' => 'assistants',
                                 'file' => fopen($tempPath, 'r'),
                             ]);
-            
+
                             $uploadedFileIds[] = $uploaded['id'];
                         } catch (\Exception $e) {
                             // If the file type is not supported by OpenAI, log the error
                             \Log::warning("File type not supported by OpenAI: {$originalName}. Error: {$e->getMessage()}");
-                            
+
                             // For unsupported file types, we'll try to extract text if possible
                             $fileContent = $this->tryExtractTextFromFile($tempPath, $extension);
-                            
+
                             if (!empty($fileContent)) {
                                 // Log the successful extraction
                                 \Log::info("Successfully extracted text from file: {$originalName}. Length: " . strlen($fileContent));
-                                
+
                                 // Create a temporary text file with the extracted content
                                 $textFilePath = storage_path('app/tmp/extracted_' . pathinfo($originalName, PATHINFO_FILENAME) . '.txt');
                                 file_put_contents($textFilePath, $fileContent);
-                                
+
                                 try {
                                     // Upload the text file instead
                                     $uploaded = OpenAI::files()->upload([
                                         'purpose' => 'assistants',
                                         'file' => fopen($textFilePath, 'r'),
                                     ]);
-                                    
+
                                     $uploadedFileIds[] = $uploaded['id'];
                                     \Log::info("Successfully uploaded extracted text as file: {$uploaded['id']}");
                                 } catch (\Exception $e2) {
                                     \Log::error("Failed to upload extracted text file: {$e2->getMessage()}");
-                                    
+
                                     // If we can't upload the file, add the content directly to the prompt
                                     // This is a fallback for when file upload fails
                                     $fileExtractedContent = "Content from {$originalName}:\n\n" . $fileContent;
-                                    
+
                                     // Add the extracted content to the image messages if it's not too long
                                     if (strlen($fileExtractedContent) < 4000) {
                                         $imageMessages[] = [
@@ -161,14 +162,14 @@ class OpenAIController extends Controller
                     }
                 }
             }
-        
+
             // GPT-4 Vision
             if (!empty($imageMessages)) {
                 // Create a system message that instructs the model to analyze all images
                 $specialty = auth()->user()->setting->specialty ?? 'medicine';
-                $systemMessage = "You are a senior consultant physician specialized in {$specialty} with 20+ years of clinical experience. 
+                $systemMessage = "You are a senior consultant physician specialized in {$specialty} with 20+ years of clinical experience.
                     You have extensive training in analyzing medical images and documents.
-                    
+
                     CRITICAL CLINICAL APPROACH:
                     1. ALWAYS prioritize life-threatening conditions first in your differential diagnosis
                     2. Assign specific probability percentages to each diagnosis (e.g., 70%, 25%, 5%)
@@ -179,28 +180,28 @@ class OpenAIController extends Controller
                     7. Flag cases as ROUTINE, URGENT, or EMERGENCY based on clinical presentation
                     8. Include specific medication recommendations when appropriate
                     9. Recommend specialist referrals when indicated
-                    
+
                     IMPORTANT INSTRUCTIONS:
                     1. Begin your response with a 'CASE URGENCY' classification (ROUTINE/URGENT/EMERGENCY)
-                    
+
                     2. Then provide a 'PATIENT INFORMATION' section that includes:
                        - Basic patient details from the input data
                        - A subsection called 'MEDICAL REPORTS ANALYSIS' with a concise summary of all uploaded images
-                    
+
                     3. For each image in the MEDICAL REPORTS ANALYSIS:
                        - Identify and describe what the image shows (brain scan, x-ray, ultrasound, etc.)
                        - Identify any visible abnormalities, lesions, or notable findings
                        - Extract any text visible in the images (lab values, measurements, annotations)
                        - Keep descriptions concise even if there are many images
-                    
+
                     4. After the PATIENT INFORMATION section, proceed with your diagnosis sections (A, B, C, D)
-                    
+
                     DO NOT say you cannot analyze the image. If you can see the image at all, provide your best medical analysis.
                     If the image is unclear, still describe what you can see and provide possible interpretations.";
-                
+
                 $response = OpenAI::chat()->create([
                    'model' => 'gpt-4o',
-    
+
                     'messages' => [
                         [
                             'role' => 'system',
@@ -215,31 +216,31 @@ class OpenAIController extends Controller
                         ]
                     ]
                 ]);
-                
+
                 $rawMessage = $response['choices'][0]['message']['content'] ?? '';
-    
+
                 $filteredMessage = $this->filterReponse($rawMessage);
-                
+
                 $this->insertTotable($request,$filteredMessage);
                 return redirect()->back()->with([
                     'openai_result' => $filteredMessage,
                 ]);
-                
+
             }
-        
+
             // File Search
             if (!empty($uploadedFileIds)) {
                 $vectorStore = OpenAI::vectorStores()->create([
                     'file_ids' => $uploadedFileIds,
                 ]);
                 $vectorStoreId = $vectorStore['id'];
-        
+
                 $specialty = auth()->user()->setting->specialty ?? 'Internal Medicine';
-                
+
                 $assistant = OpenAI::assistants()->create([
                     'name' => 'Medical Document Analyzer',
                     'instructions' => "You are a senior consultant physician specialized in {$specialty} with 20+ years of clinical experience. Your task is to thoroughly analyze ALL uploaded medical documents to extract relevant clinical information.
-                    
+
                     CRITICAL CLINICAL APPROACH:
                     1. ALWAYS prioritize life-threatening conditions first in your differential diagnosis
                     2. Assign specific probability percentages to each diagnosis (e.g., 70%, 25%, 5%)
@@ -250,28 +251,28 @@ class OpenAIController extends Controller
                     7. Flag cases as ROUTINE, URGENT, or EMERGENCY based on clinical presentation
                     8. Include specific medication recommendations when appropriate
                     9. Recommend specialist referrals when indicated
-                    
+
                     IMPORTANT INSTRUCTIONS:
                     1. Begin your response with a 'CASE URGENCY' classification (ROUTINE/URGENT/EMERGENCY)
-                    
+
                     2. Then provide a 'PATIENT INFORMATION' section that includes:
                        - Basic patient details from the input data
                        - Vital signs assessment (if provided)
                        - A subsection called 'MEDICAL REPORTS ANALYSIS' with a concise summary of all uploaded files
-                    
+
                     3. For the MEDICAL REPORTS ANALYSIS:
                        - Keep it concise even if there are many files (10+)
                        - Group similar files together and summarize key findings
                        - For images: Brief description and key findings
                        - For text documents: Key medical information and relevance
-                    
+
                     4. Examine EACH file thoroughly and extract ALL medical information:
                        - For medical documents: Extract symptoms, diagnoses, test results, and treatments
                        - For text documents about medical conditions: Summarize key information and connect to the patient's case
                        - For images: Describe what they show and identify any abnormalities
-                    
+
                     5. After the PATIENT INFORMATION section, proceed with your diagnosis sections (A, B, C, D)
-                    
+
                     DO NOT say you cannot analyze the files. If you can access the file content at all, provide your best medical analysis based on what you can see.",
                     'tools' => [['type' => 'file_search']],
                     'tool_resources' => [
@@ -281,17 +282,17 @@ class OpenAIController extends Controller
                     ],
                     'model' => 'gpt-4o',
                 ]);
-        
+
                 $thread = OpenAI::threads()->create([]);
                 $threadId = $thread['id'];
-                
+
                 // Store thread ID in session for follow-up messages
                 session(['thread_id' => $threadId]);
-                
+
                 // Create a conversation ID for follow-up messages
                 $conversationId = uniqid('conv_');
                 session(['conversation_id' => $conversationId]);
-                
+
                 // Store the initial conversation in the session
                 $specialty = auth()->user()->setting->specialty ?? null;
                 $initialPrompt = $this->preparePrompt($inputData, $criterion, true);
@@ -299,34 +300,34 @@ class OpenAIController extends Controller
                     ['role' => 'system', 'content' => $this->getSystemPrompt($specialty, $criterion)],
                     ['role' => 'user', 'content' => $initialPrompt]
                 ]]);
-        
+
                 // Create a more detailed prompt that specifically mentions the files
                 $fileNames = [];
                 foreach ($files as $file) {
                     $fileNames[] = $file->getClientOriginalName();
                 }
-                
+
                 $fileListText = "I've uploaded the following files for analysis:\n";
                 foreach ($fileNames as $index => $name) {
                     $fileListText .= ($index + 1) . ". " . $name . "\n";
                 }
-                
+
                 $enhancedPrompt = $fileListText . "\n" . $initialPrompt . "\n\nPlease analyze ALL these files thoroughly from your {$specialty} perspective. Don't skip any files, and make sure to extract all relevant medical information.";
-                
+
                 OpenAI::threads()->messages()->create($threadId, [
                     'role' => 'user',
                     'content' => $enhancedPrompt,
                 ]);
-        
+
                 $run = OpenAI::threads()->runs()->create($threadId, [
                     'assistant_id' => $assistant['id'],
                 ]);
                 $runId = $run['id'];
-                
-    
+
+
                 return $this->checkRunStatus($request, $threadId, $runId);
             }
-        
+
             // No files provided: still try to respond based on inputData alone
             $response = OpenAI::chat()->create([
                 'model' => 'gpt-4o',
@@ -338,15 +339,15 @@ class OpenAIController extends Controller
                 ]
             ]);
             $rawMessage = $response['choices'][0]['message']['content'] ?? '';
-            
+
             $filteredMessage = $this->filterReponse($rawMessage);
             // ✅ Save to database
             $this->insertTotable($request, $filteredMessage);
-            
+
             // Create a conversation ID for follow-up messages
             $conversationId = uniqid('conv_');
             session(['conversation_id' => $conversationId]);
-            
+
             // Store the initial conversation in the session
             $specialty = auth()->user()->setting->specialty ?? null;
             session(['conversation_history_' . $conversationId => [
@@ -354,7 +355,7 @@ class OpenAIController extends Controller
                 ['role' => 'user', 'content' => $this->preparePrompt($inputData, $criterion, false)],
                 ['role' => 'assistant', 'content' => $rawMessage]
             ]]);
-            
+
             return redirect()->back()->with([
                 'openai_result' => $filteredMessage,
                 'conversation_id' => $conversationId,
@@ -362,17 +363,17 @@ class OpenAIController extends Controller
         } catch (\Exception $e) {
             // Check if it's an API key issue
             $message = $e->getMessage();
-            if (strpos($message, 'API key') !== false || 
-                strpos($message, 'authentication') !== false || 
-                strpos($message, '401') !== false || 
+            if (strpos($message, 'API key') !== false ||
+                strpos($message, 'authentication') !== false ||
+                strpos($message, '401') !== false ||
                 strpos($message, 'Unauthorized') !== false) {
-                
+
                 // It's likely an API key issue
                 return redirect()->back()->with([
                     'openai_api_error' => 'Your OpenAI API key appears to be invalid or expired. Please contact the administrator to update the API key.',
                 ]);
             }
-            
+
             // For other errors
             return redirect()->back()->with([
                 'openai_error' => 'An error occurred while processing your request: ' . $e->getMessage(),
@@ -380,16 +381,16 @@ class OpenAIController extends Controller
         }
     }
 
-    
-    
-    
+
+
+
     public function checkRunStatus($request, $threadId, $runId)
     {
         $maxAttempts = 30; // Increase max attempts
         $delayMicroseconds = 1000000; // 1 second
-        
+
         \Log::info("Checking run status for thread: $threadId, run: $runId");
-    
+
         for ($i = 0; $i < $maxAttempts; $i++) {
             $runStatus = OpenAI::threads()->runs()->retrieve($threadId, $runId);
             \Log::info("Run status: " . $runStatus['status'] . " (attempt $i)");
@@ -400,10 +401,10 @@ class OpenAIController extends Controller
                     'limit' => 10, // Get more messages to ensure we have the complete response
                     'order' => 'desc' // Get newest first
                 ]);
-                
+
                 // Log the number of messages received
                 \Log::info("Retrieved " . count($messages['data']) . " messages from thread");
-                
+
                 // Get the assistant's response (should be the first message)
                 $assistantMessage = null;
                 foreach ($messages['data'] as $message) {
@@ -412,14 +413,14 @@ class OpenAIController extends Controller
                         break;
                     }
                 }
-                
+
                 if (!$assistantMessage) {
                     \Log::error("No assistant message found in thread: $threadId");
                     return redirect()->back()->with([
                         'openai_error' => 'No response was generated. Please try again.',
                     ]);
                 }
-                
+
                 // Combine all content parts (text, images, etc.)
                 $fullContent = '';
                 foreach ($assistantMessage['content'] as $contentPart) {
@@ -427,25 +428,25 @@ class OpenAIController extends Controller
                         $fullContent .= $contentPart['text']['value'] . "\n\n";
                     }
                 }
-                
+
                 $lastMessage = trim($fullContent);
                 \Log::info("Response length: " . strlen($lastMessage) . " characters");
-                
+
                 if (empty($lastMessage)) {
                     \Log::error("Empty response from assistant in thread: $threadId");
                     return redirect()->back()->with([
                         'openai_error' => 'The response was empty. Please try again.',
                     ]);
                 }
-                
+
                 $lastMessage = $this->filterReponse($lastMessage);
-                
+
                 // Save to database
                 $this->insertTotable($request, $lastMessage);
-                
+
                 // Get the conversation ID from session
                 $conversationId = session('conversation_id');
-                
+
                 // Add the AI's response to the conversation history
                 if ($conversationId) {
                     $conversationHistory = session('conversation_history_' . $conversationId, []);
@@ -454,7 +455,7 @@ class OpenAIController extends Controller
                         session(['conversation_history_' . $conversationId => $conversationHistory]);
                     }
                 }
-                
+
                 return redirect()->back()->with([
                     'openai_result' => $lastMessage,
                     'conversation_id' => $conversationId,
@@ -469,17 +470,17 @@ class OpenAIController extends Controller
                 // Handle required actions (like function calls)
                 // For now, we'll just continue waiting
             }
-    
+
             usleep($delayMicroseconds);
         }
-    
+
         \Log::warning("Run timed out after $maxAttempts attempts");
         return redirect()->back()->with([
             'openai_error' => 'The analysis is taking longer than expected. Please check back in a few minutes.',
         ]);
     }
-    
-    
+
+
 
     private function collectPatientData(Request $request)
     {
@@ -487,37 +488,37 @@ class OpenAIController extends Controller
         if ($request->patient_selection && $request->patient_selection != 'new') {
             // Get the existing patient data
             $existingPatient = PatientAnalysis::find($request->patient_selection);
-            
+
             if ($existingPatient) {
                 // Get the patient's history using patient_key if available
                 $patientHistory = $existingPatient->getPatientHistory();
-                
+
                 // Get the latest record for this patient
                 $latestRecord = $patientHistory->sortByDesc('visit_number')->first();
-                
+
                 // Use the latest record if available, otherwise use the selected one
                 $patientRecord = $latestRecord ?? $existingPatient;
-                
+
                 // Count the number of visits
                 $visitCount = $patientHistory->count();
-                
+
                 // Calculate the visit number for this specific visit
                 // This will be the next visit number (count + 1) since we're creating a new record
                 $currentVisitNumber = $visitCount + 1;
-                
+
                 // Get previous medical history from past visits
                 $previousMedicalHistory = '';
                 if ($visitCount > 0) {
                     $previousMedicalHistory = "PATIENT HISTORY SUMMARY:\n";
                     $previousMedicalHistory .= "Total previous visits: " . $visitCount . "\n\n";
-                    
+
                     // Get the previous visits with more detailed information
                     $previousVisits = $patientHistory->sortByDesc('created_at')->take(3)->map(function($record, $index) {
                         $date = $record->created_at->format('M d, Y');
                         $visitNum = $record->visit_number ?? ($index + 1);
-                        
+
                         $visitSummary = "VISIT #$visitNum ($date):\n";
-                        
+
                         // Add vital signs if available
                         $vitalSigns = [];
                         if ($record->temperature) $vitalSigns[] = "Temperature: " . $record->temperature;
@@ -525,15 +526,15 @@ class OpenAIController extends Controller
                         if ($record->blood_sugar) $vitalSigns[] = "Blood Sugar: " . $record->blood_sugar;
                         if ($record->weight) $vitalSigns[] = "Weight: " . $record->weight;
                         if ($record->height) $vitalSigns[] = "Height: " . $record->height;
-                        
+
                         if (!empty($vitalSigns)) {
                             $visitSummary .= "Vitals: " . implode(", ", $vitalSigns) . "\n";
                         }
-                        
+
                         // Add symptoms
                         if ($record->symptoms) {
                             $symptoms = is_string($record->symptoms) ? json_decode($record->symptoms, true) : $record->symptoms;
-                            
+
                             // If symptoms are numeric IDs, try to get the actual symptom names
                             if (is_array($symptoms) && !empty($symptoms) && is_numeric($symptoms[0])) {
                                 $processedSymptoms = $this->processSymptoms($symptoms);
@@ -541,15 +542,15 @@ class OpenAIController extends Controller
                             } else {
                                 $symptomsText = is_array($symptoms) ? implode(", ", $symptoms) : $symptoms;
                             }
-                            
+
                             $visitSummary .= "Symptoms: $symptomsText\n";
                         }
-                        
+
                         // Add test results if available
                         if ($record->test_results) {
                             $visitSummary .= "Test Results: " . $record->test_results . "\n";
                         }
-                        
+
                         // Extract diagnoses from AI response
                         if ($record->ai_response) {
                             // Try to extract differential diagnosis
@@ -557,23 +558,23 @@ class OpenAIController extends Controller
                                 $diagnosis = trim(strip_tags($matches[0]));
                                 $visitSummary .= "Diagnosis: " . str_replace("\n", " ", $diagnosis) . "\n";
                             }
-                            
+
                             // Try to extract treatment recommendations
                             if (preg_match('/(?:C\)\s*TREATMENT\s*RECOMMENDATIONS|C\)\s*MANAGEMENT\s*RECOMMENDATIONS)[\s\S]*?(?=D\)|$)/i', $record->ai_response, $matches)) {
                                 $treatment = trim(strip_tags($matches[0]));
                                 $visitSummary .= "Treatment: " . str_replace("\n", " ", $treatment) . "\n";
                             }
                         }
-                        
+
                         return $visitSummary;
                     })->join("\n");
-                    
+
                     $previousMedicalHistory .= $previousVisits;
-                    
+
                     // Add note about clinical progression
                     $previousMedicalHistory .= "\nIMPORTANT: Consider the clinical progression across these visits when formulating your assessment.";
                 }
-                
+
                 return [
                     'name' => $patientRecord->name,
                     'age' => $patientRecord->age,
@@ -586,9 +587,24 @@ class OpenAIController extends Controller
                         'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
                         'blood_pressure' => $request->blood_pressure,
                         'blood_sugar' => is_numeric($request->blood_sugar) ? $request->blood_sugar : null,
+                        'heart_rate' => is_numeric($request->heart_rate) ? $request->heart_rate : null,
+                        'respiratory_rate' => is_numeric($request->respiratory_rate) ? $request->respiratory_rate : null,
+                        'oxygen_saturation' => is_numeric($request->oxygen_saturation) ? $request->oxygen_saturation : null,
                     ],
                     'reports' => $request->file('reports') ?? null,
                     'preliminary_diagnosis' => $request->preliminary_diagnosis,
+                    // New enhanced medical fields
+                    'chief_complaint' => $request->chief_complaint,
+                    'symptom_duration' => $request->symptom_duration,
+                    'past_medical_history' => $request->past_medical_history,
+                    'medication_history' => $request->medication_history,
+                    'allergies' => $request->allergies,
+                    'family_history' => $request->family_history,
+                    'social_history' => $request->social_history,
+                    'pain_scale' => is_numeric($request->pain_scale) ? $request->pain_scale : null,
+                    'visit_type' => $request->visit_type,
+                    'physician_notes' => $request->physician_notes,
+                    'additional_notes' => $request->additional_notes,
                     'is_existing_patient' => true,
                     'patient_id' => $patientRecord->id,
                     'previous_record_id' => $patientRecord->id, // Store the previous record ID for reference
@@ -598,7 +614,7 @@ class OpenAIController extends Controller
                 ];
             }
         }
-        
+
         // New patient or existing patient not found
         return [
             'name' => $request->name,
@@ -612,9 +628,24 @@ class OpenAIController extends Controller
                 'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
                 'blood_pressure' => $request->blood_pressure,
                 'blood_sugar' => is_numeric($request->blood_sugar) ? $request->blood_sugar : null,
+                'heart_rate' => is_numeric($request->heart_rate) ? $request->heart_rate : null,
+                'respiratory_rate' => is_numeric($request->respiratory_rate) ? $request->respiratory_rate : null,
+                'oxygen_saturation' => is_numeric($request->oxygen_saturation) ? $request->oxygen_saturation : null,
             ],
             'reports' => $request->file('reports') ?? null,
             'preliminary_diagnosis' => $request->preliminary_diagnosis,
+            // New enhanced medical fields
+            'chief_complaint' => $request->chief_complaint,
+            'symptom_duration' => $request->symptom_duration,
+            'past_medical_history' => $request->past_medical_history,
+            'medication_history' => $request->medication_history,
+            'allergies' => $request->allergies,
+            'family_history' => $request->family_history,
+            'social_history' => $request->social_history,
+            'pain_scale' => is_numeric($request->pain_scale) ? $request->pain_scale : null,
+            'visit_type' => $request->visit_type,
+            'physician_notes' => $request->physician_notes,
+            'additional_notes' => $request->additional_notes,
             'is_existing_patient' => false
         ];
     }
@@ -628,118 +659,118 @@ class OpenAIController extends Controller
         if (preg_match('/PATIENT\s+INFORMATION:[\s\S]*?MEDICAL\s+REPORTS\s+ANALYSIS/i', $text)) {
             return $text;
         }
-        
+
         // Check if the text contains an old Patient Information section
         if (preg_match('/Patient Information:[\s\S]*?---/i', $text, $matches)) {
             // Remove the entire section including the separator line
             $text = str_replace($matches[0], '', $text);
-            
+
             // Clean up any extra newlines that might be left
             $text = preg_replace("/\n{3,}/", "\n\n", $text);
         }
-        
+
         // Also check for the specific format with Age, Gender, Total Visits
         if (preg_match('/Age:\s*\d+\s*\n+Gender:\s*[a-zA-Z]+\s*\n+Total Visits:\s*\d+/i', $text, $matches)) {
             // Remove this section as well
             $text = str_replace($matches[0], '', $text);
-            
+
             // Clean up any extra newlines that might be left
             $text = preg_replace("/\n{3,}/", "\n\n", $text);
         }
-        
+
         return $text;
     }
-    
+
     private function filterReponse($lastMessage)
     {
         // Extract the PATIENT INFORMATION section with MEDICAL REPORTS ANALYSIS
         $patientInfoPattern = '/PATIENT\s+INFORMATION:[\s\S]*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS:|A\)\s*DIFFERENTIAL\s*DIAGNOSIS)/i';
         $patientInfoContent = '';
-        
+
         if (preg_match($patientInfoPattern, $lastMessage, $matches)) {
             $patientInfoContent = $matches[0];
             // Don't remove it yet, we'll add it back later
         }
-        
+
         // Extract the CASE URGENCY section if it exists
         $urgencyPattern = '/CASE\s+URGENCY:\s*(ROUTINE|URGENT|EMERGENCY).*?(?=PATIENT\s+INFORMATION:|$)/i';
         $urgencyContent = '';
-        
+
         if (preg_match($urgencyPattern, $lastMessage, $matches)) {
             $urgencyContent = $matches[0];
         }
-        
+
         // Remove markdown bold and italic (**bold**, *italic*)
         $lastMessage = preg_replace('/\*\*(.*?)\*\*/', '$1', $lastMessage);
         $lastMessage = preg_replace('/\*(.*?)\*/', '$1', $lastMessage);
-    
+
         // Remove markdown headers (##, ###, etc.)
         $lastMessage = preg_replace('/#+\s*/', '', $lastMessage);
-    
+
         // Remove bullet points (-, *, •)
         $lastMessage = preg_replace('/^[\-\*\•]\s+/m', '', $lastMessage);
-    
+
         // Remove extra whitespace at beginning of lines
         $lastMessage = preg_replace('/^\s+/m', '', $lastMessage);
-    
+
         // Normalize multiple newlines to a single one
         $lastMessage = preg_replace("/\n{2,}/", "\n\n", $lastMessage);
-    
+
         // Decode HTML entities and strip HTML tags
         $lastMessage = html_entity_decode($lastMessage, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $lastMessage = strip_tags($lastMessage);
-    
+
         // Enhance section headers like A), B), etc.
         $lastMessage = preg_replace_callback('/^([A-D])\)\s*(.+)$/m', function ($matches) {
             return "\n\n" . strtoupper($matches[1] . ') ' . $matches[2]) . "\n";
         }, $lastMessage);
-        
+
         // Check if there's a Current Symptoms section before saving it
         $currentSymptomsPattern = '/Current\s+Symptoms:.*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS:|A\)\s*DIFFERENTIAL\s*DIAGNOSIS|$)/is';
         $currentSymptomsMatch = null;
         if (preg_match($currentSymptomsPattern, $lastMessage, $currentSymptomsMatch)) {
             $currentSymptoms = trim($currentSymptomsMatch[0]);
         }
-        
+
         // Look for either the old or new diagnosis section header
         $diagnosisPattern = '/(A\)\s*POSSIBLE\s*DIAGNOSIS:|A\)\s*DIFFERENTIAL\s*DIAGNOSIS)/i';
         if (preg_match($diagnosisPattern, $lastMessage, $match, PREG_OFFSET_CAPTURE)) {
             $startPos = $match[0][1];
             $diagnosisPart = substr($lastMessage, $startPos);
-            
+
             // Construct the final message with proper sections
             $finalMessage = '';
-            
+
             // Add urgency section if we found it
             if (!empty($urgencyContent)) {
                 $finalMessage .= trim($urgencyContent) . "\n\n";
             }
-            
+
             // Add patient information section if we found it
             if (!empty($patientInfoContent)) {
                 $finalMessage .= trim($patientInfoContent) . "\n\n";
             }
-            
+
             // If we found Current Symptoms, add it after patient info
             if (!empty($currentSymptoms)) {
                 $finalMessage .= trim($currentSymptoms) . "\n\n";
             }
-            
+
             // Add the diagnosis part
             $finalMessage .= $diagnosisPart;
-            
+
             $lastMessage = $finalMessage;
         }
-    
+
         // Apply our structured formatting
         $lastMessage = $this->formatResponseStructure($lastMessage);
-        
+
         // Final trim
         return trim($lastMessage);
     }
     /**
      * Try to extract text from various file types
-     * 
+     *
      * @param string $filePath Path to the file
      * @param string $extension File extension
      * @return string Extracted text or empty string if extraction failed
@@ -753,7 +784,7 @@ class OpenAIController extends Controller
                 $pdf = $parser->parseFile($filePath);
                 return $pdf->getText();
             }
-            
+
             // For Office documents (.docx, .xlsx, .pptx)
             if (in_array(strtolower($extension), ['docx', 'xlsx', 'pptx'])) {
                 // Try to use PhpOffice if available
@@ -770,7 +801,7 @@ class OpenAIController extends Controller
                     return $text;
                 }
             }
-            
+
             // For OpenDocument formats (.odt, .ods, .odp)
             if (in_array(strtolower($extension), ['odt', 'ods', 'odp'])) {
                 // Try to extract as ZIP and read content.xml
@@ -779,48 +810,48 @@ class OpenAIController extends Controller
                     if (($index = $zip->locateName('content.xml')) !== false) {
                         $content = $zip->getFromIndex($index);
                         $zip->close();
-                        
+
                         // Better XML extraction for OpenDocument
                         $text = '';
-                        
+
                         // Remove XML namespaces to simplify parsing
                         $content = preg_replace('/<[a-z0-9]+:[^>]+>/i', '', $content);
                         $content = preg_replace('/<\/[a-z0-9]+:[^>]+>/i', '', $content);
-                        
+
                         // Extract text content
                         if (preg_match_all('/<text:p[^>]*>(.*?)<\/text:p>/s', $content, $matches)) {
                             foreach ($matches[1] as $paragraph) {
                                 $text .= strip_tags($paragraph) . "\n";
                             }
                         }
-                        
+
                         // If the above didn't work, fall back to simple stripping
                         if (empty(trim($text))) {
                             $text = strip_tags($content);
                         }
-                        
+
                         return $text;
                     }
                     $zip->close();
                 }
-                
+
                 // If the ZIP extraction failed, try to use external tools if available
                 if (function_exists('exec')) {
                     // Try using LibreOffice to convert to text if available
                     $outputPath = storage_path('app/tmp/extracted_' . pathinfo($filePath, PATHINFO_FILENAME) . '.txt');
                     @exec("libreoffice --headless --convert-to txt:Text --outdir " . storage_path('app/tmp') . " " . escapeshellarg($filePath) . " 2>/dev/null", $output, $returnVar);
-                    
+
                     if ($returnVar === 0 && file_exists($outputPath)) {
                         return file_get_contents($outputPath);
                     }
                 }
             }
-            
+
             // For plain text files
             if (in_array(strtolower($extension), ['txt', 'csv', 'json', 'xml', 'html', 'htm', 'md', 'rtf'])) {
                 return file_get_contents($filePath);
             }
-            
+
             // For other file types, try to read as text if the file is not too large
             if (filesize($filePath) < 1024 * 1024 * 5) { // 5MB limit
                 $content = file_get_contents($filePath);
@@ -831,15 +862,15 @@ class OpenAIController extends Controller
         } catch (\Exception $e) {
             \Log::error("Error extracting text from file: " . $e->getMessage());
         }
-        
+
         return '';
     }
-    
+
     private function insertTotable($request, $aiResponse){
         // Check if we're editing an existing patient
         if ($request->edit_patient_id) {
             $patientToEdit = PatientAnalysis::find($request->edit_patient_id);
-            
+
             if ($patientToEdit && $patientToEdit->user_id == auth()->id()) {
                 // Update the existing patient record
                 $patientToEdit->update([
@@ -854,32 +885,47 @@ class OpenAIController extends Controller
                     'symptoms' => $request->current_symptoms ? json_encode($request->current_symptoms) : null,
                     'test_results' => $request->test_results,
                     'preliminary_diagnosis' => $request->preliminary_diagnosis,
-                    'ai_response' => $aiResponse
+                    'ai_response' => $aiResponse,
+                    // New enhanced medical fields
+                    'chief_complaint' => $request->chief_complaint,
+                    'symptom_duration' => $request->symptom_duration,
+                    'past_medical_history' => $request->past_medical_history,
+                    'medication_history' => $request->medication_history,
+                    'allergies' => $request->allergies,
+                    'family_history' => $request->family_history,
+                    'social_history' => $request->social_history,
+                    'pain_scale' => is_numeric($request->pain_scale) ? $request->pain_scale : null,
+                    'visit_type' => $request->visit_type,
+                    'heart_rate' => is_numeric($request->heart_rate) ? $request->heart_rate : null,
+                    'respiratory_rate' => is_numeric($request->respiratory_rate) ? $request->respiratory_rate : null,
+                    'oxygen_saturation' => is_numeric($request->oxygen_saturation) ? $request->oxygen_saturation : null,
+                    'physician_notes' => $request->physician_notes,
+                    'additional_notes' => $request->additional_notes,
                 ]);
-                
+
                 return;
             }
         }
-        
+
         // Check if we're using an existing patient for a new visit
         if ($request->patient_selection && $request->patient_selection != 'new') {
             // Get the existing patient data
             $existingPatient = PatientAnalysis::find($request->patient_selection);
-            
+
             if ($existingPatient) {
                 // Get the patient's history to determine the visit number
                 $patientHistory = $existingPatient->getPatientHistory();
                 $visitNumber = $patientHistory->count() + 1;
-                
+
                 // Generate or use existing patient key
-                $patientKey = $existingPatient->patient_key ?? 
+                $patientKey = $existingPatient->patient_key ??
                     PatientAnalysis::generatePatientKey(
-                        $existingPatient->name, 
-                        $existingPatient->age, 
-                        $existingPatient->gender, 
+                        $existingPatient->name,
+                        $existingPatient->age,
+                        $existingPatient->gender,
                         auth()->id()
                     );
-                
+
                 // If this is the first time we're using patient_key, update all previous records
                 if (!$existingPatient->patient_key) {
                     foreach ($patientHistory as $index => $record) {
@@ -889,7 +935,7 @@ class OpenAIController extends Controller
                         ]);
                     }
                 }
-                
+
                 // Create a new record with the existing patient's information
                 // This creates a new entry in the patient history
                 $newRecord = PatientAnalysis::create([
@@ -908,21 +954,36 @@ class OpenAIController extends Controller
                     'user_id' => auth()->id(),
                     'previous_record_id' => $existingPatient->id,
                     'visit_number' => $visitNumber,
-                    'patient_key' => $patientKey
+                    'patient_key' => $patientKey,
+                    // New enhanced medical fields
+                    'chief_complaint' => $request->chief_complaint,
+                    'symptom_duration' => $request->symptom_duration,
+                    'past_medical_history' => $request->past_medical_history,
+                    'medication_history' => $request->medication_history,
+                    'allergies' => $request->allergies,
+                    'family_history' => $request->family_history,
+                    'social_history' => $request->social_history,
+                    'pain_scale' => is_numeric($request->pain_scale) ? $request->pain_scale : null,
+                    'visit_type' => $request->visit_type,
+                    'heart_rate' => is_numeric($request->heart_rate) ? $request->heart_rate : null,
+                    'respiratory_rate' => is_numeric($request->respiratory_rate) ? $request->respiratory_rate : null,
+                    'oxygen_saturation' => is_numeric($request->oxygen_saturation) ? $request->oxygen_saturation : null,
+                    'physician_notes' => $request->physician_notes,
+                    'additional_notes' => $request->additional_notes,
                 ]);
-                
+
                 return;
             }
         }
-        
+
         // New patient
         $patientKey = PatientAnalysis::generatePatientKey(
-            $request->name, 
-            $request->age, 
-            $request->gender, 
+            $request->name,
+            $request->age,
+            $request->gender,
             auth()->id()
         );
-        
+
         PatientAnalysis::create([
             'name' => $request->name,
             'age' => $request->age,
@@ -939,39 +1000,54 @@ class OpenAIController extends Controller
             'user_id' => auth()->id(),
             'previous_record_id' => null, // No previous record for new patients
             'visit_number' => 1, // First visit
-            'patient_key' => $patientKey
+            'patient_key' => $patientKey,
+            // New enhanced medical fields
+            'chief_complaint' => $request->chief_complaint,
+            'symptom_duration' => $request->symptom_duration,
+            'past_medical_history' => $request->past_medical_history,
+            'medication_history' => $request->medication_history,
+            'allergies' => $request->allergies,
+            'family_history' => $request->family_history,
+            'social_history' => $request->social_history,
+            'pain_scale' => is_numeric($request->pain_scale) ? $request->pain_scale : null,
+            'visit_type' => $request->visit_type,
+            'heart_rate' => is_numeric($request->heart_rate) ? $request->heart_rate : null,
+            'respiratory_rate' => is_numeric($request->respiratory_rate) ? $request->respiratory_rate : null,
+            'oxygen_saturation' => is_numeric($request->oxygen_saturation) ? $request->oxygen_saturation : null,
+            'physician_notes' => $request->physician_notes,
+            'additional_notes' => $request->additional_notes,
         ]);
     }
 
     private function preparePrompt($inputData, $criterion, $useFileSearch = false)
     {
         $fileSearchInstruction = $useFileSearch
-            ? "CRITICAL INSTRUCTION: Thoroughly analyze ALL uploaded files before responding. 
-            
+            ? "CRITICAL INSTRUCTION: Thoroughly analyze ALL uploaded files before responding.
+
             Add a 'PATIENT INFORMATION' section at the beginning of your response that includes:
-            
+
             PATIENT INFORMATION:
             • Basic patient details from the input data
             • MEDICAL REPORTS ANALYSIS: A concise summary of all uploaded files
               - For images: Brief description and key findings
               - For text documents: Key medical information and relevance
-            
+
             Keep this section concise even if there are many files (10+). Group similar files together and summarize.
-            
+
             Your diagnosis and recommendations MUST be based primarily on the content of the uploaded files.
             DO NOT provide a generic response - your analysis should directly reference specific findings from the uploaded files."
             : "";
-            
+
         // Get the user's specialty
         $specialty = auth()->user()->setting->specialty ?? null;
-        
+
         $specialtyInstruction = "";
         if ($specialty) {
             // Ensure specialty is treated as a string
             $specialtyStr = (string)$specialty;
-            
-            $specialtyInstruction = "You are a senior consultant physician specialized in {$specialtyStr} with 20+ years of clinical experience. Your expertise in this field should guide your analysis and recommendations. 
-            
+
+            $specialtyInstruction = "You are a senior consultant physician specialized in {$specialtyStr} with 20+ years of clinical experience. Your expertise in this field should guide your analysis and recommendations.
+
             As a {$specialtyStr} specialist:
             1. Prioritize diagnoses that are most relevant to your specialty, with special attention to life-threatening conditions
             2. Provide specialty-specific insights that a general practitioner might miss
@@ -980,56 +1056,76 @@ class OpenAIController extends Controller
             5. Highlight any red flags or warning signs particularly important in your specialty
             6. Use precise medical terminology and references that would be familiar to specialists in your field
             7. Be precise, specific, and actionable in your recommendations, as expected from a specialist
-            
+
             Focus particularly on aspects of the case that relate to your specialty, but maintain a holistic view of the patient's condition.";
         }
-        
+
         // Add patient history context if available
         $patientHistoryContext = "";
         if (isset($inputData['is_existing_patient']) && $inputData['is_existing_patient'] && isset($inputData['visit_count']) && $inputData['visit_count'] > 0) {
             $visitNumber = $inputData['current_visit_number'] ?? ($inputData['visit_count'] + 1);
-            
+
             $patientHistoryContext = "
             PATIENT HISTORY CONTEXT:
             This is visit #" . $visitNumber . " for this patient.
             " . $inputData['previous_medical_history'] . "
-            
+
             Please consider this patient history in your analysis. Compare current symptoms with previous visits and note any changes or patterns.
             ";
         }
-        
+
         // Generate dynamic clinical context based on vital signs and symptoms
         $clinicalContext = $this->generateClinicalContext($inputData);
 
         return "Based on the provided information and considering the evaluation criteria from the selected source ($criterion), analyze the patient case and provide a detailed medical assessment.
-            
+
             $fileSearchInstruction
-            
+
             $specialtyInstruction
-            
+
             $patientHistoryContext
-            
+
             $clinicalContext
-            
+
             IMPORTANT: Your analysis MUST be based on the clinical data provided and any uploaded files. Follow the exact output format specified below.
-            
+
             🔶 OUTPUT FORMAT:
             You MUST return your response in the following structure:
-            
+
             ---
             📋 PATIENT CASE SUMMARY:
             Name: {name}
             Age: {age}
             Gender: {gender}
             Height / Weight: {height} / {weight}
+
+            Chief Complaint: {chief_complaint if available}
+            Symptom Duration: {symptom_duration if available}
+            Visit Type: {visit_type if available}
+
             Vitals:
             Temperature: {temperature} °C
             Blood Pressure: {bp} mmHg
             Blood Sugar: {sugar} mg/dL
             Heart Rate: {heart_rate if available} bpm
-            Symptoms: {comma-separated list}
+            Respiratory Rate: {respiratory_rate if available} breaths/min
+            Oxygen Saturation: {oxygen_saturation if available} %
+            Pain Scale: {pain_scale if available}/10
+
+            Medical History:
+            Past Medical History: {past_medical_history if available}
+            Current Medications: {medication_history if available}
+            Known Allergies: {allergies if available}
+            Family History: {family_history if available}
+            Social/Lifestyle History: {social_history if available}
+
+            Current Symptoms: {comma-separated list}
             Preliminary Diagnosis: {if available}
             Lab Results / Imaging: {or state 'Not Provided'}
+
+            Clinical Notes:
+            Physician Notes: {physician_notes if available}
+            Additional Notes: {additional_notes if available}
             ---
             🚨 CASE URGENCY:
             ⚠️ {Emergency / Urgent / Routine}
@@ -1051,10 +1147,10 @@ class OpenAIController extends Controller
             💊 TREATMENT & MANAGEMENT RECOMMENDATIONS:
             Immediate Interventions:
             [List immediate steps]
-            
+
             Medications:
             [List medications with dosages and frequencies]
-            
+
             Referrals:
             [List any specialist referrals needed]
             ---
@@ -1083,20 +1179,20 @@ class OpenAIController extends Controller
             ->where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
             ->get();
-            
+
         // Group records by patient_key to calculate total visits
         $patientGroups = [];
-        
+
         foreach ($records as $record) {
             // If patient_key is not set, generate it and update the record
             if (!$record->patient_key) {
                 $patientKey = PatientAnalysis::generatePatientKey(
-                    $record->name, 
-                    $record->age, 
-                    $record->gender, 
+                    $record->name,
+                    $record->age,
+                    $record->gender,
                     $record->user_id
                 );
-                
+
                 // Find all records for this patient
                 $patientRecords = PatientAnalysis::where('name', $record->name)
                     ->where('age', $record->age)
@@ -1104,7 +1200,7 @@ class OpenAIController extends Controller
                     ->where('user_id', $record->user_id)
                     ->orderBy('created_at', 'asc')
                     ->get();
-                
+
                 // Update all records with patient_key and visit_number
                 foreach ($patientRecords as $index => $patientRecord) {
                     $patientRecord->update([
@@ -1112,19 +1208,19 @@ class OpenAIController extends Controller
                         'visit_number' => $index + 1
                     ]);
                 }
-                
+
                 // Update the current record in memory
                 $record->patient_key = $patientKey;
             }
-            
+
             // Group by patient_key
             if (!isset($patientGroups[$record->patient_key])) {
                 $patientGroups[$record->patient_key] = [];
             }
-            
+
             $patientGroups[$record->patient_key][] = $record;
         }
-        
+
         // Calculate total_visits for each record
         foreach ($records as $record) {
             if (isset($patientGroups[$record->patient_key])) {
@@ -1133,7 +1229,7 @@ class OpenAIController extends Controller
                 $record->total_visits = 1;
             }
         }
-        
+
         return view('cases', compact('records'));
     }
     public function dashboard()
@@ -1143,30 +1239,30 @@ class OpenAIController extends Controller
             ->where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
             ->get();
-            
+
         // Count only the current user's records for the past week
         $weeklyCount = PatientAnalysis::where('user_id', auth()->id())
             ->where('created_at', '>=', now()->subDays(7))
             ->count();
-        
+
         // Prepare chart data safely in the controller
         $chartData = [];
         $chartLabels = [];
-        
+
         if ($records->count() > 0) {
             $casesOverTime = $records->groupBy(function($record) {
                 return $record->created_at->format('Y-m-d');
             })->map(function($group) {
                 return $group->count();
             })->sortKeys();
-            
+
             $chartLabels = $casesOverTime->keys()->toArray();
             $chartData = $casesOverTime->values()->toArray();
         }
-        
+
         return view('dashboard', compact('records', 'weeklyCount', 'chartLabels', 'chartData'));
     }
-    
+
     /**
      * Handle follow-up questions in the chat
      */
@@ -1176,20 +1272,20 @@ class OpenAIController extends Controller
             'message' => 'required|string',
             'conversation_id' => 'nullable|string'
         ]);
-        
+
         $userMessage = $request->message;
         $conversationId = $request->conversation_id;
-        
+
         // Get user's specialty and criterion
         $specialty = auth()->user()->setting->specialty ?? null;
         $criterion = auth()->user()->setting->criterion ?? 'CDC';
-        
+
         // If we don't have a conversation ID, create a new conversation
         if (empty($conversationId)) {
             // Create a new conversation context
             $conversationId = uniqid('conv_');
             session(['conversation_id' => $conversationId]);
-            
+
             // Store the conversation history in the session
             session(['conversation_history_' . $conversationId => [
                 ['role' => 'system', 'content' => $this->getSystemPrompt($specialty, $criterion)],
@@ -1200,31 +1296,31 @@ class OpenAIController extends Controller
             $conversationHistory = session('conversation_history_' . $conversationId, [
                 ['role' => 'system', 'content' => $this->getSystemPrompt($specialty, $criterion)]
             ]);
-            
+
             // Add the user's message to the history
             $conversationHistory[] = ['role' => 'user', 'content' => $userMessage];
-            
+
             // Update the conversation history in the session
             session(['conversation_history_' . $conversationId => $conversationHistory]);
         }
-        
+
         // Get the full conversation history
         $messages = session('conversation_history_' . $conversationId);
-        
+
         try {
             // Call the OpenAI API with the full conversation history
             $response = OpenAI::chat()->create([
                 'model' => 'gpt-4o',
                 'messages' => $messages
             ]);
-            
+
             $aiResponse = $response['choices'][0]['message']['content'] ?? 'Sorry, I could not generate a response.';
-            
+
             // Add the AI's response to the conversation history
             $conversationHistory = session('conversation_history_' . $conversationId);
             $conversationHistory[] = ['role' => 'assistant', 'content' => $aiResponse];
             session(['conversation_history_' . $conversationId => $conversationHistory]);
-            
+
             return response()->json([
                 'success' => true,
                 'message' => $aiResponse,
@@ -1233,11 +1329,11 @@ class OpenAIController extends Controller
         } catch (\Exception $e) {
             // Check if it's an API key issue
             $message = $e->getMessage();
-            if (strpos($message, 'API key') !== false || 
-                strpos($message, 'authentication') !== false || 
-                strpos($message, '401') !== false || 
+            if (strpos($message, 'API key') !== false ||
+                strpos($message, 'authentication') !== false ||
+                strpos($message, '401') !== false ||
                 strpos($message, 'Unauthorized') !== false) {
-                
+
                 // It's likely an API key issue
                 return response()->json([
                     'success' => false,
@@ -1245,37 +1341,37 @@ class OpenAIController extends Controller
                     'api_key_error' => true
                 ], 401);
             }
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error: ' . $e->getMessage()
             ], 500);
         }
     }
-    
+
     /**
      * Generate a summary of a patient's medical history
      */
     public function generatePatientSummary(Request $request)
     {
         \Log::info('generatePatientSummary called');
-        
+
         $request->validate([
             'summary_data' => 'required|string',
         ]);
-        
+
         try {
             // Decode the summary data
             $summaryData = json_decode($request->summary_data, true);
             \Log::info('Summary data decoded:', ['data' => $summaryData]);
-            
+
             if (!$summaryData) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid summary data format.'
                 ], 400);
             }
-            
+
             // Prepare the prompt for OpenAI
             $prompt = "Generate a comprehensive medical summary for the following patient based on their visit history:\n\n";
             $prompt .= "Patient: " . $summaryData['patient_name'] . "\n";
@@ -1283,15 +1379,15 @@ class OpenAIController extends Controller
             $prompt .= "Gender: " . $summaryData['patient_gender'] . "\n";
             $prompt .= "Total Visits: " . $summaryData['visit_count'] . "\n\n";
             $prompt .= "Visit History:\n";
-            
+
             // Add instruction to not repeat patient information in the response
             $prompt .= "\nIMPORTANT: Do not include a 'Patient Information' section in your response. The patient's name, age, gender, and visit count are already displayed in the UI and should not be repeated in your summary. However, DO include the 'Current Symptoms' section as it contains important clinical information.\n";
-            
+
             foreach ($summaryData['visits'] as $visit) {
                 $prompt .= "Visit #" . $visit['visit_number'] . " (" . $visit['date'] . "):\n";
                 $prompt .= $visit['ai_response'] . "\n\n";
             }
-            
+
             $prompt .= "\nPlease provide a concise summary that includes:\n";
             $prompt .= "1. Overall health trajectory (improving, worsening, stable)\n";
             $prompt .= "2. Key medical issues identified across all visits\n";
@@ -1299,11 +1395,11 @@ class OpenAIController extends Controller
             $prompt .= "4. Treatment effectiveness based on visit progression\n";
             $prompt .= "5. Recommendations for future care\n\n";
             $prompt .= "Format the summary with clear headings and bullet points where appropriate.";
-            
+
             // Get user's specialty and criterion
             $specialty = auth()->user()->setting->specialty ?? null;
             $criterion = auth()->user()->setting->criterion ?? 'CDC';
-            
+
             // Call OpenAI API
             \Log::info('Calling OpenAI API for summary generation');
             $response = OpenAI::chat()->create([
@@ -1314,18 +1410,18 @@ class OpenAIController extends Controller
                 ]
             ]);
             \Log::info('OpenAI API response received');
-            
+
             $summary = $response['choices'][0]['message']['content'] ?? 'Failed to generate summary.';
-            
+
             // Remove Patient Information section
             $summary = $this->removePatientInfoSection($summary);
-            
+
             // Format the summary with proper HTML
             $lines = explode("\n", $summary);
             $formattedSummary = '';
             $inList = false;
             $listType = '';
-            
+
             // Process each line
             foreach ($lines as $line) {
                 // Check for headers (# Header)
@@ -1362,15 +1458,15 @@ class OpenAIController extends Controller
                         $formattedSummary .= $listType === 'ul' ? '</ul>' : '</ol>';
                         $inList = false;
                     }
-                    
+
                     // Skip empty lines
                     if (trim($line) === '') {
                         $formattedSummary .= '<br>';
                         continue;
                     }
-                    
+
                     // Check for section headers with multiple patterns
-                    if (preg_match('/^[A-Z][\)\.]?\s+.*?(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS).*?$/i', $line) || 
+                    if (preg_match('/^[A-Z][\)\.]?\s+.*?(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS).*?$/i', $line) ||
                         preg_match('/^(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS).*?$/i', $line) ||
                         preg_match('/^[A-Z]\)\s+(POSSIBLE\s+DIAGNOS[IE]S|RECOMMENDATIONS\s+FOR\s+TESTS|TREATMENT\s+RECOMMENDATIONS|WARNINGS)$/i', $line)) {
                         $className = '';
@@ -1383,7 +1479,7 @@ class OpenAIController extends Controller
                         } elseif (preg_match('/WARNINGS/i', $line)) {
                             $className = 'section-warnings';
                         }
-                        
+
                         $formattedSummary .= '<p><strong class="' . $className . '">' . $line . '</strong></p>';
                     } else {
                         // All other text is formatted as regular paragraphs
@@ -1391,32 +1487,32 @@ class OpenAIController extends Controller
                     }
                 }
             }
-            
+
             // Close any open lists
             if ($inList) {
                 $formattedSummary .= $listType === 'ul' ? '</ul>' : '</ol>';
             }
-            
+
             // Process inline formatting
-            
+
             // Bold text between ** or __
             $formattedSummary = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $formattedSummary);
             $formattedSummary = preg_replace('/__(.+?)__/', '<strong>$1</strong>', $formattedSummary);
-            
+
             // Italic text between * or _
             $formattedSummary = preg_replace('/\*([^*]+)\*/', '<em>$1</em>', $formattedSummary);
             $formattedSummary = preg_replace('/_([^_]+)_/', '<em>$1</em>', $formattedSummary);
-            
+
             // Section headers are now handled during line processing
-            
+
             // Wrap in ai-content div
             $formattedSummary = '<div class="ai-content">' . $formattedSummary . '</div>';
-            
+
             return response()->json([
                 'success' => true,
                 'summary' => $formattedSummary
             ]);
-            
+
         } catch (\Exception $e) {
             \Log::error('Error in generatePatientSummary: ' . $e->getMessage());
             \Log::error($e->getTraceAsString());
@@ -1426,7 +1522,7 @@ class OpenAIController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      * Get the system prompt based on user's specialty and criterion
      */
@@ -1436,9 +1532,9 @@ class OpenAIController extends Controller
         if ($specialty) {
             // Ensure specialty is treated as a string
             $specialtyStr = (string)$specialty;
-            
-            $specialtyInstruction = "You are a senior consultant physician specialized in {$specialtyStr} with 20+ years of clinical experience. Your expertise in this field should guide your analysis and recommendations. 
-            
+
+            $specialtyInstruction = "You are a senior consultant physician specialized in {$specialtyStr} with 20+ years of clinical experience. Your expertise in this field should guide your analysis and recommendations.
+
             As a {$specialtyStr} specialist:
             1. Prioritize diagnoses that are most relevant to your specialty, with special attention to life-threatening conditions
             2. Provide specialty-specific insights that a general practitioner might miss
@@ -1447,14 +1543,14 @@ class OpenAIController extends Controller
             5. Highlight any red flags or warning signs particularly important in your specialty
             6. Use precise medical terminology and references that would be familiar to specialists in your field
             7. Be precise, specific, and actionable in your recommendations, as expected from a specialist
-            
+
             Focus particularly on aspects of the case that relate to your specialty, but maintain a holistic view of the patient's condition.";
         }
-        
+
         return "You are an advanced clinical AI working inside a professional medical SaaS platform called MedCuraAI. Your job is to act like a highly experienced emergency/internal medicine physician who is cautious, evidence-based, and prioritizes patient safety.
         Based on the evaluation criteria from $criterion, provide precise, evidence-based clinical assessments.
         $specialtyInstruction
-        
+
         CRITICAL CLINICAL APPROACH:
         1. ALWAYS prioritize life-threatening conditions first in your differential diagnosis
         2. Assign specific probability percentages to each diagnosis (e.g., 70%, 25%, 5%)
@@ -1465,17 +1561,17 @@ class OpenAIController extends Controller
         7. Flag cases as ROUTINE, URGENT, or EMERGENCY based on clinical presentation
         8. Include specific medication recommendations when appropriate
         9. Recommend specialist referrals when indicated
-        
+
         IMPORTANT INSTRUCTIONS FOR ANALYZING UPLOADED FILES:
         When files are uploaded, include a 'MEDICAL REPORTS ANALYSIS' subsection within the PATIENT CASE SUMMARY with a concise summary of all uploaded files:
         - Keep it concise even if there are many files (10+)
         - Group similar files together and summarize key findings
         - For images: Brief description and key findings
         - For text documents: Key medical information and relevance
-        
+
         🔶 OUTPUT FORMAT:
         You MUST return your response in the following structure:
-        
+
         ---
         📋 PATIENT CASE SUMMARY:
         Name: {name}
@@ -1511,10 +1607,10 @@ class OpenAIController extends Controller
         💊 TREATMENT & MANAGEMENT RECOMMENDATIONS:
         Immediate Interventions:
         [List immediate steps]
-        
+
         Medications:
         [List medications with dosages and frequencies]
-        
+
         Referrals:
         [List any specialist referrals needed]
         ---
@@ -1532,10 +1628,10 @@ class OpenAIController extends Controller
         Prioritize recent publications (within the last 5 years when possible).
         Include at least one source specific to the primary diagnosis or recommendation.";
     }
-    
+
     /**
      * Process both regular and custom symptoms
-     * 
+     *
      * @param array $symptoms Array of symptom IDs from the dropdown
      * @param string|null $customSymptoms JSON string of custom symptoms
      * @return array Processed symptoms array
@@ -1544,14 +1640,14 @@ class OpenAIController extends Controller
     {
         \Log::info("Processing symptoms: " . json_encode($symptoms));
         \Log::info("Custom symptoms: " . $customSymptoms);
-        
+
         $processedSymptoms = [];
-        
+
         // Process regular symptoms (IDs from dropdown)
         if (is_array($symptoms)) {
             foreach ($symptoms as $symptom) {
                 \Log::info("Processing regular symptom: " . json_encode($symptom) . " (type: " . gettype($symptom) . ")");
-                
+
                 // Check if the symptom is a numeric ID (predefined symptom)
                 if (is_numeric($symptom)) {
                     // Try to find the symptom in the database
@@ -1571,19 +1667,19 @@ class OpenAIController extends Controller
                 }
             }
         }
-        
+
         // Process custom symptoms (from the custom input)
         if (!empty($customSymptoms)) {
             try {
                 $customSymptomsArray = json_decode($customSymptoms, true);
-                
+
                 if (is_array($customSymptomsArray)) {
                     foreach ($customSymptomsArray as $customSymptom) {
                         \Log::info("Processing custom symptom: " . $customSymptom);
-                        
+
                         // Add the custom symptom to the processed list
                         $processedSymptoms[] = $customSymptom;
-                        
+
                         // Save the new symptom to the database for future use
                         try {
                             $newSymptom = \App\Models\Symptom::firstOrCreate(['name' => $customSymptom]);
@@ -1598,15 +1694,15 @@ class OpenAIController extends Controller
                 \Log::error("Error processing custom symptoms: " . $e->getMessage());
             }
         }
-        
+
         \Log::info("Final processed symptoms: " . json_encode($processedSymptoms));
         return $processedSymptoms;
     }
-    
+
     /**
      * Generate dynamic clinical context based on vital signs and symptoms
      * This enhances the prompt with specific medical considerations based on the patient's data
-     * 
+     *
      * @param array $inputData Patient data including vital signs and symptoms
      * @return string Clinical context for the prompt
      */
@@ -1615,7 +1711,7 @@ class OpenAIController extends Controller
         $context = "CLINICAL CONTEXT:\n";
         $abnormalFindings = [];
         $redFlags = [];
-        
+
         // Check vital signs for abnormalities
         if (!empty($inputData['temperature'])) {
             $temp = floatval($inputData['temperature']);
@@ -1631,7 +1727,7 @@ class OpenAIController extends Controller
                 }
             }
         }
-        
+
         // Check blood pressure
         if (!empty($inputData['blood_pressure'])) {
             $bp = $inputData['blood_pressure'];
@@ -1639,7 +1735,7 @@ class OpenAIController extends Controller
             if (preg_match('/(\d+)[\/\s]+(\d+)/', $bp, $matches)) {
                 $systolic = intval($matches[1]);
                 $diastolic = intval($matches[2]);
-                
+
                 if ($systolic >= 180 || $diastolic >= 120) {
                     $redFlags[] = "Hypertensive crisis (BP: {$bp})";
                 } else if ($systolic >= 140 || $diastolic >= 90) {
@@ -1652,7 +1748,7 @@ class OpenAIController extends Controller
                 }
             }
         }
-        
+
         // Check blood sugar
         if (!empty($inputData['blood_sugar'])) {
             $bs = floatval($inputData['blood_sugar']);
@@ -1669,17 +1765,69 @@ class OpenAIController extends Controller
                 }
             }
         }
-        
+
+        // Check new vital signs
+        if (!empty($inputData['clinical_status']['heart_rate'])) {
+            $hr = intval($inputData['clinical_status']['heart_rate']);
+            if ($hr > 100) {
+                $abnormalFindings[] = "Tachycardia (HR: {$hr} bpm)";
+                if ($hr > 150) {
+                    $redFlags[] = "Severe tachycardia (HR: {$hr} bpm)";
+                }
+            } else if ($hr < 60) {
+                $abnormalFindings[] = "Bradycardia (HR: {$hr} bpm)";
+                if ($hr < 40) {
+                    $redFlags[] = "Severe bradycardia (HR: {$hr} bpm)";
+                }
+            }
+        }
+
+        if (!empty($inputData['clinical_status']['respiratory_rate'])) {
+            $rr = intval($inputData['clinical_status']['respiratory_rate']);
+            if ($rr > 20) {
+                $abnormalFindings[] = "Tachypnea (RR: {$rr} breaths/min)";
+                if ($rr > 30) {
+                    $redFlags[] = "Severe tachypnea (RR: {$rr} breaths/min)";
+                }
+            } else if ($rr < 12) {
+                $abnormalFindings[] = "Bradypnea (RR: {$rr} breaths/min)";
+                if ($rr < 8) {
+                    $redFlags[] = "Severe bradypnea (RR: {$rr} breaths/min)";
+                }
+            }
+        }
+
+        if (!empty($inputData['clinical_status']['oxygen_saturation'])) {
+            $o2sat = intval($inputData['clinical_status']['oxygen_saturation']);
+            if ($o2sat < 95) {
+                $abnormalFindings[] = "Hypoxemia (O2 Sat: {$o2sat}%)";
+                if ($o2sat < 90) {
+                    $redFlags[] = "Severe hypoxemia (O2 Sat: {$o2sat}%)";
+                }
+            }
+        }
+
+        // Check pain scale
+        if (!empty($inputData['pain_scale'])) {
+            $pain = intval($inputData['pain_scale']);
+            if ($pain >= 7) {
+                $abnormalFindings[] = "Severe pain (Pain Scale: {$pain}/10)";
+                if ($pain >= 9) {
+                    $redFlags[] = "Extreme pain requiring immediate attention (Pain Scale: {$pain}/10)";
+                }
+            }
+        }
+
         // Check symptoms for red flags
         $emergencySymptoms = [
-            'chest pain', 'shortness of breath', 'difficulty breathing', 'severe headache', 
+            'chest pain', 'shortness of breath', 'difficulty breathing', 'severe headache',
             'sudden confusion', 'slurred speech', 'facial drooping', 'weakness in limbs',
             'loss of consciousness', 'seizure', 'severe abdominal pain', 'vomiting blood',
             'black stool', 'bloody stool', 'severe bleeding', 'trauma', 'head injury',
             'suicidal', 'suicide', 'homicidal', 'homicide', 'psychosis', 'hallucinations',
             'delusions', 'paralysis', 'unable to move', 'stroke', 'heart attack', 'cardiac arrest'
         ];
-        
+
         // Get symptoms from the input data
         $symptoms = [];
         if (!empty($inputData['symptoms'])) {
@@ -1693,7 +1841,7 @@ class OpenAIController extends Controller
                 }
             }
         }
-        
+
         // Check for emergency symptoms
         foreach ($symptoms as $symptom) {
             foreach ($emergencySymptoms as $emergencySymptom) {
@@ -1703,7 +1851,7 @@ class OpenAIController extends Controller
                 }
             }
         }
-        
+
         // Add abnormal findings to context
         if (!empty($abnormalFindings)) {
             $context .= "Abnormal clinical findings:\n";
@@ -1712,7 +1860,7 @@ class OpenAIController extends Controller
             }
             $context .= "\n";
         }
-        
+
         // Add red flags with special emphasis
         if (!empty($redFlags)) {
             $context .= "RED FLAGS - REQUIRE IMMEDIATE ATTENTION:\n";
@@ -1721,11 +1869,11 @@ class OpenAIController extends Controller
             }
             $context .= "\nThese red flags must be addressed as high priority in your differential diagnosis and management plan.\n";
         }
-        
+
         // Add age-specific considerations
         if (!empty($inputData['age'])) {
             $age = intval($inputData['age']);
-            
+
             if ($age < 2) {
                 $context .= "\nPEDIATRIC CONSIDERATIONS (Infant):\n";
                 $context .= "• Consider age-appropriate differential diagnoses\n";
@@ -1742,15 +1890,66 @@ class OpenAIController extends Controller
                 $context .= "• Consider fall risk in medication recommendations\n";
             }
         }
-        
+
+        // Add medical history context
+        $medicalHistoryContext = [];
+
+        if (!empty($inputData['chief_complaint'])) {
+            $medicalHistoryContext[] = "Chief Complaint: " . $inputData['chief_complaint'];
+        }
+
+        if (!empty($inputData['symptom_duration'])) {
+            $medicalHistoryContext[] = "Symptom Duration: " . $inputData['symptom_duration'];
+        }
+
+        if (!empty($inputData['past_medical_history'])) {
+            $medicalHistoryContext[] = "Past Medical History: " . $inputData['past_medical_history'];
+        }
+
+        if (!empty($inputData['medication_history'])) {
+            $medicalHistoryContext[] = "Current Medications: " . $inputData['medication_history'];
+        }
+
+        if (!empty($inputData['allergies'])) {
+            $medicalHistoryContext[] = "Known Allergies: " . $inputData['allergies'];
+        }
+
+        if (!empty($inputData['family_history'])) {
+            $medicalHistoryContext[] = "Family History: " . $inputData['family_history'];
+        }
+
+        if (!empty($inputData['social_history'])) {
+            $medicalHistoryContext[] = "Social/Lifestyle History: " . $inputData['social_history'];
+        }
+
+        if (!empty($inputData['visit_type'])) {
+            $medicalHistoryContext[] = "Visit Type: " . $inputData['visit_type'];
+        }
+
+        if (!empty($inputData['physician_notes'])) {
+            $medicalHistoryContext[] = "Physician Notes: " . $inputData['physician_notes'];
+        }
+
+        if (!empty($inputData['additional_notes'])) {
+            $medicalHistoryContext[] = "Additional Notes: " . $inputData['additional_notes'];
+        }
+
+        if (!empty($medicalHistoryContext)) {
+            $context .= "\nMEDICAL HISTORY CONTEXT:\n";
+            foreach ($medicalHistoryContext as $historyItem) {
+                $context .= "• {$historyItem}\n";
+            }
+            $context .= "\nConsider this medical history when formulating your differential diagnosis and treatment plan.\n";
+        }
+
         // If no specific context was generated, return empty string
         if ($context === "CLINICAL CONTEXT:\n") {
             return "";
         }
-        
+
         return $context;
     }
-    
+
     /**
      * Format the AI response to ensure it follows our structured format
      * This helps standardize the output and ensure all required sections are present
@@ -1761,20 +1960,20 @@ class OpenAIController extends Controller
         if (!preg_match('/CASE URGENCY:\s*(ROUTINE|URGENT|EMERGENCY)/i', $response)) {
             // Try to determine urgency based on content
             $urgencyLevel = "ROUTINE";
-            
+
             // Check for emergency keywords
             if (preg_match('/(emergency|immediate attention|life-threatening|critical|severe|urgent intervention|stat)/i', $response)) {
                 $urgencyLevel = "EMERGENCY";
-            } 
+            }
             // Check for urgent keywords
             else if (preg_match('/(urgent|prompt attention|soon|timely|priority)/i', $response)) {
                 $urgencyLevel = "URGENT";
             }
-            
+
             // Add the urgency section at the beginning
             $response = "CASE URGENCY: $urgencyLevel\n\n" . $response;
         }
-        
+
         // Ensure section headers are properly formatted
         $sections = [
             'PATIENT INFORMATION' => 'PATIENT INFORMATION:',
@@ -1783,7 +1982,7 @@ class OpenAIController extends Controller
             'MANAGEMENT RECOMMENDATIONS' => 'C) MANAGEMENT RECOMMENDATIONS:',
             'CLINICAL CONSIDERATIONS' => 'D) CLINICAL CONSIDERATIONS & PRECAUTIONS:'
         ];
-        
+
         foreach ($sections as $keyword => $formattedHeader) {
             // Check if a section with this keyword exists but isn't properly formatted
             if (preg_match('/(?:^|\n)(?!.*' . preg_quote($formattedHeader, '/') . ').*' . preg_quote($keyword, '/') . '.*(?:\n|:)/i', $response)) {
@@ -1792,36 +1991,36 @@ class OpenAIController extends Controller
             }
             // If the section doesn't exist at all, we don't add it as it might not be applicable
         }
-        
+
         // Ensure the old A) POSSIBLE DIAGNOSIS section is renamed to our new format
         if (preg_match('/(?:^|\n)A\)\s*POSSIBLE\s*DIAGNOSIS/i', $response) && !preg_match('/DIFFERENTIAL DIAGNOSIS/i', $response)) {
             $response = preg_replace('/(?:^|\n)A\)\s*POSSIBLE\s*DIAGNOSIS.*(?:\n|:)/i', "\n\nA) DIFFERENTIAL DIAGNOSIS (PRIORITIZED):\n", $response);
         }
-        
+
         // Ensure the old B) RECOMMENDATIONS FOR TESTS section is renamed
         if (preg_match('/(?:^|\n)B\)\s*RECOMMENDATIONS\s*FOR\s*TESTS/i', $response) && !preg_match('/RECOMMENDED INVESTIGATIONS/i', $response)) {
             $response = preg_replace('/(?:^|\n)B\)\s*RECOMMENDATIONS\s*FOR\s*TESTS.*(?:\n|:)/i', "\n\nB) RECOMMENDED INVESTIGATIONS:\n", $response);
         }
-        
+
         // Ensure the old C) TREATMENT RECOMMENDATIONS section is renamed
         if (preg_match('/(?:^|\n)C\)\s*TREATMENT\s*RECOMMENDATIONS/i', $response) && !preg_match('/MANAGEMENT RECOMMENDATIONS/i', $response)) {
             $response = preg_replace('/(?:^|\n)C\)\s*TREATMENT\s*RECOMMENDATIONS.*(?:\n|:)/i', "\n\nC) MANAGEMENT RECOMMENDATIONS:\n", $response);
         }
-        
+
         // Ensure the old D) WARNING SIGNS section is renamed
         if (preg_match('/(?:^|\n)D\)\s*WARNING\s*SIGNS/i', $response) && !preg_match('/CLINICAL CONSIDERATIONS/i', $response)) {
             $response = preg_replace('/(?:^|\n)D\)\s*WARNING\s*SIGNS.*(?:\n|:)/i', "\n\nD) CLINICAL CONSIDERATIONS & PRECAUTIONS:\n", $response);
         }
-        
+
         // Add styling for probability percentages to make them stand out
         $response = preg_replace('/(\d{1,3})%/i', '<strong>$1%</strong>', $response);
-        
+
         // Highlight emergency warnings
         $response = preg_replace('/(emergency|immediate attention needed|life-threatening|critical condition)/i', '<span style="color: red; font-weight: bold;">$1</span>', $response);
-        
+
         // Highlight urgent/emergency case urgency
         $response = preg_replace('/(CASE URGENCY:\s*)(URGENT|EMERGENCY)/i', '$1<span style="color: red; font-weight: bold;">$2</span>', $response);
-        
+
         return $response;
     }
 }
