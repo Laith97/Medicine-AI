@@ -605,6 +605,53 @@ class OpenAIController extends Controller
                     'visit_type' => $request->visit_type,
                     'physician_notes' => $request->physician_notes,
                     'additional_notes' => $request->additional_notes,
+                    // Head-to-Toe Assessment fields
+                    'head_to_toe_assessment' => [
+                        // General Appearance
+                        'consciousness_level' => $request->consciousness_level,
+                        'mood_behavior' => $request->mood_behavior,
+                        'speech_clarity' => $request->speech_clarity,
+                        'hygiene_level' => $request->hygiene_level,
+                        // HEENT
+                        'scalp_condition' => $request->scalp_condition,
+                        'pupil_reactivity' => $request->pupil_reactivity,
+                        'vision_issues' => $request->vision_issues ? true : false,
+                        'hearing_issues' => $request->hearing_issues ? true : false,
+                        'oral_findings' => $request->oral_findings,
+                        // Neurological
+                        'orientation_level' => $request->orientation_level,
+                        'limb_strength' => $request->limb_strength,
+                        'reflexes' => $request->reflexes,
+                        'sensation_findings' => $request->sensation_findings,
+                        // Neck and Chest
+                        'trachea_position' => $request->trachea_position,
+                        'jvd_present' => $request->jvd_present ? true : false,
+                        'lung_sounds' => $request->lung_sounds,
+                        'heart_sounds' => $request->heart_sounds,
+                        'capillary_refill_time' => $request->capillary_refill_time,
+                        // Abdomen
+                        'abdominal_shape' => $request->abdominal_shape,
+                        'bowel_sounds' => $request->bowel_sounds,
+                        'abdominal_tenderness' => $request->abdominal_tenderness ? true : false,
+                        'nausea_or_vomiting' => $request->nausea_or_vomiting ? true : false,
+                        'appetite_level' => $request->appetite_level,
+                        // Genitourinary
+                        'urination_issues' => $request->urination_issues ? true : false,
+                        'catheter_present' => $request->catheter_present ? true : false,
+                        'urine_characteristics' => $request->urine_characteristics,
+                        // Musculoskeletal
+                        'range_of_motion' => $request->range_of_motion,
+                        'gait_stability' => $request->gait_stability,
+                        'assistive_devices' => $request->assistive_devices,
+                        // Skin
+                        'skin_color' => $request->skin_color,
+                        'skin_temperature' => $request->skin_temperature,
+                        'skin_lesions' => $request->skin_lesions,
+                        'pressure_ulcers' => $request->pressure_ulcers ? true : false,
+                        // Pain Assessment
+                        'pain_score' => is_numeric($request->pain_score) ? $request->pain_score : null,
+                        'pain_description' => $request->pain_description,
+                    ],
                     'is_existing_patient' => true,
                     'patient_id' => $patientRecord->id,
                     'previous_record_id' => $patientRecord->id, // Store the previous record ID for reference
@@ -646,6 +693,53 @@ class OpenAIController extends Controller
             'visit_type' => $request->visit_type,
             'physician_notes' => $request->physician_notes,
             'additional_notes' => $request->additional_notes,
+            // Head-to-Toe Assessment fields
+            'head_to_toe_assessment' => [
+                // General Appearance
+                'consciousness_level' => $request->consciousness_level,
+                'mood_behavior' => $request->mood_behavior,
+                'speech_clarity' => $request->speech_clarity,
+                'hygiene_level' => $request->hygiene_level,
+                // HEENT
+                'scalp_condition' => $request->scalp_condition,
+                'pupil_reactivity' => $request->pupil_reactivity,
+                'vision_issues' => $request->vision_issues ? true : false,
+                'hearing_issues' => $request->hearing_issues ? true : false,
+                'oral_findings' => $request->oral_findings,
+                // Neurological
+                'orientation_level' => $request->orientation_level,
+                'limb_strength' => $request->limb_strength,
+                'reflexes' => $request->reflexes,
+                'sensation_findings' => $request->sensation_findings,
+                // Neck and Chest
+                'trachea_position' => $request->trachea_position,
+                'jvd_present' => $request->jvd_present ? true : false,
+                'lung_sounds' => $request->lung_sounds,
+                'heart_sounds' => $request->heart_sounds,
+                'capillary_refill_time' => $request->capillary_refill_time,
+                // Abdomen
+                'abdominal_shape' => $request->abdominal_shape,
+                'bowel_sounds' => $request->bowel_sounds,
+                'abdominal_tenderness' => $request->abdominal_tenderness ? true : false,
+                'nausea_or_vomiting' => $request->nausea_or_vomiting ? true : false,
+                'appetite_level' => $request->appetite_level,
+                // Genitourinary
+                'urination_issues' => $request->urination_issues ? true : false,
+                'catheter_present' => $request->catheter_present ? true : false,
+                'urine_characteristics' => $request->urine_characteristics,
+                // Musculoskeletal
+                'range_of_motion' => $request->range_of_motion,
+                'gait_stability' => $request->gait_stability,
+                'assistive_devices' => $request->assistive_devices,
+                // Skin
+                'skin_color' => $request->skin_color,
+                'skin_temperature' => $request->skin_temperature,
+                'skin_lesions' => $request->skin_lesions,
+                'pressure_ulcers' => $request->pressure_ulcers ? true : false,
+                // Pain Assessment
+                'pain_score' => is_numeric($request->pain_score) ? $request->pain_score : null,
+                'pain_description' => $request->pain_description,
+            ],
             'is_existing_patient' => false
         ];
     }
@@ -901,6 +995,41 @@ class OpenAIController extends Controller
                     'oxygen_saturation' => is_numeric($request->oxygen_saturation) ? $request->oxygen_saturation : null,
                     'physician_notes' => $request->physician_notes,
                     'additional_notes' => $request->additional_notes,
+                    // Head-to-Toe Assessment fields
+                    'consciousness_level' => $request->consciousness_level,
+                    'mood_behavior' => $request->mood_behavior,
+                    'speech_clarity' => $request->speech_clarity,
+                    'hygiene_level' => $request->hygiene_level,
+                    'scalp_condition' => $request->scalp_condition,
+                    'pupil_reactivity' => $request->pupil_reactivity,
+                    'vision_issues' => $request->vision_issues ? 1 : 0,
+                    'hearing_issues' => $request->hearing_issues ? 1 : 0,
+                    'oral_findings' => $request->oral_findings,
+                    'orientation_level' => $request->orientation_level,
+                    'limb_strength' => $request->limb_strength,
+                    'reflexes' => $request->reflexes,
+                    'sensation_findings' => $request->sensation_findings,
+                    'trachea_position' => $request->trachea_position,
+                    'jvd_present' => $request->jvd_present ? 1 : 0,
+                    'lung_sounds' => $request->lung_sounds,
+                    'heart_sounds' => $request->heart_sounds,
+                    'capillary_refill_time' => $request->capillary_refill_time,
+                    'abdominal_shape' => $request->abdominal_shape,
+                    'bowel_sounds' => $request->bowel_sounds,
+                    'abdominal_tenderness' => $request->abdominal_tenderness ? 1 : 0,
+                    'nausea_or_vomiting' => $request->nausea_or_vomiting ? 1 : 0,
+                    'appetite_level' => $request->appetite_level,
+                    'urination_issues' => $request->urination_issues ? 1 : 0,
+                    'catheter_present' => $request->catheter_present ? 1 : 0,
+                    'urine_characteristics' => $request->urine_characteristics,
+                    'range_of_motion' => $request->range_of_motion,
+                    'gait_stability' => $request->gait_stability,
+                    'assistive_devices' => $request->assistive_devices,
+                    'skin_color' => $request->skin_color,
+                    'skin_temperature' => $request->skin_temperature,
+                    'skin_lesions' => $request->skin_lesions,
+                    'pressure_ulcers' => $request->pressure_ulcers ? 1 : 0,
+                    'pain_description' => $request->pain_description,
                 ]);
 
                 return;
@@ -970,6 +1099,41 @@ class OpenAIController extends Controller
                     'oxygen_saturation' => is_numeric($request->oxygen_saturation) ? $request->oxygen_saturation : null,
                     'physician_notes' => $request->physician_notes,
                     'additional_notes' => $request->additional_notes,
+                    // Head-to-Toe Assessment fields
+                    'consciousness_level' => $request->consciousness_level,
+                    'mood_behavior' => $request->mood_behavior,
+                    'speech_clarity' => $request->speech_clarity,
+                    'hygiene_level' => $request->hygiene_level,
+                    'scalp_condition' => $request->scalp_condition,
+                    'pupil_reactivity' => $request->pupil_reactivity,
+                    'vision_issues' => $request->vision_issues ? 1 : 0,
+                    'hearing_issues' => $request->hearing_issues ? 1 : 0,
+                    'oral_findings' => $request->oral_findings,
+                    'orientation_level' => $request->orientation_level,
+                    'limb_strength' => $request->limb_strength,
+                    'reflexes' => $request->reflexes,
+                    'sensation_findings' => $request->sensation_findings,
+                    'trachea_position' => $request->trachea_position,
+                    'jvd_present' => $request->jvd_present ? 1 : 0,
+                    'lung_sounds' => $request->lung_sounds,
+                    'heart_sounds' => $request->heart_sounds,
+                    'capillary_refill_time' => $request->capillary_refill_time,
+                    'abdominal_shape' => $request->abdominal_shape,
+                    'bowel_sounds' => $request->bowel_sounds,
+                    'abdominal_tenderness' => $request->abdominal_tenderness ? 1 : 0,
+                    'nausea_or_vomiting' => $request->nausea_or_vomiting ? 1 : 0,
+                    'appetite_level' => $request->appetite_level,
+                    'urination_issues' => $request->urination_issues ? 1 : 0,
+                    'catheter_present' => $request->catheter_present ? 1 : 0,
+                    'urine_characteristics' => $request->urine_characteristics,
+                    'range_of_motion' => $request->range_of_motion,
+                    'gait_stability' => $request->gait_stability,
+                    'assistive_devices' => $request->assistive_devices,
+                    'skin_color' => $request->skin_color,
+                    'skin_temperature' => $request->skin_temperature,
+                    'skin_lesions' => $request->skin_lesions,
+                    'pressure_ulcers' => $request->pressure_ulcers ? 1 : 0,
+                    'pain_description' => $request->pain_description,
                 ]);
 
                 return;
@@ -1016,6 +1180,41 @@ class OpenAIController extends Controller
             'oxygen_saturation' => is_numeric($request->oxygen_saturation) ? $request->oxygen_saturation : null,
             'physician_notes' => $request->physician_notes,
             'additional_notes' => $request->additional_notes,
+            // Head-to-Toe Assessment fields
+            'consciousness_level' => $request->consciousness_level,
+            'mood_behavior' => $request->mood_behavior,
+            'speech_clarity' => $request->speech_clarity,
+            'hygiene_level' => $request->hygiene_level,
+            'scalp_condition' => $request->scalp_condition,
+            'pupil_reactivity' => $request->pupil_reactivity,
+            'vision_issues' => $request->vision_issues ? 1 : 0,
+            'hearing_issues' => $request->hearing_issues ? 1 : 0,
+            'oral_findings' => $request->oral_findings,
+            'orientation_level' => $request->orientation_level,
+            'limb_strength' => $request->limb_strength,
+            'reflexes' => $request->reflexes,
+            'sensation_findings' => $request->sensation_findings,
+            'trachea_position' => $request->trachea_position,
+            'jvd_present' => $request->jvd_present ? 1 : 0,
+            'lung_sounds' => $request->lung_sounds,
+            'heart_sounds' => $request->heart_sounds,
+            'capillary_refill_time' => $request->capillary_refill_time,
+            'abdominal_shape' => $request->abdominal_shape,
+            'bowel_sounds' => $request->bowel_sounds,
+            'abdominal_tenderness' => $request->abdominal_tenderness ? 1 : 0,
+            'nausea_or_vomiting' => $request->nausea_or_vomiting ? 1 : 0,
+            'appetite_level' => $request->appetite_level,
+            'urination_issues' => $request->urination_issues ? 1 : 0,
+            'catheter_present' => $request->catheter_present ? 1 : 0,
+            'urine_characteristics' => $request->urine_characteristics,
+            'range_of_motion' => $request->range_of_motion,
+            'gait_stability' => $request->gait_stability,
+            'assistive_devices' => $request->assistive_devices,
+            'skin_color' => $request->skin_color,
+            'skin_temperature' => $request->skin_temperature,
+            'skin_lesions' => $request->skin_lesions,
+            'pressure_ulcers' => $request->pressure_ulcers ? 1 : 0,
+            'pain_description' => $request->pain_description,
         ]);
     }
 
@@ -1077,7 +1276,16 @@ class OpenAIController extends Controller
         // Generate dynamic clinical context based on vital signs and symptoms
         $clinicalContext = $this->generateClinicalContext($inputData);
 
-        return "Based on the provided information and considering the evaluation criteria from the selected source ($criterion), analyze the patient case and provide a detailed medical assessment.
+        return "You are MedCuraAI, an advanced clinical decision support system powered by cutting-edge artificial intelligence. You function as a senior attending physician with 25+ years of clinical experience across multiple specialties, board certifications, and extensive research background. Your role is to provide comprehensive, evidence-based medical analysis that rivals the expertise of top-tier academic medical centers.
+
+            🎯 CLINICAL EXCELLENCE MANDATE:
+            Your analysis must demonstrate the highest standards of medical practice, incorporating:
+            - Evidence-based medicine principles with current clinical guidelines
+            - Systematic clinical reasoning using established diagnostic frameworks
+            - Risk stratification and patient safety prioritization
+            - Multidisciplinary care coordination
+            - Quality improvement and outcome optimization
+            - Cultural competency and patient-centered care
 
             $fileSearchInstruction
 
@@ -1087,88 +1295,255 @@ class OpenAIController extends Controller
 
             $clinicalContext
 
-            IMPORTANT: Your analysis MUST be based on the clinical data provided and any uploaded files. Follow the exact output format specified below.
+            🔬 ADVANCED CLINICAL REASONING FRAMEWORK:
+            Apply the following systematic approach to your analysis:
 
-            🔶 OUTPUT FORMAT:
-            You MUST return your response in the following structure:
+            1. **CLINICAL PATTERN RECOGNITION**: Identify key clinical patterns, syndromes, and pathophysiological processes
+            2. **BAYESIAN DIAGNOSTIC REASONING**: Use pre-test probability, likelihood ratios, and post-test probability calculations
+            3. **SYSTEMS-BASED ANALYSIS**: Consider multi-organ system interactions and complications
+            4. **TEMPORAL ANALYSIS**: Evaluate disease progression, acute vs chronic presentations, and time-sensitive interventions
+            5. **RISK-BENEFIT ASSESSMENT**: Weigh diagnostic and therapeutic interventions against potential risks
+            6. **POPULATION HEALTH CONSIDERATIONS**: Factor in epidemiological data, demographics, and social determinants of health
+
+            🎯 DIAGNOSTIC EXCELLENCE CRITERIA:
+            - Utilize established clinical prediction rules and scoring systems where applicable
+            - Consider rare but serious diagnoses (\"zebras\") when clinical presentation warrants
+            - Apply Occam's razor while remaining vigilant for complex multi-system diseases
+            - Incorporate laboratory values, imaging findings, and physical examination in diagnostic reasoning
+            - Consider medication interactions, contraindications, and patient-specific factors
+
+            🔶 ENHANCED OUTPUT FORMAT:
+            Provide your comprehensive analysis in the following advanced clinical structure:
 
             ---
-            📋 PATIENT CASE SUMMARY:
-            Name: {name}
-            Age: {age}
-            Gender: {gender}
-            Height / Weight: {height} / {weight}
+            📋 COMPREHENSIVE PATIENT ASSESSMENT:
 
-            Chief Complaint: {chief_complaint if available}
-            Symptom Duration: {symptom_duration if available}
-            Visit Type: {visit_type if available}
+            **PATIENT DEMOGRAPHICS & PRESENTATION:**
+            Name: {name} | Age: {age} years | Gender: {gender} | BMI: {calculated if height/weight available}
 
-            Vitals:
-            Temperature: {temperature} °C
-            Blood Pressure: {bp} mmHg
-            Blood Sugar: {sugar} mg/dL
-            Heart Rate: {heart_rate if available} bpm
-            Respiratory Rate: {respiratory_rate if available} breaths/min
-            Oxygen Saturation: {oxygen_saturation if available} %
-            Pain Scale: {pain_scale if available}/10
+            **CHIEF COMPLAINT & HPI:**
+            Primary Concern: {chief_complaint with detailed analysis}
+            Symptom Timeline: {symptom_duration with progression analysis}
+            Visit Context: {visit_type with clinical significance}
 
-            Medical History:
-            Past Medical History: {past_medical_history if available}
-            Current Medications: {medication_history if available}
-            Known Allergies: {allergies if available}
-            Family History: {family_history if available}
-            Social/Lifestyle History: {social_history if available}
+            **VITAL SIGNS ANALYSIS:**
+            • Temperature: {temperature}°C {with clinical interpretation}
+            • Blood Pressure: {bp} mmHg {with hemodynamic assessment}
+            • Heart Rate: {heart_rate} bpm {with rhythm assessment if available}
+            • Respiratory Rate: {respiratory_rate} breaths/min {with respiratory status}
+            • Oxygen Saturation: {oxygen_saturation}% {with oxygenation assessment}
+            • Pain Assessment: {pain_scale}/10 {with pain characterization}
+            • Blood Glucose: {sugar} mg/dL {with metabolic assessment}
 
-            Current Symptoms: {comma-separated list}
-            Preliminary Diagnosis: {if available}
-            Lab Results / Imaging: {or state 'Not Provided'}
+            **COMPREHENSIVE MEDICAL HISTORY:**
+            • Past Medical History: {past_medical_history with relevance to current presentation}
+            • Current Medications: {medication_history with interaction analysis}
+            • Allergies/Adverse Reactions: {allergies with clinical implications}
+            • Family History: {family_history with genetic/hereditary risk factors}
+            • Social History: {social_history with risk factor analysis}
 
-            Clinical Notes:
-            Physician Notes: {physician_notes if available}
-            Additional Notes: {additional_notes if available}
+            **PHYSICAL EXAMINATION SYNTHESIS:**
+            {Comprehensive integration of head-to-toe assessment findings with clinical significance}
+
+            **SYMPTOM CONSTELLATION:**
+            {Detailed symptom analysis with pathophysiological correlations}
+
+            **DIAGNOSTIC DATA REVIEW:**
+            Laboratory/Imaging: {test_results with clinical interpretation or 'Pending/Not Available'}
+            Preliminary Assessment: {preliminary_diagnosis with validation/refinement}
+
+            **CLINICAL DOCUMENTATION:**
+            Provider Notes: {physician_notes with clinical context}
+            Additional Observations: {additional_notes with clinical relevance}
+
             ---
-            🚨 CASE URGENCY:
-            ⚠️ {Emergency / Urgent / Routine}
-            Brief reason why this triage level was chosen.
-            ---
-            🔬 DIFFERENTIAL DIAGNOSIS (Prioritized with Probabilities):
-            Rank	Diagnosis	Probability (%)	Clinical Reasoning
-            1	[Primary diagnosis]	[probability]	[reasoning with key findings supporting this diagnosis]
-            2	[Secondary diagnosis]	[probability]	[reasoning with key findings supporting this diagnosis]
-            3	[Tertiary diagnosis]	[probability]	[reasoning with key findings supporting this diagnosis]
-            Add more rows as needed.
-            ---
-            🧪 RECOMMENDED INVESTIGATIONS:
-            1. [Test name] — [Rationale]
-            2. [Test name] — [Rationale]
-            3. [Test name] — [Rationale]
-            Add more as needed.
-            ---
-            💊 TREATMENT & MANAGEMENT RECOMMENDATIONS:
-            Immediate Interventions:
-            [List immediate steps]
+            🚨 CLINICAL ACUITY & TRIAGE ASSESSMENT:
 
-            Medications:
-            [List medications with dosages and frequencies]
+            **URGENCY CLASSIFICATION:** ⚠️ {RESUSCITATION / EMERGENT / URGENT / LESS URGENT / NON-URGENT}
 
-            Referrals:
-            [List any specialist referrals needed]
-            ---
-            ⚠️ WARNING SIGNS TO MONITOR:
-            [List specific warning signs that would indicate deterioration]
-            ---
-            🧠 DOCTOR'S NOTE:
-            [Brief clinical note with any additional context or considerations]
-            ---
-            📚 SOURCES:
-            [List 3-5 relevant medical sources that support your recommendations]
-            For each source, provide the title, author(s), publication year, and journal/source name.
-            Include the URL to the source whenever possible (e.g., PubMed link, DOI, or journal website).
-            Focus on high-quality, peer-reviewed sources from reputable medical journals.
-            Prioritize recent publications (within the last 5 years when possible).
-            Include at least one source specific to the primary diagnosis or recommendation.
+            **ACUITY RATIONALE:**
+            {Detailed explanation using established triage criteria (ESI, CTAS, etc.) with specific clinical indicators}
 
-            Here is the input data: " . json_encode($inputData);
+            **TIME-SENSITIVE INTERVENTIONS:**
+            {List any time-critical interventions with specific timeframes}
+
+            **DISPOSITION CONSIDERATIONS:**
+            {Factors influencing patient placement and level of care}
+
+            ---
+            🔬 ADVANCED DIFFERENTIAL DIAGNOSIS:
+
+            **SYSTEMATIC DIAGNOSTIC APPROACH:**
+            {Brief description of diagnostic reasoning methodology used}
+
+            **PRIORITIZED DIFFERENTIAL (with Bayesian Analysis):**
+
+            | Rank | Diagnosis | Probability | Likelihood Ratio | Clinical Evidence | Pathophysiology |
+            |------|-----------|-------------|------------------|-------------------|-----------------|
+            | 1 | {Primary diagnosis} | {%} | {LR+/-} | {Key supporting findings} | {Brief pathophysiological explanation} |
+            | 2 | {Secondary diagnosis} | {%} | {LR+/-} | {Key supporting findings} | {Brief pathophysiological explanation} |
+            | 3 | {Tertiary diagnosis} | {%} | {LR+/-} | {Key supporting findings} | {Brief pathophysiological explanation} |
+            | 4+ | {Additional diagnoses as clinically relevant} |
+
+            **DIAGNOSTIC CERTAINTY ASSESSMENT:**
+            {Analysis of diagnostic confidence and factors affecting certainty}
+
+            **ALTERNATIVE DIAGNOSTIC CONSIDERATIONS:**
+            {Discussion of less likely but important differential diagnoses}
+
+            ---
+            🧪 EVIDENCE-BASED DIAGNOSTIC WORKUP:
+
+            **IMMEDIATE DIAGNOSTIC PRIORITIES:**
+            {Tests needed urgently with clinical rationale}
+
+            **COMPREHENSIVE DIAGNOSTIC PLAN:**
+
+            **Laboratory Studies:**
+            • {Test name} - {Clinical indication, expected findings, interpretation guidelines}
+            • {Additional tests with detailed rationale}
+
+            **Imaging Studies:**
+            • {Imaging modality} - {Clinical indication, expected findings, limitations}
+            • {Additional imaging with detailed rationale}
+
+            **Specialized Testing:**
+            • {Specialized tests} - {Clinical indication and expected utility}
+
+            **DIAGNOSTIC ALGORITHM:**
+            {Step-by-step diagnostic approach based on test results}
+
+            **COST-EFFECTIVENESS ANALYSIS:**
+            {Brief consideration of diagnostic efficiency and resource utilization}
+
+            ---
+            💊 COMPREHENSIVE TREATMENT & MANAGEMENT:
+
+            **IMMEDIATE INTERVENTIONS (Priority Order):**
+            1. {Intervention} - {Rationale, dosing, monitoring}
+            2. {Additional interventions with detailed protocols}
+
+            **PHARMACOLOGICAL MANAGEMENT:**
+
+            **Primary Medications:**
+            • {Drug name} {dose} {route} {frequency}
+              - Indication: {specific indication}
+              - Mechanism: {brief pharmacology}
+              - Monitoring: {required monitoring parameters}
+              - Contraindications: {relevant contraindications}
+              - Duration: {treatment duration}
+
+            **Alternative Therapies:**
+            {Alternative medication options with rationale}
+
+            **NON-PHARMACOLOGICAL INTERVENTIONS:**
+            • {Intervention} - {Rationale and implementation}
+            • {Additional interventions}
+
+            **MULTIDISCIPLINARY CARE COORDINATION:**
+
+            **Specialist Consultations:**
+            • {Specialty} - {Indication, urgency, specific questions}
+            • {Additional consultations}
+
+            **Allied Health Referrals:**
+            • {Service} - {Indication and expected outcomes}
+
+            ---
+            🏥 COMPREHENSIVE PLAN OF CARE:
+
+            **DISPOSITION & LEVEL OF CARE:**
+            {Detailed disposition decision with supporting rationale}
+
+            **MONITORING PROTOCOL:**
+            • Vital Signs: {frequency and parameters}
+            • Laboratory Monitoring: {specific tests and intervals}
+            • Clinical Assessments: {frequency and focus areas}
+            • Functional Status: {mobility, ADLs, cognitive assessment}
+
+            **FOLLOW-UP STRATEGY:**
+            • Immediate (24-48 hours): {specific instructions}
+            • Short-term (1-2 weeks): {follow-up requirements}
+            • Long-term: {ongoing care coordination}
+
+            **PATIENT & FAMILY EDUCATION:**
+            • Disease Process: {explanation appropriate for health literacy level}
+            • Treatment Plan: {medication adherence, lifestyle modifications}
+            • Warning Signs: {specific symptoms requiring immediate attention}
+            • Self-Care Instructions: {activity restrictions, wound care, etc.}
+
+            **QUALITY METRICS & OUTCOMES:**
+            {Relevant quality indicators and expected outcomes}
+
+            ---
+            ⚠️ CLINICAL SURVEILLANCE & SAFETY:
+
+            **CRITICAL WARNING SIGNS:**
+            {Specific clinical deterioration indicators with action thresholds}
+
+            **SAFETY PROTOCOLS:**
+            {Fall risk, medication safety, infection control measures}
+
+            **ESCALATION CRITERIA:**
+            {Specific parameters requiring immediate physician notification}
+
+            **ADVERSE EVENT MONITORING:**
+            {Potential complications and monitoring strategies}
+
+            ---
+            🧠 ADVANCED CLINICAL INSIGHTS:
+
+            **PATHOPHYSIOLOGICAL ANALYSIS:**
+            {Detailed explanation of underlying disease mechanisms}
+
+            **CLINICAL PEARLS:**
+            {Key clinical insights and teaching points}
+
+            **PROGNOSTIC ASSESSMENT:**
+            {Short and long-term prognosis with influencing factors}
+
+            **QUALITY IMPROVEMENT OPPORTUNITIES:**
+            {Potential areas for care optimization}
+
+            **RESEARCH CONSIDERATIONS:**
+            {Relevant clinical trials or emerging therapies if applicable}
+
+            ---
+            📚 EVIDENCE-BASED REFERENCES:
+
+            **PRIMARY CLINICAL GUIDELINES:**
+            1. {Guideline name} - {Organization, year, specific recommendations}
+            2. {Additional guidelines with relevance}
+
+            **KEY RESEARCH EVIDENCE:**
+            1. {Study title} - {Authors, Journal, Year, PMID/DOI}
+               Summary: {Brief summary of relevant findings}
+            2. {Additional studies with clinical relevance}
+
+            **CLINICAL PREDICTION TOOLS:**
+            {Relevant scoring systems or prediction rules used}
+
+            **SYSTEMATIC REVIEWS/META-ANALYSES:**
+            {High-level evidence supporting recommendations}
+
+            ---
+            🎯 CLINICAL DECISION SUMMARY:
+
+            **KEY CLINICAL DECISIONS:**
+            {Summary of major clinical decisions with rationale}
+
+            **RISK-BENEFIT ANALYSIS:**
+            {Overall assessment of treatment risks vs benefits}
+
+            **ALTERNATIVE APPROACHES:**
+            {Discussion of alternative management strategies}
+
+            **FOLLOW-UP DECISION POINTS:**
+            {Key decision points for ongoing care}
+
+            CRITICAL INSTRUCTION: Base your entire analysis on the comprehensive clinical data provided. Demonstrate advanced clinical reasoning, evidence-based practice, and patient safety prioritization throughout your response.
+
+            PATIENT DATA FOR ANALYSIS: " . json_encode($inputData);
     }
 
 
@@ -1818,15 +2193,69 @@ class OpenAIController extends Controller
             }
         }
 
-        // Check symptoms for red flags
+        // Enhanced red flags detection including physical examination findings
         $emergencySymptoms = [
             'chest pain', 'shortness of breath', 'difficulty breathing', 'severe headache',
             'sudden confusion', 'slurred speech', 'facial drooping', 'weakness in limbs',
             'loss of consciousness', 'seizure', 'severe abdominal pain', 'vomiting blood',
             'black stool', 'bloody stool', 'severe bleeding', 'trauma', 'head injury',
             'suicidal', 'suicide', 'homicidal', 'homicide', 'psychosis', 'hallucinations',
-            'delusions', 'paralysis', 'unable to move', 'stroke', 'heart attack', 'cardiac arrest'
+            'delusions', 'paralysis', 'unable to move', 'stroke', 'heart attack', 'cardiac arrest',
+            'anaphylaxis', 'severe allergic reaction', 'respiratory distress', 'cyanosis',
+            'altered mental status', 'syncope', 'severe dehydration', 'diabetic emergency'
         ];
+
+        // Check Head-to-Toe Assessment for critical findings
+        if (!empty($inputData['head_to_toe_assessment'])) {
+            $assessment = $inputData['head_to_toe_assessment'];
+
+            // Critical neurological findings
+            if (!empty($assessment['consciousness_level']) && in_array($assessment['consciousness_level'], ['Drowsy', 'Unresponsive'])) {
+                $redFlags[] = "Altered consciousness level: " . $assessment['consciousness_level'];
+            }
+            if (!empty($assessment['orientation_level']) && $assessment['orientation_level'] !== 'Oriented x4') {
+                $redFlags[] = "Disorientation: " . $assessment['orientation_level'];
+            }
+            if (!empty($assessment['limb_strength']) && in_array($assessment['limb_strength'], ['Weak Left', 'Weak Right', 'Paralyzed'])) {
+                $redFlags[] = "Neurological deficit: " . $assessment['limb_strength'];
+            }
+            if (!empty($assessment['speech_clarity']) && in_array($assessment['speech_clarity'], ['Slurred', 'Incoherent'])) {
+                $redFlags[] = "Speech abnormality: " . $assessment['speech_clarity'];
+            }
+
+            // Critical cardiovascular findings
+            if (!empty($assessment['heart_sounds']) && in_array($assessment['heart_sounds'], ['Murmur', 'Irregular'])) {
+                $abnormalFindings[] = "Cardiac abnormality: " . $assessment['heart_sounds'];
+            }
+            if (!empty($assessment['capillary_refill_time']) && $assessment['capillary_refill_time'] === '> 3s') {
+                $redFlags[] = "Poor perfusion: Capillary refill > 3 seconds";
+            }
+            if ($assessment['jvd_present']) {
+                $abnormalFindings[] = "Jugular venous distension present - suggests cardiac or volume overload";
+            }
+
+            // Critical respiratory findings
+            if (!empty($assessment['lung_sounds']) && in_array($assessment['lung_sounds'], ['Crackles', 'Wheezes', 'Diminished'])) {
+                $abnormalFindings[] = "Respiratory abnormality: " . $assessment['lung_sounds'];
+            }
+            if (!empty($assessment['trachea_position']) && $assessment['trachea_position'] === 'Deviated') {
+                $redFlags[] = "Tracheal deviation - possible tension pneumothorax or mass effect";
+            }
+
+            // Critical skin findings
+            if (!empty($assessment['skin_color']) && in_array($assessment['skin_color'], ['Pale', 'Cyanotic', 'Jaundiced'])) {
+                if ($assessment['skin_color'] === 'Cyanotic') {
+                    $redFlags[] = "Cyanosis - indicates severe hypoxemia";
+                } else {
+                    $abnormalFindings[] = "Skin color abnormality: " . $assessment['skin_color'];
+                }
+            }
+
+            // Critical pain findings
+            if (!empty($assessment['pain_score']) && $assessment['pain_score'] >= 8) {
+                $redFlags[] = "Severe pain score: " . $assessment['pain_score'] . "/10 - requires immediate attention";
+            }
+        }
 
         // Get symptoms from the input data
         $symptoms = [];
@@ -1940,6 +2369,198 @@ class OpenAIController extends Controller
                 $context .= "• {$historyItem}\n";
             }
             $context .= "\nConsider this medical history when formulating your differential diagnosis and treatment plan.\n";
+        }
+
+        // Add Head-to-Toe Assessment context
+        $headToToeContext = [];
+
+        if (!empty($inputData['head_to_toe_assessment'])) {
+            $assessment = $inputData['head_to_toe_assessment'];
+
+            // General Appearance
+            if (!empty($assessment['consciousness_level']) && $assessment['consciousness_level'] !== 'Alert') {
+                $headToToeContext[] = "Consciousness: " . $assessment['consciousness_level'];
+            }
+            if (!empty($assessment['mood_behavior']) && $assessment['mood_behavior'] !== 'Calm') {
+                $headToToeContext[] = "Mood/Behavior: " . $assessment['mood_behavior'];
+            }
+            if (!empty($assessment['speech_clarity']) && $assessment['speech_clarity'] !== 'Clear') {
+                $headToToeContext[] = "Speech: " . $assessment['speech_clarity'];
+            }
+            if (!empty($assessment['hygiene_level']) && $assessment['hygiene_level'] !== 'Good') {
+                $headToToeContext[] = "Hygiene: " . $assessment['hygiene_level'];
+            }
+
+            // HEENT
+            if (!empty($assessment['scalp_condition'])) {
+                $headToToeContext[] = "Scalp: " . $assessment['scalp_condition'];
+            }
+            if (!empty($assessment['pupil_reactivity']) && $assessment['pupil_reactivity'] !== 'PERRLA') {
+                $headToToeContext[] = "Pupils: " . $assessment['pupil_reactivity'];
+            }
+            if ($assessment['vision_issues']) {
+                $headToToeContext[] = "Vision issues present";
+            }
+            if ($assessment['hearing_issues']) {
+                $headToToeContext[] = "Hearing issues present";
+            }
+            if (!empty($assessment['oral_findings'])) {
+                $headToToeContext[] = "Oral findings: " . $assessment['oral_findings'];
+            }
+
+            // Neurological
+            if (!empty($assessment['orientation_level']) && $assessment['orientation_level'] !== 'Oriented x4') {
+                $headToToeContext[] = "Orientation: " . $assessment['orientation_level'];
+            }
+            if (!empty($assessment['limb_strength']) && $assessment['limb_strength'] !== 'Equal') {
+                $headToToeContext[] = "Limb strength: " . $assessment['limb_strength'];
+            }
+            if (!empty($assessment['reflexes']) && $assessment['reflexes'] !== 'Normal') {
+                $headToToeContext[] = "Reflexes: " . $assessment['reflexes'];
+            }
+            if (!empty($assessment['sensation_findings'])) {
+                $headToToeContext[] = "Sensation: " . $assessment['sensation_findings'];
+            }
+
+            // Neck and Chest
+            if (!empty($assessment['trachea_position']) && $assessment['trachea_position'] !== 'Midline') {
+                $headToToeContext[] = "Trachea: " . $assessment['trachea_position'];
+            }
+            if ($assessment['jvd_present']) {
+                $headToToeContext[] = "JVD present";
+            }
+            if (!empty($assessment['lung_sounds']) && $assessment['lung_sounds'] !== 'Clear') {
+                $headToToeContext[] = "Lung sounds: " . $assessment['lung_sounds'];
+            }
+            if (!empty($assessment['heart_sounds']) && $assessment['heart_sounds'] !== 'Normal') {
+                $headToToeContext[] = "Heart sounds: " . $assessment['heart_sounds'];
+            }
+            if (!empty($assessment['capillary_refill_time']) && $assessment['capillary_refill_time'] !== '< 2s') {
+                $headToToeContext[] = "Capillary refill: " . $assessment['capillary_refill_time'];
+            }
+
+            // Abdomen
+            if (!empty($assessment['abdominal_shape']) && $assessment['abdominal_shape'] !== 'Flat') {
+                $headToToeContext[] = "Abdomen: " . $assessment['abdominal_shape'];
+            }
+            if (!empty($assessment['bowel_sounds']) && $assessment['bowel_sounds'] !== 'Normal') {
+                $headToToeContext[] = "Bowel sounds: " . $assessment['bowel_sounds'];
+            }
+            if ($assessment['abdominal_tenderness']) {
+                $headToToeContext[] = "Abdominal tenderness present";
+            }
+            if ($assessment['nausea_or_vomiting']) {
+                $headToToeContext[] = "Nausea/vomiting present";
+            }
+            if (!empty($assessment['appetite_level']) && $assessment['appetite_level'] !== 'Good') {
+                $headToToeContext[] = "Appetite: " . $assessment['appetite_level'];
+            }
+
+            // Genitourinary
+            if ($assessment['urination_issues']) {
+                $headToToeContext[] = "Urination issues present";
+            }
+            if ($assessment['catheter_present']) {
+                $headToToeContext[] = "Catheter present";
+            }
+            if (!empty($assessment['urine_characteristics'])) {
+                $headToToeContext[] = "Urine: " . $assessment['urine_characteristics'];
+            }
+
+            // Musculoskeletal
+            if (!empty($assessment['range_of_motion']) && $assessment['range_of_motion'] !== 'Full') {
+                $headToToeContext[] = "Range of motion: " . $assessment['range_of_motion'];
+            }
+            if (!empty($assessment['gait_stability']) && $assessment['gait_stability'] !== 'Stable') {
+                $headToToeContext[] = "Gait: " . $assessment['gait_stability'];
+            }
+            if (!empty($assessment['assistive_devices'])) {
+                $headToToeContext[] = "Assistive devices: " . $assessment['assistive_devices'];
+            }
+
+            // Skin
+            if (!empty($assessment['skin_color']) && $assessment['skin_color'] !== 'Pink') {
+                $headToToeContext[] = "Skin color: " . $assessment['skin_color'];
+            }
+            if (!empty($assessment['skin_temperature']) && $assessment['skin_temperature'] !== 'Warm') {
+                $headToToeContext[] = "Skin temperature: " . $assessment['skin_temperature'];
+            }
+            if (!empty($assessment['skin_lesions'])) {
+                $headToToeContext[] = "Skin lesions: " . $assessment['skin_lesions'];
+            }
+            if ($assessment['pressure_ulcers']) {
+                $headToToeContext[] = "Pressure ulcers present";
+            }
+
+            // Pain Assessment
+            if (!empty($assessment['pain_score']) && $assessment['pain_score'] > 0) {
+                $headToToeContext[] = "Pain score: " . $assessment['pain_score'] . "/10";
+            }
+            if (!empty($assessment['pain_description'])) {
+                $headToToeContext[] = "Pain description: " . $assessment['pain_description'];
+            }
+        }
+
+        if (!empty($headToToeContext)) {
+            $context .= "\n🔍 COMPREHENSIVE PHYSICAL EXAMINATION ANALYSIS:\n";
+            $context .= "The following abnormal or significant physical examination findings require clinical correlation:\n\n";
+
+            // Group findings by system for better organization
+            $systemFindings = [
+                'neurological' => [],
+                'cardiovascular' => [],
+                'respiratory' => [],
+                'gastrointestinal' => [],
+                'genitourinary' => [],
+                'musculoskeletal' => [],
+                'integumentary' => [],
+                'general' => []
+            ];
+
+            foreach ($headToToeContext as $finding) {
+                if (strpos($finding, 'Consciousness') !== false || strpos($finding, 'Orientation') !== false ||
+                    strpos($finding, 'Limb strength') !== false || strpos($finding, 'Reflexes') !== false ||
+                    strpos($finding, 'Sensation') !== false || strpos($finding, 'Speech') !== false) {
+                    $systemFindings['neurological'][] = $finding;
+                } elseif (strpos($finding, 'Heart sounds') !== false || strpos($finding, 'Capillary refill') !== false ||
+                         strpos($finding, 'JVD') !== false) {
+                    $systemFindings['cardiovascular'][] = $finding;
+                } elseif (strpos($finding, 'Lung sounds') !== false || strpos($finding, 'Trachea') !== false) {
+                    $systemFindings['respiratory'][] = $finding;
+                } elseif (strpos($finding, 'Abdomen') !== false || strpos($finding, 'Bowel sounds') !== false ||
+                         strpos($finding, 'tenderness') !== false || strpos($finding, 'Nausea') !== false ||
+                         strpos($finding, 'Appetite') !== false) {
+                    $systemFindings['gastrointestinal'][] = $finding;
+                } elseif (strpos($finding, 'Urination') !== false || strpos($finding, 'Catheter') !== false ||
+                         strpos($finding, 'Urine') !== false) {
+                    $systemFindings['genitourinary'][] = $finding;
+                } elseif (strpos($finding, 'Range of motion') !== false || strpos($finding, 'Gait') !== false ||
+                         strpos($finding, 'Assistive devices') !== false) {
+                    $systemFindings['musculoskeletal'][] = $finding;
+                } elseif (strpos($finding, 'Skin') !== false || strpos($finding, 'Pressure ulcers') !== false) {
+                    $systemFindings['integumentary'][] = $finding;
+                } else {
+                    $systemFindings['general'][] = $finding;
+                }
+            }
+
+            foreach ($systemFindings as $system => $findings) {
+                if (!empty($findings)) {
+                    $systemName = ucfirst($system);
+                    $context .= "**{$systemName} System:**\n";
+                    foreach ($findings as $finding) {
+                        $context .= "  • {$finding}\n";
+                    }
+                    $context .= "\n";
+                }
+            }
+
+            $context .= "CLINICAL SIGNIFICANCE:\n";
+            $context .= "• These physical examination findings must be integrated with history and vital signs for accurate diagnosis\n";
+            $context .= "• Consider system-specific pathophysiology and potential multi-organ involvement\n";
+            $context .= "• Prioritize findings that suggest acute or life-threatening conditions\n";
+            $context .= "• Correlate abnormal findings with patient's chief complaint and symptom timeline\n";
+            $context .= "• Use these findings to guide diagnostic testing and therapeutic interventions\n\n";
         }
 
         // If no specific context was generated, return empty string

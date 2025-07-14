@@ -61,6 +61,60 @@ class PatientAnalysisRequest extends FormRequest
             'physician_notes' => 'nullable|string|max:2000',
             'additional_notes' => 'nullable|string|max:2000',
 
+            // Head-to-Toe Assessment fields
+            // General Appearance
+            'consciousness_level' => 'nullable|in:Alert,Drowsy,Unresponsive',
+            'mood_behavior' => 'nullable|in:Calm,Anxious,Aggressive,Confused',
+            'speech_clarity' => 'nullable|in:Clear,Slurred,Incoherent',
+            'hygiene_level' => 'nullable|in:Good,Fair,Poor',
+
+            // HEENT
+            'scalp_condition' => 'nullable|string|max:255',
+            'pupil_reactivity' => 'nullable|in:PERRLA,Unequal,Non-reactive',
+            'vision_issues' => 'nullable|boolean',
+            'hearing_issues' => 'nullable|boolean',
+            'oral_findings' => 'nullable|string|max:1000',
+
+            // Neurological
+            'orientation_level' => 'nullable|in:Oriented x4,Oriented x3,Oriented x2,Disoriented',
+            'limb_strength' => 'nullable|in:Equal,Weak Left,Weak Right,Paralyzed',
+            'reflexes' => 'nullable|in:Normal,Hyperreflexia,Hyporeflexia',
+            'sensation_findings' => 'nullable|string|max:1000',
+
+            // Neck and Chest
+            'trachea_position' => 'nullable|in:Midline,Deviated',
+            'jvd_present' => 'nullable|boolean',
+            'lung_sounds' => 'nullable|in:Clear,Crackles,Wheezes,Diminished',
+            'heart_sounds' => 'nullable|in:Normal,Murmur,Irregular',
+            'capillary_refill_time' => 'nullable|in:< 2s,2–3s,> 3s',
+
+            // Abdomen
+            'abdominal_shape' => 'nullable|in:Flat,Distended,Scarred',
+            'bowel_sounds' => 'nullable|in:Normal,Hyperactive,Hypoactive,Absent',
+            'abdominal_tenderness' => 'nullable|boolean',
+            'nausea_or_vomiting' => 'nullable|boolean',
+            'appetite_level' => 'nullable|in:Good,Poor,None',
+
+            // Genitourinary
+            'urination_issues' => 'nullable|boolean',
+            'catheter_present' => 'nullable|boolean',
+            'urine_characteristics' => 'nullable|string|max:1000',
+
+            // Musculoskeletal
+            'range_of_motion' => 'nullable|in:Full,Limited,None',
+            'gait_stability' => 'nullable|in:Stable,Unsteady,Requires assistance',
+            'assistive_devices' => 'nullable|string|max:255',
+
+            // Skin
+            'skin_color' => 'nullable|in:Pink,Pale,Cyanotic,Jaundiced',
+            'skin_temperature' => 'nullable|in:Warm,Cool,Cold',
+            'skin_lesions' => 'nullable|string|max:1000',
+            'pressure_ulcers' => 'nullable|boolean',
+
+            // Pain Assessment
+            'pain_score' => 'nullable|integer|min:0|max:10',
+            'pain_description' => 'nullable|string|max:1000',
+
             // File uploads
             'reports' => 'nullable|array',
             'reports.*' => 'file|max:10240', // 10MB max per file
