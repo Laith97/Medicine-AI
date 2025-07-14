@@ -25,14 +25,29 @@ class PatientAnalysis extends Model
         'previous_record_id',
         'visit_number',
         'patient_key',
+        // New enhanced medical fields
+        'chief_complaint',
+        'symptom_duration',
+        'past_medical_history',
+        'medication_history',
+        'allergies',
+        'family_history',
+        'social_history',
+        'pain_scale',
+        'visit_type',
+        'heart_rate',
+        'respiratory_rate',
+        'oxygen_saturation',
+        'physician_notes',
+        'additional_notes',
     ];
-    
+
 
     public function user()
     {
         return $this->belongsTo(User::class);
     }
-    
+
     /**
      * Get the previous record for this patient
      */
@@ -40,7 +55,7 @@ class PatientAnalysis extends Model
     {
         return $this->belongsTo(PatientAnalysis::class, 'previous_record_id');
     }
-    
+
     /**
      * Get all subsequent records for this patient
      */
@@ -48,7 +63,7 @@ class PatientAnalysis extends Model
     {
         return $this->hasMany(PatientAnalysis::class, 'previous_record_id');
     }
-    
+
     /**
      * Get all records for the same patient (by patient_key or by name, age, gender)
      */
@@ -60,7 +75,7 @@ class PatientAnalysis extends Model
                 ->orderBy('visit_number', 'asc')
                 ->get();
         }
-        
+
         return PatientAnalysis::where('name', $this->name)
             ->where('age', $this->age)
             ->where('gender', $this->gender)
@@ -68,7 +83,7 @@ class PatientAnalysis extends Model
             ->orderBy('created_at', 'desc')
             ->get();
     }
-    
+
     /**
      * Generate a unique patient key based on name, age, gender and user_id
      */
