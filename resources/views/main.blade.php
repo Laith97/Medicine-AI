@@ -209,7 +209,7 @@
                             <i class="fas fa-brain text-theme-primary" style="font-size: 2rem;"></i>
                         </div>
                         <div class="position-absolute bottom-0 start-0 bg-white rounded-circle p-3 shadow">
-                            <i class="fas fa-heartbeat text-theme-primary" style="font-size: 2rem;"></i>
+                            <i class="fas fa-heart-pulse text-theme-primary" style="font-size: 2rem;"></i>
                         </div>
                     </div>
                 </div>
@@ -269,7 +269,7 @@
                 <div class="step-card">
                     <div class="step-number">1</div>
                     <div class="mt-4">
-                        <i class="fas fa-user-md text-theme-primary mb-3" style="font-size: 3rem;"></i>
+                        <i class="fas fa-user-doctor text-theme-primary mb-3" style="font-size: 3rem;"></i>
                         <h4 class="mb-3">Input Patient Data</h4>
                         <p class="text-muted">Securely enter patient symptoms, medical history, and relevant clinical information through our intuitive interface.</p>
                     </div>

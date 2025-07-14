@@ -13,6 +13,11 @@
 <script src="https://cdn.jsdelivr.net/npm/choices.js@9.0.1/public/assets/scripts/choices.min.js"></script>
 
 <style>
+    /* Global Font */
+    * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
     .file-upload-wrapper {
         position: relative;
     }
@@ -89,41 +94,43 @@
                 @endif
                 
                 <!-- Form Progress Indicator -->
-                <div class="form-progress-container mb-4">
-                    <div class="progress-steps d-flex justify-content-between">
-                        <div class="progress-step active" data-step="patient">
-                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center">
+                <div class="form-progress-container mb-4" style="padding: 1.5rem; background-color: white; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 2rem;">
+                    <div class="progress-steps d-flex justify-content-between" style="position: relative;">
+                        <!-- Horizontal line connecting steps -->
+                        <div style="content: ''; position: absolute; top: 25px; left: 10%; right: 10%; height: 2px; background-color: #e9ecef; z-index: 0;"></div>
+                        <div class="progress-step active" data-step="patient" style="position: relative; z-index: 1; text-align: center; width: 20%;">
+                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: #DE6262; color: white; font-size: 1.25rem; margin: 0 auto; border: 2px solid #DE6262; box-shadow: 0 0 0 5px rgba(222, 98, 98, 0.2);">
                                 <i class="fas fa-user-circle"></i>
                             </div>
                             <div class="step-label mt-2">Patient</div>
                         </div>
-                        <div class="progress-step" data-step="vitals">
-                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center">
-                                <i class="fas fa-heartbeat"></i>
+                        <div class="progress-step" data-step="vitals" style="position: relative; z-index: 1; text-align: center; width: 20%;">
+                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: #f8f9fa; color: #6c757d; font-size: 1.25rem; margin: 0 auto; border: 2px solid #e9ecef;">
+                                <i class="fas fa-heart-pulse"></i>
                             </div>
                             <div class="step-label mt-2">Vitals</div>
                         </div>
-                        <div class="progress-step" data-step="symptoms">
-                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center">
+                        <div class="progress-step" data-step="symptoms" style="position: relative; z-index: 1; text-align: center; width: 20%;">
+                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: #f8f9fa; color: #6c757d; font-size: 1.25rem; margin: 0 auto; border: 2px solid #e9ecef;">
                                 <i class="fas fa-clipboard-list"></i>
                             </div>
                             <div class="step-label mt-2">Symptoms</div>
                         </div>
-                        <div class="progress-step" data-step="diagnosis">
-                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center">
+                        <div class="progress-step" data-step="diagnosis" style="position: relative; z-index: 1; text-align: center; width: 20%;">
+                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: #f8f9fa; color: #6c757d; font-size: 1.25rem; margin: 0 auto; border: 2px solid #e9ecef;">
                                 <i class="fas fa-stethoscope"></i>
                             </div>
                             <div class="step-label mt-2">Diagnosis</div>
                         </div>
-                        <div class="progress-step" data-step="analysis">
-                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center">
+                        <div class="progress-step" data-step="analysis" style="position: relative; z-index: 1; text-align: center; width: 20%;">
+                            <div class="step-icon rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: #f8f9fa; color: #6c757d; font-size: 1.25rem; margin: 0 auto; border: 2px solid #e9ecef;">
                                 <i class="fas fa-robot"></i>
                             </div>
                             <div class="step-label mt-2">AI Analysis</div>
                         </div>
                     </div>
-                    <div class="progress mt-3">
-                        <div class="progress-bar bg-gradient" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                    <div class="progress mt-3" style="height: 8px; border-radius: 4px; background-color: #f8f9fa;">
+                        <div class="progress-bar" role="progressbar" style="width: 20%; background-color: #DE6262;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
 
@@ -278,7 +285,7 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">
-                                    <i class="fas fa-heartbeat text-info me-1"></i> Blood Pressure:
+                                    <i class="fas fa-heart-pulse text-info me-1"></i> Blood Pressure:
                                 </label>
                                 <div class="input-group">
                                     <input type="text" name="blood_pressure" class="form-control" placeholder="120/80">
@@ -406,7 +413,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                 <div class="row mt-5">
                     <div class="col-md-12 text-end">
                         <button type="submit" class="btn btn-deep-red btn-lg px-4">
-                            <i class="fa-solid fa-robot me-2"></i>Get Results
+                            <i class="fa-solid fas fa-robot me-2"></i>Get Results
                         </button>
                     </div>
                 </div>
@@ -640,16 +647,38 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             
             progressSteps.forEach((stepEl, index) => {
                 const stepName = stepEl.getAttribute('data-step');
+                const stepIcon = stepEl.querySelector('.step-icon');
                 
                 if (stepName === step) {
                     stepEl.classList.add('active');
+                    // Apply active styles directly
+                    if (stepIcon) {
+                        stepIcon.style.backgroundColor = '#DE6262';
+                        stepIcon.style.color = 'white';
+                        stepIcon.style.borderColor = '#DE6262';
+                        stepIcon.style.boxShadow = '0 0 0 5px rgba(222, 98, 98, 0.2)';
+                    }
                     activeFound = true;
                     progress = (index + 1) * 20; // 20% per step
                 } else if (!activeFound) {
                     stepEl.classList.add('completed');
                     stepEl.classList.remove('active');
+                    // Apply completed styles directly
+                    if (stepIcon) {
+                        stepIcon.style.backgroundColor = '#DE6262';
+                        stepIcon.style.color = 'white';
+                        stepIcon.style.borderColor = '#DE6262';
+                        stepIcon.style.boxShadow = 'none';
+                    }
                 } else {
                     stepEl.classList.remove('active', 'completed');
+                    // Apply inactive styles directly
+                    if (stepIcon) {
+                        stepIcon.style.backgroundColor = '#f8f9fa';
+                        stepIcon.style.color = '#6c757d';
+                        stepIcon.style.borderColor = '#e9ecef';
+                        stepIcon.style.boxShadow = 'none';
+                    }
                 }
             });
             
@@ -1115,47 +1144,230 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
     }
     
     /**
+     * Format table from array of table rows
+     */
+    function formatTable(tableRows) {
+        if (!tableRows || tableRows.length === 0) return '';
+        
+        let table = '<table class="table table-striped mt-3">';
+        let isFirstRow = true;
+        let headerAdded = false;
+        
+        for (const row of tableRows) {
+            let cells = [];
+            
+            // Handle different table formats
+            if (row.includes('|')) {
+                // Pipe-separated format
+                cells = row.split('|').map(cell => cell.trim()).filter(cell => cell);
+            } else if (row.match(/^(Rank|1|2|3|4|5)\s+/)) {
+                // Diagnosis table format without pipes
+                const match = row.match(/^(\d+|Rank)\s+(.*?)\s+(\d+%)\s+(.*?)$/);
+                if (match) {
+                    cells = [match[1], match[2], match[3], match[4]];
+                } else {
+                    // Try to parse the concatenated format
+                    const diagnosisMatch = row.match(/^(\d+)(.*?)(\d+%)(.*?)$/);
+                    if (diagnosisMatch) {
+                        cells = [diagnosisMatch[1], diagnosisMatch[2], diagnosisMatch[3], diagnosisMatch[4]];
+                    }
+                }
+            } else if (row.includes('RankDiagnosis')) {
+                // Header row for the concatenated format
+                cells = ['Rank', 'Diagnosis', 'Probability (%)', 'Clinical Reasoning'];
+            }
+            
+            if (cells.length === 0) continue;
+            
+            // Check if this should be a header row
+            if (!headerAdded && (cells.some(cell => cell.toLowerCase().includes('rank') || cell.toLowerCase().includes('diagnosis')) || isFirstRow)) {
+                table += '<thead><tr>';
+                cells.forEach(cell => {
+                    table += `<th>${cell}</th>`;
+                });
+                table += '</tr></thead><tbody>';
+                headerAdded = true;
+                isFirstRow = false;
+            } else {
+                // Data row
+                table += '<tr>';
+                cells.forEach((cell, index) => {
+                    // Check if this is a probability cell
+                    if (cell.includes('%')) {
+                        cell = `<span class="probability">${cell}</span>`;
+                    }
+                    table += `<td>${cell}</td>`;
+                });
+                table += '</tr>';
+            }
+        }
+        
+        table += '</tbody></table>';
+        return table;
+    }
+
+    /**
      * Format AI response text with proper HTML formatting
      */
     function formatAIResponse(text) {
         if (!text) return '';
         
-        // Remove the Sources section from the text before formatting
-        const sourcesMatch = text.match(/Sources:([\s\S]*?)(?:$|(?=\n\n\w))/i);
-        let cleanedText = text;
+        // Clean up text: remove excessive whitespace and normalize line breaks
+        let cleanedText = text
+            .replace(/\r\n/g, '\n')  // Normalize line endings
+            .replace(/\n{3,}/g, '\n\n')  // Replace 3+ line breaks with 2
+            .replace(/[ \t]{2,}/g, ' ')  // Replace multiple spaces/tabs with single space
+            .replace(/^\s+|\s+$/gm, '')  // Trim whitespace from start/end of each line
+            .trim();
         
+        // Remove the Sources section from the text before formatting
+        const sourcesMatch = cleanedText.match(/(📚\s*SOURCES:|Sources:)([\s\S]*?)(?:$|(?=\n\n\w))/i);
         if (sourcesMatch) {
-            cleanedText = text.replace(sourcesMatch[0], '').trim();
+            cleanedText = cleanedText.replace(sourcesMatch[0], '').trim();
         }
         
-        // First, enhance the main section headers to make them more prominent
-        // This will convert PATIENT INFORMATION, A) POSSIBLE DIAGNOSIS: etc. to proper headers
-        const enhancedText = cleanedText
-            .replace(/^(PATIENT\s+INFORMATION:.*$)/gm, '<h4 class="mt-4 section-patient-info" style="color: #6c5ce7; border-left: 4px solid #6c5ce7; padding: 8px 0 8px 15px; background-color: rgba(108, 92, 231, 0.05); border-radius: 0 5px 5px 0;">$1</h4>')
-            .replace(/^(MEDICAL\s+REPORTS\s+ANALYSIS:.*$)/gm, '<h5 class="mt-3 section-reports" style="color: #6c5ce7; margin-left: 15px; border-left: 2px solid #6c5ce7; padding: 5px 0 5px 10px;">$1</h5>')
-            .replace(/^(A\)\s*POSSIBLE\s*DIAGNOSIS:.*$)/gm, '<h4 class="mt-4 section-diagnosis">$1</h4>')
-            .replace(/^(B\)\s*RECOMMENDATIONS\s*FOR\s*TESTS\s*OR\s*IMAGING:.*$)/gm, '<h4 class="mt-4 section-recommendations">$1</h4>')
-            .replace(/^(C\)\s*TREATMENT\s*RECOMMENDATIONS:.*$)/gm, '<h4 class="mt-4 section-treatment">$1</h4>')
-            .replace(/^(D\)\s*WARNING\s*SIGNS:.*$)/gm, '<h4 class="mt-4 section-warnings">$1</h4>');
+        // Professional medical formatting for structured response
+        let enhancedText = cleanedText
+            // Handle the initial CASE URGENCY format at the top
+            .replace(/^CASE\s+URGENCY:\s*(EMERGENCY|URGENT|ROUTINE)/gm, '<div class="urgency-header">CASE URGENCY: <span class="urgency-level">$1</span></div>')
+            
+            // Fix the concatenated diagnosis table format
+            .replace(/RankDiagnosisProbability \(%\)Clinical Reasoning-+/g, 'Rank|Diagnosis|Probability (%)|Clinical Reasoning')
+            .replace(/(\d+)([A-Z][^0-9]+?)(\d+%)([^0-9]+?)(?=\d|$)/g, '$1|$2|$3|$4\n')
+            
+            // Handle section separators
+            .replace(/^---$/gm, '<div class="section-break"></div>')
+            
+            // Patient Case Summary Section
+            .replace(/^📋\s*PATIENT\s+CASE\s+SUMMARY:?$/gm, '<div class="medical-section patient-section"><h4 class="section-header">📋 PATIENT CASE SUMMARY</h4><div class="section-content">')
+            
+            // Case Urgency Section
+            .replace(/^🚨\s*CASE\s+URGENCY:?$/gm, '</div></div><div class="medical-section urgency-section"><h4 class="section-header">🚨 CASE URGENCY</h4><div class="section-content">')
+            
+            // A) Differential Diagnosis Section - Handle with or without dashes
+            .replace(/^(-{0,3}A\)?\s*(DIFFERENTIAL\s+)?DIAGNOSIS.*?:?|🔬\s*.*?DIAGNOSIS.*?:?)$/gmi, '</div></div><div class="medical-section diagnosis-section"><h4 class="section-header"><i class="fas fa-microscope"></i> A) DIFFERENTIAL DIAGNOSIS</h4><div class="section-content">')
+            
+            // B) Investigations Section - Handle with or without dashes  
+            .replace(/^(-{0,3}B\)?\s*.*?(RECOMMENDED\s+)?(INVESTIGATIONS?|TESTS?|DIAGNOSTIC|WORKUP).*?:?)$/gmi, '</div></div><div class="medical-section investigations-section"><h4 class="section-header"><i class="fas fa-vials"></i> B) RECOMMENDED INVESTIGATIONS</h4><div class="section-content">')
+            
+            // C) Treatment/Management Section - Handle with or without dashes
+            .replace(/^(-{0,3}C\)?\s*.*?(TREATMENT|MANAGEMENT|PLAN|THERAPY|INTERVENTION).*?:?)$/gmi, '</div></div><div class="medical-section treatment-section"><h4 class="section-header"><i class="fas fa-pills"></i> C) MANAGEMENT RECOMMENDATIONS</h4><div class="section-content">')
+            
+            // D) Warning Signs Section - Handle with or without dashes
+            .replace(/^(-{0,3}D\)?\s*WARNING\s+SIGNS.*?:?|⚠️\s*WARNING\s+SIGNS.*?:?)$/gmi, '</div></div><div class="medical-section warnings-section"><h4 class="section-header"><i class="fas fa-exclamation-triangle"></i> D) WARNING SIGNS TO MONITOR</h4><div class="section-content">')
+            
+            // Specific pattern for the exact format: "---B) RECOMMENDED INVESTIGATIONS:"
+            .replace(/^---([ABCD])\)\s*(.+?):\s*$/gmi, function(match, letter, text) {
+                let icon = '';
+                let sectionClass = 'medical-section';
+                
+                switch(letter) {
+                    case 'A': icon = '<i class="fas fa-microscope"></i>'; break;
+                    case 'B': icon = '<i class="fas fa-vials"></i>'; break;  
+                    case 'C': icon = '<i class="fas fa-pills"></i>'; break;
+                    case 'D': icon = '<i class="fas fa-exclamation-triangle"></i>'; break;
+                }
+                
+                return `</div></div><div class="${sectionClass}"><h4 class="section-header">${icon} ${letter}) ${text.toUpperCase()}</h4><div class="section-content">`;
+            })
+            
+            // General fallback for any remaining letter-based headers
+            .replace(/^([A-D]\)\s*[A-Z\s]{5,}:?)$/gmi, function(match, p1) {
+                let sectionClass = 'medical-section';
+                let headerText = match.replace(/^[A-D]\)\s*/, '').replace(/:$/, '');
+                let letterPrefix = match.charAt(0);
+                let icon = '';
+                
+                switch(letterPrefix) {
+                    case 'A': icon = '<i class="fas fa-microscope"></i>'; break;
+                    case 'B': icon = '<i class="fas fa-vials"></i>'; break;  
+                    case 'C': icon = '<i class="fas fa-pills"></i>'; break;
+                    case 'D': icon = '<i class="fas fa-exclamation-triangle"></i>'; break;
+                }
+                
+                return `</div></div><div class="${sectionClass}"><h4 class="section-header">${icon} ${letterPrefix}) ${headerText}</h4><div class="section-content">`;
+            })
+            
+            // Doctor's Note Section
+            .replace(/^🧠\s*DOCTOR'S\s+NOTE:?$/gm, '</div></div><div class="medical-section doctor-note-section"><h4 class="section-header">🧠 DOCTOR\'S NOTE</h4><div class="section-content">')
+            
+            // Sources Section (if present)
+            .replace(/^📚\s*SOURCES:?$/gm, '</div></div><div class="medical-section sources-section"><h4 class="section-header">📚 SOURCES</h4><div class="section-content">');
         
         // Split the text into lines
         let lines = enhancedText.split('\n');
         let formatted = '';
         let inList = false;
         let listType = '';
+        let inTable = false;
+        let tableRows = [];
         
         // Process each line
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i];
             
-            // Skip processing if line is already an HTML header (from our replacement above)
-            if (line.startsWith('<h4')) {
+            // Skip processing if line is already HTML (from our replacement above)
+            if (line.startsWith('<div') || line.startsWith('</div>') || line.startsWith('<h') || line.startsWith('<hr')) {
                 if (inList) {
                     formatted += listType === 'ul' ? '</ul>' : '</ol>';
                     inList = false;
                 }
+                if (inTable) {
+                    formatted += formatTable(tableRows);
+                    inTable = false;
+                    tableRows = [];
+                }
                 formatted += line;
                 continue;
+            }
+            
+            // Check for concatenated diagnosis table
+            if (line.includes('RankDiagnosis') && line.includes('Clinical Reasoning')) {
+                if (inList) {
+                    formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                    inList = false;
+                }
+                if (!inTable) {
+                    inTable = true;
+                    tableRows = [];
+                }
+                // Create proper table header
+                tableRows.push('Rank|Diagnosis|Probability (%)|Clinical Reasoning');
+                continue;
+            }
+            // Check for the concatenated data row (like: 1Abdominal Aortic Aneurysm (AAA)70%Given the symptom...)
+            else if (line.match(/^\d+[A-Z][^0-9]*\d+%/)) {
+                if (!inTable) {
+                    inTable = true;
+                    tableRows = [];
+                    tableRows.push('Rank|Diagnosis|Probability (%)|Clinical Reasoning');
+                }
+                // Parse the concatenated format
+                const match = line.match(/^(\d+)([^0-9]*?)(\d+%)(.*)$/);
+                if (match) {
+                    const formattedRow = `${match[1]}|${match[2].trim()}|${match[3]}|${match[4].trim()}`;
+                    tableRows.push(formattedRow);
+                }
+                continue;
+            }
+            // Check for table rows (contains | or table-like structure)
+            else if ((line.includes('|') && line.split('|').length > 2) || 
+                (line.match(/^(Rank|1|2|3|4|5)\s+(.*?)\s+(\d+%)\s+(.*?)$/))) {
+                if (inList) {
+                    formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                    inList = false;
+                }
+                if (!inTable) {
+                    inTable = true;
+                    tableRows = [];
+                }
+                tableRows.push(line);
+                continue;
+            } else if (inTable) {
+                // End of table
+                formatted += formatTable(tableRows);
+                inTable = false;
+                tableRows = [];
             }
             
             // Check for headers (# Header)
@@ -1238,10 +1450,16 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             }
         }
         
-        // Close any open lists
+        // Close any open lists or tables
         if (inList) {
             formatted += listType === 'ul' ? '</ul>' : '</ol>';
         }
+        if (inTable) {
+            formatted += formatTable(tableRows);
+        }
+        
+        // Close any remaining open divs
+        formatted += '</div></div>';
         
         // Process inline formatting
         
@@ -1259,24 +1477,22 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         // Add some spacing between sections for better readability
         formatted = formatted.replace(/<\/h[1-6]>/g, '$&<div style="height: 10px;"></div>');
         
-        // Enhance the styling of the main sections
-        formatted = formatted.replace(/<h4 class="mt-4 section-patient-info">/g, 
-            '<h4 class="mt-4 section-patient-info" style="color: #6c5ce7; border-left: 4px solid #6c5ce7; padding: 8px 0 8px 15px; background-color: rgba(108, 92, 231, 0.05); border-radius: 0 5px 5px 0;">');
-            
-        formatted = formatted.replace(/<h5 class="mt-3 section-reports">/g, 
-            '<h5 class="mt-3 section-reports" style="color: #6c5ce7; margin-left: 15px; border-left: 2px solid #6c5ce7; padding: 5px 0 5px 10px; background-color: rgba(108, 92, 231, 0.03); border-radius: 0 5px 5px 0;">');
-            
-        formatted = formatted.replace(/<h4 class="mt-4 section-diagnosis">/g, 
-            '<h4 class="mt-4 section-diagnosis" style="color: #DE6262; border-left: 4px solid #DE6262; padding: 8px 0 8px 15px; background-color: rgba(222, 98, 98, 0.05); border-radius: 0 5px 5px 0;">');
-            
-        formatted = formatted.replace(/<h4 class="mt-4 section-recommendations">/g, 
-            '<h4 class="mt-4 section-recommendations" style="color: #3498db; border-left: 4px solid #3498db; padding: 8px 0 8px 15px; background-color: rgba(52, 152, 219, 0.05); border-radius: 0 5px 5px 0;">');
-            
-        formatted = formatted.replace(/<h4 class="mt-4 section-treatment">/g, 
-            '<h4 class="mt-4 section-treatment" style="color: #2ecc71; border-left: 4px solid #2ecc71; padding: 8px 0 8px 15px; background-color: rgba(46, 204, 113, 0.05); border-radius: 0 5px 5px 0;">');
-            
-        formatted = formatted.replace(/<h4 class="mt-4 section-warnings">/g, 
-            '<h4 class="mt-4 section-warnings" style="color: #f39c12; border-left: 4px solid #f39c12; padding: 8px 0 8px 15px; background-color: rgba(243, 156, 18, 0.05); border-radius: 0 5px 5px 0;">');
+        // Close any remaining open divs
+        formatted += '</div></div>';
+        
+        // Process inline formatting
+        
+        // Bold text between ** or __
+        formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        formatted = formatted.replace(/__(.+?)__/g, '<strong>$1</strong>');
+        
+        // Italic text between * or _
+        formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
+        formatted = formatted.replace(/_(.+?)_/g, '<em>$1</em>');
+        
+        // Code blocks
+        formatted = formatted.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+        formatted = formatted.replace(/`(.+?)`/g, '<code>$1</code>');
         
         return formatted;
     }

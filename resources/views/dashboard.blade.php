@@ -3,7 +3,13 @@
 @section('title', 'Dashboard')
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
 <style>
+    /* Global Font */
+    * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
     .dashboard-container {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         min-height: 100vh;
@@ -415,6 +421,93 @@
             row-gap: 1rem;
         }
     }
+
+    /* Professional Medical Design for Response Text */
+    .response-text, .ai-content {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        color: #2c3e50;
+        line-height: 1.7;
+        font-size: 15px;
+        letter-spacing: 0.3px;
+    }
+
+    .response-text .medical-section,
+    .ai-content .medical-section {
+        margin-bottom: 25px;
+        border: 1px solid #e8e8e8;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #ffffff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .response-text .section-header,
+    .ai-content .section-header {
+        background-color: #f8f9fa;
+        color: #2c3e50;
+        padding: 12px 18px;
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-bottom: 1px solid #e8e8e8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .response-text .section-content,
+    .ai-content .section-content {
+        padding: 20px;
+        text-align: justify;
+    }
+
+    .response-text .section-content p,
+    .ai-content .section-content p {
+        margin-bottom: 14px;
+        line-height: 1.7;
+        text-align: justify;
+        word-spacing: 0.1em;
+    }
+
+    .response-text table,
+    .ai-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .response-text table th,
+    .ai-content table th {
+        background-color: #f8f9fa;
+        color: #2c3e50;
+        font-weight: 600;
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 2px solid #dee2e6;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .response-text table td,
+    .ai-content table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+        vertical-align: top;
+    }
+
+    .response-text table tr:nth-child(even),
+    .ai-content table tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+
+    .response-text table tr:hover,
+    .ai-content table tr:hover {
+        background-color: #e9ecef;
+    }
 </style>
 @endpush
 
@@ -457,7 +550,7 @@
             <div class="col-md-3 mb-4">
                 <div class="stats-card">
                     <div class="stats-icon">
-                        <i class="fas fa-calendar-alt"></i>
+                        <i class="fas fa-calendar-days"></i>
                     </div>
                     <p class="stats-number">
                         @if(count($records) > 0)
@@ -490,7 +583,7 @@
             <div class="col-md-3 mb-4">
                 <div class="stats-card">
                     <div class="stats-icon">
-                        <i class="fas fa-user-md"></i>
+                        <i class="fas fa-user-doctor"></i>
                     </div>
                     <p class="stats-number">
                         @php
@@ -624,7 +717,7 @@
             <div class="row mb-4">
                 <div class="col-md-12">
                     <div class="stats-card">
-                        <h6 class="mb-3"><i class="fas fa-calendar-alt me-2"></i>Patient Visits Over Time</h6>
+                        <h6 class="mb-3"><i class="fas fa-calendar-days me-2"></i>Patient Visits Over Time</h6>
                         <div style="height: 250px;">
                             <canvas id="visitsTimelineChart"></canvas>
                         </div>
@@ -905,7 +998,7 @@
                                 
                                 <div id="visit-details-section" class="mt-4" style="display: none;">
                                     <h6 class="mb-3 border-bottom pb-2">Visit Details</h6>
-                                    <div id="visit-details-content">
+                                    <div id="visit-details-content" class="response-text">
                                         <!-- Visit details will be populated dynamically -->
                                     </div>
                                 </div>
@@ -921,7 +1014,7 @@
                 </div>
             @else
                 <div class="empty-state">
-                    <i class="fas fa-user-md"></i>
+                    <i class="fas fa-user-doctor"></i>
                     <h5>No patients yet</h5>
                     <p>Start by adding your first patient</p>
                     <a href="{{ route('ask-ai') }}" class="btn-primary-custom mt-3">
@@ -962,9 +1055,23 @@ function initializeCharts() {
         const records = @json($records ?? []);
         
         // Initialize the main charts
-        initializeVisitsTimelineChart(chartLabels, chartData);
-        initializeDemographicsChart(records);
-        initializeAgeDistributionChart(records);
+        try {
+            initializeVisitsTimelineChart(chartLabels, chartData);
+        } catch (e) {
+            console.error('Error initializing visits timeline chart:', e);
+        }
+        
+        try {
+            initializeDemographicsChart(records);
+        } catch (e) {
+            console.error('Error initializing demographics chart:', e);
+        }
+        
+        try {
+            initializeAgeDistributionChart(records);
+        } catch (e) {
+            console.error('Error initializing age distribution chart:', e);
+        }
         
         // Only render original chart if canvas element exists (for backward compatibility)
         const chartCanvas = document.getElementById('casesChart');
@@ -972,7 +1079,7 @@ function initializeCharts() {
             const ctx = chartCanvas.getContext('2d');
             
             // Destroy any existing chart instance
-            if (window.dashboardChart) {
+            if (window.dashboardChart && typeof window.dashboardChart.destroy === 'function') {
                 window.dashboardChart.destroy();
             }
             
@@ -1050,7 +1157,7 @@ function initializeVisitsTimelineChart(labels, data) {
     const ctx = canvas.getContext('2d');
     
     // Destroy any existing chart instance
-    if (window.visitsTimelineChart) {
+    if (window.visitsTimelineChart && typeof window.visitsTimelineChart.destroy === 'function') {
         window.visitsTimelineChart.destroy();
     }
     
@@ -1157,7 +1264,7 @@ function initializeDemographicsChart(records) {
     const femaleCount = records.filter(r => r.gender === 'female').length;
     
     // Destroy any existing chart instance
-    if (window.demographicsChart) {
+    if (window.demographicsChart && typeof window.demographicsChart.destroy === 'function') {
         window.demographicsChart.destroy();
     }
     
@@ -1228,7 +1335,7 @@ function initializeAgeDistributionChart(records) {
     });
     
     // Destroy any existing chart instance
-    if (window.ageDistributionChart) {
+    if (window.ageDistributionChart && typeof window.ageDistributionChart.destroy === 'function') {
         window.ageDistributionChart.destroy();
     }
     
@@ -1838,19 +1945,38 @@ function setupPatientModal() {
                 return recordKey === patientKey;
             });
             
-            // Sort visits by date (newest first)
+            // First, sort chronologically to assign correct visit numbers
+            const sortedForNumbering = [...patientVisits].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            
+            // Create a mapping of visit ID to visit number
+            const visitNumberMap = {};
+            sortedForNumbering.forEach((visit, index) => {
+                visitNumberMap[visit.id] = index + 1;
+            });
+            
+            // Now sort for display (newest first)
             patientVisits.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             
             // Populate visit history table
-            patientVisits.forEach((visit, index) => {
-                const visitNumber = visit.visit_number || (patientVisits.length - index);
+            patientVisits.forEach((visit) => {
+                const visitNumber = visitNumberMap[visit.id]; // Correct chronological visit number
                 const visitDate = new Date(visit.created_at);
+                
+                // Check if there are multiple visits on the same day
+                const sameDay = patientVisits.filter(v => {
+                    const vDate = new Date(v.created_at);
+                    return vDate.toDateString() === visitDate.toDateString();
+                }).length > 1;
+                
+                // Include time if there are multiple visits on the same day
                 const formattedDate = visitDate.toLocaleDateString('en-US', { 
                     year: 'numeric', 
                     month: 'short', 
                     day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    ...(sameDay && {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
                 });
                 
                 // Get symptoms (if available)
@@ -1968,40 +2094,10 @@ function setupPatientModal() {
                         detailsHTML += `<p class="mb-3">${visit.test_results}</p>`;
                     }
                     
-                    // Add AI analysis if available with better formatting
+                    // Add AI analysis if available with professional formatting
                     if (visit.ai_response) {
                         detailsHTML += '<h6 class="mb-2">AI Analysis:</h6>';
-                        
-                        // Instead of using regex which can be unreliable for medical text,
-                        // we'll use a more structured approach with DOM manipulation
-                        
-                        // Create a container for the AI response
-                        detailsHTML += '<div class="ai-response mb-4">';
-                        
-                        // Split the response by sections (A, B, C, D)
-                        const sections = visit.ai_response.split(/([A-D]\)\s*[A-Z\s]+:)/g);
-                        
-                        // Process each section
-                        for (let i = 0; i < sections.length; i++) {
-                            const section = sections[i].trim();
-                            
-                            if (!section) continue;
-                            
-                            // Check if this is a section header (A, B, C, D)
-                            if (/^[A-D]\)\s*[A-Z\s]+:/.test(section)) {
-                                detailsHTML += `<div class="analysis-section-header">${section}</div>`;
-                            } else {
-                                // This is section content
-                                // Format percentages
-                                let formattedContent = section.replace(/(\d+)%/g, '<span class="analysis-percentage">$1%</span>');
-                                
-                                // Add the content
-                                detailsHTML += `<div class="analysis-content">${formattedContent}</div>`;
-                            }
-                        }
-                        
-                        // Close the AI response container
-                        detailsHTML += '</div>';
+                        detailsHTML += '<div class="ai-response mb-4">' + formatAIResponse(visit.ai_response) + '</div>';
                     }
                     
                     // Add notes if available
@@ -2237,5 +2333,270 @@ function setupExportFunctionality() {
         }, 500);
     }
 }
+
+// Professional formatting functions for AI responses
+function formatTable(tableRows) {
+    if (!tableRows || tableRows.length === 0) return '';
+    
+    let table = '<table class="table table-striped mt-3">';
+    let isFirstRow = true;
+    let headerAdded = false;
+    
+    for (const row of tableRows) {
+        let cells = [];
+        
+        // Handle different table formats
+        if (row.includes('|')) {
+            // Pipe-separated format
+            cells = row.split('|').map(cell => cell.trim()).filter(cell => cell);
+        } else if (row.match(/^(Rank|1|2|3|4|5)\s+/)) {
+            // Diagnosis table format without pipes
+            const match = row.match(/^(\d+|Rank)\s+(.*?)\s+(\d+%)\s+(.*?)$/);
+            if (match) {
+                cells = [match[1], match[2], match[3], match[4]];
+            } else {
+                // Try to parse the concatenated format
+                const diagnosisMatch = row.match(/^(\d+)(.*?)(\d+%)(.*?)$/);
+                if (diagnosisMatch) {
+                    cells = [diagnosisMatch[1], diagnosisMatch[2], diagnosisMatch[3], diagnosisMatch[4]];
+                }
+            }
+        } else if (row.includes('RankDiagnosis')) {
+            // Header row for the concatenated format
+            cells = ['Rank', 'Diagnosis', 'Probability (%)', 'Clinical Reasoning'];
+        }
+        
+        if (cells.length === 0) continue;
+        
+        // Check if this should be a header row
+        if (!headerAdded && (cells.some(cell => cell.toLowerCase().includes('rank') || cell.toLowerCase().includes('diagnosis')) || isFirstRow)) {
+            table += '<thead><tr>';
+            cells.forEach(cell => {
+                table += `<th>${cell}</th>`;
+            });
+            table += '</tr></thead><tbody>';
+            headerAdded = true;
+            isFirstRow = false;
+        } else {
+            // Data row
+            table += '<tr>';
+            cells.forEach((cell, index) => {
+                // Check if this is a probability cell
+                if (cell.includes('%')) {
+                    cell = `<span class="probability">${cell}</span>`;
+                }
+                table += `<td>${cell}</td>`;
+            });
+            table += '</tr>';
+        }
+    }
+    
+    table += '</tbody></table>';
+    return table;
+}
+
+function formatAIResponse(text) {
+    if (!text) return '';
+    
+    // Remove the Sources section from the text before formatting
+    const sourcesMatch = text.match(/(📚\s*SOURCES:|Sources:)([\s\S]*?)(?:$|(?=\n\n\w))/i);
+    let cleanedText = text;
+    if (sourcesMatch) {
+        cleanedText = text.replace(sourcesMatch[0], '').trim();
+    }
+    
+    // Professional medical formatting for structured response
+    let enhancedText = cleanedText
+        // Handle the initial CASE URGENCY format at the top
+        .replace(/^CASE\s+URGENCY:\s*EMERGENCY/gm, '<div class="urgency-header">CASE URGENCY: <span class="urgency-level">EMERGENCY</span></div>')
+        .replace(/^CASE\s+URGENCY:\s*URGENT/gm, '<div class="urgency-header">CASE URGENCY: <span class="urgency-level">URGENT</span></div>')
+        .replace(/^CASE\s+URGENCY:\s*ROUTINE/gm, '<div class="urgency-header">CASE URGENCY: <span class="urgency-level">ROUTINE</span></div>')
+        
+        // Fix the concatenated diagnosis table format
+        .replace(/RankDiagnosisProbability \(%\)Clinical Reasoning-+/g, 'Rank|Diagnosis|Probability (%)|Clinical Reasoning')
+        .replace(/(\d+)([A-Z][^0-9]+?)(\d+%)([^0-9]+?)(?=\d|$)/g, '$1|$2|$3|$4\n')
+        
+        // Handle section separators
+        .replace(/^---$/gm, '<div class="section-break"></div>')
+        
+        // Patient Case Summary Section
+        .replace(/^📋\s*PATIENT\s+CASE\s+SUMMARY:?$/gm, '<div class="medical-section patient-section"><h4 class="section-header">📋 PATIENT CASE SUMMARY</h4><div class="section-content">')
+        
+        // Case Urgency Section
+        .replace(/^🚨\s*CASE\s+URGENCY:?$/gm, '</div></div><div class="medical-section urgency-section"><h4 class="section-header">🚨 CASE URGENCY</h4><div class="section-content">')
+        
+        // Differential Diagnosis Section - KEEP A) FORMAT
+        .replace(/^(A\)\s*DIFFERENTIAL\s+DIAGNOSIS.*?:|🔬\s*DIFFERENTIAL\s+DIAGNOSIS.*?:?)$/gm, '</div></div><div class="medical-section diagnosis-section"><h4 class="section-header">A) DIFFERENTIAL DIAGNOSIS</h4><div class="section-content">')
+        
+        // Investigations Section - KEEP B) FORMAT
+        .replace(/^(B\)\s*RECOMMENDED\s+INVESTIGATIONS:?|🧪\s*RECOMMENDED\s+INVESTIGATIONS:?)$/gm, '</div></div><div class="medical-section investigations-section"><h4 class="section-header">B) RECOMMENDED INVESTIGATIONS</h4><div class="section-content">')
+        
+        // Treatment Section - KEEP C) FORMAT
+        .replace(/^(C\)\s*(TREATMENT.*?RECOMMENDATIONS|MANAGEMENT.*?RECOMMENDATIONS):?|💊\s*TREATMENT.*?RECOMMENDATIONS:?)$/gm, '</div></div><div class="medical-section treatment-section"><h4 class="section-header">C) TREATMENT & MANAGEMENT RECOMMENDATIONS</h4><div class="section-content">')
+        
+        // Warning Signs Section - KEEP D) FORMAT if present, or use emoji format
+        .replace(/^(D\)\s*WARNING\s+SIGNS.*?:|⚠️\s*WARNING\s+SIGNS.*?:?)$/gm, '</div></div><div class="medical-section warnings-section"><h4 class="section-header">D) WARNING SIGNS TO MONITOR</h4><div class="section-content">')
+        
+        // Doctor's Note Section
+        .replace(/^🧠\s*DOCTOR'S\s+NOTE:?$/gm, '</div></div><div class="medical-section doctor-note-section"><h4 class="section-header">🧠 DOCTOR\'S NOTE</h4><div class="section-content">')
+        
+        // Sources Section (if present)
+        .replace(/^📚\s*SOURCES:?$/gm, '</div></div><div class="medical-section sources-section"><h4 class="section-header">📚 SOURCES</h4><div class="section-content">');
+    
+    // Split the text into lines
+    let lines = enhancedText.split('\n');
+    let formatted = '';
+    let inList = false;
+    let listType = '';
+    let inTable = false;
+    let tableRows = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        
+        if (!line) {
+            if (inList) {
+                formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                inList = false;
+            }
+            if (inTable) {
+                formatted += formatTable(tableRows);
+                inTable = false;
+                tableRows = [];
+            }
+            formatted += '<br>';
+            continue;
+        }
+        
+        // Skip already processed HTML tags
+        if (line.includes('<div class=') || line.includes('</div>')) {
+            if (inList) {
+                formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                inList = false;
+            }
+            if (inTable) {
+                formatted += formatTable(tableRows);
+                inTable = false;
+                tableRows = [];
+            }
+            formatted += line;
+            continue;
+        }
+        
+        // Check for concatenated diagnosis table
+        if (line.includes('RankDiagnosis') && line.includes('Clinical Reasoning')) {
+            if (inList) {
+                formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                inList = false;
+            }
+            if (!inTable) {
+                inTable = true;
+                tableRows = [];
+            }
+            // Create proper table header
+            tableRows.push('Rank|Diagnosis|Probability (%)|Clinical Reasoning');
+            continue;
+        }
+        // Check for the concatenated data row (like: 1Abdominal Aortic Aneurysm (AAA)70%Given the symptom...)
+        else if (line.match(/^\d+[A-Z][^0-9]*\d+%/)) {
+            if (!inTable) {
+                inTable = true;
+                tableRows = [];
+                tableRows.push('Rank|Diagnosis|Probability (%)|Clinical Reasoning');
+            }
+            // Parse the concatenated format
+            const match = line.match(/^(\d+)([^0-9]*?)(\d+%)(.*)$/);
+            if (match) {
+                const formattedRow = `${match[1]}|${match[2].trim()}|${match[3]}|${match[4].trim()}`;
+                tableRows.push(formattedRow);
+            }
+            continue;
+        }
+        // Check for table rows (contains | or table-like structure)
+        else if ((line.includes('|') && line.split('|').length > 2) || 
+            (line.match(/^(Rank|1|2|3|4|5)\s+(.*?)\s+(\d+%)\s+(.*?)$/))) {
+            if (inList) {
+                formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                inList = false;
+            }
+            if (!inTable) {
+                inTable = true;
+                tableRows = [];
+            }
+            tableRows.push(line);
+            continue;
+        } else if (inTable) {
+            // End of table
+            formatted += formatTable(tableRows);
+            inTable = false;
+            tableRows = [];
+        }
+        
+        // Check for headers (# Header)
+        if (/^#{1,6}\s+(.+)$/.test(line)) {
+            if (inList) {
+                formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                inList = false;
+            }
+            let level = line.match(/^#+/)[0].length;
+            let headerText = line.replace(/^#+\s*/, '');
+            formatted += `<h${level}>${headerText}</h${level}>`;
+            continue;
+        }
+        
+        // Check for list items
+        if (/^[\s]*[-*+]\s+(.+)$/.test(line) || /^[\s]*\d+\.\s+(.+)$/.test(line)) {
+            let isOrdered = /^[\s]*\d+\.\s+(.+)$/.test(line);
+            let content = line.replace(/^[\s]*[-*+\d\.]\s*/, '');
+            
+            if (!inList) {
+                listType = isOrdered ? 'ol' : 'ul';
+                formatted += `<${listType}>`;
+                inList = true;
+            } else if ((isOrdered && listType === 'ul') || (!isOrdered && listType === 'ol')) {
+                formatted += `</${listType}>`;
+                listType = isOrdered ? 'ol' : 'ul';
+                formatted += `<${listType}>`;
+            }
+            
+            formatted += `<li>${content}</li>`;
+            continue;
+        } else if (inList) {
+            formatted += listType === 'ul' ? '</ul>' : '</ol>';
+            inList = false;
+        }
+        
+        // Regular paragraph
+        formatted += `<p>${line}</p>`;
+    }
+    
+    // Close any open lists or tables
+    if (inList) {
+        formatted += listType === 'ul' ? '</ul>' : '</ol>';
+    }
+    if (inTable) {
+        formatted += formatTable(tableRows);
+    }
+    
+    // Close any remaining open divs
+    formatted += '</div></div>';
+    
+    // Process inline formatting
+    
+    // Bold text between ** or __
+    formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    formatted = formatted.replace(/__(.+?)__/g, '<strong>$1</strong>');
+    
+    // Italic text between * or _
+    formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    formatted = formatted.replace(/_(.+?)_/g, '<em>$1</em>');
+    
+    // Code blocks
+    formatted = formatted.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    formatted = formatted.replace(/`(.+?)`/g, '<code>$1</code>');
+    
+    return formatted;
+}
+
 </script>
 @endpush

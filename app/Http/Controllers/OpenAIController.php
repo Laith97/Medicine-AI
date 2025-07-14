@@ -1001,7 +1001,7 @@ class OpenAIController extends Controller
         // Generate dynamic clinical context based on vital signs and symptoms
         $clinicalContext = $this->generateClinicalContext($inputData);
 
-        return "Based on the provided information and considering the evaluation criteria from the selected source ($criterion), provide the following sections ONLY, with NO introduction and NO conclusion:
+        return "Based on the provided information and considering the evaluation criteria from the selected source ($criterion), analyze the patient case and provide a detailed medical assessment.
             
             $fileSearchInstruction
             
@@ -1011,60 +1011,66 @@ class OpenAIController extends Controller
             
             $clinicalContext
             
-            IMPORTANT: Your analysis MUST be based on the content of the uploaded files and the clinical data provided. Begin with a PATIENT INFORMATION section that includes a MEDICAL REPORTS ANALYSIS subsection.
+            IMPORTANT: Your analysis MUST be based on the clinical data provided and any uploaded files. Follow the exact output format specified below.
             
-            RESPONSE FORMAT:
+            🔶 OUTPUT FORMAT:
+            You MUST return your response in the following structure:
             
-            CASE URGENCY: [ROUTINE/URGENT/EMERGENCY]
-            • If URGENT or EMERGENCY, briefly explain why in 1-2 sentences using medical terminology.
+            ---
+            📋 PATIENT CASE SUMMARY:
+            Name: {name}
+            Age: {age}
+            Gender: {gender}
+            Height / Weight: {height} / {weight}
+            Vitals:
+            Temperature: {temperature} °C
+            Blood Pressure: {bp} mmHg
+            Blood Sugar: {sugar} mg/dL
+            Heart Rate: {heart_rate if available} bpm
+            Symptoms: {comma-separated list}
+            Preliminary Diagnosis: {if available}
+            Lab Results / Imaging: {or state 'Not Provided'}
+            ---
+            🚨 CASE URGENCY:
+            ⚠️ {Emergency / Urgent / Routine}
+            Brief reason why this triage level was chosen.
+            ---
+            🔬 DIFFERENTIAL DIAGNOSIS (Prioritized with Probabilities):
+            Rank	Diagnosis	Probability (%)	Clinical Reasoning
+            1	[Primary diagnosis]	[probability]	[reasoning with key findings supporting this diagnosis]
+            2	[Secondary diagnosis]	[probability]	[reasoning with key findings supporting this diagnosis]
+            3	[Tertiary diagnosis]	[probability]	[reasoning with key findings supporting this diagnosis]
+            Add more rows as needed.
+            ---
+            🧪 RECOMMENDED INVESTIGATIONS:
+            1. [Test name] — [Rationale]
+            2. [Test name] — [Rationale]
+            3. [Test name] — [Rationale]
+            Add more as needed.
+            ---
+            💊 TREATMENT & MANAGEMENT RECOMMENDATIONS:
+            Immediate Interventions:
+            [List immediate steps]
             
-            PATIENT INFORMATION:
-            • Basic patient details (name, age, gender)
-            • Vital signs assessment (if provided)
-            • MEDICAL REPORTS ANALYSIS: A concise summary of all uploaded files
-              - For images: Brief description and key findings
-              - For text documents: Key medical information and relevance
+            Medications:
+            [List medications with dosages and frequencies]
             
-            A) DIFFERENTIAL DIAGNOSIS (PRIORITIZED):
-            • List the top 3-5 diagnoses in order of likelihood, with life-threatening conditions FIRST regardless of probability
-            • For each diagnosis:
-              - Specific probability percentage (e.g., 65%)
-              - Brief clinical reasoning using proper medical terminology
-              - Supporting evidence from patient data or uploaded files
-              - Pathophysiological explanation where relevant
-            
-            B) RECOMMENDED INVESTIGATIONS:
-            • List specific laboratory tests with normal ranges and expected findings
-            • Imaging studies with detailed specifications (e.g., \"Contrast-enhanced CT of the abdomen and pelvis with arterial and venous phases\")
-            • Other diagnostic procedures with clinical justification
-            • Prioritize investigations (STAT/Urgent/Routine)
-            
-            C) MANAGEMENT RECOMMENDATIONS:
-            • Immediate interventions (if needed)
-            • Specific medication recommendations including:
-              - Drug names (generic and brand)
-              - Dosages
-              - Administration routes
-              - Duration
-              - Monitoring parameters
-            • Non-pharmacological interventions
-            • Specialist referrals with urgency level
-            • Follow-up timeline and parameters
-            
-            D) CLINICAL CONSIDERATIONS & PRECAUTIONS:
-            • Potential complications to monitor
-            • Contraindications for specific treatments
-            • Drug interactions or allergies to consider
-            • Red flag symptoms requiring immediate attention
-            • Differential diagnoses that must not be missed
-            
-            Sources:
-            • Include 3-5 relevant medical sources that support your recommendations.
-            • For each source, provide the title, author(s), publication year, and journal/source name.
-            • Include the URL to the source whenever possible (e.g., PubMed link, DOI, or journal website).
-            • Focus on high-quality, peer-reviewed sources from reputable medical journals.
-            • Prioritize recent publications (within the last 5 years when possible).
-            • Include at least one source specific to the primary diagnosis.
+            Referrals:
+            [List any specialist referrals needed]
+            ---
+            ⚠️ WARNING SIGNS TO MONITOR:
+            [List specific warning signs that would indicate deterioration]
+            ---
+            🧠 DOCTOR'S NOTE:
+            [Brief clinical note with any additional context or considerations]
+            ---
+            📚 SOURCES:
+            [List 3-5 relevant medical sources that support your recommendations]
+            For each source, provide the title, author(s), publication year, and journal/source name.
+            Include the URL to the source whenever possible (e.g., PubMed link, DOI, or journal website).
+            Focus on high-quality, peer-reviewed sources from reputable medical journals.
+            Prioritize recent publications (within the last 5 years when possible).
+            Include at least one source specific to the primary diagnosis or recommendation.
 
             Here is the input data: " . json_encode($inputData);
     }
@@ -1252,6 +1258,8 @@ class OpenAIController extends Controller
      */
     public function generatePatientSummary(Request $request)
     {
+        \Log::info('generatePatientSummary called');
+        
         $request->validate([
             'summary_data' => 'required|string',
         ]);
@@ -1259,6 +1267,7 @@ class OpenAIController extends Controller
         try {
             // Decode the summary data
             $summaryData = json_decode($request->summary_data, true);
+            \Log::info('Summary data decoded:', ['data' => $summaryData]);
             
             if (!$summaryData) {
                 return response()->json([
@@ -1296,6 +1305,7 @@ class OpenAIController extends Controller
             $criterion = auth()->user()->setting->criterion ?? 'CDC';
             
             // Call OpenAI API
+            \Log::info('Calling OpenAI API for summary generation');
             $response = OpenAI::chat()->create([
                 'model' => 'gpt-4o',
                 'messages' => [
@@ -1303,6 +1313,7 @@ class OpenAIController extends Controller
                     ['role' => 'user', 'content' => $prompt]
                 ]
             ]);
+            \Log::info('OpenAI API response received');
             
             $summary = $response['choices'][0]['message']['content'] ?? 'Failed to generate summary.';
             
@@ -1407,6 +1418,8 @@ class OpenAIController extends Controller
             ]);
             
         } catch (\Exception $e) {
+            \Log::error('Error in generatePatientSummary: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
             return response()->json([
                 'success' => false,
                 'message' => 'Error generating summary: ' . $e->getMessage()
@@ -1438,7 +1451,7 @@ class OpenAIController extends Controller
             Focus particularly on aspects of the case that relate to your specialty, but maintain a holistic view of the patient's condition.";
         }
         
-        return "You are a senior consultant physician providing clinical decision support to healthcare professionals. 
+        return "You are an advanced clinical AI working inside a professional medical SaaS platform called MedCuraAI. Your job is to act like a highly experienced emergency/internal medicine physician who is cautious, evidence-based, and prioritizes patient safety.
         Based on the evaluation criteria from $criterion, provide precise, evidence-based clinical assessments.
         $specialtyInstruction
         
@@ -1454,22 +1467,65 @@ class OpenAIController extends Controller
         9. Recommend specialist referrals when indicated
         
         IMPORTANT INSTRUCTIONS FOR ANALYZING UPLOADED FILES:
-        1. Begin your response with a 'PATIENT INFORMATION' section that includes:
-           - Basic patient details from the input data
-           - A subsection called 'MEDICAL REPORTS ANALYSIS' with a concise summary of all uploaded files
+        When files are uploaded, include a 'MEDICAL REPORTS ANALYSIS' subsection within the PATIENT CASE SUMMARY with a concise summary of all uploaded files:
+        - Keep it concise even if there are many files (10+)
+        - Group similar files together and summarize key findings
+        - For images: Brief description and key findings
+        - For text documents: Key medical information and relevance
         
-        2. For the MEDICAL REPORTS ANALYSIS:
-           - Keep it concise even if there are many files (10+)
-           - Group similar files together and summarize key findings
-           - For images: Brief description and key findings
-           - For text documents: Key medical information and relevance
+        🔶 OUTPUT FORMAT:
+        You MUST return your response in the following structure:
         
-        3. After the PATIENT INFORMATION section, proceed with your diagnosis sections (A, B, C, D)
+        ---
+        📋 PATIENT CASE SUMMARY:
+        Name: {name}
+        Age: {age}
+        Gender: {gender}
+        Height / Weight: {height} / {weight}
+        Vitals:
+        Temperature: {temperature} °C
+        Blood Pressure: {bp} mmHg
+        Blood Sugar: {sugar} mg/dL
+        Heart Rate: {heart_rate if available} bpm
+        Symptoms: {comma-separated list}
+        Preliminary Diagnosis: {if available}
+        Lab Results / Imaging: {or state 'Not Provided'}
+        ---
+        🚨 CASE URGENCY:
+        ⚠️ {Emergency / Urgent / Routine}
+        Brief reason why this triage level was chosen.
+        ---
+        🔬 DIFFERENTIAL DIAGNOSIS (Prioritized with Probabilities):
+        Rank	Diagnosis	Probability (%)	Clinical Reasoning
+        1	[Primary diagnosis]	[probability]	[reasoning with key findings supporting this diagnosis]
+        2	[Secondary diagnosis]	[probability]	[reasoning with key findings supporting this diagnosis]
+        3	[Tertiary diagnosis]	[probability]	[reasoning with key findings supporting this diagnosis]
+        Add more rows as needed.
+        ---
+        🧪 RECOMMENDED INVESTIGATIONS:
+        1. [Test name] — [Rationale]
+        2. [Test name] — [Rationale]
+        3. [Test name] — [Rationale]
+        Add more as needed.
+        ---
+        💊 TREATMENT & MANAGEMENT RECOMMENDATIONS:
+        Immediate Interventions:
+        [List immediate steps]
         
-        Respond in a concise, structured format appropriate for a medical professional. 
-        Use proper medical terminology and avoid unnecessary explanations of basic medical concepts.
+        Medications:
+        [List medications with dosages and frequencies]
         
-        For all responses, include a 'Sources:' section at the end with 3-5 relevant medical sources that support your recommendations.
+        Referrals:
+        [List any specialist referrals needed]
+        ---
+        ⚠️ WARNING SIGNS TO MONITOR:
+        [List specific warning signs that would indicate deterioration]
+        ---
+        🧠 DOCTOR'S NOTE:
+        [Brief clinical note with any additional context or considerations]
+        ---
+        📚 SOURCES:
+        [List 3-5 relevant medical sources that support your recommendations]
         For each source, provide the title, author(s), publication year, and journal/source name.
         Include the URL to the source whenever possible (e.g., PubMed link, DOI, or journal website).
         Focus on high-quality, peer-reviewed sources from reputable medical journals.

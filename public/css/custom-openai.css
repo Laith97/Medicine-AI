@@ -395,48 +395,204 @@
     font-size: 1rem;
   }
   
-  /* Styled response text */
+  /* Professional Medical Response Styling */
 .response-text {
     word-break: break-word;
-    font-family: "Segoe UI", Roboto, sans-serif;
-    font-size: 1rem;
+    font-family: "Times New Roman", serif;
+    font-size: 14px;
     line-height: 1.6;
+    color: #2c3e50;
+    background: #ffffff;
 }
 
-.response-text h4 {
-    margin-top: 1.5rem;
+/* Professional Medical Section Styling */
+.response-text .medical-section {
+    margin-bottom: 1.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fafafa;
+}
+
+.response-text .section-header {
+    background: #f5f5f5;
+    padding: 0.75rem 1rem;
+    margin: 0;
+    font-weight: 600;
+    font-size: 15px;
+    color: #2c3e50;
+    border-bottom: 1px solid #ddd;
+    font-family: "Arial", sans-serif;
+}
+
+.response-text .section-content {
+    padding: 1rem;
+    background: #ffffff;
+}
+
+/* Case Urgency Header */
+.response-text .urgency-header {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
     margin-bottom: 1rem;
     font-weight: 600;
+    font-size: 14px;
 }
 
-.response-text p {
+.response-text .urgency-level {
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    background: #fff;
+    border: 1px solid #ddd;
+}
+
+/* Section Break */
+.response-text .section-break {
+    border-top: 1px solid #ccc;
+    margin: 1.5rem 0;
+    height: 1px;
+}
+
+/* Professional Table Styling */
+.response-text table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    background: white;
+    border: 1px solid #ddd;
+    font-size: 13px;
+}
+
+.response-text table th {
+    background: #f8f9fa;
+    color: #2c3e50;
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    border: 1px solid #ddd;
+    font-family: "Arial", sans-serif;
+}
+
+.response-text table td {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    vertical-align: top;
+    background: #fff;
+}
+
+.response-text table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.response-text table tr:nth-child(even) td {
+    background-color: #f9f9f9;
+}
+
+/* Professional List Styling */
+.response-text ul, 
+.response-text ol {
     margin-bottom: 1rem;
-}
-
-.response-text ul, .response-text ol {
-    margin-bottom: 1.5rem;
-    padding-left: 2rem;
+    padding-left: 1.5rem;
 }
 
 .response-text li {
     margin-bottom: 0.5rem;
+    padding: 0.25rem 0;
+    line-height: 1.6;
+    list-style-type: disc;
 }
 
-/* Section styling */
-.response-text .section-diagnosis {
-    color: #DE6262;
+.response-text ol li {
+    list-style-type: decimal;
 }
 
-.response-text .section-recommendations {
-    color: #3498db;
+/* Paragraph Styling */
+.response-text p {
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
 }
 
-.response-text .section-treatment {
-    color: #2ecc71;
+.response-text p:last-child {
+    margin-bottom: 0;
 }
 
-.response-text .section-warnings {
-    color: #f39c12;
+/* Professional Styling for Medical Content */
+.response-text strong {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.response-text em {
+    font-style: italic;
+}
+
+/* Headers within sections */
+.response-text h1,
+.response-text h2,
+.response-text h3,
+.response-text h4,
+.response-text h5,
+.response-text h6 {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-family: "Arial", sans-serif;
+}
+
+/* Probability Badge - Simple Professional Style */
+.response-text .probability {
+    background: #f8f9fa;
+    color: #2c3e50;
+    padding: 0.15rem 0.4rem;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* Medical Terminology Emphasis */
+.response-text .medical-term {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* Medication Names */
+.response-text .medication {
+    font-style: italic;
+    font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .response-text {
+        font-size: 13px;
+    }
+    
+    .response-text table {
+        font-size: 12px;
+    }
+    
+    .response-text table th,
+    .response-text table td {
+        padding: 0.5rem 0.25rem;
+    }
+    
+    .response-text .section-header {
+        font-size: 14px;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .response-text .section-content {
+        padding: 0.75rem;
+    }
+    
+    .response-text .medical-section {
+        margin-bottom: 1rem;
+    }
 }
   
   /* Optional: prettier scrollbar */
