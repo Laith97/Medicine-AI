@@ -1207,6 +1207,249 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         50% { transform: translateY(-5px); }
         100% { transform: translateY(0); }
     }
+
+    /* MedCuraAI Styles */
+    .medcura-level1 {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .medcura-level2 {
+        background: #f8f9fa;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-top: 20px;
+        overflow: hidden;
+    }
+
+    .level-header {
+        padding: 20px 25px;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #2c3e50;
+        border-bottom: 3px solid #e9ecef;
+    }
+
+    .level1-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-bottom: none;
+    }
+
+    .level2-header {
+        background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+        color: white;
+        border-bottom: none;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .level2-header:hover {
+        background: linear-gradient(135deg, #0056b3 0%, #520dc2 100%);
+    }
+
+    .level2-toggle {
+        cursor: pointer;
+    }
+
+    .toggle-icon {
+        font-size: 1.2rem;
+        transition: transform 0.3s ease;
+    }
+
+    .toggle-hint {
+        font-size: 0.9rem;
+        opacity: 0.8;
+        font-weight: 400;
+    }
+
+    .level2-content {
+        padding: 25px;
+        background: white;
+        border-radius: 0 0 12px 12px;
+    }
+
+    .medcura-section {
+        margin-bottom: 25px;
+        border-left: 4px solid #dee2e6;
+        background: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .medcura-section .section-header {
+        background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+        color: white;
+        padding: 15px 20px;
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-bottom: none;
+    }
+
+    .medcura-section .section-content {
+        padding: 20px;
+        background: white;
+    }
+
+    .patient-summary {
+        border-left-color: #17a2b8;
+    }
+
+    .patient-summary .section-header {
+        background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+    }
+
+    .case-urgency {
+        border-left-color: #ffc107;
+    }
+
+    .case-urgency .section-header {
+        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    }
+
+    .differential-diagnoses {
+        border-left-color: #6f42c1;
+    }
+
+    .differential-diagnoses .section-header {
+        background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+    }
+
+    .recommended-tests {
+        border-left-color: #28a745;
+    }
+
+    .recommended-tests .section-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+
+    .management-plan {
+        border-left-color: #007bff;
+    }
+
+    .management-plan .section-header {
+        background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+    }
+
+    .warning-signs {
+        border-left-color: #dc3545;
+    }
+
+    .warning-signs .section-header {
+        background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+    }
+
+    .urgency-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 10px 0;
+    }
+
+    .urgency-badge.emergency {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    }
+
+    .urgency-badge.urgent {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        color: #212529;
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+    }
+
+    .urgency-badge.routine {
+        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .medcura-table {
+        margin: 15px 0;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .medcura-table table {
+        margin: 0;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .medcura-table .table-header-cell {
+        background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+        color: white;
+        font-weight: 600;
+        border: none;
+        padding: 15px 12px;
+    }
+
+    .medcura-table td {
+        padding: 12px;
+        border-top: 1px solid #dee2e6;
+        vertical-align: top;
+    }
+
+    .bullet-item {
+        padding: 8px 0;
+        padding-left: 20px;
+        position: relative;
+        line-height: 1.5;
+    }
+
+    .bullet-item::before {
+        content: "•";
+        color: #007bff;
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+    }
+
+    .subsection-header {
+        font-weight: 600;
+        color: #495057;
+        margin: 15px 0 10px 0;
+        padding: 8px 0;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .level2-section-header {
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 20px 0 15px 0;
+        padding: 12px 0;
+        border-bottom: 3px solid #007bff;
+        font-size: 1.1rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .level-header {
+            padding: 15px 20px;
+            font-size: 1.2rem;
+        }
+
+        .medcura-section .section-content {
+            padding: 15px;
+        }
+
+        .level2-content {
+            padding: 20px;
+        }
+    }
 </style>
 
 
@@ -1832,6 +2075,211 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             .replace(/[ \t]{2,}/g, ' ')  // Replace multiple spaces/tabs with single space
             .replace(/^\s+|\s+$/gm, '')  // Trim whitespace from start/end of each line
             .trim();
+
+        // Split into Level 1 and Level 2 sections
+        const level2Match = cleanedText.match(/🔵\s*DETAILED\s+MEDICAL\s+REPORT.*$/is);
+        let level1Text = cleanedText;
+        let level2Text = '';
+
+        if (level2Match) {
+            level1Text = cleanedText.substring(0, level2Match.index).trim();
+            level2Text = level2Match[0].trim();
+        }
+
+        // Format Level 1 (Quick Clinical Summary)
+        let level1HTML = formatLevel1(level1Text);
+
+        // Format Level 2 (Detailed Report) if present
+        let level2HTML = '';
+        if (level2Text) {
+            level2HTML = formatLevel2(level2Text);
+        }
+
+        return level1HTML + level2HTML;
+    }
+
+    function formatLevel1(text) {
+        if (!text) return '';
+
+        let formatted = '<div class="medcura-level1">';
+
+        // Handle Level 1 header
+        text = text.replace(/🟢\s*LEVEL\s+1:\s*QUICK\s+CLINICAL\s+SUMMARY/i,
+            '<div class="level-header level1-header">🟢 QUICK CLINICAL SUMMARY</div>');
+
+        // Patient Summary Section
+        text = text.replace(/📋\s*PATIENT\s+SUMMARY:/i,
+            '<div class="medcura-section patient-summary"><h4 class="section-header">📋 PATIENT SUMMARY</h4><div class="section-content">');
+
+        // Case Urgency Section
+        text = text.replace(/🚨\s*CASE\s+URGENCY:/i,
+            '</div></div><div class="medcura-section case-urgency"><h4 class="section-header">🚨 CASE URGENCY</h4><div class="section-content">');
+
+        // Top 3 Differential Diagnoses Section
+        text = text.replace(/🔍\s*TOP\s+3\s+DIFFERENTIAL\s+DIAGNOSES:/i,
+            '</div></div><div class="medcura-section differential-diagnoses"><h4 class="section-header">🔍 TOP 3 DIFFERENTIAL DIAGNOSES</h4><div class="section-content">');
+
+        // Recommended Tests Section
+        text = text.replace(/🧪\s*RECOMMENDED\s+TESTS:/i,
+            '</div></div><div class="medcura-section recommended-tests"><h4 class="section-header">🧪 RECOMMENDED TESTS</h4><div class="section-content">');
+
+        // Initial Management Plan Section
+        text = text.replace(/💊\s*INITIAL\s+MANAGEMENT\s+PLAN:/i,
+            '</div></div><div class="medcura-section management-plan"><h4 class="section-header">💊 INITIAL MANAGEMENT PLAN</h4><div class="section-content">');
+
+        // Warning Signs Section
+        text = text.replace(/⚠️\s*WARNING\s+SIGNS:/i,
+            '</div></div><div class="medcura-section warning-signs"><h4 class="section-header">⚠️ WARNING SIGNS</h4><div class="section-content">');
+
+        // Process the text line by line
+        let lines = text.split('\n');
+        let processedText = '';
+        let inTable = false;
+        let tableRows = [];
+
+        for (let line of lines) {
+            // Skip if already HTML
+            if (line.includes('<div') || line.includes('</div>') || line.includes('<h4')) {
+                if (inTable) {
+                    processedText += formatMedCuraTable(tableRows);
+                    inTable = false;
+                    tableRows = [];
+                }
+                processedText += line + '\n';
+                continue;
+            }
+
+            // Handle table rows (for differential diagnoses)
+            if (line.includes('|') && line.split('|').length >= 4) {
+                if (!inTable) {
+                    inTable = true;
+                    tableRows = [];
+                }
+                tableRows.push(line);
+                continue;
+            } else if (inTable) {
+                processedText += formatMedCuraTable(tableRows);
+                inTable = false;
+                tableRows = [];
+            }
+
+            // Handle bullet points
+            if (/^[\s]*[•\-\*]\s+(.+)$/.test(line)) {
+                const itemText = line.replace(/^[\s]*[•\-\*]\s+(.+)$/, '$1');
+                processedText += `<div class="bullet-item">• ${itemText}</div>\n`;
+            }
+            // Handle bold subsections
+            else if (/^\*\*(.+?)\*\*/.test(line)) {
+                const boldText = line.replace(/^\*\*(.+?)\*\*/, '<strong>$1</strong>');
+                processedText += `<div class="subsection-header">${boldText}</div>\n`;
+            }
+            // Handle urgency levels
+            else if (/^\*\*(EMERGENCY|URGENT|ROUTINE)\*\*/.test(line)) {
+                const urgencyLevel = line.match(/^\*\*(EMERGENCY|URGENT|ROUTINE)\*\*/)[1];
+                const urgencyClass = urgencyLevel.toLowerCase();
+                processedText += `<div class="urgency-badge ${urgencyClass}">${urgencyLevel}</div>\n`;
+            }
+            // Regular text
+            else if (line.trim()) {
+                processedText += `<p>${line}</p>\n`;
+            }
+        }
+
+        // Close any remaining table
+        if (inTable) {
+            processedText += formatMedCuraTable(tableRows);
+        }
+
+        formatted += processedText;
+        formatted += '</div></div></div>'; // Close last section and level1
+
+        return formatted;
+    }
+
+    function formatLevel2(text) {
+        if (!text) return '';
+
+        // Create collapsible section
+        let formatted = `
+            <div class="medcura-level2">
+                <div class="level2-toggle" onclick="toggleLevel2()">
+                    <div class="level-header level2-header">
+                        🔵 DETAILED MEDICAL REPORT
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="toggle-hint">Click to Expand</div>
+                </div>
+                <div class="level2-content" id="level2-content" style="display: none;">
+        `;
+
+        // Remove the header from text
+        text = text.replace(/🔵\s*DETAILED\s+MEDICAL\s+REPORT.*?\n/i, '');
+
+        // Process sections
+        text = text.replace(/\*\*([^*]+?)\*\*/g, '<div class="level2-section-header">$1</div>');
+
+        // Handle bullet points
+        text = text.replace(/^[\s]*[•\-\*]\s+(.+)$/gm, '<div class="bullet-item">• $1</div>');
+
+        // Handle paragraphs
+        let lines = text.split('\n');
+        let processedText = '';
+
+        for (let line of lines) {
+            if (line.includes('<div class="level2-section-header">') ||
+                line.includes('<div class="bullet-item">')) {
+                processedText += line + '\n';
+            } else if (line.trim()) {
+                processedText += `<p>${line}</p>\n`;
+            }
+        }
+
+        formatted += processedText;
+        formatted += '</div></div>';
+
+        return formatted;
+    }
+
+    function formatMedCuraTable(rows) {
+        if (!rows || rows.length === 0) return '';
+
+        let html = '<div class="medcura-table"><table class="table table-striped table-hover">';
+
+        for (let i = 0; i < rows.length; i++) {
+            const cells = rows[i].split('|').map(cell => cell.trim());
+            const tag = i === 0 ? 'th' : 'td';
+            const rowClass = i === 0 ? 'table-header' : '';
+
+            html += `<tr class="${rowClass}">`;
+            for (let cell of cells) {
+                if (i === 0) {
+                    html += `<${tag} class="table-header-cell">${cell}</${tag}>`;
+                } else {
+                    html += `<${tag}>${cell}</${tag}>`;
+                }
+            }
+            html += '</tr>';
+        }
+
+        html += '</table></div>';
+        return html;
+    }
+
+    function toggleLevel2() {
+        const content = document.getElementById('level2-content');
+        const icon = document.querySelector('.toggle-icon');
+
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.textContent = '▲';
+        } else {
+            content.style.display = 'none';
+            icon.textContent = '▼';
+        }
+    }
+
+    // Legacy function - keeping the rest of the old function for compatibility
+    function formatAIResponseOld(text) {
 
         // Remove the Sources section from the text before formatting
         const sourcesMatch = cleanedText.match(/(📚\s*SOURCES:|Sources:)([\s\S]*?)(?:$|(?=\n\n\w))/i);
