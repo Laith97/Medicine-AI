@@ -54,13 +54,48 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/font-icons.css') }}">
+    <!-- FontAwesome CDN - Priority over local -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Temporarily disabled local font-icons -->
+    <!-- <link rel="stylesheet" href="{{ asset('css/font-icons.css') }}"> -->
     <link rel="stylesheet" href="{{ asset('demos/medical/css/medical-icons.css') }}">
     <link rel="stylesheet" href="{{ asset('css/swiper.css') }}">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
     @stack('styles')
+    
+    <!-- Global Font Styling -->
+    <style>
+        body, * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+        }
+        
+        /* FontAwesome Debug - Force display if not loading */
+        .fa, .fas, .far, .fab {
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 900 !important;
+            -webkit-font-smoothing: antialiased;
+            display: inline-block;
+            font-style: normal;
+            font-variant: normal;
+            text-rendering: auto;
+            line-height: 1;
+        }
+        
+        /* Test icon visibility */
+        .icon-test {
+            font-size: 24px;
+            color: red;
+            margin: 10px;
+        }
+    </style>
+    
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Medical Demo | Canvas')</title>
 </head>
@@ -376,7 +411,7 @@
 
 	<!-- Go To Top
 	============================================= -->
-	<div id="gotoTop" class="uil uil-angle-up rounded-circle"></div>
+	<div id="gotoTop" class="fas fa-chevron-up rounded-circle" style="position: fixed; bottom: 20px; right: 20px; width: 40px; height: 40px; background-color: #007bff; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; opacity: 0.8; transition: opacity 0.3s;"></div>
 
 	<!-- JavaScripts
 	============================================= -->

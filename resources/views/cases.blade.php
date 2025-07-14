@@ -5,8 +5,14 @@
 @section('content')
 @push('styles')
 <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
 
 <style>
+    /* Global Font */
+    * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
     .cases-container {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         min-height: 100vh;
@@ -275,6 +281,15 @@
         margin-bottom: 8px;
     }
     
+    .sources-list {
+        margin: 0;
+        padding-left: 1.5rem;
+    }
+    
+    .sources-list li {
+        margin-bottom: 0.5rem;
+    }
+    
     .patient-summary-btn {
         background-color: #17a2b8;
         border-color: #17a2b8;
@@ -308,39 +323,131 @@
         font-size: 1.4rem;
     }
     
-    /* Simple styling for section headers like A) POSSIBLE DIAGNOSIS */
-    .response-text p strong, .ai-content p strong {
-        display: block;
-        font-size: 1.25rem;
+    /* Professional Medical Design - Apply to all AI response content */
+    .response-text, .ai-content {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         color: #2c3e50;
-        margin-top: 25px;
-        margin-bottom: 15px;
+        line-height: 1.7;
+        font-size: 15px;
+        letter-spacing: 0.3px;
+    }
+
+    /* Medical Section Styling */
+    .response-text .medical-section,
+    .ai-content .medical-section {
+        margin-bottom: 25px;
+        border: 1px solid #e8e8e8;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #ffffff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .response-text .section-header,
+    .ai-content .section-header {
+        background-color: #f8f9fa;
+        color: #2c3e50;
+        padding: 12px 18px;
+        margin: 0;
+        font-size: 1.1rem;
         font-weight: 600;
-        border-left: 4px solid #DE6262;
-        padding: 8px 0 8px 15px;
-        background-color: rgba(222, 98, 98, 0.05);
-        border-radius: 0 5px 5px 0;
+        border-bottom: 1px solid #e8e8e8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
-    
-    /* Specific styling for different section headers */
-    .section-diagnosis {
-        border-left-color: #DE6262; /* Red for diagnosis */
-        background-color: rgba(222, 98, 98, 0.05);
+
+    .response-text .section-content,
+    .ai-content .section-content {
+        padding: 20px;
+        text-align: justify;
     }
-    
-    .section-recommendations {
-        border-left-color: #3498db; /* Blue for recommendations */
-        background-color: rgba(52, 152, 219, 0.05);
+
+    .response-text .section-content p,
+    .ai-content .section-content p {
+        margin-bottom: 14px;
+        line-height: 1.7;
+        text-align: justify;
+        word-spacing: 0.1em;
     }
-    
-    .section-treatment {
-        border-left-color: #2ecc71; /* Green for treatment */
-        background-color: rgba(46, 204, 113, 0.05);
+
+    /* Table Styling */
+    .response-text table,
+    .ai-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border-radius: 6px;
+        overflow: hidden;
     }
-    
-    .section-warnings {
-        border-left-color: #f39c12; /* Orange for warnings */
-        background-color: rgba(243, 156, 18, 0.05);
+
+    .response-text table th,
+    .ai-content table th {
+        background-color: #f8f9fa;
+        color: #2c3e50;
+        font-weight: 600;
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 2px solid #dee2e6;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .response-text table td,
+    .ai-content table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+        vertical-align: top;
+    }
+
+    .response-text table tr:nth-child(even),
+    .ai-content table tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+
+    .response-text table tr:hover,
+    .ai-content table tr:hover {
+        background-color: #e9ecef;
+    }
+
+    /* Probability badges */
+    .response-text .probability,
+    .ai-content .probability {
+        background-color: #007bff;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    /* List styling */
+    .response-text ul, .response-text ol,
+    .ai-content ul, .ai-content ol {
+        margin: 15px 0;
+        padding-left: 25px;
+    }
+
+    .response-text li,
+    .ai-content li {
+        margin-bottom: 8px;
+        line-height: 1.5;
+    }
+
+    /* Legacy support for old format - redirect to professional style */
+    .response-text p strong, .ai-content p strong {
+        /* Remove old styling and use normal strong formatting */
+        display: inline;
+        font-size: inherit;
+        color: inherit;
+        margin: 0;
+        font-weight: 600;
+        border: none;
+        padding: 0;
+        background-color: transparent;
+        border-radius: 0;
     }
     
     .response-text p {
@@ -509,6 +616,8 @@
 
 <div class="cases-container">
     <div class="container-fluid">
+ 
+        
         @php
             $hasRecords = $records->count() > 0;
         @endphp
@@ -543,7 +652,7 @@
                                 <span class="badge bg-light text-dark">{{ $recentRecord->gender }}</span>
                             </div>
                             <div class="small text-muted mb-2">
-                                <i class="fas fa-calendar-alt me-1"></i> {{ \Carbon\Carbon::parse($recentRecord->created_at)->format('M d, Y') }}
+                                <i class="fas fa-calendar-days me-1"></i> {{ \Carbon\Carbon::parse($recentRecord->created_at)->format('M d, Y') }}
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="badge bg-light text-dark">{{ $recentRecord->age }} years</span>
@@ -553,6 +662,8 @@
                                         data-record-id="{{ $recentRecord->id }}"
                                         data-patient-name="{{ $recentRecord->name }}"
                                         data-patient-key="{{ $recentRecord->patient_key }}"
+                                        data-response="{{ htmlentities($recentRecord->ai_response) }}"
+                                        data-visit-number="{{ $recentRecord->visit_number ?? 1 }}"
                                         style="background: linear-gradient(135deg, #DE6262 0%, #c55252 100%); border: none; color: white; font-weight: 500; padding: 0.25rem 0.75rem; border-radius: 15px; box-shadow: 0 2px 8px rgba(222, 98, 98, 0.3); font-size: 0.75rem;">
                                     <i class="fas fa-eye me-1"></i>View
                                 </button>
@@ -590,11 +701,6 @@
                                     <td><strong>#{{ $record->id }}</strong></td>
                                     <td>
                                         {{ $record->name }}
-                                        @if($record->total_visits > 1)
-                                            <span class="badge bg-info ms-1" title="This patient has multiple visits">
-                                                <i class="fas fa-history me-1"></i>{{ $record->total_visits }} visits
-                                            </span>
-                                        @endif
                                     </td>
                                     <td>{{ $record->age }}</td>
                                     <td>
@@ -604,7 +710,7 @@
                                     </td>
                                     <td>{{ $record->height ?? 'N/A' }}</td>
                                     <td>{{ $record->weight ?? 'N/A' }}</td>
-                                    <td>{{ $record->created_at->format('M d, Y') }}</td>
+                                    <td data-order="{{ $record->created_at->timestamp }}">{{ $record->created_at->format('M d, Y') }}</td>
                                     <td>
                                         <span class="badge bg-secondary">Visit #{{ $record->visit_number ?? 'N/A' }}</span>
                                     </td>
@@ -644,7 +750,7 @@
                     </div>
                 @else
                     <div class="empty-state">
-                        <i class="fas fa-user-md"></i>
+                        <i class="fas fa-user-doctor"></i>
                         <h5>No Patient Records Found</h5>
                         <p>Start building your patient database by adding your first case</p>
                         <a href="{{ route('ask-ai') }}" class="btn-add-patient mt-3">
@@ -711,7 +817,7 @@
         <div class="modal-content response-modal-content">
             <div class="modal-header response-modal-header">
                 <h5 class="modal-title" id="summaryModalLabel" style="color: #fff">
-                    <i class="fas fa-user-md me-2"></i><span id="patientSummaryTitle">Patient Summary</span>
+                    <i class="fas fa-user-doctor me-2"></i><span id="patientSummaryTitle">Patient Summary</span>
                 </h5>
                 <div>
                     <button type="button" class="btn btn-sm btn-light me-2" id="printSummaryBtn">
@@ -762,7 +868,7 @@
                         <h6 class="mb-0 me-2"><i class="fas fa-robot me-2"></i>AI Generated Summary</h6>
                         <hr class="flex-grow-1 ms-2">
                     </div>
-                    <div id="aiSummaryContainer">
+                    <div id="aiSummaryContainer" class="response-text">
                         <div class="text-center py-4">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Loading...</span>
@@ -848,23 +954,49 @@
             const recordId = $(element).data('record-id');
             const patientKey = $(element).data('patient-key');
             
-            // For Recent Patients buttons, we need to get the response from the record
-            if (!raw) {
-                // Find the record by ID
-                const record = allRecords.find(r => r.id === recordId);
+            console.log('View button clicked:', {
+                raw: raw ? 'Has data' : 'No data',
+                patientName: patientName,
+                visitNumber: visitNumber,
+                recordId: recordId,
+                patientKey: patientKey
+            });
+            
+            // Check if we have all required data
+            if (!patientName || !recordId) {
+                console.error('Missing required data for modal');
+                return;
+            }
+            
+            // For buttons without response data, try to find it in allRecords
+            if (!raw || raw === '') {
+                const record = allRecords.find(r => r.id == recordId);
                 if (record && record.ai_response) {
-                    // Use the response from the record
+                    console.log('Found response in allRecords for record ID:', recordId);
                     processResponse(record.ai_response, patientName, visitNumber, recordId, patientKey);
+                    return;
+                } else {
+                    console.error('No response found for record ID:', recordId);
+                    $('#responseContent').html('<div class="alert alert-warning">No response data available for this record.</div>');
                     return;
                 }
             }
             
-            // For main table buttons with response data
+            // For buttons with response data
             processResponse(raw, patientName, visitNumber, recordId, patientKey);
         }
         
         // Process and display the response
         function processResponse(raw, patientName, visitNumber, recordId, patientKey) {
+            console.log('Processing response for:', patientName, 'Visit:', visitNumber, 'Record ID:', recordId);
+            
+            // Validate input
+            if (!raw || raw.trim() === '') {
+                console.error('Empty or invalid response data');
+                $('#responseContent').html('<div class="alert alert-danger">No medical response data available for this patient.</div>');
+                return;
+            }
+            
             // Update the modal title and content
             $('#patientNameTitle').text(patientName);
             $('#visitNumber').text(visitNumber);
@@ -953,35 +1085,51 @@
                 $('#patientHistorySection').show();
                 $('#patientHistoryList').empty();
                 
-                // Sort records by visit number (ascending) or created_at if visit_number is not available
-                patientRecords.sort((a, b) => {
-                    // If both records have visit_number, use that
-                    if (a.visit_number && b.visit_number) {
-                        return a.visit_number - b.visit_number;
-                    }
-                    // Otherwise fall back to created_at date
-                    return new Date(a.created_at) - new Date(b.created_at);
+                // First, sort records chronologically to assign correct visit numbers
+                const sortedForNumbering = [...patientRecords].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                
+                // Create a mapping of record ID to visit number
+                const visitNumberMap = {};
+                sortedForNumbering.forEach((record, index) => {
+                    visitNumberMap[record.id] = index + 1;
                 });
                 
-                // Add buttons for each visit
-                patientRecords.forEach(record => {
+                // Now sort for display (newest first)
+                patientRecords.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                
+                // Add buttons for each visit 
+                patientRecords.forEach((record) => {
                     const isActive = record.id === recordId;
-                    const visitDate = new Date(record.created_at).toLocaleDateString('en-US', {
+                    const visitDate = new Date(record.created_at);
+                    
+                    // Check if there are multiple visits on the same day
+                    const sameDay = patientRecords.filter(r => {
+                        const rDate = new Date(r.created_at);
+                        return rDate.toDateString() === visitDate.toDateString();
+                    }).length > 1;
+                    
+                    // Include time if there are multiple visits on the same day
+                    const formattedDate = visitDate.toLocaleDateString('en-US', {
                         year: 'numeric', 
                         month: 'short', 
-                        day: 'numeric'
+                        day: 'numeric',
+                        ...(sameDay && {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
                     });
                     
-                    // Sort visits chronologically (visit #1 should be the oldest)
+                    // Get the correct chronological visit number
+                    const correctVisitNumber = record.visit_number || visitNumberMap[record.id];
                     
                     const button = $(`
                         <button class="btn ${isActive ? 'btn-primary' : 'btn-outline-secondary'} btn-sm history-btn" 
                                 data-record-id="${record.id}"
                                 data-response="${htmlEntities(record.ai_response)}"
-                                data-visit-number="${record.visit_number}"
+                                data-visit-number="${correctVisitNumber}"
                                 data-patient-key="${record.patient_key}">
                             <i class="fas ${isActive ? 'fa-calendar-check' : 'fa-calendar'} me-1"></i>
-                            Visit #${record.visit_number || '?'} (${visitDate})
+                            Visit #${correctVisitNumber} (${formattedDate})
                             ${isActive ? '<span class="ms-1 badge bg-light text-dark">Current</span>' : ''}
                         </button>
                     `);
@@ -993,8 +1141,18 @@
             }
         }
         
-        // Attach event handler to both Recent Patients and main table view buttons
-        $('.view-response-btn, .btn-sm.btn-view-response').on('click', function() {
+        // Clear modal content on show
+        $('#responseModal').on('show.bs.modal', function (event) {
+            // Clear previous content but don't hide patient history section
+            // It will be shown/hidden by the processResponse function based on data
+            $('#patientHistoryList').empty();
+            $('#responseContent').html('');
+            $('#patientNameTitle').text('Loading...');
+            $('#visitBadge').hide();
+        });
+
+        // Attach event handler using delegation for both static and dynamic buttons
+        $(document).on('click', '.view-response-btn, .btn-view-response', function() {
             handleViewResponse(this);
         });
         
@@ -1066,43 +1224,243 @@
         /**
          * Format AI response text with proper HTML formatting
          */
+        function formatTable(tableRows) {
+            if (!tableRows || tableRows.length === 0) return '';
+            
+            let table = '<table class="table table-striped mt-3">';
+            let isFirstRow = true;
+            let headerAdded = false;
+            
+            for (const row of tableRows) {
+                let cells = [];
+                
+                // Handle different table formats
+                if (row.includes('|')) {
+                    // Pipe-separated format
+                    cells = row.split('|').map(cell => cell.trim()).filter(cell => cell);
+                } else if (row.match(/^(Rank|1|2|3|4|5)\s+/)) {
+                    // Diagnosis table format without pipes
+                    const match = row.match(/^(\d+|Rank)\s+(.*?)\s+(\d+%)\s+(.*?)$/);
+                    if (match) {
+                        cells = [match[1], match[2], match[3], match[4]];
+                    } else {
+                        // Try to parse the concatenated format
+                        const diagnosisMatch = row.match(/^(\d+)(.*?)(\d+%)(.*?)$/);
+                        if (diagnosisMatch) {
+                            cells = [diagnosisMatch[1], diagnosisMatch[2], diagnosisMatch[3], diagnosisMatch[4]];
+                        }
+                    }
+                } else if (row.includes('RankDiagnosis')) {
+                    // Header row for the concatenated format
+                    cells = ['Rank', 'Diagnosis', 'Probability (%)', 'Clinical Reasoning'];
+                }
+                
+                if (cells.length === 0) continue;
+                
+                // Check if this should be a header row
+                if (!headerAdded && (cells.some(cell => cell.toLowerCase().includes('rank') || cell.toLowerCase().includes('diagnosis')) || isFirstRow)) {
+                    table += '<thead><tr>';
+                    cells.forEach(cell => {
+                        table += `<th>${cell}</th>`;
+                    });
+                    table += '</tr></thead><tbody>';
+                    headerAdded = true;
+                    isFirstRow = false;
+                } else {
+                    // Data row
+                    table += '<tr>';
+                    cells.forEach((cell, index) => {
+                        // Check if this is a probability cell
+                        if (cell.includes('%')) {
+                            cell = `<span class="probability">${cell}</span>`;
+                        }
+                        table += `<td>${cell}</td>`;
+                    });
+                    table += '</tr>';
+                }
+            }
+            
+            table += '</tbody></table>';
+            return table;
+        }
+
         function formatAIResponse(text) {
             if (!text) return '';
             
-            // Remove the Sources section from the text before formatting
-            const sourcesMatch = text.match(/Sources:([\s\S]*?)(?:$|(?=\n\n\w))/i);
-            let cleanedText = text;
+            // Clean up text: remove excessive whitespace and normalize line breaks
+            let cleanedText = text
+                .replace(/\r\n/g, '\n')  // Normalize line endings
+                .replace(/\n{3,}/g, '\n\n')  // Replace 3+ line breaks with 2
+                .replace(/[ \t]{2,}/g, ' ')  // Replace multiple spaces/tabs with single space
+                .replace(/^\s+|\s+$/gm, '')  // Trim whitespace from start/end of each line
+                .trim();
             
+            // Remove the Sources section from the text before formatting
+            const sourcesMatch = cleanedText.match(/(📚\s*SOURCES:|Sources:)([\s\S]*?)(?:$|(?=\n\n\w))/i);
             if (sourcesMatch) {
-                cleanedText = text.replace(sourcesMatch[0], '').trim();
+                cleanedText = cleanedText.replace(sourcesMatch[0], '').trim();
             }
             
-            // First, enhance the main section headers to make them more prominent
-            // This will convert A) POSSIBLE DIAGNOSIS: etc. to proper h4 headers
-            const enhancedText = cleanedText
-                .replace(/^(A\)\s*POSSIBLE\s*DIAGNOSIS:.*$)/gm, '<h4 class="mt-4 section-diagnosis">$1</h4>')
-                .replace(/^(B\)\s*RECOMMENDATIONS\s*FOR\s*TESTS\s*OR\s*IMAGING:.*$)/gm, '<h4 class="mt-4 section-recommendations">$1</h4>')
-                .replace(/^(C\)\s*TREATMENT\s*RECOMMENDATIONS:.*$)/gm, '<h4 class="mt-4 section-treatment">$1</h4>')
-                .replace(/^(D\)\s*WARNING\s*SIGNS:.*$)/gm, '<h4 class="mt-4 section-warnings">$1</h4>');
+            // Debug: Log the cleaned text to see what headers we're dealing with
+            console.log('Cleaned text for header matching:', cleanedText.substring(0, 500));
+            
+            // Professional medical formatting for structured response
+            let enhancedText = cleanedText
+                // Handle the initial CASE URGENCY format at the top
+                .replace(/^CASE\s+URGENCY:\s*EMERGENCY/gm, '<div class="urgency-header">CASE URGENCY: <span class="urgency-level">EMERGENCY</span></div>')
+                .replace(/^CASE\s+URGENCY:\s*URGENT/gm, '<div class="urgency-header">CASE URGENCY: <span class="urgency-level">URGENT</span></div>')
+                .replace(/^CASE\s+URGENCY:\s*ROUTINE/gm, '<div class="urgency-header">CASE URGENCY: <span class="urgency-level">ROUTINE</span></div>')
+                
+                // Fix the concatenated diagnosis table format
+                .replace(/RankDiagnosisProbability \(%\)Clinical Reasoning-+/g, 'Rank|Diagnosis|Probability (%)|Clinical Reasoning')
+                .replace(/(\d+)([A-Z][^0-9]+?)(\d+%)([^0-9]+?)(?=\d|$)/g, '$1|$2|$3|$4\n')
+                
+                // Handle section separators
+                .replace(/^---$/gm, '<div class="section-break"></div>')
+                
+                // Patient Case Summary Section
+                .replace(/^📋\s*PATIENT\s+CASE\s+SUMMARY:?$/gm, '<div class="medical-section patient-section"><h4 class="section-header">📋 PATIENT CASE SUMMARY</h4><div class="section-content">')
+                
+                // Case Urgency Section
+                .replace(/^🚨\s*CASE\s+URGENCY:?$/gm, '</div></div><div class="medical-section urgency-section"><h4 class="section-header">🚨 CASE URGENCY</h4><div class="section-content">')
+                
+                // A) Differential Diagnosis Section - Handle with or without dashes
+                .replace(/^(-{0,3}A\)?\s*(DIFFERENTIAL\s+)?DIAGNOSIS.*?:?|🔬\s*.*?DIAGNOSIS.*?:?)$/gmi, '</div></div><div class="medical-section diagnosis-section"><h4 class="section-header"><i class="fas fa-microscope"></i> A) DIFFERENTIAL DIAGNOSIS</h4><div class="section-content">')
+                
+                // B) Investigations Section - Handle with or without dashes  
+                .replace(/^(-{0,3}B\)?\s*.*?(RECOMMENDED\s+)?(INVESTIGATIONS?|TESTS?|DIAGNOSTIC|WORKUP).*?:?)$/gmi, '</div></div><div class="medical-section investigations-section"><h4 class="section-header"><i class="fas fa-vials"></i> B) RECOMMENDED INVESTIGATIONS</h4><div class="section-content">')
+                
+                // C) Treatment/Management Section - Handle with or without dashes
+                .replace(/^(-{0,3}C\)?\s*.*?(TREATMENT|MANAGEMENT|PLAN|THERAPY|INTERVENTION).*?:?)$/gmi, '</div></div><div class="medical-section treatment-section"><h4 class="section-header"><i class="fas fa-pills"></i> C) MANAGEMENT RECOMMENDATIONS</h4><div class="section-content">')
+                
+                // D) Warning Signs Section - Handle with or without dashes
+                .replace(/^(-{0,3}D\)?\s*WARNING\s+SIGNS.*?:?|⚠️\s*WARNING\s+SIGNS.*?:?)$/gmi, '</div></div><div class="medical-section warnings-section"><h4 class="section-header"><i class="fas fa-exclamation-triangle"></i> D) WARNING SIGNS TO MONITOR</h4><div class="section-content">')
+                
+                // Specific pattern for the exact format: "---B) RECOMMENDED INVESTIGATIONS:"
+                .replace(/^---([ABCD])\)\s*(.+?):\s*$/gmi, function(match, letter, text) {
+                    let icon = '';
+                    let sectionClass = 'medical-section';
+                    
+                    switch(letter) {
+                        case 'A': icon = '<i class="fas fa-microscope"></i>'; break;
+                        case 'B': icon = '<i class="fas fa-vials"></i>'; break;  
+                        case 'C': icon = '<i class="fas fa-pills"></i>'; break;
+                        case 'D': icon = '<i class="fas fa-exclamation-triangle"></i>'; break;
+                    }
+                    
+                    return `</div></div><div class="${sectionClass}"><h4 class="section-header">${icon} ${letter}) ${text.toUpperCase()}</h4><div class="section-content">`;
+                })
+                
+                // General fallback for any remaining letter-based headers
+                .replace(/^([A-D]\)\s*[A-Z\s]{5,}:?)$/gmi, function(match, p1) {
+                    let sectionClass = 'medical-section';
+                    let headerText = match.replace(/^[A-D]\)\s*/, '').replace(/:$/, '');
+                    let letterPrefix = match.charAt(0);
+                    let icon = '';
+                    
+                    switch(letterPrefix) {
+                        case 'A': icon = '<i class="fas fa-microscope"></i>'; break;
+                        case 'B': icon = '<i class="fas fa-vials"></i>'; break;  
+                        case 'C': icon = '<i class="fas fa-pills"></i>'; break;
+                        case 'D': icon = '<i class="fas fa-exclamation-triangle"></i>'; break;
+                    }
+                    
+                    return `</div></div><div class="${sectionClass}"><h4 class="section-header">${icon} ${letterPrefix}) ${headerText}</h4><div class="section-content">`;
+                })
+                
+                // Doctor's Note Section
+                .replace(/^🧠\s*DOCTOR'S\s+NOTE:?$/gm, '</div></div><div class="medical-section doctor-note-section"><h4 class="section-header">🧠 DOCTOR\'S NOTE</h4><div class="section-content">')
+                
+                // Sources Section (if present)
+                .replace(/^📚\s*SOURCES:?$/gm, '</div></div><div class="medical-section sources-section"><h4 class="section-header">📚 SOURCES</h4><div class="section-content">');
             
             // Split the text into lines
             let lines = enhancedText.split('\n');
             let formatted = '';
             let inList = false;
             let listType = '';
+            let inTable = false;
+            let tableRows = [];
             
-            // Process each line
             for (let i = 0; i < lines.length; i++) {
-                let line = lines[i];
+                let line = lines[i].trim();
                 
-                // Skip processing if line is already an HTML header (from our replacement above)
-                if (line.startsWith('<h4')) {
+                if (!line) {
                     if (inList) {
                         formatted += listType === 'ul' ? '</ul>' : '</ol>';
                         inList = false;
                     }
+                    if (inTable) {
+                        formatted += formatTable(tableRows);
+                        inTable = false;
+                        tableRows = [];
+                    }
+                    formatted += '<br>';
+                    continue;
+                }
+                
+                // Skip already processed HTML tags
+                if (line.includes('<div class=') || line.includes('</div>')) {
+                    if (inList) {
+                        formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                        inList = false;
+                    }
+                    if (inTable) {
+                        formatted += formatTable(tableRows);
+                        inTable = false;
+                        tableRows = [];
+                    }
                     formatted += line;
                     continue;
+                }
+                
+                // Check for concatenated diagnosis table
+                if (line.includes('RankDiagnosis') && line.includes('Clinical Reasoning')) {
+                    if (inList) {
+                        formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                        inList = false;
+                    }
+                    if (!inTable) {
+                        inTable = true;
+                        tableRows = [];
+                    }
+                    // Create proper table header
+                    tableRows.push('Rank|Diagnosis|Probability (%)|Clinical Reasoning');
+                    continue;
+                }
+                // Check for the concatenated data row (like: 1Abdominal Aortic Aneurysm (AAA)70%Given the symptom...)
+                else if (line.match(/^\d+[A-Z][^0-9]*\d+%/)) {
+                    if (!inTable) {
+                        inTable = true;
+                        tableRows = [];
+                        tableRows.push('Rank|Diagnosis|Probability (%)|Clinical Reasoning');
+                    }
+                    // Parse the concatenated format
+                    const match = line.match(/^(\d+)([^0-9]*?)(\d+%)(.*)$/);
+                    if (match) {
+                        const formattedRow = `${match[1]}|${match[2].trim()}|${match[3]}|${match[4].trim()}`;
+                        tableRows.push(formattedRow);
+                    }
+                    continue;
+                }
+                // Check for table rows (contains | or table-like structure)
+                else if ((line.includes('|') && line.split('|').length > 2) || 
+                    (line.match(/^(Rank|1|2|3|4|5)\s+(.*?)\s+(\d+%)\s+(.*?)$/))) {
+                    if (inList) {
+                        formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                        inList = false;
+                    }
+                    if (!inTable) {
+                        inTable = true;
+                        tableRows = [];
+                    }
+                    tableRows.push(line);
+                    continue;
+                } else if (inTable) {
+                    // End of table
+                    formatted += formatTable(tableRows);
+                    inTable = false;
+                    tableRows = [];
                 }
                 
                 // Check for headers (# Header)
@@ -1111,84 +1469,48 @@
                         formatted += listType === 'ul' ? '</ul>' : '</ol>';
                         inList = false;
                     }
-                    const headerLevel = line.match(/^(#{1,6})\s+/)[1].length;
-                    const headerText = line.replace(/^#{1,6}\s+(.+)$/, '$1');
-                    formatted += `<h${headerLevel}>${headerText}</h${headerLevel}>`;
+                    let level = line.match(/^#+/)[0].length;
+                    let headerText = line.replace(/^#+\s*/, '');
+                    formatted += `<h${level}>${headerText}</h${level}>`;
+                    continue;
                 }
-                // Check for bullet points (* Item or - Item or • Item)
-                else if (/^[\s]*[\*\-•]\s+(.+)$/.test(line)) {
-                    if (!inList || listType !== 'ul') {
-                        if (inList) formatted += listType === 'ul' ? '</ul>' : '</ol>';
-                        formatted += '<ul class="mb-3">';
+                
+                // Check for list items
+                if (/^[\s]*[-*+]\s+(.+)$/.test(line) || /^[\s]*\d+\.\s+(.+)$/.test(line)) {
+                    let isOrdered = /^[\s]*\d+\.\s+(.+)$/.test(line);
+                    let content = line.replace(/^[\s]*[-*+\d\.]\s*/, '');
+                    
+                    if (!inList) {
+                        listType = isOrdered ? 'ol' : 'ul';
+                        formatted += `<${listType}>`;
                         inList = true;
-                        listType = 'ul';
-                    }
-                    const itemText = line.replace(/^[\s]*[\*\-•]\s+(.+)$/, '$1');
-                    formatted += `<li>${itemText}</li>`;
-                }
-                // Check for numbered lists (1. Item)
-                else if (/^[\s]*\d+\.\s+(.+)$/.test(line)) {
-                    if (!inList || listType !== 'ol') {
-                        if (inList) formatted += listType === 'ul' ? '</ul>' : '</ol>';
-                        formatted += '<ol class="mb-3">';
-                        inList = true;
-                        listType = 'ol';
-                    }
-                    const itemText = line.replace(/^[\s]*\d+\.\s+(.+)$/, '$1');
-                    formatted += `<li>${itemText}</li>`;
-                }
-                // Regular text
-                else {
-                    if (inList) {
-                        formatted += listType === 'ul' ? '</ul>' : '</ol>';
-                        inList = false;
+                    } else if ((isOrdered && listType === 'ul') || (!isOrdered && listType === 'ol')) {
+                        formatted += `</${listType}>`;
+                        listType = isOrdered ? 'ol' : 'ul';
+                        formatted += `<${listType}>`;
                     }
                     
-                    // Skip empty lines
-                    if (line.trim() === '') {
-                        formatted += '<br>';
-                        continue;
-                    }
-                    
-                    // Check for section headers with multiple patterns
-                    const diagnosisPattern = /(DIAGNOS[IE]S|POSSIBLE\s+DIAGNOS[IE]S|DIFFERENTIAL\s+DIAGNOS[IE]S)/i;
-                    const recommendationsPattern = /(RECOMMENDATIONS|RECOMMENDATIONS\s+FOR\s+TESTS|SUGGESTED\s+TESTS)/i;
-                    const treatmentPattern = /(TREATMENT|TREATMENT\s+RECOMMENDATIONS|TREATMENT\s+PLAN|MANAGEMENT)/i;
-                    const warningsPattern = /(WARNINGS|PRECAUTIONS|RED\s+FLAGS|FOLLOW\-UP)/i;
-                    
-                    if (/^[A-Z][\)\.]?\s+.*?(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS|PRECAUTIONS|MANAGEMENT|FOLLOW).*?$/i.test(line) || 
-                        /^(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS|PRECAUTIONS|MANAGEMENT|FOLLOW).*?$/i.test(line) ||
-                        /^[A-Z]\)\s+(POSSIBLE\s+DIAGNOS[IE]S|RECOMMENDATIONS\s+FOR\s+TESTS|TREATMENT\s+RECOMMENDATIONS|WARNINGS|PRECAUTIONS)$/i.test(line)) {
-                        
-                        let className = '';
-                        
-                        if (diagnosisPattern.test(line)) {
-                            className = 'section-diagnosis';
-                        } else if (recommendationsPattern.test(line)) {
-                            className = 'section-recommendations';
-                        } else if (treatmentPattern.test(line)) {
-                            className = 'section-treatment';
-                        } else if (warningsPattern.test(line)) {
-                            className = 'section-warnings';
-                        }
-                        
-                        formatted += `<h4 class="mt-4 ${className}">${line}</h4>`;
-                    } 
-                    // Check for subsection headers (often in ALL CAPS or with trailing colon)
-                    else if (/^[A-Z][A-Z\s\d\-\(\)]{5,}:?$/.test(line)) {
-                        formatted += `<p><strong style="font-size: 1.15rem; color: #34495e;">${line}</strong></p>`;
-                    }
-                    else {
-                        // All other text is formatted as regular paragraphs
-                        formatted += `<p>${line}</p>`;
-                    }
+                    formatted += `<li>${content}</li>`;
+                    continue;
+                } else if (inList) {
+                    formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                    inList = false;
                 }
+                
+                // Regular paragraph
+                formatted += `<p>${line}</p>`;
             }
             
-            // Close any open lists
+            // Close any open lists or tables
             if (inList) {
                 formatted += listType === 'ul' ? '</ul>' : '</ol>';
             }
+            if (inTable) {
+                formatted += formatTable(tableRows);
+            }
+            
+            // Close any remaining open divs
+            formatted += '</div></div>';
             
             // Process inline formatting
             
@@ -1197,37 +1519,30 @@
             formatted = formatted.replace(/__(.+?)__/g, '<strong>$1</strong>');
             
             // Italic text between * or _
-            formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-            formatted = formatted.replace(/_([^_]+)_/g, '<em>$1</em>');
+            formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            formatted = formatted.replace(/_(.+?)_/g, '<em>$1</em>');
             
-            // Highlight important information
-            formatted = formatted.replace(/\!\!(.+?)\!\!/g, '<span style="background-color: #ffffcc; padding: 0 3px;">$1</span>');
-            
-            // Add some spacing between sections for better readability
-            formatted = formatted.replace(/<\/h[1-6]>/g, '$&<div style="height: 10px;"></div>');
-            
-            // Enhance the styling of the main sections
-            formatted = formatted.replace(/<h4 class="mt-4 section-diagnosis">/g, 
-                '<h4 class="mt-4 section-diagnosis" style="color: #DE6262; border-left: 4px solid #DE6262; padding: 8px 0 8px 15px; background-color: rgba(222, 98, 98, 0.05); border-radius: 0 5px 5px 0;">');
-                
-            formatted = formatted.replace(/<h4 class="mt-4 section-recommendations">/g, 
-                '<h4 class="mt-4 section-recommendations" style="color: #3498db; border-left: 4px solid #3498db; padding: 8px 0 8px 15px; background-color: rgba(52, 152, 219, 0.05); border-radius: 0 5px 5px 0;">');
-                
-            formatted = formatted.replace(/<h4 class="mt-4 section-treatment">/g, 
-                '<h4 class="mt-4 section-treatment" style="color: #2ecc71; border-left: 4px solid #2ecc71; padding: 8px 0 8px 15px; background-color: rgba(46, 204, 113, 0.05); border-radius: 0 5px 5px 0;">');
-                
-            formatted = formatted.replace(/<h4 class="mt-4 section-warnings">/g, 
-                '<h4 class="mt-4 section-warnings" style="color: #f39c12; border-left: 4px solid #f39c12; padding: 8px 0 8px 15px; background-color: rgba(243, 156, 18, 0.05); border-radius: 0 5px 5px 0;">');
+            // Code blocks
+            formatted = formatted.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+            formatted = formatted.replace(/`(.+?)`/g, '<code>$1</code>');
             
             return formatted;
         }
         
         // Handle patient summary button click
-        $('.patient-summary-btn').on('click', function() {
+        $(document).on('click', '.patient-summary-btn', function() {
+            console.log('Patient summary button clicked!');
             const patientName = $(this).data('patient-name');
             const patientAge = $(this).data('patient-age');
             const patientGender = $(this).data('patient-gender');
             const patientKey = $(this).data('patient-key');
+            
+            console.log('Patient data:', {
+                name: patientName,
+                age: patientAge,
+                gender: patientGender,
+                key: patientKey
+            });
             
             // Update patient info in the summary modal
             $('#summaryPatientName').text(patientName);
@@ -1296,12 +1611,40 @@
                             <tbody>
                 `;
                 
-                patientRecords.forEach(record => {
-                    const visitDate = new Date(record.created_at).toLocaleDateString('en-US', {
+                // First, sort chronologically to assign correct visit numbers
+                const sortedForNumbering = [...patientRecords].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                
+                // Create a mapping of record ID to visit number
+                const visitNumberMap = {};
+                sortedForNumbering.forEach((record, index) => {
+                    visitNumberMap[record.id] = index + 1;
+                });
+                
+                // Now sort for display (newest first)
+                patientRecords.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                
+                patientRecords.forEach((record) => {
+                    const visitDate = new Date(record.created_at);
+                    
+                    // Check if there are multiple visits on the same day
+                    const sameDay = patientRecords.filter(r => {
+                        const rDate = new Date(r.created_at);
+                        return rDate.toDateString() === visitDate.toDateString();
+                    }).length > 1;
+                    
+                    // Include time if there are multiple visits on the same day
+                    const formattedDate = visitDate.toLocaleDateString('en-US', {
                         year: 'numeric', 
                         month: 'short', 
-                        day: 'numeric'
+                        day: 'numeric',
+                        ...(sameDay && {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
                     });
+                    
+                    // Get the correct chronological visit number
+                    const correctVisitNumber = record.visit_number || visitNumberMap[record.id];
                     
                     // Extract first 100 characters of AI response as summary
                     const responseSummary = record.ai_response ? 
@@ -1310,8 +1653,8 @@
                     
                     visitSummaryHtml += `
                         <tr>
-                            <td>Visit #${record.visit_number || '?'}</td>
-                            <td>${visitDate}</td>
+                            <td>Visit #${correctVisitNumber}</td>
+                            <td>${formattedDate}</td>
                             <td>${responseSummary}</td>
                         </tr>
                     `;
@@ -1326,6 +1669,7 @@
                 $('#visitSummaryContainer').html(visitSummaryHtml);
                 
                 // Generate AI summary
+                console.log('About to call generateAISummary with', patientRecords.length, 'records');
                 generateAISummary(patientRecords);
             } else {
                 $('#visitSummaryContainer').html('<div class="alert alert-info">No visit history found for this patient.</div>');
@@ -1335,6 +1679,8 @@
         
         // Function to generate AI summary from patient records
         function generateAISummary(patientRecords) {
+            console.log('generateAISummary function called with:', patientRecords);
+            
             // Prepare the data for the AI summary
             const summaryData = {
                 patient_name: $('#summaryPatientName').text(),
@@ -1353,6 +1699,7 @@
             };
             
             // Make AJAX request to generate summary
+            console.log('Sending AI summary request with data:', summaryData);
             $.ajax({
                 url: '{{ route("patient.summary") }}',
                 type: 'POST',
@@ -1360,10 +1707,14 @@
                     _token: '{{ csrf_token() }}',
                     summary_data: JSON.stringify(summaryData)
                 },
+                beforeSend: function() {
+                    console.log('AI summary request started');
+                },
                 success: function(response) {
                     if (response.success) {
                         // Process the summary to remove Patient Information section
                         let summaryHtml = response.summary;
+                        let aiContentText = response.summary; // Default to full summary
                         
                         // Extract the HTML content
                         const tempDiv = document.createElement('div');
@@ -1373,7 +1724,7 @@
                         const aiContentDiv = tempDiv.querySelector('.ai-content');
                         if (aiContentDiv) {
                             // Get the HTML content as text
-                            let aiContentText = aiContentDiv.innerHTML;
+                            aiContentText = aiContentDiv.innerHTML;
                             
                             // Check if there's a Current Symptoms section before removing Patient Information
                             let currentSymptoms = null;
@@ -1405,7 +1756,23 @@
                             summaryHtml = tempDiv.innerHTML;
                         }
                         
-                        $('#aiSummaryContainer').html(summaryHtml);
+                        // Apply professional formatting to the summary
+                        // First, extract plain text from HTML if needed
+                        const tempContentDiv = document.createElement('div');
+                        tempContentDiv.innerHTML = aiContentText;
+                        const plainTextContent = tempContentDiv.textContent || tempContentDiv.innerText || aiContentText;
+                        
+                        // Apply the same formatting as the response popup
+                        const formattedSummary = formatAIResponse(plainTextContent);
+                        
+                        // Wrap in the same styling as response modal
+                        const styledSummary = `
+                            <div class="ai-summary" style="background-color: #f8f9fa; border-radius: 15px; padding: 20px; box-shadow: 0 3px 15px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05);">
+                                ${formattedSummary}
+                            </div>
+                        `;
+                        
+                        $('#aiSummaryContainer').html(styledSummary);
                         
                         // Extract and display sources if they exist
                         const sourcesMatch = response.summary.match(/Sources:([\s\S]*?)(?:$|(?=\n\n\w))/i);
@@ -1426,16 +1793,46 @@
                 },
                 error: function(xhr) {
                     console.error('Error generating summary:', xhr);
+                    console.log('Response text:', xhr.responseText);
+                    console.log('Status:', xhr.status);
                     $('#aiSummaryContainer').html(`
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            Error generating summary. Please try again later.
+                            Error generating summary: ${xhr.status} ${xhr.statusText}
+                            <br><small>Check console for details</small>
                         </div>
                     `);
                 }
             });
         }
         
+        /**
+         * Format sources content for display
+         */
+        function formatSources(sourcesContent) {
+            if (!sourcesContent || sourcesContent.trim() === '') {
+                return '';
+            }
+            
+            // Split by lines and format each source
+            const lines = sourcesContent.split('\n').filter(line => line.trim() !== '');
+            let formatted = '<ul class="sources-list">';
+            
+            lines.forEach(line => {
+                line = line.trim();
+                if (line.startsWith('- ')) {
+                    line = line.substring(2);
+                }
+                if (line.startsWith('* ')) {
+                    line = line.substring(2);
+                }
+                formatted += `<li>${line}</li>`;
+            });
+            
+            formatted += '</ul>';
+            return formatted;
+        }
+
         /**
          * Remove Patient Information section from the AI response
          */

@@ -270,11 +270,6 @@
                             <td><strong>#{{ $analysis->id }}</strong></td>
                             <td>
                                 {{ $analysis->name }}
-                                @if($analysis->total_visits > 1)
-                                    <span class="badge bg-info ms-1" title="This patient has multiple visits">
-                                        <i class="bi bi-clock-history me-1"></i>{{ $analysis->total_visits }} visits
-                                    </span>
-                                @endif
                             </td>
                             <td>{{ $analysis->age }}</td>
                             <td>
