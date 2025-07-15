@@ -133,7 +133,7 @@ class PatientAnalysis extends Model
             ->where('age', $this->age)
             ->where('gender', $this->gender)
             ->where('user_id', $this->user_id)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('created_at', 'asc')
             ->get();
     }
 

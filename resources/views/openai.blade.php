@@ -4,6 +4,14 @@
 @section('title', 'Patients Page')
 
 @section('content')
+<div class="container-fluid px-2 px-md-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-11 col-xl-10">
+            <!-- Page Header -->
+            <div class="page-header text-center text-md-start">
+                <h2><i class="fas fa-stethoscope me-2"></i>AI Medical Assistant</h2>
+                <p>Enter patient information and get AI-powered medical recommendations</p>
+            </div>
 
 <link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
 <!-- Include Choices.js CSS -->
@@ -87,8 +95,18 @@
 
     /* Enhanced Mobile Responsiveness */
     @media (max-width: 768px) {
+        .container {
+            padding: 0 10px;
+        }
+
+        .medical-form-container {
+            padding: 0;
+        }
+
         .medical-form-section {
             margin-bottom: 1.5rem;
+            padding: 1rem;
+            border-radius: 8px;
         }
 
         .medical-form-section h4 {
@@ -97,41 +115,187 @@
         }
 
         .form-label {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .form-control, .form-select {
+            font-size: 0.9rem;
+            padding: 0.5rem 0.75rem;
+            height: auto;
+            min-height: 38px;
         }
 
         .input-group-text {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            padding: 0.5rem 0.6rem;
+        }
+
+        /* Make form progress horizontal on mobile */
+        .form-progress-container {
+            padding: 1rem;
+            margin-bottom: 1rem;
         }
 
         .progress-steps {
-            flex-direction: column;
-            gap: 1rem;
+            flex-direction: row;
+            justify-content: space-between;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
         }
 
         .progress-step {
-            width: 100% !important;
-            text-align: left !important;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+            width: auto !important;
+            min-width: 60px;
+            text-align: center !important;
+            flex: none;
         }
 
         .step-icon {
-            flex-shrink: 0;
+            width: 35px !important;
+            height: 35px !important;
+            font-size: 1rem !important;
+            margin: 0 auto;
         }
 
         .step-label {
-            margin-top: 0 !important;
+            font-size: 0.7rem;
+            margin-top: 0.3rem !important;
+            white-space: nowrap;
         }
 
-        /* Stack form fields on mobile */
+        /* Stack form fields on mobile with better spacing */
         .row .col-md-2,
         .row .col-md-3,
         .row .col-md-4,
-        .row .col-md-6 {
+        .row .col-md-6,
+        .row .col-md-8,
+        .row .col-md-12 {
+            margin-bottom: 0.75rem;
+        }
+
+        /* Assessment subsections */
+        .assessment-subsection {
+            padding: 0.75rem;
             margin-bottom: 1rem;
+        }
+
+        .assessment-subsection h5 {
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+
+        /* File upload section */
+        .input-group .btn {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .selected-files-list {
+            max-height: 150px;
+            padding: 0.5rem;
+        }
+
+        .selected-file {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.8rem;
+        }
+
+        /* Textarea adjustments */
+        textarea.form-control {
+            min-height: 80px;
+        }
+
+        /* Checkbox and radio styling */
+        .form-check-input {
+            transform: scale(1.1);
+        }
+
+        .form-check-label {
+            font-size: 0.85rem;
+            margin-left: 0.3rem;
+        }
+
+        /* Submit button */
+        .btn-submit {
+            width: 100%;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            font-size: 1rem;
+        }
+
+        /* Modal responsiveness */
+        .modal-dialog {
+            margin: 0.5rem;
+            max-width: calc(100% - 1rem);
+        }
+
+        .modal-dialog.modal-xl {
+            max-width: calc(100% - 1rem);
+        }
+
+        .modal-body {
+            padding: 1rem;
+        }
+
+        .modal-header {
+            padding: 0.75rem 1rem;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+        }
+    }
+
+    /* Tablet responsiveness */
+    @media (max-width: 992px) {
+        .medical-form-section {
+            padding: 1.25rem;
+        }
+
+        .form-control, .form-select {
+            font-size: 0.95rem;
+        }
+
+        .assessment-subsection {
+            padding: 1rem;
+        }
+    }
+
+    /* Very small screens (phones in landscape) */
+    @media (max-width: 576px) {
+        .container {
+            padding: 0 5px;
+        }
+
+        .medical-form-section {
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .medical-form-section h4 {
+            font-size: 1rem;
+        }
+
+        .form-label {
+            font-size: 0.8rem;
+        }
+
+        .form-control, .form-select {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.6rem;
+            min-height: 35px;
+        }
+
+        .step-icon {
+            width: 30px !important;
+            height: 30px !important;
+            font-size: 0.9rem !important;
+        }
+
+        .step-label {
+            font-size: 0.65rem;
         }
     }
 
@@ -202,8 +366,9 @@
     }
 </style>
 
-        <div class="container medical-form-container">
-            <form id="openaiForm" action="{{ url('/openai/respond') }}" method="POST" enctype="multipart/form-data">
+            <!-- Main Form Container -->
+            <div class="medical-form-container">
+                <form id="openaiForm" action="{{ url('/openai/respond') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @if(isset($patientToEdit))
                     <input type="hidden" name="edit_patient_id" value="{{ $patientToEdit->id }}">
@@ -262,6 +427,18 @@
                     @if(session('openai_error'))
                     <div class="alert alert-warning alert-dismissible fade show" role="alert">
                         <strong><i class="fas fa-exclamation-circle"></i> Error:</strong> {{ session('openai_error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    @endif
+
+                    @if ($errors->any())
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong><i class="fas fa-exclamation-triangle"></i> Validation Errors:</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                     @endif
@@ -1022,31 +1199,41 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                         </div>
                     </div>
 
-                <!-- Submit -->
-                <div class="row mt-5">
-                    <div class="col-md-12 text-end">
-                        <button type="submit" class="btn btn-deep-red btn-lg px-4">
-                            <i class="fa-solid fas fa-robot me-2"></i>Get Results
+                    <!-- Submit Section -->
+                    <div class="submit-section">
+                        <button type="submit" class="btn btn-submit">
+                            <i class="fas fa-robot me-2"></i>Get AI Analysis
                         </button>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                Your data is processed securely and confidentially
+                            </small>
+                        </div>
                     </div>
-                </div>
 
-
-
-                </div>
-            </form>
-        </div>
-
-        <div id="page-loader" style="display:none;">
-            <div id='css3-spinner-svg-pulse-wrapper'>
-                <svg id='css3-spinner-svg-pulse' version='1.2' height='210' width='550'
-                     xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'>
-                    <path id='css3-spinner-pulse' stroke='#DE6262' fill='none' stroke-width='2'
-                          stroke-linejoin='round'
-                          d='M0,90L250,90Q257,60 262,87T267,95 270,88 273,92t6,35 7,-60T290,127 297,107s2,-11 10,-10 1,1 8,-10T319,95c6,4 8,-6 10,-17s2,10 9,11h210'></path>
-                </svg>
+                </form>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Enhanced Loading Indicator -->
+<div id="page-loader" style="display:none;">
+    <div class="loader-content">
+        <div class="text-center">
+            <div class="spinner-border mb-3" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h5 class="mb-2" style="color: #2c3e50;">Processing Your Request</h5>
+            <p class="text-muted mb-0">Our AI is analyzing the patient data...</p>
+            <div class="progress mt-3" style="height: 6px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                     style="width: 100%; background-color: #DE6262;"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 <!-- Response Modal -->
@@ -1065,14 +1252,37 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                 </div>
             </div>
             <div class="modal-body response-modal-body">
-                <!-- AI Response Section -->
+                <!-- AI Response Section with Enhanced Structure -->
                 <div class="ai-response-section mb-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <h6 class="mb-0 me-2"><i class="fas fa-robot me-2"></i>AI Analysis</h6>
-                        <hr class="flex-grow-1 ms-2">
-                    </div>
-                    <div class="ai-summary" style="background-color: #f8f9fa; border-radius: 15px; padding: 20px; box-shadow: 0 3px 15px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05);">
+                    <!-- Level 1: Core Analysis -->
+                    <div class="medcura-level1">
+                        <div class="level1-header level-header">
+                            <i class="fas fa-stethoscope me-2"></i>
+                            <span>Core Medical Analysis</span>
+                        </div>
                         <div id="openaiReply" class="response-text"></div>
+                    </div>
+
+                    <!-- Level 2: Detailed Analysis (Initially Hidden) -->
+                    <div class="medcura-level2">
+                        <div class="level2-header level-header level2-toggle" onclick="toggleLevel2()">
+                            <span>
+                                <i class="fas fa-microscope me-2"></i>
+                                Detailed Clinical Analysis
+                                <div class="toggle-hint">Click to Expand</div>
+                            </span>
+                            <span class="toggle-icon">▼</span>
+                        </div>
+                        <div id="level2-content" class="level2-content" style="display: none;">
+                            <div class="level2-section-header">Advanced Differential Diagnosis</div>
+                            <p>This section provides detailed clinical reasoning, alternative diagnoses, and comprehensive management strategies based on current medical guidelines.</p>
+                            
+                            <div class="level2-section-header">Risk Stratification</div>
+                            <p>Detailed risk assessment considering patient-specific factors, comorbidities, and prognostic indicators.</p>
+                            
+                            <div class="level2-section-header">Evidence-Based Recommendations</div>
+                            <p>Treatment recommendations based on latest clinical evidence and best practice guidelines.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -1083,26 +1293,32 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                     </div>
                 </div>
 
-                <!-- Chat continuation section -->
-                <hr class="my-4">
+                <!-- Enhanced Chat Continuation Section -->
+                <div class="chat-section mt-4">
+                    <div class="chat-header">
+                        <h6 class="mb-0"><i class="fas fa-comments me-2"></i>Follow-up Questions</h6>
+                        <small class="text-muted">Ask additional questions about the diagnosis or treatment</small>
+                    </div>
 
-                <div id="chat-continuation">
-                    <h6 class="mb-3"><i class="fas fa-comments me-2"></i>Follow-up Questions</h6>
-
-                    <div id="chat-messages" class="mb-3">
+                    <div id="chat-messages" class="chat-messages-container">
                         <!-- Additional messages will appear here -->
                     </div>
 
                     <div class="chat-input-container">
-                        <form id="follow-up-form" class="d-flex">
+                        <form id="follow-up-form" class="chat-form">
                             @csrf
                             <input type="hidden" id="conversation-id" name="conversation_id" value="{{ session('conversation_id') ?? '' }}">
-                            <input type="text" id="follow-up-message" name="message" class="form-control" placeholder="Ask a follow-up question..." required>
-                            <button type="submit" class="btn btn-primary ms-2">
-                                <i class="fas fa-paper-plane"></i> Send
-                            </button>
+                            <div class="input-group">
+                                <input type="text" id="follow-up-message" name="message" class="form-control" 
+                                       placeholder="Ask a follow-up question..." required>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i>
+                                    <span class="d-none d-md-inline ms-1">Send</span>
+                                </button>
+                            </div>
                         </form>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -1208,35 +1424,41 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         100% { transform: translateY(0); }
     }
 
-    /* MedCuraAI Styles */
+    /* Enhanced MedCuraAI Styles for Better Readability */
     .medcura-level1 {
         background: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        margin-bottom: 25px;
         overflow: hidden;
+        border: 1px solid #e8ecef;
     }
 
     .medcura-level2 {
-        background: #f8f9fa;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        margin-top: 20px;
+        background: #f8fafa;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        margin-top: 25px;
         overflow: hidden;
+        border: 1px solid #e1e8ed;
     }
 
     .level-header {
-        padding: 20px 25px;
-        font-size: 1.4rem;
+        padding: 18px 25px;
+        font-size: 1.3rem;
         font-weight: 700;
         color: #2c3e50;
-        border-bottom: 3px solid #e9ecef;
+        border-bottom: 2px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
     .level1-header {
         background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         color: white;
         border-bottom: none;
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
     }
 
     .level2-header {
@@ -1244,210 +1466,549 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         color: white;
         border-bottom: none;
         cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: all 0.3s ease;
+        transition: background 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
     }
 
     .level2-header:hover {
         background: linear-gradient(135deg, #0056b3 0%, #520dc2 100%);
     }
 
-    .level2-toggle {
-        cursor: pointer;
-    }
-
-    .toggle-icon {
-        font-size: 1.2rem;
-        transition: transform 0.3s ease;
-    }
-
-    .toggle-hint {
-        font-size: 0.9rem;
-        opacity: 0.8;
-        font-weight: 400;
-    }
-
-    .level2-content {
-        padding: 25px;
-        background: white;
-        border-radius: 0 0 12px 12px;
-    }
-
+    /* Section Styling */
     .medcura-section {
-        margin-bottom: 25px;
-        border-left: 4px solid #dee2e6;
-        background: #ffffff;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        margin: 0;
+        border-bottom: 1px solid #f1f3f4;
     }
 
-    .medcura-section .section-header {
-        background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
-        color: white;
-        padding: 15px 20px;
-        margin: 0;
-        font-size: 1.1rem;
-        font-weight: 600;
+    .medcura-section:last-child {
         border-bottom: none;
     }
 
-    .medcura-section .section-content {
-        padding: 20px;
+    .section-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        color: #2c3e50;
+        padding: 15px 25px;
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-bottom: 2px solid #DE6262;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .section-content {
+        padding: 20px 25px;
+        line-height: 1.7;
+        color: #495057;
         background: white;
     }
 
-    .patient-summary {
-        border-left-color: #17a2b8;
+    .section-content p {
+        margin-bottom: 12px;
+        font-size: 0.95rem;
     }
 
+    .section-content p:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Special Section Styling */
     .patient-summary .section-header {
-        background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
-    }
-
-    .case-urgency {
-        border-left-color: #ffc107;
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        color: #1565c0;
+        border-bottom-color: #2196f3;
     }
 
     .case-urgency .section-header {
-        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
-    }
-
-    .differential-diagnoses {
-        border-left-color: #6f42c1;
+        background: linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%);
+        color: #e65100;
+        border-bottom-color: #ff9800;
     }
 
     .differential-diagnoses .section-header {
-        background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
-    }
-
-    .recommended-tests {
-        border-left-color: #28a745;
+        background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+        color: #6a1b9a;
+        border-bottom-color: #9c27b0;
     }
 
     .recommended-tests .section-header {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    }
-
-    .management-plan {
-        border-left-color: #007bff;
+        background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+        color: #2e7d32;
+        border-bottom-color: #4caf50;
     }
 
     .management-plan .section-header {
-        background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
-    }
-
-    .warning-signs {
-        border-left-color: #dc3545;
+        background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+        color: #f57f17;
+        border-bottom-color: #ffc107;
     }
 
     .warning-signs .section-header {
-        background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        color: #c62828;
+        border-bottom-color: #f44336;
     }
 
+    /* Urgency Badge Styling */
     .urgency-badge {
         display: inline-block;
         padding: 8px 16px;
-        border-radius: 20px;
+        border-radius: 25px;
         font-weight: 700;
         font-size: 0.9rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin: 10px 0;
+        margin: 8px 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
 
     .urgency-badge.emergency {
         background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
         color: white;
-        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        animation: pulse-red 2s infinite;
     }
 
     .urgency-badge.urgent {
-        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-        color: #212529;
-        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+        background: linear-gradient(135deg, #fd7e14 0%, #e55a00 100%);
+        color: white;
     }
 
     .urgency-badge.routine {
         background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
         color: white;
-        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
     }
 
+    @keyframes pulse-red {
+        0% { box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3); }
+        50% { box-shadow: 0 4px 16px rgba(220, 53, 69, 0.6); }
+        100% { box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3); }
+    }
+
+    /* Bullet Points */
+    .bullet-item {
+        padding: 6px 0;
+        color: #495057;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .bullet-item::before {
+        content: "•";
+        color: #DE6262;
+        font-weight: bold;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    /* Subsection Headers */
+    .subsection-header {
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 15px 0 8px 0;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 1rem;
+    }
+
+    /* Table Styling */
     .medcura-table {
         margin: 15px 0;
-        border-radius: 8px;
+        border-radius: 10px;
         overflow: hidden;
         box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     }
 
     .medcura-table table {
         margin: 0;
-        border-radius: 8px;
-        overflow: hidden;
+        width: 100%;
+        border-collapse: collapse;
     }
 
-    .medcura-table .table-header-cell {
-        background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+    .medcura-table th {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
         color: white;
+        padding: 12px 15px;
         font-weight: 600;
-        border: none;
-        padding: 15px 12px;
+        text-align: left;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .medcura-table td {
-        padding: 12px;
-        border-top: 1px solid #dee2e6;
+        padding: 12px 15px;
+        border-bottom: 1px solid #f1f3f4;
+        font-size: 0.9rem;
         vertical-align: top;
     }
 
-    .bullet-item {
-        padding: 8px 0;
-        padding-left: 20px;
-        position: relative;
-        line-height: 1.5;
+    .medcura-table tr:nth-child(even) {
+        background-color: #f8f9fa;
     }
 
-    .bullet-item::before {
-        content: "•";
-        color: #007bff;
-        font-weight: bold;
-        position: absolute;
-        left: 0;
+    .medcura-table tr:hover {
+        background-color: rgba(222, 98, 98, 0.05);
     }
 
-    .subsection-header {
-        font-weight: 600;
-        color: #495057;
-        margin: 15px 0 10px 0;
-        padding: 8px 0;
-        border-bottom: 2px solid #e9ecef;
+    /* Level 2 Toggle */
+    .level2-toggle {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .toggle-icon {
+        float: right;
+        transition: transform 0.3s ease;
+        font-size: 1rem;
+    }
+
+    .toggle-icon.rotated {
+        transform: rotate(180deg);
+    }
+
+    .toggle-hint {
+        font-size: 0.85rem;
+        opacity: 0.8;
+        margin-top: 5px;
+        font-weight: normal;
+    }
+
+    .level2-content {
+        padding: 25px;
+        background: white;
+        border-top: 1px solid #e9ecef;
     }
 
     .level2-section-header {
-        font-weight: 700;
+        font-weight: 600;
         color: #2c3e50;
-        margin: 20px 0 15px 0;
-        padding: 12px 0;
-        border-bottom: 3px solid #007bff;
-        font-size: 1.1rem;
+        margin: 20px 0 10px 0;
+        padding: 10px 0;
+        border-bottom: 2px solid #007bff;
+        font-size: 1rem;
     }
 
-    /* Responsive adjustments */
+    /* Mobile Responsiveness for AI Response */
     @media (max-width: 768px) {
         .level-header {
-            padding: 15px 20px;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
+            padding: 15px 18px;
         }
 
-        .medcura-section .section-content {
-            padding: 15px;
+        .section-header {
+            font-size: 1rem;
+            padding: 12px 18px;
+        }
+
+        .section-content {
+            padding: 15px 18px;
+        }
+
+        .medcura-table th,
+        .medcura-table td {
+            padding: 8px 10px;
+            font-size: 0.85rem;
+        }
+
+        .urgency-badge {
+            font-size: 0.8rem;
+            padding: 6px 12px;
+        }
+
+        .bullet-item {
+            font-size: 0.9rem;
         }
 
         .level2-content {
-            padding: 20px;
+            padding: 18px;
+        }
+    }
+
+
+
+    /* Additional form layout improvements */
+    .medical-form-section .row {
+        margin-bottom: 0;
+    }
+
+    /* Page header responsiveness */
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-header h2 {
+        font-size: 2rem;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+
+    /* Form container improvements */
+    .medical-form-container {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+
+    /* Submit button section */
+    .submit-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        text-align: center;
+        border: 1px solid #e9ecef;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 0.8rem 2.5rem;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 15px rgba(222, 98, 98, 0.3);
+        transition: all 0.3s ease;
+        min-width: 200px;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(222, 98, 98, 0.4);
+        color: white;
+    }
+
+    .btn-submit:disabled {
+        opacity: 0.6;
+        transform: none;
+        box-shadow: 0 4px 15px rgba(222, 98, 98, 0.3);
+    }
+
+    /* Enhanced mobile responsiveness for header */
+    @media (max-width: 768px) {
+        .page-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .page-header {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .medical-form-container {
+            padding: 1rem;
+            border-radius: 10px;
+        }
+
+        .submit-section {
+            padding: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-submit {
+            width: 100%;
+            min-width: auto;
+            font-size: 1rem;
+            padding: 0.75rem 1.5rem;
+        }
+    }
+
+    /* Loading indicator improvements */
+    #page-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        backdrop-filter: blur(5px);
+    }
+
+    .loader-content {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        max-width: 400px;
+        margin: 0 1rem;
+    }
+
+    .spinner-border {
+        color: #DE6262 !important;
+    }
+
+    /* Enhanced Chat Section Styling */
+    .chat-section {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        border: 1px solid #e8ecef;
+    }
+
+    .chat-header {
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f1f3f4;
+        margin-bottom: 1rem;
+    }
+
+    .chat-header h6 {
+        color: #2c3e50;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .chat-messages-container {
+        max-height: 300px;
+        overflow-y: auto;
+        margin-bottom: 1rem;
+        padding: 0.5rem 0;
+    }
+
+    .chat-form .input-group {
+        border-radius: 25px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .chat-form .form-control {
+        border: none;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+    }
+
+    .chat-form .btn {
+        border: none;
+        background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+    }
+
+    .chat-form .btn:hover {
+        background: linear-gradient(135deg, #c55252 0%, #b04545 100%);
+    }
+
+    /* Modal Responsive Enhancements */
+    .response-modal-content {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        overflow: hidden;
+    }
+
+    .response-modal-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        border: none;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .response-modal-body {
+        padding: 1.5rem;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    /* Enhanced Responsive Modal Design */
+    @media (max-width: 768px) {
+        .modal-dialog.modal-xl {
+            margin: 0.5rem;
+            max-width: calc(100% - 1rem);
+        }
+
+        .response-modal-header {
+            padding: 1rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .response-modal-header .modal-title {
+            font-size: 1.1rem;
+        }
+
+        .response-modal-header > div {
+            align-self: flex-end;
+        }
+
+        .response-modal-body {
+            padding: 1rem;
+        }
+
+        .chat-section {
+            padding: 1rem;
+        }
+
+        .chat-form .btn {
+            padding: 0.75rem 1rem;
+        }
+
+        .chat-form .btn span {
+            display: none !important;
+        }
+
+        .level1-header, .level2-header {
+            font-size: 1rem;
+            padding: 12px 18px;
+        }
+
+        .level2-content {
+            padding: 15px;
+        }
+
+        .level2-section-header {
+            font-size: 0.95rem;
+            margin: 15px 0 8px 0;
+        }
+    }
+
+    /* Very small screens */
+    @media (max-width: 576px) {
+        .modal-dialog.modal-xl {
+            margin: 0.25rem;
+            max-width: calc(100% - 0.5rem);
+        }
+
+        .response-modal-header {
+            padding: 0.75rem;
+        }
+
+        .response-modal-body {
+            padding: 0.75rem;
+        }
+
+        .chat-section {
+            padding: 0.75rem;
+        }
+
+        .level1-header, .level2-header {
+            font-size: 0.95rem;
+            padding: 10px 15px;
+        }
+
+        .section-header {
+            font-size: 0.9rem;
+            padding: 10px 15px;
+        }
+
+        .section-content {
+            padding: 12px 15px;
+            font-size: 0.9rem;
         }
     }
 </style>
@@ -1470,7 +2031,43 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
 
 <script>
     document.getElementById('openaiForm').addEventListener('submit', function () {
-        document.getElementById('page-loader').style.display = 'block';
+        // Show the Canvas theme's built-in loader using the data-loader-html
+        const body = document.body;
+        
+        // Create loader overlay with the custom SVG from data-loader-html
+        const loaderHTML = body.getAttribute('data-loader-html');
+        if (loaderHTML) {
+            const loaderOverlay = document.createElement('div');
+            loaderOverlay.id = 'canvas-loader-overlay';
+            loaderOverlay.innerHTML = loaderHTML;
+            loaderOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(44, 62, 80, 0.9);
+                z-index: 9999;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                backdrop-filter: blur(5px);
+            `;
+            
+            // Style the SVG container
+            const svgContainer = loaderOverlay.querySelector('#css3-spinner-svg-pulse-wrapper');
+            if (svgContainer) {
+                svgContainer.style.cssText = `
+                    text-align: center;
+                    padding: 20px;
+                `;
+            }
+            
+            document.body.appendChild(loaderOverlay);
+        } else {
+            // Fallback to our custom loader
+            document.getElementById('page-loader').style.display = 'block';
+        }
     });
 
     // Form progress indicator functionality
@@ -1629,7 +2226,17 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             modal.show();
 
             // Hide the page loader once the modal is shown
-            document.getElementById('page-loader').style.display = 'none';
+            // Hide the Canvas theme loader
+            const canvasLoader = document.getElementById('canvas-loader-overlay');
+            if (canvasLoader) {
+                canvasLoader.remove();
+            }
+            
+            // Also hide the fallback loader
+            const pageLoader = document.getElementById('page-loader');
+            if (pageLoader) {
+                pageLoader.style.display = 'none';
+            }
 
             // Get the AI response and display it immediately (no typing animation)
             const aiResponse = @json(session('openai_result'));
@@ -2076,26 +2683,229 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             .replace(/^\s+|\s+$/gm, '')  // Trim whitespace from start/end of each line
             .trim();
 
-        // Split into Level 1 and Level 2 sections
-        const level2Match = cleanedText.match(/🔵\s*DETAILED\s+MEDICAL\s+REPORT.*$/is);
-        let level1Text = cleanedText;
-        let level2Text = '';
-
-        if (level2Match) {
-            level1Text = cleanedText.substring(0, level2Match.index).trim();
-            level2Text = level2Match[0].trim();
+        // Remove the Sources section from the text before formatting
+        const sourcesMatch = cleanedText.match(/(📚\s*SOURCES:|Sources:)([\s\S]*?)(?:$|(?=\n\n\w))/i);
+        if (sourcesMatch) {
+            cleanedText = cleanedText.replace(sourcesMatch[0], '').trim();
         }
 
-        // Format Level 1 (Quick Clinical Summary)
-        let level1HTML = formatLevel1(level1Text);
+        // Enhanced formatting for any medical response structure
+        let formattedHTML = formatMedicalResponse(cleanedText);
 
-        // Format Level 2 (Detailed Report) if present
-        let level2HTML = '';
-        if (level2Text) {
-            level2HTML = formatLevel2(level2Text);
+        return formattedHTML;
+    }
+
+    function formatMedicalResponse(text) {
+        if (!text) return '';
+
+        // Professional medical formatting for structured response
+        let enhancedText = text
+            // Handle the initial CASE URGENCY format at the top
+            .replace(/^CASE\s+URGENCY:\s*(EMERGENCY|URGENT|ROUTINE)/gm, '<div class="urgency-header">CASE URGENCY: <span class="urgency-level">$1</span></div>')
+
+            // Patient Case Summary Section
+            .replace(/^📋\s*PATIENT\s+CASE\s+SUMMARY:?$/gm, '<div class="medcura-section patient-summary"><h4 class="section-header">📋 PATIENT CASE SUMMARY</h4><div class="section-content">')
+
+            // Case Urgency Section
+            .replace(/^🚨\s*CASE\s+URGENCY:?$/gm, '</div></div><div class="medcura-section case-urgency"><h4 class="section-header">🚨 CASE URGENCY</h4><div class="section-content">')
+
+            // A) Differential Diagnosis Section - Handle with or without dashes
+            .replace(/^(-{0,3}A\)?\s*(DIFFERENTIAL\s+)?DIAGNOSIS.*?:?|🔬\s*.*?DIAGNOSIS.*?:?)$/gmi, '</div></div><div class="medcura-section differential-diagnoses"><h4 class="section-header"><i class="fas fa-microscope"></i> A) DIFFERENTIAL DIAGNOSIS</h4><div class="section-content">')
+
+            // B) Investigations Section - Handle with or without dashes
+            .replace(/^(-{0,3}B\)?\s*.*?(RECOMMENDED\s+)?(INVESTIGATIONS?|TESTS?|DIAGNOSTIC|WORKUP).*?:?)$/gmi, '</div></div><div class="medcura-section recommended-tests"><h4 class="section-header"><i class="fas fa-vials"></i> B) RECOMMENDED INVESTIGATIONS</h4><div class="section-content">')
+
+            // C) Treatment/Management Section - Handle with or without dashes
+            .replace(/^(-{0,3}C\)?\s*.*?(TREATMENT|MANAGEMENT|PLAN|THERAPY|INTERVENTION).*?:?)$/gmi, '</div></div><div class="medcura-section management-plan"><h4 class="section-header"><i class="fas fa-pills"></i> C) MANAGEMENT RECOMMENDATIONS</h4><div class="section-content">')
+
+            // D) Warning Signs Section - Handle with or without dashes
+            .replace(/^(-{0,3}D\)?\s*WARNING\s+SIGNS.*?:?|⚠️\s*WARNING\s+SIGNS.*?:?)$/gmi, '</div></div><div class="medcura-section warning-signs"><h4 class="section-header"><i class="fas fa-exclamation-triangle"></i> D) WARNING SIGNS TO MONITOR</h4><div class="section-content">')
+
+            // Handle Summary Format Headers
+            .replace(/^OVERALL\s+HEALTH\s+TRAJECTORY:?$/gmi, '<div class="medcura-section patient-summary"><h4 class="section-header"><i class="fas fa-chart-line"></i> OVERALL HEALTH TRAJECTORY</h4><div class="section-content">')
+            
+            .replace(/^KEY\s+MEDICAL\s+ISSUES\s+IDENTIFIED:?$/gmi, '</div></div><div class="medcura-section differential-diagnoses"><h4 class="section-header"><i class="fas fa-stethoscope"></i> KEY MEDICAL ISSUES IDENTIFIED</h4><div class="section-content">')
+            
+            .replace(/^IMPORTANT\s+TRENDS\s+IN\s+SYMPTOMS\s+OR\s+TEST\s+RESULTS:?$/gmi, '</div></div><div class="medcura-section recommended-tests"><h4 class="section-header"><i class="fas fa-chart-area"></i> IMPORTANT TRENDS IN SYMPTOMS OR TEST RESULTS</h4><div class="section-content">')
+            
+            .replace(/^TREATMENT\s+EFFECTIVENESS\s+BASED\s+ON\s+VISIT\s+PROGRESSION:?$/gmi, '</div></div><div class="medcura-section management-plan"><h4 class="section-header"><i class="fas fa-clipboard-check"></i> TREATMENT EFFECTIVENESS BASED ON VISIT PROGRESSION</h4><div class="section-content">')
+            
+            .replace(/^RECOMMENDATIONS\s+FOR\s+FUTURE\s+CARE:?$/gmi, '</div></div><div class="medcura-section warning-signs"><h4 class="section-header"><i class="fas fa-user-md"></i> RECOMMENDATIONS FOR FUTURE CARE</h4><div class="section-content">')
+
+            // Handle Sub-sections within the main sections
+            .replace(/^(Status:|Reason:|Symptoms:|Vital Signs:|Laboratory Findings:|Immediate Diagnostic Steps:|Critical Interventions:|Long-term Care Considerations:|Lifestyle and Risk Factor Modification:)/gmi, '<div class="subsection-header">$1</div>')
+
+            // General fallback for any remaining letter-based headers
+            .replace(/^([A-D]\)\s*[A-Z\s]{5,}:?)$/gmi, function(match, p1) {
+                let sectionClass = 'medcura-section';
+                let headerText = match.replace(/^[A-D]\)\s*/, '').replace(/:$/, '');
+                let letterPrefix = match.charAt(0);
+                let icon = '';
+
+                switch(letterPrefix) {
+                    case 'A': icon = '<i class="fas fa-microscope"></i>'; sectionClass += ' differential-diagnoses'; break;
+                    case 'B': icon = '<i class="fas fa-vials"></i>'; sectionClass += ' recommended-tests'; break;
+                    case 'C': icon = '<i class="fas fa-pills"></i>'; sectionClass += ' management-plan'; break;
+                    case 'D': icon = '<i class="fas fa-exclamation-triangle"></i>'; sectionClass += ' warning-signs'; break;
+                }
+
+                return `</div></div><div class="${sectionClass}"><h4 class="section-header">${icon} ${letterPrefix}) ${headerText}</h4><div class="section-content">`;
+            })
+
+            // Doctor's Note Section
+            .replace(/^🧠\s*DOCTOR'S\s+NOTE:?$/gm, '</div></div><div class="medcura-section doctor-note-section"><h4 class="section-header">🧠 DOCTOR\'S NOTE</h4><div class="section-content">');
+
+        // Split the text into lines for processing
+        let lines = enhancedText.split('\n');
+        let formatted = '';
+        let inList = false;
+        let listType = '';
+        let inTable = false;
+        let tableRows = [];
+        let sectionOpened = false;
+
+        // Process each line
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+
+            // Skip empty lines
+            if (!line) {
+                if (inList) {
+                    formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                    inList = false;
+                }
+                if (inTable) {
+                    formatted += formatTable(tableRows);
+                    inTable = false;
+                    tableRows = [];
+                }
+                formatted += '<br>';
+                continue;
+            }
+
+            // Skip processing if line is already HTML (from our replacement above)
+            if (line.startsWith('<div') || line.startsWith('</div>') || line.startsWith('<h') || line.startsWith('<hr')) {
+                if (inList) {
+                    formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                    inList = false;
+                }
+                if (inTable) {
+                    formatted += formatTable(tableRows);
+                    inTable = false;
+                    tableRows = [];
+                }
+                formatted += line;
+                if (line.includes('section-content')) {
+                    sectionOpened = true;
+                }
+                continue;
+            }
+
+            // Handle table data (pipe-separated)
+            if (line.includes('|') && line.split('|').length >= 3) {
+                if (!inTable) {
+                    if (inList) {
+                        formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                        inList = false;
+                    }
+                    inTable = true;
+                }
+                tableRows.push(line);
+                continue;
+            } else if (inTable) {
+                formatted += formatTable(tableRows);
+                inTable = false;
+                tableRows = [];
+            }
+
+            // Handle numbered lists
+            if (/^\d+[\.\)]\s+/.test(line)) {
+                if (!inList || listType !== 'ol') {
+                    if (inList) formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                    formatted += '<ol class="medical-list">';
+                    inList = true;
+                    listType = 'ol';
+                }
+                formatted += '<li class="bullet-item">' + line.replace(/^\d+[\.\)]\s+/, '') + '</li>';
+                continue;
+            }
+
+            // Handle bullet points
+            if (/^[•\-\*]\s+/.test(line) || /^\s*[\-\*]\s+/.test(line)) {
+                if (!inList || listType !== 'ul') {
+                    if (inList) formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                    formatted += '<ul class="medical-list">';
+                    inList = true;
+                    listType = 'ul';
+                }
+                formatted += '<li class="bullet-item">' + line.replace(/^[•\-\*\s]+/, '') + '</li>';
+                continue;
+            } else if (inList) {
+                formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                inList = false;
+            }
+
+            // Handle urgency levels with special styling
+            if (line.match(/^\s*(EMERGENCY|URGENT|ROUTINE)\s*$/i)) {
+                const urgency = line.toLowerCase();
+                formatted += `<div class="urgency-badge ${urgency}">${line.toUpperCase()}</div>`;
+                continue;
+            }
+
+            // Regular paragraph
+            if (!sectionOpened) {
+                // If no section is opened yet, start with a default section
+                formatted += '<div class="medcura-section"><div class="section-content">';
+                sectionOpened = true;
+            }
+            formatted += '<p>' + line + '</p>';
         }
 
-        return level1HTML + level2HTML;
+        // Close any remaining lists or tables
+        if (inList) {
+            formatted += listType === 'ul' ? '</ul>' : '</ol>';
+        }
+        if (inTable) {
+            formatted += formatTable(tableRows);
+        }
+
+        // Close any open sections
+        if (sectionOpened) {
+            formatted += '</div></div>';
+        }
+
+        return formatted;
+    }
+
+    function formatTable(rows) {
+        if (!rows || rows.length === 0) return '';
+
+        let tableHtml = '<div class="medcura-table"><table class="table table-striped table-hover">';
+        
+        for (let i = 0; i < rows.length; i++) {
+            let cells = rows[i].split('|').map(cell => cell.trim()).filter(cell => cell);
+            
+            if (cells.length < 2) continue;
+            
+            tableHtml += '<tr>';
+            
+            if (i === 0) {
+                // Header row
+                for (let cell of cells) {
+                    tableHtml += `<th class="table-header-cell">${cell}</th>`;
+                }
+            } else {
+                // Data rows
+                for (let cell of cells) {
+                    tableHtml += `<td>${cell}</td>`;
+                }
+            }
+            
+            tableHtml += '</tr>';
+        }
+        
+        tableHtml += '</table></div>';
+        return tableHtml;
     }
 
     function formatLevel1(text) {
@@ -2786,6 +3596,8 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
 
             // Debug: Log available keys for troubleshooting
             console.log('Available patient visit keys:', Object.keys(patientVisits));
+            console.log('Patient data:', patientData);
+            console.log('Patient visits:', patientVisits);
 
             // Function to toggle patient info visibility
             function togglePatientInfo() {
@@ -2801,9 +3613,12 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                     // Hide new patient form
                     newPatientInfo.style.display = 'none';
 
-                    // Remove required attribute
+                    // Remove required attribute and clear values
                     nameInput.required = false;
+                    nameInput.value = '';
                     ageInput.required = false;
+                    ageInput.value = '';
+                    genderSelect.value = '';
 
                     // Show patient history
                     updatePatientHistory(patientSelection.value);
@@ -2869,6 +3684,17 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
 
             // Add event listener
             patientSelection.addEventListener('change', togglePatientInfo);
+
+            // Validate form before submission
+            document.getElementById('openaiForm').addEventListener('submit', function(e) {
+                const patientSelectionField = document.getElementById('patient_selection');
+                
+                if (patientSelectionField && patientSelectionField.value === '') {
+                    e.preventDefault();
+                    alert('Please select a patient');
+                    return false;
+                }
+            });
         });
     </script>
 
@@ -3439,7 +4265,41 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                         }
 
                         // Show loading indicator
-                        document.getElementById('page-loader').style.display = 'flex';
+                        const existingLoader = document.getElementById('canvas-loader-overlay');
+                        if (!existingLoader) {
+                            const body = document.body;
+                            const loaderHTML = body.getAttribute('data-loader-html');
+                            if (loaderHTML) {
+                                const loaderOverlay = document.createElement('div');
+                                loaderOverlay.id = 'canvas-loader-overlay';
+                                loaderOverlay.innerHTML = loaderHTML;
+                                loaderOverlay.style.cssText = `
+                                    position: fixed;
+                                    top: 0;
+                                    left: 0;
+                                    width: 100%;
+                                    height: 100%;
+                                    background: rgba(44, 62, 80, 0.9);
+                                    z-index: 9999;
+                                    display: flex;
+                                    justify-content: center;
+                                    align-items: center;
+                                    backdrop-filter: blur(5px);
+                                `;
+                                
+                                const svgContainer = loaderOverlay.querySelector('#css3-spinner-svg-pulse-wrapper');
+                                if (svgContainer) {
+                                    svgContainer.style.cssText = `
+                                        text-align: center;
+                                        padding: 20px;
+                                    `;
+                                }
+                                
+                                document.body.appendChild(loaderOverlay);
+                            } else {
+                                document.getElementById('page-loader').style.display = 'flex';
+                            }
+                        }
 
                         // Update status
                         uploadStatus.innerHTML = `
@@ -3452,5 +4312,24 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             }
         }
     });
+
+    // Toggle function for Level 2 detailed report
+    function toggleLevel2() {
+        const content = document.getElementById('level2-content');
+        const icon = document.querySelector('.toggle-icon');
+        const hint = document.querySelector('.toggle-hint');
+        
+        if (content.style.display === 'none' || content.style.display === '') {
+            content.style.display = 'block';
+            icon.textContent = '▲';
+            icon.classList.add('rotated');
+            hint.textContent = 'Click to Collapse';
+        } else {
+            content.style.display = 'none';
+            icon.textContent = '▼';
+            icon.classList.remove('rotated');
+            hint.textContent = 'Click to Expand';
+        }
+    }
 </script>
     @endsection

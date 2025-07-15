@@ -8,8 +8,8 @@
 <link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
 
 <style>
-    /* Global Font */
-    * {
+    /* Global Font (Cases Page Only) */
+    .cases-container {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
 
@@ -211,45 +211,29 @@
     }
 
     .response-modal-content {
-        border-radius: 25px;
-        box-shadow: 0 20px 60px rgba(44, 62, 80, 0.2);
-        overflow: hidden;
         border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        overflow: hidden;
     }
 
     .response-modal-header {
         background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        color: #fff;
-        padding: 2rem 2.5rem;
-        border-bottom: none;
-        position: relative;
-    }
-
-    .response-modal-header::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 4px;
-        background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
+        border: none;
+        padding: 1.25rem 1.5rem;
     }
 
     .response-modal-body {
-        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-        padding: 2.5rem;
+        padding: 1.5rem;
         max-height: 70vh;
         overflow-y: auto;
-        font-size: 1rem;
-        line-height: 1.8;
-        letter-spacing: 0.3px;
     }
     
     /* Enhanced styling for the entire popup content */
     .response-modal-body p {
         margin-bottom: 1rem;
         color: #2c3e50;
-        font-size: 1.05rem;
+        font-size: 0.95rem;
     }
     
     /* No special styling for notes or medications - keep it simple like the summary */
@@ -306,7 +290,7 @@
         white-space: pre-wrap;
         word-break: break-word;
         font-family: "Segoe UI", Roboto, sans-serif;
-        font-size: 1.05rem;
+        font-size: 0.95rem;
         color: #2c3e50;
         line-height: 1.8;
         padding: 10px;
@@ -323,13 +307,25 @@
         font-size: 1.4rem;
     }
     
-    /* Professional Medical Design - Apply to all AI response content */
-    .response-text, .ai-content {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-        color: #2c3e50;
-        line-height: 1.7;
+    /* Style for the response text (EXACT COPY from AI Response Popup) */
+    .response-text {
+        white-space: pre-wrap;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.5;
+        margin: 0;
+        padding: 1rem;
         font-size: 15px;
-        letter-spacing: 0.3px;
+        color: #333;
+    }
+
+    /* AI Content styling */
+    .ai-content {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+        line-height: 1.5;
+        font-size: 15px;
+        margin: 0;
+        padding: 0;
     }
 
     /* Medical Section Styling */
@@ -390,7 +386,7 @@
         padding: 12px 15px;
         text-align: left;
         border-bottom: 2px solid #dee2e6;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
@@ -423,7 +419,7 @@
         font-weight: 600;
     }
 
-    /* List styling */
+    /* List styling - EXACT COPY FROM AI RESPONSE POPUP */
     .response-text ul, .response-text ol,
     .ai-content ul, .ai-content ol {
         margin: 15px 0;
@@ -458,10 +454,8 @@
     .response-text ul, .response-text ol {
         padding-left: 25px;
         margin-bottom: 20px;
-        background-color: rgba(236, 240, 241, 0.3);
         padding-top: 10px;
         padding-bottom: 10px;
-        border-radius: 5px;
     }
     
     .response-text li {
@@ -471,6 +465,25 @@
     
     .response-text li:last-child {
         margin-bottom: 0;
+    }
+
+    /* EXACT COPY FROM AI RESPONSE POPUP - Bullet Points */
+    .bullet-item {
+        padding: 6px 0;
+        color: #495057;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .bullet-item::before {
+        content: "•";
+        color: #DE6262;
+        font-weight: bold;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        margin-top: 2px;
     }
     
     /* Enhanced AI content styling */
@@ -482,6 +495,468 @@
         margin-bottom: 20px;
         border: 1px solid rgba(0,0,0,0.05);
         line-height: 1.8;
+    }
+
+    /* Enhanced Medical Section Styling - Same as OpenAI popup */
+    .medcura-level1, .medcura-level2 {
+        margin-bottom: 20px;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        border: 1px solid #e8ecef;
+    }
+
+    .level-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 18px 25px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        border: none;
+        margin: 0;
+        
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .level1-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-bottom: none;
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    }
+
+    .level2-header {
+        background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+        color: white;
+        border-bottom: none;
+        cursor: pointer;
+        transition: background 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+    }
+
+    .level2-header:hover {
+        background: linear-gradient(135deg, #0056b3 0%, #520dc2 100%);
+    }
+
+    /* Level 2 Toggle */
+    .level2-toggle {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .toggle-icon {
+        float: right;
+        transition: transform 0.3s ease;
+        font-size: 1rem;
+    }
+
+    .toggle-icon.rotated {
+        transform: rotate(180deg);
+    }
+
+    .toggle-hint {
+        font-size: 0.85rem;
+        opacity: 0.8;
+        margin-top: 5px;
+        font-weight: normal;
+    }
+
+    .level2-content {
+        padding: 25px;
+        background: white;
+        border-top: 1px solid #e9ecef;
+    }
+
+    /* Enhanced MedCuraAI Container Styles */
+    .medcura-level1 {
+        background: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        margin-bottom: 25px;
+        overflow: hidden;
+        border: 1px solid #e8ecef;
+    }
+
+    .medcura-level2 {
+        background: #f8fafa;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        margin-top: 25px;
+        overflow: hidden;
+        border: 1px solid #e1e8ed;
+    }
+
+    .level-header {
+background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-bottom: none;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    }
+
+    .medcura-section {
+        margin: 0;
+        border-bottom: 1px solid #f1f3f4;
+    }
+
+    .medcura-section:last-child {
+        border-bottom: none;
+    }
+
+    .section-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        color: #2c3e50;
+        padding: 15px 25px;
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-bottom: 2px solid #DE6262;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .section-content {
+        padding: 20px 25px;
+        line-height: 1.7;
+        color: #495057;
+        background: white;
+    }
+
+    .section-content p {
+        margin-bottom: 12px;
+        font-size: 0.95rem !important;
+    }
+
+    .section-content p:last-child {
+        margin-bottom: 0;
+    }
+
+    .response-text p {
+        margin-bottom: 12px;
+        padding: 0 5px;
+    }
+
+    /* Special Section Styling - Force Override with Higher Specificity */
+    .response-text .patient-summary .section-header,
+    .patient-summary .section-header,
+    .medical-section.patient-summary .section-header {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%) !important;
+        color: #1565c0 !important;
+        border-bottom-color: #2196f3 !important;
+    }
+
+    .response-text .case-urgency .section-header,
+    .case-urgency .section-header,
+    .medical-section.case-urgency .section-header {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%) !important;
+        color: #e65100 !important;
+        border-bottom-color: #ff9800 !important;
+    }
+
+    .response-text .differential-diagnoses .section-header,
+    .differential-diagnoses .section-header,
+    .medical-section.differential-diagnoses .section-header {
+        background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%) !important;
+        color: #6a1b9a !important;
+        border-bottom-color: #9c27b0 !important;
+    }
+
+    .response-text .recommended-tests .section-header,
+    .recommended-tests .section-header,
+    .medical-section.recommended-tests .section-header {
+        background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%) !important;
+        color: #2e7d32 !important;
+        border-bottom-color: #4caf50 !important;
+    }
+
+    .response-text .management-plan .section-header,
+    .management-plan .section-header,
+    .medical-section.management-plan .section-header {
+        background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%) !important;
+        color: #f57f17 !important;
+        border-bottom-color: #ffc107 !important;
+    }
+
+    .response-text .warning-signs .section-header,
+    .warning-signs .section-header,
+    .medical-section.warning-signs .section-header {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%) !important;
+        color: #c62828 !important;
+        border-bottom-color: #f44336 !important;
+    }
+
+    /* Urgency Badge Styling */
+    .urgency-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 8px 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .urgency-badge.emergency {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        animation: pulse-red 2s infinite;
+    }
+
+    .urgency-badge.urgent {
+        background: linear-gradient(135deg, #fd7e14 0%, #e55a00 100%);
+        color: white;
+    }
+
+    .urgency-badge.routine {
+        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        color: white;
+    }
+
+    @keyframes pulse-red {
+        0% { box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3); }
+        50% { box-shadow: 0 4px 16px rgba(220, 53, 69, 0.6); }
+        100% { box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3); }
+    }
+
+    /* Bullet Points */
+    .bullet-item {
+        padding: 6px 0;
+        color: #495057;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .bullet-item::before {
+        content: "•";
+        color: #DE6262;
+        font-weight: bold;
+        font-size: 1.2rem;
+        margin-top: -2px;
+    }
+
+    .medcura-table {
+        margin: 15px 0;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .medcura-table table {
+        margin: 0;
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .medcura-table th {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 12px 15px;
+        font-weight: 600;
+        text-align: left;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .medcura-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #f1f3f4;
+        font-size: 0.9rem;
+        vertical-align: top;
+    }
+
+    .medcura-table tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+
+    .medcura-table tr:hover {
+        background-color: rgba(222, 98, 98, 0.05);
+    }
+
+    /* Subsection Headers */
+    .subsection-header {
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 15px 0 8px 0;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 1rem;
+    }
+
+    .level2-section-header {
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 20px 0 10px 0;
+        padding: 10px 0;
+        border-bottom: 2px solid #007bff;
+        font-size: 1rem;
+    }
+
+    /* Enhanced Chat Section Styling */
+    .chat-section {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        border: 1px solid #e8ecef;
+    }
+
+    .chat-header {
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f1f3f4;
+        margin-bottom: 1rem;
+    }
+
+    .chat-header h6 {
+        color: #2c3e50;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .chat-messages-container {
+        max-height: 300px;
+        overflow-y: auto;
+        margin-bottom: 1rem;
+        padding: 0.5rem 0;
+    }
+
+    #chat-messages {
+        max-height: 300px;
+        overflow-y: auto;
+        margin-bottom: 15px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        background-color: #f9f9f9;
+    }
+
+    .chat-message {
+        padding: 12px 15px;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        max-width: 85%;
+        position: relative;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .user-message {
+        background-color: #007bff;
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 2px;
+    }
+
+    .ai-message {
+        background-color: #f0f0f0;
+        color: #333;
+        border-bottom-left-radius: 2px;
+    }
+
+    .message-time {
+        font-size: 0.75rem;
+        opacity: 0.7;
+        margin-top: 5px;
+        text-align: right;
+    }
+
+    .typing-indicator {
+        display: flex;
+        align-items: center;
+        padding: 10px 15px;
+        background-color: #f0f0f0;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        max-width: 60px;
+    }
+
+    .typing-indicator span {
+        width: 8px;
+        height: 8px;
+        background-color: #999;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 3px;
+        animation: typing 1.4s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+        margin-right: 0;
+    }
+
+    @keyframes typing {
+        0%, 60%, 100% {
+            transform: translateY(0);
+        }
+        30% {
+            transform: translateY(-10px);
+        }
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-form .input-group {
+        border-radius: 25px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .chat-form .form-control {
+        border: none;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+    }
+
+    .chat-form .btn {
+        border: none;
+        background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+    }
+
+    .chat-form .btn:hover {
+        background: linear-gradient(135deg, #c55252 0%, #b04545 100%);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .level-header {
+            padding: 15px 20px;
+            font-size: 1.2rem;
+        }
+
+        .medcura-section .section-content {
+            padding: 15px;
+        }
+
+        .level2-content {
+            padding: 20px;
+        }
+
+        .chat-section {
+            padding: 1rem;
+        }
+
+        .chat-form .btn {
+            padding: 0.75rem 1rem;
+        }
+
+        .chat-form .btn span {
+            display: none !important;
+        }
     }
     
     /* Style for headings in AI content */
@@ -603,6 +1078,10 @@
         
         .dataTables_wrapper .dataTables_filter input {
             min-width: 180px;
+        }
+        
+        .bullet-item {
+            font-size: 0.9rem;
         }
     }
     
@@ -769,8 +1248,7 @@
         <div class="modal-content response-modal-content">
             <div class="modal-header response-modal-header">
                 <h5 class="modal-title" id="responseModalLabel" style="color: #fff">
-                    <i class="fas fa-stethoscope me-2"></i><span id="patientNameTitle">Medical Recommendations</span>
-                    <span id="visitBadge" class="badge bg-light text-dark ms-2" style="display: none;">Visit #<span id="visitNumber"></span></span>
+                    <i class="fas fa-stethoscope me-2"></i>AI Recommendations
                 </h5>
                 <div>
                     <button type="button" class="btn btn-sm btn-light me-2" id="printResponseBtn">
@@ -780,31 +1258,73 @@
                 </div>
             </div>
             <div class="modal-body response-modal-body">
-                <div id="patientHistorySection" class="mb-4" style="display: none;">
-                    <div class="d-flex align-items-center mb-3">
-                        <h6 class="mb-0 me-2"><i class="fas fa-history me-2"></i>Patient Visit History</h6>
-                        <hr class="flex-grow-1 ms-2">
-                    </div>
-                    <div id="patientHistoryList" class="d-flex flex-wrap gap-2 mb-3">
-                        <!-- Visit history buttons will be inserted here -->
-                    </div>
-                </div>
-                
-                <div class="response-block">
-                    <div class="d-flex align-items-center mb-3">
-                        <h6 class="mb-0 me-2"><i class="fas fa-robot me-2"></i>AI Recommendations</h6>
-                        <hr class="flex-grow-1 ms-2">
-                    </div>
-                    <div class="ai-summary" style="background-color: #f8f9fa; border-radius: 15px; padding: 20px; box-shadow: 0 3px 15px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05);">
+                <!-- AI Response Section with Enhanced Structure -->
+                <div class="ai-response-section mb-4">
+                    <!-- Level 1: Core Analysis -->
+                    <div class="medcura-level1">
+                        <div class="level1-header level-header">
+                            <i class="fas fa-stethoscope me-2"></i>
+                            <span>Core Medical Analysis</span>
+                        </div>
                         <div id="openaiReply" class="response-text"></div>
-                        
-                        <!-- Sources Section - Hidden as requested -->
-                        <div id="sourcesCitation" style="display: none;">
-                            <div id="sourcesContent" class="sources-list">
-                                <!-- Source logos will be populated here but not displayed -->
-                            </div>
+                    </div>
+
+                    <!-- Level 2: Detailed Analysis (Initially Hidden) -->
+                    <div class="medcura-level2">
+                        <div class="level2-header level-header level2-toggle" onclick="toggleLevel2()">
+                            <span>
+                                <i class="fas fa-microscope me-2"></i>
+                                Detailed Clinical Analysis
+                                <div class="toggle-hint">Click to Expand</div>
+                            </span>
+                            <span class="toggle-icon">▼</span>
+                        </div>
+                        <div id="level2-content" class="level2-content" style="display: none;">
+                            <div class="level2-section-header">Advanced Differential Diagnosis</div>
+                            <p>This section provides detailed clinical reasoning, alternative diagnoses, and comprehensive management strategies based on current medical guidelines.</p>
+                            
+                            <div class="level2-section-header">Risk Stratification</div>
+                            <p>Detailed risk assessment considering patient-specific factors, comorbidities, and prognostic indicators.</p>
+                            
+                            <div class="level2-section-header">Evidence-Based Recommendations</div>
+                            <p>Treatment recommendations based on latest clinical evidence and best practice guidelines.</p>
                         </div>
                     </div>
+                </div>
+
+                <!-- Sources Section - Hidden as requested -->
+                <div id="sourcesCitation" class="mt-4" style="display: none;">
+                    <div id="sourcesContent" class="sources-list">
+                        <!-- Source logos will be populated here but not displayed -->
+                    </div>
+                </div>
+
+                <!-- Enhanced Chat Continuation Section -->
+                <div class="chat-section mt-4">
+                    <div class="chat-header">
+                        <h6 class="mb-0"><i class="fas fa-comments me-2"></i>Follow-up Questions</h6>
+                        <small class="text-muted">Ask additional questions about the diagnosis or treatment</small>
+                    </div>
+
+                    <div id="chat-messages" class="chat-messages-container">
+                        <!-- Additional messages will appear here -->
+                    </div>
+
+                    <div class="chat-input-container">
+                        <form id="follow-up-form" class="chat-form">
+                            @csrf
+                            <input type="hidden" id="conversation-id" name="conversation_id" value="{{ session('conversation_id') ?? '' }}">
+                            <div class="input-group">
+                                <input type="text" id="follow-up-message" name="message" class="form-control" 
+                                       placeholder="Ask a follow-up question..." required>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i>
+                                    <span class="d-none d-md-inline ms-1">Send</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -989,6 +1509,11 @@
         // Process and display the response
         function processResponse(raw, patientName, visitNumber, recordId, patientKey) {
             console.log('Processing response for:', patientName, 'Visit:', visitNumber, 'Record ID:', recordId);
+            console.log('Raw parameter received:', raw ? 'Has data' : 'No data');
+            
+            // Set conversation ID to the record ID for follow-up questions
+            // This allows follow-up questions to reference the original case
+            document.getElementById('conversation-id').value = recordId;
             
             // Validate input
             if (!raw || raw.trim() === '') {
@@ -997,48 +1522,59 @@
                 return;
             }
             
+            // Unescape HTML entities to allow proper rendering of HTML tags
+            raw = unescapeHtml(raw);
+            console.log('After unescaping HTML:', raw.substring(0, 200) + '...');
+            
             // Update the modal title and content
             $('#patientNameTitle').text(patientName);
             $('#visitNumber').text(visitNumber);
             $('#visitBadge').show();
             
-            // Format the AI response with proper HTML
-            let decodedResponse = decodeHtml(raw);
+            // Format the AI response with proper HTML formatting (EXACT SAME AS AI RESPONSE POPUP)
             
-            // Remove intro and conclusion sections
-            decodedResponse = removeIntroAndConclusion(decodedResponse);
-            console.log('Raw AI response (after removing intro/conclusion):', decodedResponse);
+            // Apply the same formatting logic as the AI response popup
+            let formattedResponse = raw
+                // Remove markdown formatting
+                .replace(/#{1,6}\s/g, '')  // Remove heading markers
+                .replace(/\*\*/g, '')      // Remove bold markers
+                .replace(/\*/g, '')        // Remove italic markers
+                .replace(/- /g, '• ')      // Replace dashes with bullets
+
+                // Remove introduction and conclusion sections
+                .replace(/^Based on the provided.*?guidelines,.*?\n\n/s, '')  // Remove intro
+                .replace(/^As a.*?specialist:.*?\n\n/s, '')                  // Remove specialty intro
+                .replace(/^.*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS)/s, '')          // Remove everything before section A
+                .replace(/^.*?(?=A\)\s*DIAGNOS[IE]S)/s, '')                  // Alternative section A format
+                .replace(/\n\nConclusion:.*$/s, '')                          // Remove conclusion
+               .replace(/\n\nNote:.*$/s, '')                                // Remove notes at the end
+                .replace(/^Note:.*\n\n/s, '')                                // Remove notes at the beginning
+                .replace(/\n\nIn summary.*$/s, '')                           // Remove summary
+                .replace(/\n\nSummary.*$/s, '')                                // Remove notes at the beginning
+
+                // Clean up any remaining formatting issues
+                .replace(/\n{3,}/g, '\n\n')                                  // Replace multiple newlines with double newlines
+                .trim();                                                      // Remove leading/trailing whitespace
+
+            // Format the response with proper HTML formatting
+            const finalFormattedHTML = formatAIResponse(formattedResponse);
             
-            // Check if the response contains section headers
-            const diagnosisMatch = decodedResponse.match(/[A-Z]\)?\s+.*?DIAGNOSIS.*?/i);
-            const recommendationsMatch = decodedResponse.match(/[A-Z]\)?\s+.*?RECOMMENDATIONS.*?/i);
-            const treatmentMatch = decodedResponse.match(/[A-Z]\)?\s+.*?TREATMENT.*?/i);
-            const warningsMatch = decodedResponse.match(/[A-Z]\)?\s+.*?WARNINGS.*?/i);
-            
-            // Check for exact format mentioned
-            const exactFormatMatch = decodedResponse.match(/A\)\s+POSSIBLE\s+DIAGNOSIS|B\)\s+RECOMMENDATIONS\s+FOR\s+TESTS|C\)\s+TREATMENT\s+RECOMMENDATIONS|D\)\s+WARNINGS/i);
-            
-            console.log('Section headers found:', {
-                diagnosis: diagnosisMatch ? diagnosisMatch[0] : null,
-                recommendations: recommendationsMatch ? recommendationsMatch[0] : null,
-                treatment: treatmentMatch ? treatmentMatch[0] : null,
-                warnings: warningsMatch ? warningsMatch[0] : null,
-                exactFormat: exactFormatMatch ? exactFormatMatch[0] : null
-            });
-            
-            const formattedResponse = formatAIResponse(decodedResponse);
-            console.log('Formatted response:', formattedResponse);
-            
-            $('#openaiReply').html(formattedResponse);
+            // Display the formatted response
+            $('#openaiReply').html(finalFormattedHTML);
             
             // Sources section is hidden as requested
-            const sourcesMatch = decodedResponse.match(/Sources:([\s\S]*?)(?:$|(?=\n\n\w))/i);
-            if (sourcesMatch && sourcesMatch[1].trim()) {
-                const sourcesContent = sourcesMatch[1].trim();
-                $('#sourcesContent').html(formatSources(sourcesContent));
-                // Keep sources hidden
-                $('#sourcesCitation').hide();
-            } else {
+            try {
+                const sourcesMatch = raw.match(/Sources:([\s\S]*?)(?:$|(?=\n\n\w))/i);
+                if (sourcesMatch && sourcesMatch[1].trim()) {
+                    const sourcesContent = sourcesMatch[1].trim();
+                    $('#sourcesContent').html(formatSources(sourcesContent));
+                    // Keep sources hidden
+                    $('#sourcesCitation').hide();
+                } else {
+                    $('#sourcesCitation').hide();
+                }
+            } catch (error) {
+                console.error('Error processing sources:', error);
                 $('#sourcesCitation').hide();
             }
             
@@ -1168,6 +1704,9 @@
             // Update the content with formatted HTML
             let rawResponse = decodeHtml(response);
             
+            // Unescape HTML entities to allow proper rendering of HTML tags
+            rawResponse = unescapeHtml(rawResponse);
+            
             // Remove intro and conclusion sections
             rawResponse = removeIntroAndConclusion(rawResponse);
             console.log('History button - Raw response (after removing intro/conclusion):', rawResponse);
@@ -1211,6 +1750,15 @@
             const txt = document.createElement("textarea");
             txt.innerHTML = html;
             return txt.value;
+        }
+
+        function unescapeHtml(str) {
+            return str
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'");
         }
         
         function htmlEntities(str) {
@@ -1319,22 +1867,22 @@
                 .replace(/^---$/gm, '<div class="section-break"></div>')
                 
                 // Patient Case Summary Section
-                .replace(/^📋\s*PATIENT\s+CASE\s+SUMMARY:?$/gm, '<div class="medical-section patient-section"><h4 class="section-header">📋 PATIENT CASE SUMMARY</h4><div class="section-content">')
+                .replace(/^📋\s*PATIENT\s+CASE\s+SUMMARY:?$/gm, '<div class="medical-section patient-summary"><h4 class="section-header">📋 PATIENT CASE SUMMARY</h4><div class="section-content">')
                 
                 // Case Urgency Section
-                .replace(/^🚨\s*CASE\s+URGENCY:?$/gm, '</div></div><div class="medical-section urgency-section"><h4 class="section-header">🚨 CASE URGENCY</h4><div class="section-content">')
+                .replace(/^🚨\s*CASE\s+URGENCY:?$/gm, '</div></div><div class="medical-section case-urgency"><h4 class="section-header">🚨 CASE URGENCY</h4><div class="section-content">')
                 
                 // A) Differential Diagnosis Section - Handle with or without dashes
-                .replace(/^(-{0,3}A\)?\s*(DIFFERENTIAL\s+)?DIAGNOSIS.*?:?|🔬\s*.*?DIAGNOSIS.*?:?)$/gmi, '</div></div><div class="medical-section diagnosis-section"><h4 class="section-header"><i class="fas fa-microscope"></i> A) DIFFERENTIAL DIAGNOSIS</h4><div class="section-content">')
+                .replace(/^(-{0,3}A\)?\s*(DIFFERENTIAL\s+)?DIAGNOSIS.*?:?|🔬\s*.*?DIAGNOSIS.*?:?)$/gmi, '</div></div><div class="medical-section differential-diagnoses"><h4 class="section-header"><i class="fas fa-microscope"></i> A) DIFFERENTIAL DIAGNOSIS</h4><div class="section-content">')
                 
                 // B) Investigations Section - Handle with or without dashes  
-                .replace(/^(-{0,3}B\)?\s*.*?(RECOMMENDED\s+)?(INVESTIGATIONS?|TESTS?|DIAGNOSTIC|WORKUP).*?:?)$/gmi, '</div></div><div class="medical-section investigations-section"><h4 class="section-header"><i class="fas fa-vials"></i> B) RECOMMENDED INVESTIGATIONS</h4><div class="section-content">')
+                .replace(/^(-{0,3}B\)?\s*.*?(RECOMMENDED\s+)?(INVESTIGATIONS?|TESTS?|DIAGNOSTIC|WORKUP).*?:?)$/gmi, '</div></div><div class="medical-section recommended-tests"><h4 class="section-header"><i class="fas fa-vials"></i> B) RECOMMENDED INVESTIGATIONS</h4><div class="section-content">')
                 
                 // C) Treatment/Management Section - Handle with or without dashes
-                .replace(/^(-{0,3}C\)?\s*.*?(TREATMENT|MANAGEMENT|PLAN|THERAPY|INTERVENTION).*?:?)$/gmi, '</div></div><div class="medical-section treatment-section"><h4 class="section-header"><i class="fas fa-pills"></i> C) MANAGEMENT RECOMMENDATIONS</h4><div class="section-content">')
+                .replace(/^(-{0,3}C\)?\s*.*?(TREATMENT|MANAGEMENT|PLAN|THERAPY|INTERVENTION).*?:?)$/gmi, '</div></div><div class="medical-section management-plan"><h4 class="section-header"><i class="fas fa-pills"></i> C) MANAGEMENT RECOMMENDATIONS</h4><div class="section-content">')
                 
                 // D) Warning Signs Section - Handle with or without dashes
-                .replace(/^(-{0,3}D\)?\s*WARNING\s+SIGNS.*?:?|⚠️\s*WARNING\s+SIGNS.*?:?)$/gmi, '</div></div><div class="medical-section warnings-section"><h4 class="section-header"><i class="fas fa-exclamation-triangle"></i> D) WARNING SIGNS TO MONITOR</h4><div class="section-content">')
+                .replace(/^(-{0,3}D\)?\s*WARNING\s+SIGNS.*?:?|⚠️\s*WARNING\s+SIGNS.*?:?)$/gmi, '</div></div><div class="medical-section warning-signs"><h4 class="section-header"><i class="fas fa-exclamation-triangle"></i> D) WARNING SIGNS TO MONITOR</h4><div class="section-content">')
                 
                 // Specific pattern for the exact format: "---B) RECOMMENDED INVESTIGATIONS:"
                 .replace(/^---([ABCD])\)\s*(.+?):\s*$/gmi, function(match, letter, text) {
@@ -1475,22 +2023,22 @@
                     continue;
                 }
                 
-                // Check for list items
-                if (/^[\s]*[-*+]\s+(.+)$/.test(line) || /^[\s]*\d+\.\s+(.+)$/.test(line)) {
-                    let isOrdered = /^[\s]*\d+\.\s+(.+)$/.test(line);
-                    let content = line.replace(/^[\s]*[-*+\d\.]\s*/, '');
+                // Check for list items - EXACT SAME AS AI RESPONSE
+                if (/^[•\-\*]\s+/.test(line) || /^\s*[\-\*]\s+/.test(line) || /^\d+[\.\)]\s+/.test(line)) {
+                    let isOrdered = /^\d+[\.\)]\s+/.test(line);
+                    let content = line.replace(/^[•\-\*\s]*/, '').replace(/^\d+[\.\)]\s+/, '');
                     
                     if (!inList) {
                         listType = isOrdered ? 'ol' : 'ul';
-                        formatted += `<${listType}>`;
+                        formatted += `<${listType} class="medical-list">`;
                         inList = true;
                     } else if ((isOrdered && listType === 'ul') || (!isOrdered && listType === 'ol')) {
                         formatted += `</${listType}>`;
                         listType = isOrdered ? 'ol' : 'ul';
-                        formatted += `<${listType}>`;
+                        formatted += `<${listType} class="medical-list">`;
                     }
                     
-                    formatted += `<li>${content}</li>`;
+                    formatted += `<li class="bullet-item">${content}</li>`;
                     continue;
                 } else if (inList) {
                     formatted += listType === 'ul' ? '</ul>' : '</ol>';
@@ -2105,6 +2653,493 @@
             printWindow.document.close();
             printWindow.focus();
         });
+    });
+
+    // Toggle Level 2 Content for Cases Modal
+    function toggleLevel2() {
+        const level2Content = document.getElementById('level2-content');
+        const toggleIcon = document.querySelector('.level2-toggle .toggle-icon');
+        
+        if (level2Content.style.display === 'none') {
+            level2Content.style.display = 'block';
+            toggleIcon.style.transform = 'rotate(180deg)';
+        } else {
+            level2Content.style.display = 'none';
+            toggleIcon.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    // Enhanced AI Response Formatting Function (EXACT COPY from OpenAI page)
+    // This is a duplicate - using the main formatAIResponse function above
+
+    function formatMedicalResponse(text) {
+        if (!text) return '';
+
+        // Check if this is Level 1 format (contains Quick Clinical Summary)
+        if (text.includes('🟢 LEVEL 1: QUICK CLINICAL SUMMARY') || 
+            text.includes('🟢 QUICK CLINICAL SUMMARY') ||
+            text.includes('LEVEL 1: QUICK CLINICAL SUMMARY') ||
+            text.includes('📋 PATIENT SUMMARY:') ||
+            text.includes('🚨 CASE URGENCY') ||
+            text.includes('🔍 TOP 3 DIFFERENTIAL DIAGNOSES:') ||
+            text.includes('🧪 RECOMMENDED TESTS:') ||
+            text.includes('💊 INITIAL MANAGEMENT PLAN:')) {
+            return formatLevel1(text);
+        }
+
+        // Professional medical formatting for structured response
+        let enhancedText = text
+            // Handle Summary Format Headers
+            .replace(/^OVERALL\s+HEALTH\s+TRAJECTORY:?$/gmi, '<div class="medcura-section patient-summary"><h4 class="section-header"><i class="fas fa-chart-line"></i> OVERALL HEALTH TRAJECTORY</h4><div class="section-content">')
+            
+            .replace(/^KEY\s+MEDICAL\s+ISSUES\s+IDENTIFIED:?$/gmi, '</div></div><div class="medcura-section differential-diagnoses"><h4 class="section-header"><i class="fas fa-stethoscope"></i> KEY MEDICAL ISSUES IDENTIFIED</h4><div class="section-content">')
+            
+            .replace(/^IMPORTANT\s+TRENDS\s+IN\s+SYMPTOMS\s+OR\s+TEST\s+RESULTS:?$/gmi, '</div></div><div class="medcura-section recommended-tests"><h4 class="section-header"><i class="fas fa-chart-area"></i> IMPORTANT TRENDS IN SYMPTOMS OR TEST RESULTS</h4><div class="section-content">')
+            
+            .replace(/^TREATMENT\s+EFFECTIVENESS\s+BASED\s+ON\s+VISIT\s+PROGRESSION:?$/gmi, '</div></div><div class="medcura-section management-plan"><h4 class="section-header"><i class="fas fa-clipboard-check"></i> TREATMENT EFFECTIVENESS BASED ON VISIT PROGRESSION</h4><div class="section-content">')
+            
+            .replace(/^RECOMMENDATIONS\s+FOR\s+FUTURE\s+CARE:?$/gmi, '</div></div><div class="medcura-section warning-signs"><h4 class="section-header"><i class="fas fa-user-md"></i> RECOMMENDATIONS FOR FUTURE CARE</h4><div class="section-content">')
+
+            // Handle Sub-sections within the main sections
+            .replace(/^(Status:|Reason:|Symptoms:|Vital Signs:|Laboratory Findings:|Immediate Diagnostic Steps:|Critical Interventions:|Long-term Care Considerations:|Lifestyle and Risk Factor Modification:)/gmi, '<div class="subsection-header">$1</div>');
+
+        // Split the text into lines for processing
+        let lines = enhancedText.split('\n');
+        let formatted = '';
+        let sectionOpened = false;
+
+        // Process each line
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+
+            // Skip empty lines
+            if (!line) {
+                formatted += '<br>';
+                continue;
+            }
+
+            // Skip processing if line is already HTML (from our replacement above)
+            if (line.startsWith('<div') || line.startsWith('</div>') || line.startsWith('<h') || line.startsWith('<hr')) {
+                formatted += line;
+                if (line.includes('section-content')) {
+                    sectionOpened = true;
+                }
+                continue;
+            }
+
+            // Regular paragraph
+            if (!sectionOpened) {
+                // If no section is opened yet, start with a default section
+                formatted += '<div class="medcura-section"><div class="section-content">';
+                sectionOpened = true;
+            }
+            formatted += '<p>' + line + '</p>';
+        }
+
+        // Close any open sections
+        if (sectionOpened) {
+            formatted += '</div></div>';
+        }
+
+        return formatted;
+    }
+
+    function formatLevel1(text) {
+        if (!text) return '';
+
+        let formatted = '<div class="medcura-level1">';
+
+        // Handle Level 1 header
+        text = text.replace(/🟢\s*LEVEL\s+1:\s*QUICK\s+CLINICAL\s+SUMMARY/i,
+            '<div class="level-header level1-header">🟢 LEVEL 1: QUICK CLINICAL SUMMARY</div>');
+
+        // Handle "Core Medical Analysis" header
+        text = text.replace(/^Core\s+Medical\s+Analysis/i,
+            '<div class="level-header level1-header">Core Medical Analysis</div>');
+
+        // Patient Summary Section
+        text = text.replace(/📋\s*PATIENT\s+SUMMARY:/i,
+            '<div class="medcura-section patient-summary"><h4 class="section-header">📋 PATIENT SUMMARY</h4><div class="section-content">');
+
+        // Case Urgency Section
+        text = text.replace(/🚨\s*CASE\s+URGENCY/i,
+            '</div></div><div class="medcura-section case-urgency"><h4 class="section-header">🚨 CASE URGENCY</h4><div class="section-content">');
+
+        // Top 3 Differential Diagnoses Section
+        text = text.replace(/🔍\s*TOP\s+3\s+DIFFERENTIAL\s+DIAGNOSES:/i,
+            '</div></div><div class="medcura-section differential-diagnoses"><h4 class="section-header">🔍 TOP 3 DIFFERENTIAL DIAGNOSES</h4><div class="section-content">');
+
+        // Recommended Tests Section
+        text = text.replace(/🧪\s*RECOMMENDED\s+TESTS:/i,
+            '</div></div><div class="medcura-section recommended-tests"><h4 class="section-header">🧪 RECOMMENDED TESTS</h4><div class="section-content">');
+
+        // Initial Management Plan Section
+        text = text.replace(/💊\s*INITIAL\s+MANAGEMENT\s+PLAN:/i,
+            '</div></div><div class="medcura-section management-plan"><h4 class="section-header">💊 INITIAL MANAGEMENT PLAN</h4><div class="section-content">');
+
+        // Warning Signs Section
+        text = text.replace(/D\)\s*WARNING\s+SIGNS\s+TO\s+MONITOR/i,
+            '</div></div><div class="medcura-section warning-signs"><h4 class="section-header">D) WARNING SIGNS TO MONITOR</h4><div class="section-content">');
+
+        // Level 2 Detailed Medical Report Section
+        text = text.replace(/🔵\s*DETAILED\s+MEDICAL\s+REPORT\s+\(Click\s+to\s+Expand\)/i,
+            '</div></div><div class="medcura-section level2-section"><h4 class="section-header toggle-section" onclick="toggleLevel2()">🔵 DETAILED MEDICAL REPORT (Click to Expand) <i class="fas fa-chevron-down toggle-icon"></i></h4><div class="section-content level2-content" style="display: none;">');
+
+        // Process the text line by line
+        let lines = text.split('\n');
+        let processedText = '';
+        let inTable = false;
+        let tableRows = [];
+
+        for (let line of lines) {
+            line = line.trim();
+
+            // Skip if already HTML
+            if (line.includes('<div') || line.includes('</div>') || line.includes('<h4')) {
+                if (inTable) {
+                    processedText += formatMedCuraTable(tableRows);
+                    inTable = false;
+                    tableRows = [];
+                }
+                processedText += line + '\n';
+                continue;
+            }
+
+            // Handle table rows (for differential diagnoses)
+            if (line.includes('|') && line.split('|').length >= 4) {
+                if (!inTable) {
+                    inTable = true;
+                    tableRows = [];
+                }
+                tableRows.push(line);
+                continue;
+            } else if (inTable) {
+                processedText += formatMedCuraTable(tableRows);
+                inTable = false;
+                tableRows = [];
+            }
+
+            // Handle bullet points
+            if (line.match(/^[•\-\*]\s+/)) {
+                processedText += '<li class="bullet-item">' + line.replace(/^[•\-\*]\s+/, '') + '</li>\n';
+                continue;
+            }
+
+            // Handle urgency levels
+            if (line.match(/^\s*(EMERGENCY|URGENT|ROUTINE)\s*$/i)) {
+                const urgency = line.toLowerCase();
+                processedText += `<div class="urgency-badge ${urgency}">${line.toUpperCase()}</div>\n`;
+                continue;
+            }
+
+            // Handle regular text
+            if (line.trim()) {
+                processedText += '<p>' + line + '</p>\n';
+            } else {
+                processedText += '<br>\n';
+            }
+        }
+
+        // Close any remaining table
+        if (inTable) {
+            processedText += formatMedCuraTable(tableRows);
+        }
+
+        formatted += processedText;
+        formatted += '</div></div></div>';
+
+        return formatted;
+    }
+
+    function formatMedCuraTable(rows) {
+        if (!rows || rows.length === 0) return '';
+
+        let tableHtml = '<div class="medcura-table"><table class="table table-striped table-hover">';
+        
+        for (let i = 0; i < rows.length; i++) {
+            let cells = rows[i].split('|').map(cell => cell.trim()).filter(cell => cell);
+            
+            if (cells.length < 2) continue;
+            
+            tableHtml += '<tr>';
+            
+            if (i === 0) {
+                // Header row
+                for (let cell of cells) {
+                    tableHtml += `<th>${cell}</th>`;
+                }
+            } else {
+                // Data rows
+                for (let cell of cells) {
+                    tableHtml += `<td>${cell}</td>`;
+                }
+            }
+            
+            tableHtml += '</tr>';
+        }
+        
+        tableHtml += '</table></div>';
+        return tableHtml;
+    }
+
+    // Toggle Level 2 section function (same as AI response popup)
+    function toggleLevel2() {
+        const level2Content = document.querySelector('.level2-content');
+        const toggleIcon = document.querySelector('.toggle-icon');
+        
+        if (level2Content.style.display === 'none' || level2Content.style.display === '') {
+            level2Content.style.display = 'block';
+            toggleIcon.style.transform = 'rotate(180deg)';
+            toggleIcon.classList.add('rotated');
+        } else {
+            level2Content.style.display = 'none';
+            toggleIcon.style.transform = 'rotate(0deg)';
+            toggleIcon.classList.remove('rotated');
+        }
+    }
+
+    // Follow-up chat functionality (copied from AI response popup)
+    function setupFollowUpChat() {
+        const followUpForm = document.getElementById('follow-up-form');
+        const chatMessages = document.getElementById('chat-messages');
+
+        if (followUpForm) {
+            followUpForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const messageInput = document.getElementById('follow-up-message');
+                const message = messageInput.value.trim();
+                const conversationId = document.getElementById('conversation-id').value;
+
+                if (!message) return;
+
+                // Add user message to chat
+                addChatMessage(message, 'user');
+
+                // Clear input
+                messageInput.value = '';
+
+                // Show typing indicator
+                const typingIndicator = addTypingIndicator();
+
+                // Send to server
+                fetch('{{ route("openai.follow-up") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        conversation_id: conversationId
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            throw new Error('API_KEY_ERROR');
+                        }
+                        throw new Error('SERVER_ERROR');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    removeTypingIndicator(typingIndicator);
+
+                    if (data.success) {
+                        addChatMessage(data.message, 'ai');
+
+                        if (data.conversation_id) {
+                            document.getElementById('conversation-id').value = data.conversation_id;
+                        }
+                    } else if (data.api_key_error) {
+                        addErrorMessage(data.message || 'OpenAI API key is invalid or expired. Please contact the administrator.', true);
+                    } else {
+                        addErrorMessage(data.message || 'An error occurred');
+                    }
+                })
+                .catch(error => {
+                    removeTypingIndicator(typingIndicator);
+
+                    if (error.message === 'API_KEY_ERROR') {
+                        addErrorMessage('OpenAI API key is invalid or expired. Please contact the administrator.', true);
+                    } else {
+                        addErrorMessage('Failed to connect to the server. Please try again later.');
+                    }
+                    console.error('Error:', error);
+                });
+            });
+        }
+    }
+
+    // Supporting functions for follow-up chat
+    function addChatMessage(content, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${sender}-message`;
+
+        // Create message content
+        if (sender === 'ai') {
+            const pre = document.createElement('pre');
+            pre.className = 'response-text';
+            pre.style.margin = '0';
+            pre.style.whiteSpace = 'pre-wrap';
+
+            // Add empty pre element first
+            messageDiv.appendChild(pre);
+
+            // Add timestamp
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            const now = new Date();
+            timeDiv.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            messageDiv.appendChild(timeDiv);
+
+            // Add to chat
+            document.getElementById('chat-messages').appendChild(messageDiv);
+
+            // Format the response to remove markdown symbols and unwanted sections
+            let formattedResponse = content
+                // Remove markdown formatting
+                .replace(/#{1,6}\s/g, '')  // Remove heading markers
+                .replace(/\*\*/g, '')      // Remove bold markers
+                .replace(/\*/g, '')        // Remove italic markers
+                .replace(/- /g, '• ')      // Replace dashes with bullets
+
+                // Remove introduction and conclusion sections
+                .replace(/^Based on the provided.*?guidelines,.*?\n\n/s, '')  // Remove intro
+                .replace(/^As a.*?specialist:.*?\n\n/s, '')                  // Remove specialty intro
+                .replace(/^.*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS)/s, '')          // Remove everything before section A
+                .replace(/^.*?(?=A\)\s*DIAGNOS[IE]S)/s, '')                  // Alternative section A format
+                .replace(/\n\nConclusion:.*$/s, '')                          // Remove conclusion
+                .replace(/\n\nNote:.*$/s, '')                                // Remove notes at the end
+                .replace(/^Note:.*\n\n/s, '')                                // Remove notes at the beginning
+                .replace(/\n\nIn summary.*$/s, '')                           // Remove summary
+                .replace(/\n\nSummary.*$/s, '')                                // Remove notes at the beginning
+
+                // Clean up any remaining formatting issues
+                .replace(/\n{3,}/g, '\n\n')                                  // Replace multiple newlines with double newlines
+                .trim();                                                     // Remove leading/trailing whitespace
+
+            // Start typing animation
+            typeText(pre, formattedResponse);
+        } else {
+            // For user messages, show immediately
+            messageDiv.textContent = content;
+
+            // Add timestamp
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            const now = new Date();
+            timeDiv.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            messageDiv.appendChild(timeDiv);
+
+            // Add to chat
+            document.getElementById('chat-messages').appendChild(messageDiv);
+        }
+
+        // Scroll to bottom
+        document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+    }
+
+    function addTypingIndicator() {
+        const id = 'typing-' + Date.now();
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'typing-indicator';
+        typingDiv.id = id;
+
+        for (let i = 0; i < 3; i++) {
+            const dot = document.createElement('span');
+            typingDiv.appendChild(dot);
+        }
+
+        document.getElementById('chat-messages').appendChild(typingDiv);
+
+        // Scroll to bottom
+        document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+
+        return id;
+    }
+
+    function removeTypingIndicator(id) {
+        const indicator = document.getElementById(id);
+        if (indicator) {
+            indicator.remove();
+        }
+    }
+
+    function addErrorMessage(message, isApiKeyError = false) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = isApiKeyError ? 'alert alert-danger' : 'alert alert-warning';
+
+        if (isApiKeyError) {
+            // Create icon element
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-exclamation-triangle me-2';
+            errorDiv.appendChild(icon);
+
+            // Create strong element for the title
+            const strong = document.createElement('strong');
+            strong.textContent = 'API Key Error: ';
+            errorDiv.appendChild(strong);
+
+            // Add the message text
+            const textNode = document.createTextNode(message);
+            errorDiv.appendChild(textNode);
+        } else {
+            errorDiv.textContent = message;
+        }
+
+        document.getElementById('chat-messages').appendChild(errorDiv);
+
+        // Scroll to bottom
+        document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+
+        // Only auto-remove regular errors, not API key errors
+        if (!isApiKeyError) {
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.remove();
+                }
+            }, 5000);
+        }
+    }
+
+    function typeText(element, text, speed = 10) {
+        let i = 0;
+        element.textContent = '';
+
+        function typing() {
+            if (i < text.length) {
+                // Add character by character
+                element.textContent += text.charAt(i);
+                i++;
+
+                // Scroll to bottom as text is being typed
+                const container = element.closest('.modal-body');
+                if (container) {
+                    container.scrollTop = container.scrollHeight;
+                }
+
+                // Adjust typing speed based on punctuation
+                const currentChar = text.charAt(i - 1);
+                let delay = speed;
+                if (currentChar === '.' || currentChar === '!' || currentChar === '?') {
+                    delay = speed * 10;
+                } else if (currentChar === ',' || currentChar === ';' || currentChar === ':') {
+                    delay = speed * 5;
+                }
+
+                setTimeout(typing, delay);
+            }
+        }
+
+        typing();
+    }
+
+    // Initialize follow-up chat when modal is shown
+    $('#responseModal').on('shown.bs.modal', function () {
+        setupFollowUpChat();
     });
 </script>
 

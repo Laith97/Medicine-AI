@@ -80,6 +80,8 @@ class OpenAIController extends Controller
     public function getResponse(PatientAnalysisRequest $request)
     {
         try {
+            \Log::info('Form submitted with patient_selection: ' . $request->patient_selection);
+            
             $files = $request->file('reports');
 
             $uploadedFileIds = [];
@@ -241,7 +243,7 @@ class OpenAIController extends Controller
 
                 $filteredMessage = $this->filterReponse($rawMessage);
 
-                $this->insertTotable($request,$filteredMessage);
+                $patientRecord = $this->insertTotable($request,$filteredMessage);
                 return redirect()->back()->with([
                     'openai_result' => $filteredMessage,
                 ]);
@@ -377,7 +379,7 @@ class OpenAIController extends Controller
 
             $filteredMessage = $this->filterReponse($rawMessage);
             // ✅ Save to database
-            $this->insertTotable($request, $filteredMessage);
+            $patientRecord = $this->insertTotable($request, $filteredMessage);
 
             // Create a conversation ID for follow-up messages
             $conversationId = uniqid('conv_');
@@ -396,6 +398,11 @@ class OpenAIController extends Controller
                 'conversation_id' => $conversationId,
             ]);
         } catch (\Exception $e) {
+            \Log::error('=== EXCEPTION IN FORM SUBMISSION ===');
+            \Log::error('Exception: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            \Log::error('File: ' . $e->getFile() . ' Line: ' . $e->getLine());
+            
             // Check if it's an API key issue
             $message = $e->getMessage();
             if (strpos($message, 'API key') !== false ||
@@ -477,7 +484,7 @@ class OpenAIController extends Controller
                 $lastMessage = $this->filterReponse($lastMessage);
 
                 // Save to database
-                $this->insertTotable($request, $lastMessage);
+                $patientRecord = $this->insertTotable($request, $lastMessage);
 
                 // Get the conversation ID from session
                 $conversationId = session('conversation_id');
@@ -1067,19 +1074,32 @@ class OpenAIController extends Controller
                     'pain_description' => $request->pain_description,
                 ]);
 
-                return;
+                return $patientToEdit;
             }
         }
 
         // Check if we're using an existing patient for a new visit
         if ($request->patient_selection && $request->patient_selection != 'new') {
+            \Log::info('=== EXISTING PATIENT FLOW ===');
+            \Log::info('Patient selection ID: ' . $request->patient_selection);
+            
             // Get the existing patient data
             $existingPatient = PatientAnalysis::find($request->patient_selection);
 
             if ($existingPatient) {
+                \Log::info('Found existing patient: ' . $existingPatient->name . ' (ID: ' . $existingPatient->id . ', User: ' . $existingPatient->user_id . ')');
+                
+                // Verify this patient belongs to the current user
+                if ($existingPatient->user_id != auth()->id()) {
+                    \Log::error('Security violation: Patient belongs to different user');
+                    return null;
+                }
+                
                 // Get the patient's history to determine the visit number
                 $patientHistory = $existingPatient->getPatientHistory();
                 $visitNumber = $patientHistory->count() + 1;
+                
+                \Log::info('Patient history count: ' . $patientHistory->count() . ', New visit number: ' . $visitNumber);
 
                 // Generate or use existing patient key
                 $patientKey = $existingPatient->patient_key ??
@@ -1090,13 +1110,17 @@ class OpenAIController extends Controller
                         auth()->id()
                     );
 
+                \Log::info('Patient key: ' . $patientKey . ' (existing: ' . ($existingPatient->patient_key ? 'yes' : 'no') . ')');
+
                 // If this is the first time we're using patient_key, update all previous records
                 if (!$existingPatient->patient_key) {
+                    \Log::info('Updating patient history with patient_key, found ' . $patientHistory->count() . ' records');
                     foreach ($patientHistory as $index => $record) {
                         $record->update([
                             'patient_key' => $patientKey,
                             'visit_number' => $index + 1
                         ]);
+                        \Log::info('Updated record ID ' . $record->id . ' with visit_number ' . ($index + 1));
                     }
                 }
 
@@ -1171,7 +1195,11 @@ class OpenAIController extends Controller
                     'pain_description' => $request->pain_description,
                 ]);
 
-                return;
+                \Log::info('New visit record created for patient: ' . $newRecord->name . ' (Visit #' . $newRecord->visit_number . ')');
+                
+                return $newRecord;
+            } else {
+                \Log::error('Existing patient not found with ID: ' . $request->patient_selection);
             }
         }
 
@@ -1183,7 +1211,7 @@ class OpenAIController extends Controller
             auth()->id()
         );
 
-        PatientAnalysis::create([
+        $newPatient = PatientAnalysis::create([
             'name' => $request->name,
             'age' => $request->age,
             'gender' => $request->gender,
@@ -1251,6 +1279,11 @@ class OpenAIController extends Controller
             'pressure_ulcers' => $request->pressure_ulcers ? 1 : 0,
             'pain_description' => $request->pain_description,
         ]);
+        
+        \Log::info('=== NEW PATIENT CREATED ===');
+        \Log::info('New patient created: ' . $newPatient->name . ' (ID: ' . $newPatient->id . ')');
+        
+        return $newPatient;
     }
 
     private function preparePrompt($inputData, $criterion, $useFileSearch = false)
