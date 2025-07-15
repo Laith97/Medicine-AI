@@ -23,9 +23,9 @@ class PatientAnalysisRequest extends FormRequest
     {
         return [
             // Basic patient info
-            'name' => 'required_if:patient_selection,new|string|max:255',
-            'age' => 'required_if:patient_selection,new|integer|min:0|max:150',
-            'gender' => 'required_if:patient_selection,new|in:male,female',
+            'name' => 'required_if:patient_selection,new|nullable|string|max:255',
+            'age' => 'required_if:patient_selection,new|nullable|integer|min:0|max:150',
+            'gender' => 'required_if:patient_selection,new|nullable|in:male,female',
 
             // Physical attributes
             'weight' => 'nullable|numeric|min:0|max:1000',

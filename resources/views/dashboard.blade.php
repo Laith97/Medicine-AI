@@ -625,15 +625,7 @@
                     <button class="btn btn-sm btn-outline-secondary me-2" id="refresh-stats">
                         <i class="fas fa-sync-alt me-1"></i> Refresh
                     </button>
-                    <div class="dropdown d-inline-block">
-                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-download me-1"></i> Export
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="exportDropdown">
-                            <li><a class="dropdown-item" href="#" id="export-csv"><i class="fas fa-file-csv me-2"></i>CSV</a></li>
-                            <li><a class="dropdown-item" href="#" id="export-pdf"><i class="fas fa-file-pdf me-2"></i>PDF</a></li>
-                        </ul>
-                    </div>
+
                 </div>
             </div>
             
