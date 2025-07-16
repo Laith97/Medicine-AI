@@ -81,7 +81,7 @@ class OpenAIController extends Controller
     {
         try {
             \Log::info('Form submitted with patient_selection: ' . $request->patient_selection);
-            
+
             $files = $request->file('reports');
 
             $uploadedFileIds = [];
@@ -402,7 +402,7 @@ class OpenAIController extends Controller
             \Log::error('Exception: ' . $e->getMessage());
             \Log::error('Stack trace: ' . $e->getTraceAsString());
             \Log::error('File: ' . $e->getFile() . ' Line: ' . $e->getLine());
-            
+
             // Check if it's an API key issue
             $message = $e->getMessage();
             if (strpos($message, 'API key') !== false ||
@@ -1082,23 +1082,23 @@ class OpenAIController extends Controller
         if ($request->patient_selection && $request->patient_selection != 'new') {
             \Log::info('=== EXISTING PATIENT FLOW ===');
             \Log::info('Patient selection ID: ' . $request->patient_selection);
-            
+
             // Get the existing patient data
             $existingPatient = PatientAnalysis::find($request->patient_selection);
 
             if ($existingPatient) {
                 \Log::info('Found existing patient: ' . $existingPatient->name . ' (ID: ' . $existingPatient->id . ', User: ' . $existingPatient->user_id . ')');
-                
+
                 // Verify this patient belongs to the current user
                 if ($existingPatient->user_id != auth()->id()) {
                     \Log::error('Security violation: Patient belongs to different user');
                     return null;
                 }
-                
+
                 // Get the patient's history to determine the visit number
                 $patientHistory = $existingPatient->getPatientHistory();
                 $visitNumber = $patientHistory->count() + 1;
-                
+
                 \Log::info('Patient history count: ' . $patientHistory->count() . ', New visit number: ' . $visitNumber);
 
                 // Generate or use existing patient key
@@ -1196,7 +1196,7 @@ class OpenAIController extends Controller
                 ]);
 
                 \Log::info('New visit record created for patient: ' . $newRecord->name . ' (Visit #' . $newRecord->visit_number . ')');
-                
+
                 return $newRecord;
             } else {
                 \Log::error('Existing patient not found with ID: ' . $request->patient_selection);
@@ -1279,10 +1279,10 @@ class OpenAIController extends Controller
             'pressure_ulcers' => $request->pressure_ulcers ? 1 : 0,
             'pain_description' => $request->pain_description,
         ]);
-        
+
         \Log::info('=== NEW PATIENT CREATED ===');
         \Log::info('New patient created: ' . $newPatient->name . ' (ID: ' . $newPatient->id . ')');
-        
+
         return $newPatient;
     }
 
@@ -1583,6 +1583,22 @@ class OpenAIController extends Controller
         $specialty = auth()->user()->setting->specialty ?? null;
         $criterion = auth()->user()->setting->criterion ?? 'CDC';
 
+        // Create a concise system prompt for follow-up
+        $conciseSystemPrompt = "You are a medical AI assistant specialized in {$specialty}.
+
+        IMPORTANT INSTRUCTIONS:
+        1. Be extremely concise and direct in your responses
+        2. Do not repeat patient information that was already provided
+        3. Focus only on answering the specific follow-up question
+        4. Provide only essential medical information without lengthy explanations
+        5. Use bullet points for recommendations when appropriate
+        6. Limit your response to 3-5 sentences unless more detail is absolutely necessary
+        7. For medication or treatment recommendations, be specific but brief
+        8. Remember previous context from the conversation
+        9. If the patient's condition has changed, adjust your recommendations accordingly
+
+        Your goal is to provide accurate, actionable medical information as efficiently as possible.";
+
         // If we don't have a conversation ID, create a new conversation
         if (empty($conversationId)) {
             // Create a new conversation context
@@ -1591,13 +1607,13 @@ class OpenAIController extends Controller
 
             // Store the conversation history in the session
             session(['conversation_history_' . $conversationId => [
-                ['role' => 'system', 'content' => $this->getSystemPrompt($specialty, $criterion)],
+                ['role' => 'system', 'content' => $conciseSystemPrompt],
                 ['role' => 'user', 'content' => $userMessage]
             ]]);
         } else {
             // Get the existing conversation history
             $conversationHistory = session('conversation_history_' . $conversationId, [
-                ['role' => 'system', 'content' => $this->getSystemPrompt($specialty, $criterion)]
+                ['role' => 'system', 'content' => $conciseSystemPrompt]
             ]);
 
             // Add the user's message to the history
@@ -1614,7 +1630,9 @@ class OpenAIController extends Controller
             // Call the OpenAI API with the full conversation history
             $response = OpenAI::chat()->create([
                 'model' => 'gpt-4o',
-                'messages' => $messages
+                'messages' => $messages,
+                'temperature' => 0.3, // Lower temperature for more focused responses
+                'max_tokens' => 300   // Limit token count for faster responses
             ]);
 
             $aiResponse = $response['choices'][0]['message']['content'] ?? 'Sorry, I could not generate a response.';
