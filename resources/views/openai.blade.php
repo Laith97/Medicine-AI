@@ -622,7 +622,7 @@
                     <div class="medical-form-section mt-4">
                         <h4>Physical Attributes / Vitals</h4>
                         <div class="row">
-                            <div class="col-md-2">
+                            <div class="col-md-4">
                                 <label class="form-label">
                                     <i class="fas fa-weight text-primary me-1"></i> Weight:
                                 </label>
@@ -632,7 +632,7 @@
                                 </div>
                                 <small class="form-text text-muted">Numeric value only</small>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-4">
                                 <label class="form-label">
                                     <i class="fas fa-ruler-vertical text-success me-1"></i> Height:
                                 </label>
@@ -642,7 +642,7 @@
                                 </div>
                                 <small class="form-text text-muted">Numeric value only</small>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-4">
                                 <label class="form-label">
                                     <i class="fas fa-thermometer-half text-danger me-1"></i> Temperature:
                                 </label>
@@ -652,28 +652,9 @@
                                 </div>
                                 <small class="form-text text-muted">Numeric value only</small>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label">
-                                    <i class="fas fa-heart-pulse text-info me-1"></i> Blood Pressure:
-                                </label>
-                                <div class="input-group">
-                                    <input type="text" name="blood_pressure" class="form-control" placeholder="120/80" value="{{ $patientToEdit->blood_pressure ?? '' }}">
-                                    <span class="input-group-text">mmHg</span>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">
-                                    <i class="fas fa-tint text-warning me-1"></i> Blood Sugar:
-                                </label>
-                                <div class="input-group">
-                                    <input type="number" step="0.01" name="blood_sugar" class="form-control" placeholder="85" value="{{ $patientToEdit->blood_sugar ?? '' }}">
-                                    <span class="input-group-text">mg/dL</span>
-                                </div>
-                                <small class="form-text text-muted">Enter numeric value only</small>
-                            </div>
                         </div>
 
-                        <!-- Additional Vitals Row -->
+                        <!-- Vital Signs Row -->
                         <div class="row mt-3">
                             <div class="col-md-3">
                                 <label class="form-label">
@@ -704,6 +685,19 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">
+                                    <i class="fas fa-heart-pulse text-info me-1"></i> Blood Pressure:
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" name="blood_pressure" class="form-control" placeholder="120/80" value="{{ $patientToEdit->blood_pressure ?? '' }}">
+                                    <span class="input-group-text">mmHg</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pain and Blood Sugar Row -->
+                        <div class="row mt-3">
+                            <div class="col-md-3">
+                                <label class="form-label">
                                     <i class="fas fa-exclamation-circle text-warning me-1"></i> Pain Scale:
                                 </label>
                                 <select name="pain_scale" class="form-select">
@@ -715,6 +709,23 @@
                                     @endfor
                                 </select>
                                 <small class="form-text text-muted">0 = no pain, 10 = worst pain imaginable</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">
+                                    <i class="fas fa-map-marker-alt text-danger me-1"></i> Pain Location:
+                                </label>
+                                <input type="text" name="pain_location" class="form-control" placeholder="e.g., Lower back, Head" value="{{ $patientToEdit->pain_location ?? '' }}">
+                                <small class="form-text text-muted">Specify where the pain is located</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">
+                                    <i class="fas fa-tint text-warning me-1"></i> Blood Sugar:
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" name="blood_sugar" class="form-control" placeholder="85" value="{{ $patientToEdit->blood_sugar ?? '' }}">
+                                    <span class="input-group-text">mg/dL</span>
+                                </div>
+                                <small class="form-text text-muted">Enter numeric value only</small>
                             </div>
                         </div>
                     </div>
@@ -834,94 +845,123 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
 
                         <div class="collapse" id="headToToeAssessment">
                             <!-- General Appearance -->
-                            <div class="assessment-subsection mb-4">
-                                <h5 class="text-primary mb-3"><i class="fas fa-eye me-2"></i>General Appearance</h5>
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <label for="consciousness_level" class="form-label">Consciousness Level:</label>
-                                        <select name="consciousness_level" id="consciousness_level" class="form-select">
-                                            <option value="">Select...</option>
-                                            <option value="Alert" {{ isset($patientToEdit) && $patientToEdit->consciousness_level == 'Alert' ? 'selected' : '' }}>Alert</option>
-                                            <option value="Drowsy" {{ isset($patientToEdit) && $patientToEdit->consciousness_level == 'Drowsy' ? 'selected' : '' }}>Drowsy</option>
-                                            <option value="Unresponsive" {{ isset($patientToEdit) && $patientToEdit->consciousness_level == 'Unresponsive' ? 'selected' : '' }}>Unresponsive</option>
-                                        </select>
+                            <div class="assessment-subsection mb-4" id="general-appearance-section">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="text-primary mb-0"><i class="fas fa-eye me-2"></i>General Appearance</h5>
+                                    <div class="form-check">
+                                        <input class="form-check-input section-normal-checkbox" type="checkbox" id="general-appearance-normal" data-section="general-appearance-content">
+                                        <label class="form-check-label" for="general-appearance-normal">
+                                            Normal
+                                        </label>
                                     </div>
-                                    <div class="col-md-3">
-                                        <label for="mood_behavior" class="form-label">Mood/Behavior:</label>
-                                        <select name="mood_behavior" id="mood_behavior" class="form-select">
-                                            <option value="">Select...</option>
-                                            <option value="Calm" {{ isset($patientToEdit) && $patientToEdit->mood_behavior == 'Calm' ? 'selected' : '' }}>Calm</option>
-                                            <option value="Anxious" {{ isset($patientToEdit) && $patientToEdit->mood_behavior == 'Anxious' ? 'selected' : '' }}>Anxious</option>
-                                            <option value="Aggressive" {{ isset($patientToEdit) && $patientToEdit->mood_behavior == 'Aggressive' ? 'selected' : '' }}>Aggressive</option>
-                                            <option value="Confused" {{ isset($patientToEdit) && $patientToEdit->mood_behavior == 'Confused' ? 'selected' : '' }}>Confused</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label for="speech_clarity" class="form-label">Speech Clarity:</label>
-                                        <select name="speech_clarity" id="speech_clarity" class="form-select">
-                                            <option value="">Select...</option>
-                                            <option value="Clear" {{ isset($patientToEdit) && $patientToEdit->speech_clarity == 'Clear' ? 'selected' : '' }}>Clear</option>
-                                            <option value="Slurred" {{ isset($patientToEdit) && $patientToEdit->speech_clarity == 'Slurred' ? 'selected' : '' }}>Slurred</option>
-                                            <option value="Incoherent" {{ isset($patientToEdit) && $patientToEdit->speech_clarity == 'Incoherent' ? 'selected' : '' }}>Incoherent</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label for="hygiene_level" class="form-label">Hygiene Level:</label>
-                                        <select name="hygiene_level" id="hygiene_level" class="form-select">
-                                            <option value="">Select...</option>
-                                            <option value="Good" {{ isset($patientToEdit) && $patientToEdit->hygiene_level == 'Good' ? 'selected' : '' }}>Good</option>
-                                            <option value="Fair" {{ isset($patientToEdit) && $patientToEdit->hygiene_level == 'Fair' ? 'selected' : '' }}>Fair</option>
-                                            <option value="Poor" {{ isset($patientToEdit) && $patientToEdit->hygiene_level == 'Poor' ? 'selected' : '' }}>Poor</option>
-                                        </select>
+                                </div>
+                                <div class="section-content" id="general-appearance-content">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label for="consciousness_level" class="form-label">Consciousness Level:</label>
+                                            <select name="consciousness_level" id="consciousness_level" class="form-select">
+                                                <option value="">Select...</option>
+                                                <option value="Alert" {{ isset($patientToEdit) && $patientToEdit->consciousness_level == 'Alert' ? 'selected' : '' }}>Alert</option>
+                                                <option value="Drowsy" {{ isset($patientToEdit) && $patientToEdit->consciousness_level == 'Drowsy' ? 'selected' : '' }}>Drowsy</option>
+                                                <option value="Unresponsive" {{ isset($patientToEdit) && $patientToEdit->consciousness_level == 'Unresponsive' ? 'selected' : '' }}>Unresponsive</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="mood_behavior" class="form-label">Mood/Behavior:</label>
+                                            <select name="mood_behavior" id="mood_behavior" class="form-select">
+                                                <option value="">Select...</option>
+                                                <option value="Calm" {{ isset($patientToEdit) && $patientToEdit->mood_behavior == 'Calm' ? 'selected' : '' }}>Calm</option>
+                                                <option value="Anxious" {{ isset($patientToEdit) && $patientToEdit->mood_behavior == 'Anxious' ? 'selected' : '' }}>Anxious</option>
+                                                <option value="Aggressive" {{ isset($patientToEdit) && $patientToEdit->mood_behavior == 'Aggressive' ? 'selected' : '' }}>Aggressive</option>
+                                                <option value="Confused" {{ isset($patientToEdit) && $patientToEdit->mood_behavior == 'Confused' ? 'selected' : '' }}>Confused</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="speech_clarity" class="form-label">Speech Clarity:</label>
+                                            <select name="speech_clarity" id="speech_clarity" class="form-select">
+                                                <option value="">Select...</option>
+                                                <option value="Clear" {{ isset($patientToEdit) && $patientToEdit->speech_clarity == 'Clear' ? 'selected' : '' }}>Clear</option>
+                                                <option value="Slurred" {{ isset($patientToEdit) && $patientToEdit->speech_clarity == 'Slurred' ? 'selected' : '' }}>Slurred</option>
+                                                <option value="Incoherent" {{ isset($patientToEdit) && $patientToEdit->speech_clarity == 'Incoherent' ? 'selected' : '' }}>Incoherent</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="hygiene_level" class="form-label">Hygiene Level:</label>
+                                            <select name="hygiene_level" id="hygiene_level" class="form-select">
+                                                <option value="">Select...</option>
+                                                <option value="Good" {{ isset($patientToEdit) && $patientToEdit->hygiene_level == 'Good' ? 'selected' : '' }}>Good</option>
+                                                <option value="Fair" {{ isset($patientToEdit) && $patientToEdit->hygiene_level == 'Fair' ? 'selected' : '' }}>Fair</option>
+                                                <option value="Poor" {{ isset($patientToEdit) && $patientToEdit->hygiene_level == 'Poor' ? 'selected' : '' }}>Poor</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- HEENT -->
-                            <div class="assessment-subsection mb-4">
-                                <h5 class="text-primary mb-3"><i class="fas fa-head-side-virus me-2"></i>Head, Eyes, Ears, Nose, Mouth (HEENT)</h5>
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <label for="scalp_condition" class="form-label">Scalp Condition:</label>
-                                        <input type="text" name="scalp_condition" id="scalp_condition" class="form-control"
-                                               placeholder="e.g., Normal, lesions, alopecia" value="{{ $patientToEdit->scalp_condition ?? '' }}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="pupil_reactivity" class="form-label">Pupil Reactivity:</label>
-                                        <select name="pupil_reactivity" id="pupil_reactivity" class="form-select">
-                                            <option value="">Select...</option>
-                                            <option value="PERRLA" {{ isset($patientToEdit) && $patientToEdit->pupil_reactivity == 'PERRLA' ? 'selected' : '' }}>PERRLA</option>
-                                            <option value="Unequal" {{ isset($patientToEdit) && $patientToEdit->pupil_reactivity == 'Unequal' ? 'selected' : '' }}>Unequal</option>
-                                            <option value="Non-reactive" {{ isset($patientToEdit) && $patientToEdit->pupil_reactivity == 'Non-reactive' ? 'selected' : '' }}>Non-reactive</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Issues:</label>
-                                        <div class="form-check">
-                                            <input type="checkbox" name="vision_issues" id="vision_issues" class="form-check-input" value="1"
-                                                   {{ isset($patientToEdit) && $patientToEdit->vision_issues ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="vision_issues">Vision Issues</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input type="checkbox" name="hearing_issues" id="hearing_issues" class="form-check-input" value="1"
-                                                   {{ isset($patientToEdit) && $patientToEdit->hearing_issues ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="hearing_issues">Hearing Issues</label>
-                                        </div>
+                            <div class="assessment-subsection mb-4" id="heent-section">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="text-primary mb-0"><i class="fas fa-head-side-virus me-2"></i>Head, Eyes, Ears, Nose, Mouth (HEENT)</h5>
+                                    <div class="form-check">
+                                        <input class="form-check-input section-normal-checkbox" type="checkbox" id="heent-normal" data-section="heent-content">
+                                        <label class="form-check-label" for="heent-normal">
+                                            Normal
+                                        </label>
                                     </div>
                                 </div>
-                                <div class="row mt-3">
-                                    <div class="col-md-12">
-                                        <label for="oral_findings" class="form-label">Oral Findings:</label>
-                                        <textarea name="oral_findings" id="oral_findings" class="form-control" rows="2"
-                                                  placeholder="e.g., Good dentition, dry mucous membranes, thrush">{{ $patientToEdit->oral_findings ?? '' }}</textarea>
+                                <div class="section-content" id="heent-content">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label for="scalp_condition" class="form-label">Scalp Condition:</label>
+                                            <input type="text" name="scalp_condition" id="scalp_condition" class="form-control"
+                                                placeholder="e.g., Normal, lesions, alopecia" value="{{ $patientToEdit->scalp_condition ?? '' }}">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="pupil_reactivity" class="form-label">Pupil Reactivity:</label>
+                                            <select name="pupil_reactivity" id="pupil_reactivity" class="form-select">
+                                                <option value="">Select...</option>
+                                                <option value="PERRLA" {{ isset($patientToEdit) && $patientToEdit->pupil_reactivity == 'PERRLA' ? 'selected' : '' }}>PERRLA</option>
+                                                <option value="Unequal" {{ isset($patientToEdit) && $patientToEdit->pupil_reactivity == 'Unequal' ? 'selected' : '' }}>Unequal</option>
+                                                <option value="Non-reactive" {{ isset($patientToEdit) && $patientToEdit->pupil_reactivity == 'Non-reactive' ? 'selected' : '' }}>Non-reactive</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Issues:</label>
+                                            <div class="form-check">
+                                                <input type="checkbox" name="vision_issues" id="vision_issues" class="form-check-input" value="1"
+                                                    {{ isset($patientToEdit) && $patientToEdit->vision_issues ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="vision_issues">Vision Issues</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input type="checkbox" name="hearing_issues" id="hearing_issues" class="form-check-input" value="1"
+                                                    {{ isset($patientToEdit) && $patientToEdit->hearing_issues ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="hearing_issues">Hearing Issues</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-md-12">
+                                            <label for="oral_findings" class="form-label">Oral Findings:</label>
+                                            <textarea name="oral_findings" id="oral_findings" class="form-control" rows="2"
+                                                    placeholder="e.g., Good dentition, dry mucous membranes, thrush">{{ $patientToEdit->oral_findings ?? '' }}</textarea>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Neurological -->
-                            <div class="assessment-subsection mb-4">
-                                <h5 class="text-primary mb-3"><i class="fas fa-brain me-2"></i>Neurological</h5>
-                                <div class="row">
+                            <div class="assessment-subsection mb-4" id="neurological-section">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="text-primary mb-0"><i class="fas fa-brain me-2"></i>Neurological</h5>
+                                    <div class="form-check">
+                                        <input class="form-check-input section-normal-checkbox" type="checkbox" id="neurological-normal" data-section="neurological-content">
+                                        <label class="form-check-label" for="neurological-normal">
+                                            Normal
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="section-content" id="neurological-content">
+                                    <div class="row">
                                     <div class="col-md-3">
                                         <label for="orientation_level" class="form-label">Orientation:</label>
                                         <select name="orientation_level" id="orientation_level" class="form-select">
@@ -957,12 +997,22 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                                                   placeholder="e.g., Intact, decreased, numbness">{{ $patientToEdit->sensation_findings ?? '' }}</textarea>
                                     </div>
                                 </div>
+                                </div>
                             </div>
 
                             <!-- Neck and Chest -->
-                            <div class="assessment-subsection mb-4">
-                                <h5 class="text-primary mb-3"><i class="fas fa-lungs me-2"></i>Neck and Chest</h5>
-                                <div class="row">
+                            <div class="assessment-subsection mb-4" id="neck-chest-section">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="text-primary mb-0"><i class="fas fa-lungs me-2"></i>Neck and Chest</h5>
+                                    <div class="form-check">
+                                        <input class="form-check-input section-normal-checkbox" type="checkbox" id="neck-chest-normal" data-section="neck-chest-content">
+                                        <label class="form-check-label" for="neck-chest-normal">
+                                            Normal
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="section-content" id="neck-chest-content">
+                                    <div class="row">
                                     <div class="col-md-2">
                                         <label for="trachea_position" class="form-label">Trachea:</label>
                                         <select name="trachea_position" id="trachea_position" class="form-select">
@@ -1008,12 +1058,22 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                                         </select>
                                     </div>
                                 </div>
+                                </div>
                             </div>
 
                             <!-- Abdomen -->
-                            <div class="assessment-subsection mb-4">
-                                <h5 class="text-primary mb-3"><i class="fas fa-stomach me-2"></i>Abdomen</h5>
-                                <div class="row">
+                            <div class="assessment-subsection mb-4" id="abdomen-section">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="text-primary mb-0"><i class="fas fa-stomach me-2"></i>Abdomen</h5>
+                                    <div class="form-check">
+                                        <input class="form-check-input section-normal-checkbox" type="checkbox" id="abdomen-normal" data-section="abdomen-content">
+                                        <label class="form-check-label" for="abdomen-normal">
+                                            Normal
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="section-content" id="abdomen-content">
+                                    <div class="row">
                                     <div class="col-md-3">
                                         <label for="abdominal_shape" class="form-label">Shape:</label>
                                         <select name="abdominal_shape" id="abdominal_shape" class="form-select">
@@ -1056,12 +1116,22 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                                         </div>
                                     </div>
                                 </div>
+                                </div>
                             </div>
 
                             <!-- Genitourinary -->
-                            <div class="assessment-subsection mb-4">
-                                <h5 class="text-primary mb-3"><i class="fas fa-kidneys me-2"></i>Genitourinary</h5>
-                                <div class="row">
+                            <div class="assessment-subsection mb-4" id="genitourinary-section">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="text-primary mb-0"><i class="fas fa-kidneys me-2"></i>Genitourinary</h5>
+                                    <div class="form-check">
+                                        <input class="form-check-input section-normal-checkbox" type="checkbox" id="genitourinary-normal" data-section="genitourinary-content">
+                                        <label class="form-check-label" for="genitourinary-normal">
+                                            Normal
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="section-content" id="genitourinary-content">
+                                    <div class="row">
                                     <div class="col-md-4">
                                         <label class="form-label">Issues:</label>
                                         <div class="form-check">
@@ -1081,12 +1151,22 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                                                   placeholder="e.g., Clear yellow, cloudy, hematuria">{{ $patientToEdit->urine_characteristics ?? '' }}</textarea>
                                     </div>
                                 </div>
+                                </div>
                             </div>
 
                             <!-- Musculoskeletal -->
-                            <div class="assessment-subsection mb-4">
-                                <h5 class="text-primary mb-3"><i class="fas fa-bone me-2"></i>Musculoskeletal</h5>
-                                <div class="row">
+                            <div class="assessment-subsection mb-4" id="musculoskeletal-section">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="text-primary mb-0"><i class="fas fa-bone me-2"></i>Musculoskeletal</h5>
+                                    <div class="form-check">
+                                        <input class="form-check-input section-normal-checkbox" type="checkbox" id="musculoskeletal-normal" data-section="musculoskeletal-content">
+                                        <label class="form-check-label" for="musculoskeletal-normal">
+                                            Normal
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="section-content" id="musculoskeletal-content">
+                                    <div class="row">
                                     <div class="col-md-3">
                                         <label for="range_of_motion" class="form-label">Range of Motion:</label>
                                         <select name="range_of_motion" id="range_of_motion" class="form-select">
@@ -1111,12 +1191,22 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                                                placeholder="e.g., Walker, cane, wheelchair" value="{{ $patientToEdit->assistive_devices ?? '' }}">
                                     </div>
                                 </div>
+                                </div>
                             </div>
 
                             <!-- Skin -->
-                            <div class="assessment-subsection mb-4">
-                                <h5 class="text-primary mb-3"><i class="fas fa-hand-paper me-2"></i>Skin</h5>
-                                <div class="row">
+                            <div class="assessment-subsection mb-4" id="skin-section">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="text-primary mb-0"><i class="fas fa-hand-paper me-2"></i>Skin</h5>
+                                    <div class="form-check">
+                                        <input class="form-check-input section-normal-checkbox" type="checkbox" id="skin-normal" data-section="skin-content">
+                                        <label class="form-check-label" for="skin-normal">
+                                            Normal
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="section-content" id="skin-content">
+                                    <div class="row">
                                     <div class="col-md-3">
                                         <label for="skin_color" class="form-label">Color:</label>
                                         <select name="skin_color" id="skin_color" class="form-select">
@@ -1150,12 +1240,22 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                                                   placeholder="e.g., Rash, bruising, wounds">{{ $patientToEdit->skin_lesions ?? '' }}</textarea>
                                     </div>
                                 </div>
+                                </div>
                             </div>
 
                             <!-- Pain Assessment -->
-                            <div class="assessment-subsection mb-4">
-                                <h5 class="text-primary mb-3"><i class="fas fa-exclamation-triangle me-2"></i>Pain Assessment</h5>
-                                <div class="row">
+                            <div class="assessment-subsection mb-4" id="pain-assessment-section">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="text-primary mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Pain Assessment</h5>
+                                    <div class="form-check">
+                                        <input class="form-check-input section-normal-checkbox" type="checkbox" id="pain-assessment-normal" data-section="pain-assessment-content">
+                                        <label class="form-check-label" for="pain-assessment-normal">
+                                            No Pain
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="section-content" id="pain-assessment-content">
+                                    <div class="row">
                                     <div class="col-md-3">
                                         <label for="pain_score" class="form-label">Pain Score (0-10):</label>
                                         <input type="number" name="pain_score" id="pain_score" class="form-control" min="0" max="10"
@@ -1228,7 +1328,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             <h5 class="mb-2" style="color: #2c3e50;">Processing Your Request</h5>
             <p class="text-muted mb-0">Our AI is analyzing the patient data...</p>
             <div class="progress mt-3" style="height: 6px;">
-                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                <div class="progress-bar progress-bar-striped progress-bar-animated"
                      style="width: 100%; background-color: #DE6262;"></div>
             </div>
         </div>
@@ -1276,10 +1376,10 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                         <div id="level2-content" class="level2-content" style="display: none;">
                             <div class="level2-section-header">Advanced Differential Diagnosis</div>
                             <p>This section provides detailed clinical reasoning, alternative diagnoses, and comprehensive management strategies based on current medical guidelines.</p>
-                            
+
                             <div class="level2-section-header">Risk Stratification</div>
                             <p>Detailed risk assessment considering patient-specific factors, comorbidities, and prognostic indicators.</p>
-                            
+
                             <div class="level2-section-header">Evidence-Based Recommendations</div>
                             <p>Treatment recommendations based on latest clinical evidence and best practice guidelines.</p>
                         </div>
@@ -1309,7 +1409,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                             @csrf
                             <input type="hidden" id="conversation-id" name="conversation_id" value="{{ session('conversation_id') ?? '' }}">
                             <div class="input-group">
-                                <input type="text" id="follow-up-message" name="message" class="form-control" 
+                                <input type="text" id="follow-up-message" name="message" class="form-control"
                                        placeholder="Ask a follow-up question..." required>
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-paper-plane"></i>
@@ -2033,7 +2133,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
     document.getElementById('openaiForm').addEventListener('submit', function () {
         // Show the Canvas theme's built-in loader using the data-loader-html
         const body = document.body;
-        
+
         // Create loader overlay with the custom SVG from data-loader-html
         const loaderHTML = body.getAttribute('data-loader-html');
         if (loaderHTML) {
@@ -2053,7 +2153,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                 align-items: center;
                 backdrop-filter: blur(5px);
             `;
-            
+
             // Style the SVG container
             const svgContainer = loaderOverlay.querySelector('#css3-spinner-svg-pulse-wrapper');
             if (svgContainer) {
@@ -2062,7 +2162,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                     padding: 20px;
                 `;
             }
-            
+
             document.body.appendChild(loaderOverlay);
         } else {
             // Fallback to our custom loader
@@ -2231,7 +2331,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             if (canvasLoader) {
                 canvasLoader.remove();
             }
-            
+
             // Also hide the fallback loader
             const pageLoader = document.getElementById('page-loader');
             if (pageLoader) {
@@ -2723,13 +2823,13 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
 
             // Handle Summary Format Headers
             .replace(/^OVERALL\s+HEALTH\s+TRAJECTORY:?$/gmi, '<div class="medcura-section patient-summary"><h4 class="section-header"><i class="fas fa-chart-line"></i> OVERALL HEALTH TRAJECTORY</h4><div class="section-content">')
-            
+
             .replace(/^KEY\s+MEDICAL\s+ISSUES\s+IDENTIFIED:?$/gmi, '</div></div><div class="medcura-section differential-diagnoses"><h4 class="section-header"><i class="fas fa-stethoscope"></i> KEY MEDICAL ISSUES IDENTIFIED</h4><div class="section-content">')
-            
+
             .replace(/^IMPORTANT\s+TRENDS\s+IN\s+SYMPTOMS\s+OR\s+TEST\s+RESULTS:?$/gmi, '</div></div><div class="medcura-section recommended-tests"><h4 class="section-header"><i class="fas fa-chart-area"></i> IMPORTANT TRENDS IN SYMPTOMS OR TEST RESULTS</h4><div class="section-content">')
-            
+
             .replace(/^TREATMENT\s+EFFECTIVENESS\s+BASED\s+ON\s+VISIT\s+PROGRESSION:?$/gmi, '</div></div><div class="medcura-section management-plan"><h4 class="section-header"><i class="fas fa-clipboard-check"></i> TREATMENT EFFECTIVENESS BASED ON VISIT PROGRESSION</h4><div class="section-content">')
-            
+
             .replace(/^RECOMMENDATIONS\s+FOR\s+FUTURE\s+CARE:?$/gmi, '</div></div><div class="medcura-section warning-signs"><h4 class="section-header"><i class="fas fa-user-md"></i> RECOMMENDATIONS FOR FUTURE CARE</h4><div class="section-content">')
 
             // Handle Sub-sections within the main sections
@@ -2881,14 +2981,14 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         if (!rows || rows.length === 0) return '';
 
         let tableHtml = '<div class="medcura-table"><table class="table table-striped table-hover">';
-        
+
         for (let i = 0; i < rows.length; i++) {
             let cells = rows[i].split('|').map(cell => cell.trim()).filter(cell => cell);
-            
+
             if (cells.length < 2) continue;
-            
+
             tableHtml += '<tr>';
-            
+
             if (i === 0) {
                 // Header row
                 for (let cell of cells) {
@@ -2900,10 +3000,10 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                     tableHtml += `<td>${cell}</td>`;
                 }
             }
-            
+
             tableHtml += '</tr>';
         }
-        
+
         tableHtml += '</table></div>';
         return tableHtml;
     }
@@ -3688,7 +3788,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             // Validate form before submission
             document.getElementById('openaiForm').addEventListener('submit', function(e) {
                 const patientSelectionField = document.getElementById('patient_selection');
-                
+
                 if (patientSelectionField && patientSelectionField.value === '') {
                     e.preventDefault();
                     alert('Please select a patient');
@@ -4286,7 +4386,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                                     align-items: center;
                                     backdrop-filter: blur(5px);
                                 `;
-                                
+
                                 const svgContainer = loaderOverlay.querySelector('#css3-spinner-svg-pulse-wrapper');
                                 if (svgContainer) {
                                     svgContainer.style.cssText = `
@@ -4294,7 +4394,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                                         padding: 20px;
                                     `;
                                 }
-                                
+
                                 document.body.appendChild(loaderOverlay);
                             } else {
                                 document.getElementById('page-loader').style.display = 'flex';
@@ -4318,7 +4418,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         const content = document.getElementById('level2-content');
         const icon = document.querySelector('.toggle-icon');
         const hint = document.querySelector('.toggle-hint');
-        
+
         if (content.style.display === 'none' || content.style.display === '') {
             content.style.display = 'block';
             icon.textContent = '▲';
@@ -4331,5 +4431,57 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             hint.textContent = 'Click to Expand';
         }
     }
+</script>
+
+<!-- Head-to-Toe Assessment Normal Checkbox Handler -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all normal checkboxes
+        const normalCheckboxes = document.querySelectorAll('.section-normal-checkbox');
+
+        // Add event listener to each checkbox
+        normalCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const sectionContentId = this.getAttribute('data-section');
+                const sectionContent = document.getElementById(sectionContentId);
+
+                if (this.checked) {
+                    // If checked, hide the section content using vanilla JavaScript
+                    sectionContent.style.display = 'none';
+
+                    // Clear all inputs in this section
+                    const inputs = sectionContent.querySelectorAll('input, select, textarea');
+                    inputs.forEach(input => {
+                        if (input.type === 'checkbox' || input.type === 'radio') {
+                            input.checked = false;
+                        } else if (input.tagName === 'SELECT') {
+                            input.selectedIndex = 0;
+                        } else {
+                            input.value = '';
+                        }
+                    });
+
+                    // Add a hidden input to indicate this section is normal
+                    const sectionId = this.id.replace('-normal', '');
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = sectionId + '_status';
+                    hiddenInput.value = 'normal';
+                    hiddenInput.id = sectionId + '_status';
+                    sectionContent.parentNode.appendChild(hiddenInput);
+                } else {
+                    // If unchecked, show the section content using vanilla JavaScript
+                    sectionContent.style.display = 'block';
+
+                    // Remove the hidden input if it exists
+                    const sectionId = this.id.replace('-normal', '');
+                    const hiddenInput = document.getElementById(sectionId + '_status');
+                    if (hiddenInput) {
+                        hiddenInput.parentNode.removeChild(hiddenInput);
+                    }
+                }
+            });
+        });
+    });
 </script>
     @endsection
