@@ -485,6 +485,173 @@
         flex-shrink: 0;
         margin-top: 2px;
     }
+
+    /* MedCura Section Styling - EXACT COPY FROM AI RESPONSE POPUP */
+    .medcura-section {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .medcura-section .section-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        color: #2c3e50;
+        padding: 15px 20px;
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-bottom: 1px solid #e8e8e8;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .medcura-section .section-content {
+        padding: 20px;
+        line-height: 1.6;
+    }
+
+    .medcura-section .section-content p {
+        margin-bottom: 12px;
+        color: #2c3e50;
+        text-align: justify;
+        word-spacing: 0.1em;
+    }
+
+    .medcura-section .section-content p:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Specific section colors */
+    .medcura-section.patient-summary .section-header {
+        background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+        color: #155724;
+    }
+
+    .medcura-section.differential-diagnoses .section-header {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        color: #856404;
+    }
+
+    .medcura-section.recommended-tests .section-header {
+        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+        color: #0c5460;
+    }
+
+    .medcura-section.management-plan .section-header {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        color: #721c24;
+    }
+
+    .medcura-section.warning-signs .section-header {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        color: #856404;
+    }
+
+    /* MedCura Table Styling - EXACT COPY FROM AI RESPONSE POPUP */
+    .medcura-table {
+        margin: 15px 0;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .medcura-table table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+        background: #ffffff;
+    }
+
+    .medcura-table .table-header-cell {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        font-weight: 600;
+        padding: 12px 15px;
+        text-align: left;
+        border: none;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .medcura-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+        vertical-align: top;
+    }
+
+    .medcura-table tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+
+    .medcura-table tr:hover {
+        background-color: #e9ecef;
+    }
+
+    /* Medical List Styling - EXACT COPY FROM AI RESPONSE POPUP */
+    .medical-list {
+        margin: 15px 0;
+        padding-left: 25px;
+    }
+
+    .medical-list li {
+        margin-bottom: 8px;
+        line-height: 1.5;
+    }
+
+    /* Urgency Badge Styling - EXACT COPY FROM AI RESPONSE POPUP */
+    .urgency-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        text-align: center;
+        margin: 10px 0;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.9rem;
+    }
+
+    .urgency-badge.emergency {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    }
+
+    .urgency-badge.urgent {
+        background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(255, 165, 0, 0.3);
+    }
+
+    .urgency-badge.routine {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    /* Subsection Header Styling - EXACT COPY FROM AI RESPONSE POPUP */
+    .subsection-header {
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 15px 0 10px 0;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 1rem;
+    }
+
+    /* Simple, clean AI Summary Design */
+    .ai-summary-simple {
+        background: #f8f9fa;
+        border: 1px solid rgba(0,0,0,0.05);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    }
     
     /* Enhanced AI content styling */
     .ai-content {
@@ -735,8 +902,9 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         content: "•";
         color: #DE6262;
         font-weight: bold;
-        font-size: 1.2rem;
-        margin-top: -2px;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        margin-top: 2px;
     }
 
     .medcura-table {
@@ -1083,6 +1251,35 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         .bullet-item {
             font-size: 0.9rem;
         }
+        
+        /* Enhanced modal responsive - EXACT COPY FROM AI RESPONSE */
+        .modal-dialog.modal-xl {
+            margin: 0.5rem;
+            max-width: calc(100% - 1rem);
+        }
+        
+        .modal-header {
+            padding: 1rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .modal-body {
+            padding: 1rem;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .level-header {
+            font-size: 1.1rem;
+            padding: 15px 18px;
+        }
+        
+        .section-header {
+            font-size: 1rem;
+            padding: 12px 18px;
+        }
     }
     
     @media (max-width: 576px) {
@@ -1324,7 +1521,6 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                             </div>
                         </form>
                     </div>
-                </div>
                 </div>
             </div>
         </div>
@@ -1772,64 +1968,35 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         /**
          * Format AI response text with proper HTML formatting
          */
-        function formatTable(tableRows) {
-            if (!tableRows || tableRows.length === 0) return '';
+        function formatTable(rows) {
+            if (!rows || rows.length === 0) return '';
+
+            let tableHtml = '<div class="medcura-table"><table class="table table-striped table-hover">';
             
-            let table = '<table class="table table-striped mt-3">';
-            let isFirstRow = true;
-            let headerAdded = false;
-            
-            for (const row of tableRows) {
-                let cells = [];
+            for (let i = 0; i < rows.length; i++) {
+                let cells = rows[i].split('|').map(cell => cell.trim()).filter(cell => cell);
                 
-                // Handle different table formats
-                if (row.includes('|')) {
-                    // Pipe-separated format
-                    cells = row.split('|').map(cell => cell.trim()).filter(cell => cell);
-                } else if (row.match(/^(Rank|1|2|3|4|5)\s+/)) {
-                    // Diagnosis table format without pipes
-                    const match = row.match(/^(\d+|Rank)\s+(.*?)\s+(\d+%)\s+(.*?)$/);
-                    if (match) {
-                        cells = [match[1], match[2], match[3], match[4]];
-                    } else {
-                        // Try to parse the concatenated format
-                        const diagnosisMatch = row.match(/^(\d+)(.*?)(\d+%)(.*?)$/);
-                        if (diagnosisMatch) {
-                            cells = [diagnosisMatch[1], diagnosisMatch[2], diagnosisMatch[3], diagnosisMatch[4]];
-                        }
+                if (cells.length < 2) continue;
+                
+                tableHtml += '<tr>';
+                
+                if (i === 0) {
+                    // Header row
+                    for (let cell of cells) {
+                        tableHtml += `<th class="table-header-cell">${cell}</th>`;
                     }
-                } else if (row.includes('RankDiagnosis')) {
-                    // Header row for the concatenated format
-                    cells = ['Rank', 'Diagnosis', 'Probability (%)', 'Clinical Reasoning'];
-                }
-                
-                if (cells.length === 0) continue;
-                
-                // Check if this should be a header row
-                if (!headerAdded && (cells.some(cell => cell.toLowerCase().includes('rank') || cell.toLowerCase().includes('diagnosis')) || isFirstRow)) {
-                    table += '<thead><tr>';
-                    cells.forEach(cell => {
-                        table += `<th>${cell}</th>`;
-                    });
-                    table += '</tr></thead><tbody>';
-                    headerAdded = true;
-                    isFirstRow = false;
                 } else {
-                    // Data row
-                    table += '<tr>';
-                    cells.forEach((cell, index) => {
-                        // Check if this is a probability cell
-                        if (cell.includes('%')) {
-                            cell = `<span class="probability">${cell}</span>`;
-                        }
-                        table += `<td>${cell}</td>`;
-                    });
-                    table += '</tr>';
+                    // Data rows
+                    for (let cell of cells) {
+                        tableHtml += `<td>${cell}</td>`;
+                    }
                 }
+                
+                tableHtml += '</tr>';
             }
             
-            table += '</tbody></table>';
-            return table;
+            tableHtml += '</table></div>';
+            return tableHtml;
         }
 
         function formatAIResponse(text) {
@@ -2023,30 +2190,46 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                     continue;
                 }
                 
-                // Check for list items - EXACT SAME AS AI RESPONSE
-                if (/^[•\-\*]\s+/.test(line) || /^\s*[\-\*]\s+/.test(line) || /^\d+[\.\)]\s+/.test(line)) {
-                    let isOrdered = /^\d+[\.\)]\s+/.test(line);
-                    let content = line.replace(/^[•\-\*\s]*/, '').replace(/^\d+[\.\)]\s+/, '');
-                    
-                    if (!inList) {
-                        listType = isOrdered ? 'ol' : 'ul';
-                        formatted += `<${listType} class="medical-list">`;
+                // Handle numbered lists - EXACT SAME AS AI RESPONSE
+                if (/^\d+[\.\)]\s+/.test(line)) {
+                    if (!inList || listType !== 'ol') {
+                        if (inList) formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                        formatted += '<ol class="medical-list">';
                         inList = true;
-                    } else if ((isOrdered && listType === 'ul') || (!isOrdered && listType === 'ol')) {
-                        formatted += `</${listType}>`;
-                        listType = isOrdered ? 'ol' : 'ul';
-                        formatted += `<${listType} class="medical-list">`;
+                        listType = 'ol';
                     }
-                    
-                    formatted += `<li class="bullet-item">${content}</li>`;
+                    formatted += '<li class="bullet-item">' + line.replace(/^\d+[\.\)]\s+/, '') + '</li>';
+                    continue;
+                }
+
+                // Handle bullet points - Enhanced to catch all bullet patterns
+                if (/^[•\-\*]\s+/.test(line) || /^\s*[\-\*]\s+/.test(line) || /^[\s]*[•]\s*/.test(line)) {
+                    if (!inList || listType !== 'ul') {
+                        if (inList) formatted += listType === 'ul' ? '</ul>' : '</ol>';
+                        formatted += '<ul class="medical-list">';
+                        inList = true;
+                        listType = 'ul';
+                    }
+                    formatted += '<li class="bullet-item">' + line.replace(/^[•\-\*\s]+/, '') + '</li>';
                     continue;
                 } else if (inList) {
                     formatted += listType === 'ul' ? '</ul>' : '</ol>';
                     inList = false;
                 }
                 
-                // Regular paragraph
-                formatted += `<p>${line}</p>`;
+                // Check if this might be a bullet point that wasn't caught
+                if (line.includes('•') && !line.startsWith('<')) {
+                    // Convert any remaining bullet points to proper list items
+                    if (!inList) {
+                        formatted += '<ul class="medical-list">';
+                        inList = true;
+                        listType = 'ul';
+                    }
+                    formatted += '<li class="bullet-item">' + line.replace(/^[•\-\*\s]+/, '') + '</li>';
+                } else {
+                    // Regular paragraph
+                    formatted += `<p>${line}</p>`;
+                }
             }
             
             // Close any open lists or tables
@@ -2226,8 +2409,11 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         });
         
         // Function to generate AI summary from patient records
+        let currentPatientRecords = [];
+        
         function generateAISummary(patientRecords) {
             console.log('generateAISummary function called with:', patientRecords);
+            currentPatientRecords = patientRecords; // Store for retry functionality
             
             // Prepare the data for the AI summary
             const summaryData = {
@@ -2313,9 +2499,9 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                         // Apply the same formatting as the response popup
                         const formattedSummary = formatAIResponse(plainTextContent);
                         
-                        // Wrap in the same styling as response modal
+                        // Simple, clean AI Summary Design
                         const styledSummary = `
-                            <div class="ai-summary" style="background-color: #f8f9fa; border-radius: 15px; padding: 20px; box-shadow: 0 3px 15px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05);">
+                            <div class="ai-summary-simple">
                                 ${formattedSummary}
                             </div>
                         `;
@@ -2343,11 +2529,32 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                     console.error('Error generating summary:', xhr);
                     console.log('Response text:', xhr.responseText);
                     console.log('Status:', xhr.status);
+                    
+                    let errorMessage = 'An error occurred while generating the summary.';
+                    
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        if (errorResponse.message) {
+                            errorMessage = errorResponse.message;
+                        }
+                    } catch (e) {
+                        if (xhr.status === 429) {
+                            errorMessage = 'Too many requests. Please wait a moment and try again.';
+                        } else if (xhr.status === 500) {
+                            errorMessage = 'Server error. Please try again later.';
+                        } else if (xhr.status === 0) {
+                            errorMessage = 'Network error. Please check your connection.';
+                        }
+                    }
+                    
                     $('#aiSummaryContainer').html(`
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            Error generating summary: ${xhr.status} ${xhr.statusText}
-                            <br><small>Check console for details</small>
+                            ${errorMessage}
+                            <br><small>Status: ${xhr.status} - ${xhr.statusText}</small>
+                            <br><button class="btn btn-sm btn-outline-primary mt-2" onclick="generateAISummary(currentPatientRecords)">
+                                <i class="fas fa-redo me-1"></i>Try Again
+                            </button>
                         </div>
                     `);
                 }
