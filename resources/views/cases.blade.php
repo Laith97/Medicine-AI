@@ -644,13 +644,87 @@
         font-size: 1rem;
     }
 
-    /* Simple, clean AI Summary Design */
+    /* Clean AI Summary Design */
     .ai-summary-simple {
         background: #f8f9fa;
         border: 1px solid rgba(0,0,0,0.05);
         border-radius: 15px;
         padding: 20px;
-        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .ai-summary-simple h4 {
+        color: #2c3e50;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        font-weight: 600;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 8px;
+    }
+    
+    .ai-summary-simple ul {
+        padding-left: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .ai-summary-simple li {
+        margin-bottom: 8px;
+    }
+    
+    .ai-summary-simple p {
+        margin-bottom: 12px;
+        color: #2c3e50;
+        line-height: 1.6;
+    }
+    
+    /* Loading animation for AI summary */
+    .ai-summary-loading {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: 1px solid rgba(222, 98, 98, 0.1);
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .ai-summary-loading::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
+    }
+    
+    .ai-summary-loading .spinner-border {
+        color: #DE6262;
+        width: 3rem;
+        height: 3rem;
+        border-width: 0.3em;
+    }
+    
+    .ai-summary-loading h6 {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    .ai-summary-loading .text-muted {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .ai-summary-loading .progress {
+        background-color: rgba(222, 98, 98, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .ai-summary-loading .progress-bar {
+        background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
     }
     
     /* Enhanced AI content styling */
@@ -2049,7 +2123,7 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                 .replace(/^(-{0,3}C\)?\s*.*?(TREATMENT|MANAGEMENT|PLAN|THERAPY|INTERVENTION).*?:?)$/gmi, '</div></div><div class="medical-section management-plan"><h4 class="section-header"><i class="fas fa-pills"></i> C) MANAGEMENT RECOMMENDATIONS</h4><div class="section-content">')
                 
                 // D) Warning Signs Section - Handle with or without dashes
-                .replace(/^(-{0,3}D\)?\s*WARNING\s+SIGNS.*?:?|⚠️\s*WARNING\s+SIGNS.*?:?)$/gmi, '</div></div><div class="medical-section warning-signs"><h4 class="section-header"><i class="fas fa-exclamation-triangle"></i> D) WARNING SIGNS TO MONITOR</h4><div class="section-content">')
+                .replace(/^(-{0,3}D\)?\s*WARNING\s+SIGNS.*?:?|⚠️\s*WARNING\s+SIGNS.*?:?)$/gmi, '</div></div><div class="medical-section warning-signs"><h4 class="section-header"><i class="fas fa-exclamation-triangle"></i>WARNING SIGNS TO MONITOR</h4><div class="section-content">')
                 
                 // Specific pattern for the exact format: "---B) RECOMMENDED INVESTIGATIONS:"
                 .replace(/^---([ABCD])\)\s*(.+?):\s*$/gmi, function(match, letter, text) {
@@ -2415,6 +2489,9 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             console.log('generateAISummary function called with:', patientRecords);
             currentPatientRecords = patientRecords; // Store for retry functionality
             
+            // Track performance
+            const startTime = performance.now();
+            
             // Prepare the data for the AI summary
             const summaryData = {
                 patient_name: $('#summaryPatientName').text(),
@@ -2432,6 +2509,21 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                 }))
             };
             
+            // Show enhanced loading state
+            $('#aiSummaryContainer').html(`
+                <div class="ai-summary-loading">
+                    <div class="spinner-border mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h6 class="mb-2">🤖 AI Analysis in Progress</h6>
+                    <p class="text-muted mb-0">Analyzing ${patientRecords.length} visit(s) to generate comprehensive summary...</p>
+                    <div class="progress mt-3" style="height: 6px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 100%"></div>
+                    </div>
+                </div>
+            `);
+            
             // Make AJAX request to generate summary
             console.log('Sending AI summary request with data:', summaryData);
             $.ajax({
@@ -2445,61 +2537,22 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                     console.log('AI summary request started');
                 },
                 success: function(response) {
+                    const endTime = performance.now();
+                    const duration = ((endTime - startTime) / 1000).toFixed(2);
+                    
+                    console.log('AI summary response received:', response);
+                    console.log(`Summary generation completed in ${duration} seconds`);
+                    
                     if (response.success) {
-                        // Process the summary to remove Patient Information section
-                        let summaryHtml = response.summary;
-                        let aiContentText = response.summary; // Default to full summary
-                        
-                        // Extract the HTML content
+                        // Extract the plain text content from the response
                         const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = summaryHtml;
-                        
-                        // Get the AI content div
-                        const aiContentDiv = tempDiv.querySelector('.ai-content');
-                        if (aiContentDiv) {
-                            // Get the HTML content as text
-                            aiContentText = aiContentDiv.innerHTML;
-                            
-                            // Check if there's a Current Symptoms section before removing Patient Information
-                            let currentSymptoms = null;
-                            const currentSymptomsRegex = /<p>Current\s+Symptoms:[\s\S]*?(?=<p>A\)\s*POSSIBLE\s*DIAGNOSIS|<\/div>)/i;
-                            const currentSymptomsMatch = aiContentText.match(currentSymptomsRegex);
-                            
-                            if (currentSymptomsMatch) {
-                                currentSymptoms = currentSymptomsMatch[0];
-                                console.log('Found Current Symptoms in summary:', currentSymptoms);
-                            }
-                            
-                            // Remove Patient Information section using regex
-                            const patientInfoRegex = /<p>Patient Information:[\s\S]*?<p>---<\/p>/i;
-                            aiContentText = aiContentText.replace(patientInfoRegex, '');
-                            
-                            // Also check for the specific format with Age, Gender, Total Visits
-                            const patientDetailsRegex = /<p>Age:[\s\S]*?<p>Gender:[\s\S]*?<p>Total Visits:[\s\S]*?<\/p>/i;
-                            aiContentText = aiContentText.replace(patientDetailsRegex, '');
-                            
-                            // If we found Current Symptoms and it was removed, add it back at the beginning
-                            if (currentSymptoms && !aiContentText.includes(currentSymptoms)) {
-                                aiContentText = currentSymptoms + aiContentText;
-                            }
-                            
-                            // Update the AI content div
-                            aiContentDiv.innerHTML = aiContentText;
-                            
-                            // Get the updated HTML
-                            summaryHtml = tempDiv.innerHTML;
-                        }
-                        
-                        // Apply professional formatting to the summary
-                        // First, extract plain text from HTML if needed
-                        const tempContentDiv = document.createElement('div');
-                        tempContentDiv.innerHTML = aiContentText;
-                        const plainTextContent = tempContentDiv.textContent || tempContentDiv.innerText || aiContentText;
+                        tempDiv.innerHTML = response.summary;
+                        const plainTextContent = tempDiv.textContent || tempDiv.innerText || response.summary;
                         
                         // Apply the same formatting as the response popup
                         const formattedSummary = formatAIResponse(plainTextContent);
                         
-                        // Simple, clean AI Summary Design
+                        // Simple, clean AI Summary Design with enhanced styling
                         const styledSummary = `
                             <div class="ai-summary-simple">
                                 ${formattedSummary}
@@ -2520,15 +2573,23 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                     } else {
                         $('#aiSummaryContainer').html(`
                             <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
                                 ${response.message || 'Failed to generate summary.'}
+                                <br><button class="btn btn-sm btn-outline-primary mt-2" onclick="generateAISummary(currentPatientRecords)">
+                                    <i class="fas fa-redo me-1"></i>Try Again
+                                </button>
                             </div>
                         `);
                     }
                 },
                 error: function(xhr) {
+                    const endTime = performance.now();
+                    const duration = ((endTime - startTime) / 1000).toFixed(2);
+                    
                     console.error('Error generating summary:', xhr);
                     console.log('Response text:', xhr.responseText);
                     console.log('Status:', xhr.status);
+                    console.error(`Failed after ${duration} seconds`);
                     
                     let errorMessage = 'An error occurred while generating the summary.';
                     
@@ -2551,7 +2612,7 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             ${errorMessage}
-                            <br><small>Status: ${xhr.status} - ${xhr.statusText}</small>
+                            <br><small>Status: ${xhr.status} - ${xhr.statusText} (${duration}s)</small>
                             <br><button class="btn btn-sm btn-outline-primary mt-2" onclick="generateAISummary(currentPatientRecords)">
                                 <i class="fas fa-redo me-1"></i>Try Again
                             </button>
@@ -2986,7 +3047,7 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
 
         // Warning Signs Section
         text = text.replace(/D\)\s*WARNING\s+SIGNS\s+TO\s+MONITOR/i,
-            '</div></div><div class="medcura-section warning-signs"><h4 class="section-header">D) WARNING SIGNS TO MONITOR</h4><div class="section-content">');
+            '</div></div><div class="medcura-section warning-signs"><h4 class="section-header"> WARNING SIGNS TO MONITOR</h4><div class="section-content">');
 
         // Level 2 Detailed Medical Report Section
         text = text.replace(/🔵\s*DETAILED\s+MEDICAL\s+REPORT\s+\(Click\s+to\s+Expand\)/i,
