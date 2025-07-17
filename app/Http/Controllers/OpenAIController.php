@@ -1693,7 +1693,19 @@ class OpenAIController extends Controller
                 ], 400);
             }
 
-            // Prepare the prompt for OpenAI
+            // Check for cached summary to improve performance
+            $cacheKey = 'patient_summary_' . md5(json_encode($summaryData));
+            $cachedSummary = cache()->get($cacheKey);
+            
+            if ($cachedSummary) {
+                \Log::info('Returning cached summary');
+                return response()->json([
+                    'success' => true,
+                    'summary' => $cachedSummary
+                ]);
+            }
+
+            // Prepare the improved prompt for OpenAI
             $prompt = "Generate a comprehensive medical summary for the following patient based on their visit history:\n\n";
             $prompt .= "Patient: " . $summaryData['patient_name'] . "\n";
             $prompt .= "Age: " . $summaryData['patient_age'] . "\n";
@@ -1702,20 +1714,25 @@ class OpenAIController extends Controller
             $prompt .= "Visit History:\n";
 
             // Add instruction to not repeat patient information in the response
-            $prompt .= "\nIMPORTANT: Do not include a 'Patient Information' section in your response. The patient's name, age, gender, and visit count are already displayed in the UI and should not be repeated in your summary. However, DO include the 'Current Symptoms' section as it contains important clinical information.\n";
+            $prompt .= "\nIMPORTANT: Do not include a 'Patient Information' section in your response. The patient's name, age, gender, and visit count are already displayed in the UI and should not be repeated in your summary.\n";
 
             foreach ($summaryData['visits'] as $visit) {
                 $prompt .= "Visit #" . $visit['visit_number'] . " (" . $visit['date'] . "):\n";
                 $prompt .= $visit['ai_response'] . "\n\n";
             }
 
-            $prompt .= "\nPlease provide a concise summary that includes:\n";
-            $prompt .= "1. Overall health trajectory (improving, worsening, stable)\n";
-            $prompt .= "2. Key medical issues identified across all visits\n";
-            $prompt .= "3. Important trends in symptoms or test results\n";
-            $prompt .= "4. Treatment effectiveness based on visit progression\n";
-            $prompt .= "5. Recommendations for future care\n\n";
-            $prompt .= "Format the summary with clear headings and bullet points where appropriate.";
+            $prompt .= "\nPlease provide a concise summary using the following structure:\n\n";
+            $prompt .= "OVERALL HEALTH TRAJECTORY:\n";
+            $prompt .= "Describe if the patient's condition is improving, worsening, or stable.\n\n";
+            $prompt .= "KEY MEDICAL ISSUES IDENTIFIED:\n";
+            $prompt .= "List the main medical problems found across all visits.\n\n";
+            $prompt .= "IMPORTANT TRENDS IN SYMPTOMS OR TEST RESULTS:\n";
+            $prompt .= "Highlight any significant changes or patterns.\n\n";
+            $prompt .= "TREATMENT EFFECTIVENESS BASED ON VISIT PROGRESSION:\n";
+            $prompt .= "Evaluate how well treatments are working.\n\n";
+            $prompt .= "RECOMMENDATIONS FOR FUTURE CARE:\n";
+            $prompt .= "Provide specific recommendations for ongoing care.\n\n";
+            $prompt .= "Use clear, professional language and bullet points where appropriate. Do not use section letters like 'A)', 'B)', 'C)' etc. Use the exact headers provided above.";
 
             // Get user's specialty and criterion
             $specialty = auth()->user()->setting->specialty ?? null;
@@ -1737,97 +1754,11 @@ class OpenAIController extends Controller
             // Remove Patient Information section
             $summary = $this->removePatientInfoSection($summary);
 
-            // Format the summary with proper HTML
-            $lines = explode("\n", $summary);
-            $formattedSummary = '';
-            $inList = false;
-            $listType = '';
+            // Use simple formatting for the summary (let frontend handle styling)
+            $formattedSummary = '<div class="ai-content">' . nl2br(htmlspecialchars($summary)) . '</div>';
 
-            // Process each line
-            foreach ($lines as $line) {
-                // Check for headers (# Header)
-                if (preg_match('/^#{1,6}\s+(.+)$/', $line, $matches)) {
-                    if ($inList) {
-                        $formattedSummary .= $listType === 'ul' ? '</ul>' : '</ol>';
-                        $inList = false;
-                    }
-                    $formattedSummary .= '<h4>' . $matches[1] . '</h4>';
-                }
-                // Check for bullet points (* Item or - Item)
-                else if (preg_match('/^[\s]*[\*\-]\s+(.+)$/', $line, $matches)) {
-                    if (!$inList || $listType !== 'ul') {
-                        if ($inList) $formattedSummary .= $listType === 'ul' ? '</ul>' : '</ol>';
-                        $formattedSummary .= '<ul>';
-                        $inList = true;
-                        $listType = 'ul';
-                    }
-                    $formattedSummary .= '<li>' . $matches[1] . '</li>';
-                }
-                // Check for numbered lists (1. Item)
-                else if (preg_match('/^[\s]*\d+\.\s+(.+)$/', $line, $matches)) {
-                    if (!$inList || $listType !== 'ol') {
-                        if ($inList) $formattedSummary .= $listType === 'ul' ? '</ul>' : '</ol>';
-                        $formattedSummary .= '<ol>';
-                        $inList = true;
-                        $listType = 'ol';
-                    }
-                    $formattedSummary .= '<li>' . $matches[1] . '</li>';
-                }
-                // Regular text
-                else {
-                    if ($inList) {
-                        $formattedSummary .= $listType === 'ul' ? '</ul>' : '</ol>';
-                        $inList = false;
-                    }
-
-                    // Skip empty lines
-                    if (trim($line) === '') {
-                        $formattedSummary .= '<br>';
-                        continue;
-                    }
-
-                    // Check for section headers with multiple patterns
-                    if (preg_match('/^[A-Z][\)\.]?\s+.*?(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS).*?$/i', $line) ||
-                        preg_match('/^(DIAGNOS[IE]S|RECOMMENDATIONS|TREATMENT|WARNINGS).*?$/i', $line) ||
-                        preg_match('/^[A-Z]\)\s+(POSSIBLE\s+DIAGNOS[IE]S|RECOMMENDATIONS\s+FOR\s+TESTS|TREATMENT\s+RECOMMENDATIONS|WARNINGS)$/i', $line)) {
-                        $className = '';
-                        if (preg_match('/DIAGNOS[IE]S/i', $line)) {
-                            $className = 'section-diagnosis';
-                        } elseif (preg_match('/RECOMMENDATIONS/i', $line)) {
-                            $className = 'section-recommendations';
-                        } elseif (preg_match('/TREATMENT/i', $line)) {
-                            $className = 'section-treatment';
-                        } elseif (preg_match('/WARNINGS/i', $line)) {
-                            $className = 'section-warnings';
-                        }
-
-                        $formattedSummary .= '<p><strong class="' . $className . '">' . $line . '</strong></p>';
-                    } else {
-                        // All other text is formatted as regular paragraphs
-                        $formattedSummary .= '<p>' . $line . '</p>';
-                    }
-                }
-            }
-
-            // Close any open lists
-            if ($inList) {
-                $formattedSummary .= $listType === 'ul' ? '</ul>' : '</ol>';
-            }
-
-            // Process inline formatting
-
-            // Bold text between ** or __
-            $formattedSummary = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $formattedSummary);
-            $formattedSummary = preg_replace('/__(.+?)__/', '<strong>$1</strong>', $formattedSummary);
-
-            // Italic text between * or _
-            $formattedSummary = preg_replace('/\*([^*]+)\*/', '<em>$1</em>', $formattedSummary);
-            $formattedSummary = preg_replace('/_([^_]+)_/', '<em>$1</em>', $formattedSummary);
-
-            // Section headers are now handled during line processing
-
-            // Wrap in ai-content div
-            $formattedSummary = '<div class="ai-content">' . $formattedSummary . '</div>';
+            // Cache the result for 30 minutes to improve performance
+            cache()->put($cacheKey, $formattedSummary, 1800);
 
             return response()->json([
                 'success' => true,
@@ -1843,6 +1774,8 @@ class OpenAIController extends Controller
             ], 500);
         }
     }
+
+
 
     /**
      * Get the system prompt based on user's specialty and criterion
