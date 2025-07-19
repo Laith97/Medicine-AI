@@ -65,28 +65,28 @@
         <div class="row text-center g-4">
             <div class="col-md-3">
                 <div class="p-4 rounded shadow-sm bg-white">
-                    <i class="i-plain i-xlarge icon-medical-i-surgery mb-2" style="color: #DE6262;"></i>
+                    <i class="fas fa-procedures fa-3x mb-2" style="color: #DE6262;"></i>
                     <h2 class="fw-bold mb-0">42,762+</h2>
                     <p class="mb-0 text-muted">Treatments Made</p>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="p-4 rounded shadow-sm bg-white">
-                    <i class="i-plain i-xlarge icon-medical-i-respiratory mb-2" style="color: #DE6262;"></i>
+                    <i class="fas fa-lungs fa-3x mb-2" style="color: #DE6262;"></i>
                     <h2 class="fw-bold mb-0">21,500+</h2>
                     <p class="mb-0 text-muted">Cured Patients</p>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="p-4 rounded shadow-sm bg-white">
-                    <i class="i-plain i-xlarge icon-medical-i-social-services mb-2" style="color: #DE6262;"></i>
+                    <i class="fas fa-users fa-3x mb-2" style="color: #DE6262;"></i>
                     <h2 class="fw-bold mb-0">408K</h2>
                     <p class="mb-0 text-muted">Satisfied Customers</p>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="p-4 rounded shadow-sm bg-white">
-                    <i class="i-plain i-xlarge icon-medical-i-ambulance mb-2" style="color: #DE6262;"></i>
+                    <i class="fas fa-ambulance fa-3x mb-2" style="color: #DE6262;"></i>
                     <h2 class="fw-bold mb-0">140</h2>
                     <p class="mb-0 text-muted">Ambulance Available</p>
                 </div>
@@ -119,30 +119,30 @@
                 <!-- How It Works Section (Stepper Style) -->
                 <div class="how-it-works p-4 rounded shadow-sm bg-white mb-4">
                     <div class="heading-block mb-3 border-bottom-0 text-center">
-                        <h4 class="fw-bold mb-2" style="color: #DE6262;"><i class="icon-line-clipboard me-2"></i>How It Works</h4>
+                        <h4 class="fw-bold mb-2" style="color: #DE6262;"><i class="fas fa-clipboard-list me-2"></i>How It Works</h4>
                         <span class="text-muted">A simple, guided process for doctors</span>
                     </div>
                     <div class="row text-center align-items-center justify-content-center g-0 mb-3">
                         <div class="col-3 col-md-3">
-                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="icon-user"></i></div>
+                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="fas fa-user"></i></div>
                             <div class="fw-semibold">Login</div>
                             <div class="small text-muted">Access your account</div>
                         </div>
                         <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
                         <div class="col-3 col-md-3">
-                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="icon-edit"></i></div>
+                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="fas fa-edit"></i></div>
                             <div class="fw-semibold">Fill Form</div>
                             <div class="small text-muted">Enter patient data</div>
                         </div>
                         <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
                         <div class="col-3 col-md-3">
-                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="icon-line-paper-plane"></i></div>
+                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="fas fa-paper-plane"></i></div>
                             <div class="fw-semibold">Submit</div>
                             <div class="small text-muted">Send for AI analysis</div>
                         </div>
                         <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
                         <div class="col-3 col-md-3">
-                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="icon-medical-i-bar-graph"></i></div>
+                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="fas fa-chart-bar"></i></div>
                             <div class="fw-semibold">Get Results</div>
                             <div class="small text-muted">View instant diagnosis</div>
                         </div>
@@ -154,13 +154,13 @@
                 <!-- Core Principles Section -->
                 <div class="core-principles p-4 rounded shadow-sm bg-white mt-4">
                     <div class="heading-block mb-3 border-bottom-0">
-                        <h4 class="fw-bold mb-2"><i class="icon-line-heart me-2" style="color: #DE6262;"></i>Core Principles</h4>
+                        <h4 class="fw-bold mb-2"><i class="fas fa-heart me-2" style="color: #DE6262;"></i>Core Principles</h4>
                         <span class="text-muted">What drives MedCura AI for Doctors</span>
                     </div>
                     <ul class="list-unstyled mb-0">
-                        <li class="mb-2"><i class="icon-line-check text-success me-2"></i> Evidence-based practice</li>
-                        <li class="mb-2"><i class="icon-line-check text-success me-2"></i> Patient-centered care</li>
-                        <li class="mb-2"><i class="icon-line-check text-success me-2"></i> Reducing unnecessary interventions</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Evidence-based practice</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Patient-centered care</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Reducing unnecessary interventions</li>
                     </ul>
                 </div>
             </div>

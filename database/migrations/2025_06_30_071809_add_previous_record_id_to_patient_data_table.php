@@ -30,11 +30,17 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('patient_data', function (Blueprint $table) {
-            // Remove the foreign key constraint first
-            $table->dropForeign(['previous_record_id']);
-            
-            // Then drop the column
-            $table->dropColumn('previous_record_id');
+            if (Schema::hasColumn('patient_data', 'previous_record_id')) {
+                // Remove the foreign key constraint first (if it exists)
+                try {
+                    $table->dropForeign(['previous_record_id']);
+                } catch (\Exception $e) {
+                    // Foreign key might not exist, continue with column drop
+                }
+                
+                // Then drop the column
+                $table->dropColumn('previous_record_id');
+            }
         });
     }
 };

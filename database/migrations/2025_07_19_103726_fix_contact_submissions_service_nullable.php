@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('settings', function (Blueprint $table) {
-            $table->string('specialty')->nullable()->after('criterion');
+        Schema::table('contact_submissions', function (Blueprint $table) {
+            $table->string('service')->nullable()->default('General Inquiry')->change();
         });
     }
 
@@ -21,10 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('settings', function (Blueprint $table) {
-            if (Schema::hasColumn('settings', 'specialty')) {
-                $table->dropColumn('specialty');
-            }
+        Schema::table('contact_submissions', function (Blueprint $table) {
+            $table->string('service')->nullable(false)->default(null)->change();
         });
     }
 };

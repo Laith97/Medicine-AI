@@ -198,6 +198,132 @@
         box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.15) !important;
     }
 
+    /* Responsive Modal Styles */
+    @media (max-width: 768px) {
+        .modal-dialog.modal-xl {
+            margin: 0.5rem;
+            max-width: calc(100% - 1rem);
+        }
+
+        .response-modal-header {
+            padding: 1rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .response-modal-header .modal-title {
+            font-size: 1.1rem;
+            word-break: break-word;
+            hyphens: auto;
+            line-height: 1.3;
+        }
+
+        .response-modal-header > div {
+            align-self: flex-end;
+        }
+
+        .response-modal-body {
+            padding: 1rem;
+        }
+
+        /* Fix text display issues in modal body */
+        .response-modal-body .patient-info-section,
+        .response-modal-body .ai-response-section,
+        .response-modal-body .ai-response-content {
+            font-size: 0.9rem !important;
+            line-height: 1.5 !important;
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+            hyphens: auto !important;
+        }
+
+        .response-modal-body p {
+            margin-bottom: 0.8rem !important;
+            text-align: left !important;
+        }
+
+        .response-modal-body h1, 
+        .response-modal-body h2, 
+        .response-modal-body h3, 
+        .response-modal-body h4,
+        .response-modal-body h5,
+        .response-modal-body h6 {
+            font-size: 1rem !important;
+            line-height: 1.3 !important;
+            word-break: break-word !important;
+            margin-top: 1rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .response-modal-body ul,
+        .response-modal-body ol {
+            padding-left: 1.2rem !important;
+            margin-bottom: 1rem !important;
+        }
+
+        .response-modal-body li {
+            margin-bottom: 0.5rem !important;
+            line-height: 1.4 !important;
+            word-break: break-word !important;
+        }
+
+        .response-modal-body .form-control-plaintext {
+            font-size: 0.9rem !important;
+            word-break: break-word !important;
+        }
+
+        .response-modal-body .col-form-label {
+            font-size: 0.9rem !important;
+            word-break: break-word !important;
+        }
+    }
+
+    /* Very small screens */
+    @media (max-width: 576px) {
+        .modal-dialog.modal-xl {
+            margin: 0.25rem;
+            max-width: calc(100% - 0.5rem);
+        }
+
+        .response-modal-header {
+            padding: 0.75rem;
+        }
+
+        .response-modal-header .modal-title {
+            font-size: 1rem !important;
+        }
+
+        .response-modal-body {
+            padding: 0.75rem;
+        }
+
+        /* Extra small screen text fixes */
+        .response-modal-body .patient-info-section,
+        .response-modal-body .ai-response-section,
+        .response-modal-body .ai-response-content {
+            font-size: 0.8rem !important;
+            line-height: 1.4 !important;
+        }
+
+        .response-modal-body h1, 
+        .response-modal-body h2, 
+        .response-modal-body h3, 
+        .response-modal-body h4,
+        .response-modal-body h5,
+        .response-modal-body h6 {
+            font-size: 0.9rem !important;
+        }
+
+        .response-modal-body .form-control-plaintext {
+            font-size: 0.8rem !important;
+        }
+
+        .response-modal-body .col-form-label {
+            font-size: 0.8rem !important;
+        }
+    }
+
     .dataTables_wrapper .dataTables_paginate .paginate_button {
         color: #DE6262 !important;
         border-radius: 8px !important;

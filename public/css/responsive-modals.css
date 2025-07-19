@@ -1,0 +1,845 @@
+/* 
+ * Responsive Modal Fixes for MedCura AI
+ * Fixes vertical text display issues in all popups/modals on mobile devices
+ */
+
+/* Global Modal Responsive Fixes */
+@media (max-width: 768px) {
+    /* Modal Dialog Adjustments */
+    .modal-dialog,
+    .modal-dialog.modal-xl,
+    .modal-dialog.modal-lg {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+
+    /* Modal Header Fixes */
+    .modal-header {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .modal-header .modal-title {
+        font-size: 1.1rem !important;
+        word-break: break-word !important;
+        hyphens: auto !important;
+        line-height: 1.3 !important;
+        overflow-wrap: break-word !important;
+        white-space: normal !important;
+    }
+
+    .modal-header > button,
+    .modal-header > div {
+        align-self: flex-end;
+    }
+
+    /* Modal Body Text Fixes */
+    .modal-body {
+        padding: 1rem;
+        font-size: 0.9rem !important;
+        line-height: 1.5 !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        hyphens: auto !important;
+    }
+
+    .modal-body p {
+        margin-bottom: 0.8rem !important;
+        text-align: left !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+
+    .modal-body h1, 
+    .modal-body h2, 
+    .modal-body h3, 
+    .modal-body h4,
+    .modal-body h5,
+    .modal-body h6 {
+        font-size: 1rem !important;
+        line-height: 1.3 !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        margin-top: 1rem !important;
+        margin-bottom: 0.5rem !important;
+        white-space: normal !important;
+    }
+
+    .modal-body ul,
+    .modal-body ol {
+        padding-left: 1.2rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .modal-body li {
+        margin-bottom: 0.5rem !important;
+        line-height: 1.4 !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+
+    /* Table Responsive Fixes */
+    .modal-body table {
+        font-size: 0.7rem !important;
+        display: block !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        width: 100% !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .modal-body table th,
+    .modal-body table td {
+        padding: 0.3rem 0.4rem !important;
+        min-width: 60px !important;
+        word-break: break-word !important;
+        white-space: normal !important;
+        vertical-align: top !important;
+        line-height: 1.2 !important;
+    }
+
+    .modal-body table th {
+        font-size: 0.65rem !important;
+        font-weight: 600 !important;
+        background-color: #f8f9fa !important;
+    }
+
+    .modal-body table tbody tr:nth-child(even) {
+        background-color: #f8f9fa !important;
+    }
+
+    .modal-body table tbody tr:hover {
+        background-color: #e9ecef !important;
+    }
+
+    /* Form Elements */
+    .modal-body .form-control-plaintext {
+        font-size: 0.9rem !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+
+    .modal-body .col-form-label {
+        font-size: 0.9rem !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+
+    /* List Group Items */
+    .modal-body .list-group-item {
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        padding: 0.75rem !important;
+    }
+
+    /* Alert Messages */
+    .modal-body .alert {
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* Strong/Bold Text */
+    .modal-body strong,
+    .modal-body b {
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+
+    /* Code Elements */
+    .modal-body code,
+    .modal-body kbd {
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        white-space: normal !important;
+    }
+}
+
+/* Very Small Screens (576px and below) */
+@media (max-width: 576px) {
+    /* Modal Dialog Adjustments */
+    .modal-dialog,
+    .modal-dialog.modal-xl,
+    .modal-dialog.modal-lg {
+        margin: 0.25rem;
+        max-width: calc(100% - 0.5rem);
+    }
+
+    /* Modal Header */
+    .modal-header {
+        padding: 0.75rem;
+    }
+
+    .modal-header .modal-title {
+        font-size: 1rem !important;
+    }
+
+    /* Modal Body */
+    .modal-body {
+        padding: 0.75rem;
+        font-size: 0.8rem !important;
+        line-height: 1.4 !important;
+    }
+
+    .modal-body h1, 
+    .modal-body h2, 
+    .modal-body h3, 
+    .modal-body h4,
+    .modal-body h5,
+    .modal-body h6 {
+        font-size: 0.9rem !important;
+    }
+
+    .modal-body table {
+        font-size: 0.6rem !important;
+    }
+
+    .modal-body table th,
+    .modal-body table td {
+        padding: 0.2rem 0.3rem !important;
+        min-width: 50px !important;
+        line-height: 1.1 !important;
+    }
+
+    .modal-body table th {
+        font-size: 0.55rem !important;
+        font-weight: 600 !important;
+    }
+
+    .modal-body .form-control-plaintext {
+        font-size: 0.8rem !important;
+    }
+
+    .modal-body .col-form-label {
+        font-size: 0.8rem !important;
+    }
+
+    .modal-body .list-group-item {
+        padding: 0.5rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    .modal-body .alert {
+        font-size: 0.8rem !important;
+    }
+}
+
+/* Specific Modal Class Fixes */
+@media (max-width: 768px) {
+    /* Response Modal Specific */
+    .response-modal-body .ai-response-section,
+    .response-modal-body .response-text,
+    .response-modal-body .ai-content {
+        font-size: 0.9rem !important;
+        line-height: 1.5 !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        hyphens: auto !important;
+    }
+
+    /* Medical Section Styling */
+    .medical-section .section-header {
+        font-size: 0.9rem !important;
+        padding: 0.8rem !important;
+        word-break: break-word !important;
+    }
+
+    .medical-section .section-content {
+        padding: 1rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* Bullet Points */
+    .bullet-item {
+        font-size: 0.85rem !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.3rem !important;
+    }
+
+    .bullet-item::before {
+        margin-top: 0 !important;
+    }
+
+    /* Patient Info Sections */
+    .patient-info-section,
+    .ai-response-section {
+        font-size: 0.9rem !important;
+        line-height: 1.5 !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .response-modal-body .ai-response-section,
+    .response-modal-body .response-text,
+    .response-modal-body .ai-content {
+        font-size: 0.8rem !important;
+        line-height: 1.4 !important;
+    }
+
+    .medical-section .section-header {
+        font-size: 0.8rem !important;
+        padding: 0.6rem !important;
+    }
+
+    .medical-section .section-content {
+        padding: 0.8rem !important;
+        font-size: 0.75rem !important;
+    }
+
+    .bullet-item {
+        font-size: 0.75rem !important;
+    }
+
+    .patient-info-section,
+    .ai-response-section {
+        font-size: 0.8rem !important;
+        line-height: 1.4 !important;
+    }
+}
+
+/* Fix for Bootstrap Modal Backdrop on Mobile */
+@media (max-width: 768px) {
+    .modal-backdrop {
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .modal {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+}
+
+/* Prevent horizontal scrolling in modals */
+.modal-body {
+    overflow-x: hidden !important;
+}
+
+.modal-content {
+    overflow-x: hidden !important;
+}
+
+/* Ensure text doesn't break out of containers */
+.modal-body * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Enhanced Table Responsiveness for Different Table Types */
+@media (max-width: 768px) {
+    /* DataTables specific fixes */
+    .modal-body .dataTables_wrapper table {
+        font-size: 0.7rem !important;
+    }
+
+    .modal-body .dataTables_wrapper table th,
+    .modal-body .dataTables_wrapper table td {
+        padding: 0.3rem 0.4rem !important;
+        min-width: 60px !important;
+    }
+
+    /* Custom table classes */
+    .modal-body .custom-table {
+        font-size: 0.7rem !important;
+    }
+
+    .modal-body .custom-table th,
+    .modal-body .custom-table td {
+        padding: 0.3rem 0.4rem !important;
+        font-size: 0.7rem !important;
+    }
+
+    /* Table responsive wrapper */
+    .modal-body .table-responsive {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Visit history table specific */
+    .modal-body #visit-history-table {
+        font-size: 0.65rem !important;
+    }
+
+    .modal-body #visit-history-table th,
+    .modal-body #visit-history-table td {
+        padding: 0.25rem 0.3rem !important;
+        font-size: 0.65rem !important;
+        white-space: nowrap !important;
+    }
+
+    /* Patients table specific */
+    .modal-body #patients-table {
+        font-size: 0.65rem !important;
+    }
+
+    .modal-body #patients-table th,
+    .modal-body #patients-table td {
+        padding: 0.25rem 0.3rem !important;
+        font-size: 0.65rem !important;
+    }
+
+    /* Bootstrap table classes */
+    .modal-body .table-sm th,
+    .modal-body .table-sm td {
+        padding: 0.2rem 0.3rem !important;
+        font-size: 0.65rem !important;
+    }
+
+    .modal-body .table-hover tbody tr:hover {
+        background-color: rgba(222, 98, 98, 0.05) !important;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Extra small screen table fixes */
+    .modal-body .dataTables_wrapper table {
+        font-size: 0.6rem !important;
+    }
+
+    .modal-body .dataTables_wrapper table th,
+    .modal-body .dataTables_wrapper table td {
+        padding: 0.2rem 0.25rem !important;
+        min-width: 45px !important;
+    }
+
+    .modal-body .custom-table {
+        font-size: 0.6rem !important;
+    }
+
+    .modal-body .custom-table th,
+    .modal-body .custom-table td {
+        padding: 0.2rem 0.25rem !important;
+        font-size: 0.6rem !important;
+    }
+
+    .modal-body #visit-history-table {
+        font-size: 0.55rem !important;
+    }
+
+    .modal-body #visit-history-table th,
+    .modal-body #visit-history-table td {
+        padding: 0.15rem 0.2rem !important;
+        font-size: 0.55rem !important;
+    }
+
+    .modal-body #patients-table {
+        font-size: 0.55rem !important;
+    }
+
+    .modal-body #patients-table th,
+    .modal-body #patients-table td {
+        padding: 0.15rem 0.2rem !important;
+        font-size: 0.55rem !important;
+    }
+
+    .modal-body .table-sm th,
+    .modal-body .table-sm td {
+        padding: 0.15rem 0.2rem !important;
+        font-size: 0.55rem !important;
+    }
+}
+
+/* Table scroll indicators */
+@media (max-width: 768px) {
+    .modal-body .table-responsive::after {
+        content: "← Scroll horizontally to see more →";
+        display: block;
+        text-align: center;
+        font-size: 0.7rem;
+        color: #6c757d;
+        padding: 0.5rem;
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+    }
+}
+
+@media (max-width: 576px) {
+    .modal-body .table-responsive::after {
+        font-size: 0.6rem;
+        padding: 0.3rem;
+    }
+}
+
+/* ========================================
+   COMPREHENSIVE FORM RESPONSIVENESS
+   ======================================== */
+
+/* Global Form Responsive Fixes */
+@media (max-width: 768px) {
+    /* Heading Tags - Reduce huge sizes on mobile */
+    h1, .h1 {
+        font-size: 1.5rem !important;
+        line-height: 1.3 !important;
+        margin-bottom: 1rem !important;
+        word-break: break-word !important;
+    }
+
+    h2, .h2 {
+        font-size: 1.3rem !important;
+        line-height: 1.3 !important;
+        margin-bottom: 0.9rem !important;
+        word-break: break-word !important;
+    }
+
+    h3, .h3 {
+        font-size: 1.2rem !important;
+        line-height: 1.3 !important;
+        margin-bottom: 0.8rem !important;
+        word-break: break-word !important;
+    }
+
+    h4, .h4 {
+        font-size: 1.1rem !important;
+        line-height: 1.3 !important;
+        margin-bottom: 0.75rem !important;
+        word-break: break-word !important;
+    }
+
+    h5, .h5 {
+        font-size: 1rem !important;
+        line-height: 1.3 !important;
+        margin-bottom: 0.7rem !important;
+        word-break: break-word !important;
+    }
+
+    h6, .h6 {
+        font-size: 0.95rem !important;
+        line-height: 1.3 !important;
+        margin-bottom: 0.6rem !important;
+        word-break: break-word !important;
+    }
+
+    /* Form Elements */
+    .form-label,
+    .col-form-label {
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.5rem !important;
+        word-break: break-word !important;
+        line-height: 1.3 !important;
+    }
+
+    .form-control,
+    .form-select,
+    .form-control-plaintext {
+        font-size: 0.9rem !important;
+        padding: 0.5rem 0.75rem !important;
+        line-height: 1.4 !important;
+    }
+
+    .form-text,
+    .text-muted {
+        font-size: 0.8rem !important;
+        line-height: 1.3 !important;
+    }
+
+    /* Button Responsiveness */
+    .btn {
+        font-size: 0.85rem !important;
+        padding: 0.5rem 1rem !important;
+        line-height: 1.3 !important;
+    }
+
+    .btn-sm {
+        font-size: 0.75rem !important;
+        padding: 0.4rem 0.8rem !important;
+    }
+
+    .btn-lg {
+        font-size: 0.95rem !important;
+        padding: 0.6rem 1.2rem !important;
+    }
+
+    /* Card Components */
+    .card-title {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.75rem !important;
+        word-break: break-word !important;
+    }
+
+    .card-subtitle {
+        font-size: 0.9rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .card-text {
+        font-size: 0.9rem !important;
+        line-height: 1.4 !important;
+        word-break: break-word !important;
+    }
+
+    .card-body {
+        padding: 1rem !important;
+    }
+
+    /* Input Groups */
+    .input-group-text {
+        font-size: 0.9rem !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    /* Form Rows and Columns */
+    .row {
+        margin-bottom: 0.75rem !important;
+    }
+
+    .col-md-6,
+    .col-lg-6,
+    .col-xl-6 {
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* Alert Messages */
+    .alert {
+        font-size: 0.9rem !important;
+        padding: 0.75rem !important;
+        word-break: break-word !important;
+    }
+
+    /* Badge Components */
+    .badge {
+        font-size: 0.7rem !important;
+        padding: 0.3rem 0.5rem !important;
+    }
+
+    /* List Groups */
+    .list-group-item {
+        font-size: 0.9rem !important;
+        padding: 0.75rem !important;
+        word-break: break-word !important;
+    }
+
+    /* Navigation Elements */
+    .nav-link {
+        font-size: 0.9rem !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb-item {
+        font-size: 0.85rem !important;
+    }
+
+    /* Pagination */
+    .page-link {
+        font-size: 0.85rem !important;
+        padding: 0.4rem 0.6rem !important;
+    }
+}
+
+/* Very Small Screens (576px and below) */
+@media (max-width: 576px) {
+    /* Further reduce heading sizes */
+    h1, .h1 {
+        font-size: 1.3rem !important;
+        margin-bottom: 0.8rem !important;
+    }
+
+    h2, .h2 {
+        font-size: 1.2rem !important;
+        margin-bottom: 0.7rem !important;
+    }
+
+    h3, .h3 {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.6rem !important;
+    }
+
+    h4, .h4 {
+        font-size: 1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    h5, .h5 {
+        font-size: 0.95rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    h6, .h6 {
+        font-size: 0.9rem !important;
+        margin-bottom: 0.4rem !important;
+    }
+
+    /* Form Elements - Extra Small */
+    .form-label,
+    .col-form-label {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+
+    .form-control,
+    .form-select,
+    .form-control-plaintext {
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.6rem !important;
+    }
+
+    .form-text,
+    .text-muted {
+        font-size: 0.7rem !important;
+    }
+
+    /* Buttons - Extra Small */
+    .btn {
+        font-size: 0.75rem !important;
+        padding: 0.4rem 0.8rem !important;
+    }
+
+    .btn-sm {
+        font-size: 0.7rem !important;
+        padding: 0.3rem 0.6rem !important;
+    }
+
+    .btn-lg {
+        font-size: 0.85rem !important;
+        padding: 0.5rem 1rem !important;
+    }
+
+    /* Card Components - Extra Small */
+    .card-title {
+        font-size: 1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .card-subtitle {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+
+    .card-text {
+        font-size: 0.8rem !important;
+    }
+
+    .card-body {
+        padding: 0.75rem !important;
+    }
+
+    /* Input Groups - Extra Small */
+    .input-group-text {
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.6rem !important;
+    }
+
+    /* Form Layout - Extra Small */
+    .row {
+        margin-bottom: 0.5rem !important;
+    }
+
+    .col-md-6,
+    .col-lg-6,
+    .col-xl-6 {
+        margin-bottom: 0.3rem !important;
+    }
+
+    /* Other Components - Extra Small */
+    .alert {
+        font-size: 0.8rem !important;
+        padding: 0.5rem !important;
+    }
+
+    .badge {
+        font-size: 0.65rem !important;
+        padding: 0.25rem 0.4rem !important;
+    }
+
+    .list-group-item {
+        font-size: 0.8rem !important;
+        padding: 0.5rem !important;
+    }
+
+    .nav-link {
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.6rem !important;
+    }
+
+    .breadcrumb-item {
+        font-size: 0.75rem !important;
+    }
+
+    .page-link {
+        font-size: 0.75rem !important;
+        padding: 0.3rem 0.5rem !important;
+    }
+}
+
+/* ========================================
+   MEDICAL FORM SECTION SPECIFIC FIXES
+   ======================================== */
+
+/* Medical Form Section Responsive Fixes */
+@media (max-width: 768px) {
+    .medical-form-section h6 {
+        font-size: 1rem !important;
+        line-height: 1.3 !important;
+        margin-bottom: 0.75rem !important;
+        word-break: break-word !important;
+        font-weight: 600 !important;
+        border-bottom: 2px solid #DE6262 !important;
+        padding-bottom: 0.4rem !important;
+    }
+
+    .medical-form-section {
+        padding: 0.75rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .medical-form-section .form-label {
+        font-size: 0.85rem !important;
+        margin-bottom: 0.4rem !important;
+    }
+
+    .medical-form-section .form-control,
+    .medical-form-section .form-select {
+        font-size: 0.85rem !important;
+        padding: 0.4rem 0.6rem !important;
+    }
+
+    .medical-form-section .btn {
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.8rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .medical-form-section h6 {
+        font-size: 0.9rem !important;
+        margin-bottom: 0.5rem !important;
+        padding-bottom: 0.3rem !important;
+    }
+
+    .medical-form-section {
+        padding: 0.5rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    .medical-form-section .form-label {
+        font-size: 0.75rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+
+    .medical-form-section .form-control,
+    .medical-form-section .form-select {
+        font-size: 0.75rem !important;
+        padding: 0.35rem 0.5rem !important;
+    }
+
+    .medical-form-section .btn {
+        font-size: 0.7rem !important;
+        padding: 0.35rem 0.7rem !important;
+    }
+
+    .medical-form-section .row {
+        margin-bottom: 0.5rem !important;
+    }
+
+    .medical-form-section .col-md-4,
+    .medical-form-section .col-md-6,
+    .medical-form-section .col-lg-4,
+    .medical-form-section .col-lg-6 {
+        margin-bottom: 0.4rem !important;
+    }
+}
