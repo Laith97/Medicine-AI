@@ -109,9 +109,10 @@
             border-radius: 8px;
         }
 
-        .medical-form-section h4 {
+        .medical-form-section h6 {
             font-size: 1.1rem;
             margin-bottom: 1rem;
+            font-weight: 600;
         }
 
         .form-label {
@@ -274,8 +275,9 @@
             margin-bottom: 1rem;
         }
 
-        .medical-form-section h4 {
+        .medical-form-section h6 {
             font-size: 1rem;
+            font-weight: 600;
         }
 
         .form-label {
@@ -309,12 +311,13 @@
         margin-bottom: 1.5rem;
     }
 
-    .medical-form-section h4 {
+    .medical-form-section h6 {
         /* color: #2c3e50; */
         border-bottom: 2px solid #DE6262;
         padding-bottom: 0.5rem;
         margin-bottom: 1.5rem;
         font-weight: 600;
+        font-size: 1.1rem;
     }
 
     .form-label {
@@ -447,7 +450,7 @@
 
                     <!-- Patient Selection -->
                     <div class="medical-form-section">
-                        <h4>Patient Selection</h4>
+                        <h6>Patient Selection</h6>
                         <div class="row">
                             <div class="col-md-12">
                                 <label for="patient_selection" class="form-label">Select Patient:</label>
@@ -477,7 +480,7 @@
 
                     <!-- Patient Info (only shown for new patients) -->
                     <div class="medical-form-section" id="new_patient_info">
-                        <h4>Patient Information</h4>
+                        <h6>Patient Information</h6>
                         <div class="row">
                             <div class="col-md-4">
                                 <label for="name" class="form-label required">Name:</label>
@@ -500,7 +503,7 @@
                     <!-- Enhanced File Upload Section (always visible) -->
                     <div class="medical-form-section mt-4">
                         <div class="d-flex align-items-center mb-3">
-                            <h4 class="mb-0"><i class="fas fa-file-medical  me-2" ></i>Medical Reports</h4>
+                            <h6 class="mb-0"><i class="fas fa-file-medical  me-2" ></i>Medical Reports</h6>
                             <span class="badge bg-info ms-2">Optional</span>
                         </div>
 
@@ -533,7 +536,7 @@
                     <!-- Patient History (only shown for existing patients) -->
                     <div class="medical-form-section" id="patient_history_info" style="display: none;">
                         <div class="d-flex align-items-center mb-3">
-                            <h4 class="mb-0 me-2">Patient History</h4>
+                            <h6 class="mb-0 me-2">Patient History</h6>
                             <span id="visit_count_badge" class="badge bg-info ms-2">Visit #1</span>
                         </div>
                         <div class="alert alert-info" id="patient_history_alert">
@@ -544,7 +547,7 @@
 
                     <!-- Enhanced Patient History Section -->
                     <div class="medical-form-section mt-4">
-                        <h4><i class="fas fa-history me-2"></i>Patient History</h4>
+                        <h6><i class="fas fa-history me-2"></i>Patient History</h6>
                         <div class="row">
                             <div class="col-md-6">
                                 <label for="chief_complaint" class="form-label">
@@ -620,7 +623,7 @@
 
                     <!-- Vitals -->
                     <div class="medical-form-section mt-4">
-                        <h4>Physical Attributes / Vitals</h4>
+                        <h6>Physical Attributes / Vitals</h6>
                         <div class="row">
                             <div class="col-md-4">
                                 <label class="form-label">
@@ -732,7 +735,7 @@
 
                     <!-- Symptoms -->
                     <div class="medical-form-section mt-4">
-                        <h4>Symptoms</h4>
+                        <h6>Symptoms</h6>
                         <div class="row">
                             <div class="col-md-6">
                                 <label class="form-label">
@@ -804,7 +807,7 @@
 
                     <!-- Tests and Diagnosis -->
                     <div class="medical-form-section mt-4">
-                        <h4>Test Results & Preliminary Diagnosis</h4>
+                        <h6>Test Results & Preliminary Diagnosis</h6>
                         <div class="row">
                             <div class="col-md-6">
                                 <label class="form-label">
@@ -837,7 +840,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                     <!-- Head-to-Toe Assessment Section -->
                     <div class="medical-form-section mt-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h4><i class="fas fa-user-check me-2"></i>Head-to-Toe Assessment</h4>
+                            <h6><i class="fas fa-user-check me-2"></i>Head-to-Toe Assessment</h6>
                             <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#headToToeAssessment" aria-expanded="false">
                                 <i class="fas fa-chevron-down me-1"></i> Toggle Assessment
                             </button>
@@ -1274,7 +1277,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
 
                     <!-- Physician Notes Section -->
                     <div class="medical-form-section mt-4">
-                        <h4><i class="fas fa-user-md me-2"></i>Clinical Notes</h4>
+                        <h6><i class="fas fa-user-md me-2"></i>Clinical Notes</h6>
                         <div class="row">
                             <div class="col-md-6">
                                 <label for="physician_notes" class="form-label">
@@ -2040,6 +2043,9 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
 
         .response-modal-header .modal-title {
             font-size: 1.1rem;
+            word-break: break-word;
+            hyphens: auto;
+            line-height: 1.3;
         }
 
         .response-modal-header > div {
@@ -2050,8 +2056,112 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             padding: 1rem;
         }
 
+        /* Fix text display issues in modal body */
+        .response-modal-body .ai-response-section,
+        .response-modal-body .response-text,
+        .response-modal-body .ai-content {
+            font-size: 0.9rem !important;
+            line-height: 1.5 !important;
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+            hyphens: auto !important;
+        }
+
+        .response-modal-body p {
+            margin-bottom: 0.8rem !important;
+            text-align: left !important;
+        }
+
+        .response-modal-body h1, 
+        .response-modal-body h2, 
+        .response-modal-body h3, 
+        .response-modal-body h4,
+        .response-modal-body h5,
+        .response-modal-body h6 {
+            font-size: 1rem !important;
+            line-height: 1.3 !important;
+            word-break: break-word !important;
+            margin-top: 1rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .response-modal-body ul,
+        .response-modal-body ol {
+            padding-left: 1.2rem !important;
+            margin-bottom: 1rem !important;
+        }
+
+        .response-modal-body li {
+            margin-bottom: 0.5rem !important;
+            line-height: 1.4 !important;
+            word-break: break-word !important;
+        }
+
+        .response-modal-body table {
+            font-size: 0.65rem !important;
+            display: block !important;
+            overflow-x: auto !important;
+            white-space: nowrap !important;
+        }
+
+        .response-modal-body table th,
+        .response-modal-body table td {
+            padding: 0.25rem 0.3rem !important;
+            min-width: 50px !important;
+            line-height: 1.2 !important;
+            vertical-align: top !important;
+        }
+
+        .response-modal-body table th {
+            font-size: 0.6rem !important;
+            font-weight: 600 !important;
+            background-color: #f8f9fa !important;
+        }
+
         .chat-section {
             padding: 1rem;
+        }
+
+        /* Form responsive fixes for OpenAI page */
+        .chat-section h1,
+        .chat-section h2,
+        .chat-section h3,
+        .chat-section h4,
+        .chat-section h5,
+        .chat-section h6 {
+            font-size: 1.1rem !important;
+            line-height: 1.3 !important;
+            margin-bottom: 0.75rem !important;
+            word-break: break-word !important;
+        }
+
+        .chat-section .form-label,
+        .chat-section .col-form-label {
+            font-size: 0.9rem !important;
+            font-weight: 600 !important;
+            margin-bottom: 0.5rem !important;
+            word-break: break-word !important;
+        }
+
+        .chat-section .form-control,
+        .chat-section .form-select {
+            font-size: 0.9rem !important;
+            padding: 0.5rem 0.75rem !important;
+        }
+
+        .chat-section .btn {
+            font-size: 0.85rem !important;
+            padding: 0.5rem 1rem !important;
+        }
+
+        .chat-section .card-title {
+            font-size: 1.1rem !important;
+            margin-bottom: 0.75rem !important;
+        }
+
+        .chat-section .card-text {
+            font-size: 0.9rem !important;
+            line-height: 1.4 !important;
         }
 
         .chat-form .btn {
@@ -2065,6 +2175,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         .level1-header, .level2-header {
             font-size: 1rem;
             padding: 12px 18px;
+            word-break: break-word;
         }
 
         .level2-content {
@@ -2074,6 +2185,31 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         .level2-section-header {
             font-size: 0.95rem;
             margin: 15px 0 8px 0;
+            word-break: break-word;
+        }
+
+        /* Fix medical section styling for mobile */
+        .medical-section .section-header {
+            font-size: 0.9rem !important;
+            padding: 0.8rem !important;
+            word-break: break-word !important;
+        }
+
+        .medical-section .section-content {
+            padding: 1rem !important;
+            font-size: 0.85rem !important;
+        }
+
+        /* Fix bullet points for mobile */
+        .bullet-item {
+            font-size: 0.85rem !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 0.3rem !important;
+        }
+
+        .bullet-item::before {
+            margin-top: 0 !important;
         }
     }
 
@@ -2088,12 +2224,86 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             padding: 0.75rem;
         }
 
+        .response-modal-header .modal-title {
+            font-size: 1rem !important;
+        }
+
         .response-modal-body {
             padding: 0.75rem;
         }
 
+        /* Extra small screen text fixes */
+        .response-modal-body .ai-response-section,
+        .response-modal-body .response-text,
+        .response-modal-body .ai-content {
+            font-size: 0.8rem !important;
+            line-height: 1.4 !important;
+        }
+
+        .response-modal-body h1, 
+        .response-modal-body h2, 
+        .response-modal-body h3, 
+        .response-modal-body h4,
+        .response-modal-body h5,
+        .response-modal-body h6 {
+            font-size: 0.9rem !important;
+        }
+
+        .response-modal-body table {
+            font-size: 0.55rem !important;
+        }
+
+        .response-modal-body table th,
+        .response-modal-body table td {
+            padding: 0.15rem 0.2rem !important;
+            min-width: 40px !important;
+            line-height: 1.1 !important;
+        }
+
+        .response-modal-body table th {
+            font-size: 0.5rem !important;
+            font-weight: 600 !important;
+        }
+
         .chat-section {
             padding: 0.75rem;
+        }
+
+        /* Form responsive fixes for very small screens */
+        .chat-section h1,
+        .chat-section h2,
+        .chat-section h3,
+        .chat-section h4,
+        .chat-section h5,
+        .chat-section h6 {
+            font-size: 1rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .chat-section .form-label,
+        .chat-section .col-form-label {
+            font-size: 0.8rem !important;
+            margin-bottom: 0.3rem !important;
+        }
+
+        .chat-section .form-control,
+        .chat-section .form-select {
+            font-size: 0.8rem !important;
+            padding: 0.4rem 0.6rem !important;
+        }
+
+        .chat-section .btn {
+            font-size: 0.75rem !important;
+            padding: 0.4rem 0.8rem !important;
+        }
+
+        .chat-section .card-title {
+            font-size: 1rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .chat-section .card-text {
+            font-size: 0.8rem !important;
         }
 
         .level1-header, .level2-header {
@@ -2177,7 +2387,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
 
         // Find sections by heading text
         function findSectionByHeadingText(text) {
-            const headings = document.querySelectorAll('.medical-form-section h4');
+            const headings = document.querySelectorAll('.medical-form-section h6');
             for (let heading of headings) {
                 if (heading.textContent.includes(text)) {
                     return heading.closest('.medical-form-section');
@@ -2669,23 +2879,23 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         if (!document.getElementById('apiKeyErrorModal')) {
             const modalHtml = `
                 <div class="modal fade" id="apiKeyErrorModal" tabindex="-1" aria-labelledby="apiKeyErrorModalLabel" aria-hidden="true">
-                    <div class="modal-dialog">
+                    <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content">
                             <div class="modal-header bg-danger text-white">
-                                <h5 class="modal-title" id="apiKeyErrorModalLabel">
+                                <h5 class="modal-title" id="apiKeyErrorModalLabel" style="word-break: break-word; line-height: 1.3; font-size: 1.1rem;">
                                     <i class="fas fa-exclamation-triangle me-2"></i>
                                     OpenAI API Key Error
                                 </h5>
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
-                            <div class="modal-body">
-                                <p>The OpenAI API key appears to be invalid or expired. This means:</p>
-                                <ul>
-                                    <li>You won't be able to get AI-powered responses</li>
-                                    <li>Medical analysis features will be unavailable</li>
-                                    <li>Chat functionality will not work</li>
+                            <div class="modal-body" style="word-break: break-word; line-height: 1.5; font-size: 0.95rem;">
+                                <p style="margin-bottom: 1rem;">The OpenAI API key appears to be invalid or expired. This means:</p>
+                                <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
+                                    <li style="margin-bottom: 0.5rem; word-break: break-word;">You won't be able to get AI-powered responses</li>
+                                    <li style="margin-bottom: 0.5rem; word-break: break-word;">Medical analysis features will be unavailable</li>
+                                    <li style="margin-bottom: 0.5rem; word-break: break-word;">Chat functionality will not work</li>
                                 </ul>
-                                <p>Please contact the system administrator to update the API key.</p>
+                                <p style="margin-bottom: 0;">Please contact the system administrator to update the API key.</p>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -4034,44 +4244,44 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                 // Create modal for file upload instructions
                 const modalHtml = `
                     <div class="modal fade" id="fileUploadInfoModal" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog">
+                        <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title">File Upload Instructions</h5>
+                                    <h5 class="modal-title" style="word-break: break-word; line-height: 1.3; font-size: 1.1rem;">File Upload Instructions</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
-                                <div class="modal-body">
+                                <div class="modal-body" style="word-break: break-word; line-height: 1.5; font-size: 0.95rem;">
                                     <div class="mb-3">
-                                        <h6><i class="fas fa-info-circle text-primary me-2"></i>How to Add Multiple Files</h6>
-                                        <p>You can add files in two ways:</p>
+                                        <h6 style="word-break: break-word; font-size: 1rem;"><i class="fas fa-info-circle text-primary me-2"></i>How to Add Multiple Files</h6>
+                                        <p style="margin-bottom: 0.8rem;">You can add files in two ways:</p>
                                         <ul class="list-group list-group-flush mb-3">
-                                            <li class="list-group-item">
+                                            <li class="list-group-item" style="word-break: break-word; padding: 0.75rem;">
                                                 <strong>Method 1:</strong> Select multiple files at once
-                                                <ul class="mt-2">
-                                                    <li><strong>Windows:</strong> Hold <kbd>Ctrl</kbd> and click each file</li>
-                                                    <li><strong>Mac:</strong> Hold <kbd>⌘ Command</kbd> and click each file</li>
+                                                <ul class="mt-2" style="padding-left: 1.2rem;">
+                                                    <li style="margin-bottom: 0.3rem; word-break: break-word;"><strong>Windows:</strong> Hold <kbd>Ctrl</kbd> and click each file</li>
+                                                    <li style="margin-bottom: 0.3rem; word-break: break-word;"><strong>Mac:</strong> Hold <kbd>⌘ Command</kbd> and click each file</li>
                                                 </ul>
                                             </li>
-                                            <li class="list-group-item">
+                                            <li class="list-group-item" style="word-break: break-word; padding: 0.75rem;">
                                                 <strong>Method 2:</strong> Add files incrementally
-                                                <ul class="mt-2">
-                                                    <li>Select one or more files</li>
-                                                    <li>Click the <i class="fas fa-plus"></i> button to add more files</li>
-                                                    <li>Repeat as needed to add different file types</li>
+                                                <ul class="mt-2" style="padding-left: 1.2rem;">
+                                                    <li style="margin-bottom: 0.3rem; word-break: break-word;">Select one or more files</li>
+                                                    <li style="margin-bottom: 0.3rem; word-break: break-word;">Click the <i class="fas fa-plus"></i> button to add more files</li>
+                                                    <li style="margin-bottom: 0.3rem; word-break: break-word;">Repeat as needed to add different file types</li>
                                                 </ul>
                                             </li>
                                         </ul>
                                     </div>
 
                                     <div class="mb-3">
-                                        <h6><i class="fas fa-file-medical text-danger me-2"></i>Supported File Types</h6>
+                                        <h6 style="word-break: break-word; font-size: 1rem;"><i class="fas fa-file-medical text-danger me-2"></i>Supported File Types</h6>
                                         <ul class="list-group list-group-flush">
-                                            <li class="list-group-item"><strong>Images:</strong> JPG, JPEG, PNG, GIF, BMP, WEBP</li>
-                                            <li class="list-group-item"><strong>Documents:</strong> PDF, DOCX, DOC, TXT, RTF</li>
+                                            <li class="list-group-item" style="word-break: break-word; padding: 0.75rem;"><strong>Images:</strong> JPG, JPEG, PNG, GIF, BMP, WEBP</li>
+                                            <li class="list-group-item" style="word-break: break-word; padding: 0.75rem;"><strong>Documents:</strong> PDF, DOCX, DOC, TXT, RTF</li>
                                         </ul>
                                     </div>
 
-                                    <div class="alert alert-info">
+                                    <div class="alert alert-info" style="word-break: break-word; font-size: 0.9rem;">
                                         <i class="fas fa-robot me-2"></i> The AI will analyze <strong>all uploaded files together</strong> to provide a comprehensive analysis.
                                     </div>
                                 </div>

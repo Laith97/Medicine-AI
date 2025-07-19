@@ -1311,7 +1311,58 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         }
         
         .cases-card-body {
-            padding: 1rem;
+            padding: 0.75rem;
+        }
+
+        /* Form responsive fixes */
+        .cases-card-body h1,
+        .cases-card-body h2,
+        .cases-card-body h3,
+        .cases-card-body h4,
+        .cases-card-body h5,
+        .cases-card-body h6 {
+            font-size: 1.1rem !important;
+            line-height: 1.3 !important;
+            margin-bottom: 0.75rem !important;
+            word-break: break-word !important;
+        }
+
+        .cases-card-body .form-label,
+        .cases-card-body .col-form-label {
+            font-size: 0.9rem !important;
+            font-weight: 600 !important;
+            margin-bottom: 0.5rem !important;
+            word-break: break-word !important;
+        }
+
+        .cases-card-body .form-control,
+        .cases-card-body .form-select {
+            font-size: 0.9rem !important;
+            padding: 0.5rem 0.75rem !important;
+        }
+
+        .cases-card-body .btn {
+            font-size: 0.85rem !important;
+            padding: 0.5rem 1rem !important;
+        }
+
+        .cases-card-body .card-title {
+            font-size: 1.1rem !important;
+            margin-bottom: 0.75rem !important;
+        }
+
+        .cases-card-body .card-text {
+            font-size: 0.9rem !important;
+            line-height: 1.4 !important;
+        }
+
+        .cases-card-body .row {
+            margin-bottom: 0.75rem !important;
+        }
+
+        .cases-card-body .col-md-6,
+        .cases-card-body .col-lg-6 {
+            margin-bottom: 0.5rem !important;
         }
         
         .col-lg-2-4 {
@@ -1332,33 +1383,243 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             max-width: calc(100% - 1rem);
         }
         
-        .modal-header {
+        .response-modal-header {
             padding: 1rem;
             flex-direction: column;
             align-items: flex-start;
             gap: 0.75rem;
         }
+
+        .response-modal-header .modal-title {
+            font-size: 1.1rem;
+            word-break: break-word;
+            hyphens: auto;
+            line-height: 1.3;
+        }
+
+        .response-modal-header > div {
+            align-self: flex-end;
+        }
         
-        .modal-body {
+        .response-modal-body {
             padding: 1rem;
             max-height: 70vh;
             overflow-y: auto;
+        }
+
+        /* Fix text display issues in modal body */
+        .response-modal-body .ai-response-section,
+        .response-modal-body .response-text,
+        .response-modal-body .ai-content {
+            font-size: 0.9rem !important;
+            line-height: 1.5 !important;
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+            hyphens: auto !important;
+        }
+
+        .response-modal-body p {
+            margin-bottom: 0.8rem !important;
+            text-align: left !important;
+        }
+
+        .response-modal-body h1, 
+        .response-modal-body h2, 
+        .response-modal-body h3, 
+        .response-modal-body h4,
+        .response-modal-body h5,
+        .response-modal-body h6 {
+            font-size: 1rem !important;
+            line-height: 1.3 !important;
+            word-break: break-word !important;
+            margin-top: 1rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .response-modal-body ul,
+        .response-modal-body ol {
+            padding-left: 1.2rem !important;
+            margin-bottom: 1rem !important;
+        }
+
+        .response-modal-body li {
+            margin-bottom: 0.5rem !important;
+            line-height: 1.4 !important;
+            word-break: break-word !important;
+        }
+
+        .response-modal-body table {
+            font-size: 0.65rem !important;
+            display: block !important;
+            overflow-x: auto !important;
+            white-space: nowrap !important;
+        }
+
+        .response-modal-body table th,
+        .response-modal-body table td {
+            padding: 0.25rem 0.3rem !important;
+            min-width: 50px !important;
+            line-height: 1.2 !important;
+            vertical-align: top !important;
+        }
+
+        .response-modal-body table th {
+            font-size: 0.6rem !important;
+            font-weight: 600 !important;
+            background-color: #f8f9fa !important;
         }
         
         .level-header {
             font-size: 1.1rem;
             padding: 15px 18px;
+            word-break: break-word;
         }
         
         .section-header {
             font-size: 1rem;
             padding: 12px 18px;
+            word-break: break-word;
+        }
+
+        /* Fix medical section styling for mobile */
+        .medical-section .section-header {
+            font-size: 0.9rem !important;
+            padding: 0.8rem !important;
+            word-break: break-word !important;
+        }
+
+        .medical-section .section-content {
+            padding: 1rem !important;
+            font-size: 0.85rem !important;
+        }
+
+        /* Fix bullet points for mobile */
+        .bullet-item {
+            font-size: 0.85rem !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 0.3rem !important;
+        }
+
+        .bullet-item::before {
+            margin-top: 0 !important;
         }
     }
     
     @media (max-width: 576px) {
         .col-lg-2-4 {
             width: 100%;
+        }
+
+        /* Enhanced form responsive for very small screens */
+        .cases-card-body {
+            padding: 0.5rem;
+        }
+
+        .cases-card-body h1,
+        .cases-card-body h2,
+        .cases-card-body h3,
+        .cases-card-body h4,
+        .cases-card-body h5,
+        .cases-card-body h6 {
+            font-size: 1rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .cases-card-body .form-label,
+        .cases-card-body .col-form-label {
+            font-size: 0.8rem !important;
+            margin-bottom: 0.3rem !important;
+        }
+
+        .cases-card-body .form-control,
+        .cases-card-body .form-select {
+            font-size: 0.8rem !important;
+            padding: 0.4rem 0.6rem !important;
+        }
+
+        .cases-card-body .btn {
+            font-size: 0.75rem !important;
+            padding: 0.4rem 0.8rem !important;
+        }
+
+        .cases-card-body .card-title {
+            font-size: 1rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .cases-card-body .card-text {
+            font-size: 0.8rem !important;
+        }
+
+        .cases-card-body .row {
+            margin-bottom: 0.5rem !important;
+        }
+
+        .cases-card-body .col-md-6,
+        .cases-card-body .col-lg-6 {
+            margin-bottom: 0.3rem !important;
+        }
+
+        /* Very small screen modal fixes */
+        .modal-dialog.modal-xl {
+            margin: 0.25rem;
+            max-width: calc(100% - 0.5rem);
+        }
+
+        .response-modal-header {
+            padding: 0.75rem;
+        }
+
+        .response-modal-header .modal-title {
+            font-size: 1rem !important;
+        }
+
+        .response-modal-body {
+            padding: 0.75rem;
+        }
+
+        /* Extra small screen text fixes */
+        .response-modal-body .ai-response-section,
+        .response-modal-body .response-text,
+        .response-modal-body .ai-content {
+            font-size: 0.8rem !important;
+            line-height: 1.4 !important;
+        }
+
+        .response-modal-body h1, 
+        .response-modal-body h2, 
+        .response-modal-body h3, 
+        .response-modal-body h4,
+        .response-modal-body h5,
+        .response-modal-body h6 {
+            font-size: 0.9rem !important;
+        }
+
+        .response-modal-body table {
+            font-size: 0.55rem !important;
+        }
+
+        .response-modal-body table th,
+        .response-modal-body table td {
+            padding: 0.15rem 0.2rem !important;
+            min-width: 40px !important;
+            line-height: 1.1 !important;
+        }
+
+        .response-modal-body table th {
+            font-size: 0.5rem !important;
+            font-weight: 600 !important;
+        }
+
+        .level-header {
+            font-size: 1rem;
+            padding: 12px 15px;
+        }
+        
+        .section-header {
+            font-size: 0.9rem;
+            padding: 10px 15px;
         }
     }
 </style>

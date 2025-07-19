@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\OpenAIController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserSettingsController;
@@ -22,7 +23,14 @@ Route::middleware('auth')->group(function () {
 
 });
 
-Route::get('/contact', [UserSettingsController::class, 'contact'])->name('contact');
+Route::get('/contact', [ContactController::class, 'show'])->name('contact');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+
+// Admin route to view contact submissions
+Route::middleware('auth')->group(function () {
+    Route::get('/admin/contact-submissions', [ContactController::class, 'adminIndex'])->name('admin.contact-submissions');
+    Route::patch('/admin/contact-submissions/{submission}/mark-read', [ContactController::class, 'markAsRead'])->name('admin.contact-submissions.mark-read');
+});
 Route::get('/about', [UserSettingsController::class, 'about'])->name('about');
 
 // Admin routes

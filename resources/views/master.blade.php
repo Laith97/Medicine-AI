@@ -68,6 +68,7 @@
     <link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/responsive-modals.css') }}">
     @stack('styles')
     
     <!-- Global Font Styling -->

@@ -420,6 +420,222 @@
         .filter-card .row {
             row-gap: 1rem;
         }
+
+        /* Form responsive fixes for dashboard */
+        .filter-card h1,
+        .filter-card h2,
+        .filter-card h3,
+        .filter-card h4,
+        .filter-card h5,
+        .filter-card h6 {
+            font-size: 1.1rem !important;
+            line-height: 1.3 !important;
+            margin-bottom: 0.75rem !important;
+            word-break: break-word !important;
+        }
+
+        .filter-card .form-label,
+        .filter-card .col-form-label {
+            font-size: 0.9rem !important;
+            font-weight: 600 !important;
+            margin-bottom: 0.5rem !important;
+            word-break: break-word !important;
+        }
+
+        .filter-card .form-control,
+        .filter-card .form-select {
+            font-size: 0.9rem !important;
+            padding: 0.5rem 0.75rem !important;
+        }
+
+        .filter-card .btn {
+            font-size: 0.85rem !important;
+            padding: 0.5rem 1rem !important;
+        }
+
+        .filter-card .card-title {
+            font-size: 1.1rem !important;
+            margin-bottom: 0.75rem !important;
+        }
+
+        .filter-card .card-text {
+            font-size: 0.9rem !important;
+            line-height: 1.4 !important;
+        }
+
+        /* Modal responsive fixes */
+        .modal-dialog.modal-lg {
+            margin: 0.5rem;
+            max-width: calc(100% - 1rem);
+        }
+
+        .modal-header {
+            padding: 1rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .modal-header .modal-title {
+            font-size: 1.1rem !important;
+            word-break: break-word;
+            hyphens: auto;
+            line-height: 1.3;
+        }
+
+        .modal-header > button {
+            align-self: flex-end;
+        }
+
+        .modal-body {
+            padding: 1rem;
+            font-size: 0.9rem !important;
+            line-height: 1.5 !important;
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+            hyphens: auto !important;
+        }
+
+        .modal-body p {
+            margin-bottom: 0.8rem !important;
+            text-align: left !important;
+        }
+
+        .modal-body h1, 
+        .modal-body h2, 
+        .modal-body h3, 
+        .modal-body h4,
+        .modal-body h5,
+        .modal-body h6 {
+            font-size: 1rem !important;
+            line-height: 1.3 !important;
+            word-break: break-word !important;
+            margin-top: 1rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .modal-body .col-form-label {
+            font-size: 0.9rem !important;
+            word-break: break-word !important;
+        }
+
+        .modal-body .form-control-plaintext {
+            font-size: 0.9rem !important;
+            word-break: break-word !important;
+        }
+
+        .modal-body table {
+            font-size: 0.65rem !important;
+            display: block !important;
+            overflow-x: auto !important;
+            white-space: nowrap !important;
+        }
+
+        .modal-body table th,
+        .modal-body table td {
+            padding: 0.25rem 0.3rem !important;
+            min-width: 50px !important;
+            line-height: 1.2 !important;
+            vertical-align: top !important;
+        }
+
+        .modal-body table th {
+            font-size: 0.6rem !important;
+            font-weight: 600 !important;
+            background-color: #f8f9fa !important;
+        }
+    }
+
+    /* Very small screens */
+    @media (max-width: 576px) {
+        /* Form responsive fixes for very small screens */
+        .filter-card h1,
+        .filter-card h2,
+        .filter-card h3,
+        .filter-card h4,
+        .filter-card h5,
+        .filter-card h6 {
+            font-size: 1rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .filter-card .form-label,
+        .filter-card .col-form-label {
+            font-size: 0.8rem !important;
+            margin-bottom: 0.3rem !important;
+        }
+
+        .filter-card .form-control,
+        .filter-card .form-select {
+            font-size: 0.8rem !important;
+            padding: 0.4rem 0.6rem !important;
+        }
+
+        .filter-card .btn {
+            font-size: 0.75rem !important;
+            padding: 0.4rem 0.8rem !important;
+        }
+
+        .filter-card .card-title {
+            font-size: 1rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .filter-card .card-text {
+            font-size: 0.8rem !important;
+        }
+
+        .modal-dialog.modal-lg {
+            margin: 0.25rem;
+            max-width: calc(100% - 0.5rem);
+        }
+
+        .modal-header {
+            padding: 0.75rem;
+        }
+
+        .modal-header .modal-title {
+            font-size: 1rem !important;
+        }
+
+        .modal-body {
+            padding: 0.75rem;
+            font-size: 0.8rem !important;
+            line-height: 1.4 !important;
+        }
+
+        .modal-body h1, 
+        .modal-body h2, 
+        .modal-body h3, 
+        .modal-body h4,
+        .modal-body h5,
+        .modal-body h6 {
+            font-size: 0.9rem !important;
+        }
+
+        .modal-body .col-form-label {
+            font-size: 0.8rem !important;
+        }
+
+        .modal-body .form-control-plaintext {
+            font-size: 0.8rem !important;
+        }
+
+        .modal-body table {
+            font-size: 0.55rem !important;
+        }
+
+        .modal-body table th,
+        .modal-body table td {
+            padding: 0.15rem 0.2rem !important;
+            min-width: 40px !important;
+            line-height: 1.1 !important;
+        }
+
+        .modal-body table th {
+            font-size: 0.5rem !important;
+            font-weight: 600 !important;
+        }
     }
 
     /* Professional Medical Design for Response Text */

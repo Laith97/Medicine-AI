@@ -34,27 +34,25 @@ class UserSettingsController extends Controller
         return back()->with('status', 'Settings updated!');
     }
 
-    public function contact(){
-        return view('contact');
-    }
+
 
     public function about(){
         $aboutTitle = 'About MedCura AI for Doctors';
         $aboutTagline = 'Empowering doctors to make evidence-based decisions.';
         $features = [
             [
-                'icon' => 'icon-medical-i-cardiology',
+                'icon' => 'fas fa-heartbeat',
                 'title' => 'Evidence-Based Guidance',
                 'description' => 'Access up-to-date, peer-reviewed recommendations for clinical decisions.'
             ],
             [
-                'icon' => 'icon-medical-i-social-services',
+                'icon' => 'fas fa-user-md',
                 'title' => 'Patient-Centered',
                 'description' => 'Focus on what matters most for patient outcomes and safety.',
                 'delay' => '200'
             ],
             [
-                'icon' => 'icon-medical-i-neurology',
+                'icon' => 'fas fa-brain',
                 'title' => 'Reduce Unnecessary Care',
                 'description' => 'Identify and avoid low-value or unnecessary interventions.',
                 'delay' => '400'
@@ -64,15 +62,15 @@ class UserSettingsController extends Controller
         $whatWeDoDescription = 'MedCura AI for Doctors provides a platform for clinicians to access, share, and discuss best practices, reducing unnecessary procedures and improving patient care.';
         $whatWeDoFeatures = [
             [
-                'icon' => 'icon-medical-i-womens-health',
+                'icon' => 'fas fa-list-ul',
                 'description' => 'Curated lists of recommendations for various specialties.'
             ],
             [
-                'icon' => 'icon-medical-i-ultrasound',
+                'icon' => 'fas fa-stethoscope',
                 'description' => 'Tools to help you make wise choices at the point of care.'
             ],
             [
-                'icon' => 'icon-medical-i-cath-lab',
+                'icon' => 'fas fa-comments',
                 'description' => 'Community-driven updates and discussion.'
             ],
         ];

@@ -42,7 +42,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('patient_data', function (Blueprint $table) {
-            $table->dropColumn([
+            $columnsToCheck = [
                 'chief_complaint',
                 'symptom_duration',
                 'past_medical_history',
@@ -57,7 +57,18 @@ return new class extends Migration
                 'oxygen_saturation',
                 'physician_notes',
                 'additional_notes'
-            ]);
+            ];
+            
+            $columnsToDrop = [];
+            foreach ($columnsToCheck as $column) {
+                if (Schema::hasColumn('patient_data', $column)) {
+                    $columnsToDrop[] = $column;
+                }
+            }
+            
+            if (!empty($columnsToDrop)) {
+                $table->dropColumn($columnsToDrop);
+            }
         });
     }
 };
