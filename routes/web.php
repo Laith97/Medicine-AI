@@ -1,25 +1,48 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\OpenAIController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserSettingsController;
+use App\Http\Controllers\Doctor\DashboardController as DoctorDashboardController;
+use App\Http\Controllers\Doctor\AvailabilityController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('main');
 });
+// Public doctor routes
+Route::get('/doctors', [DoctorController::class, 'index'])->name('doctors.index');
+Route::get('/doctors/{doctor}', [DoctorController::class, 'show'])->name('doctors.show');
+Route::get('/doctors/{doctor}/slots', [DoctorController::class, 'getAvailableSlots'])->name('doctors.slots');
+Route::get('/doctors/search', [DoctorController::class, 'search'])->name('doctors.search');
+Route::get('/doctors/{doctor}/reviews', [ReviewController::class, 'doctorReviews'])->name('doctors.reviews');
+
 Route::middleware('auth')->group(function () {
     Route::get('/ask-ai', [OpenAIController::class, 'showForm'])->name('ask-ai');
     Route::post('/openai/respond', [OpenAIController::class, 'getResponse'])->name('openai.respond');
     Route::post('/openai/follow-up', [OpenAIController::class, 'followUp'])->name('openai.follow-up');
     Route::post('/patient/summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient.summary');
-   
+
     Route::get('/settings', [UserSettingsController::class, 'index'])->name('settings');
     Route::put('/user/settings/update', [UserSettingsController::class, 'update'])->name('settings.update');
     Route::get('/cases', [OpenAIController::class, 'getCases'])->name('cases');
     Route::get('/dashboard', [OpenAIController::class, 'dashboard'])->name('dashboard');
+
+    // Appointment routes for patients
+    Route::resource('appointments', AppointmentController::class)->except(['edit', 'update']);
+    Route::get('/appointments/{doctor}/create', [AppointmentController::class, 'create'])->name('appointments.create');
+    Route::post('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
+    Route::post('/appointments/{appointment}/reschedule', [AppointmentController::class, 'reschedule'])->name('appointments.reschedule');
+    Route::get('/appointments/calendar/events', [AppointmentController::class, 'getCalendarEvents'])->name('appointments.calendar.events');
+
+    // Review routes for patients
+    Route::resource('reviews', ReviewController::class);
+    Route::get('/appointments/{appointment}/review', [ReviewController::class, 'create'])->name('appointments.review');
 
 });
 
@@ -32,6 +55,28 @@ Route::middleware('auth')->group(function () {
     Route::patch('/admin/contact-submissions/{submission}/mark-read', [ContactController::class, 'markAsRead'])->name('admin.contact-submissions.mark-read');
 });
 Route::get('/about', [UserSettingsController::class, 'about'])->name('about');
+
+// Doctor routes
+Route::middleware(['auth'])->prefix('doctor')->name('doctor.')->group(function () {
+    Route::get('/dashboard', [DoctorDashboardController::class, 'index'])->name('dashboard');
+
+    // Appointment management
+    Route::get('/appointments', [DoctorDashboardController::class, 'appointments'])->name('appointments.index');
+    Route::get('/appointments/{appointment}', [DoctorDashboardController::class, 'showAppointment'])->name('appointments.show');
+    Route::post('/appointments/{appointment}/confirm', [DoctorDashboardController::class, 'confirmAppointment'])->name('appointments.confirm');
+    Route::post('/appointments/{appointment}/cancel', [DoctorDashboardController::class, 'cancelAppointment'])->name('appointments.cancel');
+    Route::post('/appointments/{appointment}/complete', [DoctorDashboardController::class, 'completeAppointment'])->name('appointments.complete');
+    Route::post('/appointments/{appointment}/no-show', [DoctorDashboardController::class, 'markNoShow'])->name('appointments.no-show');
+    Route::get('/appointments/calendar/events', [DoctorDashboardController::class, 'getCalendarEvents'])->name('appointments.calendar.events');
+
+    // Availability management
+    Route::resource('availability', AvailabilityController::class);
+    Route::post('/availability/{availabilitySlot}/toggle', [AvailabilityController::class, 'toggle'])->name('availability.toggle');
+    Route::post('/availability/bulk', [AvailabilityController::class, 'bulkStore'])->name('availability.bulk');
+
+    // Reviews
+    Route::get('/reviews', [DoctorDashboardController::class, 'reviews'])->name('reviews.index');
+});
 
 // Admin routes
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {

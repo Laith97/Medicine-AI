@@ -23,6 +23,16 @@ class User extends Authenticatable
         'email',
         'password',
         'is_admin',
+        'role',
+        'phone',
+        'date_of_birth',
+        'gender',
+        'address',
+        'city',
+        'state',
+        'zip_code',
+        'emergency_contact_name',
+        'emergency_contact_phone',
     ];
 
     /**
@@ -46,6 +56,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'date_of_birth' => 'date',
         ];
     }
 
@@ -57,6 +68,24 @@ class User extends Authenticatable
 public function patientAnalyses()
 {
     return $this->hasMany(PatientAnalysis::class);
+}
+
+// Doctor relationship
+public function doctor()
+{
+    return $this->hasOne(Doctor::class);
+}
+
+// Patient appointments
+public function appointments()
+{
+    return $this->hasMany(Appointment::class, 'patient_id');
+}
+
+// Patient reviews
+public function reviews()
+{
+    return $this->hasMany(Review::class, 'patient_id');
 }
 
 /**
@@ -81,6 +110,37 @@ public function makeAdmin()
 public function removeAdmin()
 {
     $this->update(['is_admin' => false]);
+}
+
+/**
+ * Check if user is a doctor
+ */
+public function isDoctor()
+{
+    return $this->role === 'doctor';
+}
+
+/**
+ * Check if user is a patient
+ */
+public function isPatient()
+{
+    return $this->role === 'patient';
+}
+
+/**
+ * Get full address
+ */
+public function getFullAddressAttribute()
+{
+    $parts = array_filter([
+        $this->address,
+        $this->city,
+        $this->state,
+        $this->zip_code
+    ]);
+
+    return implode(', ', $parts);
 }
 
 /**

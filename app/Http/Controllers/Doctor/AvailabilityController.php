@@ -1,0 +1,310 @@
+<?php
+
+namespace App\Http\Controllers\Doctor;
+
+use App\Http\Controllers\Controller;
+use App\Models\AvailabilitySlot;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class AvailabilityController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            if (!Auth::user()->isDoctor() || !Auth::user()->doctor) {
+                abort(403, 'Access denied. Doctor profile required.');
+            }
+            return $next($request);
+        });
+    }
+
+    /**
+     * Display doctor's availability slots
+     */
+    public function index()
+    {
+        $doctor = Auth::user()->doctor;
+
+        $availabilitySlots = $doctor->availabilitySlots()
+            ->orderBy('day_of_week')
+            ->orderBy('start_time')
+            ->get()
+            ->groupBy('day_of_week');
+
+        $daysOfWeek = [
+            'monday' => 'Monday',
+            'tuesday' => 'Tuesday',
+            'wednesday' => 'Wednesday',
+            'thursday' => 'Thursday',
+            'friday' => 'Friday',
+            'saturday' => 'Saturday',
+            'sunday' => 'Sunday'
+        ];
+
+        return view('doctor.availability.index', compact('availabilitySlots', 'daysOfWeek'));
+    }
+
+    /**
+     * Show the form for creating a new availability slot
+     */
+    public function create()
+    {
+        $daysOfWeek = [
+            'monday' => 'Monday',
+            'tuesday' => 'Tuesday',
+            'wednesday' => 'Wednesday',
+            'thursday' => 'Thursday',
+            'friday' => 'Friday',
+            'saturday' => 'Saturday',
+            'sunday' => 'Sunday'
+        ];
+
+        return view('doctor.availability.create', compact('daysOfWeek'));
+    }
+
+    /**
+     * Store a newly created availability slot
+     */
+    public function store(Request $request)
+    {
+        $doctor = Auth::user()->doctor;
+
+        $request->validate([
+            'day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+            'slot_duration' => 'required|integer|min:15|max:120',
+            'max_bookings_per_slot' => 'required|integer|min:1|max:10',
+            'effective_from' => 'nullable|date|after_or_equal:today',
+            'effective_until' => 'nullable|date|after:effective_from',
+        ]);
+
+        // Check for overlapping slots
+        $overlapping = $doctor->availabilitySlots()
+            ->where('day_of_week', $request->day_of_week)
+            ->where('is_active', true)
+            ->where(function ($query) use ($request) {
+                $query->whereBetween('start_time', [$request->start_time, $request->end_time])
+                      ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
+                      ->orWhere(function ($q) use ($request) {
+                          $q->where('start_time', '<=', $request->start_time)
+                            ->where('end_time', '>=', $request->end_time);
+                      });
+            })
+            ->exists();
+
+        if ($overlapping) {
+            return back()->withErrors(['error' => 'This time slot overlaps with an existing availability slot.']);
+        }
+
+        AvailabilitySlot::create([
+            'doctor_id' => $doctor->id,
+            'day_of_week' => $request->day_of_week,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+            'slot_duration' => $request->slot_duration,
+            'max_bookings_per_slot' => $request->max_bookings_per_slot,
+            'effective_from' => $request->effective_from,
+            'effective_until' => $request->effective_until,
+            'is_active' => true,
+        ]);
+
+        return redirect()->route('doctor.availability.index')
+            ->with('success', 'Availability slot created successfully.');
+    }
+
+    /**
+     * Show the form for editing the specified availability slot
+     */
+    public function edit(AvailabilitySlot $availabilitySlot)
+    {
+        $doctor = Auth::user()->doctor;
+
+        // Check if this slot belongs to the doctor
+        if ($availabilitySlot->doctor_id !== $doctor->id) {
+            abort(403);
+        }
+
+        $daysOfWeek = [
+            'monday' => 'Monday',
+            'tuesday' => 'Tuesday',
+            'wednesday' => 'Wednesday',
+            'thursday' => 'Thursday',
+            'friday' => 'Friday',
+            'saturday' => 'Saturday',
+            'sunday' => 'Sunday'
+        ];
+
+        return view('doctor.availability.edit', compact('availabilitySlot', 'daysOfWeek'));
+    }
+
+    /**
+     * Update the specified availability slot
+     */
+    public function update(Request $request, AvailabilitySlot $availabilitySlot)
+    {
+        $doctor = Auth::user()->doctor;
+
+        // Check if this slot belongs to the doctor
+        if ($availabilitySlot->doctor_id !== $doctor->id) {
+            abort(403);
+        }
+
+        $request->validate([
+            'day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+            'slot_duration' => 'required|integer|min:15|max:120',
+            'max_bookings_per_slot' => 'required|integer|min:1|max:10',
+            'effective_from' => 'nullable|date|after_or_equal:today',
+            'effective_until' => 'nullable|date|after:effective_from',
+            'is_active' => 'boolean',
+        ]);
+
+        // Check for overlapping slots (excluding current slot)
+        $overlapping = $doctor->availabilitySlots()
+            ->where('id', '!=', $availabilitySlot->id)
+            ->where('day_of_week', $request->day_of_week)
+            ->where('is_active', true)
+            ->where(function ($query) use ($request) {
+                $query->whereBetween('start_time', [$request->start_time, $request->end_time])
+                      ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
+                      ->orWhere(function ($q) use ($request) {
+                          $q->where('start_time', '<=', $request->start_time)
+                            ->where('end_time', '>=', $request->end_time);
+                      });
+            })
+            ->exists();
+
+        if ($overlapping) {
+            return back()->withErrors(['error' => 'This time slot overlaps with an existing availability slot.']);
+        }
+
+        $availabilitySlot->update([
+            'day_of_week' => $request->day_of_week,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+            'slot_duration' => $request->slot_duration,
+            'max_bookings_per_slot' => $request->max_bookings_per_slot,
+            'effective_from' => $request->effective_from,
+            'effective_until' => $request->effective_until,
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return redirect()->route('doctor.availability.index')
+            ->with('success', 'Availability slot updated successfully.');
+    }
+
+    /**
+     * Remove the specified availability slot
+     */
+    public function destroy(AvailabilitySlot $availabilitySlot)
+    {
+        $doctor = Auth::user()->doctor;
+
+        // Check if this slot belongs to the doctor
+        if ($availabilitySlot->doctor_id !== $doctor->id) {
+            abort(403);
+        }
+
+        // Check if there are any future appointments using this slot
+        $futureAppointments = $doctor->appointments()
+            ->where('appointment_date', '>', now())
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->count();
+
+        if ($futureAppointments > 0) {
+            return back()->withErrors(['error' => 'Cannot delete availability slot with future appointments. Please cancel or reschedule appointments first.']);
+        }
+
+        $availabilitySlot->delete();
+
+        return redirect()->route('doctor.availability.index')
+            ->with('success', 'Availability slot deleted successfully.');
+    }
+
+    /**
+     * Toggle availability slot status
+     */
+    public function toggle(AvailabilitySlot $availabilitySlot)
+    {
+        $doctor = Auth::user()->doctor;
+
+        // Check if this slot belongs to the doctor
+        if ($availabilitySlot->doctor_id !== $doctor->id) {
+            abort(403);
+        }
+
+        $availabilitySlot->update([
+            'is_active' => !$availabilitySlot->is_active
+        ]);
+
+        $status = $availabilitySlot->is_active ? 'activated' : 'deactivated';
+
+        return back()->with('success', "Availability slot {$status} successfully.");
+    }
+
+    /**
+     * Bulk create availability slots for multiple days
+     */
+    public function bulkStore(Request $request)
+    {
+        $doctor = Auth::user()->doctor;
+
+        $request->validate([
+            'days' => 'required|array|min:1',
+            'days.*' => 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+            'slot_duration' => 'required|integer|min:15|max:120',
+            'max_bookings_per_slot' => 'required|integer|min:1|max:10',
+            'effective_from' => 'nullable|date|after_or_equal:today',
+            'effective_until' => 'nullable|date|after:effective_from',
+        ]);
+
+        $created = 0;
+        $errors = [];
+
+        foreach ($request->days as $day) {
+            // Check for overlapping slots
+            $overlapping = $doctor->availabilitySlots()
+                ->where('day_of_week', $day)
+                ->where('is_active', true)
+                ->where(function ($query) use ($request) {
+                    $query->whereBetween('start_time', [$request->start_time, $request->end_time])
+                          ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
+                          ->orWhere(function ($q) use ($request) {
+                              $q->where('start_time', '<=', $request->start_time)
+                                ->where('end_time', '>=', $request->end_time);
+                          });
+                })
+                ->exists();
+
+            if (!$overlapping) {
+                AvailabilitySlot::create([
+                    'doctor_id' => $doctor->id,
+                    'day_of_week' => $day,
+                    'start_time' => $request->start_time,
+                    'end_time' => $request->end_time,
+                    'slot_duration' => $request->slot_duration,
+                    'max_bookings_per_slot' => $request->max_bookings_per_slot,
+                    'effective_from' => $request->effective_from,
+                    'effective_until' => $request->effective_until,
+                    'is_active' => true,
+                ]);
+                $created++;
+            } else {
+                $errors[] = ucfirst($day) . ' has overlapping time slots';
+            }
+        }
+
+        $message = "Created {$created} availability slots successfully.";
+        if (!empty($errors)) {
+            $message .= ' Skipped: ' . implode(', ', $errors);
+        }
+
+        return redirect()->route('doctor.availability.index')
+            ->with('success', $message);
+    }
+}
