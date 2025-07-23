@@ -1,400 +1,686 @@
-@extends('layouts.app')
+@extends('master')
 
 @section('title', 'Book Appointment with ' . $doctor->user->name)
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
+<style>
+.booking-hero {
+    background: linear-gradient(135deg, #DE6262 0%, #DE6280 100%);
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.booking-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: none;
+    overflow: hidden;
+}
+
+.section-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid #f0f0f0;
+    margin-bottom: 1.5rem;
+}
+
+.booking-option {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.booking-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(222, 98, 98, 0.15);
+}
+
+.booking-option.selected {
+    border-color: #DE6262;
+    background: linear-gradient(135deg, rgba(222, 98, 98, 0.05) 0%, rgba(222, 98, 128, 0.05) 100%);
+}
+
+.date-option {
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.date-option:hover {
+    border-color: #DE6262;
+    background: rgba(222, 98, 98, 0.05);
+}
+
+.date-option.selected {
+    border-color: #DE6262;
+    background: linear-gradient(135deg, rgba(222, 98, 98, 0.1) 0%, rgba(222, 98, 128, 0.1) 100%);
+}
+
+.time-slot {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    color: #495057;
+}
+
+.time-slot:hover {
+    border-color: #DE6262;
+    background: rgba(222, 98, 98, 0.05);
+    color: #DE6262;
+}
+
+.time-slot.selected {
+    background: linear-gradient(135deg, #DE6262 0%, #DE6280 100%);
+    border-color: #DE6262;
+    color: white;
+}
+
+.btn-book {
+    background: linear-gradient(135deg, #DE6262 0%, #DE6280 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.btn-book:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(222, 98, 98, 0.4);
+    color: white;
+}
+
+.btn-book:disabled {
+    background: #6c757d;
+    transform: none;
+    box-shadow: none;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #DE6262;
+    box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #DE6262;
+    border-color: #DE6262;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #DE6262;
+    display: inline-block;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, rgba(222, 98, 98, 0.05) 0%, rgba(222, 98, 128, 0.05) 100%);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.info-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(222, 98, 98, 0.1);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.appointment-type-card {
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.appointment-type-card:hover {
+    border-color: #DE6262;
+    background: rgba(222, 98, 98, 0.05);
+}
+
+.appointment-type-card.selected {
+    border-color: #DE6262;
+    background: linear-gradient(135deg, rgba(222, 98, 98, 0.1) 0%, rgba(222, 98, 128, 0.1) 100%);
+}
+
+.icon-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.progress-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.progress-step {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #6c757d;
+    background: #e9ecef;
+    margin: 0 1rem;
+    position: relative;
+}
+
+.progress-step.active {
+    background: linear-gradient(135deg, #DE6262 0%, #DE6280 100%);
+    color: white;
+}
+
+.progress-step.completed {
+    background: #28a745;
+    color: white;
+}
+
+.progress-step::after {
+    content: '';
+    position: absolute;
+    right: -2rem;
+    width: 2rem;
+    height: 2px;
+    background: #e9ecef;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.progress-step:last-child::after {
+    display: none;
+}
+
+.progress-step.completed::after {
+    background: #28a745;
+}
+
+.doctor-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+</style>
+@endpush
+
 @section('content')
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Back Button -->
-        <div class="mb-6">
-            <a href="{{ route('doctors.show', $doctor) }}" class="inline-flex items-center text-primary-600 hover:text-primary-800">
-                <i class="fas fa-arrow-left mr-2"></i>
-                Back to Doctor Profile
-            </a>
-        </div>
+<div class="container-fluid">
+    <!-- Back Navigation -->
+    <div class="container mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{{ route('doctors.show', $doctor) }}" class="text-decoration-none">
+                        <i class="fas fa-arrow-left me-2"></i>Dr. {{ $doctor->user->name }}
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">Book Appointment</li>
+            </ol>
+        </nav>
+    </div>
 
-        <!-- Header -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <div class="flex items-center">
-                <!-- Doctor Image -->
-                <div class="flex-shrink-0">
-                    @if($doctor->profile_image)
-                        <img src="{{ asset('storage/' . $doctor->profile_image) }}"
-                             alt="{{ $doctor->user->name }}"
-                             class="w-16 h-16 rounded-full object-cover">
-                    @else
-                        <div class="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
-                            <i class="fas fa-user-md text-2xl text-primary-600"></i>
+    <!-- Booking Hero Section -->
+    <div class="booking-hero">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center text-white">
+                        <div class="me-4">
+                            @if($doctor->profile_image)
+                                <img src="{{ asset('storage/' . $doctor->profile_image) }}"
+                                     alt="{{ $doctor->user->name }}"
+                                     class="doctor-avatar"
+                                     style="object-fit: cover;">
+                            @else
+                                <div class="doctor-avatar bg-white d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-user-md text-primary fs-4"></i>
+                                </div>
+                            @endif
                         </div>
-                    @endif
+                        <div>
+                            <h1 class="mb-2">Book Appointment</h1>
+                            <h2 class="h4 mb-1 text-white-75">with Dr. {{ $doctor->user->name }}</h2>
+                            <p class="mb-0 text-white-50">{{ $doctor->specialty->name }}</p>
+                        </div>
+                    </div>
                 </div>
-
-                <!-- Doctor Info -->
-                <div class="ml-4">
-                    <h1 class="text-2xl font-bold text-gray-900">Book Appointment</h1>
-                    <p class="text-lg text-gray-600">with {{ $doctor->user->name }}</p>
-                    <p class="text-primary-600">{{ $doctor->specialty->name }}</p>
-                </div>
-
-                <!-- Consultation Fee -->
-                <div class="ml-auto text-right">
-                    <p class="text-sm text-gray-600">Consultation Fee</p>
-                    <p class="text-2xl font-bold text-green-600">${{ number_format($doctor->consultation_fee / 100, 2) }}</p>
+                <div class="col-md-4 text-end">
+                    <div class="text-white">
+                        <div class="h3 mb-1">${{ number_format($doctor->consultation_fee / 100, 2) }}</div>
+                        <div class="text-white-75">Consultation Fee</div>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Account Options -->
+    <div class="container">
+        <!-- Progress Indicator -->
+        <div class="progress-indicator">
+            <div class="progress-step active" id="step1">1</div>
+            <div class="progress-step" id="step2">2</div>
+            <div class="progress-step" id="step3">3</div>
+        </div>
+
         @guest
-            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Booking Options</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-500 cursor-pointer booking-option" data-type="guest">
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-user-clock text-primary-600 mr-2"></i>
-                            <h3 class="font-medium text-gray-900">Book as Guest</h3>
+        <!-- Booking Options -->
+        <div class="section-card mb-4">
+            <h2 class="section-title">Choose Booking Method</h2>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="booking-option" data-type="guest">
+                        <div class="d-flex align-items-start">
+                            <div class="icon-circle bg-primary text-white me-3">
+                                <i class="fas fa-user-clock"></i>
+                            </div>
+                            <div>
+                                <h3 class="h5 mb-2">Book as Guest</h3>
+                                <p class="text-muted mb-0">Quick booking without creating an account. Perfect for one-time visits.</p>
+                                <small class="text-success mt-2 d-block">
+                                    <i class="fas fa-check-circle me-1"></i>No registration required
+                                </small>
+                            </div>
                         </div>
-                        <p class="text-sm text-gray-600">Quick booking without creating an account. You'll receive appointment details via email.</p>
-                    </div>
-                    <div class="border border-gray-200 rounded-lg p-4 hover:border-green-500 cursor-pointer booking-option" data-type="register">
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-user-plus text-green-600 mr-2"></i>
-                            <h3 class="font-medium text-gray-900">Create Account & Book</h3>
-                        </div>
-                        <p class="text-sm text-gray-600">Create an account to manage appointments, view history, and get personalized features.</p>
                     </div>
                 </div>
-                <div class="mt-4 text-center">
-                    <p class="text-sm text-gray-500">Already have an account?
-                        <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="text-primary-600 hover:text-primary-800">Login here</a>
-                    </p>
+                <div class="col-md-6 mb-3">
+                    <div class="booking-option" data-type="register">
+                        <div class="d-flex align-items-start">
+                            <div class="icon-circle bg-success text-white me-3">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <div>
+                                <h3 class="h5 mb-2">Create Account & Book</h3>
+                                <p class="text-muted mb-0">Get a personal dashboard to manage all your appointments and health records.</p>
+                                <small class="text-success mt-2 d-block">
+                                    <i class="fas fa-check-circle me-1"></i>Access to appointment history
+                                </small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+            <div class="text-center mt-3">
+                <small class="text-muted">Already have an account?
+                    <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="text-decoration-none" style="color: #DE6262;">Sign in here</a>
+                </small>
+            </div>
+        </div>
         @endguest
 
-        <!-- Booking Form -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <form method="POST" action="{{ route('appointments.store') }}" id="appointmentForm">
-                @csrf
-                <input type="hidden" name="doctor_id" value="{{ $doctor->id }}">
-                @guest
-                    <input type="hidden" name="booking_type" id="bookingType" value="guest">
-                @endguest
+        <!-- Main Booking Form -->
+        <form method="POST" action="{{ route('appointments.store') }}" id="appointmentForm">
+            @csrf
+            <input type="hidden" name="doctor_id" value="{{ $doctor->id }}">
+            @guest
+                <input type="hidden" name="booking_type" id="bookingType" value="guest">
+            @endguest
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <!-- Left Column - Patient Info & Appointment Details -->
-                    <div>
-                        @guest
-                            <!-- Guest Patient Information -->
-                            <div id="guestInfo" class="mb-8">
-                                <h2 class="text-xl font-semibold text-gray-900 mb-6">Your Information</h2>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label for="guest_name" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Full Name <span class="text-red-500">*</span>
-                                        </label>
-                                        <input type="text" name="guest_name" id="guest_name" required
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                               placeholder="Enter your full name" value="{{ old('guest_name') }}">
-                                        @error('guest_name')
-                                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-
-                                    <div>
-                                        <label for="guest_email" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Email Address <span class="text-red-500">*</span>
-                                        </label>
-                                        <input type="email" name="guest_email" id="guest_email" required
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                               placeholder="Enter your email" value="{{ old('guest_email') }}">
-                                        @error('guest_email')
-                                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label for="guest_phone" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Phone Number <span class="text-red-500">*</span>
-                                        </label>
-                                        <input type="tel" name="guest_phone" id="guest_phone" required
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                               placeholder="Enter your phone number" value="{{ old('guest_phone') }}">
-                                        @error('guest_phone')
-                                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-
-                                    <div>
-                                        <label for="guest_date_of_birth" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Date of Birth <span class="text-red-500">*</span>
-                                        </label>
-                                        <input type="date" name="guest_date_of_birth" id="guest_date_of_birth" required
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                               max="{{ date('Y-m-d') }}" value="{{ old('guest_date_of_birth') }}">
-                                        @error('guest_date_of_birth')
-                                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                                    <div>
-                                        <label for="guest_gender" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Gender <span class="text-red-500">*</span>
-                                        </label>
-                                        <select name="guest_gender" id="guest_gender" required
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                            <option value="">Select gender</option>
-                                            <option value="male" {{ old('guest_gender') == 'male' ? 'selected' : '' }}>Male</option>
-                                            <option value="female" {{ old('guest_gender') == 'female' ? 'selected' : '' }}>Female</option>
-                                            <option value="other" {{ old('guest_gender') == 'other' ? 'selected' : '' }}>Other</option>
-                                        </select>
-                                        @error('guest_gender')
-                                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-
-                                    <div>
-                                        <label for="guest_address" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Address (Optional)
-                                        </label>
-                                        <input type="text" name="guest_address" id="guest_address"
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                               placeholder="Enter your address" value="{{ old('guest_address') }}">
-                                        @error('guest_address')
-                                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-                                </div>
+            <div class="row">
+                <!-- Left Column - Form -->
+                <div class="col-lg-8">
+                    @guest
+                    <!-- Guest Information -->
+                    <div class="section-card" id="guestInfo">
+                        <h2 class="section-title">Your Information</h2>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="guest_name" class="form-label fw-medium">
+                                    Full Name <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="guest_name" id="guest_name" required
+                                       class="form-control"
+                                       placeholder="Enter your full name" value="{{ old('guest_name') }}">
+                                @error('guest_name')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
                             </div>
-
-                            <!-- Registration Form (Hidden by default) -->
-                            <div id="registrationInfo" class="mb-8" style="display: none;">
-                                <h2 class="text-xl font-semibold text-gray-900 mb-6">Create Your Account</h2>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label for="reg_name" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Full Name <span class="text-red-500">*</span>
-                                        </label>
-                                        <input type="text" name="reg_name" id="reg_name"
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                               placeholder="Enter your full name">
-                                    </div>
-
-                                    <div>
-                                        <label for="reg_email" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Email Address <span class="text-red-500">*</span>
-                                        </label>
-                                        <input type="email" name="reg_email" id="reg_email"
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                               placeholder="Enter your email">
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                                    <div>
-                                        <label for="reg_password" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Password <span class="text-red-500">*</span>
-                                        </label>
-                                        <input type="password" name="reg_password" id="reg_password"
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                               placeholder="Create a password">
-                                    </div>
-
-                                    <div>
-                                        <label for="reg_password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Confirm Password <span class="text-red-500">*</span>
-                                        </label>
-                                        <input type="password" name="reg_password_confirmation" id="reg_password_confirmation"
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                               placeholder="Confirm your password">
-                                    </div>
-                                </div>
+                            <div class="col-md-6">
+                                <label for="guest_email" class="form-label fw-medium">
+                                    Email Address <span class="text-danger">*</span>
+                                </label>
+                                <input type="email" name="guest_email" id="guest_email" required
+                                       class="form-control"
+                                       placeholder="Enter your email" value="{{ old('guest_email') }}">
+                                @error('guest_email')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
                             </div>
-                        @endguest
+                            <div class="col-md-6">
+                                <label for="guest_phone" class="form-label fw-medium">
+                                    Phone Number <span class="text-danger">*</span>
+                                </label>
+                                <input type="tel" name="guest_phone" id="guest_phone" required
+                                       class="form-control"
+                                       placeholder="Enter your phone number" value="{{ old('guest_phone') }}">
+                                @error('guest_phone')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="guest_date_of_birth" class="form-label fw-medium">
+                                    Date of Birth <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" name="guest_date_of_birth" id="guest_date_of_birth" required
+                                       class="form-control"
+                                       max="{{ date('Y-m-d') }}" value="{{ old('guest_date_of_birth') }}">
+                                @error('guest_date_of_birth')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="guest_gender" class="form-label fw-medium">
+                                    Gender <span class="text-danger">*</span>
+                                </label>
+                                <select name="guest_gender" id="guest_gender" required class="form-select">
+                                    <option value="">Select gender</option>
+                                    <option value="male" {{ old('guest_gender') == 'male' ? 'selected' : '' }}>Male</option>
+                                    <option value="female" {{ old('guest_gender') == 'female' ? 'selected' : '' }}>Female</option>
+                                    <option value="other" {{ old('guest_gender') == 'other' ? 'selected' : '' }}>Other</option>
+                                </select>
+                                @error('guest_gender')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="guest_address" class="form-label fw-medium">
+                                    Address <span class="text-muted">(Optional)</span>
+                                </label>
+                                <input type="text" name="guest_address" id="guest_address"
+                                       class="form-control"
+                                       placeholder="Enter your address" value="{{ old('guest_address') }}">
+                                @error('guest_address')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
 
-                        <h2 class="text-xl font-semibold text-gray-900 mb-6">Appointment Details</h2>
+                    <!-- Registration Form (Hidden by default) -->
+                    <div class="section-card" id="registrationInfo" style="display: none;">
+                        <h2 class="section-title">Create Your Account</h2>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="reg_name" class="form-label fw-medium">
+                                    Full Name <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="reg_name" id="reg_name"
+                                       class="form-control"
+                                       placeholder="Enter your full name">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="reg_email" class="form-label fw-medium">
+                                    Email Address <span class="text-danger">*</span>
+                                </label>
+                                <input type="email" name="reg_email" id="reg_email"
+                                       class="form-control"
+                                       placeholder="Enter your email">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="reg_password" class="form-label fw-medium">
+                                    Password <span class="text-danger">*</span>
+                                </label>
+                                <input type="password" name="reg_password" id="reg_password"
+                                       class="form-control"
+                                       placeholder="Create a strong password">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="reg_password_confirmation" class="form-label fw-medium">
+                                    Confirm Password <span class="text-danger">*</span>
+                                </label>
+                                <input type="password" name="reg_password_confirmation" id="reg_password_confirmation"
+                                       class="form-control"
+                                       placeholder="Confirm your password">
+                            </div>
+                        </div>
+                    </div>
+                    @endguest
+
+                    <!-- Date & Time Selection -->
+                    <div class="section-card">
+                        <h2 class="section-title">Select Date & Time</h2>
 
                         <!-- Date Selection -->
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
-                            <div class="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto border rounded-lg p-4">
-                                @forelse($availableSlots as $date => $slots)
-                                    <div class="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer date-option"
-                                         data-date="{{ $date }}">
-                                        <div class="flex justify-between items-center">
-                                            <div>
-                                                <div class="font-medium text-gray-900">
-                                                    {{ \Carbon\Carbon::parse($date)->format('M j, Y') }}
-                                                </div>
-                                                <div class="text-sm text-gray-500">
-                                                    {{ \Carbon\Carbon::parse($date)->format('l') }}
-                                                </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-medium mb-3">Choose Available Date</label>
+                            @forelse($availableSlots as $date => $slots)
+                                <div class="date-option mb-2" data-date="{{ $date }}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-semibold">
+                                                {{ \Carbon\Carbon::parse($date)->format('M j, Y') }}
                                             </div>
-                                            <div class="text-sm text-primary-600">
-                                                {{ $slots->count() }} slots available
+                                            <div class="small text-muted">
+                                                {{ \Carbon\Carbon::parse($date)->format('l') }}
                                             </div>
                                         </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-success">{{ $slots->count() }} slots</span>
+                                        </div>
                                     </div>
-                                @empty
-                                    <div class="text-center py-8">
-                                        <i class="fas fa-calendar-times text-4xl text-gray-300 mb-4"></i>
-                                        <p class="text-gray-500">No available slots in the next 30 days</p>
-                                        <p class="text-sm text-gray-400 mt-2">Please contact the doctor's office directly</p>
-                                    </div>
-                                @endforelse
-                            </div>
+                                </div>
+                            @empty
+                                <div class="text-center py-5">
+                                    <i class="fas fa-calendar-times display-4 text-muted mb-3"></i>
+                                    <h3 class="h5 text-muted">No Available Slots</h3>
+                                    <p class="text-muted">Please contact the doctor's office directly to schedule an appointment.</p>
+                                </div>
+                            @endforelse
                         </div>
 
                         <!-- Time Selection -->
-                        <div class="mb-6" id="timeSelection" style="display: none;">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Time</label>
-                            <div class="grid grid-cols-3 gap-2" id="timeSlots">
-                                <!-- Time slots will be populated by JavaScript -->
+                        <div id="timeSelection" style="display: none;">
+                            <label class="form-label fw-medium mb-3">Choose Time Slot</label>
+                            <div class="row g-2" id="timeSlots">
+                                <!-- Time slots populated by JavaScript -->
                             </div>
                             <input type="hidden" name="appointment_date" id="selectedDateTime">
                         </div>
+                    </div>
 
-                        <!-- Appointment Type -->
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Appointment Type</label>
-                            <div class="space-y-2">
-                                <label class="flex items-center">
-                                    <input type="radio" name="appointment_type" value="in_person" class="mr-2" checked>
-                                    <span>In-Person Visit</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="radio" name="appointment_type" value="video_call" class="mr-2">
-                                    <span>Video Call</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="radio" name="appointment_type" value="phone_call" class="mr-2">
-                                    <span>Phone Call</span>
-                                </label>
+                    <!-- Appointment Type -->
+                    <div class="section-card">
+                        <h2 class="section-title">Appointment Type</h2>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="appointment-type-card" data-type="in_person">
+                                    <div class="text-center">
+                                        <i class="fas fa-hospital fs-2 text-primary mb-2"></i>
+                                        <h3 class="h6 mb-1">In-Person Visit</h3>
+                                        <small class="text-muted">Visit the clinic</small>
+                                    </div>
+                                    <input type="radio" name="appointment_type" value="in_person" class="d-none" checked>
+                                </div>
                             </div>
-                        </div>
-
-                        <!-- Reason for Visit -->
-                        <div class="mb-6">
-                            <label for="reason" class="block text-sm font-medium text-gray-700 mb-2">
-                                Reason for Visit <span class="text-red-500">*</span>
-                            </label>
-                            <textarea name="reason" id="reason" rows="3" required
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                      placeholder="Please describe the reason for your visit...">{{ old('reason') }}</textarea>
-                            @error('reason')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Symptoms -->
-                        <div class="mb-6">
-                            <label for="symptoms" class="block text-sm font-medium text-gray-700 mb-2">
-                                Current Symptoms (Optional)
-                            </label>
-                            <textarea name="symptoms" id="symptoms" rows="3"
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                      placeholder="Describe any symptoms you're experiencing...">{{ old('symptoms') }}</textarea>
-                            @error('symptoms')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Additional Notes -->
-                        <div class="mb-6">
-                            <label for="patient_notes" class="block text-sm font-medium text-gray-700 mb-2">
-                                Additional Notes (Optional)
-                            </label>
-                            <textarea name="patient_notes" id="patient_notes" rows="3"
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                      placeholder="Any additional information you'd like the doctor to know...">{{ old('patient_notes') }}</textarea>
-                            @error('patient_notes')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
+                            <div class="col-md-4">
+                                <div class="appointment-type-card" data-type="video_call">
+                                    <div class="text-center">
+                                        <i class="fas fa-video fs-2 text-success mb-2"></i>
+                                        <h3 class="h6 mb-1">Video Call</h3>
+                                        <small class="text-muted">Online consultation</small>
+                                    </div>
+                                    <input type="radio" name="appointment_type" value="video_call" class="d-none">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="appointment-type-card" data-type="phone_call">
+                                    <div class="text-center">
+                                        <i class="fas fa-phone fs-2 text-info mb-2"></i>
+                                        <h3 class="h6 mb-1">Phone Call</h3>
+                                        <small class="text-muted">Voice consultation</small>
+                                    </div>
+                                    <input type="radio" name="appointment_type" value="phone_call" class="d-none">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Right Column - Summary -->
-                    <div>
-                        <h2 class="text-xl font-semibold text-gray-900 mb-6">Appointment Summary</h2>
+                    <!-- Medical Information -->
+                    <div class="section-card">
+                        <h2 class="section-title">Medical Information</h2>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="reason" class="form-label fw-medium">
+                                    Reason for Visit <span class="text-danger">*</span>
+                                </label>
+                                <textarea name="reason" id="reason" rows="3" required
+                                          class="form-control"
+                                          placeholder="Please describe the reason for your visit...">{{ old('reason') }}</textarea>
+                                @error('reason')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="symptoms" class="form-label fw-medium">
+                                    Current Symptoms <span class="text-muted">(Optional)</span>
+                                </label>
+                                <textarea name="symptoms" id="symptoms" rows="3"
+                                          class="form-control"
+                                          placeholder="Describe any symptoms...">{{ old('symptoms') }}</textarea>
+                                @error('symptoms')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="patient_notes" class="form-label fw-medium">
+                                    Additional Notes <span class="text-muted">(Optional)</span>
+                                </label>
+                                <textarea name="patient_notes" id="patient_notes" rows="3"
+                                          class="form-control"
+                                          placeholder="Any additional information...">{{ old('patient_notes') }}</textarea>
+                                @error('patient_notes')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                        <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                <!-- Right Column - Summary -->
+                <div class="col-lg-4">
+                    <div class="position-sticky" style="top: 2rem;">
+                        <!-- Appointment Summary -->
+                        <div class="section-card">
+                            <h2 class="section-title">Appointment Summary</h2>
+
                             <!-- Doctor Info -->
-                            <div class="flex items-center mb-4">
+                            <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
                                 @if($doctor->profile_image)
                                     <img src="{{ asset('storage/' . $doctor->profile_image) }}"
                                          alt="{{ $doctor->user->name }}"
-                                         class="w-12 h-12 rounded-full object-cover">
+                                         class="rounded-circle me-3"
+                                         style="width: 50px; height: 50px; object-fit: cover;">
                                 @else
-                                    <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
-                                        <i class="fas fa-user-md text-primary-600"></i>
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3"
+                                         style="width: 50px; height: 50px;">
+                                        <i class="fas fa-user-md text-primary"></i>
                                     </div>
                                 @endif
-                                <div class="ml-3">
-                                    <p class="font-medium text-gray-900">{{ $doctor->user->name }}</p>
-                                    <p class="text-sm text-gray-600">{{ $doctor->specialty->name }}</p>
+                                <div>
+                                    <div class="fw-semibold">Dr. {{ $doctor->user->name }}</div>
+                                    <small class="text-muted">{{ $doctor->specialty->name }}</small>
                                 </div>
                             </div>
 
                             <!-- Appointment Details -->
-                            <div class="space-y-3">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Date:</span>
-                                    <span class="font-medium" id="summaryDate">Not selected</span>
+                            <div class="summary-card">
+                                <div class="info-item d-flex justify-content-between">
+                                    <span class="text-muted">Date:</span>
+                                    <span class="fw-medium" id="summaryDate">Not selected</span>
                                 </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Time:</span>
-                                    <span class="font-medium" id="summaryTime">Not selected</span>
+                                <div class="info-item d-flex justify-content-between">
+                                    <span class="text-muted">Time:</span>
+                                    <span class="fw-medium" id="summaryTime">Not selected</span>
                                 </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Duration:</span>
-                                    <span class="font-medium">{{ $doctor->appointment_duration }} minutes</span>
+                                <div class="info-item d-flex justify-content-between">
+                                    <span class="text-muted">Duration:</span>
+                                    <span class="fw-medium">{{ $doctor->appointment_duration }} minutes</span>
                                 </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Type:</span>
-                                    <span class="font-medium" id="summaryType">In-Person Visit</span>
+                                <div class="info-item d-flex justify-content-between">
+                                    <span class="text-muted">Type:</span>
+                                    <span class="fw-medium" id="summaryType">In-Person Visit</span>
                                 </div>
-                                <hr class="my-3">
-                                <div class="flex justify-between text-lg font-semibold">
-                                    <span>Consultation Fee:</span>
-                                    <span class="text-green-600">${{ number_format($doctor->consultation_fee / 100, 2) }}</span>
+                                <div class="info-item d-flex justify-content-between fs-5">
+                                    <span class="fw-semibold">Total:</span>
+                                    <span class="fw-bold" style="color: #DE6262;">${{ number_format($doctor->consultation_fee / 100, 2) }}</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Important Information -->
-                        <div class="bg-primary-50 border border-blue-200 rounded-lg p-4 mb-6">
-                            <h3 class="font-medium text-primary-900 mb-2">Important Information</h3>
-                            <ul class="text-sm text-primary-800 space-y-1">
-                                <li>• Please arrive 15 minutes early for in-person appointments</li>
-                                <li>• Bring a valid ID and insurance card</li>
-                                <li>• You will receive a confirmation email with appointment details</li>
+                        <div class="section-card">
+                            <h3 class="h6 fw-semibold mb-3" style="color: #DE6262;">Important Reminders</h3>
+                            <div class="small text-muted">
+                                <div class="d-flex mb-2">
+                                    <i class="fas fa-check-circle me-2 mt-1" style="color: #DE6262;"></i>
+                                    <span>Arrive 15 minutes early for in-person visits</span>
+                                </div>
+                                <div class="d-flex mb-2">
+                                    <i class="fas fa-check-circle me-2 mt-1" style="color: #DE6262;"></i>
+                                    <span>Bring valid ID and insurance information</span>
+                                </div>
+                                <div class="d-flex mb-2">
+                                    <i class="fas fa-check-circle me-2 mt-1" style="color: #DE6262;"></i>
+                                    <span>Confirmation email will be sent shortly</span>
+                                </div>
                                 @if(!$doctor->auto_approve_appointments)
-                                    <li>• Your appointment is subject to doctor's approval</li>
+                                <div class="d-flex">
+                                    <i class="fas fa-info-circle me-2 mt-1" style="color: #DE6262;"></i>
+                                    <span>Appointment requires doctor's approval</span>
+                                </div>
                                 @endif
-                            </ul>
+                            </div>
                         </div>
 
-                        <!-- Submit Button -->
-                        <button type="submit"
-                                class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                id="submitButton" disabled>
-                            <i class="fas fa-calendar-check mr-2"></i>
-                            Book Appointment
+                        <!-- Book Button -->
+                        <button type="submit" class="btn btn-book w-100 mb-3" id="submitButton" disabled>
+                            <i class="fas fa-calendar-plus me-2"></i>
+                            Confirm Booking
                         </button>
 
-                        <p class="text-xs text-gray-500 mt-3 text-center">
-                            By booking this appointment, you agree to our terms of service and privacy policy.
+                        <p class="small text-muted text-center">
+                            By booking, you agree to our
+                            <a href="#" class="text-decoration-none" style="color: #DE6262;">terms of service</a>
+                            and
+                            <a href="#" class="text-decoration-none" style="color: #DE6262;">privacy policy</a>.
                         </p>
                     </div>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -426,14 +712,14 @@ document.addEventListener('DOMContentLoaded', function() {
         option.addEventListener('click', function() {
             // Remove previous selection
             bookingOptions.forEach(opt => {
-                opt.classList.remove('border-blue-500', 'bg-primary-50', 'border-green-500', 'bg-green-50');
+                opt.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10', 'border-success', 'bg-success');
             });
 
             const type = this.dataset.type;
             bookingTypeInput.value = type;
 
             if (type === 'guest') {
-                this.classList.add('border-blue-500', 'bg-primary-50');
+                this.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
                 guestInfo.style.display = 'block';
                 registrationInfo.style.display = 'none';
 
@@ -447,7 +733,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     field.required = false;
                 });
             } else {
-                this.classList.add('border-green-500', 'bg-green-50');
+                this.classList.add('border-success', 'bg-success', 'bg-opacity-10');
                 guestInfo.style.display = 'none';
                 registrationInfo.style.display = 'block';
 
@@ -476,10 +762,10 @@ document.addEventListener('DOMContentLoaded', function() {
     dateOptions.forEach(option => {
         option.addEventListener('click', function() {
             // Remove previous selection
-            dateOptions.forEach(opt => opt.classList.remove('bg-primary-50', 'border-blue-500'));
+            dateOptions.forEach(opt => opt.classList.remove('bg-primary', 'bg-opacity-10', 'border-primary'));
 
             // Add selection to current
-            this.classList.add('bg-primary-50', 'border-blue-500');
+            this.classList.add('bg-primary', 'bg-opacity-10', 'border-primary');
 
             selectedDate = this.dataset.date;
             selectedTime = null;
@@ -517,7 +803,7 @@ document.addEventListener('DOMContentLoaded', function() {
         timeSlots.innerHTML = '';
 
         if (slots.length === 0) {
-            timeSlots.innerHTML = '<p class="col-span-3 text-center text-gray-500">No available slots</p>';
+            timeSlots.innerHTML = '<p class="col-12 text-center text-muted">No available slots</p>';
             timeSelection.style.display = 'block';
             return;
         }
@@ -525,7 +811,7 @@ document.addEventListener('DOMContentLoaded', function() {
         slots.forEach(slot => {
             const button = document.createElement('button');
             button.type = 'button';
-            button.className = 'px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-primary-50 hover:border-blue-500 transition-colors time-slot';
+            button.className = 'btn btn-primary-custom col-4 time-slot';
             button.textContent = formatTime(slot.start_time);
             button.dataset.datetime = `${date} ${slot.start_time}`;
             button.dataset.time = slot.start_time;
@@ -533,13 +819,11 @@ document.addEventListener('DOMContentLoaded', function() {
             button.addEventListener('click', function() {
                 // Remove previous selection
                 document.querySelectorAll('.time-slot').forEach(btn => {
-                    btn.classList.remove('bg-primary-500', 'text-white');
-                    btn.classList.add('border-gray-300');
+                    btn.classList.remove('active');
                 });
 
                 // Add selection to current
-                this.classList.add('bg-primary-500', 'text-white');
-                this.classList.remove('border-gray-300');
+                this.classList.add('active');
 
                 selectedTime = this.dataset.time;
                 selectedDateTimeInput.value = this.dataset.datetime;
@@ -575,4 +859,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<style>
+.booking-option {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.booking-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.time-slot {
+    transition: all 0.2s ease;
+}
+
+.date-option {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.date-option:hover {
+    background-color: var(--bs-primary-bg-subtle);
+    border-color: var(--bs-primary);
+}
+</style>
 @endsection

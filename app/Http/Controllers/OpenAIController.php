@@ -9,10 +9,20 @@ use App\Models\Review;
 use Illuminate\Http\Request;
 use App\Http\Requests\PatientAnalysisRequest;
 use OpenAI\Laravel\Facades\OpenAI;
+use Illuminate\Support\Facades\Auth;
 
 class OpenAIController extends Controller
-
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            if (!Auth::user()->isDoctor() || !Auth::user()->doctor) {
+                abort(403, 'Access denied. Doctor profile required.');
+            }
+            return $next($request);
+        });
+    }
+
     public function showForm(Request $request)
     {
         $symptoms = Symptom::all();

@@ -1,192 +1,160 @@
-@extends('layouts.app')
+@extends('master')
 
 @section('title', 'Doctor Dashboard')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Welcome back, Dr. {{ explode(' ', $doctor->user->name)[1] ?? $doctor->user->name }}</h1>
-            <p class="text-gray-600 mt-2">Here's what's happening with your practice today</p>
+<div class="dashboard-container">
+    <div class="container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div>
+                <h2>Welcome back, Dr. {{ explode(' ', $doctor->user->name)[1] ?? $doctor->user->name }}</h2>
+                <p>Here's what's happening with your practice today</p>
+            </div>
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="row">
             <!-- Today's Appointments -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-calendar-day text-primary-600 text-xl"></i>
-                        </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                        <i class="fas fa-calendar-day"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Today's Appointments</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ $stats['today_appointments'] }}</p>
-                    </div>
+                    <p class="stats-number">{{ $stats['today_appointments'] }}</p>
+                    <p class="stats-label">Today's Appointments</p>
                 </div>
             </div>
 
             <!-- Pending Appointments -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-clock text-yellow-600 text-xl"></i>
-                        </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);">
+                        <i class="fas fa-clock"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Pending Approval</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ $stats['pending_appointments'] }}</p>
-                    </div>
+                    <p class="stats-number">{{ $stats['pending_appointments'] }}</p>
+                    <p class="stats-label">Pending Approval</p>
                 </div>
             </div>
 
             <!-- Average Rating -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-star text-green-600 text-xl"></i>
-                        </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                        <i class="fas fa-star"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Average Rating</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ number_format($stats['average_rating'], 1) }}</p>
-                    </div>
+                    <p class="stats-number">{{ number_format($stats['average_rating'], 1) }}</p>
+                    <p class="stats-label">Average Rating</p>
                 </div>
             </div>
 
             <!-- Monthly Revenue -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-dollar-sign text-purple-600 text-xl"></i>
-                        </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);">
+                        <i class="fas fa-dollar-sign"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">This Month</p>
-                        <p class="text-2xl font-bold text-gray-900">${{ number_format($stats['revenue_this_month'], 0) }}</p>
-                    </div>
+                    <p class="stats-number">${{ number_format($stats['revenue_this_month'], 0) }}</p>
+                    <p class="stats-label">This Month</p>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="row">
             <!-- Today's Schedule -->
-            <div class="lg:col-span-2">
-                <div class="bg-white rounded-lg shadow-md">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <h2 class="text-lg font-semibold text-gray-900">Today's Schedule</h2>
-                            <span class="text-sm text-gray-500">{{ now()->format('l, F j, Y') }}</span>
-                        </div>
+            <div class="col-lg-8 mb-4">
+                <div class="table-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h6><i class="fas fa-calendar-day me-2"></i>Today's Schedule</h6>
+                        <small class="text-muted">{{ now()->format('l, F j, Y') }}</small>
                     </div>
 
-                    <div class="p-6">
-                        @if($todayAppointments->count() > 0)
-                            <div class="space-y-4">
-                                @foreach($todayAppointments as $appointment)
-                                    <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <!-- Time -->
-                                        <div class="flex-shrink-0 w-20">
-                                            <div class="text-sm font-medium text-gray-900">
-                                                {{ $appointment->appointment_date->format('g:i A') }}
-                                            </div>
-                                            <div class="text-xs text-gray-500">
-                                                {{ $appointment->appointment_date->diffInMinutes($appointment->appointment_end) }}min
-                                            </div>
-                                        </div>
+                    @if($todayAppointments->count() > 0)
+                        @foreach($todayAppointments as $appointment)
+                            <div class="d-flex align-items-center p-3 border rounded mb-3">
+                                <!-- Time -->
+                                <div class="me-3" style="min-width: 80px;">
+                                    <div class="fw-medium">{{ $appointment->appointment_date->format('g:i A') }}</div>
+                                    <small class="text-muted">{{ $appointment->appointment_date->diffInMinutes($appointment->appointment_end) }}min</small>
+                                </div>
 
-                                        <!-- Patient Info -->
-                                        <div class="flex-1 ml-4">
-                                            <div class="flex items-center">
-                                                <h3 class="text-sm font-medium text-gray-900">{{ $appointment->patient->name }}</h3>
-                                                <span class="ml-2 px-2 py-1 text-xs rounded-full {{ $appointment->status == 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                                    {{ ucfirst($appointment->status) }}
-                                                </span>
-                                            </div>
-                                            <p class="text-sm text-gray-600 mt-1">{{ $appointment->reason }}</p>
-                                            <div class="flex items-center mt-2 text-xs text-gray-500">
-                                                <i class="fas fa-{{ $appointment->appointment_type == 'video_call' ? 'video' : ($appointment->appointment_type == 'phone_call' ? 'phone' : 'hospital') }} mr-1"></i>
-                                                {{ ucfirst(str_replace('_', ' ', $appointment->appointment_type)) }}
-                                            </div>
-                                        </div>
-
-                                        <!-- Actions -->
-                                        <div class="flex-shrink-0 ml-4">
-                                            <a href="{{ route('doctor.appointments.show', $appointment) }}"
-                                               class="text-primary-600 hover:text-primary-800 text-sm">
-                                                View Details
-                                            </a>
-                                        </div>
+                                <!-- Patient Info -->
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <h6 class="mb-0 me-2">{{ $appointment->patient->name }}</h6>
+                                        <span class="badge {{ $appointment->status == 'confirmed' ? 'bg-success' : 'bg-warning' }}">
+                                            {{ ucfirst($appointment->status) }}
+                                        </span>
                                     </div>
-                                @endforeach
+                                    <p class="text-muted small mb-1">{{ $appointment->reason }}</p>
+                                    <div class="text-muted small">
+                                        <i class="fas fa-{{ $appointment->appointment_type == 'video_call' ? 'video' : ($appointment->appointment_type == 'phone_call' ? 'phone' : 'hospital') }} me-1"></i>
+                                        {{ ucfirst(str_replace('_', ' ', $appointment->appointment_type)) }}
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div>
+                                    <a href="{{ route('doctor.appointments.show', $appointment) }}" class="btn btn-smbtn-primary-custom">
+                                        View Details
+                                    </a>
+                                </div>
                             </div>
-                        @else
-                            <div class="text-center py-8">
-                                <i class="fas fa-calendar-check text-4xl text-gray-300 mb-4"></i>
-                                <p class="text-gray-500">No appointments scheduled for today</p>
-                            </div>
-                        @endif
-                    </div>
+                        @endforeach
+                    @else
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-check"></i>
+                            <p>No appointments scheduled for today</p>
+                        </div>
+                    @endif
                 </div>
             </div>
 
             <!-- Sidebar -->
-            <div class="space-y-6">
+            <div class="col-lg-4">
                 <!-- Quick Actions -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                    <div class="space-y-3">
-                        <a href="{{ route('doctor.appointments.index') }}"
-                           class="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors text-center block">
-                            <i class="fas fa-calendar mr-2"></i>View All Appointments
+                <div class="table-card mb-4">
+                    <h6 class="mb-3"><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
+                    <div class="d-grid gap-2">
+                        <a href="{{ route('doctor.appointments.index') }}" class="btn btn-primary-custom">
+                            <i class="fas fa-calendar me-2"></i>View All Appointments
                         </a>
-                        <a href="{{ route('doctor.availability.index') }}"
-                           class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-center block">
-                            <i class="fas fa-clock mr-2"></i>Manage Availability
+                        <a href="{{ route('doctor.availability.index') }}" class="btn btn-success">
+                            <i class="fas fa-clock me-2"></i>Manage Availability
                         </a>
-                        <a href="{{ route('doctor.reviews.index') }}"
-                           class="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors text-center block">
-                            <i class="fas fa-star mr-2"></i>View Reviews
+                        <a href="{{ route('doctor.reviews.index') }}" class="btn btn-info">
+                            <i class="fas fa-star me-2"></i>View Reviews
                         </a>
                     </div>
                 </div>
 
                 <!-- Pending Appointments -->
                 @if($pendingAppointments->count() > 0)
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Pending Appointments</h3>
-                        <div class="space-y-3">
-                            @foreach($pendingAppointments as $appointment)
-                                <div class="p-3 border border-yellow-200 bg-yellow-50 rounded-lg">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-900">{{ $appointment->patient->name }}</p>
-                                            <p class="text-xs text-gray-600">{{ $appointment->appointment_date->format('M j, g:i A') }}</p>
-                                        </div>
-                                        <div class="flex gap-1">
-                                            <form method="POST" action="{{ route('doctor.appointments.confirm', $appointment) }}" class="inline">
-                                                @csrf
-                                                <button type="submit" class="text-green-600 hover:text-green-800 text-xs">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                            </form>
-                                            <a href="{{ route('doctor.appointments.show', $appointment) }}"
-                                               class="text-primary-600 hover:text-primary-800 text-xs ml-2">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </div>
+                    <div class="table-card mb-4">
+                        <h6 class="mb-3"><i class="fas fa-clock me-2"></i>Pending Appointments</h6>
+                        @foreach($pendingAppointments as $appointment)
+                            <div class="alert alert-warning p-3 mb-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-medium">{{ $appointment->patient->name }}</div>
+                                        <small class="text-muted">{{ $appointment->appointment_date->format('M j, g:i A') }}</small>
+                                    </div>
+                                    <div class="d-flex gap-1">
+                                        <form method="POST" action="{{ route('doctor.appointments.confirm', $appointment) }}" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-success" title="Confirm">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                        <a href="{{ route('doctor.appointments.show', $appointment) }}" class="btn btn-smbtn-primary-custom" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
                                     </div>
                                 </div>
-                            @endforeach
-                        </div>
-                        <div class="mt-3">
-                            <a href="{{ route('doctor.appointments.index', ['status' => 'pending']) }}"
-                               class="text-primary-600 hover:text-primary-800 text-sm">
+                            </div>
+                        @endforeach
+                        <div class="text-center">
+                            <a href="{{ route('doctor.appointments.index', ['status' => 'pending']) }}" class="btn btn-smbtn-primary-custom">
                                 View all pending →
                             </a>
                         </div>
@@ -195,37 +163,32 @@
 
                 <!-- Recent Reviews -->
                 @if($recentReviews->count() > 0)
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Reviews</h3>
-                        <div class="space-y-3">
-                            @foreach($recentReviews as $review)
-                                <div class="p-3 border border-gray-200 rounded-lg">
-                                    <div class="flex items-center mb-2">
-                                        <div class="flex text-yellow-400 mr-2">
-                                            @for($i = 1; $i <= 5; $i++)
-                                                @if($i <= $review->rating)
-                                                    <i class="fas fa-star text-xs"></i>
-                                                @else
-                                                    <i class="far fa-star text-xs"></i>
-                                                @endif
-                                            @endfor
-                                        </div>
-                                        <span class="text-xs text-gray-600">
-                                            {{ $review->created_at->diffForHumans() }}
-                                        </span>
+                    <div class="table-card mb-4">
+                        <h6 class="mb-3"><i class="fas fa-star me-2"></i>Recent Reviews</h6>
+                        @foreach($recentReviews as $review)
+                            <div class="border rounded p-3 mb-2">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="text-warning me-2">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            @if($i <= $review->rating)
+                                                <i class="fas fa-star small"></i>
+                                            @else
+                                                <i class="far fa-star small"></i>
+                                            @endif
+                                        @endfor
                                     </div>
-                                    @if($review->comment)
-                                        <p class="text-sm text-gray-700">{{ Str::limit($review->comment, 80) }}</p>
-                                    @endif
-                                    <p class="text-xs text-gray-500 mt-1">
-                                        by {{ $review->is_anonymous ? 'Anonymous' : $review->patient->name }}
-                                    </p>
+                                    <small class="text-muted">{{ $review->created_at->diffForHumans() }}</small>
                                 </div>
-                            @endforeach
-                        </div>
-                        <div class="mt-3">
-                            <a href="{{ route('doctor.reviews.index') }}"
-                               class="text-primary-600 hover:text-primary-800 text-sm">
+                                @if($review->comment)
+                                    <p class="small mb-1">{{ Str::limit($review->comment, 80) }}</p>
+                                @endif
+                                <small class="text-muted">
+                                    by {{ $review->is_anonymous ? 'Anonymous' : $review->patient->name }}
+                                </small>
+                            </div>
+                        @endforeach
+                        <div class="text-center">
+                            <a href="{{ route('doctor.reviews.index') }}" class="btn btn-smbtn-primary-custom">
                                 View all reviews →
                             </a>
                         </div>
@@ -234,23 +197,19 @@
 
                 <!-- Upcoming Appointments -->
                 @if($upcomingAppointments->count() > 0)
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Upcoming This Week</h3>
-                        <div class="space-y-3">
-                            @foreach($upcomingAppointments as $appointment)
-                                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-900">{{ $appointment->patient->name }}</p>
-                                        <p class="text-xs text-gray-600">
-                                            {{ $appointment->appointment_date->format('M j, g:i A') }}
-                                        </p>
-                                    </div>
-                                    <span class="px-2 py-1 text-xs rounded-full {{ $appointment->status == 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                        {{ ucfirst($appointment->status) }}
-                                    </span>
+                    <div class="table-card">
+                        <h6 class="mb-3"><i class="fas fa-calendar-week me-2"></i>Upcoming This Week</h6>
+                        @foreach($upcomingAppointments as $appointment)
+                            <div class="d-flex justify-content-between align-items-center p-3 border rounded mb-2">
+                                <div>
+                                    <div class="fw-medium">{{ $appointment->patient->name }}</div>
+                                    <small class="text-muted">{{ $appointment->appointment_date->format('M j, g:i A') }}</small>
                                 </div>
-                            @endforeach
-                        </div>
+                                <span class="badge {{ $appointment->status == 'confirmed' ? 'bg-success' : 'bg-warning' }}">
+                                    {{ ucfirst($appointment->status) }}
+                                </span>
+                            </div>
+                        @endforeach
                     </div>
                 @endif
             </div>

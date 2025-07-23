@@ -917,7 +917,7 @@
                                             </td>
                                             <td>
                                                 <a href="{{ route('doctor.appointments.show', $appointment) }}"
-                                                   class="btn btn-sm btn-primary-custom">
+                                                   class="btn btn-smbtn-outline-primary">
                                                     <i class="fas fa-eye me-1"></i>View
                                                 </a>
                                             </td>
@@ -991,7 +991,7 @@
                         </div>
                         <div class="text-center mt-2">
                             <a href="{{ route('doctor.appointments.index', ['status' => 'pending']) }}"
-                               class="btn btn-sm btn-outline-primary">
+                               class="btn btn-smbtn-primary-custom">
                                 View all pending →
                             </a>
                         </div>
@@ -1028,7 +1028,7 @@
                         </div>
                         <div class="text-center mt-2">
                             <a href="{{ route('doctor.reviews.index') }}"
-                               class="btn btn-sm btn-outline-primary">
+                               class="btn btn-smbtn-primary-custom">
                                 View all reviews →
                             </a>
                         </div>
@@ -2440,7 +2440,7 @@ function setupPatientModal() {
                     <td>${formattedDate}</td>
                     <td>${symptomsText}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary view-visit-details" data-visit-id="${visit.id}">
+                        <button class="btn btn-smbtn-primary-custom view-visit-details" data-visit-id="${visit.id}">
                             <i class="fas fa-file-medical me-1"></i> Details
                         </button>
                     </td>

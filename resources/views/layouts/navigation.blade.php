@@ -45,10 +45,6 @@
                                 <i class="fas fa-calendar mr-2"></i>{{ __('All Appointments') }}
                             </x-nav-link>
                         @else
-                            <!-- Patient Navigation -->
-                            <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                                <i class="fas fa-tachometer-alt mr-2"></i>{{ __('Dashboard') }}
-                            </x-nav-link>
                             <x-nav-link :href="route('doctors.index')" :active="request()->routeIs('doctors.*')">
                                 <i class="fas fa-search mr-2"></i>{{ __('Find Doctors') }}
                             </x-nav-link>

@@ -1,39 +1,40 @@
-@extends('layouts.app')
+@extends('master')
 
 @section('title', 'Find Doctors')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="dashboard-container">
+    <div class="container">
         <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-4">Find the Right Doctor for You</h1>
-            <p class="text-lg text-gray-600">Search and book appointments with qualified healthcare professionals</p>
+        <div class="dashboard-header">
+            <div class="text-center">
+                <h2>Find the Right Doctor for You</h2>
+                <p>Search and book appointments with qualified healthcare professionals</p>
+            </div>
         </div>
 
         <!-- Search and Filters -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <form method="GET" action="{{ route('doctors.index') }}" class="space-y-4">
+        <div class="table-card mb-4">
+            <form method="GET" action="{{ route('doctors.index') }}">
                 <!-- Search Bar -->
-                <div class="flex flex-col md:flex-row gap-4">
-                    <div class="flex-1">
-                        <input type="text"
-                               name="search"
-                               value="{{ request('search') }}"
-                               placeholder="Search by doctor name or specialty..."
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-9">
+                        <input type="text" name="search" value="{{ request('search') }}"
+                               placeholder="Search by doctor name or specialty..." class="form-control">
                     </div>
-                    <button type="submit" class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-                        <i class="fas fa-search mr-2"></i>Search
-                    </button>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary-custom w-100">
+                            <i class="fas fa-search me-2"></i>Search
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Filters -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="row g-3">
                     <!-- Specialty Filter -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Specialty</label>
-                        <select name="specialty" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                    <div class="col-md-3">
+                        <label class="form-label">Specialty</label>
+                        <select name="specialty" class="form-select">
                             <option value="">All Specialties</option>
                             @foreach($specialties as $specialty)
                                 <option value="{{ $specialty->id }}" {{ request('specialty') == $specialty->id ? 'selected' : '' }}>
@@ -44,9 +45,9 @@
                     </div>
 
                     <!-- City Filter -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
-                        <select name="city" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                    <div class="col-md-3">
+                        <label class="form-label">City</label>
+                        <select name="city" class="form-select">
                             <option value="">All Cities</option>
                             @foreach($cities as $city)
                                 <option value="{{ $city }}" {{ request('city') == $city ? 'selected' : '' }}>
@@ -57,9 +58,9 @@
                     </div>
 
                     <!-- Language Filter -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Language</label>
-                        <select name="language" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                    <div class="col-md-3">
+                        <label class="form-label">Language</label>
+                        <select name="language" class="form-select">
                             <option value="">All Languages</option>
                             @foreach($languages as $language)
                                 <option value="{{ $language }}" {{ request('language') == $language ? 'selected' : '' }}>
@@ -70,9 +71,9 @@
                     </div>
 
                     <!-- Rating Filter -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Min Rating</label>
-                        <select name="min_rating" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                    <div class="col-md-3">
+                        <label class="form-label">Min Rating</label>
+                        <select name="min_rating" class="form-select">
                             <option value="">Any Rating</option>
                             <option value="4" {{ request('min_rating') == '4' ? 'selected' : '' }}>4+ Stars</option>
                             <option value="4.5" {{ request('min_rating') == '4.5' ? 'selected' : '' }}>4.5+ Stars</option>
@@ -81,125 +82,134 @@
                 </div>
 
                 <!-- Sort Options -->
-                <div class="flex flex-col md:flex-row gap-4 items-end">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
-                        <select name="sort_by" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                <div class="row g-3 mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Sort By</label>
+                        <select name="sort_by" class="form-select">
                             <option value="rating" {{ request('sort_by') == 'rating' ? 'selected' : '' }}>Rating</option>
                             <option value="name" {{ request('sort_by') == 'name' ? 'selected' : '' }}>Name</option>
                             <option value="reviews" {{ request('sort_by') == 'reviews' ? 'selected' : '' }}>Reviews</option>
                             <option value="fee" {{ request('sort_by') == 'fee' ? 'selected' : '' }}>Consultation Fee</option>
                         </select>
                     </div>
-                    <button type="button" onclick="clearFilters()" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
-                        Clear Filters
-                    </button>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <button type="button" onclick="clearFilters()" class="btn btn-outline-secondary me-2">
+                            Clear Filters
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
 
         <!-- Results -->
-        <div class="mb-6">
-            <p class="text-gray-600">
+        <div class="mb-4">
+            <p class="text-muted">
                 Showing {{ $doctors->firstItem() ?? 0 }}-{{ $doctors->lastItem() ?? 0 }} of {{ $doctors->total() }} doctors
             </p>
         </div>
 
         <!-- Doctor Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div class="row">
             @forelse($doctors as $doctor)
-                <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                    <!-- Doctor Image -->
-                    <div class="h-48 bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-                        @if($doctor->profile_image)
-                            <img src="{{ asset('storage/' . $doctor->profile_image) }}"
-                                 alt="{{ $doctor->user->name }}"
-                                 class="w-24 h-24 rounded-full border-4 border-white object-cover">
-                        @else
-                            <div class="w-24 h-24 rounded-full border-4 border-white bg-white flex items-center justify-center">
-                                <i class="fas fa-user-md text-3xl text-primary-600"></i>
-                            </div>
-                        @endif
-                    </div>
-
-                    <!-- Doctor Info -->
-                    <div class="p-6">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">{{ $doctor->user->name }}</h3>
-                        <p class="text-primary-600 font-medium mb-2">{{ $doctor->specialty->name }}</p>
-
-                        <!-- Rating -->
-                        <div class="flex items-center mb-3">
-                            <div class="flex text-yellow-400">
-                                @for($i = 1; $i <= 5; $i++)
-                                    @if($i <= floor($doctor->average_rating))
-                                        <i class="fas fa-star"></i>
-                                    @elseif($i - 0.5 <= $doctor->average_rating)
-                                        <i class="fas fa-star-half-alt"></i>
-                                    @else
-                                        <i class="far fa-star"></i>
-                                    @endif
-                                @endfor
-                            </div>
-                            <span class="ml-2 text-sm text-gray-600">
-                                {{ number_format($doctor->average_rating, 1) }} ({{ $doctor->total_reviews }} reviews)
-                            </span>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card h-100">
+                        <!-- Doctor Image -->
+                        <div class="card-img-top d-flex align-items-center justify-content-center" style="height: 200px; background: linear-gradient(135deg, #2c3e50 0%, #c55252 100%);">
+                            @if($doctor->profile_image)
+                                <img src="{{ asset('storage/' . $doctor->profile_image) }}"
+                                     alt="{{ $doctor->user->name }}"
+                                     class="rounded-circle border border-4 border-white"
+                                     style="width: 100px; height: 100px; object-fit: cover;">
+                            @else
+                                <div class="rounded-circle border border-4 border-white bg-white d-flex align-items-center justify-content-center"
+                                     style="width: 100px; height: 100px;">
+                                    <i class="fas fa-user-md text-primary" style="font-size: 2rem;"></i>
+                                </div>
+                            @endif
                         </div>
 
-                        <!-- Location -->
-                        <div class="flex items-center text-gray-600 mb-3">
-                            <i class="fas fa-map-marker-alt mr-2"></i>
-                            <span class="text-sm">{{ $doctor->city }}, {{ $doctor->state }}</span>
-                        </div>
+                        <!-- Doctor Info -->
+                        <div class="card-body">
+                            <h5 class="card-title">{{ $doctor->user->name }}</h5>
+                            <p class="text-primary fw-medium mb-2">{{ $doctor->specialty->name }}</p>
 
-                        <!-- Languages -->
-                        @if($doctor->languages)
-                            <div class="flex items-center text-gray-600 mb-3">
-                                <i class="fas fa-language mr-2"></i>
-                                <span class="text-sm">{{ implode(', ', $doctor->languages) }}</span>
+                            <!-- Rating -->
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="text-warning me-2">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        @if($i <= floor($doctor->average_rating))
+                                            <i class="fas fa-star"></i>
+                                        @elseif($i - 0.5 <= $doctor->average_rating)
+                                            <i class="fas fa-star-half-alt"></i>
+                                        @else
+                                            <i class="far fa-star"></i>
+                                        @endif
+                                    @endfor
+                                </div>
+                                <small class="text-muted">
+                                    {{ number_format($doctor->average_rating, 1) }} ({{ $doctor->total_reviews }} reviews)
+                                </small>
                             </div>
-                        @endif
 
-                        <!-- Consultation Fee -->
-                        <div class="flex items-center text-gray-900 font-semibold mb-4">
-                            <i class="fas fa-dollar-sign mr-2"></i>
-                            <span>${{ number_format($doctor->consultation_fee / 100, 2) }} consultation</span>
+                            <!-- Location -->
+                            <div class="d-flex align-items-center text-muted mb-2">
+                                <i class="fas fa-map-marker-alt me-2"></i>
+                                <small>{{ $doctor->city }}, {{ $doctor->state }}</small>
+                            </div>
+
+                            <!-- Languages -->
+                            @if($doctor->languages)
+                                <div class="d-flex align-items-center text-muted mb-2">
+                                    <i class="fas fa-language me-2"></i>
+                                    <small>{{ implode(', ', $doctor->languages) }}</small>
+                                </div>
+                            @endif
+
+                            <!-- Consultation Fee -->
+                            <div class="d-flex align-items-center fw-bold mb-3">
+                                <i class="fas fa-dollar-sign me-2"></i>
+                                <span>${{ number_format($doctor->consultation_fee / 100, 2) }} consultation</span>
+                            </div>
+
+                            <!-- Bio -->
+                            <p class="card-text text-muted small mb-3" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                                {{ $doctor->bio }}
+                            </p>
                         </div>
-
-                        <!-- Bio -->
-                        <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{ $doctor->bio }}</p>
 
                         <!-- Actions -->
-                        <div class="flex gap-2">
-                            <a href="{{ route('doctors.show', $doctor) }}"
-                               class="flex-1 bg-primary-600 text-white text-center py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors">
-                                View Profile
-                            </a>
-                            @auth
-                                <a href="{{ route('appointments.create', $doctor) }}"
-                                   class="flex-1 bg-accent-600 text-white text-center py-2 px-4 rounded-lg hover:bg-accent-700 transition-colors">
-                                    Book Now
+                        <div class="card-footer bg-transparent">
+                            <div class="d-grid gap-2">
+                                <a href="{{ route('doctors.show', $doctor) }}" class="btn btn-primary-custom">
+                                    View Profile
                                 </a>
-                            @else
-                                <a href="{{ route('login') }}"
-                                   class="flex-1 bg-accent-600 text-white text-center py-2 px-4 rounded-lg hover:bg-accent-700 transition-colors">
-                                    Login to Book
-                                </a>
-                            @endauth
+                                @auth
+                                    <a href="{{ route('appointments.create', $doctor) }}" class="btn btn-primary-custom">
+                                        Book Now
+                                    </a>
+                                @else
+                                    <a href="{{ route('login') }}" class="btn btn-primary-custom">
+                                        Login to Book
+                                    </a>
+                                @endauth
+                            </div>
                         </div>
                     </div>
                 </div>
             @empty
-                <div class="col-span-full text-center py-12">
-                    <i class="fas fa-user-md text-6xl text-gray-300 mb-4"></i>
-                    <h3 class="text-xl font-semibold text-gray-900 mb-2">No doctors found</h3>
-                    <p class="text-gray-600">Try adjusting your search criteria or filters.</p>
+                <div class="col-12">
+                    <div class="empty-state">
+                        <i class="fas fa-user-md"></i>
+                        <h5>No doctors found</h5>
+                        <p>Try adjusting your search criteria or filters.</p>
+                    </div>
                 </div>
             @endforelse
         </div>
 
         <!-- Pagination -->
         @if($doctors->hasPages())
-            <div class="flex justify-center">
+            <div class="d-flex justify-content-center mt-4">
                 {{ $doctors->links() }}
             </div>
         @endif
@@ -211,13 +221,4 @@ function clearFilters() {
     window.location.href = "{{ route('doctors.index') }}";
 }
 </script>
-
-<style>
-.line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-</style>
 @endsection

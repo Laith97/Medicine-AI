@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('master')
 
 @section('content')
 <div class="container">
@@ -62,7 +62,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         {{ $submissions->links() }}
                     @else
                         <div class="alert alert-info">

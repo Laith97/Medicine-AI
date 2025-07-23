@@ -5,6 +5,7 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
 <link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
 @endpush
 
 @section('content')
@@ -12,8 +13,8 @@
     <div class="container">
         <!-- Dashboard Header -->
         <div class="dashboard-header">
-            <h2>Patient Reviews</h2>
-            <p>Manage and view feedback from your patients</p>
+            <h2 class="h1 mb-1" style="font-weight: 700;">Patient Reviews</h2>
+            <p class="text-muted">Manage and view feedback from your patients</p>
         </div>
 
         <!-- Stats Cards -->
@@ -88,7 +89,7 @@
 
                 <!-- Submit Button -->
                 <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary-custom me-2">
+                    <button type="submit" class="btn btn-primary me-2" style="background-color: #0088cc; border-color: #0088cc;">
                         <i class="fas fa-filter me-2"></i>Filter
                     </button>
 
@@ -216,19 +217,19 @@
         </div>
 
         <!-- Help Section -->
-        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <div class="flex items-start">
-                <div class="flex-shrink-0">
-                    <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+        <div class="table-card">
+            <div class="d-flex">
+                <div class="flex-shrink-0 me-3">
+                    <i class="fas fa-info-circle text-primary fs-4"></i>
                 </div>
-                <div class="ml-3">
-                    <h3 class="text-sm font-medium text-blue-800">About Patient Reviews</h3>
-                    <div class="mt-2 text-sm text-blue-700">
-                        <ul class="list-disc list-inside space-y-1">
-                            <li>Patients can leave reviews after completing their appointments</li>
-                            <li>All reviews are automatically approved and visible to other patients</li>
-                            <li>Reviews help build trust and attract new patients to your practice</li>
-                            <li>You can view both internal reviews and those synced from Google</li>
+                <div>
+                    <h3 class="h5 mb-3">About Patient Reviews</h3>
+                    <div class="text-muted">
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="fas fa-check-circle me-2 text-success"></i>Patients can leave reviews after completing their appointments</li>
+                            <li class="mb-2"><i class="fas fa-check-circle me-2 text-success"></i>All reviews are automatically approved and visible to other patients</li>
+                            <li class="mb-2"><i class="fas fa-check-circle me-2 text-success"></i>Reviews help build trust and attract new patients to your practice</li>
+                            <li class="mb-2"><i class="fas fa-check-circle me-2 text-success"></i>You can view both internal reviews and those synced from Google</li>
                         </ul>
                     </div>
                 </div>
