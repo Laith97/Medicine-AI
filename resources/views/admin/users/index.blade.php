@@ -1,4 +1,4 @@
-@extends('master')
+@extends('layouts.admin')
 
 @section('title', 'Manage Users')
 
@@ -94,19 +94,11 @@
 @endpush
 
 @section('content')
-<div class="admin-page">
-    <div class="container">
-        <!-- Header -->
-        <div class="admin-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h2 mb-2">Manage Users</h1>
-                    <p class="mb-0 opacity-75">View and manage all system users</p>
-                </div>
-                <div class="d-flex gap-3">
-                    <a href="{{ route('admin.dashboard') }}" class="btn btn-light">
-                        <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
-                    </a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <p class="text-muted mb-0">View and manage all system users</p>
+    </div>
+    <div class="d-flex gap-3">
                     <a href="{{ route('admin.users.create') }}" class="btn btn-success">
                         <i class="bi bi-person-plus me-2"></i>Create New User
                     </a>
@@ -226,6 +218,4 @@
                 {{ $users->links() }}
             </div>
         @endif
-    </div>
-</div>
 @endsection
