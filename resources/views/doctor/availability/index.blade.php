@@ -38,7 +38,7 @@
                         <div class="border rounded p-4 mb-3">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="mb-0">{{ $dayName }}</h5>
-                                <button onclick="showBulkModal('{{ $day }}')" class="btn btn-outline-primary btn-sm">
+                                <button onclick="showBulkModal('{{ $day }}')" class="btn btn-primary-custom btn-sm">
                                     <i class="fas fa-plus me-1"></i>Quick Add
                                 </button>
                             </div>
@@ -86,7 +86,7 @@
 
                                                 <!-- Edit -->
                                                 <a href="{{ route('doctor.availability.edit', $slot) }}"
-                                                   class="btn btn-sm btn-outline-primary" title="Edit">
+                                                   class="btn btn-smbtn-primary-custom" title="Edit">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
 
@@ -107,7 +107,7 @@
                                 <div class="empty-state">
                                     <i class="fas fa-calendar-times"></i>
                                     <p class="mb-2">No availability set for {{ $dayName }}</p>
-                                    <button onclick="showBulkModal('{{ $day }}')" class="btn btn-outline-primary btn-sm">
+                                    <button onclick="showBulkModal('{{ $day }}')" class="btn btn-primary-custom btn-sm">
                                         Add time slots
                                     </button>
                                 </div>

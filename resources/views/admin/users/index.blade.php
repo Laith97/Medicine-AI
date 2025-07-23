@@ -9,7 +9,7 @@
         min-height: 100vh;
         padding: 2rem 0;
     }
-    
+
     .admin-header {
         background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
         color: white;
@@ -18,7 +18,7 @@
         margin-bottom: 2rem;
         box-shadow: 0 10px 30px rgba(44, 62, 80, 0.3);
     }
-    
+
     .users-table-card {
         background: white;
         border-radius: 15px;
@@ -26,20 +26,20 @@
         border: none;
         overflow: hidden;
     }
-    
+
     .table-responsive {
         border-radius: 15px;
     }
-    
+
     .custom-table {
         margin-bottom: 0;
     }
-    
+
     .custom-table thead {
         background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
         color: white;
     }
-    
+
     .custom-table thead th {
         border: none;
         padding: 1rem;
@@ -48,22 +48,22 @@
         font-size: 0.85rem;
         letter-spacing: 0.5px;
     }
-    
+
     .custom-table tbody tr {
         transition: background-color 0.3s ease;
     }
-    
+
     .custom-table tbody tr:hover {
         background-color: rgba(222, 98, 98, 0.05);
     }
-    
+
     .custom-table tbody td {
         padding: 1rem;
         border: none;
         border-bottom: 1px solid #f1f3f4;
         vertical-align: middle;
     }
-    
+
     .user-avatar {
         width: 40px;
         height: 40px;
@@ -75,7 +75,7 @@
         color: white;
         font-weight: 600;
     }
-    
+
     .action-btn {
         padding: 0.25rem 0.75rem;
         font-size: 0.875rem;
@@ -85,7 +85,7 @@
         border: none;
         cursor: pointer;
     }
-    
+
     .action-btn:hover {
         text-decoration: none;
         transform: translateY(-1px);
@@ -178,13 +178,13 @@
                                 </td>
                                 <td>
                                     <div class="d-flex gap-2 flex-wrap">
-                                        <a href="{{ route('admin.users.show', $user) }}" class="action-btn btn btn-outline-primary btn-sm">
+                                        <a href="{{ route('admin.users.show', $user) }}" class="action-btn btn btn-primary-custom btn-sm">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         <a href="{{ route('admin.users.edit', $user) }}" class="action-btn btn btn-outline-warning btn-sm">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        
+
                                         @if($user->id !== auth()->id())
                                             <form action="{{ route('admin.users.toggle-admin', $user) }}" method="POST" class="d-inline">
                                                 @csrf
@@ -192,8 +192,8 @@
                                                     <i class="bi bi-{{ $user->isAdmin() ? 'shield-x' : 'shield-check' }}"></i>
                                                 </button>
                                             </form>
-                                            
-                                            <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline" 
+
+                                            <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline"
                                                   onsubmit="return confirm('Are you sure you want to delete this user?')">
                                                 @csrf
                                                 @method('DELETE')

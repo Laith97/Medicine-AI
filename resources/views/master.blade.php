@@ -156,6 +156,11 @@
                                 <i class="bi bi-gear"></i> Settings
                             </a>
                         </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('doctor.profile.edit') }}">
+                                <i class="fas fa-user-edit"></i>Edit Profile
+                            </a>
+                        </li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form method="POST" action="{{ route('logout') }}">
@@ -214,30 +219,45 @@
 						<nav class="primary-menu style-3 menu-spacing-margin">
                             <ul class="menu-container">
                                 @auth
-                                    <li class="menu-item {{ request()->routeIs('dashboard') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('dashboard') }}"><div>Dashboard</div></a>
-                                    </li>
-                                    <li class="menu-item {{ request()->routeIs('ask-ai') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('ask-ai') }}"><div>Add-Patients</div></a>
-                                    </li>
-                                    <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('cases') }}"><div>Cases</div></a>
-                                    </li>
-                                    <li class="menu-item {{ request()->routeIs('doctor.appointments.index') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('doctor.appointments.index') }}">
-                                            <div><i class="fas fa-calendar mr-2"></i>{{ __('Appointments') }}</div>
-                                        </a>
-                                    </li>
-                                    <li class="menu-item {{ request()->routeIs('doctor.availability.index') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('doctor.availability.index') }}">
-                                            <div><i class="fas fa-clock mr-2"></i>{{ __('Availability') }}</div>
-                                        </a>
-                                    </li>
-                                    <li class="menu-item {{ request()->routeIs('doctor.reviews.index') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('doctor.reviews.index') }}">
-                                            <div><i class="fas fa-star mr-2"></i>{{ __('Reviews') }}</div>
-                                        </a>
-                                    </li>
+                                    @if(auth()->user()->role === 'doctor')
+                                        <!-- Doctor Navigation -->
+                                        <li class="menu-item {{ request()->routeIs('dashboard') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('dashboard') }}"><div>Dashboard</div></a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('ask-ai') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('ask-ai') }}"><div>Add-Patients</div></a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('cases') }}"><div>Cases</div></a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('doctor.appointments.index') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('doctor.appointments.index') }}">
+                                                <div><i class="fas fa-calendar mr-2"></i>{{ __('Appointments') }}</div>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('doctor.availability.index') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('doctor.availability.index') }}">
+                                                <div><i class="fas fa-clock mr-2"></i>{{ __('Availability') }}</div>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('doctor.reviews.index') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('doctor.reviews.index') }}">
+                                                <div><i class="fas fa-star mr-2"></i>{{ __('Reviews') }}</div>
+                                            </a>
+                                        </li>
+                                    @else
+                                        <!-- Patient Navigation -->
+                                        <li class="menu-item {{ request()->routeIs('doctors.index') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('doctors.index') }}">
+                                                <div><i class="fas fa-user-md mr-2"></i>Find Doctors</div>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('appointments.index') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('appointments.index') }}">
+                                                <div><i class="fas fa-calendar mr-2"></i>My Appointments</div>
+                                            </a>
+                                        </li>
+                                    @endif
                                 @endauth
 
                                 @guest

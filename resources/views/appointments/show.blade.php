@@ -1,359 +1,513 @@
-@extends('layouts.app')
+@extends('master')
 
 @section('title', 'Appointment Details')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Back Button -->
-        <div class="mb-6">
-            <a href="{{ route('appointments.index') }}" class="inline-flex items-center text-primary-600 hover:text-primary-800">
-                <i class="fas fa-arrow-left mr-2"></i>
-                Back to My Appointments
-            </a>
-        </div>
+<div class="dashboard-container">
+    <div class="container-fluid">
 
-        <!-- Header -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900 mb-2">Appointment Details</h1>
-                    <p class="text-gray-600">Appointment #{{ $appointment->id }}</p>
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+                    <!-- Back Button & Title -->
+                    <div class="d-flex align-items-center mb-3 mb-md-0">
+                        <a href="{{ route('appointments.index') }}" class="btn btn-outline-secondary me-3">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Appointments
+                        </a>
+                        <div>
+                            <h1 class="h2 mb-1 fw-bold">Appointment Details</h1>
+                            <small class="text-muted">ID: #{{ $appointment->id }}</small>
+                        </div>
+                    </div>
+
+                    <!-- Status Badge -->
+                    @php
+                        $statusClasses = [
+                            'pending' => 'bg-warning text-dark',
+                            'confirmed' => 'bg-success text-white',
+                            'completed' => 'bg-primary text-white',
+                            'cancelled' => 'bg-danger text-white',
+                            'no_show' => 'bg-secondary text-white'
+                        ];
+                        $statusClass = $statusClasses[$appointment->status] ?? 'bg-secondary text-white';
+                    @endphp
+                    <span class="badge {{ $statusClass }} px-3 py-2 rounded-pill fs-6">
+                        <i class="fas fa-circle me-2" style="font-size: 0.5rem;"></i>
+                        {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
+                    </span>
                 </div>
-
-                <!-- Status Badge -->
-                @php
-                    $statusColors = [
-                        'pending' => 'bg-yellow-100 text-yellow-800',
-                        'confirmed' => 'bg-green-100 text-green-800',
-                        'completed' => 'bg-primary-100 text-primary-800',
-                        'cancelled' => 'bg-red-100 text-red-800',
-                        'no_show' => 'bg-gray-100 text-gray-800'
-                    ];
-                @endphp
-                <span class="px-4 py-2 rounded-full text-sm font-medium {{ $statusColors[$appointment->status] ?? 'bg-gray-100 text-gray-800' }}">
-                    {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
-                </span>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Main Content -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- Doctor Information -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Doctor Information</h2>
+        <!-- Main Content -->
+        <div class="row">
+            <!-- Left Column - Main Content -->
+            <div class="col-lg-8">
 
-                    <div class="flex items-center">
-                        <!-- Doctor Image -->
-                        <div class="flex-shrink-0">
-                            @if($appointment->doctor->profile_image)
-                                <img src="{{ asset('storage/' . $appointment->doctor->profile_image) }}"
-                                     alt="{{ $appointment->doctor->user->name }}"
-                                     class="w-16 h-16 rounded-full object-cover">
-                            @else
-                                <div class="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
-                                    <i class="fas fa-user-md text-2xl text-primary-600"></i>
-                                </div>
-                            @endif
-                        </div>
-
-                        <!-- Doctor Details -->
-                        <div class="ml-4 flex-1">
-                            <h3 class="text-lg font-semibold text-gray-900">{{ $appointment->doctor->user->name }}</h3>
-                            <p class="text-primary-600 mb-2">{{ $appointment->doctor->specialty->name }}</p>
-
-                            <!-- Rating -->
-                            <div class="flex items-center">
-                                <div class="flex text-yellow-400 mr-2">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        @if($i <= floor($appointment->doctor->average_rating))
-                                            <i class="fas fa-star text-sm"></i>
-                                        @elseif($i - 0.5 <= $appointment->doctor->average_rating)
-                                            <i class="fas fa-star-half-alt text-sm"></i>
-                                        @else
-                                            <i class="far fa-star text-sm"></i>
-                                        @endif
-                                    @endfor
-                                </div>
-                                <span class="text-sm text-gray-600">
-                                    {{ number_format($appointment->doctor->average_rating, 1) }} ({{ $appointment->doctor->total_reviews }} reviews)
-                                </span>
+                <!-- Appointment Overview Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="card-title mb-1 fw-bold">{{ $appointment->appointment_date->format('l, F j, Y') }}</h3>
+                                <p class="mb-0 opacity-75">{{ $appointment->appointment_date->format('g:i A') }} - {{ $appointment->appointment_end->format('g:i A') }}</p>
+                            </div>
+                            <div class="text-end">
+                                <div class="h2 mb-0 fw-bold">{{ $appointment->appointment_date->diffInMinutes($appointment->appointment_end) }}</div>
+                                <small class="opacity-75">minutes</small>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Contact Actions -->
-                        <div class="flex flex-col gap-2">
-                            <a href="{{ route('doctors.show', $appointment->doctor) }}"
-                               class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors text-sm text-center">
-                                View Profile
-                            </a>
-                            @if($appointment->doctor->phone)
-                                <a href="tel:{{ $appointment->doctor->phone }}"
-                                   class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm text-center">
-                                    <i class="fas fa-phone mr-1"></i>Call
-                                </a>
-                            @endif
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 rounded-3 p-3 me-3">
+                                        <i class="fas fa-calendar-alt text-primary fs-4"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-semibold mb-1">Appointment Type</h6>
+                                        <p class="text-muted mb-0">{{ ucfirst(str_replace('_', ' ', $appointment->appointment_type)) }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-success bg-opacity-10 rounded-3 p-3 me-3">
+                                        <i class="fas fa-dollar-sign text-success fs-4"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-semibold mb-1">Consultation Fee</h6>
+                                        <p class="text-muted mb-0">${{ number_format($appointment->consultation_fee / 100, 2) }}</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Appointment Details -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Appointment Details</h2>
+                <!-- Doctor Information Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title mb-4 fw-bold">Your Doctor</h4>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h3 class="font-medium text-gray-900 mb-2">Date & Time</h3>
-                            <div class="space-y-2">
-                                <div class="flex items-center text-gray-600">
-                                    <i class="fas fa-calendar mr-2"></i>
-                                    <span>{{ $appointment->appointment_date->format('l, F j, Y') }}</span>
-                                </div>
-                                <div class="flex items-center text-gray-600">
-                                    <i class="fas fa-clock mr-2"></i>
-                                    <span>{{ $appointment->appointment_date->format('g:i A') }} - {{ $appointment->appointment_end->format('g:i A') }}</span>
-                                </div>
-                                <div class="flex items-center text-gray-600">
-                                    <i class="fas fa-hourglass-half mr-2"></i>
-                                    <span>{{ $appointment->appointment_date->diffInMinutes($appointment->appointment_end) }} minutes</span>
-                                </div>
+                        <div class="d-flex align-items-start">
+                            <!-- Doctor Avatar -->
+                            <div class="me-4 flex-shrink-0">
+                                @if($appointment->doctor->profile_image)
+                                    <img src="{{ asset('storage/' . $appointment->doctor->profile_image) }}"
+                                         alt="{{ $appointment->doctor->user->name }}"
+                                         class="rounded-3 border" style="width: 80px; height: 80px; object-fit: cover;">
+                                @else
+                                    <div class="bg-primary rounded-3 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                        <i class="fas fa-user-md text-white fs-2"></i>
+                                    </div>
+                                @endif
                             </div>
-                        </div>
 
-                        <div>
-                            <h3 class="font-medium text-gray-900 mb-2">Appointment Type</h3>
-                            <div class="flex items-center text-gray-600">
-                                <i class="fas fa-{{ $appointment->appointment_type == 'video_call' ? 'video' : ($appointment->appointment_type == 'phone_call' ? 'phone' : 'hospital') }} mr-2"></i>
-                                <span>{{ ucfirst(str_replace('_', ' ', $appointment->appointment_type)) }}</span>
-                            </div>
-                        </div>
-                    </div>
+                            <!-- Doctor Details -->
+                            <div class="flex-grow-1">
+                                <h5 class="fw-bold mb-1">{{ $appointment->doctor->user->name }}</h5>
+                                <p class="text-primary fw-semibold mb-2">{{ $appointment->doctor->specialty->name }}</p>
 
-                    <div class="mt-6">
-                        <h3 class="font-medium text-gray-900 mb-2">Reason for Visit</h3>
-                        <p class="text-gray-700 bg-gray-50 p-3 rounded-lg">{{ $appointment->reason }}</p>
-                    </div>
-
-                    @if($appointment->symptoms)
-                        <div class="mt-4">
-                            <h3 class="font-medium text-gray-900 mb-2">Symptoms</h3>
-                            <p class="text-gray-700 bg-gray-50 p-3 rounded-lg">{{ $appointment->symptoms }}</p>
-                        </div>
-                    @endif
-
-                    @if($appointment->patient_notes)
-                        <div class="mt-4">
-                            <h3 class="font-medium text-gray-900 mb-2">Additional Notes</h3>
-                            <p class="text-gray-700 bg-gray-50 p-3 rounded-lg">{{ $appointment->patient_notes }}</p>
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Doctor's Notes (if completed) -->
-                @if($appointment->status == 'completed' && $appointment->doctor_notes)
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Doctor's Notes</h2>
-                        <div class="bg-primary-50 p-4 rounded-lg">
-                            <p class="text-gray-700">{{ $appointment->doctor_notes }}</p>
-                        </div>
-
-                        @if($appointment->follow_up_required)
-                            <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                <div class="flex items-center">
-                                    <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
-                                    <span class="text-yellow-800 font-medium">Follow-up appointment recommended</span>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                @endif
-
-                <!-- Review Section -->
-                @if($appointment->status == 'completed')
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Review</h2>
-
-                        @if($appointment->review)
-                            <div class="bg-green-50 p-4 rounded-lg">
-                                <div class="flex items-center mb-2">
-                                    <div class="flex text-yellow-400 mr-2">
+                                <!-- Rating -->
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="text-warning me-2">
                                         @for($i = 1; $i <= 5; $i++)
-                                            @if($i <= $appointment->review->rating)
+                                            @if($i <= floor($appointment->doctor->average_rating))
                                                 <i class="fas fa-star"></i>
+                                            @elseif($i - 0.5 <= $appointment->doctor->average_rating)
+                                                <i class="fas fa-star-half-alt"></i>
                                             @else
                                                 <i class="far fa-star"></i>
                                             @endif
                                         @endfor
                                     </div>
-                                    <span class="text-sm text-gray-600">
-                                        Reviewed on {{ $appointment->review->created_at->format('M j, Y') }}
+                                    <span class="text-muted">
+                                        {{ number_format($appointment->doctor->average_rating, 1) }} ({{ $appointment->doctor->total_reviews }} reviews)
                                     </span>
                                 </div>
-                                @if($appointment->review->comment)
-                                    <p class="text-gray-700">{{ $appointment->review->comment }}</p>
-                                @endif
-                                <div class="mt-3">
-                                    <a href="{{ route('reviews.show', $appointment->review) }}"
-                                       class="text-primary-600 hover:text-primary-800 text-sm">
-                                        View full review
+
+                                <!-- Contact Actions -->
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a href="{{ route('doctors.show', $appointment->doctor) }}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-user me-1"></i>View Profile
                                     </a>
+                                    @if($appointment->doctor->phone)
+                                        <a href="tel:{{ $appointment->doctor->phone }}" class="btn btn-success btn-sm">
+                                            <i class="fas fa-phone me-1"></i>Call Doctor
+                                        </a>
+                                    @endif
                                 </div>
                             </div>
-                        @else
-                            <div class="text-center py-6">
-                                <i class="fas fa-star text-4xl text-gray-300 mb-4"></i>
-                                <p class="text-gray-600 mb-4">How was your appointment?</p>
-                                <a href="{{ route('appointments.review', $appointment) }}"
-                                   class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
-                                    <i class="fas fa-star mr-2"></i>
-                                    Leave a Review
-                                </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appointment Information Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title mb-4 fw-bold">Appointment Information</h4>
+
+                        <!-- Reason for Visit -->
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-info bg-opacity-10 rounded-3 p-2 me-3">
+                                    <i class="fas fa-clipboard-list text-info"></i>
+                                </div>
+                                <h6 class="fw-semibold mb-0">Reason for Visit</h6>
+                            </div>
+                            <div class="bg-light rounded-3 p-3 ms-5">
+                                <p class="mb-0">{{ $appointment->reason }}</p>
+                            </div>
+                        </div>
+
+                        @if($appointment->symptoms)
+                            <div class="mb-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="bg-warning bg-opacity-10 rounded-3 p-2 me-3">
+                                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                                    </div>
+                                    <h6 class="fw-semibold mb-0">Symptoms</h6>
+                                </div>
+                                <div class="bg-light rounded-3 p-3 ms-5">
+                                    <p class="mb-0">{{ $appointment->symptoms }}</p>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($appointment->patient_notes)
+                            <div class="mb-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="bg-secondary bg-opacity-10 rounded-3 p-2 me-3">
+                                        <i class="fas fa-sticky-note text-secondary"></i>
+                                    </div>
+                                    <h6 class="fw-semibold mb-0">Additional Notes</h6>
+                                </div>
+                                <div class="bg-light rounded-3 p-3 ms-5">
+                                    <p class="mb-0">{{ $appointment->patient_notes }}</p>
+                                </div>
                             </div>
                         @endif
                     </div>
-                @endif
-            </div>
+                </div>
 
-            <!-- Sidebar -->
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-lg shadow-md p-6 sticky top-8">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-
-                    <div class="space-y-3">
-                        @if($appointment->canBeCancelled())
-                            <button onclick="cancelAppointment()"
-                                    class="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
-                                <i class="fas fa-times mr-2"></i>Cancel Appointment
-                            </button>
-                        @endif
-
-                        @if($appointment->canBeRescheduled())
-                            <button onclick="rescheduleAppointment()"
-                                    class="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700 transition-colors">
-                                <i class="fas fa-calendar-alt mr-2"></i>Reschedule
-                            </button>
-                        @endif
-
-                        @if(in_array($appointment->status, ['pending', 'confirmed']) && $appointment->appointment_type == 'video_call')
-                            <button class="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors">
-                                <i class="fas fa-video mr-2"></i>Join Video Call
-                            </button>
-                        @endif
-
-                        <a href="{{ route('doctors.show', $appointment->doctor) }}"
-                           class="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors text-center block">
-                            <i class="fas fa-user-md mr-2"></i>View Doctor Profile
-                        </a>
-
-                        @if($appointment->doctor->phone)
-                            <a href="tel:{{ $appointment->doctor->phone }}"
-                               class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-center block">
-                                <i class="fas fa-phone mr-2"></i>Call Doctor's Office
-                            </a>
-                        @endif
-                    </div>
-
-                    <!-- Appointment Summary -->
-                    <div class="mt-6 pt-6 border-t">
-                        <h4 class="font-medium text-gray-900 mb-3">Summary</h4>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Consultation Fee:</span>
-                                <span class="font-medium">${{ number_format($appointment->consultation_fee / 100, 2) }}</span>
+                <!-- Doctor's Assessment (if completed) -->
+                @if($appointment->status == 'completed' && $appointment->doctor_notes)
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="bg-primary bg-opacity-10 rounded-3 p-3 me-3">
+                                    <i class="fas fa-user-md text-primary fs-4"></i>
+                                </div>
+                                <h4 class="card-title mb-0 fw-bold">Doctor's Assessment</h4>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Booked on:</span>
-                                <span class="font-medium">{{ $appointment->created_at->format('M j, Y') }}</span>
+
+                            <div class="bg-primary bg-opacity-5 rounded-3 p-4">
+                                <p class="mb-0 fs-5">{{ $appointment->doctor_notes }}</p>
                             </div>
-                            @if($appointment->cancelled_at)
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Cancelled on:</span>
-                                    <span class="font-medium">{{ $appointment->cancelled_at->format('M j, Y') }}</span>
+
+                            @if($appointment->follow_up_required)
+                                <div class="alert alert-warning mt-3 mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Follow-up appointment recommended</strong>
                                 </div>
                             @endif
                         </div>
                     </div>
+                @endif
 
-                    <!-- Important Information -->
-                    @if(in_array($appointment->status, ['pending', 'confirmed']))
-                        <div class="mt-6 pt-6 border-t">
-                            <h4 class="font-medium text-gray-900 mb-3">Important Information</h4>
-                            <ul class="text-sm text-gray-600 space-y-1">
+                <!-- Review Section -->
+                @if($appointment->status == 'completed')
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="bg-warning bg-opacity-10 rounded-3 p-3 me-3">
+                                    <i class="fas fa-star text-warning fs-4"></i>
+                                </div>
+                                <h4 class="card-title mb-0 fw-bold">Your Review</h4>
+                            </div>
+
+                            @if($appointment->review)
+                                <div class="bg-success bg-opacity-5 rounded-3 p-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="text-warning me-3">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                @if($i <= $appointment->review->rating)
+                                                    <i class="fas fa-star"></i>
+                                                @else
+                                                    <i class="far fa-star"></i>
+                                                @endif
+                                            @endfor
+                                        </div>
+                                        <small class="text-muted">
+                                            Reviewed on {{ $appointment->review->created_at->format('M j, Y') }}
+                                        </small>
+                                    </div>
+                                    @if($appointment->review->comment)
+                                        <p class="mb-3">{{ $appointment->review->comment }}</p>
+                                    @endif
+                                    <a href="{{ route('reviews.show', $appointment->review) }}" class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-eye me-1"></i>View full review
+                                    </a>
+                                </div>
+                            @else
+                                <div class="text-center py-5">
+                                    <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                        <i class="fas fa-star text-warning fs-2"></i>
+                                    </div>
+                                    <h5 class="fw-bold mb-2">How was your appointment?</h5>
+                                    <p class="text-muted mb-4">Share your experience to help other patients</p>
+                                    <a href="{{ route('appointments.review', $appointment) }}" class="btn btn-warning">
+                                        <i class="fas fa-star me-2"></i>Leave a Review
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            <!-- Right Column - Sidebar -->
+            <div class="col-lg-4">
+                <!-- Quick Actions Card -->
+                <div class="card shadow-sm mb-4 sticky-top" style="top: 20px;">
+                    <div class="card-header">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-bolt text-primary me-2"></i>
+                            <h5 class="card-title mb-0 fw-bold">Quick Actions</h5>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-3">
+                            @if(in_array($appointment->status, ['pending', 'confirmed']) && $appointment->appointment_type == 'video_call')
+                                <button onclick="joinVideoCall()" class="btn btn-primary">
+                                    <i class="fas fa-video me-2"></i>Join Video Call
+                                </button>
+                            @endif
+
+                            @if($appointment->canBeRescheduled())
+                                <button onclick="rescheduleAppointment()" class="btn btn-warning">
+                                    <i class="fas fa-calendar-alt me-2"></i>Reschedule
+                                </button>
+                            @endif
+
+                            @if($appointment->canBeCancelled())
+                                <button onclick="showCancelModal()" class="btn btn-danger">
+                                    <i class="fas fa-times me-2"></i>Cancel Appointment
+                                </button>
+                            @endif
+
+                            <hr>
+
+                            <a href="{{ route('doctors.show', $appointment->doctor) }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-user-md me-2"></i>View Doctor Profile
+                            </a>
+
+                            @if($appointment->doctor->phone)
+                                <a href="tel:{{ $appointment->doctor->phone }}" class="btn btn-success">
+                                    <i class="fas fa-phone me-2"></i>Call Doctor
+                                </a>
+                            @endif
+                        </div>
+
+                        <!-- Appointment Summary -->
+                        <hr class="my-4">
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fas fa-info-circle text-muted me-2"></i>
+                                <h6 class="fw-semibold mb-0">Summary</h6>
+                            </div>
+                            <div class="small">
+                                <div class="d-flex justify-content-between py-2 px-3 bg-light rounded mb-2">
+                                    <span class="text-muted">Consultation Fee</span>
+                                    <span class="fw-semibold">${{ number_format($appointment->consultation_fee / 100, 2) }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between py-2 px-3 bg-light rounded mb-2">
+                                    <span class="text-muted">Booked on</span>
+                                    <span class="fw-medium">{{ $appointment->created_at->format('M j, Y') }}</span>
+                                </div>
+                                @if($appointment->cancelled_at)
+                                    <div class="d-flex justify-content-between py-2 px-3 bg-danger bg-opacity-10 rounded">
+                                        <span class="text-danger">Cancelled on</span>
+                                        <span class="fw-medium text-danger">{{ $appointment->cancelled_at->format('M j, Y') }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preparation Tips Card -->
+                @if(in_array($appointment->status, ['pending', 'confirmed']))
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <h6 class="card-title mb-0 fw-bold">Preparation Tips</h6>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
                                 @if($appointment->appointment_type == 'in_person')
-                                    <li>• Arrive 15 minutes early</li>
-                                    <li>• Bring valid ID and insurance card</li>
-                                    <li>• Wear a mask if required</li>
+                                    <li class="d-flex align-items-start mb-3">
+                                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+                                        <span class="small">Arrive 15 minutes early</span>
+                                    </li>
+                                    <li class="d-flex align-items-start mb-3">
+                                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+                                        <span class="small">Bring valid ID and insurance card</span>
+                                    </li>
+                                    <li class="d-flex align-items-start">
+                                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+                                        <span class="small">Wear a mask if required</span>
+                                    </li>
                                 @elseif($appointment->appointment_type == 'video_call')
-                                    <li>• Test your camera and microphone</li>
-                                    <li>• Ensure stable internet connection</li>
-                                    <li>• Join the call 5 minutes early</li>
+                                    <li class="d-flex align-items-start mb-3">
+                                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+                                        <span class="small">Test your camera and microphone</span>
+                                    </li>
+                                    <li class="d-flex align-items-start mb-3">
+                                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+                                        <span class="small">Ensure stable internet connection</span>
+                                    </li>
+                                    <li class="d-flex align-items-start">
+                                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+                                        <span class="small">Join the call 5 minutes early</span>
+                                    </li>
                                 @else
-                                    <li>• Ensure your phone is charged</li>
-                                    <li>• Be in a quiet location</li>
-                                    <li>• Have your medical history ready</li>
+                                    <li class="d-flex align-items-start mb-3">
+                                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+                                        <span class="small">Ensure your phone is charged</span>
+                                    </li>
+                                    <li class="d-flex align-items-start mb-3">
+                                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+                                        <span class="small">Be in a quiet location</span>
+                                    </li>
+                                    <li class="d-flex align-items-start">
+                                        <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+                                        <span class="small">Have your medical history ready</span>
+                                    </li>
                                 @endif
                             </ul>
                         </div>
-                    @endif
-                </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
 </div>
 
 <!-- Cancel Appointment Modal -->
-<div id="cancelModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Cancel Appointment</h3>
-        <form method="POST" action="{{ route('appointments.cancel', $appointment) }}">
-            @csrf
-            <div class="mb-4">
-                <label for="cancellation_reason" class="block text-sm font-medium text-gray-700 mb-2">
-                    Reason for cancellation (optional)
-                </label>
-                <textarea name="cancellation_reason" id="cancellation_reason" rows="3"
-                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          placeholder="Please let us know why you're cancelling..."></textarea>
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <div class="d-flex align-items-center">
+                    <div class="bg-danger bg-opacity-10 rounded-3 p-2 me-3">
+                        <i class="fas fa-exclamation-triangle text-danger"></i>
+                    </div>
+                    <h5 class="modal-title fw-bold" id="cancelModalLabel">Cancel Appointment</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="flex justify-end gap-3">
-                <button type="button" onclick="closeCancelModal()"
-                        class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+
+            <div class="modal-body">
+                <!-- Warning Message -->
+                <div class="alert alert-danger">
+                    <strong>Are you sure you want to cancel this appointment?</strong><br>
+                    This action cannot be undone and you may need to reschedule for a later date.
+                </div>
+
+                <!-- Form -->
+                <form method="POST" action="{{ route('appointments.cancel', $appointment) }}" id="cancelForm">
+                    @csrf
+                    <div class="mb-3">
+                        <label for="cancellation_reason" class="form-label fw-semibold">
+                            Reason for cancellation (optional)
+                        </label>
+                        <textarea name="cancellation_reason" id="cancellation_reason" rows="4"
+                                  class="form-control"
+                                  placeholder="Please let us know why you're cancelling this appointment..."></textarea>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     Keep Appointment
                 </button>
-                <button type="submit"
-                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                <button type="submit" form="cancelForm" class="btn btn-danger">
                     Cancel Appointment
                 </button>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 
 <script>
-function cancelAppointment() {
-    const modal = document.getElementById('cancelModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
-
-function closeCancelModal() {
-    const modal = document.getElementById('cancelModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
+// Modal Functions
+function showCancelModal() {
+    const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
+    modal.show();
 }
 
 function rescheduleAppointment() {
-    // For now, redirect to the booking page
-    // In a full implementation, you'd show a reschedule modal
-    alert('Reschedule functionality will be implemented in the next phase.');
+    showNotification('Reschedule feature coming soon!', 'info');
 }
 
-// Close modal when clicking outside
-document.getElementById('cancelModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeCancelModal();
-    }
+function joinVideoCall() {
+    showNotification('Launching video call...', 'success');
+}
+
+// Notification System
+function showNotification(message, type = 'info') {
+    const alertTypes = {
+        success: 'alert-success',
+        info: 'alert-info',
+        warning: 'alert-warning',
+        error: 'alert-danger'
+    };
+
+    const icons = {
+        success: 'fas fa-check-circle',
+        info: 'fas fa-info-circle',
+        warning: 'fas fa-exclamation-triangle',
+        error: 'fas fa-times-circle'
+    };
+
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertTypes[type]} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="${icons[type]} me-2"></i>
+            <span>${message}</span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+// Initialize tooltips and other Bootstrap components
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tooltips if any
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
 });
 </script>
 @endsection

@@ -1,33 +1,31 @@
-@extends('layouts.app')
+@extends('master')
 
 @section('title', 'Create Patient Account')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-    <div class="sm:mx-auto sm:w-full sm:max-w-md">
-        <div class="text-center">
-            <h2 class="text-3xl font-bold text-gray-900">Create Your Patient Account</h2>
-            <p class="mt-2 text-sm text-gray-600">
-                Join our platform to easily manage your appointments and health records
-            </p>
-        </div>
-    </div>
+<div class="dashboard-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="text-center mb-4">
+                    <h2>Create Your Patient Account</h2>
+                    <p class="text-muted">Join our platform to easily manage your appointments and health records</p>
+                </div>
 
-    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <form class="space-y-6" method="POST" action="{{ route('patient.register') }}">
-                @csrf
+                <div class="table-card">
+                    <form method="POST" action="{{ route('patient.register') }}">
+                        @csrf
 
-                <!-- Full Name -->
-                <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700">
-                        Full Name
-                    </label>
-                    <div class="mt-1">
-                        <input id="name" name="name" type="text" required
-                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                               placeholder="Enter your full name" value="{{ old('name') }}">
-                    </div>
+                        <!-- Full Name -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Full Name</label>
+                            <input id="name" name="name" type="text" required
+                                   class="form-control @error('name') is-invalid @enderror"
+                                   placeholder="Enter your full name" value="{{ old('name') }}">
+                            @error('name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
                     @error('name')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
