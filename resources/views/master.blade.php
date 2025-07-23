@@ -69,6 +69,7 @@
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
     <link rel="stylesheet" href="{{ asset('css/responsive-modals.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/custom-buttons.css') }}">
     @stack('styles')
     
     <!-- Global Font Styling -->
@@ -141,12 +142,7 @@
                         @if(Auth::user()->isAdmin())
                             <li>
                                 <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.dashboard') }}">
-                                    <i class="bi bi-shield-check"></i> Admin Dashboard
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.users.index') }}">
-                                    <i class="bi bi-people"></i> Manage Users
+                                    <i class="bi bi-shield-check"></i> Admin Panel
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
@@ -223,11 +219,20 @@
                                     <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
                                         <a class="menu-link" href="{{ route('cases') }}"><div>Cases</div></a>
                                     </li>
+                                    <li class="menu-item {{ request()->routeIs('invoices.*') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('invoices.index') }}"><div>Invoices</div></a>
+                                    </li>
+                                    <li class="menu-item {{ request()->routeIs('subscription.manage') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('subscription.manage') }}"><div>Subscription</div></a>
+                                    </li>
                                 @endauth
                             
                                 @guest
                                     <li class="menu-item {{ request()->is('/') ? 'current' : '' }}">
                                         <a class="menu-link" href="{{ url('/') }}"><div>Home</div></a>
+                                    </li>
+                                    <li class="menu-item">
+                                        <a class="menu-link" href="/#pricing"><div>Pricing</div></a>
                                     </li>
                                     <li class="menu-item {{ request()->is('about') ? 'current' : '' }}">
                                         <a class="menu-link" href="{{ route('about') }}"><div>About Us</div></a>
@@ -247,7 +252,62 @@
 			<div class="header-wrap-clone"></div>
 		</header><!-- #header end -->
 
-
+        <!-- Flash Messages -->
+        @if(session('success') || session('error') || session('warning') || session('info'))
+            <div class="container-fluid px-0">
+                <div class="row">
+                    <div class="col-12">
+                        @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
+                                <div class="container">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        <strong>Success!</strong> {{ session('success') }}
+                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                        
+                        @if(session('error'))
+                            <div class="alert alert-danger alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
+                                <div class="container">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-exclamation-circle me-2"></i>
+                                        <strong>Error!</strong> {{ session('error') }}
+                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                        
+                        @if(session('warning'))
+                            <div class="alert alert-warning alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
+                                <div class="container">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <strong>Warning!</strong> {{ session('warning') }}
+                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                        
+                        @if(session('info'))
+                            <div class="alert alert-info alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
+                                <div class="container">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Info!</strong> {{ session('info') }}
+                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- Main Content -->
         <main>
