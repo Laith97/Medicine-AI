@@ -44,15 +44,180 @@
             </div>
         </div>
 
+        <!-- Account Options -->
+        @guest
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Booking Options</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-500 cursor-pointer booking-option" data-type="guest">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-user-clock text-blue-600 mr-2"></i>
+                            <h3 class="font-medium text-gray-900">Book as Guest</h3>
+                        </div>
+                        <p class="text-sm text-gray-600">Quick booking without creating an account. You'll receive appointment details via email.</p>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg p-4 hover:border-green-500 cursor-pointer booking-option" data-type="register">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-user-plus text-green-600 mr-2"></i>
+                            <h3 class="font-medium text-gray-900">Create Account & Book</h3>
+                        </div>
+                        <p class="text-sm text-gray-600">Create an account to manage appointments, view history, and get personalized features.</p>
+                    </div>
+                </div>
+                <div class="mt-4 text-center">
+                    <p class="text-sm text-gray-500">Already have an account?
+                        <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="text-blue-600 hover:text-blue-800">Login here</a>
+                    </p>
+                </div>
+            </div>
+        @endguest
+
         <!-- Booking Form -->
         <div class="bg-white rounded-lg shadow-md p-6">
             <form method="POST" action="{{ route('appointments.store') }}" id="appointmentForm">
                 @csrf
                 <input type="hidden" name="doctor_id" value="{{ $doctor->id }}">
+                @guest
+                    <input type="hidden" name="booking_type" id="bookingType" value="guest">
+                @endguest
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <!-- Left Column - Appointment Details -->
+                    <!-- Left Column - Patient Info & Appointment Details -->
                     <div>
+                        @guest
+                            <!-- Guest Patient Information -->
+                            <div id="guestInfo" class="mb-8">
+                                <h2 class="text-xl font-semibold text-gray-900 mb-6">Your Information</h2>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="guest_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Full Name <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="text" name="guest_name" id="guest_name" required
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="Enter your full name" value="{{ old('guest_name') }}">
+                                        @error('guest_name')
+                                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div>
+                                        <label for="guest_email" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Email Address <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="email" name="guest_email" id="guest_email" required
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="Enter your email" value="{{ old('guest_email') }}">
+                                        @error('guest_email')
+                                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="guest_phone" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Phone Number <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="tel" name="guest_phone" id="guest_phone" required
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="Enter your phone number" value="{{ old('guest_phone') }}">
+                                        @error('guest_phone')
+                                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div>
+                                        <label for="guest_date_of_birth" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Date of Birth <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="date" name="guest_date_of_birth" id="guest_date_of_birth" required
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               max="{{ date('Y-m-d') }}" value="{{ old('guest_date_of_birth') }}">
+                                        @error('guest_date_of_birth')
+                                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                    <div>
+                                        <label for="guest_gender" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Gender <span class="text-red-500">*</span>
+                                        </label>
+                                        <select name="guest_gender" id="guest_gender" required
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <option value="">Select gender</option>
+                                            <option value="male" {{ old('guest_gender') == 'male' ? 'selected' : '' }}>Male</option>
+                                            <option value="female" {{ old('guest_gender') == 'female' ? 'selected' : '' }}>Female</option>
+                                            <option value="other" {{ old('guest_gender') == 'other' ? 'selected' : '' }}>Other</option>
+                                        </select>
+                                        @error('guest_gender')
+                                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div>
+                                        <label for="guest_address" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Address (Optional)
+                                        </label>
+                                        <input type="text" name="guest_address" id="guest_address"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="Enter your address" value="{{ old('guest_address') }}">
+                                        @error('guest_address')
+                                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Registration Form (Hidden by default) -->
+                            <div id="registrationInfo" class="mb-8" style="display: none;">
+                                <h2 class="text-xl font-semibold text-gray-900 mb-6">Create Your Account</h2>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="reg_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Full Name <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="text" name="reg_name" id="reg_name"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="Enter your full name">
+                                    </div>
+
+                                    <div>
+                                        <label for="reg_email" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Email Address <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="email" name="reg_email" id="reg_email"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="Enter your email">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                    <div>
+                                        <label for="reg_password" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Password <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="password" name="reg_password" id="reg_password"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="Create a password">
+                                    </div>
+
+                                    <div>
+                                        <label for="reg_password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Confirm Password <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="password" name="reg_password_confirmation" id="reg_password_confirmation"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="Confirm your password">
+                                    </div>
+                                </div>
+                            </div>
+                        @endguest
+
                         <h2 class="text-xl font-semibold text-gray-900 mb-6">Appointment Details</h2>
 
                         <!-- Date Selection -->
@@ -249,6 +414,63 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let selectedDate = null;
     let selectedTime = null;
+
+    @guest
+    // Booking option selection
+    const bookingOptions = document.querySelectorAll('.booking-option');
+    const guestInfo = document.getElementById('guestInfo');
+    const registrationInfo = document.getElementById('registrationInfo');
+    const bookingTypeInput = document.getElementById('bookingType');
+
+    bookingOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Remove previous selection
+            bookingOptions.forEach(opt => {
+                opt.classList.remove('border-blue-500', 'bg-blue-50', 'border-green-500', 'bg-green-50');
+            });
+
+            const type = this.dataset.type;
+            bookingTypeInput.value = type;
+
+            if (type === 'guest') {
+                this.classList.add('border-blue-500', 'bg-blue-50');
+                guestInfo.style.display = 'block';
+                registrationInfo.style.display = 'none';
+
+                // Make guest fields required
+                document.querySelectorAll('#guestInfo input[required], #guestInfo select[required]').forEach(field => {
+                    field.required = true;
+                });
+
+                // Make registration fields not required
+                document.querySelectorAll('#registrationInfo input').forEach(field => {
+                    field.required = false;
+                });
+            } else {
+                this.classList.add('border-green-500', 'bg-green-50');
+                guestInfo.style.display = 'none';
+                registrationInfo.style.display = 'block';
+
+                // Make registration fields required
+                document.querySelectorAll('#registrationInfo input').forEach(field => {
+                    if (field.id !== 'reg_password_confirmation') {
+                        field.required = true;
+                    }
+                });
+
+                // Make guest fields not required
+                document.querySelectorAll('#guestInfo input, #guestInfo select').forEach(field => {
+                    field.required = false;
+                });
+            }
+        });
+    });
+
+    // Set default selection to guest
+    if (bookingOptions.length > 0) {
+        bookingOptions[0].click();
+    }
+    @endguest
 
     // Date selection
     dateOptions.forEach(option => {

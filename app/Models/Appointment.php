@@ -31,6 +31,16 @@ class Appointment extends Model
         'completed_at',
         'reminder_sent',
         'follow_up_required',
+        // Guest patient fields
+        'guest_name',
+        'guest_email',
+        'guest_phone',
+        'guest_date_of_birth',
+        'guest_gender',
+        'guest_address',
+        'verification_token',
+        'token_expires_at',
+        'is_verified',
     ];
 
     protected $casts = [
@@ -42,6 +52,9 @@ class Appointment extends Model
         'completed_at' => 'datetime',
         'reminder_sent' => 'boolean',
         'follow_up_required' => 'boolean',
+        'guest_date_of_birth' => 'date',
+        'token_expires_at' => 'datetime',
+        'is_verified' => 'boolean',
     ];
 
     /**
@@ -264,5 +277,90 @@ class Appointment extends Model
     public function getIsUpcomingAttribute()
     {
         return $this->appointment_date->isFuture();
+    }
+
+    /**
+     * Check if this is a guest appointment
+     */
+    public function isGuestAppointment()
+    {
+        return is_null($this->patient_id) && !empty($this->guest_email);
+    }
+
+    /**
+     * Get patient name (registered or guest)
+     */
+    public function getPatientNameAttribute()
+    {
+        return $this->patient ? $this->patient->name : $this->guest_name;
+    }
+
+    /**
+     * Get patient email (registered or guest)
+     */
+    public function getPatientEmailAttribute()
+    {
+        return $this->patient ? $this->patient->email : $this->guest_email;
+    }
+
+    /**
+     * Get patient phone (registered or guest)
+     */
+    public function getPatientPhoneAttribute()
+    {
+        return $this->patient ? $this->patient->phone : $this->guest_phone;
+    }
+
+    /**
+     * Generate verification token for guest appointments
+     */
+    public function generateVerificationToken()
+    {
+        $this->verification_token = bin2hex(random_bytes(32));
+        $this->token_expires_at = now()->addHours(24);
+        $this->save();
+
+        return $this->verification_token;
+    }
+
+    /**
+     * Verify guest appointment with token
+     */
+    public function verifyWithToken($token)
+    {
+        if ($this->verification_token === $token &&
+            $this->token_expires_at &&
+            $this->token_expires_at->isFuture()) {
+
+            $this->is_verified = true;
+            $this->save();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Scope for guest appointments
+     */
+    public function scopeGuest($query)
+    {
+        return $query->whereNull('patient_id')->whereNotNull('guest_email');
+    }
+
+    /**
+     * Scope for registered patient appointments
+     */
+    public function scopeRegistered($query)
+    {
+        return $query->whereNotNull('patient_id');
+    }
+
+    /**
+     * Scope for appointments by guest email
+     */
+    public function scopeByGuestEmail($query, $email)
+    {
+        return $query->where('guest_email', $email);
     }
 }
