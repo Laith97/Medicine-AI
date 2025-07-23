@@ -7,7 +7,7 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Back Button -->
         <div class="mb-6">
-            <a href="{{ route('doctors.show', $doctor) }}" class="inline-flex items-center text-blue-600 hover:text-blue-800">
+            <a href="{{ route('doctors.show', $doctor) }}" class="inline-flex items-center text-primary-600 hover:text-primary-800">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Back to Doctor Profile
             </a>
@@ -23,8 +23,8 @@
                              alt="{{ $doctor->user->name }}"
                              class="w-16 h-16 rounded-full object-cover">
                     @else
-                        <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-                            <i class="fas fa-user-md text-2xl text-blue-600"></i>
+                        <div class="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
+                            <i class="fas fa-user-md text-2xl text-primary-600"></i>
                         </div>
                     @endif
                 </div>
@@ -33,7 +33,7 @@
                 <div class="ml-4">
                     <h1 class="text-2xl font-bold text-gray-900">Book Appointment</h1>
                     <p class="text-lg text-gray-600">with {{ $doctor->user->name }}</p>
-                    <p class="text-blue-600">{{ $doctor->specialty->name }}</p>
+                    <p class="text-primary-600">{{ $doctor->specialty->name }}</p>
                 </div>
 
                 <!-- Consultation Fee -->
@@ -51,7 +51,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-500 cursor-pointer booking-option" data-type="guest">
                         <div class="flex items-center mb-2">
-                            <i class="fas fa-user-clock text-blue-600 mr-2"></i>
+                            <i class="fas fa-user-clock text-primary-600 mr-2"></i>
                             <h3 class="font-medium text-gray-900">Book as Guest</h3>
                         </div>
                         <p class="text-sm text-gray-600">Quick booking without creating an account. You'll receive appointment details via email.</p>
@@ -66,7 +66,7 @@
                 </div>
                 <div class="mt-4 text-center">
                     <p class="text-sm text-gray-500">Already have an account?
-                        <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="text-blue-600 hover:text-blue-800">Login here</a>
+                        <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="text-primary-600 hover:text-primary-800">Login here</a>
                     </p>
                 </div>
             </div>
@@ -236,7 +236,7 @@
                                                     {{ \Carbon\Carbon::parse($date)->format('l') }}
                                                 </div>
                                             </div>
-                                            <div class="text-sm text-blue-600">
+                                            <div class="text-sm text-primary-600">
                                                 {{ $slots->count() }} slots available
                                             </div>
                                         </div>
@@ -331,8 +331,8 @@
                                          alt="{{ $doctor->user->name }}"
                                          class="w-12 h-12 rounded-full object-cover">
                                 @else
-                                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                                        <i class="fas fa-user-md text-blue-600"></i>
+                                    <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
+                                        <i class="fas fa-user-md text-primary-600"></i>
                                     </div>
                                 @endif
                                 <div class="ml-3">
@@ -368,9 +368,9 @@
                         </div>
 
                         <!-- Important Information -->
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                            <h3 class="font-medium text-blue-900 mb-2">Important Information</h3>
-                            <ul class="text-sm text-blue-800 space-y-1">
+                        <div class="bg-primary-50 border border-blue-200 rounded-lg p-4 mb-6">
+                            <h3 class="font-medium text-primary-900 mb-2">Important Information</h3>
+                            <ul class="text-sm text-primary-800 space-y-1">
                                 <li>• Please arrive 15 minutes early for in-person appointments</li>
                                 <li>• Bring a valid ID and insurance card</li>
                                 <li>• You will receive a confirmation email with appointment details</li>
@@ -426,14 +426,14 @@ document.addEventListener('DOMContentLoaded', function() {
         option.addEventListener('click', function() {
             // Remove previous selection
             bookingOptions.forEach(opt => {
-                opt.classList.remove('border-blue-500', 'bg-blue-50', 'border-green-500', 'bg-green-50');
+                opt.classList.remove('border-blue-500', 'bg-primary-50', 'border-green-500', 'bg-green-50');
             });
 
             const type = this.dataset.type;
             bookingTypeInput.value = type;
 
             if (type === 'guest') {
-                this.classList.add('border-blue-500', 'bg-blue-50');
+                this.classList.add('border-blue-500', 'bg-primary-50');
                 guestInfo.style.display = 'block';
                 registrationInfo.style.display = 'none';
 
@@ -476,10 +476,10 @@ document.addEventListener('DOMContentLoaded', function() {
     dateOptions.forEach(option => {
         option.addEventListener('click', function() {
             // Remove previous selection
-            dateOptions.forEach(opt => opt.classList.remove('bg-blue-50', 'border-blue-500'));
+            dateOptions.forEach(opt => opt.classList.remove('bg-primary-50', 'border-blue-500'));
 
             // Add selection to current
-            this.classList.add('bg-blue-50', 'border-blue-500');
+            this.classList.add('bg-primary-50', 'border-blue-500');
 
             selectedDate = this.dataset.date;
             selectedTime = null;
@@ -525,7 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
         slots.forEach(slot => {
             const button = document.createElement('button');
             button.type = 'button';
-            button.className = 'px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-500 transition-colors time-slot';
+            button.className = 'px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-primary-50 hover:border-blue-500 transition-colors time-slot';
             button.textContent = formatTime(slot.start_time);
             button.dataset.datetime = `${date} ${slot.start_time}`;
             button.dataset.time = slot.start_time;
@@ -533,12 +533,12 @@ document.addEventListener('DOMContentLoaded', function() {
             button.addEventListener('click', function() {
                 // Remove previous selection
                 document.querySelectorAll('.time-slot').forEach(btn => {
-                    btn.classList.remove('bg-blue-500', 'text-white');
+                    btn.classList.remove('bg-primary-500', 'text-white');
                     btn.classList.add('border-gray-300');
                 });
 
                 // Add selection to current
-                this.classList.add('bg-blue-500', 'text-white');
+                this.classList.add('bg-primary-500', 'text-white');
                 this.classList.remove('border-gray-300');
 
                 selectedTime = this.dataset.time;

@@ -7,18 +7,14 @@ use App\Models\Appointment;
 use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(function ($request, $next) {
-            if (!Auth::user()->isDoctor() || !Auth::user()->doctor) {
-                abort(403, 'Access denied. Doctor profile required.');
-            }
-            return $next($request);
-        });
+        // Middleware is handled at route level
     }
 
     /**
@@ -245,8 +241,75 @@ class DashboardController extends Controller
         }
 
         $reviews = $query->latest()->paginate(15);
+        
+        // Calculate positive reviews (ratings 4-5)
+        $positiveReviews = $doctor->reviews()->whereIn('rating', [4, 5])->count();
+        
+        // Calculate recent reviews (this month)
+        $recentReviews = $doctor->reviews()->whereMonth('created_at', now()->month)->count();
 
-        return view('doctor.reviews.index', compact('reviews'));
+        return view('doctor.reviews.index', compact('reviews', 'positiveReviews', 'recentReviews'));
+    }
+
+    /**
+     * Show doctor profile edit form
+     */
+    public function profile()
+    {
+        $doctor = Auth::user()->doctor;
+        $doctor->load(['user', 'specialty']);
+
+        // Get available specialties for the dropdown
+        $specialties = \App\Models\Specialty::orderBy('name')->get();
+
+        return view('doctor.profile.edit', compact('doctor', 'specialties'));
+    }
+
+    /**
+     * Update doctor profile
+     */
+    public function updateProfile(Request $request)
+    {
+        $doctor = Auth::user()->doctor;
+
+        $request->validate([
+            'bio' => 'nullable|string|max:2000',
+            'phone' => 'nullable|string|max:20',
+            'specialty_id' => 'required|exists:specialties,id',
+            'consultation_fee' => 'required|numeric|min:0|max:999999',
+            'appointment_duration' => 'required|integer|min:15|max:240',
+            'languages' => 'nullable|array',
+            'languages.*' => 'string|max:50',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'zip_code' => 'nullable|string|max:20',
+            'country' => 'nullable|string|max:100',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'auto_approve_appointments' => 'boolean',
+            'allow_cancellation' => 'boolean',
+            'allow_rescheduling' => 'boolean',
+            'cancellation_hours' => 'required|integer|min:1|max:168',
+        ]);
+
+        $data = $request->except(['profile_image']);
+
+        // Convert consultation fee to cents
+        $data['consultation_fee'] = $request->consultation_fee * 100;
+
+        // Handle profile image upload
+        if ($request->hasFile('profile_image')) {
+            // Delete old image if exists
+            if ($doctor->profile_image) {
+                \Storage::disk('public')->delete($doctor->profile_image);
+            }
+
+            $data['profile_image'] = $request->file('profile_image')->store('doctor-profiles', 'public');
+        }
+
+        $doctor->update($data);
+
+        return back()->with('success', 'Profile updated successfully!');
     }
 
     /**

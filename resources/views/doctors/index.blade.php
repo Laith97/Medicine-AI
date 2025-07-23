@@ -21,9 +21,9 @@
                                name="search"
                                value="{{ request('search') }}"
                                placeholder="Search by doctor name or specialty..."
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                     </div>
-                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <button type="submit" class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
                         <i class="fas fa-search mr-2"></i>Search
                     </button>
                 </div>
@@ -33,7 +33,7 @@
                     <!-- Specialty Filter -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Specialty</label>
-                        <select name="specialty" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <select name="specialty" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                             <option value="">All Specialties</option>
                             @foreach($specialties as $specialty)
                                 <option value="{{ $specialty->id }}" {{ request('specialty') == $specialty->id ? 'selected' : '' }}>
@@ -46,7 +46,7 @@
                     <!-- City Filter -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
-                        <select name="city" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <select name="city" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                             <option value="">All Cities</option>
                             @foreach($cities as $city)
                                 <option value="{{ $city }}" {{ request('city') == $city ? 'selected' : '' }}>
@@ -59,7 +59,7 @@
                     <!-- Language Filter -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Language</label>
-                        <select name="language" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <select name="language" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                             <option value="">All Languages</option>
                             @foreach($languages as $language)
                                 <option value="{{ $language }}" {{ request('language') == $language ? 'selected' : '' }}>
@@ -72,7 +72,7 @@
                     <!-- Rating Filter -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Min Rating</label>
-                        <select name="min_rating" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <select name="min_rating" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                             <option value="">Any Rating</option>
                             <option value="4" {{ request('min_rating') == '4' ? 'selected' : '' }}>4+ Stars</option>
                             <option value="4.5" {{ request('min_rating') == '4.5' ? 'selected' : '' }}>4.5+ Stars</option>
@@ -84,7 +84,7 @@
                 <div class="flex flex-col md:flex-row gap-4 items-end">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
-                        <select name="sort_by" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <select name="sort_by" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                             <option value="rating" {{ request('sort_by') == 'rating' ? 'selected' : '' }}>Rating</option>
                             <option value="name" {{ request('sort_by') == 'name' ? 'selected' : '' }}>Name</option>
                             <option value="reviews" {{ request('sort_by') == 'reviews' ? 'selected' : '' }}>Reviews</option>
@@ -110,14 +110,14 @@
             @forelse($doctors as $doctor)
                 <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                     <!-- Doctor Image -->
-                    <div class="h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                    <div class="h-48 bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
                         @if($doctor->profile_image)
                             <img src="{{ asset('storage/' . $doctor->profile_image) }}"
                                  alt="{{ $doctor->user->name }}"
                                  class="w-24 h-24 rounded-full border-4 border-white object-cover">
                         @else
                             <div class="w-24 h-24 rounded-full border-4 border-white bg-white flex items-center justify-center">
-                                <i class="fas fa-user-md text-3xl text-blue-600"></i>
+                                <i class="fas fa-user-md text-3xl text-primary-600"></i>
                             </div>
                         @endif
                     </div>
@@ -125,7 +125,7 @@
                     <!-- Doctor Info -->
                     <div class="p-6">
                         <h3 class="text-xl font-semibold text-gray-900 mb-2">{{ $doctor->user->name }}</h3>
-                        <p class="text-blue-600 font-medium mb-2">{{ $doctor->specialty->name }}</p>
+                        <p class="text-primary-600 font-medium mb-2">{{ $doctor->specialty->name }}</p>
 
                         <!-- Rating -->
                         <div class="flex items-center mb-3">
@@ -171,17 +171,17 @@
                         <!-- Actions -->
                         <div class="flex gap-2">
                             <a href="{{ route('doctors.show', $doctor) }}"
-                               class="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                               class="flex-1 bg-primary-600 text-white text-center py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors">
                                 View Profile
                             </a>
                             @auth
                                 <a href="{{ route('appointments.create', $doctor) }}"
-                                   class="flex-1 bg-green-600 text-white text-center py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
+                                   class="flex-1 bg-accent-600 text-white text-center py-2 px-4 rounded-lg hover:bg-accent-700 transition-colors">
                                     Book Now
                                 </a>
                             @else
                                 <a href="{{ route('login') }}"
-                                   class="flex-1 bg-green-600 text-white text-center py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
+                                   class="flex-1 bg-accent-600 text-white text-center py-2 px-4 rounded-lg hover:bg-accent-700 transition-colors">
                                     Login to Book
                                 </a>
                             @endauth

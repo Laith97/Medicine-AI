@@ -6,7 +6,7 @@
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-4xl mx-auto px-4">
         <div class="mb-8">
-            <a href="{{ route('appointments.guest.search') }}?email={{ $appointment->guest_email }}" class="text-blue-600 hover:text-blue-800 mb-4 inline-flex items-center">
+            <a href="{{ route('appointments.guest.search') }}?email={{ $appointment->guest_email }}" class="text-primary-600 hover:text-primary-800 mb-4 inline-flex items-center">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Back to Appointments
             </a>
@@ -26,8 +26,8 @@
                                  alt="{{ $appointment->doctor->user->name }}"
                                  class="w-16 h-16 rounded-full object-cover">
                         @else
-                            <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-                                <i class="fas fa-user-md text-blue-600 text-2xl"></i>
+                            <div class="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
+                                <i class="fas fa-user-md text-primary-600 text-2xl"></i>
                             </div>
                         @endif
                         <div class="ml-4">
@@ -59,7 +59,7 @@
                                 @if($appointment->status === 'confirmed') bg-green-100 text-green-800
                                 @elseif($appointment->status === 'pending') bg-yellow-100 text-yellow-800
                                 @elseif($appointment->status === 'cancelled') bg-red-100 text-red-800
-                                @elseif($appointment->status === 'completed') bg-blue-100 text-blue-800
+                                @elseif($appointment->status === 'completed') bg-primary-100 text-primary-800
                                 @else bg-gray-100 text-gray-800 @endif">
                                 {{ ucfirst($appointment->status) }}
                             </span>
@@ -154,9 +154,9 @@
                 </div>
 
                 <!-- Important Information -->
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h3 class="font-medium text-blue-900 mb-2">Important Information</h3>
-                    <ul class="text-sm text-blue-800 space-y-1">
+                <div class="bg-primary-50 border border-blue-200 rounded-lg p-4">
+                    <h3 class="font-medium text-primary-900 mb-2">Important Information</h3>
+                    <ul class="text-sm text-primary-800 space-y-1">
                         @if($appointment->appointment_type === 'in_person')
                             <li>• Please arrive 15 minutes early</li>
                             <li>• Bring a valid ID</li>

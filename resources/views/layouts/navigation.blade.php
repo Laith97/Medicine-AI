@@ -15,14 +15,23 @@
                     @auth
                         @if(auth()->user()->role === 'doctor')
                             <!-- Doctor Navigation -->
-                            <x-nav-link :href="route('doctor.dashboard')" :active="request()->routeIs('doctor.*')">
+                            <x-nav-link :href="route('doctor.dashboard')" :active="request()->routeIs('doctor.dashboard')">
                                 <i class="fas fa-tachometer-alt mr-2"></i>{{ __('Dashboard') }}
+                            </x-nav-link>
+                            <x-nav-link :href="route('ask-ai')" :active="request()->routeIs('ask-ai')">
+                                <i class="fas fa-user-plus mr-2"></i>{{ __('Add-patients') }}
+                            </x-nav-link>
+                            <x-nav-link :href="route('cases')" :active="request()->routeIs('cases')">
+                                <i class="fas fa-folder-open mr-2"></i>{{ __('Cases') }}
                             </x-nav-link>
                             <x-nav-link :href="route('doctor.appointments.index')" :active="request()->routeIs('doctor.appointments.*')">
                                 <i class="fas fa-calendar mr-2"></i>{{ __('Appointments') }}
                             </x-nav-link>
                             <x-nav-link :href="route('doctor.availability.index')" :active="request()->routeIs('doctor.availability.*')">
                                 <i class="fas fa-clock mr-2"></i>{{ __('Availability') }}
+                            </x-nav-link>
+                            <x-nav-link :href="route('doctor.reviews.index')" :active="request()->routeIs('doctor.reviews.*')">
+                                <i class="fas fa-star mr-2"></i>{{ __('Reviews') }}
                             </x-nav-link>
                         @elseif(auth()->user()->role === 'admin')
                             <!-- Admin Navigation -->
@@ -79,9 +88,18 @@
                         </x-slot>
 
                         <x-slot name="content">
-                            <x-dropdown-link :href="route('profile.edit')">
-                                {{ __('Profile') }}
-                            </x-dropdown-link>
+                            @if(auth()->user()->role === 'doctor')
+                                <x-dropdown-link :href="route('doctor.profile.edit')">
+                                    {{ __('Doctor Profile') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('profile.edit')">
+                                    {{ __('Account Settings') }}
+                                </x-dropdown-link>
+                            @else
+                                <x-dropdown-link :href="route('profile.edit')">
+                                    {{ __('Profile') }}
+                                </x-dropdown-link>
+                            @endif
 
                             <!-- Authentication -->
                             <form method="POST" action="{{ route('logout') }}">
@@ -98,10 +116,10 @@
                 @else
                     <!-- Guest Actions -->
                     <div class="flex items-center space-x-4">
-                        <a href="{{ route('patient.register') }}" class="text-sm font-medium text-blue-600 hover:text-blue-500">
+                        <a href="{{ route('patient.register') }}" class="text-sm font-medium text-primary-600 hover:text-primary-500">
                             Create Account
                         </a>
-                        <a href="{{ route('login') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <a href="{{ route('login') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             Sign In
                         </a>
                     </div>
@@ -126,14 +144,23 @@
             @auth
                 @if(auth()->user()->role === 'doctor')
                     <!-- Doctor Mobile Navigation -->
-                    <x-responsive-nav-link :href="route('doctor.dashboard')" :active="request()->routeIs('doctor.*')">
+                    <x-responsive-nav-link :href="route('doctor.dashboard')" :active="request()->routeIs('doctor.dashboard')">
                         <i class="fas fa-tachometer-alt mr-2"></i>{{ __('Dashboard') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('ask-ai')" :active="request()->routeIs('ask-ai')">
+                        <i class="fas fa-user-plus mr-2"></i>{{ __('Add-patients') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('cases')" :active="request()->routeIs('cases')">
+                        <i class="fas fa-folder-open mr-2"></i>{{ __('Cases') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('doctor.appointments.index')" :active="request()->routeIs('doctor.appointments.*')">
                         <i class="fas fa-calendar mr-2"></i>{{ __('Appointments') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('doctor.availability.index')" :active="request()->routeIs('doctor.availability.*')">
                         <i class="fas fa-clock mr-2"></i>{{ __('Availability') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('doctor.reviews.index')" :active="request()->routeIs('doctor.reviews.*')">
+                        <i class="fas fa-star mr-2"></i>{{ __('Reviews') }}
                     </x-responsive-nav-link>
                 @elseif(auth()->user()->role === 'admin')
                     <!-- Admin Mobile Navigation -->
@@ -178,9 +205,18 @@
                 </div>
 
                 <div class="mt-3 space-y-1">
-                    <x-responsive-nav-link :href="route('profile.edit')">
-                        {{ __('Profile') }}
-                    </x-responsive-nav-link>
+                    @if(auth()->user()->role === 'doctor')
+                        <x-responsive-nav-link :href="route('doctor.profile.edit')">
+                            {{ __('Doctor Profile') }}
+                        </x-responsive-nav-link>
+                        <x-responsive-nav-link :href="route('profile.edit')">
+                            {{ __('Account Settings') }}
+                        </x-responsive-nav-link>
+                    @else
+                        <x-responsive-nav-link :href="route('profile.edit')">
+                            {{ __('Profile') }}
+                        </x-responsive-nav-link>
+                    @endif
 
                     <!-- Authentication -->
                     <form method="POST" action="{{ route('logout') }}">

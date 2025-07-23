@@ -7,7 +7,7 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Back Button -->
         <div class="mb-6">
-            <a href="{{ route('appointments.index') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800">
+            <a href="{{ route('appointments.index') }}" class="inline-flex items-center text-primary-600 hover:text-primary-800">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Back to My Appointments
             </a>
@@ -26,7 +26,7 @@
                     $statusColors = [
                         'pending' => 'bg-yellow-100 text-yellow-800',
                         'confirmed' => 'bg-green-100 text-green-800',
-                        'completed' => 'bg-blue-100 text-blue-800',
+                        'completed' => 'bg-primary-100 text-primary-800',
                         'cancelled' => 'bg-red-100 text-red-800',
                         'no_show' => 'bg-gray-100 text-gray-800'
                     ];
@@ -52,8 +52,8 @@
                                      alt="{{ $appointment->doctor->user->name }}"
                                      class="w-16 h-16 rounded-full object-cover">
                             @else
-                                <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-                                    <i class="fas fa-user-md text-2xl text-blue-600"></i>
+                                <div class="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
+                                    <i class="fas fa-user-md text-2xl text-primary-600"></i>
                                 </div>
                             @endif
                         </div>
@@ -61,7 +61,7 @@
                         <!-- Doctor Details -->
                         <div class="ml-4 flex-1">
                             <h3 class="text-lg font-semibold text-gray-900">{{ $appointment->doctor->user->name }}</h3>
-                            <p class="text-blue-600 mb-2">{{ $appointment->doctor->specialty->name }}</p>
+                            <p class="text-primary-600 mb-2">{{ $appointment->doctor->specialty->name }}</p>
 
                             <!-- Rating -->
                             <div class="flex items-center">
@@ -85,7 +85,7 @@
                         <!-- Contact Actions -->
                         <div class="flex flex-col gap-2">
                             <a href="{{ route('doctors.show', $appointment->doctor) }}"
-                               class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm text-center">
+                               class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors text-sm text-center">
                                 View Profile
                             </a>
                             @if($appointment->doctor->phone)
@@ -154,7 +154,7 @@
                 @if($appointment->status == 'completed' && $appointment->doctor_notes)
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <h2 class="text-xl font-semibold text-gray-900 mb-4">Doctor's Notes</h2>
-                        <div class="bg-blue-50 p-4 rounded-lg">
+                        <div class="bg-primary-50 p-4 rounded-lg">
                             <p class="text-gray-700">{{ $appointment->doctor_notes }}</p>
                         </div>
 
@@ -195,7 +195,7 @@
                                 @endif
                                 <div class="mt-3">
                                     <a href="{{ route('reviews.show', $appointment->review) }}"
-                                       class="text-blue-600 hover:text-blue-800 text-sm">
+                                       class="text-primary-600 hover:text-primary-800 text-sm">
                                         View full review
                                     </a>
                                 </div>
@@ -236,7 +236,7 @@
                         @endif
 
                         @if(in_array($appointment->status, ['pending', 'confirmed']) && $appointment->appointment_type == 'video_call')
-                            <button class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                            <button class="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors">
                                 <i class="fas fa-video mr-2"></i>Join Video Call
                             </button>
                         @endif

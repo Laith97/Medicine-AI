@@ -6,7 +6,7 @@
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-2xl mx-auto px-4">
         <div class="mb-8">
-            <a href="{{ route('appointments.guest.show', ['appointment' => $appointment->appointment_number, 'email' => $appointment->guest_email]) }}" class="text-blue-600 hover:text-blue-800 mb-4 inline-flex items-center">
+            <a href="{{ route('appointments.guest.show', ['appointment' => $appointment->appointment_number, 'email' => $appointment->guest_email]) }}" class="text-primary-600 hover:text-primary-800 mb-4 inline-flex items-center">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Back to Appointment
             </a>
@@ -22,8 +22,8 @@
                          alt="{{ $appointment->doctor->user->name }}"
                          class="w-16 h-16 rounded-full object-cover">
                 @else
-                    <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-                        <i class="fas fa-user-md text-blue-600 text-2xl"></i>
+                    <div class="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
+                        <i class="fas fa-user-md text-primary-600 text-2xl"></i>
                     </div>
                 @endif
                 <div class="ml-4">
@@ -90,7 +90,7 @@
                 <!-- Anonymous Option -->
                 <div class="mb-6">
                     <label class="flex items-center">
-                        <input type="checkbox" name="is_anonymous" value="1" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" {{ old('is_anonymous') ? 'checked' : '' }}>
+                        <input type="checkbox" name="is_anonymous" value="1" class="rounded border-gray-300 text-primary-600 focus:ring-blue-500" {{ old('is_anonymous') ? 'checked' : '' }}>
                         <span class="ml-2 text-sm text-gray-700">Post this review anonymously</span>
                     </label>
                     <p class="text-sm text-gray-500 mt-1">Your name will not be displayed if you choose this option.</p>
@@ -99,7 +99,7 @@
                 <!-- Google Reviews Consent -->
                 <div class="mb-8">
                     <label class="flex items-start">
-                        <input type="checkbox" name="consent_google_posting" value="1" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1" {{ old('consent_google_posting') ? 'checked' : '' }}>
+                        <input type="checkbox" name="consent_google_posting" value="1" class="rounded border-gray-300 text-primary-600 focus:ring-blue-500 mt-1" {{ old('consent_google_posting') ? 'checked' : '' }}>
                         <span class="ml-2 text-sm text-gray-700">
                             I consent to having this review posted on Google Reviews to help other patients find quality healthcare.
                             <span class="block text-gray-500 mt-1">This helps improve the doctor's online presence and assists other patients in making informed decisions.</span>
@@ -109,7 +109,7 @@
 
                 <div class="flex flex-col sm:flex-row gap-4">
                     <button type="submit"
-                            class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                            class="flex-1 bg-primary-600 text-white py-3 px-6 rounded-lg hover:bg-primary-700 transition-colors font-medium">
                         <i class="fas fa-paper-plane mr-2"></i>
                         Submit Review
                     </button>
@@ -121,9 +121,9 @@
             </form>
         </div>
 
-        <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h3 class="font-medium text-blue-900 mb-2">Review Guidelines</h3>
-            <ul class="text-sm text-blue-800 space-y-1">
+        <div class="mt-6 p-4 bg-primary-50 rounded-lg">
+            <h3 class="font-medium text-primary-900 mb-2">Review Guidelines</h3>
+            <ul class="text-sm text-primary-800 space-y-1">
                 <li>• Be honest and constructive in your feedback</li>
                 <li>• Focus on your experience with the doctor and treatment</li>
                 <li>• Avoid sharing personal medical information</li>

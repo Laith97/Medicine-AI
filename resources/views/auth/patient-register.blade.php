@@ -128,12 +128,12 @@
                 <div class="flex items-start">
                     <div class="flex items-center h-5">
                         <input id="terms" name="terms" type="checkbox" required
-                               class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
+                               class="focus:ring-blue-500 h-4 w-4 text-primary-600 border-gray-300 rounded">
                     </div>
                     <div class="ml-3 text-sm">
                         <label for="terms" class="text-gray-700">
-                            I agree to the <a href="#" class="text-blue-600 hover:text-blue-500">Terms of Service</a>
-                            and <a href="#" class="text-blue-600 hover:text-blue-500">Privacy Policy</a>
+                            I agree to the <a href="#" class="text-primary-600 hover:text-primary-500">Terms of Service</a>
+                            and <a href="#" class="text-primary-600 hover:text-primary-500">Privacy Policy</a>
                         </label>
                     </div>
                 </div>
@@ -144,9 +144,9 @@
                 <!-- Submit Button -->
                 <div>
                     <button type="submit"
-                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                            <i class="fas fa-user-plus text-blue-500 group-hover:text-blue-400"></i>
+                            <i class="fas fa-user-plus text-primary-500 group-hover:text-primary-400"></i>
                         </span>
                         Create Account
                     </button>
@@ -164,7 +164,7 @@
                 </div>
 
                 <div class="mt-6 text-center">
-                    <a href="{{ route('login') }}" class="font-medium text-blue-600 hover:text-blue-500">
+                    <a href="{{ route('login') }}" class="font-medium text-primary-600 hover:text-primary-500">
                         Sign in to your account
                     </a>
                 </div>
@@ -202,7 +202,7 @@
         <div class="mt-6 text-center">
             <p class="text-sm text-gray-600">
                 Don't want to create an account?
-                <a href="{{ route('doctors.index') }}" class="text-blue-600 hover:text-blue-500">
+                <a href="{{ route('doctors.index') }}" class="text-primary-600 hover:text-primary-500">
                     Continue as guest
                 </a>
             </p>

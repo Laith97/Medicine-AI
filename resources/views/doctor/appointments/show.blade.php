@@ -1,13 +1,18 @@
-@extends('layouts.app')
+@extends('master')
 
 @section('title', 'Appointment Details')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
+<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+@endpush
+
 @section('content')
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="dashboard-container">
+    <div class="container">
         <!-- Back Button -->
         <div class="mb-6">
-            <a href="{{ route('doctor.appointments.index') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800">
+            <a href="{{ route('doctor.appointments.index') }}" class="inline-flex items-center text-primary-600 hover:text-primary-800">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Back to Appointments
             </a>
@@ -26,7 +31,7 @@
                     $statusColors = [
                         'pending' => 'bg-yellow-100 text-yellow-800',
                         'confirmed' => 'bg-green-100 text-green-800',
-                        'completed' => 'bg-blue-100 text-blue-800',
+                        'completed' => 'bg-primary-100 text-primary-800',
                         'cancelled' => 'bg-red-100 text-red-800',
                         'no_show' => 'bg-gray-100 text-gray-800'
                     ];
@@ -47,8 +52,8 @@
                     <div class="flex items-center mb-6">
                         <!-- Patient Avatar -->
                         <div class="flex-shrink-0">
-                            <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-                                <span class="text-xl font-medium text-blue-600">
+                            <div class="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
+                                <span class="text-xl font-medium text-primary-600">
                                     {{ substr($appointment->patient->name, 0, 1) }}
                                 </span>
                             </div>
@@ -66,7 +71,7 @@
                         <!-- Contact Actions -->
                         <div class="flex flex-col gap-2">
                             <a href="mailto:{{ $appointment->patient->email }}"
-                               class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm text-center">
+                               class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors text-sm text-center">
                                 <i class="fas fa-envelope mr-1"></i>Email
                             </a>
                             @if($appointment->patient->phone)
@@ -152,7 +157,7 @@
                     <h2 class="text-xl font-semibold text-gray-900 mb-4">Doctor's Notes</h2>
 
                     @if($appointment->doctor_notes)
-                        <div class="bg-blue-50 p-4 rounded-lg mb-4">
+                        <div class="bg-primary-50 p-4 rounded-lg mb-4">
                             <p class="text-gray-700">{{ $appointment->doctor_notes }}</p>
                         </div>
 
@@ -219,7 +224,7 @@
 
                         @if($appointment->status == 'confirmed')
                             <button onclick="completeAppointment()"
-                                    class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                                    class="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors">
                                 <i class="fas fa-check-circle mr-2"></i>Complete Appointment
                             </button>
 
@@ -313,7 +318,7 @@
                     Cancel
                 </button>
                 <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
                     Complete Appointment
                 </button>
             </div>
