@@ -172,6 +172,131 @@
     color: #6C757D;
     margin-bottom: 50px;
 }
+
+/* Pricing Section Styles */
+.pricing-card {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    border: 2px solid #f0f0f0;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.pricing-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    border-color: #DE6262;
+}
+
+.pricing-card.featured {
+    border-color: #DE6262;
+    transform: scale(1.05);
+}
+
+.pricing-card.featured:hover {
+    transform: scale(1.05) translateY(-10px);
+}
+
+.popular-badge {
+    position: absolute;
+    top: 20px;
+    right: -30px;
+    background: linear-gradient(45deg, #DE6262, #E87A7A);
+    color: white;
+    padding: 5px 40px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transform: rotate(45deg);
+    text-align: center;
+}
+
+.pricing-header {
+    margin-bottom: 30px;
+}
+
+.plan-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2C3E50;
+    margin-bottom: 15px;
+}
+
+.price-container {
+    margin-bottom: 10px;
+}
+
+.price {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #DE6262;
+}
+
+.period {
+    font-size: 1.2rem;
+    color: #6C757D;
+    font-weight: 500;
+}
+
+.pricing-body {
+    margin-bottom: 30px;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.feature-list li {
+    padding: 8px 0;
+    font-size: 1rem;
+    color: #495057;
+}
+
+.pricing-footer {
+    margin-top: auto;
+}
+
+/* Billing Toggle */
+.form-check-input:checked {
+    background-color: #DE6262;
+    border-color: #DE6262;
+}
+
+.form-check-input:focus {
+    border-color: #DE6262;
+    box-shadow: 0 0 0 0.25rem rgba(222, 98, 98, 0.25);
+}
+
+/* Responsive pricing cards */
+@media (max-width: 992px) {
+    .pricing-card.featured {
+        transform: none;
+        margin-top: 0;
+    }
+    
+    .pricing-card.featured:hover {
+        transform: translateY(-10px);
+    }
+}
+
+@media (max-width: 768px) {
+    .pricing-card {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .price {
+        font-size: 2.5rem;
+    }
+    
+    .popular-badge {
+        font-size: 0.7rem;
+        padding: 3px 35px;
+    }
+}
 </style>
 @endpush
 
@@ -363,6 +488,130 @@
     </div>
 </section>
 
+<!-- Pricing Section -->
+<section id="pricing" class="py-5 bg-white">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Choose Your Plan</h2>
+            <p class="section-subtitle">Flexible pricing for practices of all sizes</p>
+            
+            <!-- Billing Toggle -->
+            <div class="d-flex justify-content-center align-items-center mb-4">
+                <span class="me-3">Monthly</span>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="billingToggle" style="transform: scale(1.5);">
+                </div>
+                <span class="ms-3">Yearly <span class="badge bg-success">Save 17%</span></span>
+            </div>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            <!-- Basic Plan -->
+            <div class="col-lg-4 col-md-6">
+                <div class="pricing-card h-100">
+                    <div class="pricing-header text-center">
+                        <h4 class="plan-name">Basic</h4>
+                        <div class="price-container">
+                            <span class="price monthly-price">$29</span>
+                            <span class="price yearly-price d-none">$24</span>
+                            <span class="period">/month</span>
+                        </div>
+                        <p class="text-muted">Perfect for small practices</p>
+                    </div>
+                    <div class="pricing-body">
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check text-success me-2"></i>100 AI diagnoses per month</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Basic patient management</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Email support</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Standard security</li>
+                        </ul>
+                    </div>
+                    <div class="pricing-footer text-center">
+                        <button class="btn btn-theme-outline w-100 subscribe-btn" 
+                                data-plan="basic" 
+                                data-monthly-price="29" 
+                                data-yearly-price="290">
+                            Get Started
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pro Plan -->
+            <div class="col-lg-4 col-md-6">
+                <div class="pricing-card h-100 featured">
+                    <div class="popular-badge">Most Popular</div>
+                    <div class="pricing-header text-center">
+                        <h4 class="plan-name">Professional</h4>
+                        <div class="price-container">
+                            <span class="price monthly-price">$79</span>
+                            <span class="price yearly-price d-none">$66</span>
+                            <span class="period">/month</span>
+                        </div>
+                        <p class="text-muted">Ideal for growing practices</p>
+                    </div>
+                    <div class="pricing-body">
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check text-success me-2"></i>500 AI diagnoses per month</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Advanced patient management</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Priority email support</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Advanced analytics</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Export capabilities</li>
+                        </ul>
+                    </div>
+                    <div class="pricing-footer text-center">
+                        <button class="btn btn-theme-primary w-100 subscribe-btn" 
+                                data-plan="pro" 
+                                data-monthly-price="79" 
+                                data-yearly-price="790">
+                            Get Started
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enterprise Plan -->
+            <div class="col-lg-4 col-md-6">
+                <div class="pricing-card h-100">
+                    <div class="pricing-header text-center">
+                        <h4 class="plan-name">Enterprise</h4>
+                        <div class="price-container">
+                            <span class="price monthly-price">$199</span>
+                            <span class="price yearly-price d-none">$166</span>
+                            <span class="period">/month</span>
+                        </div>
+                        <p class="text-muted">For large healthcare organizations</p>
+                    </div>
+                    <div class="pricing-body">
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check text-success me-2"></i>Unlimited AI diagnoses</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Complete patient management suite</li>
+                            <li><i class="fas fa-check text-success me-2"></i>24/7 phone & email support</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Advanced analytics & reporting</li>
+                            <li><i class="fas fa-check text-success me-2"></i>API access</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Custom integrations</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Dedicated account manager</li>
+                        </ul>
+                    </div>
+                    <div class="pricing-footer text-center">
+                        <button class="btn btn-theme-outline w-100 subscribe-btn" 
+                                data-plan="enterprise" 
+                                data-monthly-price="199" 
+                                data-yearly-price="1990">
+                            Get Started
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <p class="text-muted">All plans include a 14-day free trial. No credit card required.</p>
+            <p class="text-muted">Need a custom solution? <a href="{{ route('contact') }}" class="text-theme-primary">Contact our sales team</a></p>
+        </div>
+    </div>
+</section>
+
 <!-- CTA Section -->
 <section class="cta-section">
     <div class="container text-center">
@@ -410,11 +659,129 @@ const observer = new IntersectionObserver((entries) => {
 }, observerOptions);
 
 // Observe all cards and sections
-document.querySelectorAll('.feature-card, .step-card, .testimonial-card').forEach(el => {
+document.querySelectorAll('.feature-card, .step-card, .testimonial-card, .pricing-card').forEach(el => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(30px)';
     el.style.transition = 'all 0.6s ease';
     observer.observe(el);
+});
+
+// Pricing functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const billingToggle = document.getElementById('billingToggle');
+    const monthlyPrices = document.querySelectorAll('.monthly-price');
+    const yearlyPrices = document.querySelectorAll('.yearly-price');
+    const subscribeButtons = document.querySelectorAll('.subscribe-btn');
+
+    // Toggle between monthly and yearly pricing
+    billingToggle.addEventListener('change', function() {
+        const isYearly = this.checked;
+        
+        monthlyPrices.forEach(price => {
+            price.classList.toggle('d-none', isYearly);
+        });
+        
+        yearlyPrices.forEach(price => {
+            price.classList.toggle('d-none', !isYearly);
+        });
+    });
+
+    // Handle subscription button clicks
+    subscribeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const plan = this.dataset.plan;
+            const billingCycle = billingToggle.checked ? 'yearly' : 'monthly';
+            
+            // Check if user is authenticated
+            @auth
+                // User is logged in, proceed with checkout
+                handleSubscription(plan, billingCycle);
+            @else
+                // Redirect to login with plan info
+                window.location.href = `/login?plan=${plan}&billing=${billingCycle}`;
+            @endauth
+        });
+    });
+
+    @auth
+    function handleSubscription(plan, billingCycle) {
+        // Show loading state
+        const button = document.querySelector(`[data-plan="${plan}"]`);
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        button.disabled = true;
+
+        // Debug logging
+        console.log('Starting subscription checkout for:', plan, billingCycle);
+        
+        // Check CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (!csrfToken) {
+            console.error('CSRF token meta tag not found');
+            alert('Page error: CSRF token missing. Please refresh the page.');
+            button.innerHTML = originalText;
+            button.disabled = false;
+            return;
+        }
+        
+        console.log('CSRF token found:', csrfToken.getAttribute('content').substring(0, 10) + '...');
+
+        // Create checkout session
+        fetch('/subscription/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken.getAttribute('content')
+            },
+            body: JSON.stringify({
+                plan: plan,
+                billing_cycle: billingCycle
+            })
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                return response.json().then(data => {
+                    console.error('Server error response:', data);
+                    throw new Error(data.error || 'Failed to create checkout session');
+                }).catch(jsonError => {
+                    console.error('Failed to parse error response as JSON:', jsonError);
+                    throw new Error(`Server error (${response.status}): ${response.statusText}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.checkout_url) {
+                window.location.href = data.checkout_url;
+            } else {
+                throw new Error(data.error || 'Failed to create checkout session');
+            }
+        })
+        .catch(error => {
+            console.error('Subscription checkout error:', error);
+            console.error('Error message:', error.message);
+            console.error('Error stack:', error.stack);
+            
+            // Show more specific error message
+            let errorMessage = error.message;
+            if (errorMessage.includes('not configured')) {
+                errorMessage = 'Payment system is currently being set up. Please contact support for assistance.';
+            } else if (errorMessage.includes('Price ID not configured')) {
+                errorMessage = 'This plan is temporarily unavailable. Please contact support.';
+            }
+            
+            // Log the final error message being shown to user
+            console.error('Showing user error:', errorMessage);
+            
+            alert('Error: ' + errorMessage);
+            
+            // Reset button
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+    @endauth
 });
 </script>
 @endsection

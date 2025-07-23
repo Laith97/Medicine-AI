@@ -1,23 +1,9 @@
-@extends('master')
+@extends('layouts.admin')
 
 @section('title', 'Admin Dashboard')
 
 @push('styles')
 <style>
-    .admin-dashboard {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        min-height: 100vh;
-        padding: 2rem 0;
-    }
-    
-    .admin-header {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        color: white;
-        padding: 2rem;
-        border-radius: 20px;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(44, 62, 80, 0.3);
-    }
     
     .stats-card {
         background: white;
@@ -102,15 +88,7 @@
 @endpush
 
 @section('content')
-<div class="admin-dashboard">
-    <div class="container">
-        <!-- Admin Header -->
-        <div class="admin-header">
-            <h1 class="h2 mb-2">Admin Dashboard</h1>
-            <p class="mb-0 opacity-75">Manage users and system settings</p>
-        </div>
-
-        <!-- Statistics Cards -->
+<!-- Statistics Cards -->
         <div class="row g-4 mb-5">
             <div class="col-lg-3 col-md-6">
                 <div class="stats-card">
@@ -218,6 +196,4 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
 @endsection

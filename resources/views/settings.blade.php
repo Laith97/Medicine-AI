@@ -39,7 +39,7 @@
                             <h5 class="mb-4 mt-5 text-center">Select Your Medical Specialty</h5>
                             
                             <div class="mb-3">
-                                <select class="form-select" name="specialty" id="specialty">
+                                <select class="form-select" name="specialty_select" id="specialty_select" onchange="toggleCustomSpecialtySettings()">
                                     <option value="" {{ (!$setting || !$setting->specialty) ? 'selected' : '' }}>-- Select Specialty --</option>
                                     
                                     <optgroup label="🧠 General & Internal Medicine">
@@ -136,7 +136,25 @@
                                         <option value="Tropical Medicine" {{ ($setting && $setting->specialty == 'Tropical Medicine') ? 'selected' : '' }}>Tropical Medicine</option>
                                         <option value="Pre-hospital Emergency" {{ ($setting && $setting->specialty == 'Pre-hospital Emergency') ? 'selected' : '' }}>Pre-hospital Emergency / EMS</option>
                                     </optgroup>
+                                    
+                                    <optgroup label="✏️ Custom">
+                                        <option value="other">Other (Please specify)</option>
+                                    </optgroup>
                                 </select>
+                                
+                                <!-- Custom Specialty Input (Hidden by default) -->
+                                <div id="custom_specialty_container_settings" style="display: none;" class="mt-2">
+                                    <input 
+                                        type="text" 
+                                        name="custom_specialty" 
+                                        id="custom_specialty_settings" 
+                                        class="form-select"
+                                        placeholder="Please enter your medical specialty"
+                                    >
+                                </div>
+                                
+                                <!-- Hidden field to store the final specialty value -->
+                                <input type="hidden" name="specialty" id="specialty_settings" value="{{ $setting ? $setting->specialty : '' }}">
                             </div>
             
                             <div class="text-center mt-4">
@@ -154,4 +172,107 @@
         </div>
     </div>
 </div>
+
+<script>
+function toggleCustomSpecialtySettings() {
+    const select = document.getElementById('specialty_select');
+    const customContainer = document.getElementById('custom_specialty_container_settings');
+    const customInput = document.getElementById('custom_specialty_settings');
+    const hiddenInput = document.getElementById('specialty_settings');
+    
+    if (select.value === 'other') {
+        customContainer.style.display = 'block';
+        customInput.required = true;
+        customInput.focus();
+        hiddenInput.value = ''; // Clear hidden field when showing custom input
+    } else {
+        customContainer.style.display = 'none';
+        customInput.required = false;
+        customInput.value = '';
+        hiddenInput.value = select.value; // Set hidden field to selected value
+    }
+}
+
+// Initialize settings page functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const customInput = document.getElementById('custom_specialty_settings');
+    const hiddenInput = document.getElementById('specialty_settings');
+    const select = document.getElementById('specialty_select');
+    
+    // Handle custom input changes
+    customInput.addEventListener('input', function() {
+        if (select.value === 'other') {
+            hiddenInput.value = this.value;
+        }
+    });
+    
+    // Handle form submission
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const select = document.getElementById('specialty_select');
+        const customInput = document.getElementById('custom_specialty_settings');
+        const hiddenInput = document.getElementById('specialty_settings');
+        
+        if (select.value === 'other') {
+            if (!customInput.value.trim()) {
+                e.preventDefault();
+                customInput.focus();
+                customInput.style.borderColor = '#dc3545';
+                return false;
+            }
+            hiddenInput.value = customInput.value.trim();
+        } else {
+            hiddenInput.value = select.value;
+        }
+    });
+    
+    // Initialize on page load - check if current specialty exists in dropdown
+    const currentSpecialty = '{{ $setting ? $setting->specialty : "" }}';
+    
+    if (currentSpecialty) {
+        // Check if current specialty exists in dropdown options
+        const selectOptions = Array.from(document.getElementById('specialty_select').options);
+        const optionExists = selectOptions.some(option => option.value === currentSpecialty);
+        
+        if (optionExists) {
+            document.getElementById('specialty_select').value = currentSpecialty;
+        } else {
+            // If specialty doesn't exist in dropdown, treat as custom
+            document.getElementById('specialty_select').value = 'other';
+            toggleCustomSpecialtySettings();
+            document.getElementById('custom_specialty_settings').value = currentSpecialty;
+        }
+        document.getElementById('specialty_settings').value = currentSpecialty;
+    }
+});
+</script>
+
+<style>
+/* Custom specialty input styling for settings page */
+#custom_specialty_container_settings {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#custom_specialty_settings {
+    border: 2px solid #e9ecef;
+    transition: border-color 0.3s ease;
+}
+
+#custom_specialty_settings:focus {
+    border-color: #DE6262;
+    box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.25);
+}
+</style>
+
 @endsection
