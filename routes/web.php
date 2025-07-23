@@ -27,6 +27,7 @@ Route::get('/doctors/search', [DoctorController::class, 'search'])->name('doctor
 Route::get('/doctors/{doctor}/slots', [DoctorController::class, 'getAvailableSlots'])->name('doctors.slots');
 Route::get('/doctors/{doctor}', [DoctorController::class, 'show'])->name('doctors.show');
 Route::get('/doctors/{doctor}/reviews', [ReviewController::class, 'doctorReviews'])->name('doctors.reviews');
+Route::get('/doctors/{doctor}/reviews/ajax', [ReviewController::class, 'getDoctorReviews'])->name('doctors.reviews.ajax');
 
 // Public appointment booking (for guests)
 Route::get('/appointments/{doctor}/create', [AppointmentController::class, 'create'])->name('appointments.create');
@@ -84,8 +85,11 @@ Route::middleware('auth')->group(function () {
 Route::get('/about', [UserSettingsController::class, 'about'])->name('about');
 
 // Doctor routes
-Route::middleware(['auth'])->prefix('doctor')->name('doctor.')->group(function () {
-    Route::get('/dashboard', [DoctorDashboardController::class, 'index'])->name('dashboard');
+Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(function () {
+    // Redirect doctor dashboard to main dashboard
+    Route::get('/dashboard', function () {
+        return redirect()->route('dashboard');
+    })->name('dashboard');
 
     // Appointment management
     Route::get('/appointments', [DoctorDashboardController::class, 'appointments'])->name('appointments.index');
@@ -103,6 +107,10 @@ Route::middleware(['auth'])->prefix('doctor')->name('doctor.')->group(function (
 
     // Reviews
     Route::get('/reviews', [DoctorDashboardController::class, 'reviews'])->name('reviews.index');
+
+    // Profile management
+    Route::get('/profile', [DoctorDashboardController::class, 'profile'])->name('profile.edit');
+    Route::patch('/profile', [DoctorDashboardController::class, 'updateProfile'])->name('profile.update');
 });
 
 // Admin routes

@@ -223,6 +223,21 @@
                                     <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
                                         <a class="menu-link" href="{{ route('cases') }}"><div>Cases</div></a>
                                     </li>
+                                    <li class="menu-item {{ request()->routeIs('doctor.appointments.index') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('doctor.appointments.index') }}">
+                                            <div><i class="fas fa-calendar mr-2"></i>{{ __('Appointments') }}</div>
+                                        </a>
+                                    </li>
+                                    <li class="menu-item {{ request()->routeIs('doctor.availability.index') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('doctor.availability.index') }}">
+                                            <div><i class="fas fa-clock mr-2"></i>{{ __('Availability') }}</div>
+                                        </a>
+                                    </li>
+                                    <li class="menu-item {{ request()->routeIs('doctor.reviews.index') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('doctor.reviews.index') }}">
+                                            <div><i class="fas fa-star mr-2"></i>{{ __('Reviews') }}</div>
+                                        </a>
+                                    </li>
                                 @endauth
 
                                 @guest

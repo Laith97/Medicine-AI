@@ -17,8 +17,8 @@
             <div class="bg-white rounded-lg shadow-md p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-calendar-day text-blue-600 text-xl"></i>
+                        <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-calendar-day text-primary-600 text-xl"></i>
                         </div>
                     </div>
                     <div class="ml-4">
@@ -118,7 +118,7 @@
                                         <!-- Actions -->
                                         <div class="flex-shrink-0 ml-4">
                                             <a href="{{ route('doctor.appointments.show', $appointment) }}"
-                                               class="text-blue-600 hover:text-blue-800 text-sm">
+                                               class="text-primary-600 hover:text-primary-800 text-sm">
                                                 View Details
                                             </a>
                                         </div>
@@ -142,7 +142,7 @@
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                     <div class="space-y-3">
                         <a href="{{ route('doctor.appointments.index') }}"
-                           class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-center block">
+                           class="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors text-center block">
                             <i class="fas fa-calendar mr-2"></i>View All Appointments
                         </a>
                         <a href="{{ route('doctor.availability.index') }}"
@@ -176,7 +176,7 @@
                                                 </button>
                                             </form>
                                             <a href="{{ route('doctor.appointments.show', $appointment) }}"
-                                               class="text-blue-600 hover:text-blue-800 text-xs ml-2">
+                                               class="text-primary-600 hover:text-primary-800 text-xs ml-2">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                         </div>
@@ -186,7 +186,7 @@
                         </div>
                         <div class="mt-3">
                             <a href="{{ route('doctor.appointments.index', ['status' => 'pending']) }}"
-                               class="text-blue-600 hover:text-blue-800 text-sm">
+                               class="text-primary-600 hover:text-primary-800 text-sm">
                                 View all pending →
                             </a>
                         </div>
@@ -225,7 +225,7 @@
                         </div>
                         <div class="mt-3">
                             <a href="{{ route('doctor.reviews.index') }}"
-                               class="text-blue-600 hover:text-blue-800 text-sm">
+                               class="text-primary-600 hover:text-primary-800 text-sm">
                                 View all reviews →
                             </a>
                         </div>

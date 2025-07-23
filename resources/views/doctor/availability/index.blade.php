@@ -1,84 +1,84 @@
-@extends('layouts.app')
+@extends('master')
 
 @section('title', 'Manage Availability')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
+<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+@endpush
+
 @section('content')
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">Manage Availability</h1>
-                <p class="text-gray-600 mt-2">Set your weekly schedule and appointment slots</p>
-            </div>
-            <div class="flex gap-3">
-                <a href="{{ route('doctor.dashboard') }}"
-                   class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i>
-                    Back to Dashboard
-                </a>
-                <a href="{{ route('doctor.availability.create') }}"
-                   class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
-                    <i class="fas fa-plus mr-2"></i>
-                    Add Time Slot
-                </a>
+<div class="dashboard-container">
+    <div class="container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>Manage Availability</h2>
+                    <p>Set your weekly schedule and appointment slots</p>
+                </div>
+                <div class="d-flex gap-3">
+                    <a href="{{ route('dashboard') }}" class="btn btn-secondary-custom">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                    <a href="{{ route('doctor.availability.create') }}" class="btn btn-primary-custom">
+                        <i class="fas fa-plus me-2"></i>Add Time Slot
+                    </a>
+                </div>
             </div>
         </div>
 
         <!-- Weekly Schedule -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-900">Weekly Schedule</h2>
-            </div>
+        <div class="table-card">
+            <h6 class="mb-4"><i class="fas fa-calendar-week me-2"></i>Weekly Schedule</h6>
 
-            <div class="p-6">
-                <div class="grid grid-cols-1 gap-6">
-                    @foreach($daysOfWeek as $day => $dayName)
-                        <div class="border border-gray-200 rounded-lg p-4">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-medium text-gray-900">{{ $dayName }}</h3>
-                                <button onclick="showBulkModal('{{ $day }}')"
-                                        class="text-blue-600 hover:text-blue-800 text-sm">
-                                    <i class="fas fa-plus mr-1"></i>Quick Add
+            <div class="row g-4">
+                @foreach($daysOfWeek as $day => $dayName)
+                    <div class="col-12">
+                        <div class="border rounded p-4 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">{{ $dayName }}</h5>
+                                <button onclick="showBulkModal('{{ $day }}')" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-plus me-1"></i>Quick Add
                                 </button>
                             </div>
 
                             @if($availabilitySlots->has($day))
-                                <div class="space-y-3">
+                                <div class="d-flex flex-column gap-3">
                                     @foreach($availabilitySlots[$day] as $slot)
-                                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                            <div class="flex-1">
-                                                <div class="flex items-center">
-                                                    <span class="font-medium text-gray-900">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex align-items-center mb-1">
+                                                    <span class="fw-medium">
                                                         {{ date('g:i A', strtotime($slot->start_time)) }} - {{ date('g:i A', strtotime($slot->end_time)) }}
                                                     </span>
                                                     @if(!$slot->is_active)
-                                                        <span class="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
-                                                            Inactive
-                                                        </span>
+                                                        <span class="badge bg-danger ms-2">Inactive</span>
                                                     @endif
                                                 </div>
-                                                <div class="text-sm text-gray-600 mt-1">
+                                                <small class="text-muted">
                                                     {{ $slot->slot_duration }} min slots • Max {{ $slot->max_bookings_per_slot }} booking(s) per slot
-                                                </div>
+                                                </small>
                                                 @if($slot->effective_from || $slot->effective_until)
-                                                    <div class="text-xs text-gray-500 mt-1">
-                                                        @if($slot->effective_from)
-                                                            From {{ $slot->effective_from->format('M j, Y') }}
-                                                        @endif
-                                                        @if($slot->effective_until)
-                                                            Until {{ $slot->effective_until->format('M j, Y') }}
-                                                        @endif
+                                                    <div class="mt-1">
+                                                        <small class="text-muted">
+                                                            @if($slot->effective_from)
+                                                                From {{ $slot->effective_from->format('M j, Y') }}
+                                                            @endif
+                                                            @if($slot->effective_until)
+                                                                Until {{ $slot->effective_until->format('M j, Y') }}
+                                                            @endif
+                                                        </small>
                                                     </div>
                                                 @endif
                                             </div>
 
-                                            <div class="flex items-center gap-2">
+                                            <div class="d-flex align-items-center gap-2">
                                                 <!-- Toggle Active/Inactive -->
-                                                <form method="POST" action="{{ route('doctor.availability.toggle', $slot) }}" class="inline">
+                                                <form method="POST" action="{{ route('doctor.availability.toggle', $slot) }}" class="d-inline">
                                                     @csrf
                                                     <button type="submit"
-                                                            class="text-{{ $slot->is_active ? 'yellow' : 'green' }}-600 hover:text-{{ $slot->is_active ? 'yellow' : 'green' }}-800"
+                                                            class="btn btn-sm btn-outline-{{ $slot->is_active ? 'warning' : 'success' }}"
                                                             title="{{ $slot->is_active ? 'Deactivate' : 'Activate' }}">
                                                         <i class="fas fa-{{ $slot->is_active ? 'pause' : 'play' }}"></i>
                                                     </button>
@@ -86,16 +86,16 @@
 
                                                 <!-- Edit -->
                                                 <a href="{{ route('doctor.availability.edit', $slot) }}"
-                                                   class="text-blue-600 hover:text-blue-800" title="Edit">
+                                                   class="btn btn-sm btn-outline-primary" title="Edit">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
 
                                                 <!-- Delete -->
                                                 <form method="POST" action="{{ route('doctor.availability.destroy', $slot) }}"
-                                                      class="inline" onsubmit="return confirm('Are you sure you want to delete this time slot?')">
+                                                      class="d-inline" onsubmit="return confirm('Are you sure you want to delete this time slot?')">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-800" title="Delete">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </form>
@@ -104,11 +104,10 @@
                                     @endforeach
                                 </div>
                             @else
-                                <div class="text-center py-8 text-gray-500">
-                                    <i class="fas fa-calendar-times text-3xl mb-2"></i>
-                                    <p>No availability set for {{ $dayName }}</p>
-                                    <button onclick="showBulkModal('{{ $day }}')"
-                                            class="mt-2 text-blue-600 hover:text-blue-800 text-sm">
+                                <div class="empty-state">
+                                    <i class="fas fa-calendar-times"></i>
+                                    <p class="mb-2">No availability set for {{ $dayName }}</p>
+                                    <button onclick="showBulkModal('{{ $day }}')" class="btn btn-outline-primary btn-sm">
                                         Add time slots
                                     </button>
                                 </div>
@@ -120,54 +119,38 @@
         </div>
 
         <!-- Quick Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-clock text-blue-600 text-xl"></i>
-                        </div>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                        <i class="fas fa-clock"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Total Weekly Hours</p>
-                        <p class="text-2xl font-bold text-gray-900">
-                            {{ $availabilitySlots->flatten()->sum(function($slot) {
-                                return \Carbon\Carbon::parse($slot->end_time)->diffInHours(\Carbon\Carbon::parse($slot->start_time));
-                            }) }}
-                        </p>
-                    </div>
+                    <p class="stats-number">
+                        {{ $availabilitySlots->flatten()->sum(function($slot) {
+                            return \Carbon\Carbon::parse($slot->end_time)->diffInHours(\Carbon\Carbon::parse($slot->start_time));
+                        }) }}
+                    </p>
+                    <p class="stats-label">Total Weekly Hours</p>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-calendar-check text-green-600 text-xl"></i>
-                        </div>
+            <div class="col-md-4 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                        <i class="fas fa-calendar-check"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Active Time Slots</p>
-                        <p class="text-2xl font-bold text-gray-900">
-                            {{ $availabilitySlots->flatten()->where('is_active', true)->count() }}
-                        </p>
-                    </div>
+                    <p class="stats-number">{{ $availabilitySlots->flatten()->where('is_active', true)->count() }}</p>
+                    <p class="stats-label">Active Time Slots</p>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-calendar-day text-purple-600 text-xl"></i>
-                        </div>
+            <div class="col-md-4 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);">
+                        <i class="fas fa-calendar-day"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Days Available</p>
-                        <p class="text-2xl font-bold text-gray-900">
-                            {{ $availabilitySlots->keys()->count() }}
-                        </p>
-                    </div>
+                    <p class="stats-number">{{ $availabilitySlots->keys()->count() }}</p>
+                    <p class="stats-label">Days Available</p>
                 </div>
             </div>
         </div>
@@ -175,81 +158,63 @@
 </div>
 
 <!-- Bulk Add Modal -->
-<div id="bulkModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Add Time Slot</h3>
-        <form method="POST" action="{{ route('doctor.availability.store') }}">
-            @csrf
-            <input type="hidden" name="day_of_week" id="bulkDay">
-
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                    <input type="time" name="start_time" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                    <input type="time" name="end_time" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
+<div class="modal fade" id="bulkModal" tabindex="-1" aria-labelledby="bulkModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkModalLabel">Quick Add Time Slot</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <form method="POST" action="{{ route('doctor.availability.store') }}">
+                @csrf
+                <div class="modal-body">
+                    <input type="hidden" name="day_of_week" id="bulkDay">
 
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Slot Duration (minutes)</label>
-                    <select name="slot_duration" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <option value="15">15 minutes</option>
-                        <option value="30" selected>30 minutes</option>
-                        <option value="45">45 minutes</option>
-                        <option value="60">60 minutes</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Max Bookings per Slot</label>
-                    <select name="max_bookings_per_slot" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <option value="1" selected>1 patient</option>
-                        <option value="2">2 patients</option>
-                        <option value="3">3 patients</option>
-                    </select>
-                </div>
-            </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Start Time</label>
+                            <input type="time" name="start_time" required class="form-control">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">End Time</label>
+                            <input type="time" name="end_time" required class="form-control">
+                        </div>
+                    </div>
 
-            <div class="flex justify-end gap-3">
-                <button type="button" onclick="closeBulkModal()"
-                        class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
-                    Cancel
-                </button>
-                <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    Add Time Slot
-                </button>
-            </div>
-        </form>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label">Slot Duration (minutes)</label>
+                            <select name="slot_duration" required class="form-select">
+                                <option value="15">15 minutes</option>
+                                <option value="30" selected>30 minutes</option>
+                                <option value="45">45 minutes</option>
+                                <option value="60">60 minutes</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Max Bookings per Slot</label>
+                            <select name="max_bookings_per_slot" required class="form-select">
+                                <option value="1" selected>1 patient</option>
+                                <option value="2">2 patients</option>
+                                <option value="3">3 patients</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">Add Time Slot</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <script>
 function showBulkModal(day) {
     document.getElementById('bulkDay').value = day;
-    const modal = document.getElementById('bulkModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+    const modal = new bootstrap.Modal(document.getElementById('bulkModal'));
+    modal.show();
 }
-
-function closeBulkModal() {
-    const modal = document.getElementById('bulkModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-}
-
-// Close modal when clicking outside
-document.getElementById('bulkModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeBulkModal();
-    }
-});
 </script>
 @endsection

@@ -7,7 +7,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Back Button -->
         <div class="mb-6">
-            <a href="{{ route('doctors.index') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800">
+            <a href="{{ route('doctors.index') }}" class="inline-flex items-center text-primary-600 hover:text-primary-800">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Back to Doctors
             </a>
@@ -18,7 +18,7 @@
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-lg shadow-md overflow-hidden">
                     <!-- Header -->
-                    <div class="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-8">
+                    <div class="bg-gradient-to-r from-primary-600 to-primary-800 px-6 py-8">
                         <div class="flex items-center">
                             <!-- Profile Image -->
                             <div class="flex-shrink-0">
@@ -28,7 +28,7 @@
                                          class="w-24 h-24 rounded-full border-4 border-white object-cover">
                                 @else
                                     <div class="w-24 h-24 rounded-full border-4 border-white bg-white flex items-center justify-center">
-                                        <i class="fas fa-user-md text-3xl text-blue-600"></i>
+                                        <i class="fas fa-user-md text-3xl text-primary-600"></i>
                                     </div>
                                 @endif
                             </div>
@@ -36,7 +36,7 @@
                             <!-- Basic Info -->
                             <div class="ml-6 text-white">
                                 <h1 class="text-3xl font-bold">{{ $doctor->user->name }}</h1>
-                                <p class="text-xl text-blue-100 mb-2">{{ $doctor->specialty->name }}</p>
+                                <p class="text-xl text-primary-100 mb-2">{{ $doctor->specialty->name }}</p>
 
                                 <!-- Rating -->
                                 <div class="flex items-center mb-2">
@@ -51,7 +51,7 @@
                                             @endif
                                         @endfor
                                     </div>
-                                    <span class="ml-2 text-blue-100">
+                                    <span class="ml-2 text-primary-100">
                                         {{ number_format($doctor->average_rating, 1) }} ({{ $doctor->total_reviews }} reviews)
                                     </span>
                                 </div>
@@ -72,17 +72,17 @@
                         <!-- Quick Info -->
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             <div class="text-center p-4 bg-gray-50 rounded-lg">
-                                <i class="fas fa-clock text-2xl text-blue-600 mb-2"></i>
+                                <i class="fas fa-clock text-2xl text-primary-600 mb-2"></i>
                                 <p class="text-sm text-gray-600">Appointment Duration</p>
                                 <p class="font-semibold">{{ $doctor->appointment_duration }} minutes</p>
                             </div>
                             <div class="text-center p-4 bg-gray-50 rounded-lg">
-                                <i class="fas fa-dollar-sign text-2xl text-green-600 mb-2"></i>
+                                <i class="fas fa-dollar-sign text-2xl text-accent-600 mb-2"></i>
                                 <p class="text-sm text-gray-600">Consultation Fee</p>
                                 <p class="font-semibold">${{ number_format($doctor->consultation_fee / 100, 2) }}</p>
                             </div>
                             <div class="text-center p-4 bg-gray-50 rounded-lg">
-                                <i class="fas fa-language text-2xl text-purple-600 mb-2"></i>
+                                <i class="fas fa-language text-2xl text-primary-600 mb-2"></i>
                                 <p class="text-sm text-gray-600">Languages</p>
                                 <p class="font-semibold">{{ implode(', ', $doctor->languages ?? ['English']) }}</p>
                             </div>
@@ -100,16 +100,16 @@
                             <div class="space-y-2">
                                 @if($doctor->phone)
                                     <div class="flex items-center text-gray-700">
-                                        <i class="fas fa-phone mr-3 text-blue-600"></i>
+                                        <i class="fas fa-phone mr-3 text-primary-600"></i>
                                         <span>{{ $doctor->phone }}</span>
                                     </div>
                                 @endif
                                 <div class="flex items-center text-gray-700">
-                                    <i class="fas fa-envelope mr-3 text-blue-600"></i>
+                                    <i class="fas fa-envelope mr-3 text-primary-600"></i>
                                     <span>{{ $doctor->user->email }}</span>
                                 </div>
                                 <div class="flex items-center text-gray-700">
-                                    <i class="fas fa-map-marker-alt mr-3 text-blue-600"></i>
+                                    <i class="fas fa-map-marker-alt mr-3 text-primary-600"></i>
                                     <span>{{ $doctor->full_address }}</span>
                                 </div>
                             </div>
@@ -153,7 +153,7 @@
                         <div>
                             <div class="flex justify-between items-center mb-4">
                                 <h2 class="text-xl font-semibold text-gray-900">Recent Reviews</h2>
-                                <a href="{{ route('doctors.reviews', $doctor) }}" class="text-blue-600 hover:text-blue-800">
+                                <a href="{{ route('doctors.reviews', $doctor) }}" class="text-primary-600 hover:text-primary-800">
                                     View All Reviews
                                 </a>
                             </div>
@@ -161,7 +161,7 @@
                             @if($doctor->approvedReviews->count() > 0)
                                 <div class="space-y-4">
                                     @foreach($doctor->approvedReviews->take(3) as $review)
-                                        <div class="border-l-4 border-blue-500 pl-4 py-2">
+                                        <div class="border-l-4 border-primary-500 pl-4 py-2">
                                             <div class="flex items-center mb-2">
                                                 <div class="flex text-yellow-400 mr-2">
                                                     @for($i = 1; $i <= 5; $i++)
@@ -208,9 +208,9 @@
                                                 <span class="text-sm text-gray-500">({{ \Carbon\Carbon::parse($date)->format('l') }})</span>
                                             </div>
                                             <div class="grid grid-cols-2 gap-1">
-                                                @foreach($slots->take(4) as $timeSlot) as $slot)
-                                                    <button class="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100 transition-colors">
-                                                        {{ \Carbon\Carbon::parse($slot['start_time'])->format('g:i A') }}
+                                                @foreach($slots->take(4) as $timeSlot)
+                                                    <button class="text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded hover:bg-primary-100 transition-colors">
+                                                        {{ \Carbon\Carbon::parse($timeSlot['start_time'])->format('g:i A') }}
                                                     </button>
                                                 @endforeach
                                                 @if($slots->count() > 4)
@@ -223,7 +223,7 @@
                             </div>
 
                             <a href="{{ route('appointments.create', $doctor) }}"
-                               class="w-full bg-green-600 text-white text-center py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                               class="w-full bg-accent-600 text-white text-center py-3 px-4 rounded-lg hover:bg-accent-700 transition-colors font-medium">
                                 Book Appointment
                             </a>
                         @else
@@ -236,7 +236,7 @@
                         <div class="text-center">
                             <p class="text-gray-600 mb-4">Please log in to book an appointment</p>
                             <a href="{{ route('login') }}"
-                               class="w-full bg-blue-600 text-white text-center py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium block">
+                               class="w-full bg-primary-600 text-white text-center py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors font-medium block">
                                 Login to Book
                             </a>
                         </div>
@@ -247,18 +247,18 @@
                         <h4 class="font-medium text-gray-900 mb-3">Quick Actions</h4>
                         <div class="space-y-2">
                             <a href="{{ route('doctors.reviews', $doctor) }}"
-                               class="flex items-center text-gray-600 hover:text-blue-600 transition-colors">
+                               class="flex items-center text-gray-600 hover:text-primary-600 transition-colors">
                                 <i class="fas fa-star mr-2"></i>
                                 View All Reviews
                             </a>
                             <a href="mailto:{{ $doctor->user->email }}"
-                               class="flex items-center text-gray-600 hover:text-blue-600 transition-colors">
+                               class="flex items-center text-gray-600 hover:text-primary-600 transition-colors">
                                 <i class="fas fa-envelope mr-2"></i>
                                 Send Message
                             </a>
                             @if($doctor->phone)
                                 <a href="tel:{{ $doctor->phone }}"
-                                   class="flex items-center text-gray-600 hover:text-blue-600 transition-colors">
+                                   class="flex items-center text-gray-600 hover:text-primary-600 transition-colors">
                                     <i class="fas fa-phone mr-2"></i>
                                     Call Office
                                 </a>

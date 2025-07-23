@@ -6,7 +6,7 @@
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-4xl mx-auto px-4">
         <div class="mb-8">
-            <a href="{{ route('appointments.guest.show', ['appointment' => $appointment->appointment_number, 'email' => $appointment->guest_email]) }}" class="text-blue-600 hover:text-blue-800 mb-4 inline-flex items-center">
+            <a href="{{ route('appointments.guest.show', ['appointment' => $appointment->appointment_number, 'email' => $appointment->guest_email]) }}" class="text-primary-600 hover:text-primary-800 mb-4 inline-flex items-center">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Back to Appointment
             </a>
@@ -22,8 +22,8 @@
                          alt="{{ $appointment->doctor->user->name }}"
                          class="w-16 h-16 rounded-full object-cover">
                 @else
-                    <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-                        <i class="fas fa-user-md text-blue-600 text-2xl"></i>
+                    <div class="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
+                        <i class="fas fa-user-md text-primary-600 text-2xl"></i>
                     </div>
                 @endif
                 <div class="ml-4">
@@ -141,7 +141,7 @@
                         Back to Appointment
                     </a>
                     <a href="{{ route('appointments.guest.search') }}?email={{ $appointment->guest_email }}"
-                       class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium text-center">
+                       class="flex-1 bg-primary-600 text-white py-3 px-6 rounded-lg hover:bg-primary-700 transition-colors font-medium text-center">
                         <i class="fas fa-list mr-2"></i>
                         View All Appointments
                     </a>
@@ -149,9 +149,9 @@
             </div>
         </div>
 
-        <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h3 class="font-medium text-blue-900 mb-2">Thank You!</h3>
-            <p class="text-sm text-blue-800">
+        <div class="mt-6 p-4 bg-primary-50 rounded-lg">
+            <h3 class="font-medium text-primary-900 mb-2">Thank You!</h3>
+            <p class="text-sm text-primary-800">
                 Your feedback helps other patients make informed decisions and helps doctors improve their services.
             </p>
         </div>

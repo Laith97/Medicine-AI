@@ -1,30 +1,29 @@
-@extends('layouts.app')
+@extends('master')
 
 @section('title', 'Manage Appointments')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
+<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+@endpush
+
 @section('content')
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">Manage Appointments</h1>
-                <p class="text-gray-600 mt-2">View and manage your patient appointments</p>
-            </div>
-            <a href="{{ route('doctor.dashboard') }}"
-               class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
-                <i class="fas fa-arrow-left mr-2"></i>
-                Back to Dashboard
-            </a>
+<div class="dashboard-container">
+    <div class="container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <h2>Manage Appointments</h2>
+            <p>View and manage your patient appointments</p>
         </div>
 
         <!-- Filters -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <form method="GET" action="{{ route('doctor.appointments.index') }}" class="flex flex-wrap gap-4">
+        <div class="table-card mb-4">
+            <h6 class="mb-3"><i class="fas fa-filter me-2"></i>Filter Appointments</h6>
+            <form method="GET" action="{{ route('doctor.appointments.index') }}" class="row g-3">
                 <!-- Status Filter -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select name="status" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
                         <option value="">All Statuses</option>
                         <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
@@ -35,29 +34,22 @@
                 </div>
 
                 <!-- Date Range -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-                    <input type="date" name="date_from" value="{{ request('date_from') }}"
-                           class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <div class="col-md-3">
+                    <label class="form-label">From Date</label>
+                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control">
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-                    <input type="date" name="date_to" value="{{ request('date_to') }}"
-                           class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <div class="col-md-3">
+                    <label class="form-label">To Date</label>
+                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control">
                 </div>
 
-                <!-- Submit Button -->
-                <div class="flex items-end">
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                        <i class="fas fa-filter mr-2"></i>Filter
+                <!-- Buttons -->
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary-custom btn-sm">
+                        <i class="fas fa-filter me-1"></i>Filter
                     </button>
-                </div>
-
-                <!-- Clear Button -->
-                <div class="flex items-end">
-                    <a href="{{ route('doctor.appointments.index') }}"
-                       class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                    <a href="{{ route('doctor.appointments.index') }}" class="btn btn-secondary btn-sm">
                         Clear
                     </a>
                 </div>
@@ -66,40 +58,29 @@
 
         <!-- Appointments List -->
         @if($appointments->count() > 0)
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+            <div class="table-card">
+                <h6 class="mb-3"><i class="fas fa-calendar me-2"></i>Appointments</h6>
+                <div class="table-responsive">
+                    <table class="table custom-table mb-0">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Patient
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Date & Time
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Type
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Reason
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
-                                </th>
+                                <th>Patient</th>
+                                <th>Date & Time</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Reason</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach($appointments as $appointment)
                                 <tr class="hover:bg-gray-50">
                                     <!-- Patient -->
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10">
-                                                <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                                    <span class="text-sm font-medium text-blue-600">
+                                                <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                                                    <span class="text-sm font-medium text-primary-600">
                                                         {{ substr($appointment->patient->name, 0, 1) }}
                                                     </span>
                                                 </div>
@@ -141,7 +122,7 @@
                                             $statusColors = [
                                                 'pending' => 'bg-yellow-100 text-yellow-800',
                                                 'confirmed' => 'bg-green-100 text-green-800',
-                                                'completed' => 'bg-blue-100 text-blue-800',
+                                                'completed' => 'bg-primary-100 text-primary-800',
                                                 'cancelled' => 'bg-red-100 text-red-800',
                                                 'no_show' => 'bg-gray-100 text-gray-800'
                                             ];
@@ -162,7 +143,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex items-center space-x-2">
                                             <a href="{{ route('doctor.appointments.show', $appointment) }}"
-                                               class="text-blue-600 hover:text-blue-900">
+                                               class="text-primary-600 hover:text-primary-900">
                                                 <i class="fas fa-eye"></i>
                                             </a>
 
@@ -177,7 +158,7 @@
 
                                             @if($appointment->status == 'confirmed')
                                                 <button onclick="completeAppointment({{ $appointment->id }})"
-                                                        class="text-blue-600 hover:text-blue-900" title="Complete">
+                                                        class="text-primary-600 hover:text-primary-900" title="Complete">
                                                     <i class="fas fa-check-circle"></i>
                                                 </button>
                                                 <button onclick="markNoShow({{ $appointment->id }})"
@@ -214,7 +195,7 @@
                 <h3 class="text-xl font-semibold text-gray-900 mb-2">No appointments found</h3>
                 <p class="text-gray-600 mb-6">No appointments match your current filters.</p>
                 <a href="{{ route('doctor.appointments.index') }}"
-                   class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                   class="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors">
                     Clear Filters
                 </a>
             </div>
@@ -223,94 +204,78 @@
 </div>
 
 <!-- Complete Appointment Modal -->
-<div id="completeModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Complete Appointment</h3>
-        <form id="completeForm" method="POST">
-            @csrf
-            <div class="mb-4">
-                <label for="doctor_notes" class="block text-sm font-medium text-gray-700 mb-2">
-                    Doctor's Notes (optional)
-                </label>
-                <textarea name="doctor_notes" id="doctor_notes" rows="4"
-                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          placeholder="Add any notes about the appointment..."></textarea>
+<div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="completeModalLabel">Complete Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="mb-4">
-                <label class="flex items-center">
-                    <input type="checkbox" name="follow_up_required" class="mr-2">
-                    <span class="text-sm text-gray-700">Follow-up appointment recommended</span>
-                </label>
-            </div>
-            <div class="flex justify-end gap-3">
-                <button type="button" onclick="closeCompleteModal()"
-                        class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
-                    Cancel
-                </button>
-                <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    Complete Appointment
-                </button>
-            </div>
-        </form>
+            <form id="completeForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="doctor_notes" class="form-label">Doctor's Notes (optional)</label>
+                        <textarea name="doctor_notes" id="doctor_notes" rows="4" class="form-control"
+                                  placeholder="Add any notes about the appointment..."></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="follow_up_required" class="form-check-input" id="follow_up_required">
+                        <label class="form-check-label" for="follow_up_required">
+                            Follow-up appointment recommended
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">Complete Appointment</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <!-- Cancel Appointment Modal -->
-<div id="cancelModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Cancel Appointment</h3>
-        <form id="cancelForm" method="POST">
-            @csrf
-            <div class="mb-4">
-                <label for="cancellation_reason" class="block text-sm font-medium text-gray-700 mb-2">
-                    Reason for cancellation <span class="text-red-500">*</span>
-                </label>
-                <textarea name="cancellation_reason" id="cancellation_reason" rows="3" required
-                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          placeholder="Please provide a reason for cancelling..."></textarea>
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelModalLabel">Cancel Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="flex justify-end gap-3">
-                <button type="button" onclick="closeCancelModal()"
-                        class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
-                    Keep Appointment
-                </button>
-                <button type="submit"
-                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                    Cancel Appointment
-                </button>
-            </div>
-        </form>
+            <form id="cancelForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="cancellation_reason" class="form-label">
+                            Reason for cancellation <span class="text-danger">*</span>
+                        </label>
+                        <textarea name="cancellation_reason" id="cancellation_reason" rows="3" required class="form-control"
+                                  placeholder="Please provide a reason for cancelling..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Appointment</button>
+                    <button type="submit" class="btn btn-danger">Cancel Appointment</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <script>
 function completeAppointment(appointmentId) {
-    const modal = document.getElementById('completeModal');
     const form = document.getElementById('completeForm');
     form.action = `/doctor/appointments/${appointmentId}/complete`;
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
-
-function closeCompleteModal() {
-    const modal = document.getElementById('completeModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
+    const modal = new bootstrap.Modal(document.getElementById('completeModal'));
+    modal.show();
 }
 
 function cancelAppointment(appointmentId) {
-    const modal = document.getElementById('cancelModal');
     const form = document.getElementById('cancelForm');
     form.action = `/doctor/appointments/${appointmentId}/cancel`;
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
-
-function closeCancelModal() {
-    const modal = document.getElementById('cancelModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
+    const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
+    modal.show();
 }
 
 function markNoShow(appointmentId) {

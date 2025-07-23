@@ -21,8 +21,8 @@
                                          alt="{{ $appointment->doctor->user->name }}"
                                          class="w-12 h-12 rounded-full object-cover">
                                 @else
-                                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                                        <i class="fas fa-user-md text-blue-600"></i>
+                                    <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
+                                        <i class="fas fa-user-md text-primary-600"></i>
                                     </div>
                                 @endif
                                 <div class="ml-3">
@@ -47,7 +47,7 @@
                                         @if($appointment->status === 'confirmed') bg-green-100 text-green-800
                                         @elseif($appointment->status === 'pending') bg-yellow-100 text-yellow-800
                                         @elseif($appointment->status === 'cancelled') bg-red-100 text-red-800
-                                        @elseif($appointment->status === 'completed') bg-blue-100 text-blue-800
+                                        @elseif($appointment->status === 'completed') bg-primary-100 text-primary-800
                                         @else bg-gray-100 text-gray-800 @endif">
                                         {{ ucfirst($appointment->status) }}
                                     </span>
@@ -62,7 +62,7 @@
 
                         <div class="flex flex-col sm:flex-row lg:flex-col gap-2 lg:ml-6">
                             <a href="{{ route('appointments.guest.show', ['appointment' => $appointment->appointment_number, 'email' => $appointment->guest_email]) }}"
-                               class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                               class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors">
                                 <i class="fas fa-eye mr-2"></i>
                                 View Details
                             </a>
@@ -106,7 +106,7 @@
                 </div>
                 <h3 class="text-lg font-medium text-gray-900 mb-2">No appointments found</h3>
                 <p class="text-gray-600 mb-6">You don't have any appointments yet.</p>
-                <a href="{{ route('doctors.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                <a href="{{ route('doctors.index') }}" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors">
                     <i class="fas fa-search mr-2"></i>
                     Find a Doctor
                 </a>
@@ -114,7 +114,7 @@
         @endif
 
         <div class="mt-8 text-center">
-            <a href="{{ route('appointments.guest.lookup') }}" class="text-blue-600 hover:text-blue-800">
+            <a href="{{ route('appointments.guest.lookup') }}" class="text-primary-600 hover:text-primary-800">
                 ← Search with different email
             </a>
         </div>

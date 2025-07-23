@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\PatientAnalysis;
 use App\Models\Symptom;
+use App\Models\Appointment;
+use App\Models\Review;
 use Illuminate\Http\Request;
 use App\Http\Requests\PatientAnalysisRequest;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -1537,6 +1539,13 @@ class OpenAIController extends Controller
     }
     public function dashboard()
     {
+        // Redirect admins to their specific dashboard
+        if (auth()->user()->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+
+        $user = auth()->user();
+
         // Filter records by the current authenticated user
         $records = PatientAnalysis::with('user')
             ->where('user_id', auth()->id())
@@ -1563,7 +1572,111 @@ class OpenAIController extends Controller
             $chartData = $casesOverTime->values()->toArray();
         }
 
-        return view('dashboard', compact('records', 'weeklyCount', 'chartLabels', 'chartData'));
+        // Group patients by patient_key for the patient list
+        $patientGroups = [];
+        foreach ($records as $record) {
+            $key = $record->patient_key ?? ($record->name . '-' . $record->age . '-' . $record->gender);
+
+            if (!isset($patientGroups[$key])) {
+                $patientGroups[$key] = [
+                    'patient' => $record,
+                    'visits' => [],
+                    'visit_count' => 0,
+                    'last_visit' => $record->created_at
+                ];
+            }
+
+            $patientGroups[$key]['visits'][] = $record;
+            $patientGroups[$key]['visit_count']++;
+
+            if ($record->created_at > $patientGroups[$key]['last_visit']) {
+                $patientGroups[$key]['last_visit'] = $record->created_at;
+            }
+        }
+
+        // Sort by last visit date (most recent first)
+        uasort($patientGroups, function($a, $b) {
+            return $b['last_visit']->timestamp - $a['last_visit']->timestamp;
+        });
+
+        // Limit to 10 for dashboard display
+        $patientGroups = array_slice($patientGroups, 0, 10, true);
+
+        // Doctor-specific data
+        $doctorData = null;
+        if ($user->role === 'doctor' && $user->doctor) {
+            $doctor = $user->doctor;
+
+            // Get today's appointments
+            $todayAppointments = $doctor->appointments()
+                ->with(['patient'])
+                ->whereDate('appointment_date', today())
+                ->orderBy('appointment_date')
+                ->get();
+
+            // Get upcoming appointments (next 7 days)
+            $upcomingAppointments = $doctor->appointments()
+                ->with(['patient'])
+                ->whereBetween('appointment_date', [now(), now()->addDays(7)])
+                ->whereIn('status', ['pending', 'confirmed'])
+                ->orderBy('appointment_date')
+                ->limit(5)
+                ->get();
+
+            // Get pending appointments
+            $pendingAppointments = $doctor->appointments()
+                ->with(['patient'])
+                ->where('status', 'pending')
+                ->orderBy('appointment_date')
+                ->limit(5)
+                ->get();
+
+            // Get recent reviews
+            $recentReviews = $doctor->reviews()
+                ->with(['patient'])
+                ->latest()
+                ->limit(5)
+                ->get();
+
+            // Calculate statistics
+            $doctorStats = $this->getDoctorDashboardStats($doctor);
+
+            $doctorData = [
+                'doctor' => $doctor,
+                'todayAppointments' => $todayAppointments,
+                'upcomingAppointments' => $upcomingAppointments,
+                'pendingAppointments' => $pendingAppointments,
+                'recentReviews' => $recentReviews,
+                'stats' => $doctorStats
+            ];
+        }
+
+        return view('dashboard', compact('records', 'weeklyCount', 'chartLabels', 'chartData', 'doctorData', 'patientGroups'));
+    }
+
+    /**
+     * Get dashboard statistics for doctor
+     */
+    private function getDoctorDashboardStats($doctor)
+    {
+        $today = today();
+        $thisMonth = now()->startOfMonth();
+
+        return [
+            'total_appointments' => $doctor->appointments()->count(),
+            'today_appointments' => $doctor->appointments()->whereDate('appointment_date', $today)->count(),
+            'pending_appointments' => $doctor->appointments()->where('status', 'pending')->count(),
+            'this_month_appointments' => $doctor->appointments()->whereDate('appointment_date', '>=', $thisMonth)->count(),
+            'completed_appointments' => $doctor->appointments()->where('status', 'completed')->count(),
+            'cancelled_appointments' => $doctor->appointments()->where('status', 'cancelled')->count(),
+            'average_rating' => $doctor->average_rating,
+            'total_reviews' => $doctor->total_reviews,
+            'this_month_reviews' => $doctor->reviews()->whereDate('created_at', '>=', $thisMonth)->count(),
+            'revenue_this_month' => $doctor->appointments()
+                ->where('status', 'completed')
+                ->whereDate('appointment_date', '>=', $thisMonth)
+                ->sum('consultation_fee') / 100, // Convert from cents to dollars
+        ];
     }
 
     /**
@@ -1696,7 +1809,7 @@ class OpenAIController extends Controller
             // Check for cached summary to improve performance
             $cacheKey = 'patient_summary_' . md5(json_encode($summaryData));
             $cachedSummary = cache()->get($cacheKey);
-            
+
             if ($cachedSummary) {
                 \Log::info('Returning cached summary');
                 return response()->json([

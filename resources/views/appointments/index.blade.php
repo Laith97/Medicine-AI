@@ -12,7 +12,7 @@
                 <p class="text-gray-600 mt-2">Manage your upcoming and past appointments</p>
             </div>
             <a href="{{ route('doctors.index') }}"
-               class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+               class="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors">
                 <i class="fas fa-plus mr-2"></i>
                 Book New Appointment
             </a>
@@ -49,7 +49,7 @@
 
                 <!-- Submit Button -->
                 <div class="flex items-end">
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    <button type="submit" class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
                         <i class="fas fa-filter mr-2"></i>Filter
                     </button>
                 </div>
@@ -81,8 +81,8 @@
                                                      alt="{{ $appointment->doctor->user->name }}"
                                                      class="w-12 h-12 rounded-full object-cover">
                                             @else
-                                                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                                                    <i class="fas fa-user-md text-blue-600"></i>
+                                                <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
+                                                    <i class="fas fa-user-md text-primary-600"></i>
                                                 </div>
                                             @endif
                                         </div>
@@ -92,7 +92,7 @@
                                             <h3 class="text-lg font-semibold text-gray-900">
                                                 {{ $appointment->doctor->user->name }}
                                             </h3>
-                                            <p class="text-blue-600">{{ $appointment->doctor->specialty->name }}</p>
+                                            <p class="text-primary-600">{{ $appointment->doctor->specialty->name }}</p>
                                         </div>
 
                                         <!-- Status Badge -->
@@ -101,7 +101,7 @@
                                                 $statusColors = [
                                                     'pending' => 'bg-yellow-100 text-yellow-800',
                                                     'confirmed' => 'bg-green-100 text-green-800',
-                                                    'completed' => 'bg-blue-100 text-blue-800',
+                                                    'completed' => 'bg-primary-100 text-primary-800',
                                                     'cancelled' => 'bg-red-100 text-red-800',
                                                     'no_show' => 'bg-gray-100 text-gray-800'
                                                 ];
@@ -137,7 +137,7 @@
                                     <!-- Actions -->
                                     <div class="flex flex-wrap gap-2">
                                         <a href="{{ route('appointments.show', $appointment) }}"
-                                           class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                                           class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors text-sm">
                                             <i class="fas fa-eye mr-1"></i>View Details
                                         </a>
 
@@ -168,16 +168,16 @@
 
                         <!-- Additional Info for Upcoming Appointments -->
                         @if(in_array($appointment->status, ['pending', 'confirmed']) && $appointment->appointment_date->isFuture())
-                            <div class="bg-blue-50 px-6 py-3 border-t">
+                            <div class="bg-primary-50 px-6 py-3 border-t">
                                 <div class="flex items-center justify-between">
-                                    <div class="flex items-center text-blue-800">
+                                    <div class="flex items-center text-primary-800">
                                         <i class="fas fa-info-circle mr-2"></i>
                                         <span class="text-sm">
                                             Appointment in {{ $appointment->appointment_date->diffForHumans() }}
                                         </span>
                                     </div>
                                     @if($appointment->appointment_type == 'video_call')
-                                        <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
+                                        <button class="bg-primary-600 text-white px-3 py-1 rounded text-sm hover:bg-primary-700 transition-colors">
                                             <i class="fas fa-video mr-1"></i>Join Call
                                         </button>
                                     @endif
@@ -201,7 +201,7 @@
                 <h3 class="text-xl font-semibold text-gray-900 mb-2">No appointments found</h3>
                 <p class="text-gray-600 mb-6">You haven't booked any appointments yet.</p>
                 <a href="{{ route('doctors.index') }}"
-                   class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                   class="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors">
                     <i class="fas fa-plus mr-2"></i>
                     Book Your First Appointment
                 </a>

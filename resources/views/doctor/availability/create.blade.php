@@ -1,81 +1,82 @@
-@extends('layouts.app')
+@extends('master')
 
 @section('title', 'Add Availability Slot')
 
-@section('content')
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Back Button -->
-        <div class="mb-6">
-            <a href="{{ route('doctor.availability.index') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800">
-                <i class="fas fa-arrow-left mr-2"></i>
-                Back to Availability
-            </a>
-        </div>
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
+<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+@endpush
 
-        <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Add Availability Slot</h1>
-            <p class="text-gray-600 mt-2">Create a new time slot for patient appointments</p>
+@section('content')
+<div class="dashboard-container">
+    <div class="container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>Add Availability Slot</h2>
+                    <p>Create a new time slot for patient appointments</p>
+                </div>
+                <a href="{{ route('doctor.availability.index') }}" class="btn btn-secondary-custom">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Availability
+                </a>
+            </div>
         </div>
 
         <!-- Form -->
-        <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="table-card">
+            <h6 class="mb-4"><i class="fas fa-plus me-2"></i>New Time Slot</h6>
+
             <form method="POST" action="{{ route('doctor.availability.store') }}">
                 @csrf
 
-                <!-- Day of Week -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Day of Week <span class="text-red-500">*</span>
-                    </label>
-                    <select name="day_of_week" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <option value="">Select a day</option>
-                        @foreach($daysOfWeek as $day => $dayName)
-                            <option value="{{ $day }}" {{ old('day_of_week') == $day ? 'selected' : '' }}>
-                                {{ $dayName }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('day_of_week')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Time Range -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Start Time <span class="text-red-500">*</span>
+                <div class="row g-4">
+                    <!-- Day of Week -->
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            Day of Week <span class="text-danger">*</span>
                         </label>
-                        <input type="time" name="start_time" value="{{ old('start_time') }}" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <select name="day_of_week" required class="form-select">
+                            <option value="">Select a day</option>
+                            @foreach($daysOfWeek as $day => $dayName)
+                                <option value="{{ $day }}" {{ old('day_of_week') == $day ? 'selected' : '' }}>
+                                    {{ $dayName }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('day_of_week')
+                            <div class="text-danger small mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Start Time -->
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            Start Time <span class="text-danger">*</span>
+                        </label>
+                        <input type="time" name="start_time" value="{{ old('start_time') }}" required class="form-control">
                         @error('start_time')
-                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                            <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            End Time <span class="text-red-500">*</span>
+                    <!-- End Time -->
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            End Time <span class="text-danger">*</span>
                         </label>
-                        <input type="time" name="end_time" value="{{ old('end_time') }}" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <input type="time" name="end_time" value="{{ old('end_time') }}" required class="form-control">
                         @error('end_time')
-                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                            <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                </div>
 
-                <!-- Slot Configuration -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Slot Duration (minutes) <span class="text-red-500">*</span>
+                    <!-- Slot Duration -->
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            Slot Duration (minutes) <span class="text-danger">*</span>
                         </label>
-                        <select name="slot_duration" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <select name="slot_duration" required class="form-select">
                             <option value="15" {{ old('slot_duration') == '15' ? 'selected' : '' }}>15 minutes</option>
                             <option value="30" {{ old('slot_duration', '30') == '30' ? 'selected' : '' }}>30 minutes</option>
                             <option value="45" {{ old('slot_duration') == '45' ? 'selected' : '' }}>45 minutes</option>
@@ -84,16 +85,16 @@
                             <option value="120" {{ old('slot_duration') == '120' ? 'selected' : '' }}>120 minutes</option>
                         </select>
                         @error('slot_duration')
-                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                            <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Max Bookings per Slot <span class="text-red-500">*</span>
+                    <!-- Max Bookings per Slot -->
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            Max Bookings per Slot <span class="text-danger">*</span>
                         </label>
-                        <select name="max_bookings_per_slot" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <select name="max_bookings_per_slot" required class="form-select">
                             @for($i = 1; $i <= 10; $i++)
                                 <option value="{{ $i }}" {{ old('max_bookings_per_slot', '1') == $i ? 'selected' : '' }}>
                                     {{ $i }} {{ $i == 1 ? 'patient' : 'patients' }}
@@ -101,118 +102,106 @@
                             @endfor
                         </select>
                         @error('max_bookings_per_slot')
-                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                            <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                </div>
 
-                <!-- Effective Dates (Optional) -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Effective From (optional)
-                        </label>
+                    <!-- Effective From -->
+                    <div class="col-md-6">
+                        <label class="form-label">Effective From (optional)</label>
                         <input type="date" name="effective_from" value="{{ old('effective_from') }}"
-                               min="{{ date('Y-m-d') }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <p class="text-xs text-gray-500 mt-1">Leave blank to start immediately</p>
+                               min="{{ date('Y-m-d') }}" class="form-control">
+                        <small class="form-text text-muted">Leave blank to start immediately</small>
                         @error('effective_from')
-                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                            <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Effective Until (optional)
-                        </label>
+                    <!-- Effective Until -->
+                    <div class="col-md-6">
+                        <label class="form-label">Effective Until (optional)</label>
                         <input type="date" name="effective_until" value="{{ old('effective_until') }}"
-                               min="{{ date('Y-m-d') }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <p class="text-xs text-gray-500 mt-1">Leave blank for no end date</p>
+                               min="{{ date('Y-m-d') }}" class="form-control">
+                        <small class="form-text text-muted">Leave blank for no end date</small>
                         @error('effective_until')
-                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                            <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                </div>
 
-                <!-- Preview -->
-                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h3 class="font-medium text-blue-900 mb-2">Preview</h3>
-                    <div id="preview" class="text-sm text-blue-800">
-                        Select day and time to see preview
+                    <!-- Preview -->
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">Preview</h6>
+                            <div id="preview">Select day and time to see preview</div>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Submit Buttons -->
-                <div class="flex justify-end gap-3">
-                    <a href="{{ route('doctor.availability.index') }}"
-                       class="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        Cancel
-                    </a>
-                    <button type="submit"
-                            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        <i class="fas fa-save mr-2"></i>
-                        Create Availability Slot
-                    </button>
+                    <!-- Submit Buttons -->
+                    <div class="col-12">
+                        <div class="d-flex justify-content-end gap-3">
+                            <a href="{{ route('doctor.availability.index') }}" class="btn btn-secondary-custom">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary-custom">
+                                <i class="fas fa-save me-2"></i>Create Availability Slot
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
 
         <!-- Bulk Create Option -->
-        <div class="mt-8 bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Setup</h2>
-            <p class="text-gray-600 mb-4">Want to set the same hours for multiple days?</p>
+        <div class="table-card">
+            <h6 class="mb-3"><i class="fas fa-calendar-plus me-2"></i>Quick Setup</h6>
+            <p class="text-muted mb-4">Want to set the same hours for multiple days?</p>
 
             <form method="POST" action="{{ route('doctor.availability.bulk') }}">
                 @csrf
 
                 <!-- Multiple Days Selection -->
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Days</label>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <label class="form-label">Select Days</label>
+                    <div class="row g-2">
                         @foreach($daysOfWeek as $day => $dayName)
-                            <label class="flex items-center">
-                                <input type="checkbox" name="days[]" value="{{ $day }}" class="mr-2">
-                                <span class="text-sm">{{ $dayName }}</span>
-                            </label>
+                            <div class="col-md-3 col-6">
+                                <div class="form-check">
+                                    <input type="checkbox" name="days[]" value="{{ $day }}" class="form-check-input" id="bulk_{{ $day }}">
+                                    <label class="form-check-label" for="bulk_{{ $day }}">{{ $dayName }}</label>
+                                </div>
+                            </div>
                         @endforeach
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                        <input type="time" name="start_time" value="09:00"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label">Start Time</label>
+                        <input type="time" name="start_time" value="09:00" class="form-control">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                        <input type="time" name="end_time" value="17:00"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <div class="col-md-3">
+                        <label class="form-label">End Time</label>
+                        <input type="time" name="end_time" value="17:00" class="form-control">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                        <select name="slot_duration"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <div class="col-md-3">
+                        <label class="form-label">Duration</label>
+                        <select name="slot_duration" class="form-select">
                             <option value="30">30 min</option>
                             <option value="60">60 min</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Max Bookings</label>
-                        <select name="max_bookings_per_slot"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <div class="col-md-3">
+                        <label class="form-label">Max Bookings</label>
+                        <select name="max_bookings_per_slot" class="form-select">
                             <option value="1">1 patient</option>
                             <option value="2">2 patients</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="mt-4">
-                    <button type="submit"
-                            class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                        <i class="fas fa-calendar-plus mr-2"></i>
-                        Create Multiple Slots
+                <div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-calendar-plus me-2"></i>Create Multiple Slots
                     </button>
                 </div>
             </form>
