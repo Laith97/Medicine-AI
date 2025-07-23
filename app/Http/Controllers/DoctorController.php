@@ -85,6 +85,11 @@ class DoctorController extends Controller
      */
     public function show(Doctor $doctor)
     {
+        // Make sure we're not returning a single availability slot
+        if (request()->has('date')) {
+            return $this->getAvailableSlots(request(), $doctor);
+        }
+
         $doctor->load([
             'user',
             'specialty',
@@ -105,6 +110,8 @@ class DoctorController extends Controller
                 $availableSlots[$date] = $slots;
             }
         }
+\Log::info('Doctor availability slots:', $doctor->availabilitySlots->toArray());
+\Log::info('Available slots for next 7 days:', $availableSlots);
 
         return view('doctors.show', compact('doctor', 'availableSlots'));
     }

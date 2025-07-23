@@ -152,6 +152,14 @@ class Doctor extends Model
     }
 
     /**
+     * Get full address (method version)
+     */
+    public function getFullAddress()
+    {
+        return $this->getFullAddressAttribute();
+    }
+
+    /**
      * Get consultation fee in dollars
      */
     public function getConsultationFeeDollarsAttribute()

@@ -21,6 +21,12 @@ class Review extends Model
         'google_review_id',
         'google_posted_at',
         'source',
+        // Guest reviewer fields
+        'guest_name',
+        'guest_email',
+        'verification_token',
+        'token_expires_at',
+        'is_verified',
     ];
 
     protected $casts = [
@@ -29,6 +35,8 @@ class Review extends Model
         'is_approved' => 'boolean',
         'posted_to_google' => 'boolean',
         'google_posted_at' => 'datetime',
+        'token_expires_at' => 'datetime',
+        'is_verified' => 'boolean',
     ];
 
     /**
@@ -145,7 +153,7 @@ class Review extends Model
             return 'Anonymous Patient';
         }
 
-        return $this->patient->name;
+        return $this->patient ? $this->patient->name : $this->guest_name;
     }
 
     /**
@@ -197,5 +205,69 @@ class Review extends Model
             'google_review_id' => $googleReviewId,
             'google_posted_at' => now(),
         ]);
+    }
+
+    /**
+     * Check if this is a guest review
+     */
+    public function isGuestReview()
+    {
+        return is_null($this->patient_id) && !empty($this->guest_email);
+    }
+
+    /**
+     * Generate verification token for guest reviews
+     */
+    public function generateVerificationToken()
+    {
+        $this->verification_token = bin2hex(random_bytes(32));
+        $this->token_expires_at = now()->addHours(24);
+        $this->save();
+
+        return $this->verification_token;
+    }
+
+    /**
+     * Verify guest review with token
+     */
+    public function verifyWithToken($token)
+    {
+        if ($this->verification_token === $token &&
+            $this->token_expires_at &&
+            $this->token_expires_at->isFuture()) {
+
+            $this->is_verified = true;
+            $this->save();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Scope for guest reviews
+     */
+    public function scopeGuest($query)
+    {
+        return $query->whereNull('patient_id')->whereNotNull('guest_email');
+    }
+
+    /**
+     * Scope for registered patient reviews
+     */
+    public function scopeRegistered($query)
+    {
+        return $query->whereNotNull('patient_id');
+    }
+
+    /**
+     * Scope for verified reviews (both registered and verified guest reviews)
+     */
+    public function scopeVerified($query)
+    {
+        return $query->where(function($q) {
+            $q->whereNotNull('patient_id')
+              ->orWhere('is_verified', true);
+        });
     }
 }

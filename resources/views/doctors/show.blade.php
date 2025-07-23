@@ -110,7 +110,7 @@
                                 </div>
                                 <div class="flex items-center text-gray-700">
                                     <i class="fas fa-map-marker-alt mr-3 text-blue-600"></i>
-                                    <span>{{ $doctor->getFullAddress() }}</span>
+                                    <span>{{ $doctor->full_address }}</span>
                                 </div>
                             </div>
                         </div>
@@ -137,8 +137,8 @@
                                         <span class="font-medium">{{ $dayName }}</span>
                                         <div class="text-sm text-gray-600">
                                             @if($groupedSlots->has($day))
-                                                @foreach($groupedSlots[$day] as $slot)
-                                                    <div>{{ date('g:i A', strtotime($slot->start_time)) }} - {{ date('g:i A', strtotime($slot->end_time)) }}</div>
+                                                @foreach($groupedSlots[$day] as $timeSlot)
+                                                    <div>{{ date('g:i A', strtotime($timeSlot->start_time)) }} - {{ date('g:i A', strtotime($timeSlot->end_time)) }}</div>
                                                 @endforeach
                                             @else
                                                 <span class="text-gray-400">Not Available</span>
@@ -208,7 +208,7 @@
                                                 <span class="text-sm text-gray-500">({{ \Carbon\Carbon::parse($date)->format('l') }})</span>
                                             </div>
                                             <div class="grid grid-cols-2 gap-1">
-                                                @foreach($slots->take(4) as $slot)
+                                                @foreach($slots->take(4) as $timeSlot) as $slot)
                                                     <button class="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100 transition-colors">
                                                         {{ \Carbon\Carbon::parse($slot['start_time'])->format('g:i A') }}
                                                     </button>

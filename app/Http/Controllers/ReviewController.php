@@ -26,27 +26,57 @@ class ReviewController extends Controller
     /**
      * Show the form for creating a new review
      */
-    public function create(Appointment $appointment)
+    public function create(Request $request, $appointmentNumber = null)
     {
-        // Check if user can review this appointment
-        if ($appointment->patient_id !== Auth::id()) {
-            abort(403);
+        if ($appointmentNumber) {
+            // Guest review creation
+            $request->validate([
+                'email' => 'required|email',
+            ]);
+
+            $appointment = Appointment::where('appointment_number', $appointmentNumber)
+                ->where('guest_email', $request->email)
+                ->with(['doctor.user', 'doctor.specialty'])
+                ->firstOrFail();
+
+            // Check if appointment is completed
+            if ($appointment->status !== 'completed') {
+                return redirect()->back()->withErrors(['error' => 'You can only review completed appointments.']);
+            }
+
+            // Check if review already exists
+            if ($appointment->review) {
+                return redirect()->route('reviews.guest.show', [
+                    'appointment' => $appointmentNumber,
+                    'email' => $request->email
+                ])->with('info', 'You have already reviewed this appointment.');
+            }
+
+            return view('reviews.guest.create', compact('appointment'));
+        } else {
+            // Registered user review creation
+            $appointment = Appointment::findOrFail($request->appointment_id);
+
+            // Check if user can review this appointment
+            if ($appointment->patient_id !== Auth::id()) {
+                abort(403);
+            }
+
+            // Check if appointment is completed
+            if ($appointment->status !== 'completed') {
+                return redirect()->back()->withErrors(['error' => 'You can only review completed appointments.']);
+            }
+
+            // Check if review already exists
+            if ($appointment->review) {
+                return redirect()->route('reviews.show', $appointment->review)
+                    ->with('info', 'You have already reviewed this appointment.');
+            }
+
+            $appointment->load(['doctor.user', 'doctor.specialty']);
+
+            return view('reviews.create', compact('appointment'));
         }
-
-        // Check if appointment is completed
-        if ($appointment->status !== 'completed') {
-            return redirect()->back()->withErrors(['error' => 'You can only review completed appointments.']);
-        }
-
-        // Check if review already exists
-        if ($appointment->review) {
-            return redirect()->route('reviews.show', $appointment->review)
-                ->with('info', 'You have already reviewed this appointment.');
-        }
-
-        $appointment->load(['doctor.user', 'doctor.specialty']);
-
-        return view('reviews.create', compact('appointment'));
     }
 
     /**
@@ -54,47 +84,101 @@ class ReviewController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'appointment_id' => 'required|exists:appointments,id',
+        // Base validation rules
+        $rules = [
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
             'is_anonymous' => 'boolean',
             'consent_google_posting' => 'boolean',
-        ]);
+        ];
 
-        $appointment = Appointment::findOrFail($request->appointment_id);
-
-        // Check if user can review this appointment
-        if ($appointment->patient_id !== Auth::id()) {
-            abort(403);
+        // Add validation based on user type
+        if (Auth::check()) {
+            $rules['appointment_id'] = 'required|exists:appointments,id';
+        } else {
+            $rules = array_merge($rules, [
+                'appointment_number' => 'required|string',
+                'guest_email' => 'required|email',
+                'guest_name' => 'required_unless:is_anonymous,true|string|max:255',
+            ]);
         }
 
-        // Check if appointment is completed
-        if ($appointment->status !== 'completed') {
-            return back()->withErrors(['error' => 'You can only review completed appointments.']);
+        $request->validate($rules);
+
+        if (Auth::check()) {
+            // Registered user review
+            $appointment = Appointment::findOrFail($request->appointment_id);
+
+            // Check if user can review this appointment
+            if ($appointment->patient_id !== Auth::id()) {
+                abort(403);
+            }
+
+            // Check if appointment is completed
+            if ($appointment->status !== 'completed') {
+                return back()->withErrors(['error' => 'You can only review completed appointments.']);
+            }
+
+            // Check if review already exists
+            if ($appointment->review) {
+                return redirect()->route('reviews.show', $appointment->review)
+                    ->with('info', 'You have already reviewed this appointment.');
+            }
+
+            $review = Review::create([
+                'doctor_id' => $appointment->doctor_id,
+                'patient_id' => Auth::id(),
+                'appointment_id' => $appointment->id,
+                'rating' => $request->rating,
+                'comment' => $request->comment,
+                'is_anonymous' => $request->boolean('is_anonymous'),
+                'is_approved' => true, // Auto-approve for now
+                'source' => 'medcura',
+            ]);
+
+            return redirect()->route('reviews.show', $review)
+                ->with('success', 'Thank you for your review!');
+        } else {
+            // Guest review
+            $appointment = Appointment::where('appointment_number', $request->appointment_number)
+                ->where('guest_email', $request->guest_email)
+                ->firstOrFail();
+
+            // Check if appointment is completed
+            if ($appointment->status !== 'completed') {
+                return back()->withErrors(['error' => 'You can only review completed appointments.']);
+            }
+
+            // Check if review already exists
+            if ($appointment->review) {
+                return redirect()->route('reviews.guest.show', [
+                    'appointment' => $request->appointment_number,
+                    'email' => $request->guest_email
+                ])->with('info', 'You have already reviewed this appointment.');
+            }
+
+            $review = Review::create([
+                'doctor_id' => $appointment->doctor_id,
+                'appointment_id' => $appointment->id,
+                'rating' => $request->rating,
+                'comment' => $request->comment,
+                'is_anonymous' => $request->boolean('is_anonymous'),
+                'guest_name' => $request->boolean('is_anonymous') ? null : $request->guest_name,
+                'guest_email' => $request->guest_email,
+                'is_approved' => false, // Require verification for guest reviews
+                'source' => 'medcura',
+            ]);
+
+            // Generate verification token
+            $review->generateVerificationToken();
+
+            // TODO: Send verification email
+
+            return redirect()->route('reviews.guest.verify', [
+                'review' => $review->id,
+                'email' => $request->guest_email
+            ])->with('success', 'Thank you for your review! Please check your email to verify and publish your review.');
         }
-
-        // Check if review already exists
-        if ($appointment->review) {
-            return redirect()->route('reviews.show', $appointment->review)
-                ->with('info', 'You have already reviewed this appointment.');
-        }
-
-        $review = Review::create([
-            'doctor_id' => $appointment->doctor_id,
-            'patient_id' => Auth::id(),
-            'appointment_id' => $appointment->id,
-            'rating' => $request->rating,
-            'comment' => $request->comment,
-            'is_anonymous' => $request->boolean('is_anonymous'),
-            'is_approved' => true, // Auto-approve for now
-            'source' => 'medcura',
-        ]);
-
-        // TODO: If consent_google_posting is true, queue job to post to Google Reviews
-
-        return redirect()->route('reviews.show', $review)
-            ->with('success', 'Thank you for your review!');
     }
 
     /**
@@ -256,5 +340,147 @@ class ReviewController extends Controller
                 'total' => $reviews->total(),
             ]
         ]);
+    }
+
+    /**
+     * Show guest review verification form
+     */
+    public function guestVerify(Request $request, $reviewId)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $review = Review::where('id', $reviewId)
+            ->where('guest_email', $request->email)
+            ->firstOrFail();
+
+        return view('reviews.guest.verify', compact('review'));
+    }
+
+    /**
+     * Verify guest review with token
+     */
+    public function guestVerifyToken(Request $request, $reviewId)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'email' => 'required|email',
+        ]);
+
+        $review = Review::where('id', $reviewId)
+            ->where('guest_email', $request->email)
+            ->firstOrFail();
+
+        if ($review->verifyWithToken($request->token)) {
+            $review->update(['is_approved' => true]);
+
+            return redirect()->route('doctors.show', $review->doctor)
+                ->with('success', 'Review verified and published successfully!');
+        }
+
+        return back()->withErrors(['token' => 'Invalid or expired verification token.']);
+    }
+
+    /**
+     * Show guest review
+     */
+    public function guestShow(Request $request, $appointmentNumber)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $appointment = Appointment::where('appointment_number', $appointmentNumber)
+            ->where('guest_email', $request->email)
+            ->with(['review', 'doctor.user', 'doctor.specialty'])
+            ->firstOrFail();
+
+        if (!$appointment->review) {
+            return redirect()->route('reviews.guest.create', [
+                'appointment' => $appointmentNumber,
+                'email' => $request->email
+            ])->with('info', 'You haven\'t reviewed this appointment yet.');
+        }
+
+        return view('reviews.guest.show', compact('appointment'));
+    }
+
+    /**
+     * Show guest review creation form
+     */
+    public function guestCreate(Request $request, $appointmentNumber)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $appointment = Appointment::where('appointment_number', $appointmentNumber)
+            ->where('guest_email', $request->email)
+            ->where('status', 'completed')
+            ->with(['doctor.user', 'doctor.specialty', 'review'])
+            ->firstOrFail();
+
+        if ($appointment->review) {
+            return redirect()->route('reviews.guest.show', [
+                'appointment' => $appointmentNumber,
+                'email' => $request->email
+            ])->with('info', 'You have already reviewed this appointment.');
+        }
+
+        return view('reviews.guest.create', compact('appointment'));
+    }
+
+    /**
+     * Store guest review
+     */
+    public function guestStore(Request $request)
+    {
+        $request->validate([
+            'appointment_number' => 'required|string',
+            'guest_email' => 'required|email',
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
+            'guest_name' => 'nullable|string|max:255',
+            'is_anonymous' => 'boolean',
+            'consent_google_posting' => 'boolean',
+        ]);
+
+        $appointment = Appointment::where('appointment_number', $request->appointment_number)
+            ->where('guest_email', $request->guest_email)
+            ->where('status', 'completed')
+            ->firstOrFail();
+
+        if ($appointment->review) {
+            return redirect()->route('reviews.guest.show', [
+                'appointment' => $request->appointment_number,
+                'email' => $request->guest_email
+            ])->with('error', 'You have already reviewed this appointment.');
+        }
+
+        // Create the review
+        $review = Review::create([
+            'doctor_id' => $appointment->doctor_id,
+            'patient_id' => null, // Guest review
+            'appointment_id' => $appointment->id,
+            'rating' => $request->rating,
+            'comment' => $request->comment,
+            'guest_name' => $request->is_anonymous ? null : $request->guest_name,
+            'guest_email' => $request->guest_email,
+            'is_anonymous' => $request->boolean('is_anonymous'),
+            'is_verified' => false, // Requires verification
+            'source' => 'guest',
+        ]);
+
+        // Generate verification token
+        $review->generateVerificationToken();
+
+        // Send verification email
+        // TODO: Implement email sending
+
+        return redirect()->route('appointments.guest.show', [
+            'appointment' => $request->appointment_number,
+            'email' => $request->guest_email
+        ])->with('success', 'Review submitted! Please check your email to verify and publish your review.');
     }
 }

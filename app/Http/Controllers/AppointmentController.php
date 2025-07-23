@@ -16,6 +16,11 @@ class AppointmentController extends Controller
      */
     public function index(Request $request)
     {
+        // Redirect guests to guest appointment lookup
+        if (!Auth::check()) {
+            return redirect()->route('appointments.guest.lookup');
+        }
+
         $query = Auth::user()->appointments()
             ->with(['doctor.user', 'doctor.specialty']);
 
@@ -63,14 +68,39 @@ class AppointmentController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        // Base validation rules
+        $rules = [
             'doctor_id' => 'required|exists:doctors,id',
             'appointment_date' => 'required|date|after:now',
             'reason' => 'required|string|max:500',
             'symptoms' => 'nullable|string|max:1000',
             'appointment_type' => 'required|in:in_person,video_call,phone_call',
             'patient_notes' => 'nullable|string|max:1000',
-        ]);
+        ];
+
+        // Add validation rules based on booking type for guests
+        if (!Auth::check()) {
+            $bookingType = $request->input('booking_type', 'guest');
+
+            if ($bookingType === 'guest') {
+                $rules = array_merge($rules, [
+                    'guest_name' => 'required|string|max:255',
+                    'guest_email' => 'required|email|max:255',
+                    'guest_phone' => 'required|string|max:20',
+                    'guest_date_of_birth' => 'required|date|before:today',
+                    'guest_gender' => 'required|in:male,female,other',
+                    'guest_address' => 'nullable|string|max:500',
+                ]);
+            } elseif ($bookingType === 'register') {
+                $rules = array_merge($rules, [
+                    'reg_name' => 'required|string|max:255',
+                    'reg_email' => 'required|email|max:255|unique:users,email',
+                    'reg_password' => 'required|string|min:8|confirmed',
+                ]);
+            }
+        }
+
+        $request->validate($rules);
 
         $doctor = Doctor::findOrFail($request->doctor_id);
 
@@ -88,9 +118,27 @@ class AppointmentController extends Controller
 
         DB::beginTransaction();
         try {
-            $appointment = Appointment::create([
+            $patientId = null;
+
+            // Handle user creation if registering during booking
+            if (!Auth::check() && $request->input('booking_type') === 'register') {
+                $user = \App\Models\User::create([
+                    'name' => $request->reg_name,
+                    'email' => $request->reg_email,
+                    'password' => bcrypt($request->reg_password),
+                    'role' => 'patient',
+                ]);
+
+                Auth::login($user);
+                $patientId = $user->id;
+            } elseif (Auth::check()) {
+                $patientId = Auth::id();
+            }
+
+            // Create appointment data
+            $appointmentData = [
                 'doctor_id' => $doctor->id,
-                'patient_id' => Auth::id(),
+                'patient_id' => $patientId,
                 'appointment_date' => $appointmentDate,
                 'appointment_end' => $appointmentDate->copy()->addMinutes($doctor->appointment_duration),
                 'status' => $doctor->auto_approve_appointments ? 'confirmed' : 'pending',
@@ -99,7 +147,26 @@ class AppointmentController extends Controller
                 'appointment_type' => $request->appointment_type,
                 'patient_notes' => $request->patient_notes,
                 'consultation_fee' => $doctor->consultation_fee,
-            ]);
+            ];
+
+            // Add guest data if booking as guest
+            if (!Auth::check() && $request->input('booking_type') === 'guest') {
+                $appointmentData = array_merge($appointmentData, [
+                    'guest_name' => $request->guest_name,
+                    'guest_email' => $request->guest_email,
+                    'guest_phone' => $request->guest_phone,
+                    'guest_date_of_birth' => $request->guest_date_of_birth,
+                    'guest_gender' => $request->guest_gender,
+                    'guest_address' => $request->guest_address,
+                ]);
+            }
+
+            $appointment = Appointment::create($appointmentData);
+
+            // Generate verification token for guest appointments
+            if ($appointment->isGuestAppointment()) {
+                $appointment->generateVerificationToken();
+            }
 
             if ($doctor->auto_approve_appointments) {
                 $appointment->confirm();
@@ -107,11 +174,18 @@ class AppointmentController extends Controller
 
             DB::commit();
 
-            // TODO: Send email notification to doctor and patient
+            // TODO: Send email notification to doctor and patient/guest
             // TODO: Add to calendar
 
-            return redirect()->route('appointments.show', $appointment)
-                ->with('success', 'Appointment booked successfully!');
+            if ($appointment->isGuestAppointment()) {
+                return redirect()->route('appointments.guest.show', [
+                    'appointment' => $appointment->appointment_number,
+                    'email' => $appointment->guest_email
+                ])->with('success', 'Appointment booked successfully! Check your email for verification and appointment details.');
+            } else {
+                return redirect()->route('appointments.show', $appointment)
+                    ->with('success', 'Appointment booked successfully!');
+            }
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -264,4 +338,101 @@ class AppointmentController extends Controller
             default => '#6b7280'
         };
     }
+
+    /**
+     * Show guest appointment lookup form
+     */
+    public function guestLookup()
+    {
+        return view('appointments.guest.lookup');
+    }
+
+    /**
+     * Find guest appointments by email
+     */
+    public function guestSearch(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $appointments = Appointment::guest()
+            ->byGuestEmail($request->email)
+            ->with(['doctor.user', 'doctor.specialty'])
+            ->orderBy('appointment_date', 'desc')
+            ->get();
+
+        if ($appointments->isEmpty()) {
+            return back()->withErrors(['email' => 'No appointments found for this email address.']);
+        }
+
+        return view('appointments.guest.list', compact('appointments'));
+    }
+
+    /**
+     * Show guest appointment details
+     */
+    public function guestShow(Request $request, $appointmentNumber)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $appointment = Appointment::where('appointment_number', $appointmentNumber)
+            ->where('guest_email', $request->email)
+            ->with(['doctor.user', 'doctor.specialty'])
+            ->firstOrFail();
+
+        return view('appointments.guest.show', compact('appointment'));
+    }
+
+    /**
+     * Verify guest appointment
+     */
+    public function guestVerify(Request $request, $appointmentNumber)
+    {
+        $request->validate([
+            'token' => 'required|string',
+        ]);
+
+        $appointment = Appointment::where('appointment_number', $appointmentNumber)
+            ->firstOrFail();
+
+        if ($appointment->verifyWithToken($request->token)) {
+            return redirect()->route('appointments.guest.show', [
+                'appointment' => $appointmentNumber,
+                'email' => $appointment->guest_email
+            ])->with('success', 'Appointment verified successfully!');
+        }
+
+        return back()->withErrors(['token' => 'Invalid or expired verification token.']);
+    }
+
+    /**
+     * Cancel guest appointment
+     */
+    public function guestCancel(Request $request, $appointmentNumber)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'cancellation_reason' => 'nullable|string|max:500',
+        ]);
+
+        $appointment = Appointment::where('appointment_number', $appointmentNumber)
+            ->where('guest_email', $request->email)
+            ->firstOrFail();
+
+        if (!$appointment->canBeCancelled()) {
+            return back()->withErrors(['error' => 'This appointment cannot be cancelled.']);
+        }
+
+        $appointment->cancel('patient', $request->cancellation_reason);
+
+        return redirect()->route('appointments.guest.show', [
+            'appointment' => $appointmentNumber,
+            'email' => $request->email
+        ])->with('success', 'Appointment cancelled successfully.');
+    }
+
+
 }

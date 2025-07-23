@@ -10,17 +10,45 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserSettingsController;
 use App\Http\Controllers\Doctor\DashboardController as DoctorDashboardController;
 use App\Http\Controllers\Doctor\AvailabilityController;
+use App\Http\Controllers\Auth\PatientRegistrationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('main');
 });
+
+// Patient registration routes
+Route::get('/register/patient', [PatientRegistrationController::class, 'create'])->name('patient.register');
+Route::post('/register/patient', [PatientRegistrationController::class, 'store'])->name('patient.register');
+
 // Public doctor routes
 Route::get('/doctors', [DoctorController::class, 'index'])->name('doctors.index');
-Route::get('/doctors/{doctor}', [DoctorController::class, 'show'])->name('doctors.show');
-Route::get('/doctors/{doctor}/slots', [DoctorController::class, 'getAvailableSlots'])->name('doctors.slots');
 Route::get('/doctors/search', [DoctorController::class, 'search'])->name('doctors.search');
+Route::get('/doctors/{doctor}/slots', [DoctorController::class, 'getAvailableSlots'])->name('doctors.slots');
+Route::get('/doctors/{doctor}', [DoctorController::class, 'show'])->name('doctors.show');
 Route::get('/doctors/{doctor}/reviews', [ReviewController::class, 'doctorReviews'])->name('doctors.reviews');
+
+// Public appointment booking (for guests)
+Route::get('/appointments/{doctor}/create', [AppointmentController::class, 'create'])->name('appointments.create');
+Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
+
+// Guest appointment management
+Route::prefix('appointments/guest')->name('appointments.guest.')->group(function () {
+    Route::get('/lookup', [AppointmentController::class, 'guestLookup'])->name('lookup');
+    Route::post('/search', [AppointmentController::class, 'guestSearch'])->name('search');
+    Route::get('/{appointment}', [AppointmentController::class, 'guestShow'])->name('show');
+    Route::post('/{appointment}/verify', [AppointmentController::class, 'guestVerify'])->name('verify');
+    Route::post('/{appointment}/cancel', [AppointmentController::class, 'guestCancel'])->name('cancel');
+});
+
+// Guest review management
+Route::prefix('reviews/guest')->name('reviews.guest.')->group(function () {
+    Route::get('/{appointment}/create', [ReviewController::class, 'guestCreate'])->name('create');
+    Route::post('/store', [ReviewController::class, 'guestStore'])->name('store');
+    Route::get('/{review}/verify', [ReviewController::class, 'guestVerify'])->name('verify');
+    Route::post('/{review}/verify', [ReviewController::class, 'guestVerifyToken'])->name('verify.token');
+    Route::get('/{appointment}/show', [ReviewController::class, 'guestShow'])->name('show');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/ask-ai', [OpenAIController::class, 'showForm'])->name('ask-ai');
@@ -34,8 +62,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [OpenAIController::class, 'dashboard'])->name('dashboard');
 
     // Appointment routes for patients
-    Route::resource('appointments', AppointmentController::class)->except(['edit', 'update']);
-    Route::get('/appointments/{doctor}/create', [AppointmentController::class, 'create'])->name('appointments.create');
+    Route::resource('appointments', AppointmentController::class)->except(['edit', 'update', 'create', 'store']);
     Route::post('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
     Route::post('/appointments/{appointment}/reschedule', [AppointmentController::class, 'reschedule'])->name('appointments.reschedule');
     Route::get('/appointments/calendar/events', [AppointmentController::class, 'getCalendarEvents'])->name('appointments.calendar.events');
