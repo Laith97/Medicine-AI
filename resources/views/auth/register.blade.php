@@ -30,7 +30,7 @@
                                 id="name" 
                                 type="text" 
                                 name="name" 
-                                class="form-control auth-input @error('name') is-invalid @enderror" 
+                                class="form-control auth-input @if($errors ?? false) @error('name') is-invalid @enderror @endif" 
                                 value="{{ old('name') }}" 
                                 required 
                                 autofocus
@@ -111,7 +111,7 @@
                             <label for="specialty" class="form-label">
                                 <i class="bi bi-heart-pulse me-2"></i>Medical Specialty <span class="text-danger">*</span>
                             </label>
-                            <select class="form-control auth-input @error('specialty') is-invalid @enderror" name="specialty" id="specialty" required>
+                            <select class="form-control auth-input @error('specialty') is-invalid @enderror" name="specialty_select" id="specialty_select" onchange="toggleCustomSpecialty()">
                                 <option value="">-- Select Your Specialty --</option>
                                 
                                 <optgroup label="🧠 General & Internal Medicine">
@@ -197,10 +197,37 @@
                                     <option value="Occupational & Environmental Medicine">Occupational & Environmental Medicine</option>
                                     <option value="Sports Medicine">Sports Medicine</option>
                                 </optgroup>
+                                
+                                <optgroup label="✏️ Custom">
+                                    <option value="other">Other (Please specify)</option>
+                                </optgroup>
                             </select>
-                            @error('specialty')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            
+                            <!-- Custom Specialty Input (Hidden by default) -->
+                            <div id="custom_specialty_container" style="display: none;" class="mt-2">
+                                <input 
+                                    type="text" 
+                                    name="custom_specialty" 
+                                    id="custom_specialty" 
+                                    class="form-control auth-input @if($errors ?? false) @error('custom_specialty') is-invalid @enderror @endif"
+                                    placeholder="Please enter your medical specialty"
+                                    value="{{ old('custom_specialty') }}"
+                                >
+                                @if($errors ?? false)
+                                    @error('custom_specialty')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                @endif
+                            </div>
+                            
+                            <!-- Hidden field to store the final specialty value -->
+                            <input type="hidden" name="specialty" id="specialty" value="{{ old('specialty') }}">
+                            
+                            @if($errors ?? false)
+                                @error('specialty')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            @endif
                         </div>
 
                         <!-- Terms Agreement -->
@@ -401,6 +428,32 @@ select.form-control.auth-input {
     box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.25);
 }
 
+/* Custom specialty input styling */
+#custom_specialty_container {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#custom_specialty {
+    border: 2px solid #e9ecef;
+    transition: border-color 0.3s ease;
+}
+
+#custom_specialty:focus {
+    border-color: #DE6262;
+    box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.25);
+}
+
 @media (max-width: 768px) {
     .auth-card {
         padding: 2rem;
@@ -426,5 +479,83 @@ function togglePassword(inputId) {
         eye.className = 'bi bi-eye';
     }
 }
+
+function toggleCustomSpecialty() {
+    const select = document.getElementById('specialty_select');
+    const customContainer = document.getElementById('custom_specialty_container');
+    const customInput = document.getElementById('custom_specialty');
+    const hiddenInput = document.getElementById('specialty');
+    
+    if (select.value === 'other') {
+        customContainer.style.display = 'block';
+        customInput.required = true;
+        customInput.focus();
+        hiddenInput.value = ''; // Clear hidden field when showing custom input
+    } else {
+        customContainer.style.display = 'none';
+        customInput.required = false;
+        customInput.value = '';
+        hiddenInput.value = select.value; // Set hidden field to selected value
+    }
+}
+
+// Update hidden field when custom specialty is typed
+document.addEventListener('DOMContentLoaded', function() {
+    const customInput = document.getElementById('custom_specialty');
+    const hiddenInput = document.getElementById('specialty');
+    const select = document.getElementById('specialty_select');
+    
+    // Handle custom input changes
+    customInput.addEventListener('input', function() {
+        if (select.value === 'other') {
+            hiddenInput.value = this.value;
+        }
+    });
+    
+    // Handle form submission to ensure proper validation
+    const form = document.querySelector('.auth-form');
+    form.addEventListener('submit', function(e) {
+        const select = document.getElementById('specialty_select');
+        const customInput = document.getElementById('custom_specialty');
+        const hiddenInput = document.getElementById('specialty');
+        
+        if (select.value === 'other') {
+            if (!customInput.value.trim()) {
+                e.preventDefault();
+                customInput.focus();
+                customInput.classList.add('is-invalid');
+                return false;
+            }
+            hiddenInput.value = customInput.value.trim();
+        } else {
+            hiddenInput.value = select.value;
+        }
+    });
+    
+    // Initialize on page load (for validation errors)
+    const oldSpecialty = '{{ old("specialty") }}';
+    const oldCustomSpecialty = '{{ old("custom_specialty") }}';
+    
+    if (oldCustomSpecialty) {
+        document.getElementById('specialty_select').value = 'other';
+        toggleCustomSpecialty();
+        document.getElementById('custom_specialty').value = oldCustomSpecialty;
+        document.getElementById('specialty').value = oldCustomSpecialty;
+    } else if (oldSpecialty) {
+        // Check if old specialty exists in dropdown
+        const selectOptions = Array.from(document.getElementById('specialty_select').options);
+        const optionExists = selectOptions.some(option => option.value === oldSpecialty);
+        
+        if (optionExists) {
+            document.getElementById('specialty_select').value = oldSpecialty;
+        } else {
+            // If specialty doesn't exist in dropdown, treat as custom
+            document.getElementById('specialty_select').value = 'other';
+            toggleCustomSpecialty();
+            document.getElementById('custom_specialty').value = oldSpecialty;
+        }
+        document.getElementById('specialty').value = oldSpecialty;
+    }
+});
 </script>
 @endsection

@@ -21,13 +21,22 @@ class UserSettingsController extends Controller
         $request->validate([
             'criterion' => ['required', Rule::in(['NICE', 'CDC', 'Mayo Clinic'])],
             'specialty' => ['nullable', 'string', 'max:255'],
+            'custom_specialty' => ['nullable', 'string', 'max:255'],
         ]);
+
+        // Determine the final specialty value
+        $specialty = $request->specialty;
+        
+        // If specialty is empty but custom_specialty is provided, use custom_specialty
+        if (empty($specialty) && !empty($request->custom_specialty)) {
+            $specialty = trim($request->custom_specialty);
+        }
 
         auth()->user()->setting()->updateOrCreate(
             ['user_id' => auth()->id()],
             [
                 'criterion' => $request->criterion,
-                'specialty' => $request->specialty
+                'specialty' => $specialty
             ]
         );
 
