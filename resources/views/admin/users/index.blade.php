@@ -152,15 +152,9 @@
                                     <span class="text-muted">{{ $user->email }}</span>
                                 </td>
                                 <td>
-                                    @if($user->isAdmin())
-                                        <span class="badge bg-success">
-                                            <i class="bi bi-shield-check me-1"></i>Admin
-                                        </span>
-                                    @else
-                                        <span class="badge bg-secondary">
-                                            <i class="bi bi-person me-1"></i>User
-                                        </span>
-                                    @endif
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-person me-1"></i>User
+                                    </span>
                                 </td>
                                 <td>
                                     <span class="text-muted">{{ $user->created_at->format('M d, Y') }}</span>
@@ -177,25 +171,14 @@
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         
-                                        @if($user->id !== auth()->id())
-                                            <form action="{{ route('admin.users.toggle-admin', $user) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="action-btn btn btn-outline-info btn-sm" title="{{ $user->isAdmin() ? 'Remove Admin' : 'Make Admin' }}">
-                                                    <i class="bi bi-{{ $user->isAdmin() ? 'shield-x' : 'shield-check' }}"></i>
-                                                </button>
-                                            </form>
-                                            
-                                            <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline" 
-                                                  onsubmit="return confirm('Are you sure you want to delete this user?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="action-btn btn btn-outline-danger btn-sm">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        @else
-                                            <span class="badge bg-light text-dark">Current User</span>
-                                        @endif
+                                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline" 
+                                              onsubmit="return confirm('Are you sure you want to delete this user?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="action-btn btn btn-outline-danger btn-sm">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>

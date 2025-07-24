@@ -29,9 +29,8 @@ class CreateMonthlyInvoices implements ShouldQueue
     {
         $invoiceService = new StripeInvoiceService();
         
-        // Get all users who are not admins and have token usage in the period
-        $users = User::where('is_admin', false)
-            ->whereHas('openaiUsages', function ($query) {
+        // Get all users who have token usage in the period
+        $users = User::whereHas('openaiUsages', function ($query) {
                 $query->whereBetween('created_at', [$this->startDate, $this->endDate]);
             })
             ->get();

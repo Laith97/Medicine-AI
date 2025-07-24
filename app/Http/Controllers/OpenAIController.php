@@ -2623,7 +2623,7 @@ class OpenAIController extends Controller
 
             // Check if user is approaching their token limit
             $user = auth()->user();
-            if ($user && !$user->is_admin) {
+            if ($user) {
                 $this->checkTokenLimits($user);
             }
 

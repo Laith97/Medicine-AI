@@ -8,10 +8,13 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\UserSettingsController;
 use App\Http\Controllers\Admin\AdminInvoiceController;
+use App\Http\Controllers\Admin\AdminAuthController;
+use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('main');
+    $showPricingSection = SystemSetting::get('show_pricing_section', true);
+    return view('main', compact('showPricingSection'));
 });
 
 Route::middleware('auth')->group(function () {
@@ -48,11 +51,7 @@ Route::middleware('auth')->group(function () {
 Route::get('/contact', [ContactController::class, 'show'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
-// Admin route to view contact submissions
-Route::middleware('auth')->group(function () {
-    Route::get('/admin/contact-submissions', [ContactController::class, 'adminIndex'])->name('admin.contact-submissions');
-    Route::patch('/admin/contact-submissions/{submission}/mark-read', [ContactController::class, 'markAsRead'])->name('admin.contact-submissions.mark-read');
-});
+// Contact submission routes moved to admin middleware group below
 Route::get('/about', [UserSettingsController::class, 'about'])->name('about');
 
 // Stripe webhook (outside auth middleware)
@@ -67,17 +66,27 @@ Route::post('/stripe/webhook', [SubscriptionController::class, 'webhook'])->name
 
 
 
+// Admin authentication routes
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AdminAuthController::class, 'login']);
+    Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+});
+
 // Admin routes
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::resource('users', AdminController::class);
-    Route::post('/users/{user}/toggle-admin', [AdminController::class, 'toggleAdmin'])->name('users.toggle-admin');
     Route::get('/users/{user}/patient-analyses', [AdminController::class, 'userPatientAnalyses'])->name('users.patient-analyses');
     
     // Billing and subscription management
     Route::get('/billing', [AdminController::class, 'billing'])->name('billing');
     Route::get('/billing/export', [AdminController::class, 'exportBilling'])->name('billing.export');
     Route::get('/usage-analytics', [AdminController::class, 'usageAnalytics'])->name('usage-analytics');
+    
+    // System settings
+    Route::get('/system-settings', [AdminController::class, 'systemSettings'])->name('system-settings');
+    Route::post('/system-settings', [AdminController::class, 'updateSystemSettings'])->name('system-settings.update');
     
     // Invoice management for admin
     Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
@@ -89,6 +98,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/invoices/{invoice}/pdf', [AdminInvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
     Route::post('/invoices/generate-monthly', [AdminInvoiceController::class, 'generateMonthlyInvoices'])->name('invoices.generate-monthly');
     Route::get('/invoices/export', [AdminInvoiceController::class, 'export'])->name('invoices.export');
+    
+    // Contact submission management
+    Route::get('/contact-submissions', [ContactController::class, 'adminIndex'])->name('contact-submissions');
+    Route::patch('/contact-submissions/{submission}/mark-read', [ContactController::class, 'markAsRead'])->name('contact-submissions.mark-read');
 });
 
 Route::middleware('auth')->group(function () {

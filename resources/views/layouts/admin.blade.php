@@ -264,17 +264,12 @@
                 <!-- System Section -->
                 <div class="nav-section">System</div>
                 <div class="nav-item">
-                    <a href="{{ route('settings') }}" class="nav-link {{ request()->routeIs('settings') ? 'active' : '' }}">
-                        <i class="fas fa-cog"></i>
-                        <span>Settings</span>
+                    <a href="{{ route('admin.system-settings') }}" class="nav-link {{ request()->routeIs('admin.system-settings*') ? 'active' : '' }}">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>System Settings</span>
                     </a>
                 </div>
-                <div class="nav-item">
-                    <a href="{{ route('dashboard') }}" class="nav-link">
-                        <i class="fas fa-arrow-left"></i>
-                        <span>Back to Main Site</span>
-                    </a>
-                </div>
+         
             </div>
 
             <!-- User Info -->
@@ -284,7 +279,7 @@
                         <i class="fas fa-user"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <div class="fw-semibold">{{ Auth::user()->name }}</div>
+                        <div class="fw-semibold">{{ Auth::guard('admin')->user()->name }}</div>
                         <small class="text-white-50">Administrator</small>
                     </div>
                     <div class="dropdown">
@@ -293,13 +288,7 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
-                                <a class="dropdown-item" href="{{ route('settings') }}">
-                                    <i class="fas fa-user-cog me-2"></i>Profile
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form method="POST" action="{{ route('logout') }}">
+                                <form method="POST" action="{{ route('admin.logout') }}">
                                     @csrf
                                     <button type="submit" class="dropdown-item text-danger">
                                         <i class="fas fa-sign-out-alt me-2"></i>Logout
