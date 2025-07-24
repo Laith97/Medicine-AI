@@ -107,20 +107,12 @@
                             @enderror
                         </div>
 
-                        <!-- Admin Status -->
+                        <!-- Note: Admin privileges are managed through the separate Admin system -->
                         <div class="mb-4">
-                            <div class="form-check">
-                                <input class="form-check-input @error('is_admin') is-invalid @enderror" 
-                                       type="checkbox" name="is_admin" value="1" id="is_admin" 
-                                       {{ old('is_admin') ? 'checked' : '' }}>
-                                <label class="form-check-label fw-bold" for="is_admin">
-                                    Grant admin privileges
-                                </label>
-                            </div>
-                            <small class="text-muted">Admin users can manage all system users and settings.</small>
-                            @error('is_admin')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-2"></i>
+                                This creates a regular user account. Admin privileges are managed separately through the Admin system.
+                            </small>
                         </div>
 
                         <!-- Buttons -->

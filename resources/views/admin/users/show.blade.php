@@ -111,15 +111,9 @@
                             {{ substr($user->name, 0, 1) }}
                         </div>
                         <h3>{{ $user->name }}</h3>
-                        @if($user->isAdmin())
-                            <span class="badge bg-success fs-6">
-                                <i class="bi bi-shield-check me-1"></i>Administrator
-                            </span>
-                        @else
-                            <span class="badge bg-secondary fs-6">
-                                <i class="bi bi-person me-1"></i>Regular User
-                            </span>
-                        @endif
+                        <span class="badge bg-secondary fs-6">
+                            <i class="bi bi-person me-1"></i>Regular User
+                        </span>
                     </div>
 
                     <div class="row">
@@ -251,14 +245,6 @@
                         </h5>
                         
                         <div class="d-grid gap-3">
-                            <form action="{{ route('admin.users.toggle-admin', $user) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn btn-warning w-100">
-                                    <i class="bi bi-{{ $user->isAdmin() ? 'shield-x' : 'shield-check' }} me-2"></i>
-                                    {{ $user->isAdmin() ? 'Remove Admin Rights' : 'Grant Admin Rights' }}
-                                </button>
-                            </form>
-                            
                             <form action="{{ route('admin.users.destroy', $user) }}" method="POST" 
                                   onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone.')">
                                 @csrf

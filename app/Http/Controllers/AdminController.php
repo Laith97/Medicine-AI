@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\OpenAIUsage;
 use App\Models\Subscription;
 use App\Models\PatientAnalysis;
+use App\Models\SystemSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Response;
@@ -43,14 +44,12 @@ class AdminController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'is_admin' => ['boolean'],
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'is_admin' => $request->boolean('is_admin', false),
         ]);
 
         return redirect()->route('admin.users.index')
@@ -83,13 +82,11 @@ class AdminController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
-            'is_admin' => ['boolean'],
         ]);
 
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
-            'is_admin' => $request->boolean('is_admin', false),
         ];
 
         if ($request->filled('password')) {
@@ -119,28 +116,7 @@ class AdminController extends Controller
                         ->with('success', 'User deleted successfully.');
     }
 
-    /**
-     * Toggle admin status for a user.
-     */
-    public function toggleAdmin(User $user)
-    {
-        // Prevent admin from removing their own admin privileges
-        if ($user->id === auth()->id()) {
-            return redirect()->route('admin.users.index')
-                            ->with('error', 'You cannot modify your own admin status.');
-        }
 
-        if ($user->isAdmin()) {
-            $user->removeAdmin();
-            $message = 'Admin privileges removed from ' . $user->name;
-        } else {
-            $user->makeAdmin();
-            $message = 'Admin privileges granted to ' . $user->name;
-        }
-
-        return redirect()->route('admin.users.index')
-                        ->with('success', $message);
-    }
 
     /**
      * Show admin dashboard with statistics.
@@ -149,8 +125,8 @@ class AdminController extends Controller
     {
         $stats = [
             'total_users' => User::count(),
-            'admin_users' => User::where('is_admin', true)->count(),
-            'regular_users' => User::where('is_admin', false)->count(),
+            'admin_users' => \App\Models\Admin::count(),
+            'regular_users' => User::count(), // All users in the users table are regular users now
             'recent_users' => User::where('created_at', '>=', now()->subDays(7))->count(),
         ];
 
@@ -431,5 +407,33 @@ class AdminController extends Controller
         return Subscription::where('status', 'active')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->sum('amount');
+    }
+
+    /**
+     * Display system settings page
+     */
+    public function systemSettings()
+    {
+        $settings = SystemSetting::all()->keyBy('key');
+        return view('admin.system-settings', compact('settings'));
+    }
+
+    /**
+     * Update system settings
+     */
+    public function updateSystemSettings(Request $request)
+    {
+        $request->validate([
+            'show_pricing_section' => 'boolean'
+        ]);
+
+        SystemSetting::set(
+            'show_pricing_section', 
+            $request->has('show_pricing_section') ? '1' : '0', 
+            'boolean',
+            'Show/hide the Choose Your Plan section on the home page'
+        );
+
+        return redirect()->back()->with('success', 'System settings updated successfully.');
     }
 }
