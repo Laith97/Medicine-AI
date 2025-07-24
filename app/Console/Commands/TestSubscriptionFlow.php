@@ -30,16 +30,15 @@ class TestSubscriptionFlow extends Command
         $this->newLine();
 
         // Test 1: Check if users exist
-        $users = User::where('is_admin', false)->get();
-        $this->info("Found {$users->count()} non-admin users");
+        $users = User::get();
+        $this->info("Found {$users->count()} users");
         
         if ($users->isEmpty()) {
-            $this->error('No non-admin users found. Creating a test user...');
+            $this->error('No users found. Creating a test user...');
             $user = User::create([
                 'name' => 'Test Subscription User',
                 'email' => 'subscription.test@example.com',
                 'password' => bcrypt('password'),
-                'is_admin' => false,
             ]);
             $this->info("Created test user: {$user->name}");
         } else {

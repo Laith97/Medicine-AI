@@ -488,6 +488,7 @@
     </div>
 </section>
 
+@if($showPricingSection)
 <!-- Pricing Section -->
 <section id="pricing" class="py-5 bg-white">
     <div class="container">
@@ -611,6 +612,7 @@
         </div>
     </div>
 </section>
+@endif
 
 <!-- CTA Section -->
 <section class="cta-section">
@@ -697,8 +699,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // User is logged in, proceed with checkout
                 handleSubscription(plan, billingCycle);
             @else
-                // Redirect to login with plan info
-                window.location.href = `/login?plan=${plan}&billing=${billingCycle}`;
+                // Redirect to registration with plan info
+                window.location.href = `/register?plan=${plan}&billing=${billingCycle}`;
             @endauth
         });
     });

@@ -55,7 +55,7 @@ class AdminInvoiceController extends Controller
         $invoices = $query->orderBy('created_at', 'desc')->paginate(20);
 
         // Get users for filter dropdown
-        $users = User::where('is_admin', false)->orderBy('name')->get();
+        $users = User::orderBy('name')->get();
 
         // Calculate summary statistics
         $totalUnpaid = StripeInvoice::unpaid()->sum('amount_due') - StripeInvoice::unpaid()->sum('amount_paid');
@@ -87,7 +87,7 @@ class AdminInvoiceController extends Controller
      */
     public function create()
     {
-        $users = User::where('is_admin', false)->orderBy('name')->get();
+        $users = User::orderBy('name')->get();
         return view('admin.invoices.create', compact('users'));
     }
 

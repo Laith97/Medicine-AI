@@ -109,29 +109,13 @@
                             @enderror
                         </div>
 
-                        <!-- Admin Status -->
-                        @if($user->id !== auth()->id())
-                            <div class="mb-4">
-                                <div class="form-check">
-                                    <input class="form-check-input @error('is_admin') is-invalid @enderror" 
-                                           type="checkbox" name="is_admin" value="1" id="is_admin" 
-                                           {{ old('is_admin', $user->is_admin) ? 'checked' : '' }}>
-                                    <label class="form-check-label fw-bold" for="is_admin">
-                                        Grant admin privileges
-                                    </label>
-                                </div>
-                                <small class="text-muted">Admin users can manage all system users and settings.</small>
-                                @error('is_admin')
-                                    <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        @else
-                            <div class="alert alert-warning">
-                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                <strong>Note:</strong> You cannot modify your own admin status.
-                            </div>
-                            <input type="hidden" name="is_admin" value="{{ $user->is_admin ? '1' : '0' }}">
-                        @endif
+                        <!-- Note: Admin privileges are managed through the separate Admin system -->
+                        <div class="mb-4">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-2"></i>
+                                This manages a regular user account. Admin privileges are managed separately through the Admin system.
+                            </small>
+                        </div>
 
                         <!-- Buttons -->
                         <div class="d-flex justify-content-end gap-3">
