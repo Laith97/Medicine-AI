@@ -180,13 +180,6 @@
                                         </a>
 
                                         @if($user->id !== auth()->id())
-                                            <form action="{{ route('admin.users.toggle-admin', $user) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="action-btn btn btn-outline-info btn-sm" title="{{ $user->isAdmin() ? 'Remove Admin' : 'Make Admin' }}">
-                                                    <i class="bi bi-{{ $user->isAdmin() ? 'shield-x' : 'shield-check' }}"></i>
-                                                </button>
-                                            </form>
-
                                             <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline"
                                                   onsubmit="return confirm('Are you sure you want to delete this user?')">
                                                 @csrf

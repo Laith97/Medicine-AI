@@ -316,21 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             @enderror
                         </div>
 
-                        <!-- Admin Status -->
-                        <div class="mb-4">
-                            <div class="form-check">
-                                <input class="form-check-input @error('is_admin') is-invalid @enderror"
-                                       type="checkbox" name="is_admin" value="1" id="is_admin"
-                                       {{ old('is_admin') ? 'checked' : '' }}>
-                                <label class="form-check-label fw-bold" for="is_admin">
-                                    Grant admin privileges
-                                </label>
-                            </div>
-                            <small class="text-muted">Admin users can manage all system users and settings.</small>
-                            @error('is_admin')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
+
 
                         <!-- Buttons -->
                         <div class="d-flex justify-content-end gap-3">
