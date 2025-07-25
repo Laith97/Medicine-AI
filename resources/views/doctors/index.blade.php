@@ -166,9 +166,9 @@
                             @endif
 
                             <!-- Consultation Fee -->
-                            <div class="d-flex align-items-center fw-bold mb-3">
+                            <div class="d-flex align-items-center fw-bold mb-3 text-success">
                                 <i class="fas fa-dollar-sign me-2"></i>
-                                <span>${{ number_format($doctor->consultation_fee / 100, 2) }} consultation</span>
+                                <span>{{ number_format($doctor->consultation_fee / 100, 2) }} consultation</span>
                             </div>
 
                             <!-- Bio -->

@@ -106,7 +106,7 @@
     <div class="container">
         <!-- Admin Header -->
         <div class="admin-header">
-            <h1 class="h2 mb-2">Admin Dashboard</h1>
+            <h1 class="h2 mb-2 text-white">Admin Dashboard</h1>
             <p class="mb-0 opacity-75">Manage users and system settings</p>
         </div>
 

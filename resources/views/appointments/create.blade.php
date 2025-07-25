@@ -786,17 +786,35 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Appointment type change
-    document.querySelectorAll('input[name="appointment_type"]').forEach(radio => {
-        radio.addEventListener('change', function() {
+    // Appointment type selection
+    const appointmentTypeCards = document.querySelectorAll('.appointment-type-card');
+    
+    appointmentTypeCards.forEach(card => {
+        card.addEventListener('click', function() {
+            // Remove previous selection
+            appointmentTypeCards.forEach(c => c.classList.remove('selected'));
+            
+            // Add selection to current card
+            this.classList.add('selected');
+            
+            // Check the radio button
+            const radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+            
+            // Update summary
             const typeMap = {
                 'in_person': 'In-Person Visit',
                 'video_call': 'Video Call',
                 'phone_call': 'Phone Call'
             };
-            summaryType.textContent = typeMap[this.value];
+            summaryType.textContent = typeMap[radio.value];
         });
     });
+    
+    // Set default selection (first card)
+    if (appointmentTypeCards.length > 0) {
+        appointmentTypeCards[0].click();
+    }
 
     function showTimeSlots(date) {
         const slots = availableSlots[date] || [];

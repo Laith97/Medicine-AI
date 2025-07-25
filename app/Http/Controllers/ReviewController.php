@@ -26,10 +26,34 @@ class ReviewController extends Controller
     /**
      * Show the form for creating a new review
      */
-    public function create(Request $request, $appointmentNumber = null)
+    public function create(Request $request, Appointment $appointment = null)
     {
-        if ($appointmentNumber) {
-            // Guest review creation
+        // If appointment is passed as route parameter (from /appointments/{appointment}/review)
+        if ($appointment) {
+            // Check if user can review this appointment
+            if ($appointment->patient_id !== Auth::id()) {
+                abort(403);
+            }
+
+            // Check if appointment is completed
+            if ($appointment->status !== 'completed') {
+                return redirect()->route('appointments.show', $appointment)
+                    ->withErrors(['error' => 'You can only review completed appointments.']);
+            }
+
+            // Check if review already exists
+            if ($appointment->review) {
+                return redirect()->route('reviews.show', $appointment->review)
+                    ->with('info', 'You have already reviewed this appointment.');
+            }
+
+            $appointment->load(['doctor.user', 'doctor.specialty']);
+            return view('reviews.create', compact('appointment'));
+        }
+
+        // Guest review creation (legacy support)
+        $appointmentNumber = $request->route('appointment');
+        if ($appointmentNumber && !is_object($appointmentNumber)) {
             $request->validate([
                 'email' => 'required|email',
             ]);
@@ -53,8 +77,10 @@ class ReviewController extends Controller
             }
 
             return view('reviews.guest.create', compact('appointment'));
-        } else {
-            // Registered user review creation
+        }
+
+        // Fallback for other cases
+        if ($request->has('appointment_id')) {
             $appointment = Appointment::findOrFail($request->appointment_id);
 
             // Check if user can review this appointment
@@ -74,9 +100,10 @@ class ReviewController extends Controller
             }
 
             $appointment->load(['doctor.user', 'doctor.specialty']);
-
             return view('reviews.create', compact('appointment'));
         }
+
+        abort(404);
     }
 
     /**
@@ -136,6 +163,9 @@ class ReviewController extends Controller
                 'source' => 'medcura',
             ]);
 
+            // Update doctor's review statistics
+            $this->updateDoctorReviewStats($appointment->doctor_id);
+
             return redirect()->route('reviews.show', $review)
                 ->with('success', 'Thank you for your review!');
         } else {
@@ -171,6 +201,11 @@ class ReviewController extends Controller
 
             // Generate verification token
             $review->generateVerificationToken();
+
+            // Update doctor's review statistics (for approved reviews only)
+            if ($review->is_approved) {
+                $this->updateDoctorReviewStats($appointment->doctor_id);
+            }
 
             // TODO: Send verification email
 
@@ -244,6 +279,9 @@ class ReviewController extends Controller
             'is_anonymous' => $request->boolean('is_anonymous'),
         ]);
 
+        // Update doctor's review statistics
+        $this->updateDoctorReviewStats($review->doctor_id);
+
         return redirect()->route('reviews.show', $review)
             ->with('success', 'Review updated successfully!');
     }
@@ -263,7 +301,11 @@ class ReviewController extends Controller
             return back()->withErrors(['error' => 'Reviews can only be deleted within 24 hours of posting.']);
         }
 
+        $doctorId = $review->doctor_id;
         $review->delete();
+
+        // Update doctor's review statistics
+        $this->updateDoctorReviewStats($doctorId);
 
         return redirect()->route('reviews.index')
             ->with('success', 'Review deleted successfully.');
@@ -374,6 +416,9 @@ class ReviewController extends Controller
 
         if ($review->verifyWithToken($request->token)) {
             $review->update(['is_approved' => true]);
+            
+            // Update doctor's review statistics now that review is approved
+            $this->updateDoctorReviewStats($review->doctor_id);
 
             return redirect()->route('doctors.show', $review->doctor)
                 ->with('success', 'Review verified and published successfully!');
@@ -404,6 +449,24 @@ class ReviewController extends Controller
         }
 
         return view('reviews.guest.show', compact('appointment'));
+    }
+
+    /**
+     * Update doctor's review statistics
+     */
+    private function updateDoctorReviewStats($doctorId)
+    {
+        $doctor = \App\Models\Doctor::find($doctorId);
+        if ($doctor) {
+            $reviews = $doctor->reviews()->where('is_approved', true);
+            $totalReviews = $reviews->count();
+            $averageRating = $totalReviews > 0 ? $reviews->avg('rating') : 0;
+            
+            $doctor->update([
+                'total_reviews' => $totalReviews,
+                'average_rating' => round($averageRating, 2)
+            ]);
+        }
     }
 
     /**

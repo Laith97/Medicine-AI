@@ -14,7 +14,7 @@
         <!-- Dashboard Header -->
         <div class="dashboard-header">
             <h2 class="h1 mb-1" style="font-weight: 700;">Patient Reviews</h2>
-            <p class="text-muted">Manage and view feedback from your patients</p>
+            <p>Manage and view feedback from your patients</p>
         </div>
 
         <!-- Stats Cards -->
@@ -117,7 +117,7 @@
                                         @if($i <= $review->rating)
                                             <i class="fas fa-star"></i>
                                         @else
-                                            <i class="far fa-star"></i>
+                                            <i class="star"></i>
                                         @endif
                                     @endfor
                                 </div>
@@ -180,7 +180,9 @@
                                     <span>
                                         Related to appointment on
                                         {{ $review->appointment->appointment_date->format('M j, Y') }}
-                                        at {{ $review->appointment->appointment_time->format('g:i A') }}
+                                        @if($review->appointment->appointment_time)
+                                            at {{ $review->appointment->appointment_time->format('g:i A') }}
+                                        @endif
                                     </span>
                                 </div>
                                 @if($review->appointment->reason)

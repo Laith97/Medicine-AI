@@ -117,12 +117,12 @@ class AvailabilityController extends Controller
     /**
      * Show the form for editing the specified availability slot
      */
-    public function edit(AvailabilitySlot $availabilitySlot)
+    public function edit(AvailabilitySlot $availability)
     {
         $doctor = Auth::user()->doctor;
 
         // Check if this slot belongs to the doctor
-        if ($availabilitySlot->doctor_id !== $doctor->id) {
+        if ($availability->doctor_id !== $doctor->id) {
             abort(403);
         }
 
@@ -136,42 +136,49 @@ class AvailabilityController extends Controller
             'sunday' => 'Sunday'
         ];
 
-        return view('doctor.availability.edit', compact('availabilitySlot', 'daysOfWeek'));
+        return view('doctor.availability.edit', compact('availability', 'daysOfWeek'));
     }
 
     /**
      * Update the specified availability slot
      */
-    public function update(Request $request, AvailabilitySlot $availabilitySlot)
+    public function update(Request $request, AvailabilitySlot $availability)
     {
         $doctor = Auth::user()->doctor;
 
         // Check if this slot belongs to the doctor
-        if ($availabilitySlot->doctor_id !== $doctor->id) {
+        if ($availability->doctor_id !== $doctor->id) {
             abort(403);
         }
 
+        // Convert start_time to H:i format if it has seconds
+        $startTime = strlen($request->start_time) > 5 ? substr($request->start_time, 0, 5) : $request->start_time;
+
         $request->validate([
             'day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
+            'start_time' => 'required',
+            'end_time' => 'required',
             'slot_duration' => 'required|integer|min:15|max:120',
             'max_bookings_per_slot' => 'required|integer|min:1|max:10',
-            'effective_from' => 'nullable|date|after_or_equal:today',
+            'effective_from' => 'nullable|date',
             'effective_until' => 'nullable|date|after:effective_from',
             'is_active' => 'boolean',
         ]);
 
+        if (strtotime($request->end_time) <= strtotime($startTime)) {
+            return back()->withInput()->withErrors(['end_time' => 'End time must be after start time.']);
+        }
+
         // Check for overlapping slots (excluding current slot)
         $overlapping = $doctor->availabilitySlots()
-            ->where('id', '!=', $availabilitySlot->id)
+            ->where('id', '!=', $availability->id)
             ->where('day_of_week', $request->day_of_week)
             ->where('is_active', true)
-            ->where(function ($query) use ($request) {
-                $query->whereBetween('start_time', [$request->start_time, $request->end_time])
-                      ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
-                      ->orWhere(function ($q) use ($request) {
-                          $q->where('start_time', '<=', $request->start_time)
+            ->where(function ($query) use ($startTime, $request) {
+                $query->whereBetween('start_time', [$startTime, $request->end_time])
+                      ->orWhereBetween('end_time', [$startTime, $request->end_time])
+                      ->orWhere(function ($q) use ($startTime, $request) {
+                          $q->where('start_time', '<=', $startTime)
                             ->where('end_time', '>=', $request->end_time);
                       });
             })
@@ -181,9 +188,9 @@ class AvailabilityController extends Controller
             return back()->withErrors(['error' => 'This time slot overlaps with an existing availability slot.']);
         }
 
-        $availabilitySlot->update([
+        $availability->update([
             'day_of_week' => $request->day_of_week,
-            'start_time' => $request->start_time,
+            'start_time' => $startTime,
             'end_time' => $request->end_time,
             'slot_duration' => $request->slot_duration,
             'max_bookings_per_slot' => $request->max_bookings_per_slot,
@@ -199,12 +206,12 @@ class AvailabilityController extends Controller
     /**
      * Remove the specified availability slot
      */
-    public function destroy(AvailabilitySlot $availabilitySlot)
+    public function destroy(AvailabilitySlot $availability)
     {
         $doctor = Auth::user()->doctor;
 
         // Check if this slot belongs to the doctor
-        if ($availabilitySlot->doctor_id !== $doctor->id) {
+        if ($availability->doctor_id !== $doctor->id) {
             abort(403);
         }
 
@@ -218,7 +225,7 @@ class AvailabilityController extends Controller
             return back()->withErrors(['error' => 'Cannot delete availability slot with future appointments. Please cancel or reschedule appointments first.']);
         }
 
-        $availabilitySlot->delete();
+        $availability->delete();
 
         return redirect()->route('doctor.availability.index')
             ->with('success', 'Availability slot deleted successfully.');
@@ -227,20 +234,20 @@ class AvailabilityController extends Controller
     /**
      * Toggle availability slot status
      */
-    public function toggle(AvailabilitySlot $availabilitySlot)
+    public function toggle(AvailabilitySlot $availability)
     {
         $doctor = Auth::user()->doctor;
 
         // Check if this slot belongs to the doctor
-        if ($availabilitySlot->doctor_id !== $doctor->id) {
+        if ($availability->doctor_id !== $doctor->id) {
             abort(403);
         }
 
-        $availabilitySlot->update([
-            'is_active' => !$availabilitySlot->is_active
+        $availability->update([
+            'is_active' => !$availability->is_active
         ]);
 
-        $status = $availabilitySlot->is_active ? 'activated' : 'deactivated';
+        $status = $availability->is_active ? 'activated' : 'deactivated';
 
         return back()->with('success', "Availability slot {$status} successfully.");
     }

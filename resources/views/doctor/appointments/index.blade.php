@@ -74,22 +74,22 @@
                         </thead>
                         <tbody>
                             @foreach($appointments as $appointment)
-                                <tr class="hover:bg-gray-50">
+                                <tr>
                                     <!-- Patient -->
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-10 w-10">
-                                                <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                                                    <span class="text-sm font-medium text-primary-600">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <span class="fw-medium text-primary">
                                                         {{ substr($appointment->patient->name, 0, 1) }}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div class="ml-4">
-                                                <div class="text-sm font-medium text-gray-900">
+                                            <div>
+                                                <div class="fw-medium">
                                                     {{ $appointment->patient->name }}
                                                 </div>
-                                                <div class="text-sm text-gray-500">
+                                                <div class="text-muted small">
                                                     {{ $appointment->patient->email }}
                                                 </div>
                                             </div>
@@ -97,79 +97,75 @@
                                     </td>
 
                                     <!-- Date & Time -->
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">
+                                    <td>
+                                        <div class="fw-medium">
                                             {{ $appointment->appointment_date->format('M j, Y') }}
                                         </div>
-                                        <div class="text-sm text-gray-500">
-                                            {{ $appointment->appointment_date->format('g:i A') }} - {{ $appointment->appointment_end->format('g:i A') }}
+                                        <div class="text-muted small">
+                                            {{ $appointment->appointment_date->format('g:i A') }}
                                         </div>
                                     </td>
 
                                     <!-- Type -->
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <i class="fas fa-{{ $appointment->appointment_type == 'video_call' ? 'video' : ($appointment->appointment_type == 'phone_call' ? 'phone' : 'hospital') }} mr-2 text-gray-400"></i>
-                                            <span class="text-sm text-gray-900">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-{{ $appointment->appointment_type == 'video_call' ? 'video' : ($appointment->appointment_type == 'phone_call' ? 'phone' : 'hospital') }} me-2 text-muted"></i>
+                                            <span>
                                                 {{ ucfirst(str_replace('_', ' ', $appointment->appointment_type)) }}
                                             </span>
                                         </div>
                                     </td>
 
                                     <!-- Status -->
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td>
                                         @php
                                             $statusColors = [
-                                                'pending' => 'bg-yellow-100 text-yellow-800',
-                                                'confirmed' => 'bg-green-100 text-green-800',
-                                                'completed' => 'bg-primary-100 text-primary-800',
-                                                'cancelled' => 'bg-red-100 text-red-800',
-                                                'no_show' => 'bg-gray-100 text-gray-800'
+                                                'pending' => 'bg-warning',
+                                                'confirmed' => 'bg-success',
+                                                'completed' => 'bg-success',
+                                                'cancelled' => 'bg-danger',
+                                                'no_show' => 'bg-secondary'
                                             ];
                                         @endphp
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusColors[$appointment->status] ?? 'bg-gray-100 text-gray-800' }}">
+                                        <span class="badge {{ $statusColors[$appointment->status] ?? 'bg-secondary' }}">
                                             {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
                                         </span>
                                     </td>
 
                                     <!-- Reason -->
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-900 max-w-xs truncate">
+                                    <td>
+                                        <div class="text-truncate" style="max-width: 200px;">
                                             {{ $appointment->reason }}
                                         </div>
                                     </td>
 
                                     <!-- Actions -->
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <div class="flex items-center space-x-2">
-                                            <a href="{{ route('doctor.appointments.show', $appointment) }}"
-                                               class="text-primary-600 hover:text-primary-900">
+                                    <td>
+                                        <div class="gap-1">
+                                            <a href="{{ route('doctor.appointments.show', $appointment) }}" class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-eye"></i>
                                             </a>
 
                                             @if($appointment->status == 'pending')
-                                                <form method="POST" action="{{ route('doctor.appointments.confirm', $appointment) }}" class="inline">
+                                                <form method="POST" action="{{ route('doctor.appointments.confirm', $appointment) }}" class="d-inline">
                                                     @csrf
-                                                    <button type="submit" class="text-green-600 hover:text-green-900" title="Confirm">
+                                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Confirm">
                                                         <i class="fas fa-check"></i>
                                                     </button>
                                                 </form>
                                             @endif
 
                                             @if($appointment->status == 'confirmed')
-                                                <button onclick="completeAppointment({{ $appointment->id }})"
-                                                        class="text-primary-600 hover:text-primary-900" title="Complete">
+                                                <button onclick="completeAppointment({{ $appointment->id }})" class="btn btn-sm btn-outline-primary" title="Complete">
                                                     <i class="fas fa-check-circle"></i>
                                                 </button>
-                                                <button onclick="markNoShow({{ $appointment->id }})"
-                                                        class="text-gray-600 hover:text-gray-900" title="No Show">
+                                                <button onclick="markNoShow({{ $appointment->id }})" class="btn btn-sm btn-outline-secondary" title="No Show">
                                                     <i class="fas fa-user-times"></i>
                                                 </button>
                                             @endif
 
                                             @if(in_array($appointment->status, ['pending', 'confirmed']))
-                                                <button onclick="cancelAppointment({{ $appointment->id }})"
-                                                        class="text-red-600 hover:text-red-900" title="Cancel">
+                                                <button onclick="cancelAppointment({{ $appointment->id }})" class="btn btn-sm btn-outline-danger" title="Cancel">
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             @endif
@@ -184,18 +180,16 @@
 
             <!-- Pagination -->
             @if($appointments->hasPages())
-                <div class="mt-8 flex justify-center">
+                <div class="d-flex justify-content-center mt-4">
                     {{ $appointments->links() }}
                 </div>
             @endif
         @else
-            <!-- Empty State -->
-            <div class="bg-white rounded-lg shadow-md p-12 text-center">
-                <i class="fas fa-calendar-times text-6xl text-gray-300 mb-4"></i>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">No appointments found</h3>
-                <p class="text-gray-600 mb-6">No appointments match your current filters.</p>
-                <a href="{{ route('doctor.appointments.index') }}"
-                   class="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors">
+            <div class="table-card text-center py-5">
+                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                <h5>No appointments found</h5>
+                <p class="text-muted">No appointments match your current filters.</p>
+                <a href="{{ route('doctor.appointments.index') }}" class="btn btn-primary-custom">
                     Clear Filters
                 </a>
             </div>

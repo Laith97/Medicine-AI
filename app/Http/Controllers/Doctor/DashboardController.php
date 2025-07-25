@@ -181,7 +181,7 @@ class DashboardController extends Controller
 
         $request->validate([
             'doctor_notes' => 'nullable|string|max:2000',
-            'follow_up_required' => 'boolean'
+            'follow_up_required' => 'nullable'
         ]);
 
         $appointment->update([
@@ -241,10 +241,10 @@ class DashboardController extends Controller
         }
 
         $reviews = $query->latest()->paginate(15);
-        
+
         // Calculate positive reviews (ratings 4-5)
         $positiveReviews = $doctor->reviews()->whereIn('rating', [4, 5])->count();
-        
+
         // Calculate recent reviews (this month)
         $recentReviews = $doctor->reviews()->whereMonth('created_at', now()->month)->count();
 
