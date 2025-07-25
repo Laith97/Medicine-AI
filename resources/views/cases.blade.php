@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('title', 'Patients Page')
+@section('title', 'Patient Cases')
 
 @section('content')
 @push('styles')
@@ -8,156 +8,204 @@
 <link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
 
 <style>
-    /* Global Font (Cases Page Only) */
-    .cases-container {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    }
-
-    .cases-container {
+    .dashboard-container {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         min-height: 100vh;
         padding: 2rem 0;
     }
-
-    .cases-header {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        color: white;
-        padding: 2rem;
+    
+    .subscription-card {
+        background: white;
         border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border: none;
         margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(44, 62, 80, 0.3);
         position: relative;
         overflow: hidden;
     }
-
-    .cases-header::before {
+    
+    .subscription-card::before {
         content: '';
         position: absolute;
         top: 0;
+        left: 0;
         right: 0;
-        width: 100px;
-        height: 100%;
-        background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
-        opacity: 0.1;
-        transform: skewX(-15deg);
+        height: 4px;
+        background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
     }
-
-    .cases-header h5 {
-        margin: 0;
-        font-weight: 700;
-        font-size: 2rem;
-        color: white;
-    }
-
-    .cases-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border-radius: 25px;
-        box-shadow: 0 15px 50px rgba(44, 62, 80, 0.1);
+    
+    .stats-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         border: none;
+        height: 100%;
+        text-align: center;
+        position: relative;
         overflow: hidden;
         transition: all 0.3s ease;
     }
-
-    .cases-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 60px rgba(44, 62, 80, 0.15);
-    }
-
-    .cases-card-header {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        color: white;
-        padding: 1.5rem 2rem;
-        border-bottom: none;
-        position: relative;
-    }
-
-    .cases-card-header::after {
+    
+    .stats-card::before {
         content: '';
         position: absolute;
-        bottom: 0;
+        top: 0;
         left: 0;
-        width: 100%;
-        height: 4px;
-        background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
+        right: 0;
+        height: 3px;
+        background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(222, 98, 98, 0.15);
     }
 
-    .cases-card-body {
+    /* Enhanced Table Styling - Smaller and Cleaner */
+    .table-custom {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        font-size: 0.9rem;
+    }
+    
+    .table-custom thead th {
+        background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
+        color: white;
+        font-weight: 600;
+        border: none;
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    
+    .table-custom tbody td {
+        padding: 0.75rem 0.5rem;
+        border-color: #f1f3f4;
+        vertical-align: middle;
+        font-size: 0.85rem;
+    }
+    
+    .table-custom tbody tr:hover {
+        background-color: rgba(222, 98, 98, 0.03);
+    }
+    
+    /* Compact action buttons */
+    .table-custom .btn-sm {
+        padding: 0.35rem 0.6rem;
+        font-size: 0.75rem;
+        border-radius: 8px;
+        min-width: 40px;
+    }
+    
+    .table-custom .btn-sm i {
+        font-size: 0.8rem;
+    }
+
+    /* Page Header */
+    .page-header {
+        background: white;
+        border-radius: 20px;
         padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
+    }
+    
+    .page-header h1 {
+        background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
     }
 
-    .btn-add-patient {
-        background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
+    /* Enhanced stat numbers */
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    /* Button Styling - Matching Invoice/Subscription Design */
+    .btn-custom-primary {
+        background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
         border: none;
         color: white;
         font-weight: 600;
-        padding: 0.6rem 1.5rem;
+        padding: 0.75rem 1.5rem;
         border-radius: 25px;
         box-shadow: 0 4px 15px rgba(222, 98, 98, 0.3);
         transition: all 0.3s ease;
         text-decoration: none;
     }
 
-    .btn-add-patient:hover {
+    .btn-custom-primary:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(222, 98, 98, 0.4);
         color: white;
         text-decoration: none;
     }
 
-    .custom-table {
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    }
-
-    .custom-table thead {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        color: white;
-    }
-
-    .custom-table thead th {
-        border: none;
-        padding: 1rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.85rem;
-        letter-spacing: 0.5px;
-    }
-
-    .custom-table tbody tr {
-        transition: all 0.3s ease;
+    .btn-custom-secondary {
         background: white;
-    }
-
-    .custom-table tbody tr:hover {
-        background: linear-gradient(135deg, rgba(222, 98, 98, 0.05) 0%, rgba(222, 98, 98, 0.02) 100%);
-        transform: scale(1.01);
-    }
-
-    .custom-table tbody td {
-        padding: 1rem;
-        border: none;
-        border-bottom: 1px solid #f1f3f4;
-        vertical-align: middle;
-    }
-
-    .btn-view-response {
-        background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
-        border: none;
-        color: white;
-        font-weight: 500;
+        border: 2px solid #e9ecef;
+        color: #6c757d;
+        font-weight: 600;
         padding: 0.5rem 1rem;
-        border-radius: 20px;
-        box-shadow: 0 2px 8px rgba(222, 98, 98, 0.3);
+        border-radius: 15px;
         transition: all 0.3s ease;
-        font-size: 0.85rem;
+        text-decoration: none;
+        font-size: 0.9rem;
     }
 
-    .btn-view-response:hover {
+    .btn-custom-secondary:hover {
+        border-color: #DE6262;
+        color: #DE6262;
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(222, 98, 98, 0.4);
-        background: linear-gradient(135deg, #c55252 0%, #b04848 100%);
-        color: white;
+        text-decoration: none;
+    }
+
+    /* Status badges - matching invoice design */
+    .badge {
+        font-weight: 600;
+        padding: 0.5rem 0.75rem;
+        border-radius: 12px;
+    }
+
+    /* Action buttons in table */
+    .btn-group .btn {
+        margin-right: 0.25rem;
+    }
+
+    .btn-group .btn:last-child {
+        margin-right: 0;
     }
 
     /* DataTables Styling */
@@ -1306,63 +1354,34 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     }
 
     @media (max-width: 768px) {
-        .cases-header h5 {
-            font-size: 1.5rem;
+        .dashboard-container {
+            padding: 1rem 0;
         }
         
-        .cases-card-body {
-            padding: 0.75rem;
+        .page-header,
+        .subscription-card,
+        .stats-card {
+            margin: 1rem;
+            padding: 1.5rem;
+        }
+        
+        .page-header h1 {
+            font-size: 1.75rem;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
         }
 
-        /* Form responsive fixes */
-        .cases-card-body h1,
-        .cases-card-body h2,
-        .cases-card-body h3,
-        .cases-card-body h4,
-        .cases-card-body h5,
-        .cases-card-body h6 {
-            font-size: 1.1rem !important;
-            line-height: 1.3 !important;
-            margin-bottom: 0.75rem !important;
-            word-break: break-word !important;
+        /* Table responsive fixes */
+        .table-custom {
+            font-size: 0.85rem;
         }
-
-        .cases-card-body .form-label,
-        .cases-card-body .col-form-label {
-            font-size: 0.9rem !important;
-            font-weight: 600 !important;
-            margin-bottom: 0.5rem !important;
-            word-break: break-word !important;
-        }
-
-        .cases-card-body .form-control,
-        .cases-card-body .form-select {
-            font-size: 0.9rem !important;
-            padding: 0.5rem 0.75rem !important;
-        }
-
-        .cases-card-body .btn {
-            font-size: 0.85rem !important;
-            padding: 0.5rem 1rem !important;
-        }
-
-        .cases-card-body .card-title {
-            font-size: 1.1rem !important;
-            margin-bottom: 0.75rem !important;
-        }
-
-        .cases-card-body .card-text {
-            font-size: 0.9rem !important;
-            line-height: 1.4 !important;
-        }
-
-        .cases-card-body .row {
-            margin-bottom: 0.75rem !important;
-        }
-
-        .cases-card-body .col-md-6,
-        .cases-card-body .col-lg-6 {
-            margin-bottom: 0.5rem !important;
+        
+        .btn-custom-primary,
+        .btn-custom-secondary {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
         }
         
         .col-lg-2-4 {
@@ -1625,85 +1644,79 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
 </style>
 @endpush
 
-<div class="cases-container">
+<div class="dashboard-container">
     <div class="container-fluid">
- 
-        
-        @php
-            $hasRecords = $records->count() > 0;
-        @endphp
-        
-        <!-- Cases Header -->
-        <div class="cases-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5>Patient Records</h5>
-                    <p class="mb-0 opacity-75">Manage and view all patient cases</p>
-                </div>
-                <a href="{{ route('ask-ai') }}" class="btn-add-patient">
-                    <i class="fas fa-plus me-2"></i>Add New Patient
-                </a>
-            </div>
-        </div>
-        
-        <!-- Recent Patients Section -->
-        @if($hasRecords)
-        <div class="recent-patients-card mb-4">
-            <div class="card-header bg-white p-3 d-flex justify-content-between align-items-center">
-                <h6 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Patients</h6>
-                <span class="badge bg-primary">Last 5 patients</span>
-            </div>
-            <div class="card-body p-0">
-                <div class="row g-0">
-                    @foreach($records->sortByDesc('created_at')->take(5) as $recentRecord)
-                    <div class="col-md-4 col-lg-2-4 border-end border-bottom">
-                        <div class="recent-patient-item p-3">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="mb-0 text-truncate" style="max-width: 150px;">{{ $recentRecord->name }}</h6>
-                                <span class="badge bg-light text-dark">{{ $recentRecord->gender }}</span>
-                            </div>
-                            <div class="small text-muted mb-2">
-                                <i class="fas fa-calendar-days me-1"></i> {{ \Carbon\Carbon::parse($recentRecord->created_at)->format('M d, Y') }}
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="badge bg-light text-dark">{{ $recentRecord->age }} years</span>
-                                <button class="btn btn-sm btn-view-response" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#responseModal" 
-                                        data-record-id="{{ $recentRecord->id }}"
-                                        data-patient-name="{{ $recentRecord->name }}"
-                                        data-patient-key="{{ $recentRecord->patient_key }}"
-                                        data-response="{{ htmlentities($recentRecord->ai_response) }}"
-                                        data-visit-number="{{ $recentRecord->visit_number ?? 1 }}"
-                                        style="background: linear-gradient(135deg, #DE6262 0%, #c55252 100%); border: none; color: white; font-weight: 500; padding: 0.25rem 0.75rem; border-radius: 15px; box-shadow: 0 2px 8px rgba(222, 98, 98, 0.3); font-size: 0.75rem;">
-                                    <i class="fas fa-eye me-1"></i>View
-                                </button>
-                            </div>
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10">
+                @php
+                    $hasRecords = $records->count() > 0;
+                @endphp
+                
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1><i class="fas fa-user-injured me-2"></i>Patient Cases</h1>
+                            <p class="text-muted mb-0">Manage and view all patient medical records</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('ask-ai') }}" class="btn-custom-primary">
+                                <i class="fas fa-plus me-2"></i>Add New Patient
+                            </a>
+                            <button class="btn-custom-secondary" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                                <i class="fas fa-filter"></i> Filters
+                            </button>
                         </div>
                     </div>
-                    @endforeach
                 </div>
-            </div>
-        </div>
-        @endif
-        
-        <!-- Cases Card -->
-        <div class="cases-card">
-            <div class="cases-card-body">
+                
+                <!-- Summary Cards -->
                 @if($hasRecords)
-                    <div class="table-responsive">
-                        <table id="recordsTable" class="table custom-table align-middle w-100">
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="stats-card">
+                            <div class="stat-number">{{ $records->count() }}</div>
+                            <div class="stat-label">Total Patients</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stats-card">
+                            <div class="stat-number">{{ $records->where('created_at', '>=', now()->subDays(30))->count() }}</div>
+                            <div class="stat-label">This Month</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stats-card">
+                            <div class="stat-number">{{ $records->where('created_at', '>=', now()->subDays(7))->count() }}</div>
+                            <div class="stat-label">This Week</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stats-card">
+                            <div class="stat-number">{{ $records->where('created_at', '>=', now()->subDay())->count() }}</div>
+                            <div class="stat-label">Today</div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+        
+                <!-- Patient Records Table -->
+                <div class="subscription-card">
+                    @if($hasRecords)
+                        <div class="table-responsive">
+                            <table id="recordsTable" class="table table-custom align-middle w-100">
                             <thead>
                                 <tr>
-                                    <th class="text-center">ID</th>
-                                    <th class="text-center">Patient Name</th>
-                                    <th class="text-center">Age</th>
-                                    <th class="text-center">Gender</th>
-                                    <th class="text-center">Height</th>
-                                    <th class="text-center">Weight</th>
-                                    <th class="text-center">Date</th>
-                                    <th class="text-center">Visit #</th>
-                                    <th class="text-center">Recommendations</th>
+                                    <th style="width: 60px;">ID</th>
+                                    <th style="width: 15%;">Patient Name</th>
+                                    <th style="width: 60px;">Age</th>
+                                    <th style="width: 80px;">Gender</th>
+                                    <th style="width: 80px;">Height</th>
+                                    <th style="width: 80px;">Weight</th>
+                                    <th style="width: 120px;">Date</th>
+                                    <th style="width: 80px;">Visit #</th>
+                                    <th style="width: 25%;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1726,8 +1739,8 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                                         <span class="badge bg-secondary">Visit #{{ $record->visit_number ?? 'N/A' }}</span>
                                     </td>
                                     <td>
-                                        <div class="btn-group">
-                                            <button class="btn view-response-btn"
+                                        <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                            <button class="btn btn-custom-secondary btn-sm view-response-btn"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#responseModal"
                                                     data-response="{{ htmlentities($record->ai_response) }}"
@@ -1735,22 +1748,23 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                                                     data-visit-number="{{ $record->visit_number ?? 1 }}"
                                                     data-record-id="{{ $record->id }}"
                                                     data-patient-key="{{ $record->patient_key }}"
-                                                    style="background: linear-gradient(135deg, #DE6262 0%, #c55252 100%); border: none; color: white; font-weight: 500; padding: 0.5rem 1rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(222, 98, 98, 0.3); font-size: 0.85rem; margin-right: 5px;">
-                                                <i class="fas fa-eye me-1"></i>View
+                                                    title="View Medical Report">
+                                                <i class="fas fa-eye"></i>
                                             </button>
-                                            <button class="btn patient-summary-btn"
+                                            <button class="btn btn-custom-primary btn-sm patient-summary-btn"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#summaryModal"
                                                     data-patient-name="{{ $record->name }}"
                                                     data-patient-age="{{ $record->age }}"
                                                     data-patient-gender="{{ $record->gender }}"
                                                     data-patient-key="{{ $record->patient_key }}"
-                                                    style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); border: none; color: white; font-weight: 500; padding: 0.5rem 1rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3); font-size: 0.85rem; margin-right: 5px;">
-                                                <i class="fas fa-history me-1"></i>Summary
+                                                    title="View Patient Summary">
+                                                <i class="fas fa-history"></i>
                                             </button>
-                                            <a href="{{ route('ask-ai', ['edit_patient' => $record->id]) }}" class="btn" 
-                                               style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); border: none; color: white; font-weight: 500; padding: 0.5rem 1rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3); font-size: 0.85rem;">
-                                                <i class="fas fa-edit me-1"></i>Edit
+                                            <a href="{{ route('ask-ai', ['edit_patient' => $record->id]) }}" 
+                                               class="btn btn-custom-secondary btn-sm"
+                                               title="Edit Patient">
+                                                <i class="fas fa-edit"></i>
                                             </a>
                                         </div>
                                     </td>
@@ -1759,16 +1773,17 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                             </tbody>
                         </table>
                     </div>
-                @else
-                    <div class="empty-state">
-                        <i class="fas fa-user-doctor"></i>
-                        <h5>No Patient Records Found</h5>
-                        <p>Start building your patient database by adding your first case</p>
-                        <a href="{{ route('ask-ai') }}" class="btn-add-patient mt-3">
-                            <i class="fas fa-plus me-2"></i>Add First Patient
-                        </a>
-                    </div>
-                @endif
+                    @else
+                        <div class="text-center py-5">
+                            <i class="fas fa-user-doctor text-muted mb-3" style="font-size: 4rem;"></i>
+                            <h5 class="text-muted">No Patient Records Found</h5>
+                            <p class="text-muted mb-4">Start building your patient database by adding your first case</p>
+                            <a href="{{ route('ask-ai') }}" class="btn-custom-primary">
+                                <i class="fas fa-plus me-2"></i>Add First Patient
+                            </a>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
