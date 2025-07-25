@@ -26,13 +26,13 @@
                             <label for="email" class="form-label">
                                 <i class="bi bi-envelope me-2"></i>Email Address
                             </label>
-                            <input 
-                                id="email" 
-                                type="email" 
-                                name="email" 
-                                class="form-control auth-input @error('email') is-invalid @enderror" 
-                                value="{{ old('email') }}" 
-                                required 
+                            <input
+                                id="email"
+                                type="email"
+                                name="email"
+                                class="form-control auth-input @error('email') is-invalid @enderror"
+                                value="{{ old('email') }}"
+                                required
                                 autofocus
                                 placeholder="Enter your email"
                             >
@@ -47,11 +47,11 @@
                                 <i class="bi bi-lock me-2"></i>Password
                             </label>
                             <div class="password-input-wrapper">
-                                <input 
-                                    id="password" 
-                                    type="password" 
-                                    name="password" 
-                                    class="form-control auth-input @error('password') is-invalid @enderror" 
+                                <input
+                                    id="password"
+                                    type="password"
+                                    name="password"
+                                    class="form-control auth-input @error('password') is-invalid @enderror"
                                     required
                                     placeholder="Enter your password"
                                 >
@@ -84,11 +84,18 @@
                             <i class="bi bi-box-arrow-in-right me-2"></i>
                             Sign In
                         </button>
-<!--
+
                         <div class="auth-divider">
                             <span>or</span>
                         </div>
+                        <div class="text-center">
+                            <p class="mb-0">New Patient?</p>
+                            <a href="{{ route('patient.register') }}" class="auth-link-primary">
+                                Register Here <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
 
+<!--
                         <div class="text-center">
                             <p class="mb-0">Don't have an account?</p>
                             <a href="{{ route('register') }}" class="auth-link-primary">
@@ -266,7 +273,7 @@
         padding: 2rem;
         margin: 1rem;
     }
-    
+
     .auth-title {
         font-size: 1.75rem;
     }
@@ -277,7 +284,7 @@
 function togglePassword(inputId) {
     const input = document.getElementById(inputId);
     const eye = document.getElementById(inputId + '-eye');
-    
+
     if (input.type === 'password') {
         input.type = 'text';
         eye.className = 'bi bi-eye-slash';
