@@ -20,9 +20,17 @@ return new class extends Migration
             $table->string('guest_email')->nullable()->after('guest_name');
 
             // Add verification fields for guest reviews
-            $table->string('verification_token')->nullable()->after('guest_email');
-            $table->datetime('token_expires_at')->nullable()->after('verification_token');
-            $table->boolean('is_verified')->default(false)->after('token_expires_at');
+            if (!Schema::hasColumn('reviews', 'verification_token')) {
+                $table->string('verification_token')->nullable()->after('guest_email');
+            }
+
+            if (!Schema::hasColumn('reviews', 'token_expires_at')) {
+                $table->datetime('token_expires_at')->nullable()->after('verification_token');
+            }
+
+            if (!Schema::hasColumn('reviews', 'is_verified')) {
+                $table->boolean('is_verified')->default(false)->after('token_expires_at');
+            }
 
             // Add index for guest email lookups
             $table->index('guest_email');
