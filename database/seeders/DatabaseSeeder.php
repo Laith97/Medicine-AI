@@ -26,6 +26,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SymptomsTableSeeder::class, // Using the original symptoms seeder
             AdminSeeder::class, // Add the admin seeder
+            SpecialtySeeder::class,
+            DoctorSeeder::class,
         ]);
     }
 }

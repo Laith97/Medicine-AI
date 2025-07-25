@@ -9,7 +9,7 @@
         min-height: 100vh;
         padding: 2rem 0;
     }
-    
+
     .admin-header {
         background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
         color: white;
@@ -18,7 +18,7 @@
         margin-bottom: 2rem;
         box-shadow: 0 10px 30px rgba(44, 62, 80, 0.3);
     }
-    
+
     .info-card {
         background: white;
         border-radius: 15px;
@@ -27,7 +27,7 @@
         border: none;
         margin-bottom: 2rem;
     }
-    
+
     .user-avatar-large {
         width: 80px;
         height: 80px;
@@ -41,16 +41,16 @@
         font-size: 2rem;
         margin-bottom: 1rem;
     }
-    
+
     .info-item {
         padding: 1rem 0;
         border-bottom: 1px solid #f1f3f4;
     }
-    
+
     .info-item:last-child {
         border-bottom: none;
     }
-    
+
     .info-label {
         font-weight: 600;
         color: #6c757d;
@@ -58,13 +58,13 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
-    
+
     .info-value {
         font-size: 1.1rem;
         color: #2c3e50;
         margin-top: 0.25rem;
     }
-    
+
     .analysis-card {
         background: #f8f9fa;
         border: 1px solid #e9ecef;
@@ -73,7 +73,7 @@
         margin-bottom: 1rem;
         transition: all 0.3s ease;
     }
-    
+
     .analysis-card:hover {
         background: #e9ecef;
         transform: translateY(-2px);
@@ -88,7 +88,7 @@
         <div class="admin-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1 class="h2 mb-2">User Details</h1>
+                    <h1 class="h2 mb-2 text-white">User Details</h1>
                     <p class="mb-0 opacity-75">Detailed information about {{ $user->name }}</p>
                 </div>
                 <div class="d-flex gap-3">
@@ -123,21 +123,21 @@
                                 <div class="info-value">{{ $user->email }}</div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-6">
                             <div class="info-item">
                                 <div class="info-label">Member Since</div>
                                 <div class="info-value">{{ $user->created_at->format('F j, Y') }}</div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-6">
                             <div class="info-item">
                                 <div class="info-label">Last Updated</div>
                                 <div class="info-value">{{ $user->updated_at->format('F j, Y g:i A') }}</div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-6">
                             <div class="info-item">
                                 <div class="info-label">Email Verification</div>
@@ -170,14 +170,14 @@
                             </a>
                         @endif
                     </div>
-                    
+
                     @if($user->patientAnalyses->count() > 0)
                         @foreach($user->patientAnalyses->take(5) as $analysis)
                             <div class="analysis-card">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
                                         <h6 class="mb-1">
-                                            Patient: {{ $analysis->name }} 
+                                            Patient: {{ $analysis->name }}
                                             <span class="badge bg-secondary ms-1">{{ $analysis->gender }}, {{ $analysis->age }} y/o</span>
                                         </h6>
                                         <p class="text-muted mb-0 small">
@@ -188,10 +188,10 @@
                                 </div>
                             </div>
                         @endforeach
-                        
+
                         @if($user->patientAnalyses->count() > 5)
                             <div class="text-center mt-3">
-                                <a href="{{ route('admin.users.patient-analyses', $user) }}" class="btn btn-outline-primary btn-sm">
+                                <a href="{{ route('admin.users.patient-analyses', $user) }}" class="btn btn-primary-custom btn-sm">
                                     View All {{ $user->patientAnalyses->count() }} Patient Records
                                 </a>
                             </div>
@@ -212,19 +212,19 @@
                     <h5 class="mb-4">
                         <i class="bi bi-graph-up me-2"></i>Statistics
                     </h5>
-                    
+
                     <div class="info-item">
                         <div class="info-label">Total Analyses</div>
                         <div class="info-value">
                             <span class="h4 text-primary">{{ $user->patientAnalyses->count() }}</span>
                         </div>
                     </div>
-                    
+
                     <div class="info-item">
                         <div class="info-label">Account Age</div>
                         <div class="info-value">{{ $user->created_at->diffForHumans(null, true) }}</div>
                     </div>
-                    
+
                     @if($user->setting)
                         <div class="info-item">
                             <div class="info-label">Settings Configured</div>
@@ -243,9 +243,17 @@
                         <h5 class="mb-4">
                             <i class="bi bi-lightning me-2"></i>Quick Actions
                         </h5>
-                        
+
                         <div class="d-grid gap-3">
-                            <form action="{{ route('admin.users.destroy', $user) }}" method="POST" 
+                            <form action="{{ route('admin.users.toggle-admin', $user) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn btn-warning w-100">
+                                    <i class="bi bi-{{ $user->isAdmin() ? 'shield-x' : 'shield-check' }} me-2"></i>
+                                    {{ $user->isAdmin() ? 'Remove Admin Rights' : 'Grant Admin Rights' }}
+                                </button>
+                            </form>
+
+                            <form action="{{ route('admin.users.destroy', $user) }}" method="POST"
                                   onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone.')">
                                 @csrf
                                 @method('DELETE')

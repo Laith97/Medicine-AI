@@ -4,7 +4,21 @@
 
 @push('styles')
 <style>
-    
+    .admin-dashboard {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+
+    .admin-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(44, 62, 80, 0.3);
+    }
+
     .stats-card {
         background: white;
         border-radius: 15px;
@@ -14,12 +28,12 @@
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         height: 100%;
     }
-    
+
     .stats-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
     }
-    
+
     .stats-icon {
         width: 50px;
         height: 50px;
@@ -31,21 +45,21 @@
         color: white;
         font-size: 1.2rem;
     }
-    
+
     .stats-number {
         font-size: 2rem;
         font-weight: 700;
         color: #2c3e50;
         margin: 0;
     }
-    
+
     .stats-label {
         color: #6c757d;
         font-weight: 500;
         margin: 0;
         font-size: 0.9rem;
     }
-    
+
     .action-card {
         background: white;
         border-radius: 15px;
@@ -54,11 +68,11 @@
         border: none;
         transition: transform 0.3s ease;
     }
-    
+
     .action-card:hover {
         transform: translateY(-2px);
     }
-    
+
     .action-link {
         display: flex;
         align-items: center;
@@ -68,11 +82,11 @@
         transition: all 0.3s ease;
         margin-bottom: 0.5rem;
     }
-    
+
     .action-link:hover {
         text-decoration: none;
     }
-    
+
     .user-avatar {
         width: 40px;
         height: 40px;
@@ -88,7 +102,15 @@
 @endpush
 
 @section('content')
-<!-- Statistics Cards -->
+<div class="admin-dashboard">
+    <div class="container">
+        <!-- Admin Header -->
+        <div class="admin-header">
+            <h1 class="h2 mb-2 text-white">Admin Dashboard</h1>
+            <p class="mb-0 opacity-75">Manage users and system settings</p>
+        </div>
+
+        <!-- Statistics Cards -->
         <div class="row g-4 mb-5">
             <div class="col-lg-3 col-md-6">
                 <div class="stats-card">
@@ -138,9 +160,9 @@
                 <div class="action-card">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="mb-0">Recent Users</h5>
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                        <a href="{{ route('admin.users.index') }}" class="btn btn-smbtn-primary-custom">View All</a>
                     </div>
-                    
+
                     @if($recentUsers->count() > 0)
                         <div class="list-group list-group-flush">
                             @foreach($recentUsers as $user)
@@ -175,7 +197,7 @@
             <div class="col-lg-4">
                 <div class="action-card">
                     <h5 class="mb-4">Quick Actions</h5>
-                    
+
                     <a href="{{ route('admin.users.index') }}" class="action-link" style="background: rgba(52, 152, 219, 0.1); color: #3498db;">
                         <i class="bi bi-people me-3"></i>
                         <span>Manage All Users</span>
@@ -193,4 +215,6 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
 @endsection

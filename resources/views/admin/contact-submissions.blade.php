@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('title', 'Contact Submissions')
+@extends('master')
 
 @section('content')
 <div class="container">
@@ -64,7 +62,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         {{ $submissions->links() }}
                     @else
                         <div class="alert alert-info">

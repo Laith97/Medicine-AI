@@ -10,7 +10,7 @@
         min-height: 100vh;
         padding: 2rem 0;
     }
-    
+
     .admin-header {
         background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
         color: white;
@@ -19,7 +19,7 @@
         margin-bottom: 2rem;
         box-shadow: 0 10px 30px rgba(44, 62, 80, 0.3);
     }
-    
+
     .info-card {
         background: white;
         border-radius: 15px;
@@ -28,7 +28,7 @@
         border: none;
         margin-bottom: 2rem;
     }
-    
+
     .custom-table {
         border-radius: 15px;
         overflow: hidden;
@@ -65,7 +65,7 @@
         border-bottom: 1px solid #f1f3f4;
         vertical-align: middle;
     }
-    
+
     .btn-view-details {
         background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
         border: none;
@@ -84,7 +84,7 @@
         background: linear-gradient(135deg, #c55252 0%, #b04848 100%);
         color: white;
     }
-    
+
     /* Modal Styling */
     .modal-xl {
         max-width: 95vw;
@@ -124,7 +124,7 @@
         line-height: 1.8;
         letter-spacing: 0.3px;
     }
-    
+
     .patient-info-section {
         background-color: #f8f9fa;
         border-radius: 12px;
@@ -133,7 +133,7 @@
         margin-bottom: 20px;
         border: 1px solid rgba(0,0,0,0.05);
     }
-    
+
     .patient-info-section h4 {
         color: #2c3e50;
         margin-top: 0;
@@ -142,21 +142,21 @@
         border-bottom: 1px solid #e9ecef;
         padding-bottom: 10px;
     }
-    
+
     .patient-info-section .row {
         margin-bottom: 15px;
     }
-    
+
     .patient-info-section .col-form-label {
         font-weight: 600;
         color: #6c757d;
     }
-    
+
     .patient-info-section .form-control-plaintext {
         padding: 0.375rem 0;
         color: #2c3e50;
     }
-    
+
     .ai-response-section {
         background-color: #f8f9fa;
         border-radius: 12px;
@@ -164,7 +164,7 @@
         box-shadow: 0 3px 10px rgba(0,0,0,0.08);
         border: 1px solid rgba(0,0,0,0.05);
     }
-    
+
     .ai-response-section h4 {
         color: #2c3e50;
         margin-top: 0;
@@ -173,7 +173,7 @@
         border-bottom: 1px solid #e9ecef;
         padding-bottom: 10px;
     }
-    
+
     .ai-response-content {
         white-space: pre-wrap;
         word-break: break-word;
@@ -183,7 +183,7 @@
         line-height: 1.8;
         padding: 10px;
     }
-    
+
     /* DataTables Styling */
     .dataTables_filter input {
         border-radius: 12px !important;
@@ -243,9 +243,9 @@
             text-align: left !important;
         }
 
-        .response-modal-body h1, 
-        .response-modal-body h2, 
-        .response-modal-body h3, 
+        .response-modal-body h1,
+        .response-modal-body h2,
+        .response-modal-body h3,
         .response-modal-body h4,
         .response-modal-body h5,
         .response-modal-body h6 {
@@ -306,9 +306,9 @@
             line-height: 1.4 !important;
         }
 
-        .response-modal-body h1, 
-        .response-modal-body h2, 
-        .response-modal-body h3, 
+        .response-modal-body h1,
+        .response-modal-body h2,
+        .response-modal-body h3,
         .response-modal-body h4,
         .response-modal-body h5,
         .response-modal-body h6 {
@@ -364,7 +364,7 @@
         <div class="admin-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1 class="h2 mb-2">Patient Analyses for {{ $user->name }}</h1>
+                    <h1 class="h2 mb-2 text-white">Patient Analyses for {{ $user->name }}</h1>
                     <p class="mb-0 opacity-75">Viewing all patient data entered by this user</p>
                 </div>
                 <div class="d-flex gap-3">
@@ -408,9 +408,9 @@
                             </td>
                             <td>{{ $analysis->created_at->format('M d, Y') }}</td>
                             <td>
-                                <button class="btn btn-view-details" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#patientDetailsModal" 
+                                <button class="btn btn-view-details"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#patientDetailsModal"
                                         data-analysis-id="{{ $analysis->id }}">
                                     <i class="bi bi-search me-1"></i>View Details
                                 </button>
@@ -476,18 +476,18 @@
                 }
             }
         });
-        
+
         // Store all patient analyses for quick access
         const patientAnalyses = @json($patientAnalyses);
-        
+
         // Handle view details button click
         $('#patientDetailsModal').on('show.bs.modal', function(event) {
             const button = $(event.relatedTarget);
             const analysisId = button.data('analysis-id');
-            
+
             // Find the analysis in the collection
             const analysis = patientAnalyses.data.find(a => a.id === analysisId);
-            
+
             if (analysis) {
                 // Format the patient details
                 let detailsHtml = `
@@ -519,7 +519,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="mb-3 row">
@@ -546,7 +546,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="mb-3 row">
@@ -573,7 +573,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-12">
                                 <div class="mb-3 row">
@@ -584,7 +584,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-12">
                                 <div class="mb-3 row">
@@ -595,7 +595,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-12">
                                 <div class="mb-3 row">
@@ -608,7 +608,7 @@
                         </div>
                     </div>
                 `;
-                
+
                 // Add AI response section if available
                 if (analysis.ai_response) {
                     detailsHtml += `
@@ -618,26 +618,26 @@
                         </div>
                     `;
                 }
-                
+
                 // Update the modal content
                 $('#patientDetailsContent').html(detailsHtml);
             } else {
                 $('#patientDetailsContent').html('<div class="alert alert-danger">Patient analysis not found.</div>');
             }
         });
-        
+
         // Handle print button click
         $('#printDetailsBtn').click(function() {
             const printContents = document.getElementById('patientDetailsContent').innerHTML;
             const originalContents = document.body.innerHTML;
-            
+
             document.body.innerHTML = `
                 <div style="padding: 20px;">
                     <h1 style="text-align: center; margin-bottom: 20px;">Patient Analysis Details</h1>
                     ${printContents}
                 </div>
             `;
-            
+
             window.print();
             document.body.innerHTML = originalContents;
             location.reload();

@@ -36,8 +36,8 @@
 .top-link:hover::after {
     width: 100%;
 }
-.dropdown-item:focus, .dropdown-item:active, 
-.dropdown-item:focus-visible, 
+.dropdown-item:focus, .dropdown-item:active,
+.dropdown-item:focus-visible,
 .dropdown-item:focus-within {
     outline: none !important;
     box-shadow: 0 0 0 0.2rem rgba(222,98,98,0.25) !important;
@@ -64,20 +64,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
     <link rel="stylesheet" href="{{ asset('css/responsive-modals.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom-buttons.css') }}">
     @stack('styles')
-    
+
     <!-- Global Font Styling -->
     <style>
         body, * {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
         }
-        
+
         /* FontAwesome Debug - Force display if not loading */
         .fa, .fas, .far, .fab {
             font-family: "Font Awesome 6 Free" !important;
@@ -89,7 +89,7 @@
             text-rendering: auto;
             line-height: 1;
         }
-        
+
         /* Test icon visibility */
         .icon-test {
             font-size: 24px;
@@ -97,7 +97,7 @@
             margin: 10px;
         }
     </style>
-    
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Medical Demo | Canvas')</title>
 </head>
@@ -126,11 +126,11 @@
 
                 @auth
                 <!-- Quick Action Button for Emergency -->
-                <a href="{{ route('ask-ai') }}" class="btn btn-sm px-3 py-1 me-2" 
+                <a href="{{ route('ask-ai') }}" class="btn btn-sm px-3 py-1 me-2"
                    style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; font-size: 12px;">
                     <i class="bi bi-lightning-charge me-1"></i> Quick Diagnosis
                 </a>
-                
+
                 <div class="dropdown">
                     <a class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle"
                        href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
@@ -139,12 +139,31 @@
                         <span>{{ Auth::user()->name }}</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow">
-
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('settings') }}">
-                                <i class="bi bi-gear"></i> Settings
-                            </a>
-                        </li>
+                        @if(Auth::user()->isAdmin())
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.dashboard') }}">
+                                    <i class="bi bi-shield-check"></i> Admin Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.users.index') }}">
+                                    <i class="bi bi-people"></i> Manage Users
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                        @endif
+                        @if(Auth::user()->isDoctor())
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('settings') }}">
+                                    <i class="bi bi-gear"></i> Settings
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('doctor.profile.edit') }}">
+                                    <i class="fas fa-user-edit"></i>Edit Profile
+                                </a>
+                            </li>
+                        @endif
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form method="POST" action="{{ route('logout') }}">
@@ -157,7 +176,7 @@
                     </ul>
                 </div>
             @endauth
-        
+
             @guest
             <a href="{{ route('login') }}"
                class="btn btn-sm px-4"
@@ -203,23 +222,57 @@
 						<nav class="primary-menu style-3 menu-spacing-margin">
                             <ul class="menu-container">
                                 @auth
-                                    <li class="menu-item {{ request()->routeIs('dashboard') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('dashboard') }}"><div>Dashboard</div></a>
-                                    </li>
-                                    <li class="menu-item {{ request()->routeIs('ask-ai') ? 'current' : '' }}">
-                                        <a class="menu-link " href="{{ route('ask-ai') }}"><div>Add-Patients</div></a>
-                                    </li>
-                                    <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('cases') }}"><div>Cases</div></a>
-                                    </li>
-                                    <li class="menu-item {{ request()->routeIs('invoices.*') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('invoices.index') }}"><div>Invoices</div></a>
-                                    </li>
-                                    <li class="menu-item {{ request()->routeIs('subscription.manage') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('subscription.manage') }}"><div>Subscription</div></a>
-                                    </li>
+                                    @if (Auth::user()->isAdmin())
+                                        <li class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('admin.dashboard') }}"><div>Dashboard</div></a>
+                                        </li>
+                                    @elseif(auth()->user()->role === 'doctor')
+                                        <!-- Doctor Navigation -->
+                                        <li class="menu-item {{ request()->routeIs('dashboard') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('dashboard') }}"><div>Dashboard</div></a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('ask-ai') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('ask-ai') }}"><div>Add-Patients</div></a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('cases') }}"><div>Cases</div></a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('doctor.appointments.index') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('doctor.appointments.index') }}">
+                                                <div><i class="fas fa-calendar mr-2"></i>{{ __('Appointments') }}</div>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('doctor.availability.index') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('doctor.availability.index') }}">
+                                                <div><i class="fas fa-clock mr-2"></i>{{ __('Availability') }}</div>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('doctor.reviews.index') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('doctor.reviews.index') }}">
+                                                <div><i class="fas fa-star mr-2"></i>{{ __('Reviews') }}</div>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('invoices.*') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('invoices.index') }}"><div>Invoices</div></a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('subscription.manage') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('subscription.manage') }}"><div>Subscription</div></a>
+                                        </li>
+                                    @else
+                                        <!-- Patient Navigation -->
+                                        <li class="menu-item {{ request()->routeIs('doctors.index') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('doctors.index') }}">
+                                                <div><i class="fas fa-user-md mr-2"></i>Find Doctors</div>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('appointments.index') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('appointments.index') }}">
+                                                <div><i class="fas fa-calendar mr-2"></i>My Appointments</div>
+                                            </a>
+                                        </li>
+                                    @endif
                                 @endauth
-                            
+
                                 @guest
                                     <li class="menu-item {{ request()->is('/') ? 'current' : '' }}">
                                         <a class="menu-link" href="{{ url('/') }}"><div>Home</div></a>
@@ -235,7 +288,7 @@
                                     </li>
                                 @endguest
                             </ul>
-                            
+
 
 						</nav><!-- #primary-menu end -->
 
@@ -261,7 +314,7 @@
                                 </div>
                             </div>
                         @endif
-                        
+
                         @if(session('error'))
                             <div class="alert alert-danger alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
                                 <div class="container">
@@ -273,7 +326,7 @@
                                 </div>
                             </div>
                         @endif
-                        
+
                         @if(session('warning'))
                             <div class="alert alert-warning alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
                                 <div class="container">
@@ -285,7 +338,7 @@
                                 </div>
                             </div>
                         @endif
-                        
+
                         @if(session('info'))
                             <div class="alert alert-info alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
                                 <div class="container">
@@ -322,7 +375,7 @@
                         AI Medical Diagnosis
                     </h4>
                     <p class="text-white-50 mb-4">Revolutionizing healthcare with cutting-edge artificial intelligence. Empowering medical professionals with advanced diagnostic tools for superior patient care and outcomes.</p>
-                    
+
                     <!-- Social Links -->
                     <div class="social-links">
                         <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
@@ -365,7 +418,7 @@
                 <ul class="list-unstyled footer-links">
                     <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Platform</a></li>
                     <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact Support</a></li>
-                    @auth 
+                    @auth
                         <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Profile Settings</a></li>
                     @endauth
                 </ul>
@@ -374,7 +427,7 @@
             <!-- Contact & Support -->
             <div class="col-lg-4 col-md-6">
                 <h6 class="text-white mb-3" style="color: #DE6262 !important;">Contact & Support</h6>
-                
+
                 <div class="contact-info mb-4">
                     <div class="d-flex align-items-center mb-3">
                         <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
@@ -385,7 +438,7 @@
                             <a href="info@medcuraai.com" class="text-white text-decoration-none">info@medcuraai.com</a>
                         </div>
                     </div>
-                    
+
                     <div class="d-flex align-items-center mb-3">
                         <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                             <i class="bi bi-headset" style="color: #DE6262;"></i>
@@ -472,7 +525,7 @@
 	============================================= -->
     <script src="{{ asset('js/plugins.min.js') }}"></script>
     <script src="{{ asset('js/functions.bundle.js') }}"></script>
-    
+
     @stack('scripts')
 
 </body>
