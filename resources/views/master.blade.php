@@ -286,6 +286,9 @@
                                     <li class="menu-item {{ request()->is('contact') ? 'current' : '' }}">
                                         <a class="menu-link" href="{{ route('contact') }}"><div>Contact</div></a>
                                     </li>
+                                        <li class="menu-item {{ request()->is('doctors') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('doctors.index') }}"><div>For Patients</div></a>
+                                    </li>
                                 @endguest
                             </ul>
 
