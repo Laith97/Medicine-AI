@@ -16,8 +16,13 @@ return new class extends Migration
             $table->foreignId('patient_id')->nullable()->change();
 
             // Add guest fields if they don't exist
-            $table->string('guest_name')->nullable()->after('is_anonymous');
-            $table->string('guest_email')->nullable()->after('guest_name');
+            if (!Schema::hasColumn('reviews', 'guest_name')) {
+                $table->string('guest_name')->nullable()->after('is_anonymous');
+            }
+
+            if (!Schema::hasColumn('reviews', 'guest_email')) {
+                $table->string('guest_email')->nullable()->after('guest_name');
+            }
 
             // Add verification fields for guest reviews
             if (!Schema::hasColumn('reviews', 'verification_token')) {
