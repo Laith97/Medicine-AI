@@ -15,8 +15,12 @@ return new class extends Migration
             // Make patient_id nullable for guest reviews
             $table->foreignId('patient_id')->nullable()->change();
 
-            // Add verification fields for guest reviews (guest_name, guest_email, is_anonymous already exist)
-            $table->string('verification_token')->nullable()->after('is_anonymous');
+            // Add guest fields if they don't exist
+            $table->string('guest_name')->nullable()->after('is_anonymous');
+            $table->string('guest_email')->nullable()->after('guest_name');
+
+            // Add verification fields for guest reviews
+            $table->string('verification_token')->nullable()->after('guest_email');
             $table->datetime('token_expires_at')->nullable()->after('verification_token');
             $table->boolean('is_verified')->default(false)->after('token_expires_at');
 
@@ -32,12 +36,18 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('reviews', function (Blueprint $table) {
+            // Drop indexes first
+            $table->dropIndex(['guest_email']);
+            $table->dropIndex(['verification_token']);
+
+            // Drop the columns we added
             $table->dropColumn([
+                'guest_name',
+                'guest_email',
                 'verification_token',
                 'token_expires_at',
                 'is_verified'
             ]);
-            // Don't drop guest_name, guest_email, is_anonymous as they already existed
 
             // Make patient_id required again
             $table->foreignId('patient_id')->nullable(false)->change();
