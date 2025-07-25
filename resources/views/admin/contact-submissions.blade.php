@@ -1,4 +1,6 @@
-@extends('master')
+@extends('layouts.admin')
+
+@section('title', 'Contact Submissions')
 
 @section('content')
 <div class="container">
