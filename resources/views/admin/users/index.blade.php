@@ -100,7 +100,7 @@
         <div class="admin-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1 class="h2 mb-2">Manage Users</h1>
+                    <h1 class="h2 mb-2 text-white">Manage Users</h1>
                     <p class="mb-0 opacity-75">View and manage all system users</p>
                 </div>
                 <div class="d-flex gap-3">
