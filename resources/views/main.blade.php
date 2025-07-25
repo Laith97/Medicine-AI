@@ -8,7 +8,7 @@
 .text-theme-primary { color: #DE6262 !important; }
 .border-theme-primary { border-color: #DE6262 !important; }
 
-.btn-theme-primary { 
+.btn-theme-primary {
     background: linear-gradient(45deg, #DE6262, #E87A7A);
     border: none;
     color: white;
@@ -18,13 +18,13 @@
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(222, 98, 98, 0.3);
 }
-.btn-theme-primary:hover { 
+.btn-theme-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(222, 98, 98, 0.4);
     color: white;
 }
 
-.btn-theme-outline { 
+.btn-theme-outline {
     background: transparent;
     border: 2px solid #DE6262;
     color: #DE6262;
@@ -33,7 +33,7 @@
     font-weight: 600;
     transition: all 0.3s ease;
 }
-.btn-theme-outline:hover { 
+.btn-theme-outline:hover {
     background: #DE6262;
     color: white;
     transform: translateY(-2px);
@@ -276,7 +276,7 @@
         transform: none;
         margin-top: 0;
     }
-    
+
     .pricing-card.featured:hover {
         transform: translateY(-10px);
     }
@@ -287,11 +287,11 @@
         padding: 20px;
         margin-bottom: 20px;
     }
-    
+
     .price {
         font-size: 2.5rem;
     }
-    
+
     .popular-badge {
         font-size: 0.7rem;
         padding: 3px 35px;
@@ -495,7 +495,7 @@
         <div class="text-center mb-5">
             <h2 class="section-title">Choose Your Plan</h2>
             <p class="section-subtitle">Flexible pricing for practices of all sizes</p>
-            
+
             <!-- Billing Toggle -->
             <div class="d-flex justify-content-center align-items-center mb-4">
                 <span class="me-3">Monthly</span>
@@ -528,9 +528,9 @@
                         </ul>
                     </div>
                     <div class="pricing-footer text-center">
-                        <button class="btn btn-theme-outline w-100 subscribe-btn" 
-                                data-plan="basic" 
-                                data-monthly-price="29" 
+                        <button class="btn btn-theme-outline w-100 subscribe-btn"
+                                data-plan="basic"
+                                data-monthly-price="29"
                                 data-yearly-price="290">
                             Get Started
                         </button>
@@ -561,9 +561,9 @@
                         </ul>
                     </div>
                     <div class="pricing-footer text-center">
-                        <button class="btn btn-theme-primary w-100 subscribe-btn" 
-                                data-plan="pro" 
-                                data-monthly-price="79" 
+                        <button class="btn btn-theme-primary w-100 subscribe-btn"
+                                data-plan="pro"
+                                data-monthly-price="79"
                                 data-yearly-price="790">
                             Get Started
                         </button>
@@ -595,9 +595,9 @@
                         </ul>
                     </div>
                     <div class="pricing-footer text-center">
-                        <button class="btn btn-theme-outline w-100 subscribe-btn" 
-                                data-plan="enterprise" 
-                                data-monthly-price="199" 
+                        <button class="btn btn-theme-outline w-100 subscribe-btn"
+                                data-plan="enterprise"
+                                data-monthly-price="199"
                                 data-yearly-price="1990">
                             Get Started
                         </button>
@@ -678,11 +678,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle between monthly and yearly pricing
     billingToggle.addEventListener('change', function() {
         const isYearly = this.checked;
-        
+
         monthlyPrices.forEach(price => {
             price.classList.toggle('d-none', isYearly);
         });
-        
+
         yearlyPrices.forEach(price => {
             price.classList.toggle('d-none', !isYearly);
         });
@@ -693,7 +693,7 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const plan = this.dataset.plan;
             const billingCycle = billingToggle.checked ? 'yearly' : 'monthly';
-            
+
             // Check if user is authenticated
             @auth
                 // User is logged in, proceed with checkout
@@ -715,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Debug logging
         console.log('Starting subscription checkout for:', plan, billingCycle);
-        
+
         // Check CSRF token
         const csrfToken = document.querySelector('meta[name="csrf-token"]');
         if (!csrfToken) {
@@ -725,7 +725,7 @@ document.addEventListener('DOMContentLoaded', function() {
             button.disabled = false;
             return;
         }
-        
+
         console.log('CSRF token found:', csrfToken.getAttribute('content').substring(0, 10) + '...');
 
         // Create checkout session
@@ -764,7 +764,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Subscription checkout error:', error);
             console.error('Error message:', error.message);
             console.error('Error stack:', error.stack);
-            
+
             // Show more specific error message
             let errorMessage = error.message;
             if (errorMessage.includes('not configured')) {
@@ -772,12 +772,12 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (errorMessage.includes('Price ID not configured')) {
                 errorMessage = 'This plan is temporarily unavailable. Please contact support.';
             }
-            
+
             // Log the final error message being shown to user
             console.error('Showing user error:', errorMessage);
-            
+
             alert('Error: ' + errorMessage);
-            
+
             // Reset button
             button.innerHTML = originalText;
             button.disabled = false;

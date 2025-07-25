@@ -1,0 +1,183 @@
+@extends('master')
+
+@section('content')
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-edit me-2"></i>
+                        <h4 class="mb-0">Edit Review</h4>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if(session('success'))
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+
+                    @if(session('error'))
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ session('error') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+
+                    @if($errors->any())
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <ul class="mb-0">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+
+                    <!-- Doctor Info -->
+                    <div class="row mb-4">
+                        <div class="col-md-3 text-center">
+                            <img src="{{ $review->doctor->user->profile_photo_url ?? asset('images/default-doctor.png') }}"
+                                 alt="Dr. {{ $review->doctor->user->name }}"
+                                 class="rounded-circle mb-2"
+                                 style="width: 80px; height: 80px; object-fit: cover;">
+                        </div>
+                        <div class="col-md-9">
+                            <h5 class="fw-bold mb-1">Dr. {{ $review->doctor->user->name }}</h5>
+                            <p class="text-muted mb-2">{{ $review->doctor->specialty->name ?? 'General Practice' }}</p>
+                            <small class="text-muted">
+                                Appointment: {{ $review->appointment->appointment_date->format('M j, Y \a\t g:i A') }}
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Edit Form -->
+                    <form action="{{ route('reviews.update', $review) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+
+                        <!-- Rating -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Rating *</label>
+                            <div class="rating-input">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <input type="radio" name="rating" value="{{ $i }}" id="star{{ $i }}"
+                                           {{ (old('rating', $review->rating) == $i) ? 'checked' : '' }}>
+                                    <label for="star{{ $i }}" class="star">
+                                        <i class="fas fa-star"></i>
+                                    </label>
+                                @endfor
+                            </div>
+                            @error('rating')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Comment -->
+                        <div class="mb-4">
+                            <label for="comment" class="form-label fw-semibold">Your Review</label>
+                            <textarea name="comment" id="comment" class="form-control" rows="4"
+                                      placeholder="Share your experience with Dr. {{ $review->doctor->user->name }}...">{{ old('comment', $review->comment) }}</textarea>
+                            @error('comment')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Anonymous Option -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_anonymous" value="1" id="is_anonymous" class="form-check-input"
+                                       {{ old('is_anonymous', $review->is_anonymous) ? 'checked' : '' }}>
+                                <label for="is_anonymous" class="form-check-label">
+                                    Post this review anonymously
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Time Limit Warning -->
+                        <div class="alert alert-warning">
+                            <i class="fas fa-clock me-2"></i>
+                            <strong>Note:</strong> Reviews can only be edited within 24 hours of posting.
+                            Time remaining: {{ $review->created_at->addHours(24)->diffForHumans() }}
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ route('reviews.show', $review) }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-1"></i>Update Review
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.rating-input {
+    display: flex;
+    gap: 5px;
+}
+
+.rating-input input[type="radio"] {
+    display: none;
+}
+
+.rating-input .star {
+    cursor: pointer;
+    font-size: 2rem;
+    color: #ddd;
+    transition: color 0.2s;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const stars = document.querySelectorAll('.rating-input .star');
+
+    stars.forEach((star, index) => {
+        star.addEventListener('click', function() {
+            const input = document.getElementById('star' + (index + 1));
+            input.checked = true;
+            highlightStars(index + 1);
+        });
+
+        star.addEventListener('mouseover', function() {
+            highlightStars(index + 1);
+        });
+
+        star.addEventListener('mouseout', function() {
+            const checkedInput = document.querySelector('.rating-input input[type="radio"]:checked');
+            if (checkedInput) {
+                highlightStars(parseInt(checkedInput.value));
+            } else {
+                highlightStars(0);
+            }
+        });
+    });
+
+    function highlightStars(rating) {
+        stars.forEach((star, index) => {
+            if (index < rating) {
+                star.style.color = '#ffc107';
+            } else {
+                star.style.color = '#ddd';
+            }
+        });
+    }
+
+    // Initialize with current selection
+    const checkedInput = document.querySelector('.rating-input input[type="radio"]:checked');
+    if (checkedInput) {
+        highlightStars(parseInt(checkedInput.value));
+    }
+});
+</script>
+@endsection
