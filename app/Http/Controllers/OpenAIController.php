@@ -6,8 +6,12 @@ use App\Models\PatientAnalysis;
 use App\Models\Symptom;
 use App\Models\Appointment;
 use App\Models\Review;
+use App\Models\OpenAIUsage;
+use App\Mail\UsageWarning;
 use Illuminate\Http\Request;
 use App\Http\Requests\PatientAnalysisRequest;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
 use OpenAI\Laravel\Facades\OpenAI;
 use Illuminate\Support\Facades\Auth;
 
@@ -388,6 +392,9 @@ class OpenAIController extends Controller
                 ]
             ]);
             $rawMessage = $response['choices'][0]['message']['content'] ?? '';
+
+            // Track token usage
+            $this->trackTokenUsage($response, 'diagnosis');
 
             $filteredMessage = $this->filterReponse($rawMessage);
             // ✅ Save to database
@@ -1760,6 +1767,9 @@ class OpenAIController extends Controller
 
             $aiResponse = $response['choices'][0]['message']['content'] ?? 'Sorry, I could not generate a response.';
 
+            // Track token usage
+            $this->trackTokenUsage($response, 'follow_up');
+
             // Add the AI's response to the conversation history
             $conversationHistory = session('conversation_history_' . $conversationId);
             $conversationHistory[] = ['role' => 'assistant', 'content' => $aiResponse];
@@ -2693,5 +2703,98 @@ class OpenAIController extends Controller
         $response = preg_replace('/(CASE URGENCY:\s*)(URGENT|EMERGENCY)/i', '$1<span style="color: red; font-weight: bold;">$2</span>', $response);
 
         return $response;
+    }
+
+    /**
+     * Track OpenAI token usage for billing purposes
+     */
+    private function trackTokenUsage($response, string $requestType = 'diagnosis'): void
+    {
+        try {
+            $usage = $response['usage'] ?? null;
+
+            if (!$usage) {
+                \Log::warning('No usage data found in OpenAI response');
+                return;
+            }
+
+            $promptTokens = $usage['prompt_tokens'] ?? 0;
+            $completionTokens = $usage['completion_tokens'] ?? 0;
+            $totalTokens = $usage['total_tokens'] ?? ($promptTokens + $completionTokens);
+
+            // Calculate cost estimate
+            $costEstimate = OpenAIUsage::calculateCost($totalTokens);
+
+            // Get model from response or default
+            $model = $response['model'] ?? 'gpt-4o';
+
+            // Store usage record
+            OpenAIUsage::create([
+                'user_id' => auth()->id(),
+                'request_type' => $requestType,
+                'prompt_tokens' => $promptTokens,
+                'completion_tokens' => $completionTokens,
+                'total_tokens' => $totalTokens,
+                'cost_estimate' => $costEstimate,
+                'model_used' => $model,
+                'request_metadata' => [
+                    'timestamp' => now()->toISOString(),
+                    'user_agent' => request()->userAgent(),
+                    'ip_address' => request()->ip(),
+                ]
+            ]);
+
+            // Check if user is approaching their token limit
+            $user = auth()->user();
+            if ($user) {
+                $this->checkTokenLimits($user);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to track token usage: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check if user is approaching token limits and send notifications
+     */
+    private function checkTokenLimits($user): void
+    {
+        try {
+            $monthlyUsage = $user->getMonthlyTokenUsage();
+            $planConfig = $user->getPlanConfig();
+            $tokenLimit = $planConfig['token_limit'] ?? 0;
+
+            // Skip check for unlimited plans
+            if ($tokenLimit === -1) {
+                return;
+            }
+
+            // Calculate usage percentage
+            $usagePercentage = $tokenLimit > 0 ? ($monthlyUsage / $tokenLimit) * 100 : 0;
+
+            // Send warning at 80% usage (once per day)
+            if ($usagePercentage >= 80 && $usagePercentage < 95) {
+                $cacheKey = "usage_warning_80_{$user->id}_" . now()->format('Y-m-d');
+                if (!Cache::has($cacheKey)) {
+                    Mail::to($user->email)->send(new UsageWarning($user, (int)$usagePercentage, $monthlyUsage, $tokenLimit));
+                    Cache::put($cacheKey, true, now()->addDay());
+                    \Log::info("Usage warning email sent to user {$user->id} at {$usagePercentage}% usage");
+                }
+            }
+
+            // Send critical warning at 95% usage (once per day)
+            if ($usagePercentage >= 95) {
+                $cacheKey = "usage_warning_95_{$user->id}_" . now()->format('Y-m-d');
+                if (!Cache::has($cacheKey)) {
+                    Mail::to($user->email)->send(new UsageWarning($user, (int)$usagePercentage, $monthlyUsage, $tokenLimit));
+                    Cache::put($cacheKey, true, now()->addDay());
+                    \Log::warning("Critical usage warning email sent to user {$user->id} at {$usagePercentage}% usage");
+                }
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to check token limits: ' . $e->getMessage());
+        }
     }
 }

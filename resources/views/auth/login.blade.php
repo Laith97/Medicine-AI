@@ -84,19 +84,17 @@
                             <i class="bi bi-box-arrow-in-right me-2"></i>
                             Sign In
                         </button>
-
-                        <!-- Divider -->
+<!--
                         <div class="auth-divider">
                             <span>or</span>
                         </div>
 
-                        <!-- Register Link -->
                         <div class="text-center">
                             <p class="mb-0">Don't have an account?</p>
                             <a href="{{ route('register') }}" class="auth-link-primary">
                                 Create your account <i class="bi bi-arrow-right ms-1"></i>
                             </a>
-                        </div>
+                        </div>-->
                     </form>
                 </div>
             </div>

@@ -1,4 +1,4 @@
-@extends('master')
+@extends('layouts.admin')
 
 @section('title', 'User Details')
 
@@ -111,15 +111,9 @@
                             {{ substr($user->name, 0, 1) }}
                         </div>
                         <h3>{{ $user->name }}</h3>
-                        @if($user->isAdmin())
-                            <span class="badge bg-success fs-6">
-                                <i class="bi bi-shield-check me-1"></i>Administrator
-                            </span>
-                        @else
-                            <span class="badge bg-secondary fs-6">
-                                <i class="bi bi-person me-1"></i>Regular User
-                            </span>
-                        @endif
+                        <span class="badge bg-secondary fs-6">
+                            <i class="bi bi-person me-1"></i>Regular User
+                        </span>
                     </div>
 
                     <div class="row">
