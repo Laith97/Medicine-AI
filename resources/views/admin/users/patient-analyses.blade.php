@@ -1,4 +1,4 @@
-@extends('master')
+@extends('layouts.admin')
 
 @section('title', 'Patient Analyses for ' . $user->name)
 

@@ -16,7 +16,6 @@
         padding: 2rem 0;
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
     }
-
     .dashboard-header {
         background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
         color: white;
@@ -98,7 +97,6 @@
         color: white;
         text-decoration: none;
     }
-
     .stats-card {
         background: white;
         border-radius: 20px;
@@ -123,8 +121,8 @@
     }
 
     .stats-card:hover {
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(222, 98, 98, 0.15);
+        transform: translateY(-2px);
     }
 
     .stats-icon {
@@ -180,7 +178,7 @@
     }
 
     .chart-card:hover {
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 12px 30px rgba(222, 98, 98, 0.15);
     }
 
     .chart-title {
@@ -218,7 +216,7 @@
     }
 
     .table-card:hover {
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 12px 30px rgba(222, 98, 98, 0.15);
     }
 
     .table-title {
@@ -852,25 +850,32 @@
 @section('content')
 <div class="dashboard-container">
     <div class="container">
-        <!-- Dashboard Header -->
-        <div class="dashboard-header">
-            @if(Auth::user())
-                <h2>Welcome back, {{ Auth::user()->name }}!</h2>
-                <p>Here's an overview of your medical practice</p>
-            @else
-                <h2>Medical Dashboard</h2>
-                <p>Manage your patients and cases efficiently</p>
-            @endif
+        <!-- Enhanced Page Header -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    @if(Auth::user())
+                        <h2><i class="fas fa-tachometer-alt me-2"></i>Welcome back, {{ Auth::user()->name }}!</h2>
+                        <p>Here's an overview of your medical practice</p>
+                    @else
+                        <h2><i class="fas fa-tachometer-alt me-2"></i>Medical Dashboard</h2>
+                        <p>Manage your patients and cases efficiently</p>
+                    @endif
+                </div>
+            </div>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="action-buttons">
-            <a href="{{ route('ask-ai') }}" class="btn-primary-custom">
-                <i class="fas fa-user-plus me-2"></i> Add New Patient
-            </a>
-            <a href="{{ route('cases') }}" class="btn-secondary-custom">
-                <i class="fas fa-list me-2"></i> View All Cases
-            </a>
+        <!-- Quick Actions Card -->
+        <div class="chart-card">
+            <h4><i class="fas fa-bolt me-2"></i>Quick Actions</h4>
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <a href="{{ route('ask-ai') }}" class="btn-custom-primary">
+                    <i class="fas fa-user-plus me-2"></i> Add New Patient
+                </a>
+                <a href="{{ route('cases') }}" class="btn-custom-secondary">
+                    <i class="fas fa-list me-2"></i> View All Cases
+                </a>
+            </div>
         </div>
 
         <!-- Statistics Section -->

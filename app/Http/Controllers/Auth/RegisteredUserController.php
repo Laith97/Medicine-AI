@@ -38,16 +38,28 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'specialty' => ['required', 'string', 'max:255'],
+            'custom_specialty' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $userData = [
+        // Determine the final specialty value
+        $specialty = $request->specialty;
+
+        // If specialty is empty but custom_specialty is provided, use custom_specialty
+        if (empty($specialty) && !empty($request->custom_specialty)) {
+            $specialty = trim($request->custom_specialty);
+        }
+
+        // Validate that we have a specialty
+        if (empty($specialty)) {
+            return back()->withErrors(['specialty' => 'Please select or enter your medical specialty.'])->withInput();
+        }
+
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => 'doctor', // Set role as doctor for this registration
-        ];
-
-        $user = User::create($userData);
+        ]);
 
         // Ensure the role is set correctly
         if ($user->role !== 'doctor') {
@@ -56,7 +68,7 @@ class RegisteredUserController extends Controller
 
         // Create user settings with selected specialty
         $user->setting()->create([
-            'specialty' => $request->specialty,
+            'specialty' => $specialty,
             'criterion' => 'CDC', // Default criterion
         ]);
 

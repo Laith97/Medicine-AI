@@ -1,4 +1,4 @@
-@extends('master')
+@extends('layouts.admin')
 
 @section('title', 'Admin Dashboard')
 
@@ -178,9 +178,6 @@
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center">
-                                            @if($user->isAdmin())
-                                                <span class="badge bg-success me-2">Admin</span>
-                                            @endif
                                             <small class="text-muted">{{ $user->created_at->diffForHumans() }}</small>
                                         </div>
                                     </div>

@@ -1,4 +1,4 @@
-@extends('master')
+@extends('layouts.admin')
 
 @section('title', 'Manage Users')
 
@@ -160,15 +160,9 @@
                                     <span class="text-muted">{{ $user->email }}</span>
                                 </td>
                                 <td>
-                                    @if($user->isAdmin())
-                                        <span class="badge bg-success">
-                                            <i class="bi bi-shield-check me-1"></i>Admin
-                                        </span>
-                                    @else
-                                        <span class="badge bg-secondary">
-                                            <i class="bi bi-person me-1"></i>User
-                                        </span>
-                                    @endif
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-person me-1"></i>User
+                                    </span>
                                 </td>
                                 <td>
                                     <span class="text-muted">{{ $user->created_at->format('M d, Y') }}</span>
