@@ -22,7 +22,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'is_admin',
         'role',
         'phone',
         'date_of_birth',
@@ -60,7 +59,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_admin' => 'boolean',
             'date_of_birth' => 'date',
             'subscription_ends_at' => 'datetime',
             'subscription_active' => 'boolean',
@@ -95,13 +93,7 @@ class User extends Authenticatable
         return $this->hasMany(Review::class, 'patient_id');
     }
 
-    /**
-     * Check if user is admin
-     */
-    public function isAdmin()
-    {
-        return $this->is_admin;
-    }
+
 
     public function subscriptions()
     {

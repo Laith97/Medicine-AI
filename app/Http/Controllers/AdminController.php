@@ -50,7 +50,6 @@ class AdminController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'in:patient,doctor'],
-            'is_admin' => ['boolean'],
             'is_verified' => ['boolean'],
         ];
 
@@ -66,7 +65,6 @@ class AdminController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
-            'is_admin' => $request->boolean('is_admin', false),
             'email_verified_at' => $request->boolean('is_verified', false) ? now() : null,
         ];
 
@@ -140,7 +138,6 @@ class AdminController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'in:patient,doctor'],
-            'is_admin' => ['boolean'],
             'is_verified' => ['boolean'],
         ];
 
@@ -155,7 +152,6 @@ class AdminController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'role' => $request->role,
-            'is_admin' => $request->boolean('is_admin', false),
             'email_verified_at' => $request->boolean('is_verified', false) ? now() : null,
         ];
 
