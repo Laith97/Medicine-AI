@@ -28,6 +28,32 @@
             </div>
         </div>
 
+        <!-- Session Messages -->
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+        
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+        
+        @if($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <ul class="mb-0">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
         <!-- Weekly Schedule -->
         <div class="table-card">
             <h6 class="mb-4"><i class="fas fa-calendar-week me-2"></i>Weekly Schedule</h6>
@@ -73,7 +99,7 @@
                                                 @endif
                                             </div>
 
-                                            <div class="d-flex align-items-center gap-2">
+                                            <div class="align-items-center gap-2">
                                                 <!-- Toggle Active/Inactive -->
                                                 <form method="POST" action="{{ route('doctor.availability.toggle', $slot) }}" class="d-inline">
                                                     @csrf

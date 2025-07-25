@@ -219,7 +219,7 @@
 						<nav class="primary-menu style-3 menu-spacing-margin">
                             <ul class="menu-container">
                                 @auth
-                                    @if(auth()->user()->role === 'doctor')
+                                    @if(auth()->user()->role === 'doctor' || auth()->user()->role === 'admin')
                                         <!-- Doctor Navigation -->
                                         <li class="menu-item {{ request()->routeIs('dashboard') ? 'current' : '' }}">
                                             <a class="menu-link" href="{{ route('dashboard') }}"><div>Dashboard</div></a>

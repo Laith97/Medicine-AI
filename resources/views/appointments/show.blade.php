@@ -12,7 +12,7 @@
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
                     <!-- Back Button & Title -->
                     <div class="d-flex align-items-center mb-3 mb-md-0">
-                        <a href="{{ route('appointments.index') }}" class="btn btn-outline-secondary me-3">
+                        <a href="{{ route('appointments.index') }}" class="btn btn-secondary-custom me-3">
                             <i class="fas fa-arrow-left me-2"></i>Back to Appointments
                         </a>
                         <div>
