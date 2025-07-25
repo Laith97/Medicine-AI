@@ -245,14 +245,6 @@
                         </h5>
 
                         <div class="d-grid gap-3">
-                            <form action="{{ route('admin.users.toggle-admin', $user) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn btn-warning w-100">
-                                    <i class="bi bi-{{ $user->isAdmin() ? 'shield-x' : 'shield-check' }} me-2"></i>
-                                    {{ $user->isAdmin() ? 'Remove Admin Rights' : 'Grant Admin Rights' }}
-                                </button>
-                            </form>
-
                             <form action="{{ route('admin.users.destroy', $user) }}" method="POST"
                                   onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone.')">
                                 @csrf

@@ -11,21 +11,26 @@ This document describes the admin user management system implemented for the Med
 
 ### User Management
 - **View All Users**: Paginated list of all system users with their details
-- **Create New User**: Form to create new users with optional admin privileges
-- **Edit User**: Update user information including name, email, password, and admin status
+- **Create New User**: Form to create new users (regular users only)
+- **Edit User**: Update user information including name, email, password, and role
 - **View User Details**: Detailed view of individual users with statistics and activity
-- **Toggle Admin Status**: Promote/demote users to/from admin role
 - **Delete Users**: Remove users from the system (with safety checks)
 
 ### Security Features
-- **Admin Middleware**: Protects admin routes from unauthorized access
-- **Self-Protection**: Admins cannot delete themselves or remove their own admin privileges
-- **Role-Based Access**: Only admin users can access admin functionality
+- **Admin Middleware**: Protects admin routes from unauthorized access using separate admin guard
+- **Separate Admin Authentication**: Admins use a separate authentication system with their own login
+- **Role-Based Access**: Only authenticated admin users can access admin functionality
 
 ## Admin Routes
 
 All admin routes are prefixed with `/admin` and protected by authentication and admin middleware:
 
+### Authentication Routes
+- `GET /admin/login` - Admin login form
+- `POST /admin/login` - Admin login handler
+- `POST /admin/logout` - Admin logout
+
+### Admin Panel Routes
 - `GET /admin/dashboard` - Admin dashboard
 - `GET /admin/users` - List all users
 - `GET /admin/users/create` - Create new user form
@@ -34,50 +39,52 @@ All admin routes are prefixed with `/admin` and protected by authentication and 
 - `GET /admin/users/{user}/edit` - Edit user form
 - `PUT /admin/users/{user}` - Update user
 - `DELETE /admin/users/{user}` - Delete user
-- `POST /admin/users/{user}/toggle-admin` - Toggle admin status
 
 ## Admin Access
 
 ### Default Admin User
-A default admin user is created with the following credentials:
+A default admin user is created in the `admins` table with the following credentials:
 - **Email**: admin@medical.com
 - **Password**: admin123
 
-### Making Users Admin
-1. **Via Admin Panel**: Use the "Toggle Admin" button in the user management interface
-2. **Via Database**: Set `is_admin = 1` in the users table
-3. **Via Tinker**: `User::find(ID)->makeAdmin()`
+### Admin Access
+Admins are managed separately from regular users:
+1. **Admin Login**: Access via `/admin/login` with admin credentials
+2. **Separate Database Table**: Admins are stored in the `admins` table, not the `users` table
+3. **Via Database**: Insert directly into the `admins` table
+4. **Via Tinker**: `Admin::create(['name' => 'Name', 'email' => 'email@example.com', 'password' => Hash::make('password')])`
 
 ### Admin Navigation
-Admin users will see additional menu items in their user dropdown:
+When logged in as an admin, you will see additional menu items:
 - Admin Dashboard
 - Manage Users
 
-## User Model Methods
+## Admin Model
 
-The User model includes several helper methods for admin functionality:
+The `Admin` model is separate from the `User` model and includes standard Authenticatable functionality:
 
 ```php
-// Check if user is admin
-$user->isAdmin()
+// Create new admin
+Admin::create([
+    'name' => 'Admin Name',
+    'email' => 'admin@example.com', 
+    'password' => Hash::make('password')
+]);
 
-// Make user admin
-$user->makeAdmin()
-
-// Remove admin privileges
-$user->removeAdmin()
+// Check if current user is admin (in views)
+Auth::guard('admin')->check()
 ```
 
 ## Middleware
 
 The `AdminMiddleware` protects admin routes by:
-1. Checking if user is authenticated
-2. Verifying user has admin privileges
-3. Redirecting unauthorized users appropriately
+1. Checking if admin is authenticated using the `admin` guard
+2. Redirecting unauthenticated users to `/admin/login`
 
 ## Views
 
 Admin views are located in `resources/views/admin/`:
+- `auth/login.blade.php` - Admin login form
 - `dashboard.blade.php` - Admin dashboard
 - `users/index.blade.php` - User listing
 - `users/create.blade.php` - Create user form
@@ -86,25 +93,25 @@ Admin views are located in `resources/views/admin/`:
 
 ## Database
 
-The admin system uses the existing `users` table with an additional `is_admin` boolean column added via migration `2025_06_05_105858_add_is_admin_to_users_table.php`.
+The admin system uses a separate `admins` table created via migration `2025_07_24_061737_create_admins_table.php`. Regular users are stored in the `users` table and are completely separate from admin accounts.
 
 ## Usage Instructions
 
-1. **Login as Admin**: Use the admin credentials or any user with admin privileges
-2. **Access Admin Panel**: Click on your name in the top-right corner and select "Admin Dashboard"
-3. **Manage Users**: From the dashboard, click "Manage All Users" or use the "Manage Users" link in the dropdown
-4. **Create Users**: Click "Create New User" to add new users to the system
+1. **Login as Admin**: Navigate to `/admin/login` and use admin credentials
+2. **Access Admin Panel**: After login, you'll be redirected to the admin dashboard
+3. **Manage Users**: From the dashboard, click "Manage All Users" to view regular users
+4. **Create Users**: Click "Create New User" to add new regular users to the system
 5. **Edit Users**: Click "Edit" next to any user to modify their information
-6. **Toggle Admin**: Use the "Make Admin" or "Remove Admin" buttons to change user privileges
+6. **Delete Users**: Use the delete button to remove users from the system
 
 ## Security Considerations
 
-- Admin routes are protected by middleware
-- Users cannot modify their own admin status
-- Users cannot delete their own accounts
+- Admin routes are protected by separate admin middleware and guard
+- Admins and regular users are completely separate systems
+- Admin authentication is independent from user authentication
 - All admin actions are logged through Laravel's built-in logging
 - Password changes require confirmation
-- Email uniqueness is enforced
+- Email uniqueness is enforced in both tables
 
 ## Future Enhancements
 
@@ -112,6 +119,7 @@ Potential improvements to consider:
 - Activity logging for admin actions
 - Bulk user operations
 - User import/export functionality
-- Role-based permissions beyond simple admin/user
+- Multiple admin roles with different permissions
 - Email notifications for admin actions
 - User suspension/activation features
+- Admin password reset functionality

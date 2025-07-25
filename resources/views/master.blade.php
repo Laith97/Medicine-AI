@@ -139,7 +139,7 @@
                         <span>{{ Auth::user()->name }}</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow">
-                        @if(Auth::user()->isAdmin())
+                        @if(Auth::guard('admin')->check())
                             <li>
                                 <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.dashboard') }}">
                                     <i class="bi bi-shield-check"></i> Admin Dashboard
@@ -222,7 +222,7 @@
 						<nav class="primary-menu style-3 menu-spacing-margin">
                             <ul class="menu-container">
                                 @auth
-                                    @if (Auth::user()->isAdmin())
+                                    @if (Auth::guard('admin')->check())
                                         <li class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
                                             <a class="menu-link" href="{{ route('admin.dashboard') }}"><div>Dashboard</div></a>
                                         </li>
