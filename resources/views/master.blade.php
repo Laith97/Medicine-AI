@@ -207,7 +207,7 @@
                                         <a class="menu-link" href="{{ route('dashboard') }}"><div>Dashboard</div></a>
                                     </li>
                                     <li class="menu-item {{ request()->routeIs('ask-ai') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('ask-ai') }}"><div>Add-Patients</div></a>
+                                        <a class="menu-link " href="{{ route('ask-ai') }}"><div>Add-Patients</div></a>
                                     </li>
                                     <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
                                         <a class="menu-link" href="{{ route('cases') }}"><div>Cases</div></a>
