@@ -88,7 +88,7 @@
         <div class="admin-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1 class="h2 mb-2">User Details</h1>
+                    <h1 class="h2 mb-2 text-white">User Details</h1>
                     <p class="mb-0 opacity-75">Detailed information about {{ $user->name }}</p>
                 </div>
                 <div class="d-flex gap-3">

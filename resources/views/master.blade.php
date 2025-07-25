@@ -151,16 +151,18 @@
                             </li>
                             <li><hr class="dropdown-divider"></li>
                         @endif
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('settings') }}">
-                                <i class="bi bi-gear"></i> Settings
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('doctor.profile.edit') }}">
-                                <i class="fas fa-user-edit"></i>Edit Profile
-                            </a>
-                        </li>
+                        @if(Auth::user()->isDoctor())
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('settings') }}">
+                                    <i class="bi bi-gear"></i> Settings
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('doctor.profile.edit') }}">
+                                    <i class="fas fa-user-edit"></i>Edit Profile
+                                </a>
+                            </li>
+                        @endif
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form method="POST" action="{{ route('logout') }}">
@@ -219,7 +221,11 @@
 						<nav class="primary-menu style-3 menu-spacing-margin">
                             <ul class="menu-container">
                                 @auth
-                                    @if(auth()->user()->role === 'doctor' || auth()->user()->role === 'admin')
+                                    @if (Auth::user()->isAdmin())
+                                        <li class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('admin.dashboard') }}"><div>Dashboard</div></a>
+                                        </li>
+                                    @elseif(auth()->user()->role === 'doctor')
                                         <!-- Doctor Navigation -->
                                         <li class="menu-item {{ request()->routeIs('dashboard') ? 'current' : '' }}">
                                             <a class="menu-link" href="{{ route('dashboard') }}"><div>Dashboard</div></a>

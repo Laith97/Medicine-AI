@@ -33,6 +33,7 @@ class User extends Authenticatable
         'zip_code',
         'emergency_contact_name',
         'emergency_contact_phone',
+        'email_verified_at'
     ];
 
     /**

@@ -14,6 +14,7 @@
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         min-height: 100vh;
         padding: 2rem 0;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
     }
 
     .dashboard-header {
@@ -23,6 +24,18 @@
         border-radius: 20px;
         margin-bottom: 2rem;
         box-shadow: 0 10px 30px rgba(44, 62, 80, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 6px;
+        background: linear-gradient(90deg, #f39c12, #e67e22);
     }
 
     .dashboard-header h2 {
@@ -93,7 +106,20 @@
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         border: none;
         transition: box-shadow 0.3s ease, transform 0.3s ease;
-        height: 100%;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .stats-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, #DE6262, #c55252);
     }
 
     .stats-card:hover {
@@ -135,8 +161,22 @@
         padding: 2rem;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         border: none;
-        margin-bottom: 2rem;
+        margin-bottom: 3rem;
         transition: box-shadow 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+        clear: both;
+    }
+
+    .chart-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, #3498db, #2980b9);
     }
 
     .chart-card:hover {
@@ -159,7 +199,22 @@
         padding: 2rem;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         border: none;
+        margin-bottom: 3rem;
         transition: box-shadow 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+        clear: both;
+    }
+
+    .table-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, #27ae60, #229954);
     }
 
     .table-card:hover {
@@ -241,6 +296,7 @@
         border: none;
         background-color: #f8f9fa;
         transition: box-shadow 0.3s ease;
+        margin-bottom: 1.5rem;
     }
 
     .filter-card:hover {
@@ -399,8 +455,65 @@
     }
 
     .chart-card canvas {
-        max-height: 300px !important;
-        height: 300px !important;
+        max-height: 300px;
+        height: auto !important;
+    }
+
+    /* Section spacing fixes */
+    .row {
+        margin-bottom: 0;
+    }
+
+    .row.mb-5 {
+        margin-bottom: 3rem !important;
+        clear: both;
+    }
+
+    .row.mb-4 {
+        margin-bottom: 2rem !important;
+        clear: both;
+    }
+
+    /* Prevent floating issues */
+    .dashboard-container::after,
+    .row::after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+
+    /* Ensure proper stacking */
+    .dashboard-header {
+        z-index: 10;
+        position: relative;
+    }
+
+    /* Fix any potential overlapping with sidebar */
+    .col-lg-4,
+    .col-lg-8 {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Ensure all dashboard sections have proper spacing */
+    .dashboard-container .row + .row {
+        margin-top: 2rem;
+    }
+
+    /* Fix list group items spacing */
+    .list-group-item {
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+    }
+
+    .list-group-item:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Ensure proper spacing between sidebar cards */
+    .col-lg-4 .stats-card + .stats-card {
+        margin-top: 1.5rem;
     }
 
     /* Responsive styles */
@@ -432,6 +545,15 @@
             line-height: 1.3 !important;
             margin-bottom: 0.75rem !important;
             word-break: break-word !important;
+        }
+
+        /* Improved mobile spacing */
+        .row {
+            margin-bottom: 1.5rem;
+        }
+
+        .col-md-3.mb-4 {
+            margin-bottom: 1.5rem !important;
         }
 
         .filter-card .form-label,
@@ -752,7 +874,7 @@
         </div>
 
         <!-- Statistics Section -->
-        <div class="row mb-4">
+        <div class="row mb-4 mb-md-5">
             <div class="col-md-3 mb-4">
                 <div class="stats-card">
                     <div class="stats-icon">
@@ -814,7 +936,7 @@
 
         @if($doctorData)
         <!-- Doctor-Specific Dashboard Sections -->
-        <div class="row mb-4">
+        <div class="row mb-5">
             <div class="col-12">
                 <div class="dashboard-header" style="background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);">
                     <h3 style="margin: 0; color: white; font-size: 1.8rem;">
@@ -829,7 +951,7 @@
         </div>
 
         <!-- Doctor Statistics Cards -->
-        <div class="row mb-4">
+        <div class="row mb-5">
             <div class="col-md-3 mb-4">
                 <div class="stats-card">
                     <div class="stats-icon" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
@@ -872,7 +994,7 @@
         </div>
 
         <!-- Doctor Dashboard Content -->
-        <div class="row mb-4">
+        <div class="row mb-5">
             <!-- Today's Schedule -->
             <div class="col-lg-8 mb-4">
                 <div class="table-card">
@@ -917,7 +1039,7 @@
                                             </td>
                                             <td>
                                                 <a href="{{ route('doctor.appointments.show', $appointment) }}"
-                                                   class="btn btn-smbtn-outline-primary">
+                                                   class="btn btn-sm btn-outline-primary">
                                                     <i class="fas fa-eye me-1"></i>View
                                                 </a>
                                             </td>
@@ -937,7 +1059,7 @@
             </div>
 
             <!-- Doctor Sidebar -->
-            <div class="col-lg-4 mb-4">
+            <div class="col-lg-4">
                 <!-- Quick Actions -->
                 <div class="stats-card mb-4">
                     <h6 class="mb-3">
@@ -961,7 +1083,7 @@
 
                 <!-- Pending Appointments -->
                 @if($doctorData['pendingAppointments']->count() > 0)
-                    <div class="stats-card mb-4">
+                    <div class="stats-card" style="margin-bottom: 2rem; position: relative; z-index: 2;">
                         <h6 class="mb-3">
                             <i class="fas fa-clock me-2"></i>Pending Appointments
                         </h6>
@@ -973,7 +1095,7 @@
                                             <strong class="text-dark">{{ $appointment->patient->name }}</strong><br>
                                             <small class="text-muted">{{ $appointment->appointment_date->format('M j, g:i A') }}</small>
                                         </div>
-                                        <div class="btn-group btn-group-sm">
+                                        <div class="btn-group-sm">
                                             <form method="POST" action="{{ route('doctor.appointments.confirm', $appointment) }}" class="d-inline">
                                                 @csrf
                                                 <button type="submit" class="btn btn-success btn-sm" title="Confirm">
@@ -989,9 +1111,9 @@
                                 </div>
                             @endforeach
                         </div>
-                        <div class="text-center mt-2">
+                        <div class="text-center mt-3">
                             <a href="{{ route('doctor.appointments.index', ['status' => 'pending']) }}"
-                               class="btn btn-smbtn-primary-custom">
+                               class="btn btn-sm btn-primary-custom">
                                 View all pending →
                             </a>
                         </div>
@@ -1000,7 +1122,7 @@
 
                 <!-- Recent Reviews -->
                 @if($doctorData['recentReviews']->count() > 0)
-                    <div class="stats-card">
+                    <div class="stats-card" style="margin-bottom: 2rem; position: relative; z-index: 2;">
                         <h6 class="mb-3">
                             <i class="fas fa-star me-2"></i>Recent Reviews
                         </h6>
@@ -1026,9 +1148,9 @@
                                 </div>
                             @endforeach
                         </div>
-                        <div class="text-center mt-2">
+                        <div class="text-center mt-3">
                             <a href="{{ route('doctor.reviews.index') }}"
-                               class="btn btn-smbtn-primary-custom">
+                               class="btn btn-sm btn-primary-custom">
                                 View all reviews →
                             </a>
                         </div>
@@ -1039,7 +1161,7 @@
         @endif
 
         <!-- Cases Over Time Chart -->
-        <div class="row mb-4">
+        <div class="row mb-5">
             <div class="col-lg-8 mb-4">
                 <div class="chart-card">
                     <h6 class="chart-title">Cases Over Time</h6>
@@ -1060,7 +1182,7 @@
         </div>
 
         <!-- Advanced Statistics & Filters -->
-        <div class="chart-card mb-4">
+        <div class="chart-card mb-5">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="chart-title mb-0">Advanced Statistics</h6>
                 <div class="filter-controls">
@@ -1204,7 +1326,7 @@
         </div>
 
         <!-- Consolidated Patient List with Advanced Features -->
-        <div class="table-card">
+        <div class="table-card mb-5">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="table-title mb-0">Patient List</h6>
                 <div>
@@ -1350,8 +1472,7 @@
                                     <td data-date="{{ $group['last_visit']->timestamp }}">{{ $group['last_visit']->format('M d, Y') }}</td>
                                     <td>
                                         <div class="btn-group">
-                                            <button type="button" class="btn btn-sm btn-view-patient"
-                                                    style="background: linear-gradient(135deg, #DE6262 0%, #c55252 100%); border: none; color: white; font-weight: 500; padding: 0.5rem 1rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(222, 98, 98, 0.3); font-size: 0.85rem;"
+                                            <button type="button" class="btn btn-sm btn-view-patient btn-primary-custom"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#patientModal"
                                                     data-patient-key="{{ $key }}"
@@ -1360,7 +1481,6 @@
                                                     data-patient-gender="{{ $group['patient']->gender }}">
                                                 <i class="fas fa-eye me-1"></i>View
                                             </button>
-
                                         </div>
                                     </td>
                                 </tr>
@@ -2439,11 +2559,11 @@ function setupPatientModal() {
                     <td>${visitNumber}</td>
                     <td>${formattedDate}</td>
                     <td>${symptomsText}</td>
-                    <td>
-                        <button class="btn btn-smbtn-primary-custom view-visit-details" data-visit-id="${visit.id}">
-                            <i class="fas fa-file-medical me-1"></i> Details
-                        </button>
-                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary-custom view-visit-details" data-visit-id="${visit.id}">
+                                            <i class="fas fa-file-medical me-1"></i> Details
+                                        </button>
+                                    </td>
                 `;
 
                 visitHistoryBody.appendChild(row);
