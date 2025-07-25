@@ -614,6 +614,72 @@
 </section>
 @endif
 
+<!-- For Patients Section -->
+<section class="py-5" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <div class="pe-lg-5">
+                    <h2 class="section-title text-start mb-4">
+                        <i class="fas fa-user-injured text-theme-primary me-3"></i>
+                        Are You a Patient?
+                    </h2>
+                    <p class="lead mb-4">
+                        Find qualified doctors, book appointments, and manage your healthcare journey with ease.
+                    </p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-search text-theme-primary me-3"></i>
+                                <span>Find Doctors by Specialty</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-calendar-check text-theme-primary me-3"></i>
+                                <span>Easy Online Booking</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user-shield text-theme-primary me-3"></i>
+                                <span>No Account Required</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star text-theme-primary me-3"></i>
+                                <span>Leave Reviews</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="{{ route('doctors.index') }}" class="btn btn-theme-primary btn-lg">
+                            <i class="fas fa-search me-2"></i>Find a Doctor
+                        </a>
+                        <a href="{{ route('patient.register') }}" class="btn btn-theme-outline btn-lg">
+                            <i class="fas fa-user-plus me-2"></i>Create Account
+                        </a>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-muted small mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Account creation is optional - you can book appointments as a guest
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <div class="position-relative">
+                    <img src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                         alt="Patient Care" class="img-fluid rounded-3 shadow-lg">
+                    <div class="position-absolute top-0 start-0 w-100 h-100 bg-gradient-overlay rounded-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- CTA Section -->
 <section class="cta-section">
     <div class="container text-center">
