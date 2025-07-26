@@ -15,6 +15,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\Admin\AdminInvoiceController;
 use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Doctor\GoogleController;
 use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Route;
 
@@ -131,6 +132,16 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
     // Profile management
     Route::get('/profile', [DoctorDashboardController::class, 'profile'])->name('profile.edit');
     Route::patch('/profile', [DoctorDashboardController::class, 'updateProfile'])->name('profile.update');
+
+    // Google integration
+    Route::prefix('google')->name('google.')->group(function () {
+        Route::get('/redirect', [GoogleController::class, 'redirectToGoogle'])->name('redirect');
+        Route::get('/callback', [GoogleController::class, 'handleGoogleCallback'])->name('callback');
+        Route::post('/disconnect', [GoogleController::class, 'disconnectGoogle'])->name('disconnect');
+        Route::get('/accounts', [GoogleController::class, 'getAccounts'])->name('accounts');
+        Route::get('/locations', [GoogleController::class, 'getLocations'])->name('locations');
+        Route::post('/account-location', [GoogleController::class, 'setAccountLocation'])->name('account-location');
+    });
 });
 // Stripe webhook (outside auth middleware)
 Route::post('/stripe/webhook', [SubscriptionController::class, 'webhook'])->name('stripe.webhook');

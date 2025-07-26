@@ -186,6 +186,87 @@
                                class="form-control">
                     </div>
 
+                   <!-- Google Integration -->
+                   <div class="table-card">
+                       <h6 class="mb-4"><i class="fab fa-google me-2"></i>Google Integration</h6>
+
+                       @if($doctor->googleAccount)
+                           <div class="alert alert-success mb-4">
+                               <div class="d-flex justify-content-between align-items-center">
+                                   <div>
+                                       <i class="fas fa-check-circle me-2"></i>
+                                       <strong>Google Account Connected</strong>
+                                       <p class="mb-0 mt-1">Your Google account is connected and reviews can be posted to Google.</p>
+                                   </div>
+                                   <form method="POST" action="{{ route('doctor.google.disconnect') }}">
+                                       @csrf
+                                       <button type="submit" class="btn btn-outline-danger btn-sm">
+                                           <i class="fas fa-unlink me-1"></i>Disconnect
+                                       </button>
+                                   </form>
+                               </div>
+                           </div>
+
+                           @if($doctor->googleAccount->business_account_id && $doctor->googleAccount->location_id)
+                               <div class="alert alert-info">
+                                   <i class="fas fa-info-circle me-2"></i>
+                                   <strong>Google My Business Configured</strong>
+                                   <p class="mb-0">Reviews will be posted to your Google My Business location.</p>
+                               </div>
+                           @else
+                               <div class="alert alert-warning">
+                                   <i class="fas fa-exclamation-triangle me-2"></i>
+                                   <strong>Google My Business Not Configured</strong>
+                                   <p class="mb-0">Please select your Google My Business account and location below.</p>
+                               </div>
+
+                               <div class="row g-4">
+                                   <div class="col-12">
+                                       <label class="form-label">Google My Business Accounts</label>
+                                       <div id="google-accounts-container">
+                                           <button type="button" class="btn btn-outline-primary" id="fetch-accounts-btn">
+                                               <i class="fas fa-sync me-2"></i>Fetch Google Accounts
+                                           </button>
+                                       </div>
+                                   </div>
+
+                                   <div class="col-12">
+                                       <label for="google_account_id" class="form-label">Select Account</label>
+                                       <select name="google_account_id" id="google_account_id" class="form-select" disabled>
+                                           <option value="">Select an account first</option>
+                                       </select>
+                                   </div>
+
+                                   <div class="col-12">
+                                       <label for="google_location_id" class="form-label">Select Location</label>
+                                       <select name="google_location_id" id="google_location_id" class="form-select" disabled>
+                                           <option value="">Select an account first</option>
+                                       </select>
+                                   </div>
+
+                                   <div class="col-12">
+                                       <button type="button" class="btn btn-primary" id="save-google-config-btn" disabled>
+                                           <i class="fas fa-save me-2"></i>Save Configuration
+                                       </button>
+                                   </div>
+                               </div>
+                           @endif
+                       @else
+                           <div class="alert alert-info">
+                               <div class="d-flex justify-content-between align-items-center">
+                                   <div>
+                                       <i class="fab fa-google me-2"></i>
+                                       <strong>Connect Google Account</strong>
+                                       <p class="mb-0">Connect your Google account to enable posting reviews to Google.</p>
+                                   </div>
+                                   <a href="{{ route('doctor.google.redirect') }}" class="btn btn-outline-primary">
+                                       <i class="fab fa-google me-1"></i>Connect Google
+                                   </a>
+                               </div>
+                           </div>
+                       @endif
+                   </div>
+
                     <!-- State -->
                     <div class="col-md-6">
                         <label for="state" class="form-label">State/Province</label>
@@ -369,3 +450,113 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+   const fetchAccountsBtn = document.getElementById('fetch-accounts-btn');
+   const accountSelect = document.getElementById('google_account_id');
+   const locationSelect = document.getElementById('google_location_id');
+   const saveConfigBtn = document.getElementById('save-google-config-btn');
+
+   if (fetchAccountsBtn) {
+       fetchAccountsBtn.addEventListener('click', function() {
+           fetch('{{ route('doctor.google.accounts') }}')
+               .then(response => response.json())
+               .then(data => {
+                   if (data.success) {
+                       accountSelect.innerHTML = '<option value="">Select an account</option>';
+                       data.accounts.forEach(account => {
+                           const option = document.createElement('option');
+                           option.value = account.name;
+                           option.textContent = account.accountName;
+                           accountSelect.appendChild(option);
+                       });
+                       accountSelect.disabled = false;
+                   } else {
+                       alert('Error fetching accounts: ' + data.error);
+                   }
+               })
+               .catch(error => {
+                   console.error('Error:', error);
+                   alert('Error fetching accounts');
+               });
+       });
+   }
+
+   if (accountSelect) {
+       accountSelect.addEventListener('change', function() {
+           const accountId = this.value;
+           if (accountId) {
+               fetch('{{ route('doctor.google.locations') }}?account_id=' + encodeURIComponent(accountId))
+                   .then(response => response.json())
+                   .then(data => {
+                       if (data.success) {
+                           locationSelect.innerHTML = '<option value="">Select a location</option>';
+                           data.locations.forEach(location => {
+                               const option = document.createElement('option');
+                               option.value = location.name;
+                               option.textContent = location.locationName;
+                               locationSelect.appendChild(option);
+                           });
+                           locationSelect.disabled = false;
+                       } else {
+                           alert('Error fetching locations: ' + data.error);
+                       }
+                   })
+                   .catch(error => {
+                       console.error('Error:', error);
+                       alert('Error fetching locations');
+                   });
+           } else {
+               locationSelect.innerHTML = '<option value="">Select an account first</option>';
+               locationSelect.disabled = true;
+           }
+       });
+   }
+
+   if (locationSelect) {
+       locationSelect.addEventListener('change', function() {
+           saveConfigBtn.disabled = !this.value;
+       });
+   }
+
+   if (saveConfigBtn) {
+       saveConfigBtn.addEventListener('click', function() {
+           const accountId = accountSelect.value;
+           const locationId = locationSelect.value;
+
+           if (!accountId || !locationId) {
+               alert('Please select both account and location');
+               return;
+           }
+
+           fetch('{{ route('doctor.google.account-location') }}', {
+               method: 'POST',
+               headers: {
+                   'Content-Type': 'application/json',
+                   'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+               },
+               body: JSON.stringify({
+                   account_id: accountId,
+                   location_id: locationId
+               })
+           })
+           .then(response => response.json())
+           .then(data => {
+               if (data.success) {
+                   alert(data.message);
+                   location.reload();
+               } else {
+                   alert('Error saving configuration: ' + data.error);
+               }
+           })
+           .catch(error => {
+               console.error('Error:', error);
+               alert('Error saving configuration');
+           });
+       });
+   }
+});
+</script>
+@endpush

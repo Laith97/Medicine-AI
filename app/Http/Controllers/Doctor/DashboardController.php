@@ -257,7 +257,7 @@ class DashboardController extends Controller
     public function profile()
     {
         $doctor = Auth::user()->doctor;
-        $doctor->load(['user', 'specialty']);
+        $doctor->load(['user', 'specialty', 'googleAccount']);
 
         // Get available specialties for the dropdown
         $specialties = \App\Models\Specialty::orderBy('name')->get();
