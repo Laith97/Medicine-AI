@@ -95,6 +95,19 @@
                             </div>
                         </div>
 
+                        <!-- Google Consent -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="consent_google_posting" value="1" id="consent_google_posting" class="form-check-input" {{ old('consent_google_posting') ? 'checked' : '' }}>
+                                <label for="consent_google_posting" class="form-check-label">
+                                    <i class="fab fa-google me-1"></i>I consent to have this review posted to Google
+                                </label>
+                                <small class="form-text text-muted d-block mt-1">
+                                    By checking this box, you agree to have your review posted to Google Reviews for this doctor's business.
+                                </small>
+                            </div>
+                        </div>
+
                         <!-- Submit Buttons -->
                         <div class="d-flex justify-content-between">
                             <a href="{{ route('appointments.show', $appointment) }}" class="btn btn-outline-secondary">
@@ -114,8 +127,6 @@
 <style>
 .rating-input {
     display: flex;
-    flex-direction: row-reverse;
-    justify-content: flex-end;
     gap: 5px;
 }
 
@@ -129,16 +140,6 @@
     color: #ddd;
     transition: color 0.2s;
 }
-
-.rating-input input[type="radio"]:checked ~ .star,
-.rating-input .star:hover,
-.rating-input .star:hover ~ .star {
-    color: #ffc107;
-}
-
-.rating-input input[type="radio"]:checked ~ .star {
-    color: #ffc107;
-}
 </style>
 
 <script>
@@ -147,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     stars.forEach((star, index) => {
         star.addEventListener('mouseover', function() {
-            highlightStars(5 - index);
+            highlightStars(index + 1);
         });
 
         star.addEventListener('mouseout', function() {
@@ -162,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function highlightStars(rating) {
         stars.forEach((star, index) => {
-            if (5 - index <= rating) {
+            if (index < rating) {
                 star.style.color = '#ffc107';
             } else {
                 star.style.color = '#ddd';
