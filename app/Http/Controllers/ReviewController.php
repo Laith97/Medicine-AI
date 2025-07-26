@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Review;
 use App\Models\Appointment;
 use App\Models\Doctor;
+use App\Jobs\PostReviewToGoogle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -159,12 +160,18 @@ class ReviewController extends Controller
                 'rating' => $request->rating,
                 'comment' => $request->comment,
                 'is_anonymous' => $request->boolean('is_anonymous'),
+                'consent_google_posting' => $request->boolean('consent_google_posting'),
                 'is_approved' => true, // Auto-approve for now
                 'source' => 'medcura',
             ]);
 
             // Update doctor's review statistics
             $this->updateDoctorReviewStats($appointment->doctor_id);
+
+            // Dispatch job to post review to Google if consent is given
+            if ($request->boolean('consent_google_posting')) {
+                PostReviewToGoogle::dispatch($review->id);
+            }
 
             return redirect()->route('reviews.show', $review)
                 ->with('success', 'Thank you for your review!');
@@ -416,7 +423,7 @@ class ReviewController extends Controller
 
         if ($review->verifyWithToken($request->token)) {
             $review->update(['is_approved' => true]);
-            
+
             // Update doctor's review statistics now that review is approved
             $this->updateDoctorReviewStats($review->doctor_id);
 
@@ -461,7 +468,7 @@ class ReviewController extends Controller
             $reviews = $doctor->reviews()->where('is_approved', true);
             $totalReviews = $reviews->count();
             $averageRating = $totalReviews > 0 ? $reviews->avg('rating') : 0;
-            
+
             $doctor->update([
                 'total_reviews' => $totalReviews,
                 'average_rating' => round($averageRating, 2)
@@ -531,6 +538,7 @@ class ReviewController extends Controller
             'guest_name' => $request->is_anonymous ? null : $request->guest_name,
             'guest_email' => $request->guest_email,
             'is_anonymous' => $request->boolean('is_anonymous'),
+            'consent_google_posting' => $request->boolean('consent_google_posting'),
             'is_verified' => false, // Requires verification
             'source' => 'guest',
         ]);
@@ -540,6 +548,11 @@ class ReviewController extends Controller
 
         // Send verification email
         // TODO: Implement email sending
+
+        // Dispatch job to post review to Google if consent is given
+        if ($request->boolean('consent_google_posting')) {
+            PostReviewToGoogle::dispatch($review->id);
+        }
 
         return redirect()->route('appointments.guest.show', [
             'appointment' => $request->appointment_number,
