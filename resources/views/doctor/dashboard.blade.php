@@ -122,6 +122,9 @@
                         <a href="{{ route('doctor.availability.index') }}" class="btn btn-success">
                             <i class="fas fa-clock me-2"></i>Manage Availability
                         </a>
+                        <a href="{{ route('doctor.landing-page.index') }}" class="btn btn-warning">
+                            <i class="fas fa-globe me-2"></i>Landing Page
+                        </a>
                         <a href="{{ route('doctor.reviews.index') }}" class="btn btn-info">
                             <i class="fas fa-star me-2"></i>View Reviews
                         </a>
