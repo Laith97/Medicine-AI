@@ -14,6 +14,7 @@ use App\Models\OpenAIUsage;
 use App\Models\Subscription;
 use App\Models\PatientAnalysis;
 use App\Models\SystemSetting;
+use App\Models\MonthlyInvoiceSetting;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Validation\Rules;
 use Carbon\Carbon;
@@ -25,7 +26,7 @@ class AdminController extends Controller
      */
     public function index()
     {
-        $users = User::with(['setting', 'patientAnalyses'])
+        $users = User::with(['setting', 'patientAnalyses', 'monthlyInvoiceSetting'])
                     ->orderBy('created_at', 'desc')
                     ->paginate(15);
 
@@ -48,66 +49,101 @@ class AdminController extends Controller
         $validationRules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'phone' => ['required', 'string', 'regex:/^\+?[1-9]\d{6,14}$/', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'in:patient,doctor'],
-            'is_verified' => ['boolean'],
+            'specialty_select' => ['nullable', 'string', 'max:255'],
+            'custom_specialty' => ['nullable', 'string', 'max:255'],
+            'specialty' => ['required', 'string', 'max:255'],
+            'billing_amount' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'monthly_cost_limit' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'subscription_period_months' => ['nullable', 'integer', 'in:1,3,6,12,24,36,-1'],
+            'grace_period_days' => ['nullable', 'integer', 'min:1', 'max:30'],
+            'warning_period_days' => ['nullable', 'integer', 'min:1', 'max:14'],
+            'reminder_frequency_days' => ['nullable', 'integer', 'min:1', 'max:30'],
         ];
 
-        // Add specialty validation only if user is a doctor
-        if ($request->role === 'doctor') {
-            $validationRules['specialty'] = ['required', 'string', 'max:255'];
+        // Validate the request
+        $request->validate($validationRules);
+
+        // Process specialty field based on form input
+        $specialty = $request->specialty;
+        if ($request->specialty_select === 'other' && $request->filled('custom_specialty')) {
+            $specialty = trim($request->custom_specialty);
+        } elseif ($request->filled('specialty_select') && $request->specialty_select !== 'other') {
+            $specialty = $request->specialty_select;
         }
 
-        $request->validate($validationRules);
+        // Ensure we have a valid specialty
+        if (empty($specialty)) {
+            return back()->withErrors(['specialty' => 'Please select a medical specialty.'])->withInput();
+        }
 
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
+            'phone' => $request->phone,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
-            'email_verified_at' => $request->boolean('is_verified', false) ? now() : null,
+            'monthly_cost_limit' => $request->monthly_cost_limit ?? 0,
+            'role' => 'doctor', // Set role to doctor for medical AI users
         ];
 
-        // Add specialty only for doctors
-        if ($request->role === 'doctor' && $request->specialty) {
-            $userData['specialty'] = $request->specialty;
-        }
-
+        // Create the user first
         $user = User::create($userData);
 
-        // Handle doctor-specific setup
-        if ($request->role === 'doctor') {
-            // Create user settings with selected specialty
-            $user->setting()->create([
-                'specialty' => $request->specialty,
-                'criterion' => 'CDC', // Default criterion
+        // Create user settings with specialty
+        $user->setting()->create([
+            'specialty' => $specialty,
+            'criterion' => 'CDC', // Default criterion
+        ]);
+
+        // Create doctor profile for doctor users
+        if ($user->role === 'doctor') {
+            // Get or create a default specialty for the doctor profile
+            $doctorSpecialty = Specialty::where('name', $specialty)->first();
+            if (!$doctorSpecialty) {
+                $doctorSpecialty = Specialty::first(); // Use first available specialty
+            }
+            
+            if ($doctorSpecialty) {
+                $user->doctor()->create([
+                    'specialty_id' => $doctorSpecialty->id,
+                    'license_number' => 'LIC' . str_pad($user->id, 6, '0', STR_PAD_LEFT),
+                    'bio' => 'Medical professional using AI-assisted diagnosis system.',
+                    'consultation_fee' => 5000, // $50.00 in cents
+                    'appointment_duration' => 30,
+                    'is_active' => true,
+                    'is_verified' => true
+                ]);
+            }
+        }
+
+        // Create monthly invoice setting using provided amount or system defaults
+        $monthlyAmount = $request->billing_amount;
+        $subscriptionPeriod = $request->subscription_period_months ?? 1;
+        $gracePeriod = $request->grace_period_days ?? SystemSetting::get('default_grace_period', 7);
+        $warningPeriod = $request->warning_period_days ?? 3;
+        $reminderFrequency = $request->reminder_frequency_days ?? 3;
+        
+        // Use system default if no amount provided
+        if (!$monthlyAmount && SystemSetting::get('default_monthly_amount')) {
+            $monthlyAmount = SystemSetting::get('default_monthly_amount');
+        }
+        
+        if ($monthlyAmount && $monthlyAmount > 0) {
+            $user->monthlyInvoiceSetting()->create([
+                'billing_amount' => $monthlyAmount,
+                'subscription_period_months' => $subscriptionPeriod,
+                'is_active' => true,
+                'grace_period_days' => $gracePeriod,
+                'warning_period_days' => $warningPeriod,
+                'reminder_frequency_days' => $reminderFrequency,
+                'restricted_pages' => ['ask-ai', 'dashboard', 'cases'],
+                'is_restricted' => false,
             ]);
-
-            // Find or create specialty
-            $specialty = Specialty::firstOrCreate(
-                ['name' => $request->specialty],
-                ['slug' => Str::slug($request->specialty), 'is_active' => true]
-            );
-
-            // Create doctor profile
-            $user->doctor()->create([
-                'specialty_id' => $specialty->id,
-                'license_number' => 'TEMP-' . strtoupper(Str::random(8)) . '-' . $user->id,
-                'consultation_fee' => 5000, // Default $50.00 in cents
-                'appointment_duration' => 30, // Default 30 minutes
-                'auto_approve_appointments' => false,
-                'allow_cancellation' => true,
-                'allow_rescheduling' => true,
-                'cancellation_hours' => 24, // Default 24 hours notice
-                'is_verified' => $request->boolean('is_verified', false),
-                'verified_at' => $request->boolean('is_verified', false) ? now() : null,
-            ]);
-
-            event(new Registered($user));
         }
 
         return redirect()->route('admin.users.index')
-                        ->with('success', 'User created successfully.');
+                        ->with('success', 'User created successfully with monthly invoice settings.');
     }
 
     /**
@@ -115,7 +151,7 @@ class AdminController extends Controller
      */
     public function show(User $user)
     {
-        $user->load(['setting', 'patientAnalyses']);
+        $user->load(['setting', 'patientAnalyses', 'monthlyInvoiceSetting']);
         return view('admin.users.show', compact('user'));
     }
 
@@ -124,7 +160,7 @@ class AdminController extends Controller
      */
     public function edit(User $user)
     {
-        $user->load(['setting', 'doctor']);
+        $user->load(['setting', 'monthlyInvoiceSetting']);
         return view('admin.users.edit', compact('user'));
     }
 
@@ -136,85 +172,78 @@ class AdminController extends Controller
         $validationRules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'phone' => ['required', 'string', 'regex:/^\+?[1-9]\d{6,14}$/', 'unique:users,phone,'.$user->id],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'in:patient,doctor'],
-            'is_verified' => ['boolean'],
+            'specialty_select' => ['nullable', 'string', 'max:255'],
+            'custom_specialty' => ['nullable', 'string', 'max:255'],
+            'specialty' => ['required', 'string', 'max:255'],
+            'billing_amount' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'monthly_cost_limit' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'grace_period_days' => ['nullable', 'integer', 'min:1', 'max:30'],
+            'reminder_frequency_days' => ['nullable', 'integer', 'min:1', 'max:30'],
         ];
 
-        // Add specialty validation only if user is a doctor
-        if ($request->role === 'doctor') {
-            $validationRules['specialty'] = ['required', 'string', 'max:255'];
-        }
-
+        // Validate the request
         $request->validate($validationRules);
 
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
-            'role' => $request->role,
-            'email_verified_at' => $request->boolean('is_verified', false) ? now() : null,
+            'phone' => $request->phone,
+            'monthly_cost_limit' => $request->monthly_cost_limit ?? 0,
+            'role' => 'doctor', // Ensure role is set to doctor for medical AI users
         ];
-
-        // Add specialty only for doctors
-        if ($request->role === 'doctor' && $request->specialty) {
-            $userData['specialty'] = $request->specialty;
-        }
 
         if ($request->filled('password')) {
             $userData['password'] = Hash::make($request->password);
         }
 
-        $user->update($userData);
-
-        // Handle doctor-specific setup when changing to doctor
-        if ($request->role === 'doctor' && $user->role !== 'doctor') {
-            // Create user settings if not exists
-            if (!$user->setting) {
-                $user->setting()->create([
-                    'specialty' => $request->specialty,
-                    'criterion' => 'CDC',
-                ]);
-            } else {
-                $user->setting->update(['specialty' => $request->specialty]);
-            }
-
-            // Find or create specialty
-            $specialty = Specialty::firstOrCreate(
-                ['name' => $request->specialty],
-                ['slug' => Str::slug($request->specialty), 'is_active' => true]
-            );
-
-            // Create doctor profile if not exists
-            if (!$user->doctor) {
-                $user->doctor()->create([
-                    'specialty_id' => $specialty->id,
-                    'license_number' => 'TEMP-' . strtoupper(Str::random(8)) . '-' . $user->id,
-                    'consultation_fee' => 5000,
-                    'appointment_duration' => 30,
-                    'auto_approve_appointments' => false,
-                    'allow_cancellation' => true,
-                    'allow_rescheduling' => true,
-                    'cancellation_hours' => 24,
-                    'is_verified' => $request->boolean('is_verified', false),
-                    'verified_at' => $request->boolean('is_verified', false) ? now() : null,
-                ]);
-            }
+        // Process specialty field based on form input
+        $specialty = $request->specialty;
+        if ($request->specialty_select === 'other' && $request->filled('custom_specialty')) {
+            $specialty = trim($request->custom_specialty);
+        } elseif ($request->filled('specialty_select') && $request->specialty_select !== 'other') {
+            $specialty = $request->specialty_select;
         }
 
-        // Update existing doctor's specialty and verification
-        if ($request->role === 'doctor' && $user->doctor) {
-            $specialty = Specialty::firstOrCreate(
-                ['name' => $request->specialty],
-                ['slug' => Str::slug($request->specialty), 'is_active' => true]
-            );
-            $user->doctor->update([
-                'specialty_id' => $specialty->id,
-                'is_verified' => $request->boolean('is_verified', false),
-                'verified_at' => $request->boolean('is_verified', false) ? now() : null,
+        // Ensure we have a valid specialty
+        if (empty($specialty)) {
+            return back()->withErrors(['specialty' => 'Please select a medical specialty.'])->withInput();
+        }
+
+        $user->update($userData);
+
+        // Update user settings
+        if ($user->setting) {
+            $user->setting->update([
+                'specialty' => $specialty,
             ]);
-            if ($user->setting) {
-                $user->setting->update(['specialty' => $request->specialty]);
+        } else {
+            $user->setting()->create([
+                'specialty' => $specialty,
+                'criterion' => 'CDC',
+            ]);
+        }
+
+        // Update or create monthly invoice setting
+        if ($request->filled('billing_amount') && $request->billing_amount > 0) {
+            $monthlyData = [
+                'billing_amount' => $request->billing_amount,
+                'is_active' => true,
+                'grace_period_days' => $request->grace_period_days ?? 7,
+                'reminder_frequency_days' => $request->reminder_frequency_days ?? 3,
+                'restricted_pages' => ['ask-ai', 'dashboard', 'cases'],
+            ];
+
+            if ($user->monthlyInvoiceSetting) {
+                $user->monthlyInvoiceSetting->update($monthlyData);
+            } else {
+                $monthlyData['is_restricted'] = false;
+                $user->monthlyInvoiceSetting()->create($monthlyData);
             }
+        } elseif ($user->monthlyInvoiceSetting) {
+            // If monthly amount is removed, deactivate the setting
+            $user->monthlyInvoiceSetting->update(['is_active' => false]);
         }
 
         return redirect()->route('admin.users.index')
@@ -546,16 +575,338 @@ class AdminController extends Controller
     public function updateSystemSettings(Request $request)
     {
         $request->validate([
-            'show_pricing_section' => 'boolean'
+            'show_pricing_section' => 'boolean',
+            'default_monthly_amount' => 'nullable|numeric|min:0|max:9999.99',
+            'default_grace_period' => 'nullable|integer|min:1|max:30',
         ]);
 
+        // Update pricing section visibility
         SystemSetting::set(
             'show_pricing_section',
             $request->has('show_pricing_section') ? '1' : '0',
             'boolean',
-            'Show/hide the Choose Your Plan section on the home page'
+            'Show/hide the pricing information section on the home page'
         );
 
+        // Update default monthly amount
+        if ($request->filled('default_monthly_amount')) {
+            SystemSetting::set(
+                'default_monthly_amount',
+                $request->default_monthly_amount,
+                'decimal',
+                'Default monthly amount for new user accounts'
+            );
+        }
+
+        // Update default grace period
+        if ($request->filled('default_grace_period')) {
+            SystemSetting::set(
+                'default_grace_period',
+                $request->default_grace_period,
+                'integer',
+                'Default grace period in days for new user accounts'
+            );
+        }
+
         return redirect()->back()->with('success', 'System settings updated successfully.');
+    }
+
+    /**
+     * Show the manual reminders form
+     */
+    public function showSendRemindersForm()
+    {
+        try {
+            // Get all users with active monthly invoice settings
+            $allUsers = User::whereHas('monthlyInvoiceSetting', function($query) {
+                $query->where('is_active', true);
+            })->with(['monthlyInvoiceSetting', 'stripeInvoices' => function($query) {
+                $query->where('status', 'open');
+            }])->get();
+
+            // Categorize users by their current status
+            $gracePeriodUsers = $allUsers->filter(function($user) {
+                return $user->isInGracePeriod();
+            });
+
+            $warningPeriodUsers = $allUsers->filter(function($user) {
+                return $user->isInWarningPeriod();
+            });
+
+            $overdueUsers = $allUsers->filter(function($user) {
+                return $user->stripeInvoices->where('status', 'open')->where('due_date', '<', now())->count() > 0;
+            });
+
+            // Get all users for "All Types" option (users with active billing)
+            $allEligibleUsers = $allUsers;
+
+            // Ensure collections are not null
+            $gracePeriodUsers = $gracePeriodUsers ?? collect();
+            $warningPeriodUsers = $warningPeriodUsers ?? collect();
+            $overdueUsers = $overdueUsers ?? collect();
+            $allEligibleUsers = $allEligibleUsers ?? collect();
+
+            return view('admin.send-reminders', compact(
+                'gracePeriodUsers',
+                'warningPeriodUsers', 
+                'overdueUsers',
+                'allEligibleUsers'
+            ));
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in showSendRemindersForm: ' . $e->getMessage());
+            return redirect()->route('admin.dashboard')
+                ->with('error', 'Unable to load reminders form. Please try again.');
+        }
+    }
+
+    /**
+     * Send manual reminders
+     */
+    public function sendManualReminders(Request $request)
+    {
+        try {
+            // Log the request data for debugging
+            \Log::info('Manual reminders request data:', $request->all());
+            
+            $request->validate([
+                'reminder_type' => 'required|in:grace_period,warning_period,overdue,all',
+                'user_ids' => 'nullable|array',
+                'user_ids.*' => 'exists:users,id',
+                'force_send' => 'boolean'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Manual reminders validation failed:', $e->errors());
+            return redirect()->back()
+                ->withErrors($e->validator)
+                ->withInput()
+                ->with('error', 'Please check your input and try again.');
+        }
+
+        $results = [
+            'grace_reminders_sent' => 0,
+            'warning_reminders_sent' => 0,
+            'overdue_reminders_sent' => 0,
+            'errors' => []
+        ];
+
+        try {
+            // Safely get user_ids as array
+            $userIds = $request->input('user_ids');
+            if ($userIds && !is_array($userIds)) {
+                $userIds = [$userIds];
+            }
+            
+            switch ($request->reminder_type) {
+                case 'grace_period':
+                    $graceResults = $this->sendGracePeriodReminders($userIds, $request->boolean('force_send'));
+                    $results = [
+                        'grace_reminders_sent' => $graceResults['grace_reminders_sent'],
+                        'warning_reminders_sent' => 0,
+                        'overdue_reminders_sent' => 0,
+                        'errors' => $graceResults['errors']
+                    ];
+                    break;
+                    
+                case 'warning_period':
+                    $warningResults = $this->sendWarningPeriodReminders($userIds, $request->boolean('force_send'));
+                    $results = [
+                        'grace_reminders_sent' => 0,
+                        'warning_reminders_sent' => $warningResults['warning_reminders_sent'],
+                        'overdue_reminders_sent' => 0,
+                        'errors' => $warningResults['errors']
+                    ];
+                    break;
+                    
+                case 'overdue':
+                    $overdueResults = $this->sendOverdueReminders($userIds, $request->boolean('force_send'));
+                    $results = [
+                        'grace_reminders_sent' => 0,
+                        'warning_reminders_sent' => 0,
+                        'overdue_reminders_sent' => $overdueResults['overdue_reminders_sent'],
+                        'errors' => $overdueResults['errors']
+                    ];
+                    break;
+                    
+                case 'all':
+                    $graceResults = $this->sendGracePeriodReminders(null, $request->boolean('force_send'));
+                    $warningResults = $this->sendWarningPeriodReminders(null, $request->boolean('force_send'));
+                    $overdueResults = $this->sendOverdueReminders(null, $request->boolean('force_send'));
+                    
+                    $results = [
+                        'grace_reminders_sent' => $graceResults['grace_reminders_sent'],
+                        'warning_reminders_sent' => $warningResults['warning_reminders_sent'],
+                        'overdue_reminders_sent' => $overdueResults['overdue_reminders_sent'],
+                        'errors' => array_merge($graceResults['errors'], $warningResults['errors'], $overdueResults['errors'])
+                    ];
+                    break;
+            }
+
+            $totalSent = $results['grace_reminders_sent'] + $results['warning_reminders_sent'] + $results['overdue_reminders_sent'];
+            $message = "Successfully sent {$totalSent} reminder(s). ";
+            
+            if ($results['grace_reminders_sent'] > 0) {
+                $message .= "{$results['grace_reminders_sent']} grace period, ";
+            }
+            if ($results['warning_reminders_sent'] > 0) {
+                $message .= "{$results['warning_reminders_sent']} warning period, ";
+            }
+            if ($results['overdue_reminders_sent'] > 0) {
+                $message .= "{$results['overdue_reminders_sent']} overdue, ";
+            }
+            
+            $message = rtrim($message, ', ') . '.';
+            
+            if (count($results['errors']) > 0) {
+                $message .= ' ' . count($results['errors']) . ' error(s) occurred.';
+                // Store detailed errors in session for debugging
+                session()->flash('detailed_errors', $results['errors']);
+            }
+
+            return redirect()->back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to send reminders: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send grace period reminders
+     */
+    private function sendGracePeriodReminders($userIds = null, $forceSend = false)
+    {
+        $results = ['grace_reminders_sent' => 0, 'errors' => []];
+
+        $query = User::whereHas('monthlyInvoiceSetting', function($query) {
+            $query->where('is_active', true);
+        })->with('monthlyInvoiceSetting');
+
+        if ($userIds && is_array($userIds) && count($userIds) > 0) {
+            $query->whereIn('id', $userIds);
+        }
+
+        $users = $query->get()->filter(function($user) {
+            return $user->isInGracePeriod();
+        });
+
+        foreach ($users as $user) {
+            try {
+                $setting = $user->monthlyInvoiceSetting;
+                
+                // Check if we should send reminder (unless forced)
+                if (!$forceSend) {
+                    if ($setting->last_reminder_sent_at && 
+                        !$setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->isPast()) {
+                        continue; // Skip - too soon since last reminder
+                    }
+                }
+
+                // Send notification
+                $user->notify(new \App\Notifications\GracePeriodReminder($setting));
+                
+                // Update timestamp
+                $setting->update(['last_reminder_sent_at' => now()]);
+                
+                $results['grace_reminders_sent']++;
+
+            } catch (\Exception $e) {
+                $results['errors'][] = "User {$user->id} ({$user->name}): " . $e->getMessage();
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Send warning period reminders
+     */
+    private function sendWarningPeriodReminders($userIds = null, $forceSend = false)
+    {
+        $results = ['warning_reminders_sent' => 0, 'errors' => []];
+
+        $query = User::whereHas('monthlyInvoiceSetting', function($query) {
+            $query->where('is_active', true);
+        })->with('monthlyInvoiceSetting');
+
+        if ($userIds && is_array($userIds) && count($userIds) > 0) {
+            $query->whereIn('id', $userIds);
+        }
+
+        $users = $query->get()->filter(function($user) {
+            return $user->isInWarningPeriod();
+        });
+
+        foreach ($users as $user) {
+            try {
+                $setting = $user->monthlyInvoiceSetting;
+                
+                // Check if we should send reminder (unless forced)
+                if (!$forceSend) {
+                    if ($setting->last_reminder_sent_at && 
+                        !$setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->isPast()) {
+                        continue; // Skip - too soon since last reminder
+                    }
+                }
+
+                // Send notification
+                $user->notify(new \App\Notifications\FinalWarning($setting));
+                
+                // Update timestamp
+                $setting->update(['last_reminder_sent_at' => now()]);
+                
+                $results['warning_reminders_sent']++;
+
+            } catch (\Exception $e) {
+                $results['errors'][] = "User {$user->id} ({$user->name}): " . $e->getMessage();
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Send overdue reminders
+     */
+    private function sendOverdueReminders($userIds = null, $forceSend = false)
+    {
+        $results = ['overdue_reminders_sent' => 0, 'errors' => []];
+
+        $query = User::whereHas('stripeInvoices', function($query) {
+            $query->where('status', 'open')
+                  ->where('due_date', '<', now());
+        })->with(['stripeInvoices' => function($query) {
+            $query->where('status', 'open')
+                  ->where('due_date', '<', now());
+        }]);
+
+        if ($userIds && is_array($userIds) && count($userIds) > 0) {
+            $query->whereIn('id', $userIds);
+        }
+
+        $users = $query->get();
+
+        foreach ($users as $user) {
+            foreach ($user->stripeInvoices as $invoice) {
+                try {
+                    // Check if we should send reminder (unless forced)
+                    if (!$forceSend && !$invoice->needsReminder()) {
+                        continue; // Skip - doesn't need reminder yet
+                    }
+
+                    // Send notification
+                    $user->notify(new \App\Notifications\InvoiceOverdue($invoice));
+                    
+                    // Update invoice reminder tracking
+                    $invoice->markReminderSent();
+                    
+                    $results['overdue_reminders_sent']++;
+
+                } catch (\Exception $e) {
+                    $results['errors'][] = "Invoice {$invoice->id} for user {$user->id} ({$user->name}): " . $e->getMessage();
+                }
+            }
+        }
+
+        return $results;
     }
 }

@@ -140,6 +140,10 @@
                         <a href="{{ route('invoices.pay', $invoice) }}" class="btn-custom-success">
                             <i class="fas fa-credit-card"></i> Pay Now
                         </a>
+                        <!-- Alternative direct redirect for testing -->
+                        <a href="{{ route('invoices.pay', $invoice) }}?direct=1" class="btn-custom-info" style="font-size: 0.8rem; padding: 8px 12px;">
+                            <i class="fas fa-external-link-alt"></i> Direct Pay
+                        </a>
                     @endif
                     <a href="{{ route('invoices.pdf', $invoice) }}" class="btn-custom-primary">
                         <i class="fas fa-download"></i> Download PDF

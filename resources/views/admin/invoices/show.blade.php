@@ -278,7 +278,13 @@
                                 @foreach($invoice->metadata as $key => $value)
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>{{ ucwords(str_replace('_', ' ', $key)) }}:</span>
-                                        <span>{{ $value }}</span>
+                                        <span>
+                                            @if(is_array($value))
+                                                {{ implode(', ', $value) }}
+                                            @else
+                                                {{ $value }}
+                                            @endif
+                                        </span>
                                     </div>
                                 @endforeach
                             </div>

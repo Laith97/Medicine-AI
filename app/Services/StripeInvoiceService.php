@@ -260,16 +260,141 @@ class StripeInvoiceService
     /**
      * Get invoice payment URL
      */
-    public function getPaymentUrl(StripeInvoice $invoice): string
+    public function getPaymentUrl(StripeInvoice $invoice): ?string
     {
-        $url = $invoice->invoice_url;
-        
-        // Handle case where URL might be an array
-        if (is_array($url)) {
-            $url = isset($url[0]) ? $url[0] : '';
+        try {
+            // For monthly invoices, create a Stripe checkout session if not already available
+            if ($invoice->isMonthlyInvoice() && !$invoice->invoice_url) {
+                Log::info('Creating payment session for monthly invoice', ['invoice_id' => $invoice->id]);
+                
+                // Try to create Stripe session, fallback if it fails
+                $stripeUrl = $this->createPaymentSessionForMonthlyInvoice($invoice);
+                if ($stripeUrl) {
+                    return $stripeUrl;
+                }
+                
+                // Fallback: Create a manual payment URL only if Stripe truly fails
+                Log::warning('Stripe session creation failed, using fallback payment method', [
+                    'invoice_id' => $invoice->id
+                ]);
+                
+                // Create a fallback payment URL
+                $fallbackUrl = route('invoices.manual-payment', $invoice);
+                
+                // Don't update the invoice_url here - let it remain null so we can retry Stripe later
+                // Only return the fallback URL for immediate use
+                return $fallbackUrl;
+            }
+            
+            $url = $invoice->invoice_url;
+            
+            // Handle case where URL might be an array
+            if (is_array($url)) {
+                $url = isset($url[0]) ? $url[0] : '';
+            }
+            
+            $result = $url && is_string($url) ? $url : null;
+            
+            Log::info('Payment URL retrieved', [
+                'invoice_id' => $invoice->id,
+                'has_url' => !empty($result),
+                'is_monthly' => $invoice->isMonthlyInvoice()
+            ]);
+            
+            return $result;
+            
+        } catch (\Exception $e) {
+            Log::error('Error getting payment URL: ' . $e->getMessage(), [
+                'invoice_id' => $invoice->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            // Return fallback URL in case of error
+            return route('invoices.manual-payment', $invoice);
         }
-        
-        return $url && is_string($url) ? $url : '';
+    }
+    
+    /**
+     * Create a Stripe checkout session for monthly invoice
+     */
+    private function createPaymentSessionForMonthlyInvoice(StripeInvoice $invoice): ?string
+    {
+        try {
+            $user = $invoice->user;
+            
+            Log::info('Creating payment session', [
+                'invoice_id' => $invoice->id,
+                'amount' => $invoice->amount_due,
+                'user_id' => $user->id
+            ]);
+            
+            // Check if Stripe is properly configured
+            if (!config('stripe.secret')) {
+                Log::error('Stripe secret key not configured');
+                return null;
+            }
+            
+            // Ensure user has a Stripe customer ID
+            if (!$user->stripe_customer_id) {
+                Log::info('Creating Stripe customer for user', ['user_id' => $user->id]);
+                $this->createStripeCustomer($user);
+                $user->refresh(); // Reload to get the stripe_customer_id
+            }
+
+            if (!$user->stripe_customer_id) {
+                Log::error('Failed to create or get Stripe customer ID', ['user_id' => $user->id]);
+                return null;
+            }
+
+            // Create a checkout session
+            $session = \Stripe\Checkout\Session::create([
+                'customer' => $user->stripe_customer_id,
+                'payment_method_types' => ['card'],
+                'line_items' => [
+                    [
+                        'price_data' => [
+                            'currency' => 'usd',
+                            'product_data' => [
+                                'name' => $invoice->description ?: 'Monthly Service Fee',
+                                'description' => "Invoice #{$invoice->id}",
+                            ],
+                            'unit_amount' => round($invoice->amount_due * 100), // Convert to cents
+                        ],
+                        'quantity' => 1,
+                    ],
+                ],
+                'mode' => 'payment',
+                'success_url' => route('invoices.show', $invoice) . '?payment=success',
+                'cancel_url' => route('invoices.show', $invoice) . '?payment=cancelled',
+                'metadata' => [
+                    'invoice_id' => $invoice->id,
+                    'user_id' => $user->id,
+                    'type' => 'monthly_invoice',
+                ],
+            ]);
+            
+            Log::info('Stripe session created successfully', [
+                'invoice_id' => $invoice->id,
+                'session_id' => $session->id,
+                'session_url' => $session->url
+            ]);
+            
+            // Update the invoice with the payment URL
+            $invoice->update([
+                'invoice_url' => $session->url,
+                'stripe_session_id' => $session->id,
+            ]);
+            
+            return $session->url;
+            
+        } catch (\Exception $e) {
+            Log::error("Failed to create payment session for monthly invoice {$invoice->id}: " . $e->getMessage(), [
+                'invoice_id' => $invoice->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return null;
+        }
     }
 
     /**

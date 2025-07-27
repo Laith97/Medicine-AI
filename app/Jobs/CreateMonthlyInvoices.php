@@ -2,9 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\User;
-use App\Services\StripeInvoiceService;
-use App\Notifications\InvoiceCreated;
+use App\Services\MonthlyInvoiceService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -15,11 +13,9 @@ class CreateMonthlyInvoices implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        public ?Carbon $startDate = null,
-        public ?Carbon $endDate = null
+        public ?Carbon $date = null
     ) {
-        $this->startDate = $startDate ?? now()->subMonth()->startOfMonth();
-        $this->endDate = $endDate ?? now()->subMonth()->endOfMonth();
+        $this->date = $date ?? now();
     }
 
     /**
@@ -27,42 +23,16 @@ class CreateMonthlyInvoices implements ShouldQueue
      */
     public function handle(): void
     {
-        $invoiceService = new StripeInvoiceService();
+        $monthlyInvoiceService = new MonthlyInvoiceService(new \App\Services\StripeInvoiceService());
         
-        // Get all users who have token usage in the period
-        $users = User::whereHas('openaiUsages', function ($query) {
-                $query->whereBetween('created_at', [$this->startDate, $this->endDate]);
-            })
-            ->get();
+        Log::info('Starting monthly invoice creation', [
+            'date' => $this->date->toDateString(),
+            'month' => $this->date->month,
+            'year' => $this->date->year,
+        ]);
 
-        Log::info("Creating monthly invoices for {$users->count()} users for period {$this->startDate->format('Y-m-d')} to {$this->endDate->format('Y-m-d')}");
+        $results = $monthlyInvoiceService->generateMonthlyInvoices($this->date);
 
-        foreach ($users as $user) {
-            try {
-                // Check if invoice already exists for this period
-                $existingInvoice = $user->stripeInvoices()
-                    ->where('metadata->period_start', $this->startDate->toDateString())
-                    ->where('metadata->period_end', $this->endDate->toDateString())
-                    ->first();
-
-                if ($existingInvoice) {
-                    Log::info("Invoice already exists for user {$user->id} for this period");
-                    continue;
-                }
-
-                $invoice = $invoiceService->createTokenUsageInvoice($user, $this->startDate, $this->endDate);
-                
-                if ($invoice) {
-                    // Send notification
-                    $user->notify(new InvoiceCreated($invoice));
-                    Log::info("Created invoice {$invoice->id} for user {$user->id}");
-                } else {
-                    Log::info("No token usage found for user {$user->id} in the specified period");
-                }
-
-            } catch (\Exception $e) {
-                Log::error("Failed to create invoice for user {$user->id}: " . $e->getMessage());
-            }
-        }
+        Log::info('Monthly invoice creation completed', $results);
     }
 }

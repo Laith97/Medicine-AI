@@ -208,6 +208,11 @@
                         <span>Create New User</span>
                     </a>
 
+                    <a href="{{ route('admin.send-reminders.form') }}" class="action-link" style="background: rgba(40, 167, 69, 0.1); color: #28a745;">
+                        <i class="bi bi-bell me-3"></i>
+                        <span>Send Manual Reminders</span>
+                    </a>
+
                     <a href="{{ route('dashboard') }}" class="action-link" style="background: rgba(155, 89, 182, 0.1); color: #9b59b6;">
                         <i class="bi bi-speedometer2 me-3"></i>
                         <span>Main Dashboard</span>

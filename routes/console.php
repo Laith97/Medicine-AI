@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Artisan;
 use App\Jobs\CreateMonthlyInvoices;
 use App\Jobs\SendInvoiceNotifications;
 use App\Jobs\SyncStripeInvoices;
+use App\Jobs\ProcessSubscriptionLifecycle;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -28,3 +29,9 @@ Artisan::command('invoices:sync', function () {
     SyncStripeInvoices::dispatch();
     $this->info('Invoice sync job dispatched.');
 })->purpose('Sync invoice statuses with Stripe');
+
+Artisan::command('subscriptions:process-lifecycle', function () {
+    $this->info('Processing subscription lifecycle (grace periods, warnings, restrictions)...');
+    ProcessSubscriptionLifecycle::dispatch();
+    $this->info('Subscription lifecycle processing job dispatched.');
+})->purpose('Process subscription lifecycle stages');

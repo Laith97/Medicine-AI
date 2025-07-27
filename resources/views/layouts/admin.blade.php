@@ -251,9 +251,21 @@
                         <span>Create Invoice</span>
                     </a>
                 </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.monthly-invoices.index') }}" class="nav-link {{ request()->routeIs('admin.monthly-invoices.*') ? 'active' : '' }}">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Monthly Invoices</span>
+                    </a>
+                </div>
 
                 <!-- Communication Section -->
                 <div class="nav-section">Communication</div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.send-reminders.form') }}" class="nav-link {{ request()->routeIs('admin.send-reminders*') ? 'active' : '' }}">
+                        <i class="fas fa-bell"></i>
+                        <span>Send Manual Reminders</span>
+                    </a>
+                </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.contact-submissions') }}" class="nav-link {{ request()->routeIs('admin.contact-submissions*') ? 'active' : '' }}">
                         <i class="fas fa-envelope"></i>
@@ -383,5 +395,6 @@
         });
     </script>
     @stack('scripts')
+    @yield('scripts')
 </body>
 </html>

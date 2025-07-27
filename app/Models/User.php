@@ -21,6 +21,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
         'role',
         'phone',
@@ -35,6 +36,7 @@ class User extends Authenticatable
         'email_verified_at',
         'stripe_customer_id',
         'current_plan',
+        'monthly_cost_limit',
         'subscription_ends_at',
         'subscription_active',
     ];
@@ -60,6 +62,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'date_of_birth' => 'date',
+            'monthly_cost_limit' => 'decimal:2',
             'subscription_ends_at' => 'datetime',
             'subscription_active' => 'boolean',
         ];
@@ -110,10 +113,15 @@ class User extends Authenticatable
         return $this->hasMany(OpenAIUsage::class);
     }
 
-    public function stripeInvoices()
-    {
-        return $this->hasMany(StripeInvoice::class);
-    }
+public function stripeInvoices()
+{
+    return $this->hasMany(StripeInvoice::class);
+}
+
+public function monthlyInvoiceSetting()
+{
+    return $this->hasOne(MonthlyInvoiceSetting::class);
+}
 
 
 
@@ -251,6 +259,58 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user has exceeded their monthly cost limit
+     */
+    public function hasExceededCostLimit(): bool
+    {
+        if ($this->monthly_cost_limit <= 0) {
+            return false; // No limit set
+        }
+
+        $monthlyCost = $this->getMonthlyCostEstimate();
+        return $monthlyCost > $this->monthly_cost_limit;
+    }
+
+    /**
+     * Get the excess cost over the limit
+     */
+    public function getExcessCost(): float
+    {
+        if ($this->monthly_cost_limit <= 0) {
+            return 0; // No limit set
+        }
+
+        $monthlyCost = $this->getMonthlyCostEstimate();
+        return max(0, $monthlyCost - $this->monthly_cost_limit);
+    }
+
+    /**
+     * Get remaining cost allowance for this month
+     */
+    public function getRemainingCostAllowance(): float
+    {
+        if ($this->monthly_cost_limit <= 0) {
+            return -1; // Unlimited
+        }
+
+        $monthlyCost = $this->getMonthlyCostEstimate();
+        return max(0, $this->monthly_cost_limit - $monthlyCost);
+    }
+
+    /**
+     * Get cost usage percentage
+     */
+    public function getCostUsagePercentage(): float
+    {
+        if ($this->monthly_cost_limit <= 0) {
+            return 0; // No limit set
+        }
+
+        $monthlyCost = $this->getMonthlyCostEstimate();
+        return min(100, ($monthlyCost / $this->monthly_cost_limit) * 100);
+    }
+
+    /**
      * Get total unpaid invoice amount
      */
     public function getTotalUnpaidAmount(): float
@@ -305,14 +365,139 @@ class User extends Authenticatable
             ->exists();
     }
 
-    /**
-     * Get overdue invoices count
-     */
-    public function getOverdueInvoicesCount(): int
-    {
-        return $this->stripeInvoices()
-            ->overdue()
-            ->count();
-    }
+/**
+ * Get overdue invoices count
+ */
+public function getOverdueInvoicesCount(): int
+{
+    return $this->stripeInvoices()
+        ->overdue()
+        ->count();
+}
+
+/**
+ * Get monthly invoices for a specific month/year
+ */
+public function getMonthlyInvoices(int $month = null, int $year = null)
+{
+    $month = $month ?: now()->month;
+    $year = $year ?: now()->year;
+    
+    return $this->stripeInvoices()
+        ->where('invoice_type', 'monthly')
+        ->where('invoice_month', $month)
+        ->where('invoice_year', $year);
+}
+
+/**
+ * Check if user has unpaid monthly invoices
+ */
+public function hasUnpaidMonthlyInvoices(): bool
+{
+    return $this->stripeInvoices()
+        ->where('invoice_type', 'monthly')
+        ->unpaid()
+        ->exists();
+}
+
+/**
+ * Get total unpaid monthly invoice amount
+ */
+public function getTotalUnpaidMonthlyAmount(): float
+{
+    return $this->stripeInvoices()
+        ->where('invoice_type', 'monthly')
+        ->unpaid()
+        ->sum('amount_due') - $this->stripeInvoices()
+        ->where('invoice_type', 'monthly')
+        ->unpaid()
+        ->sum('amount_paid');
+}
+
+/**
+ * Check if user is currently restricted
+ */
+public function isRestricted(): bool
+{
+    $setting = $this->monthlyInvoiceSetting;
+    return $setting && $setting->is_restricted;
+}
+
+/**
+ * Check if a specific page is restricted for this user
+ */
+public function isPageRestricted(string $routeName): bool
+{
+    $setting = $this->monthlyInvoiceSetting;
+    return $setting && $setting->isPageRestricted($routeName);
+}
+
+/**
+ * Get the user's restriction message
+ */
+public function getRestrictionMessage(): string
+{
+    $setting = $this->monthlyInvoiceSetting;
+    return $setting ? $setting->getRestrictionMessage() : '';
+}
+
+/**
+ * Get or create monthly invoice setting
+ */
+public function getOrCreateMonthlyInvoiceSetting(): MonthlyInvoiceSetting
+{
+    return $this->monthlyInvoiceSetting ?: $this->monthlyInvoiceSetting()->create([
+        'billing_amount' => 0,
+        'grace_period_days' => 7,
+        'reminder_frequency_days' => 3,
+        'is_restricted' => false,
+        'is_active' => false,
+    ]);
+}
+
+/**
+ * Check if user is in grace period
+ */
+public function isInGracePeriod(): bool
+{
+    $setting = $this->monthlyInvoiceSetting;
+    return $setting && $setting->isInGracePeriod();
+}
+
+/**
+ * Check if user is in warning period
+ */
+public function isInWarningPeriod(): bool
+{
+    $setting = $this->monthlyInvoiceSetting;
+    return $setting && $setting->isInWarningPeriod();
+}
+
+/**
+ * Get subscription status
+ */
+public function getSubscriptionStatus(): string
+{
+    $setting = $this->monthlyInvoiceSetting;
+    return $setting ? $setting->getSubscriptionStatus() : 'setup_pending';
+}
+
+/**
+ * Get days remaining in current subscription period
+ */
+public function getDaysRemainingInCurrentPeriod(): int
+{
+    $setting = $this->monthlyInvoiceSetting;
+    return $setting ? $setting->getDaysRemainingInCurrentPeriod() : 0;
+}
+
+/**
+ * Get subscription end date
+ */
+public function getSubscriptionEndDate(): ?\Carbon\Carbon
+{
+    $setting = $this->monthlyInvoiceSetting;
+    return $setting ? $setting->subscription_ends_at : null;
+}
 
 }

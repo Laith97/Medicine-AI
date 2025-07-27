@@ -155,6 +155,24 @@ document.addEventListener('DOMContentLoaded', function() {
                             @enderror
                         </div>
 
+                        <!-- Phone Number -->
+                        <div class="mb-4">
+                            <label for="phone" class="form-label fw-bold">Phone Number <span class="text-danger">*</span></label>
+                            <input id="phone" type="tel" name="phone" value="{{ old('phone') }}" required
+                                   class="form-control @error('phone') is-invalid @enderror"
+                                   placeholder="Enter phone number (e.g., +1234567890)"
+                                   pattern="^\+?[1-9]\d{6,14}$">
+                            <div class="form-text">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Required for SMS invoice reminders. Include country code (e.g., +1 for US)
+                                </small>
+                            </div>
+                            @error('phone')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         <!-- Password -->
                         <div class="mb-4">
                             <label for="password" class="form-label fw-bold">Password</label>
@@ -175,132 +193,209 @@ document.addEventListener('DOMContentLoaded', function() {
                             @enderror
                         </div>
 
-                        <!-- User Type -->
+                        <!-- Medical Specialty -->
                         <div class="mb-4">
-                            <label for="role" class="form-label fw-bold">User Type</label>
-                            <select id="role" name="role" required
-                                    class="form-control @error('role') is-invalid @enderror"
-                                    onchange="toggleMedicalSpecialty()">
-                                <option value="">-- Select User Type --</option>
-                                <option value="patient" {{ old('role') == 'patient' ? 'selected' : '' }}>Patient</option>
-                                <option value="doctor" {{ old('role') == 'doctor' ? 'selected' : '' }}>Doctor</option>
+                            <label for="specialty_select" class="form-label fw-bold">Medical Specialty <span class="text-danger">*</span></label>
+                            <select class="form-control @error('specialty') is-invalid @enderror" name="specialty_select" id="specialty_select" onchange="toggleCustomSpecialtyAdmin()" required>
+                                <option value="" {{ old('specialty_select') == '' ? 'selected' : '' }}>-- Select Specialty --</option>
+                                
+                                <optgroup label="🧠 General & Internal Medicine">
+                                    <option value="General Practitioner" {{ old('specialty_select') == 'General Practitioner' ? 'selected' : '' }}>General Practitioner (GP) / Family Medicine</option>
+                                    <option value="Internal Medicine" {{ old('specialty_select') == 'Internal Medicine' ? 'selected' : '' }}>Internal Medicine (Internist)</option>
+                                </optgroup>
+                                
+                                <optgroup label="🩺 Internal Medicine Subspecialties">
+                                    <option value="Cardiology" {{ old('specialty_select') == 'Cardiology' ? 'selected' : '' }}>Cardiology (Heart)</option>
+                                    <option value="Pulmonology" {{ old('specialty_select') == 'Pulmonology' ? 'selected' : '' }}>Pulmonology (Lungs)</option>
+                                    <option value="Gastroenterology" {{ old('specialty_select') == 'Gastroenterology' ? 'selected' : '' }}>Gastroenterology (Digestive system)</option>
+                                    <option value="Nephrology" {{ old('specialty_select') == 'Nephrology' ? 'selected' : '' }}>Nephrology (Kidneys)</option>
+                                    <option value="Endocrinology" {{ old('specialty_select') == 'Endocrinology' ? 'selected' : '' }}>Endocrinology (Hormones & glands)</option>
+                                    <option value="Hematology" {{ old('specialty_select') == 'Hematology' ? 'selected' : '' }}>Hematology (Blood)</option>
+                                    <option value="Hematology-Oncology" {{ old('specialty_select') == 'Hematology-Oncology' ? 'selected' : '' }}>Hematology-Oncology (Blood cancers)</option>
+                                    <option value="Rheumatology" {{ old('specialty_select') == 'Rheumatology' ? 'selected' : '' }}>Rheumatology (Joints & autoimmune diseases)</option>
+                                    <option value="Infectious Disease" {{ old('specialty_select') == 'Infectious Disease' ? 'selected' : '' }}>Infectious Disease</option>
+                                    <option value="Dermatology" {{ old('specialty_select') == 'Dermatology' ? 'selected' : '' }}>Dermatology (Skin, hair, nails)</option>
+                                    <option value="Allergy & Immunology" {{ old('specialty_select') == 'Allergy & Immunology' ? 'selected' : '' }}>Allergy & Immunology</option>
+                                    <option value="Reproductive Endocrinology" {{ old('specialty_select') == 'Reproductive Endocrinology' ? 'selected' : '' }}>Reproductive Endocrinology (Fertility hormones)</option>
+                                </optgroup>
+                                
+                                <optgroup label="🧠 Emergency & Critical Care">
+                                    <option value="Emergency Medicine" {{ old('specialty_select') == 'Emergency Medicine' ? 'selected' : '' }}>Emergency Medicine</option>
+                                    <option value="Critical Care" {{ old('specialty_select') == 'Critical Care' ? 'selected' : '' }}>Critical Care / Intensive Care Medicine</option>
+                                </optgroup>
+                                
+                                <optgroup label="💉 Anesthesia & Pain Management">
+                                    <option value="Anesthesiology" {{ old('specialty_select') == 'Anesthesiology' ? 'selected' : '' }}>Anesthesiology</option>
+                                    <option value="Pain Management" {{ old('specialty_select') == 'Pain Management' ? 'selected' : '' }}>Pain Management / Interventional Pain Medicine</option>
+                                </optgroup>
+                                
+                                <optgroup label="🧠 Neurology & Psychiatry">
+                                    <option value="Neurology" {{ old('specialty_select') == 'Neurology' ? 'selected' : '' }}>Neurology (Brain & nerves)</option>
+                                    <option value="Neurosurgery" {{ old('specialty_select') == 'Neurosurgery' ? 'selected' : '' }}>Neurosurgery (Brain & spine surgery)</option>
+                                    <option value="Psychiatry" {{ old('specialty_select') == 'Psychiatry' ? 'selected' : '' }}>Psychiatry (Mental health)</option>
+                                    <option value="Child & Adolescent Psychiatry" {{ old('specialty_select') == 'Child & Adolescent Psychiatry' ? 'selected' : '' }}>Child & Adolescent Psychiatry</option>
+                                    <option value="Behavioral & Developmental Pediatrics" {{ old('specialty_select') == 'Behavioral & Developmental Pediatrics' ? 'selected' : '' }}>Behavioral & Developmental Pediatrics</option>
+                                </optgroup>
+                                
+                                <optgroup label="🦴 Surgical Specialties">
+                                    <option value="General Surgery" {{ old('specialty_select') == 'General Surgery' ? 'selected' : '' }}>General Surgery</option>
+                                    <option value="Orthopedic Surgery" {{ old('specialty_select') == 'Orthopedic Surgery' ? 'selected' : '' }}>Orthopedic Surgery (Bones & joints)</option>
+                                    <option value="Cardiothoracic Surgery" {{ old('specialty_select') == 'Cardiothoracic Surgery' ? 'selected' : '' }}>Cardiothoracic Surgery (Heart & lungs)</option>
+                                    <option value="Vascular Surgery" {{ old('specialty_select') == 'Vascular Surgery' ? 'selected' : '' }}>Vascular Surgery (Blood vessels)</option>
+                                    <option value="Pediatric Vascular Surgery" {{ old('specialty_select') == 'Pediatric Vascular Surgery' ? 'selected' : '' }}>Pediatric Vascular Surgery</option>
+                                    <option value="Plastic & Reconstructive Surgery" {{ old('specialty_select') == 'Plastic & Reconstructive Surgery' ? 'selected' : '' }}>Plastic & Reconstructive Surgery</option>
+                                    <option value="Oral & Maxillofacial Surgery" {{ old('specialty_select') == 'Oral & Maxillofacial Surgery' ? 'selected' : '' }}>Oral & Maxillofacial Surgery</option>
+                                    <option value="Surgical Oncology" {{ old('specialty_select') == 'Surgical Oncology' ? 'selected' : '' }}>Surgical Oncology (Cancer surgery)</option>
+                                    <option value="Colorectal Surgery" {{ old('specialty_select') == 'Colorectal Surgery' ? 'selected' : '' }}>Colorectal Surgery</option>
+                                    <option value="Urology" {{ old('specialty_select') == 'Urology' ? 'selected' : '' }}>Urology (Urinary & male reproductive system)</option>
+                                    <option value="ENT" {{ old('specialty_select') == 'ENT' ? 'selected' : '' }}>ENT / Otolaryngology (Ear, Nose, Throat)</option>
+                                    <option value="Ophthalmic Surgery" {{ old('specialty_select') == 'Ophthalmic Surgery' ? 'selected' : '' }}>Ophthalmic Surgery (Eye surgery)</option>
+                                    <option value="Pediatric Surgery" {{ old('specialty_select') == 'Pediatric Surgery' ? 'selected' : '' }}>Pediatric Surgery</option>
+                                    <option value="Hand Surgery" {{ old('specialty_select') == 'Hand Surgery' ? 'selected' : '' }}>Hand Surgery</option>
+                                </optgroup>
+                                
+                                <optgroup label="👶 Pediatrics & Women's Health">
+                                    <option value="Pediatrics" {{ old('specialty_select') == 'Pediatrics' ? 'selected' : '' }}>Pediatrics</option>
+                                    <option value="Neonatology" {{ old('specialty_select') == 'Neonatology' ? 'selected' : '' }}>Neonatology (Newborn care)</option>
+                                    <option value="Pediatric Behavioral Medicine" {{ old('specialty_select') == 'Pediatric Behavioral Medicine' ? 'selected' : '' }}>Pediatric Behavioral Medicine</option>
+                                    <option value="Obstetrics & Gynecology" {{ old('specialty_select') == 'Obstetrics & Gynecology' ? 'selected' : '' }}>Obstetrics & Gynecology (OB/GYN)</option>
+                                    <option value="Gynecologic Oncology" {{ old('specialty_select') == 'Gynecologic Oncology' ? 'selected' : '' }}>Gynecologic Oncology</option>
+                                    <option value="Reproductive Endocrinology & Infertility" {{ old('specialty_select') == 'Reproductive Endocrinology & Infertility' ? 'selected' : '' }}>Reproductive Endocrinology & Infertility</option>
+                                    <option value="Maternal–Fetal Medicine" {{ old('specialty_select') == 'Maternal–Fetal Medicine' ? 'selected' : '' }}>Maternal–Fetal Medicine</option>
+                                </optgroup>
+                                
+                                <optgroup label="🧬 Diagnostic & Support Specialties">
+                                    <option value="Pathology" {{ old('specialty_select') == 'Pathology' ? 'selected' : '' }}>Pathology (Laboratory medicine)</option>
+                                    <option value="Radiology" {{ old('specialty_select') == 'Radiology' ? 'selected' : '' }}>Radiology (Medical imaging)</option>
+                                    <option value="Interventional Radiology" {{ old('specialty_select') == 'Interventional Radiology' ? 'selected' : '' }}>Interventional Radiology</option>
+                                    <option value="Nuclear Medicine" {{ old('specialty_select') == 'Nuclear Medicine' ? 'selected' : '' }}>Nuclear Medicine</option>
+                                    <option value="Endoscopy" {{ old('specialty_select') == 'Endoscopy' ? 'selected' : '' }}>Endoscopy / GI Endoscopy</option>
+                                    <option value="Electrodiagnostic Medicine" {{ old('specialty_select') == 'Electrodiagnostic Medicine' ? 'selected' : '' }}>Electrodiagnostic Medicine (EMG, EEG)</option>
+                                </optgroup>
+                                
+                                <optgroup label="🏥 Other Medical Specialties">
+                                    <option value="Oncology" {{ old('specialty_select') == 'Oncology' ? 'selected' : '' }}>Oncology (Medical cancer care)</option>
+                                    <option value="Hepatology" {{ old('specialty_select') == 'Hepatology' ? 'selected' : '' }}>Hepatology (Liver diseases)</option>
+                                    <option value="Genetic Hematology" {{ old('specialty_select') == 'Genetic Hematology' ? 'selected' : '' }}>Genetic Hematology</option>
+                                    <option value="Geriatrics" {{ old('specialty_select') == 'Geriatrics' ? 'selected' : '' }}>Geriatrics (Elderly care)</option>
+                                    <option value="Physical Medicine & Rehabilitation" {{ old('specialty_select') == 'Physical Medicine & Rehabilitation' ? 'selected' : '' }}>Physical Medicine & Rehabilitation</option>
+                                    <option value="Occupational & Environmental Medicine" {{ old('specialty_select') == 'Occupational & Environmental Medicine' ? 'selected' : '' }}>Occupational & Environmental Medicine</option>
+                                    <option value="Sports Medicine" {{ old('specialty_select') == 'Sports Medicine' ? 'selected' : '' }}>Sports Medicine</option>
+                                    <option value="Maternal Health Specialist" {{ old('specialty_select') == 'Maternal Health Specialist' ? 'selected' : '' }}>Maternal Health Specialist</option>
+                                    <option value="Clinical Nutrition" {{ old('specialty_select') == 'Clinical Nutrition' ? 'selected' : '' }}>Clinical Nutrition / Dietetics</option>
+                                    <option value="Neuro-rehabilitation" {{ old('specialty_select') == 'Neuro-rehabilitation' ? 'selected' : '' }}>Neuro-rehabilitation</option>
+                                </optgroup>
+                                
+                                <optgroup label="🧪 Specialized & Advanced Fields">
+                                    <option value="Medical Genetics" {{ old('specialty_select') == 'Medical Genetics' ? 'selected' : '' }}>Medical Genetics</option>
+                                    <option value="Hematologic Oncology" {{ old('specialty_select') == 'Hematologic Oncology' ? 'selected' : '' }}>Hematologic Oncology</option>
+                                    <option value="Transplant Medicine" {{ old('specialty_select') == 'Transplant Medicine' ? 'selected' : '' }}>Transplant Medicine / Surgery</option>
+                                    <option value="Tropical Medicine" {{ old('specialty_select') == 'Tropical Medicine' ? 'selected' : '' }}>Tropical Medicine</option>
+                                    <option value="Pre-hospital Emergency" {{ old('specialty_select') == 'Pre-hospital Emergency' ? 'selected' : '' }}>Pre-hospital Emergency / EMS</option>
+                                </optgroup>
+                                
+                                <optgroup label="✏️ Custom">
+                                    <option value="other">Other (Please specify)</option>
+                                </optgroup>
                             </select>
-                            @error('role')
+                            
+                            <!-- Custom Specialty Input (Hidden by default) -->
+                            <div id="custom_specialty_container_admin" style="display: none;" class="mt-2">
+                                <input 
+                                    type="text" 
+                                    name="custom_specialty" 
+                                    id="custom_specialty_admin" 
+                                    class="form-control"
+                                    placeholder="Please enter your medical specialty"
+                                >
+                            </div>
+                            
+                            <!-- Hidden field to store the final specialty value -->
+                            <input type="hidden" name="specialty" id="specialty_admin" value="{{ old('specialty') }}">
+                            
+                            @error('specialty')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
-                        <!-- Medical Specialty (for doctors only) -->
-                        <div class="mb-4" id="specialty-field" style="display: none;">
-                            <label for="specialty" class="form-label fw-bold">Medical Specialty</label>
-                            <select class="form-control @error('specialty') is-invalid @enderror" name="specialty_select" id="specialty_select" onchange="toggleCustomSpecialty()">
-                                <option value="">-- Select Your Specialty --</option>
-                                <option value="custom">✏️ Custom Specialty</option>
-
-                                <optgroup label="🧠 General & Internal Medicine">
-                                    <option value="General Practitioner">General Practitioner (GP) / Family Medicine</option>
-                                    <option value="Internal Medicine">Internal Medicine (Internist)</option>
-                                </optgroup>
-
-                                <optgroup label="🩺 Internal Medicine Subspecialties">
-                                    <option value="Cardiology">Cardiology (Heart)</option>
-                                    <option value="Pulmonology">Pulmonology (Lungs)</option>
-                                    <option value="Gastroenterology">Gastroenterology (Digestive system)</option>
-                                    <option value="Nephrology">Nephrology (Kidneys)</option>
-                                    <option value="Endocrinology">Endocrinology (Hormones & glands)</option>
-                                    <option value="Hematology">Hematology (Blood)</option>
-                                    <option value="Hematology-Oncology">Hematology-Oncology (Blood cancers)</option>
-                                    <option value="Rheumatology">Rheumatology (Joints & autoimmune diseases)</option>
-                                    <option value="Infectious Disease">Infectious Disease</option>
-                                    <option value="Dermatology">Dermatology (Skin, hair, nails)</option>
-                                    <option value="Allergy & Immunology">Allergy & Immunology</option>
-                                    <option value="Reproductive Endocrinology">Reproductive Endocrinology (Fertility hormones)</option>
-                                </optgroup>
-
-                                <optgroup label="🧠 Emergency & Critical Care">
-                                    <option value="Emergency Medicine">Emergency Medicine</option>
-                                    <option value="Critical Care">Critical Care / Intensive Care Medicine</option>
-                                </optgroup>
-
-                                <optgroup label="💉 Anesthesia & Pain Management">
-                                    <option value="Anesthesiology">Anesthesiology</option>
-                                    <option value="Pain Management">Pain Management / Interventional Pain Medicine</option>
-                                </optgroup>
-
-                                <optgroup label="🧠 Neurology & Psychiatry">
-                                    <option value="Neurology">Neurology (Brain & nerves)</option>
-                                    <option value="Neurosurgery">Neurosurgery (Brain & spine surgery)</option>
-                                    <option value="Psychiatry">Psychiatry (Mental health)</option>
-                                    <option value="Child & Adolescent Psychiatry">Child & Adolescent Psychiatry</option>
-                                    <option value="Behavioral & Developmental Pediatrics">Behavioral & Developmental Pediatrics</option>
-                                </optgroup>
-
-                                <optgroup label="🦴 Surgical Specialties">
-                                    <option value="General Surgery">General Surgery</option>
-                                    <option value="Orthopedic Surgery">Orthopedic Surgery (Bones & joints)</option>
-                                    <option value="Cardiothoracic Surgery">Cardiothoracic Surgery (Heart & lungs)</option>
-                                    <option value="Vascular Surgery">Vascular Surgery (Blood vessels)</option>
-                                    <option value="Pediatric Vascular Surgery">Pediatric Vascular Surgery</option>
-                                    <option value="Plastic & Reconstructive Surgery">Plastic & Reconstructive Surgery</option>
-                                    <option value="Oral & Maxillofacial Surgery">Oral & Maxillofacial Surgery</option>
-                                    <option value="Surgical Oncology">Surgical Oncology (Cancer surgery)</option>
-                                    <option value="Colorectal Surgery">Colorectal Surgery</option>
-                                    <option value="Urology">Urology (Urinary & male reproductive system)</option>
-                                    <option value="ENT">ENT / Otolaryngology (Ear, Nose, Throat)</option>
-                                    <option value="Ophthalmic Surgery">Ophthalmic Surgery (Eye surgery)</option>
-                                    <option value="Pediatric Surgery">Pediatric Surgery</option>
-                                    <option value="Hand Surgery">Hand Surgery</option>
-                                </optgroup>
-
-                                <optgroup label="👶 Pediatrics & Women's Health">
-                                    <option value="Pediatrics">Pediatrics</option>
-                                    <option value="Neonatology">Neonatology (Newborn care)</option>
-                                    <option value="Pediatric Behavioral Medicine">Pediatric Behavioral Medicine</option>
-                                    <option value="Obstetrics & Gynecology">Obstetrics & Gynecology (OB/GYN)</option>
-                                    <option value="Gynecologic Oncology">Gynecologic Oncology</option>
-                                    <option value="Reproductive Endocrinology & Infertility">Reproductive Endocrinology & Infertility</option>
-                                    <option value="Maternal–Fetal Medicine">Maternal–Fetal Medicine</option>
-                                </optgroup>
-
-                                <optgroup label="🧬 Diagnostic & Support Specialties">
-                                    <option value="Pathology">Pathology (Laboratory medicine)</option>
-                                    <option value="Radiology">Radiology (Medical imaging)</option>
-                                    <option value="Interventional Radiology">Interventional Radiology</option>
-                                    <option value="Nuclear Medicine">Nuclear Medicine</option>
-                                    <option value="Endoscopy">Endoscopy / GI Endoscopy</option>
-                                    <option value="Electrodiagnostic Medicine">Electrodiagnostic Medicine (EMG, EEG)</option>
-                                </optgroup>
-
-                                <optgroup label="🏥 Other Medical Specialties">
-                                    <option value="Oncology">Oncology (Medical cancer care)</option>
-                                    <option value="Hepatology">Hepatology (Liver diseases)</option>
-                                    <option value="Genetic Hematology">Genetic Hematology</option>
-                                    <option value="Geriatrics">Geriatrics (Elderly care)</option>
-                                    <option value="Physical Medicine & Rehabilitation">Physical Medicine & Rehabilitation</option>
-                                    <option value="Occupational & Environmental Medicine">Occupational & Environmental Medicine</option>
-                                    <option value="Sports Medicine">Sports Medicine</option>
-                                </optgroup>
-                            </select>
-
-                            <!-- Custom Specialty Input -->
-                            <div class="mt-3" id="custom-specialty-field" style="display: none;">
-                                <input type="text" name="custom_specialty" id="custom_specialty"
-                                       class="form-control @error('specialty') is-invalid @enderror"
-                                       placeholder="Enter custom specialty">
-                                @error('specialty')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                        <!-- Subscription Settings -->
+                        <div class="card mb-4" style="border: 2px solid #e9ecef; border-radius: 10px;">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0 fw-bold">
+                                    <i class="bi bi-credit-card me-2"></i>Subscription Settings
+                                </h6>
+                                <small class="text-muted">Configure billing period and amount for this user (optional)</small>
                             </div>
-
-                            <!-- Hidden field for actual specialty value -->
-                            <input type="hidden" name="specialty" id="specialty" value="{{ old('specialty') }}">
-
-                            @error('specialty')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="subscription_period_months" class="form-label fw-bold">Billing Period</label>
+                                        <select id="subscription_period_months" name="subscription_period_months" 
+                                                class="form-control @error('subscription_period_months') is-invalid @enderror"
+                                                onchange="updateAmountLabel()">
+                                            <option value="1" {{ old('subscription_period_months', 1) == 1 ? 'selected' : '' }}>Monthly (1 Month)</option>
+                                            <option value="3" {{ old('subscription_period_months') == 3 ? 'selected' : '' }}>Quarterly (3 Months)</option>
+                                            <option value="6" {{ old('subscription_period_months') == 6 ? 'selected' : '' }}>Semi-Annual (6 Months)</option>
+                                            <option value="12" {{ old('subscription_period_months') == 12 ? 'selected' : '' }}>Annual (12 Months)</option>
+                                            <option value="24" {{ old('subscription_period_months') == 24 ? 'selected' : '' }}>Biennial (24 Months)</option>
+                                            <option value="36" {{ old('subscription_period_months') == 36 ? 'selected' : '' }}>Triennial (36 Months)</option>
+                                            <option value="-1" {{ old('subscription_period_months') == -1 ? 'selected' : '' }}>Unlimited</option>
+                                        </select>
+                                        <small class="text-muted">How often they will be billed</small>
+                                        @error('subscription_period_months')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="billing_amount" class="form-label fw-bold">
+                                            <span id="amount_label">Amount ($)</span>
+                                        </label>
+                                        <input id="billing_amount" type="number" name="billing_amount" 
+                                               value="{{ old('billing_amount') }}" step="0.01" min="0" max="99999.99"
+                                               class="form-control @error('billing_amount') is-invalid @enderror"
+                                               placeholder="e.g., 199.99">
+                                        <small class="text-muted" id="amount_help">Amount charged per billing period</small>
+                                        @error('billing_amount')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="grace_period_days" class="form-label fw-bold">Grace Period (Days)</label>
+                                        <input id="grace_period_days" type="number" name="grace_period_days" 
+                                               value="{{ old('grace_period_days', 7) }}" min="1" max="30"
+                                               class="form-control @error('grace_period_days') is-invalid @enderror">
+                                        <small class="text-muted">Days after expiration with full access</small>
+                                        @error('grace_period_days')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="warning_period_days" class="form-label fw-bold">Warning Period (Days)</label>
+                                        <input id="warning_period_days" type="number" name="warning_period_days" 
+                                               value="{{ old('warning_period_days', 3) }}" min="1" max="14"
+                                               class="form-control @error('warning_period_days') is-invalid @enderror">
+                                        <small class="text-muted">Final warning days before restriction</small>
+                                        @error('warning_period_days')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="reminder_frequency_days" class="form-label fw-bold">Reminder Frequency (Days)</label>
+                                        <input id="reminder_frequency_days" type="number" name="reminder_frequency_days" 
+                                               value="{{ old('reminder_frequency_days', 3) }}" min="1" max="30"
+                                               class="form-control @error('reminder_frequency_days') is-invalid @enderror">
+                                        <small class="text-muted">Days between reminder notifications</small>
+                                        @error('reminder_frequency_days')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Verification Status -->
+                        <!-- Note: Admin privileges are managed through the separate Admin system -->
                         <div class="mb-4">
                             <div class="form-check">
                                 <input class="form-check-input @error('is_verified') is-invalid @enderror"
@@ -316,7 +411,25 @@ document.addEventListener('DOMContentLoaded', function() {
                             @enderror
                         </div>
 
-
+                        <!-- Monthly Cost Limit -->
+                        <div class="mb-4">
+                            <label for="monthly_cost_limit" class="form-label fw-bold">Monthly Cost Limit (USD)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input id="monthly_cost_limit" type="number" name="monthly_cost_limit" 
+                                       value="{{ old('monthly_cost_limit', 0) }}" 
+                                       step="0.01" min="0"
+                                       class="form-control @error('monthly_cost_limit') is-invalid @enderror"
+                                       placeholder="0.00">
+                            </div>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Set to 0 for no limit. Excess costs will be added to monthly invoices.
+                            </small>
+                            @error('monthly_cost_limit')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
 
                         <!-- Buttons -->
                         <div class="d-flex justify-content-end gap-3">
@@ -334,3 +447,120 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function toggleCustomSpecialtyAdmin() {
+    const select = document.getElementById('specialty_select');
+    const customContainer = document.getElementById('custom_specialty_container_admin');
+    const customInput = document.getElementById('custom_specialty_admin');
+    const hiddenInput = document.getElementById('specialty_admin');
+    
+    if (select.value === 'other') {
+        customContainer.style.display = 'block';
+        customInput.required = true;
+        customInput.focus();
+        hiddenInput.value = ''; // Clear hidden field when showing custom input
+    } else {
+        customContainer.style.display = 'none';
+        customInput.required = false;
+        customInput.value = '';
+        hiddenInput.value = select.value; // Set hidden field to selected value
+    }
+}
+
+// Initialize admin create page functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const customInput = document.getElementById('custom_specialty_admin');
+    const hiddenInput = document.getElementById('specialty_admin');
+    const select = document.getElementById('specialty_select');
+    
+    // Handle custom input changes
+    customInput.addEventListener('input', function() {
+        if (select.value === 'other') {
+            hiddenInput.value = this.value;
+        }
+    });
+    
+    // Handle form submission
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const select = document.getElementById('specialty_select');
+        const customInput = document.getElementById('custom_specialty_admin');
+        const hiddenInput = document.getElementById('specialty_admin');
+        
+        if (select.value === 'other') {
+            if (!customInput.value.trim()) {
+                e.preventDefault();
+                customInput.focus();
+                customInput.style.borderColor = '#dc3545';
+                return false;
+            }
+            hiddenInput.value = customInput.value.trim();
+        } else {
+            hiddenInput.value = select.value;
+            // Clear custom specialty when not using "other"
+            customInput.value = '';
+        }
+    });
+    
+    // Initialize on page load - set hidden field value if dropdown has selection
+    if (select.value && select.value !== 'other') {
+        hiddenInput.value = select.value;
+    }
+});
+
+function updateAmountLabel() {
+    const periodSelect = document.getElementById('subscription_period_months');
+    const amountLabel = document.getElementById('amount_label');
+    const amountHelp = document.getElementById('amount_help');
+    
+    const periodLabels = {
+        '1': { label: 'Monthly Amount ($)', help: 'Amount charged every month' },
+        '3': { label: 'Quarterly Amount ($)', help: 'Amount charged every 3 months' },
+        '6': { label: 'Semi-Annual Amount ($)', help: 'Amount charged every 6 months' },
+        '12': { label: 'Annual Amount ($)', help: 'Amount charged every year' },
+        '24': { label: 'Biennial Amount ($)', help: 'Amount charged every 2 years' },
+        '36': { label: 'Triennial Amount ($)', help: 'Amount charged every 3 years' },
+        '-1': { label: 'One-time Amount ($)', help: 'One-time payment for unlimited access' }
+    };
+    
+    const selected = periodLabels[periodSelect.value] || periodLabels['1'];
+    amountLabel.textContent = selected.label;
+    amountHelp.textContent = selected.help;
+}
+
+// Initialize amount label on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateAmountLabel();
+});
+</script>
+
+<style>
+/* Custom specialty input styling for admin create page */
+#custom_specialty_container_admin {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#custom_specialty_admin {
+    border: 2px solid #e9ecef;
+    transition: border-color 0.3s ease;
+}
+
+#custom_specialty_admin:focus {
+    border-color: #DE6262;
+    box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.25);
+}
+</style>
+@endpush

@@ -471,123 +471,436 @@
                     <p class="text-muted mb-0">View and manage your subscription plan and usage</p>
                 </div>
 
+                <!-- Quick Payment Actions -->
+                
+                @if($unpaidInvoices->count() > 0)
+                    <div class="subscription-card mb-4" style="border-left: 4px solid #dc3545;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="text-danger mb-2">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Outstanding Payments Required
+                                </h5>
+                                <p class="mb-2">
+                                    You have <strong>{{ $unpaidInvoices->count() }}</strong> unpaid invoice{{ $unpaidInvoices->count() > 1 ? 's' : '' }} 
+                                    totaling <strong class="text-danger">${{ number_format($totalUnpaid, 2) }}</strong>
+                                </p>
+                                <small class="text-muted">
+                                    Please settle outstanding payments to maintain full access to your account.
+                                </small>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{{ route('invoices.index') }}" class="btn-custom-danger">
+                                    <i class="fas fa-file-invoice-dollar me-1"></i> View All Invoices
+                                </a>
+                                @if($unpaidInvoices->count() === 1)
+                                    <a href="{{ route('invoices.pay', $unpaidInvoices->first()) }}" class="btn-custom-success">
+                                        <i class="fas fa-credit-card me-1"></i> Pay Now (${{ number_format($unpaidInvoices->first()->amount_due, 2) }})
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                        
+                        @if($unpaidInvoices->count() > 1)
+                            <div class="mt-3 pt-3 border-top">
+                                <h6 class="mb-2">Quick Actions:</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach($unpaidInvoices->take(3) as $invoice)
+                                        <a href="{{ route('invoices.pay', $invoice) }}" class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-credit-card me-1"></i>
+                                            Pay Invoice #{{ $invoice->id }} (${{ number_format($invoice->amount_due, 2) }})
+                                        </a>
+                                    @endforeach
+                                    @if($unpaidInvoices->count() > 3)
+                                        <span class="text-muted align-self-center">
+                                            and {{ $unpaidInvoices->count() - 3 }} more...
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                @else
+                    <div class="subscription-card mb-4" style="border-left: 4px solid #28a745;">
+                        <div class="d-flex align-items-center">
+                            <div class="text-success me-3">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-success mb-1">All Payments Up to Date!</h6>
+                                <p class="mb-0 text-muted">
+                                    No outstanding invoices. 
+                                    <a href="{{ route('invoices.index') }}" class="text-decoration-none">View billing history →</a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+            {{-- Variables are now passed from the controller --}}
+
             <div class="row">
-                <!-- Current Plan -->
+                <!-- Main Subscription Status -->
                 <div class="col-md-8">
                     <div class="subscription-card">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h4>Current Plan</h4>
-                                <span class="plan-badge plan-{{ auth()->user()->current_plan }}">
-                                    {{ ucfirst(auth()->user()->current_plan) }} Plan
-                                </span>
+                        
+                        @if($status === 'setup_pending')
+                            <!-- Account Setup Pending -->
+                            <div class="text-center py-5">
+                                <div class="mb-4">
+                                    <i class="fas fa-cog fa-3x text-muted mb-3"></i>
+                                    <h4>Account Setup in Progress</h4>
+                                    <p class="text-muted">Our team is configuring your personalized plan. You'll receive an email once it's ready.</p>
+                                </div>
+                                <a href="{{ route('contact') }}" class="btn-custom-primary">
+                                    <i class="fas fa-phone me-2"></i>Contact Support
+                                </a>
                             </div>
-                            @if(auth()->user()->subscription_active)
-                                <span class="status-badge status-active">Active</span>
-                            @else
-                                <span class="status-badge status-inactive">Inactive</span>
-                            @endif
-                        </div>
 
-                        @if($subscription)
-                            <div class="row mb-4">
-                                <div class="col-md-6">
-                                    <strong>Billing Cycle:</strong> {{ ucfirst($subscription->billing_cycle) }}
+                        @elseif($status === 'ready_to_subscribe')
+                            <!-- First Time User - Ready to Subscribe -->
+                            <div class="text-center py-4">
+                                <div class="mb-4">
+                                    <i class="fas fa-rocket fa-3x text-success mb-3"></i>
+                                    <h4>Welcome! Your Plan is Ready</h4>
+                                    <div class="plan-highlight p-4 rounded mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #28a745;">
+                                        <div class="row text-center">
+                                            <div class="col-md-4">
+                                                <h3 class="text-success mb-1">{{ $setting->getAmountWithPeriod() }}</h3>
+                                                <small class="text-muted">Your Rate</small>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <h5 class="text-primary mb-1">{{ $setting->getSubscriptionPeriodText() }}</h5>
+                                                <small class="text-muted">Billing Period</small>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <h5 class="text-info mb-1"><i class="fas fa-infinity"></i></h5>
+                                                <small class="text-muted">Unlimited Usage</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-muted mb-4">Click below to start your subscription and unlock full access to our AI medical assistant.</p>
                                 </div>
-                                <div class="col-md-6">
-                                    <strong>Amount:</strong> ${{ number_format($subscription->amount, 2) }}/{{ $subscription->billing_cycle === 'yearly' ? 'year' : 'month' }}
+                                <button type="button" class="btn-custom-primary btn-lg" onclick="startPersonalizedCheckout()">
+                                    <i class="fas fa-credit-card me-2"></i>Start My Subscription
+                                </button>
+                                <div class="mt-3">
+                                    <small class="text-muted">Secure payment powered by Stripe</small>
                                 </div>
-                                <div class="col-md-6 mt-2">
-                                    <strong>Next Billing:</strong> {{ $subscription->current_period_end ? $subscription->current_period_end->format('M j, Y') : 'N/A' }}
+                            </div>
+
+                        @elseif($status === 'active')
+                            <!-- Active Subscriber -->
+                            <div class="py-4">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <div>
+                                        <h4><i class="fas fa-check-circle text-success me-2"></i>Subscription Active</h4>
+                                        <p class="text-muted mb-0">You have full access to all features</p>
+                                    </div>
+                                    <span class="status-badge status-active">Active</span>
                                 </div>
-                                <div class="col-md-6 mt-2">
-                                    <strong>Status:</strong> 
-                                    <span class="status-badge {{ $subscription->status === 'active' ? 'status-active' : 'status-inactive' }}">
-                                        {{ ucfirst($subscription->status) }}
-                                    </span>
+
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="info-card p-3 rounded" style="background: #f8f9fa; border-left: 4px solid #28a745;">
+                                            <small class="text-muted d-block">Your Plan</small>
+                                            <strong class="text-success">{{ $setting->getAmountWithPeriod() }}</strong>
+                                            <div class="mt-1">
+                                                <small class="text-muted">{{ $setting->getBillingFrequencyText() }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="info-card p-3 rounded" style="background: #f8f9fa; border-left: 4px solid #007bff;">
+                                            <small class="text-muted d-block">
+                                                @if($setting->isUnlimitedSubscription())
+                                                    Access
+                                                @else
+                                                    Expires On
+                                                @endif
+                                            </small>
+                                            @if($setting->isUnlimitedSubscription())
+                                                <strong class="text-success"><i class="fas fa-infinity me-1"></i>Unlimited</strong>
+                                            @else
+                                                <strong class="text-primary">{{ $setting->subscription_ends_at->format('M d, Y') }}</strong>
+                                                @if($setting->subscription_ends_at->isBefore(now()->addDays(30)))
+                                                    <div class="mt-1">
+                                                        <small class="text-warning">
+                                                            <i class="fas fa-clock me-1"></i>{{ $setting->subscription_ends_at->diffForHumans() }}
+                                                        </small>
+                                                    </div>
+                                                @endif
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="usage-summary p-3 rounded mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                    <div class="row text-center mb-3">
+                                        <div class="col-md-4">
+                                            <h4 class="text-primary mb-1">${{ number_format($monthlyCost, 2) }}</h4>
+                                            <small class="text-muted">Cost Used This Month</small>
+                                        </div>
+                                        <div class="col-md-4">
+                                            @if($costLimit > 0)
+                                                <h4 class="text-info mb-1">${{ number_format($costLimit, 2) }}</h4>
+                                                <small class="text-muted">Monthly Limit</small>
+                                            @else
+                                                <h4 class="text-success mb-1"><i class="fas fa-infinity"></i></h4>
+                                                <small class="text-muted">No Limit Set</small>
+                                            @endif
+                                        </div>
+                                        <div class="col-md-4">
+                                            @if($excessCost > 0)
+                                                <h4 class="text-danger mb-1">${{ number_format($excessCost, 2) }}</h4>
+                                                <small class="text-muted">Excess Cost</small>
+                                            @else
+                                                @if($remainingCost >= 0)
+                                                    <h4 class="text-success mb-1">${{ number_format($remainingCost, 2) }}</h4>
+                                                    <small class="text-muted">Remaining</small>
+                                                @else
+                                                    <h4 class="text-success mb-1"><i class="fas fa-infinity"></i></h4>
+                                                    <small class="text-muted">Unlimited</small>
+                                                @endif
+                                            @endif
+                                        </div>
+                                    </div>
+                                    
+                                    @if($costLimit > 0)
+                                        <!-- Usage Progress Bar -->
+                                        <div class="usage-progress">
+                                            <div class="usage-fill {{ $costUsagePercentage >= 90 ? 'high' : ($costUsagePercentage >= 70 ? 'medium' : 'low') }}" 
+                                                 style="width: {{ min(100, $costUsagePercentage) }}%"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <small class="text-muted">{{ number_format($costUsagePercentage, 1) }}% used</small>
+                                            @if($excessCost > 0)
+                                                <small class="text-danger"><strong>Over limit by ${{ number_format($excessCost, 2) }}</strong></small>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+
+                                @if($costWarning)
+                                    <div class="alert {{ $excessCost > 0 ? 'alert-danger' : 'alert-warning' }} mb-4">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        {{ $costWarning }}
+                                    </div>
+                                @endif
+
+                                <div class="d-flex gap-2">
+                                    <a href="{{ route('subscription.portal') }}" class="btn-custom-secondary">
+                                        <i class="fas fa-cog me-2"></i>Manage Billing
+                                    </a>
+                                    <a href="{{ route('invoices.index') }}" class="btn-custom-secondary">
+                                        <i class="fas fa-file-invoice me-2"></i>View Invoices
+                                    </a>
+                                </div>
+                            </div>
+
+                        @elseif($status === 'grace_period')
+                            <!-- Grace Period -->
+                            <div class="text-center py-4">
+                                <div class="mb-4">
+                                    <i class="fas fa-clock fa-3x text-warning mb-3"></i>
+                                    <h4>Subscription Expired - Grace Period</h4>
+                                    <div class="alert alert-warning">
+                                        <strong>Your subscription expired on {{ $setting->subscription_ends_at->format('M d, Y') }}</strong>
+                                        <br>
+                                        <small>You have {{ $setting->getDaysRemainingInCurrentPeriod() }} days remaining in your grace period</small>
+                                    </div>
+                                    <p class="text-muted mb-4">Your access continues during the grace period. Renew now to avoid any interruption.</p>
+                                </div>
+                                
+                                <div class="plan-highlight p-4 rounded mb-4" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 2px solid #ffc107;">
+                                    <div class="row text-center">
+                                        <div class="col-md-6">
+                                            <h4 class="text-warning mb-1">{{ $setting->getAmountWithPeriod() }}</h4>
+                                            <small class="text-muted">Renewal Rate</small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5 class="text-primary mb-1">{{ $setting->getSubscriptionPeriodText() }}</h5>
+                                            <small class="text-muted">Billing Period</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="button" class="btn-custom-primary btn-lg" onclick="startPersonalizedCheckout()">
+                                    <i class="fas fa-refresh me-2"></i>Renew Subscription
+                                </button>
+                                <div class="mt-3">
+                                    <a href="{{ route('invoices.index') }}" class="btn-custom-secondary">
+                                        <i class="fas fa-file-invoice me-2"></i>View Invoices
+                                    </a>
+                                </div>
+                            </div>
+
+                        @elseif($status === 'warning_period')
+                            <!-- Warning Period -->
+                            <div class="text-center py-4">
+                                <div class="mb-4">
+                                    <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                                    <h4>Final Warning - Account Will Be Restricted</h4>
+                                    <div class="alert alert-danger">
+                                        <strong>Grace period ended on {{ $setting->getGracePeriodEndDate()->format('M d, Y') }}</strong>
+                                        <br>
+                                        <small>Your account will be restricted in {{ $setting->getDaysRemainingInCurrentPeriod() }} days if not renewed</small>
+                                    </div>
+                                    <p class="text-muted mb-4">This is your final warning. Renew immediately to avoid losing access to all features.</p>
+                                </div>
+                                
+                                <div class="plan-highlight p-4 rounded mb-4" style="background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); border: 2px solid #dc3545;">
+                                    <div class="row text-center">
+                                        <div class="col-md-6">
+                                            <h4 class="text-danger mb-1">{{ $setting->getAmountWithPeriod() }}</h4>
+                                            <small class="text-muted">Renewal Rate</small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5 class="text-primary mb-1">{{ $setting->getSubscriptionPeriodText() }}</h5>
+                                            <small class="text-muted">Billing Period</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="button" class="btn-custom-primary btn-lg" onclick="startPersonalizedCheckout()">
+                                    <i class="fas fa-exclamation-circle me-2"></i>Renew Now - Avoid Restriction
+                                </button>
+                                <div class="mt-3">
+                                    <a href="{{ route('invoices.index') }}" class="btn-custom-secondary">
+                                        <i class="fas fa-file-invoice me-2"></i>View Invoices
+                                    </a>
+                                </div>
+                            </div>
+
+                        @elseif($status === 'restricted' || $status === 'should_be_restricted')
+                            <!-- Restricted Account -->
+                            <div class="text-center py-4">
+                                <div class="mb-4">
+                                    <i class="fas fa-ban fa-3x text-danger mb-3"></i>
+                                    <h4>Account Restricted</h4>
+                                    <div class="alert alert-danger">
+                                        <strong>Your access has been limited due to unpaid invoices.</strong>
+                                        <br>
+                                        <small>Please resolve payment issues to restore full access.</small>
+                                    </div>
+                                </div>
+                                <a href="{{ route('invoices.index') }}" class="btn-custom-primary btn-lg">
+                                    <i class="fas fa-credit-card me-2"></i>Pay Outstanding Invoices
+                                </a>
+                                <div class="mt-3">
+                                    <a href="{{ route('contact') }}" class="btn-custom-secondary">
+                                        <i class="fas fa-phone me-2"></i>Contact Support
+                                    </a>
                                 </div>
                             </div>
                         @endif
 
-                        <!-- Usage Statistics -->
-                        @php
-                            $user = auth()->user();
-                            $planConfig = $user->getPlanConfig();
-                            $monthlyUsage = $user->getMonthlyTokenUsage();
-                            $tokenLimit = $planConfig['token_limit'] ?? 0;
-                            $usagePercentage = $tokenLimit > 0 ? ($monthlyUsage / $tokenLimit) * 100 : 0;
-                            $usageClass = $usagePercentage >= 90 ? 'high' : ($usagePercentage >= 70 ? 'medium' : 'low');
-                        @endphp
-
-                        <h5 class="mb-3">Usage This Month</h5>
-                        <div class="usage-progress">
-                            <div class="usage-fill {{ $usageClass }}" style="width: {{ min($usagePercentage, 100) }}%"></div>
-                        </div>
-                        <div class="d-flex justify-content-between text-muted small">
-                            <span>{{ number_format($monthlyUsage) }} tokens used</span>
-                            <span>{{ $tokenLimit === -1 ? 'Unlimited' : number_format($tokenLimit) }} limit</span>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="d-flex flex-wrap gap-2 mt-4">
-                            @if(!auth()->user()->subscription_active)
-                                <a href="/#pricing" class="btn-custom-primary">
-                                    <i class="fas fa-rocket"></i>Upgrade Plan
-                                </a>
-                            @else
-                                <a href="{{ route('subscription.portal') }}" class="btn-custom-secondary">
-                                    <i class="fas fa-external-link-alt"></i>Manage Billing
-                                </a>
-                                <button type="button" style="background: #DE6262" class="btn-custom-danger" onclick="confirmCancellation()">
-                                    <i class="fas fa-times"></i>Cancel Subscription
-                                </button>
-                            @endif
-                        </div>
                     </div>
                 </div>
 
-                <!-- Usage Statistics -->
+                <!-- Quick Stats & Info -->
                 <div class="col-md-4">
                     <div class="row">
-                        <div class="col-12 mb-3">
-                            <div class="stats-card">
-                                <h6 class="text-muted mb-2">Requests This Month</h6>
-                                <div class="stat-number">{{ number_format($user->getMonthlyRequestCount()) }}</div>
+                        @if(in_array($status, ['active', 'ready_to_subscribe', 'grace_period', 'warning_period']))
+                            <!-- Usage Stats for Active/Ready Users -->
+                            <div class="col-12 mb-3">
+                                <div class="stats-card">
+                                    <h6 class="text-muted mb-2">
+                                        <i class="fas fa-chart-line me-1"></i>Requests This Month
+                                    </h6>
+                                    <div class="stat-number text-primary">{{ number_format($user->getMonthlyRequestCount()) }}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-12 mb-3">
-                            <div class="stats-card">
-                                <h6 class="text-muted mb-2">Tokens This Month</h6>
-                                <div class="stat-number">{{ number_format($monthlyUsage) }}</div>
+                            <div class="col-12 mb-3">
+                                <div class="stats-card">
+                                    <h6 class="text-muted mb-2">
+                                        <i class="fas fa-dollar-sign me-1"></i>Cost This Month
+                                    </h6>
+                                    <div class="stat-number text-success">${{ number_format($monthlyCost, 2) }}</div>
+                                    @if($costLimit > 0)
+                                        <small class="text-muted">Limit: ${{ number_format($costLimit, 2) }}</small>
+                                    @else
+                                        <small class="text-muted">No limit set</small>
+                                    @endif
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-12 mb-3">
-                            <div class="stats-card">
-                                <h6 class="text-muted mb-2">Estimated Cost</h6>
-                                <div class="stat-number">${{ number_format($user->getMonthlyCostEstimate(), 4) }}</div>
+                            <div class="col-12 mb-3">
+                                <div class="stats-card">
+                                    <h6 class="text-muted mb-2">
+                                        <i class="fas fa-history me-1"></i>Total Sessions
+                                    </h6>
+                                    <div class="stat-number text-info">{{ number_format($user->openaiUsages()->count()) }}</div>
+                                </div>
                             </div>
-                        </div>
+                        @endif
+
+                        @if($setting && $setting->is_active)
+                            <!-- Plan Details -->
+                            <div class="col-12 mb-3">
+                                <div class="stats-card" style="border-left: 4px solid #DE6262;">
+                                    <h6 class="text-muted mb-2">
+                                        <i class="fas fa-tag me-1"></i>Your Plan Details
+                                    </h6>
+                                    <div class="small">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>Rate:</span>
+                                            <strong>{{ $setting->getAmountWithPeriod() }}</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>Billing:</span>
+                                            <strong>{{ $setting->getSubscriptionPeriodText() }}</strong>
+                                        </div>
+                                        @if($setting->subscription_starts_at)
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span>Started:</span>
+                                                <strong>{{ $setting->subscription_starts_at->format('M d, Y') }}</strong>
+                                            </div>
+                                        @endif
+                                        @if($setting->subscription_ends_at && !$setting->isUnlimitedSubscription())
+                                            <div class="d-flex justify-content-between">
+                                                <span>Expires:</span>
+                                                <strong class="{{ $isExpired ? 'text-danger' : 'text-success' }}">
+                                                    {{ $setting->subscription_ends_at->format('M d, Y') }}
+                                                </strong>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        <!-- Quick Actions -->
                         <div class="col-12 mb-3">
                             <div class="stats-card">
-                                <h6 class="text-muted mb-2">Total Requests</h6>
-                                <div class="stat-number">{{ number_format($user->openaiUsages()->count()) }}</div>
+                                <h6 class="text-muted mb-3">
+                                    <i class="fas fa-bolt me-1"></i>Quick Actions
+                                </h6>
+                                <div class="d-grid gap-2">
+                                    @if($status === 'active')
+                                        <a href="{{ route('ask-ai') }}" class="btn btn-sm btn-success">
+                                            <i class="fas fa-robot me-1"></i>Ask AI
+                                        </a>
+                                        <a href="{{ route('cases') }}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-folder me-1"></i>My Cases
+                                        </a>
+                                    @elseif($status === 'ready_to_subscribe')
+                                        <button class="btn btn-sm btn-primary" onclick="startPersonalizedCheckout()">
+                                            <i class="fas fa-play me-1"></i>Start Now
+                                        </button>
+                                    @elseif(in_array($status, ['grace_period', 'warning_period']))
+                                        <button class="btn btn-sm btn-warning" onclick="startPersonalizedCheckout()">
+                                            <i class="fas fa-refresh me-1"></i>Renew
+                                        </button>
+                                        <a href="{{ route('ask-ai') }}" class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-robot me-1"></i>Ask AI (Limited Time)
+                                        </a>
+                                    @endif
+                                    <a href="{{ route('invoices.index') }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-file-invoice me-1"></i>Invoices
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Plan Features -->
-                    @if(isset($planConfig['features']))
-                        <div class="subscription-card">
-                            <h5 class="mb-3">Plan Features</h5>
-                            <ul class="list-unstyled">
-                                @foreach($planConfig['features'] as $feature)
-                                    <li class="mb-2">
-                                        <i class="fas fa-check text-success me-2"></i>{{ $feature }}
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
                 </div>
             </div>
 
@@ -685,29 +998,28 @@
 
                             <!-- Invoice Summary -->
                             <div class="row mt-4">
-                                <div class="col-md-3 mb-3">
-                                    <div class="stats-card bg-success text-white">
-                                        <h6 class="mb-2 opacity-75">Total Paid</h6>
-                                        <div class="stat-number text-white">${{ number_format(auth()->user()->getTotalPaidAmount(), 2) }}</div>
+                                <div class="col-md-3 mb-2">
+                                    <div class="stats-card" style="padding: 1rem;">
+                                        <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Total Paid</div>
+                                        <div style="font-size: 1.25rem; font-weight: 600; color: #28a745;">${{ number_format($user->getTotalPaidAmount(), 2) }}</div>
                                     </div>
                                 </div>
-                                <div class="col-md-3 mb-3">
-                                    <div class="stats-card bg-danger text-white">
-                                        <h6 class="mb-2 opacity-75">Outstanding</h6>
-                                        <div class="stat-number text-white">${{ number_format(auth()->user()->getTotalUnpaidAmount(), 2) }}</div>
+                                <div class="col-md-3 mb-2">
+                                    <div class="stats-card" style="padding: 1rem;">
+                                        <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Outstanding</div>
+                                        <div style="font-size: 1.25rem; font-weight: 600; color: #DE6262;">${{ number_format($user->getTotalUnpaidAmount(), 2) }}</div>
                                     </div>
                                 </div>
-                                <div class="col-md-3 mb-3">
-                                    <div class="stats-card bg-info text-white">
-                                        <h6 class="mb-2 opacity-75">Total Invoices</h6>
-                                        <div class="stat-number text-white">{{ auth()->user()->stripeInvoices()->count() }}</div>
+                                <div class="col-md-3 mb-2">
+                                    <div class="stats-card" style="padding: 1rem;">
+                                        <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Total Invoices</div>
+                                        <div style="font-size: 1.25rem; font-weight: 600; color: #2c3e50;">{{ $user->stripeInvoices()->count() }}</div>
                                     </div>
                                 </div>
-                                <div class="col-md-3 mb-3">
-                                    <div class="stats-card bg-warning text-dark">
-                                        <h6 class="mb-2 opacity-75">Last Payment</h6>
-                                        @php $lastInvoice = auth()->user()->getLastPaidInvoice(); @endphp
-                                        <div class="stat-number text-dark">{{ $lastInvoice ? $lastInvoice->paid_at->format('M j') : 'N/A' }}</div>
+                                <div class="col-md-3 mb-2">
+                                    <div class="stats-card" style="padding: 1rem;">
+                                        <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Last Payment</div>
+                                        <div style="font-size: 1.1rem; font-weight: 600; color: #2c3e50;">{{ $lastInvoice ? $lastInvoice->paid_at->format('M j, Y') : 'N/A' }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -716,7 +1028,7 @@
                                 <i class="fas fa-file-invoice text-muted" style="font-size: 3rem;"></i>
                                 <h5 class="mt-3 text-muted">No Invoices Yet</h5>
                                 <p class="text-muted">Your invoices will appear here once you have an active subscription.</p>
-                                @if(!auth()->user()->subscription_active)
+                                @if(!$user->subscription_active)
                                     <a href="/#pricing" class="btn-custom-primary mt-3">
                                         <i class="fas fa-rocket"></i>Choose a Plan
                                     </a>
@@ -761,6 +1073,41 @@
 function confirmCancellation() {
     const modal = new bootstrap.Modal(document.getElementById('cancellationModal'));
     modal.show();
+}
+
+function startPersonalizedCheckout() {
+    const button = document.querySelector('.btn-custom-primary');
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+    button.disabled = true;
+
+    fetch('{{ route("subscription.checkout") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            // No plan needed - using personalized pricing
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.checkout_url) {
+            window.location.href = data.checkout_url;
+        } else {
+            alert(data.error || 'Failed to create checkout session');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while starting checkout');
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
 }
 
 function cancelSubscription() {
