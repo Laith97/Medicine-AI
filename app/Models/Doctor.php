@@ -120,6 +120,70 @@ class Doctor extends Model
     }
 
     /**
+     * Get landing page
+     */
+    public function landingPage()
+    {
+        return $this->hasOne(DoctorLandingPage::class);
+    }
+
+    /**
+     * Get blog posts
+     */
+    public function blogPosts()
+    {
+        return $this->hasMany(BlogPost::class);
+    }
+
+    /**
+     * Get published blog posts
+     */
+    public function publishedBlogPosts()
+    {
+        return $this->hasMany(BlogPost::class)->published();
+    }
+
+    /**
+     * Get chat sessions
+     */
+    public function chatSessions()
+    {
+        return $this->hasMany(ChatSession::class);
+    }
+
+    /**
+     * Get active chat sessions
+     */
+    public function activeChatSessions()
+    {
+        return $this->hasMany(ChatSession::class)->active();
+    }
+
+    /**
+     * Get chat sessions with unread messages
+     */
+    public function unreadChatSessions()
+    {
+        return $this->hasMany(ChatSession::class)->withUnreadMessages();
+    }
+
+    /**
+     * Get landing page visits
+     */
+    public function landingPageVisits()
+    {
+        return $this->hasMany(LandingPageVisit::class);
+    }
+
+    /**
+     * Get public reviews for landing page
+     */
+    public function publicReviews()
+    {
+        return $this->hasMany(Review::class)->where('is_public', true)->where('is_approved', true);
+    }
+
+    /**
      * Scope for active doctors
      */
     public function scopeActive($query)
