@@ -99,13 +99,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoices/{invoice}/manual-payment', [InvoiceController::class, 'manualPayment'])->name('invoices.manual-payment');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
     Route::post('/invoices/{invoice}/sync', [InvoiceController::class, 'sync'])->name('invoices.sync');
-    
+
     // Debug route for testing payment redirects
     Route::get('/debug/payment/{invoice}', function($invoiceId) {
         $invoice = \App\Models\StripeInvoice::findOrFail($invoiceId);
         $service = new \App\Services\StripeInvoiceService();
         $paymentUrl = $service->getPaymentUrl($invoice);
-        
+
         return response()->json([
             'invoice_id' => $invoice->id,
             'payment_url' => $paymentUrl,
@@ -113,22 +113,27 @@ Route::middleware('auth')->group(function () {
             'url_length' => strlen($paymentUrl)
         ]);
     })->name('debug.payment');
-    
+
     // Test payment page
     Route::get('/test-payment', function() {
         $invoices = \App\Models\StripeInvoice::where('status', '!=', 'paid')
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
-        
+
         return view('test-payment', compact('invoices'));
     })->name('test.payment');
+
+    // Test voice notes functionality
+    Route::get('/test-notes', function() {
+        return view('test-notes');
+    })->name('test.notes');
 
     // Test grace period notification
     Route::get('/test-grace-period', function() {
         $user = auth()->user();
         $setting = $user->monthlyInvoiceSetting;
-        
+
         if (!$setting) {
             return response()->json([
                 'error' => 'No monthly invoice setting found for user',
@@ -136,7 +141,7 @@ Route::middleware('auth')->group(function () {
                 'user_email' => $user->email
             ]);
         }
-        
+
         return response()->json([
             'user' => [
                 'id' => $user->id,
@@ -217,6 +222,21 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
         Route::get('/locations', [GoogleController::class, 'getLocations'])->name('locations');
         Route::post('/account-location', [GoogleController::class, 'setAccountLocation'])->name('account-location');
     });
+
+    // Doctor Notes routes
+    Route::prefix('notes')->name('notes.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'store'])->name('store');
+        Route::get('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'show'])->name('show');
+        Route::get('/{note}/edit', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'edit'])->name('edit');
+        Route::put('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'update'])->name('update');
+        Route::delete('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'destroy'])->name('destroy');
+
+        // AJAX routes
+        Route::post('/transcribe-audio', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'transcribeAudio'])->name('transcribe-audio');
+        Route::get('/patients/search', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'getPatients'])->name('patients.search');
+    });
 });
 // Stripe webhook (outside auth middleware)
 Route::post('/stripe/webhook', [SubscriptionController::class, 'webhook'])->name('stripe.webhook');
@@ -273,11 +293,11 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::post('/monthly-invoices/process-payments', [MonthlyInvoiceController::class, 'processPayments'])->name('monthly-invoices.process-payments');
     Route::post('/monthly-invoices/bulk-update', [MonthlyInvoiceController::class, 'bulkUpdate'])->name('monthly-invoices.bulk-update');
     Route::post('/monthly-invoices/generate', [MonthlyInvoiceController::class, 'generate'])->name('monthly-invoices.generate');
-    
+
     // Contact submission management
     Route::get('/contact-submissions', [ContactController::class, 'adminIndex'])->name('contact-submissions');
     Route::patch('/contact-submissions/{submission}/mark-read', [ContactController::class, 'markAsRead'])->name('contact-submissions.mark-read');
-    
+
     // Manual reminder routes
     Route::post('/send-reminders', [AdminController::class, 'sendManualReminders'])->name('send-reminders');
     Route::get('/send-reminders', [AdminController::class, 'showSendRemindersForm'])->name('send-reminders.form');
