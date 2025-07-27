@@ -181,76 +181,127 @@
 
                 <!-- Summary Cards -->
                 <div class="row mb-4">
-                    <div class="col-md-3 mb-3">
-                        <div class="stats-card bg-danger text-white">
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                        <div class="stats-card" style="padding: 1rem;">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="mb-2 opacity-75">Total Unpaid</h6>
-                                    <div class="stat-number text-white">${{ number_format($totalUnpaid, 2) }}</div>
+                                    <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Total Invoiced</div>
+                                    <div style="font-size: 1.25rem; font-weight: 600; color: #2c3e50;">${{ number_format($totalUnpaid + $totalPaid, 2) }}</div>
                                 </div>
                                 <div class="align-self-center">
-                                    <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                                    <i class="fas fa-file-invoice-dollar" style="font-size: 1.2rem; color: #6c757d;"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="stats-card bg-success text-white">
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                        <div class="stats-card" style="padding: 1rem;">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="mb-2 opacity-75">Total Paid</h6>
-                                    <div class="stat-number text-white">${{ number_format($totalPaid, 2) }}</div>
+                                    <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Outstanding</div>
+                                    <div style="font-size: 1.25rem; font-weight: 600; color: #DE6262;">${{ number_format($totalUnpaid, 2) }}</div>
                                 </div>
                                 <div class="align-self-center">
-                                    <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                                    <i class="fas fa-exclamation-triangle" style="font-size: 1.2rem; color: #DE6262;"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="stats-card bg-info text-white">
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                        <div class="stats-card" style="padding: 1rem;">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="mb-2 opacity-75">Last Payment</h6>
-                                    <div class="stat-number text-white">
-                                        @if($lastPaidInvoice)
-                                            {{ $lastPaidInvoice->paid_at->format('M d') }}
+                                    <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Paid</div>
+                                    <div style="font-size: 1.25rem; font-weight: 600; color: #28a745;">${{ number_format($totalPaid, 2) }}</div>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-check-circle" style="font-size: 1.2rem; color: #28a745;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                        <div class="stats-card" style="padding: 1rem;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Billing Rate</div>
+                                    <div style="font-size: 1.25rem; font-weight: 600; color: #2c3e50;">
+                                        @if(auth()->user()->monthlyInvoiceSetting)
+                                            {{ auth()->user()->monthlyInvoiceSetting->getAmountWithPeriod() }}
                                         @else
                                             N/A
                                         @endif
                                     </div>
                                 </div>
                                 <div class="align-self-center">
-                                    <i class="fas fa-calendar fa-2x opacity-75"></i>
+                                    <i class="fas fa-calendar-alt" style="font-size: 1.2rem; color: #6c757d;"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="stats-card bg-warning text-dark">
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                        <div class="stats-card" style="padding: 1rem;">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="mb-2 opacity-75">Next Due</h6>
-                                    <div class="stat-number text-dark">
+                                    <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Next Due</div>
+                                    <div style="font-size: 1.1rem; font-weight: 600; color: #2c3e50;">
                                         @if($nextDueInvoice)
-                                            {{ $nextDueInvoice->due_date->format('M d') }}
+                                            {{ $nextDueInvoice->due_date->format('M d, Y') }}
                                         @else
                                             N/A
                                         @endif
                                     </div>
                                 </div>
                                 <div class="align-self-center">
-                                    <i class="fas fa-clock fa-2x opacity-75"></i>
+                                    <i class="fas fa-clock" style="font-size: 1.2rem; color: #6c757d;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                        <div class="stats-card" style="padding: 1rem;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Subscription Expires</div>
+                                    <div style="font-size: 1.1rem; font-weight: 600; color: #DE6262;">
+                                        @if(auth()->user()->monthlyInvoiceSetting && auth()->user()->monthlyInvoiceSetting->subscription_ends_at)
+                                            {{ auth()->user()->monthlyInvoiceSetting->subscription_ends_at->format('M d, Y') }}
+                                        @elseif(auth()->user()->monthlyInvoiceSetting && auth()->user()->monthlyInvoiceSetting->isUnlimitedSubscription())
+                                            <span style="color: #28a745;">
+                                                <i class="fas fa-infinity me-1"></i>Never
+                                            </span>
+                                        @elseif(auth()->user()->subscription && auth()->user()->subscription->current_period_end)
+                                            {{ auth()->user()->subscription->current_period_end->format('M d, Y') }}
+                                        @else
+                                            Not Started
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-calendar-times" style="font-size: 1.2rem; color: #DE6262;"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-            @if($overdueCount > 0)
+            @if($isRestricted)
                 <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-ban"></i>
+                    <strong>Account Restricted!</strong> Your access has been limited due to unpaid invoices. 
+                    <a href="{{ route('access.restricted') }}" class="alert-link">Click here for details</a>
+                </div>
+            @elseif($overdueCount > 0)
+                <div class="alert alert-warning" role="alert">
                     <i class="fas fa-exclamation-triangle"></i>
                     <strong>Attention!</strong> You have {{ $overdueCount }} overdue invoice(s). Please pay them immediately to avoid service interruption.
+                </div>
+            @endif
+
+            @if($totalUnpaidMonthly > 0)
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Monthly Invoices:</strong> You have ${{ number_format($totalUnpaidMonthly, 2) }} in unpaid monthly service fees.
                 </div>
             @endif
 
@@ -260,7 +311,16 @@
                         <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filter Invoices</h5>
                         <form method="GET" action="{{ route('invoices.index') }}">
                             <div class="row">
-                                <div class="col-md-3">
+                                <div class="col-md-2">
+                                    <label for="type" class="form-label">Type</label>
+                                    <select name="type" id="type" class="form-select">
+                                        <option value="">All Types</option>
+                                        <option value="monthly" {{ request('type') === 'monthly' ? 'selected' : '' }}>Monthly</option>
+                                        <option value="subscription" {{ request('type') === 'subscription' ? 'selected' : '' }}>Subscription</option>
+                                        <option value="manual" {{ request('type') === 'manual' ? 'selected' : '' }}>Manual</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
                                     <label for="status" class="form-label">Status</label>
                                     <select name="status" id="status" class="form-select">
                                         <option value="">All Statuses</option>
@@ -279,7 +339,7 @@
                                     <label for="date_to" class="form-label">To Date</label>
                                     <input type="date" name="date_to" id="date_to" class="form-control" value="{{ request('date_to') }}">
                                 </div>
-                                <div class="col-md-3 d-flex align-items-end gap-2">
+                                <div class="col-md-2 d-flex align-items-end gap-2">
                                     <button type="submit" class="btn-custom-primary">
                                         <i class="fas fa-search"></i>Apply Filters
                                     </button>
@@ -307,11 +367,11 @@
                                 <thead>
                                     <tr>
                                         <th>Invoice #</th>
-                                        <th>Description</th>
+                                        <th>Period & Type</th>
                                         <th>Amount</th>
                                         <th>Status</th>
                                         <th>Due Date</th>
-                                        <th>Created</th>
+                                        <th>Grace Expires</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -319,50 +379,84 @@
                                     @foreach($invoices as $invoice)
                                         <tr class="{{ $invoice->isOverdue() ? 'table-danger' : '' }}">
                                             <td>
-                                                <strong>#{{ $invoice->id }}</strong>
+                                                <strong style="color: #DE6262;">#{{ str_pad($invoice->id, 4, '0', STR_PAD_LEFT) }}</strong>
                                                 <br>
-                                                <small class="text-muted">{{ $invoice->stripe_invoice_id }}</small>
+                                                <small class="text-muted" style="font-size: 0.75rem;">{{ $invoice->created_at->format('M d, Y') }}</small>
                                             </td>
                                             <td>
-                                                {{ $invoice->description }}
-                                                @if($invoice->line_items && count($invoice->line_items) > 0)
+                                                <span class="{{ $invoice->getTypeBadgeClass() }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                                    {{ $invoice->getHumanType() }}
+                                                </span>
+                                                @if($invoice->isMonthlyInvoice() && $invoice->getFormattedPeriod())
                                                     <br>
-                                                    <small class="text-muted">
-                                                        {{ count($invoice->line_items) }} item(s)
+                                                    <small class="text-muted" style="font-size: 0.7rem;">{{ $invoice->getFormattedPeriod() }}</small>
+                                                @endif
+                                                @if($invoice->description && strlen($invoice->description) < 50)
+                                                    <br>
+                                                    <small class="text-muted" style="font-size: 0.7rem;">{{ $invoice->description }}</small>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <strong style="color: #2c3e50; font-size: 1.1rem;">{{ $invoice->getFormattedAmountDue() }}</strong>
+                                                @if($invoice->amount_paid > 0)
+                                                    <br>
+                                                    <small class="text-success" style="font-size: 0.75rem;">Paid: {{ $invoice->getFormattedAmountPaid() }}</small>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <span class="{{ $invoice->getStatusBadgeClass() }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                                    {{ $invoice->getHumanStatus() }}
+                                                </span>
+                                                @if($invoice->isOverdue())
+                                                    <br>
+                                                    <small class="text-danger" style="font-size: 0.7rem;">
+                                                        <i class="fas fa-exclamation-triangle"></i> Overdue
                                                     </small>
                                                 @endif
                                             </td>
                                             <td>
-                                                <strong>{{ $invoice->getFormattedAmountDue() }}</strong>
-                                                @if($invoice->amount_paid > 0)
-                                                    <br>
-                                                    <small class="text-success">Paid: {{ $invoice->getFormattedAmountPaid() }}</small>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                <span class="{{ $invoice->getStatusBadgeClass() }}">
-                                                    {{ $invoice->getHumanStatus() }}
-                                                </span>
-                                            </td>
-                                            <td>
                                                 @if($invoice->due_date)
-                                                    {{ $invoice->due_date->format('M d, Y') }}
+                                                    <strong style="color: #2c3e50;">{{ $invoice->due_date->format('M d, Y') }}</strong>
                                                     @if($invoice->isOverdue())
                                                         <br>
-                                                        <small class="text-danger">
+                                                        <small class="text-danger" style="font-size: 0.75rem;">
                                                             {{ $invoice->due_date->diffForHumans() }}
                                                         </small>
                                                     @elseif($invoice->isDueSoon())
                                                         <br>
-                                                        <small class="text-warning">
+                                                        <small class="text-warning" style="font-size: 0.75rem;">
                                                             Due {{ $invoice->due_date->diffForHumans() }}
                                                         </small>
                                                     @endif
                                                 @else
-                                                    <span class="text-muted">No due date</span>
+                                                    <span class="text-muted">N/A</span>
                                                 @endif
                                             </td>
-                                            <td>{{ $invoice->created_at->format('M d, Y') }}</td>
+                                            <td>
+                                                @if($invoice->due_date && auth()->user()->monthlyInvoiceSetting)
+                                                    @php
+                                                        $expirationDate = $invoice->due_date->copy()->addDays(auth()->user()->monthlyInvoiceSetting->grace_period_days);
+                                                        $isExpired = $expirationDate->isPast();
+                                                        $isExpiringSoon = $expirationDate->isAfter(now()) && $expirationDate->isBefore(now()->addDays(7));
+                                                    @endphp
+                                                    <strong style="color: {{ $isExpired ? '#DE6262' : ($isExpiringSoon ? '#f39c12' : '#2c3e50') }};">
+                                                        {{ $expirationDate->format('M d, Y') }}
+                                                    </strong>
+                                                    @if($isExpired)
+                                                        <br>
+                                                        <small class="text-danger" style="font-size: 0.75rem;">
+                                                            <i class="fas fa-times-circle"></i> Expired
+                                                        </small>
+                                                    @elseif($isExpiringSoon)
+                                                        <br>
+                                                        <small class="text-warning" style="font-size: 0.75rem;">
+                                                            <i class="fas fa-clock"></i> Expires soon
+                                                        </small>
+                                                    @endif
+                                                @else
+                                                    <span class="text-muted">N/A</span>
+                                                @endif
+                                            </td>
                                             <td>
                                                 <div class="d-flex gap-1">
                                                     <a href="{{ route('invoices.show', $invoice) }}" class="btn-sm-custom-primary" title="View Details">

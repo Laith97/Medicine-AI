@@ -60,6 +60,32 @@
                             @enderror
                         </div>
 
+                        <!-- Phone Number Field -->
+                        <div class="form-group mb-3">
+                            <label for="phone" class="form-label">
+                                <i class="bi bi-telephone me-2"></i>Phone Number <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                id="phone" 
+                                type="tel" 
+                                name="phone" 
+                                class="form-control auth-input @error('phone') is-invalid @enderror" 
+                                value="{{ old('phone') }}" 
+                                required
+                                placeholder="Enter your phone number (e.g., +1234567890)"
+                                pattern="^\+?[1-9]\d{1,14}$"
+                            >
+                            <div class="form-text">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Required for SMS invoice reminders. Include country code (e.g., +1 for US)
+                                </small>
+                            </div>
+                            @error('phone')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         <!-- Password Field -->
                         <div class="form-group mb-3">
                             <label for="password" class="form-label">

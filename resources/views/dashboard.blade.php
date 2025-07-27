@@ -865,6 +865,128 @@
             </div>
         </div>
 
+        @auth
+            @if(Auth::user()->isRestricted())
+                <!-- Restriction Warning -->
+                <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(220, 53, 69, 0.2);">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-ban fa-2x text-danger"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="alert-heading mb-2">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Account Access Restricted
+                            </h5>
+                            <p class="mb-2">{{ Auth::user()->getRestrictionMessage() }}</p>
+                            <div class="d-flex gap-2">
+                                <a href="{{ route('invoices.index') }}" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-credit-card me-1"></i> Pay Outstanding Invoices
+                                </a>
+                                <a href="{{ route('access.restricted') }}" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-info-circle me-1"></i> View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @elseif(Auth::user()->isInGracePeriod())
+                <!-- Grace Period Warning -->
+                <div class="alert alert-warning alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(255, 193, 7, 0.2);">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-clock fa-2x text-warning"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="alert-heading mb-2">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Subscription Expired - Grace Period
+                            </h5>
+                            <p class="mb-2">
+                                <strong>Your subscription expired on {{ Auth::user()->getSubscriptionEndDate()->format('M d, Y') }}</strong>
+                                <br>
+                                You have <strong>{{ Auth::user()->getDaysRemainingInCurrentPeriod() }} days remaining</strong> in your grace period
+                            </p>
+                            <div class="d-flex gap-2">
+                                <a href="{{ route('subscription.manage') }}" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-credit-card me-1"></i> Renew Subscription
+                                </a>
+                                <a href="{{ route('invoices.index') }}" class="btn btn-outline-warning btn-sm">
+                                    <i class="fas fa-file-invoice-dollar me-1"></i> View Invoices
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Note: No close button - notification persists until payment -->
+                </div>
+            @elseif(Auth::user()->isInWarningPeriod())
+                <!-- Warning Period Alert -->
+                <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(220, 53, 69, 0.2);">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="alert-heading mb-2">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Final Warning - Account Will Be Restricted Soon
+                            </h5>
+                            <p class="mb-2">
+                                <strong>Your subscription expired on {{ Auth::user()->getSubscriptionEndDate()->format('M d, Y') }}</strong>
+                                <br>
+                                You have <strong>{{ Auth::user()->getDaysRemainingInCurrentPeriod() }} days remaining</strong> before your account is restricted
+                            </p>
+                            <div class="d-flex gap-2">
+                                <a href="{{ route('subscription.manage') }}" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-credit-card me-1"></i> Renew Now
+                                </a>
+                                <a href="{{ route('invoices.index') }}" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-file-invoice-dollar me-1"></i> Pay Invoices
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Note: No close button - notification persists until payment -->
+                </div>
+            @elseif(Auth::user()->getOverdueInvoicesCount() > 0)
+                <!-- Overdue Warning -->
+                <div class="alert alert-warning alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(255, 193, 7, 0.2);">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="alert-heading mb-2">
+                                <i class="fas fa-clock me-2"></i>Overdue Invoices
+                            </h5>
+                            <p class="mb-2">You have {{ Auth::user()->getOverdueInvoicesCount() }} overdue invoice(s). Please pay them to avoid service interruption.</p>
+                            <a href="{{ route('invoices.index') }}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-file-invoice-dollar me-1"></i> View Invoices
+                            </a>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @elseif(Auth::user()->getTotalUnpaidMonthlyAmount() > 0)
+                <!-- Monthly Invoice Reminder -->
+                <div class="alert alert-info alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(13, 202, 240, 0.2);">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-calendar-alt fa-2x text-info"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="alert-heading mb-2">
+                                <i class="fas fa-info-circle me-2"></i>Monthly Service Fee Due
+                            </h5>
+                            <p class="mb-2">You have ${{ number_format(Auth::user()->getTotalUnpaidMonthlyAmount(), 2) }} in unpaid monthly service fees.</p>
+                            <a href="{{ route('invoices.index') }}" class="btn btn-info btn-sm">
+                                <i class="fas fa-credit-card me-1"></i> Pay Now
+                            </a>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+        @endauth
+
         <!-- Quick Actions Card -->
         <div class="chart-card">
             <h4><i class="fas fa-bolt me-2"></i>Quick Actions</h4>

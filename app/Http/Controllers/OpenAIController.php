@@ -2722,11 +2722,11 @@ class OpenAIController extends Controller
             $completionTokens = $usage['completion_tokens'] ?? 0;
             $totalTokens = $usage['total_tokens'] ?? ($promptTokens + $completionTokens);
 
-            // Calculate cost estimate
-            $costEstimate = OpenAIUsage::calculateCost($totalTokens);
-
             // Get model from response or default
             $model = $response['model'] ?? 'gpt-4o';
+
+            // Calculate cost estimate with proper model and token breakdown
+            $costEstimate = OpenAIUsage::calculateCost($totalTokens, $model, $promptTokens, $completionTokens);
 
             // Store usage record
             OpenAIUsage::create([
@@ -2748,6 +2748,7 @@ class OpenAIController extends Controller
             $user = auth()->user();
             if ($user) {
                 $this->checkTokenLimits($user);
+                $this->checkCostLimits($user);
             }
 
         } catch (\Exception $e) {
@@ -2795,6 +2796,54 @@ class OpenAIController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Failed to check token limits: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check if user is approaching cost limits and send notifications
+     */
+    private function checkCostLimits($user): void
+    {
+        try {
+            if ($user->monthly_cost_limit <= 0) {
+                return; // No limit set
+            }
+
+            $monthlyCost = $user->getMonthlyCostEstimate();
+            $costLimit = $user->monthly_cost_limit;
+            $usagePercentage = $user->getCostUsagePercentage();
+
+            // Send warning at 80% usage (once per day)
+            if ($usagePercentage >= 80 && $usagePercentage < 95) {
+                $cacheKey = "cost_warning_80_{$user->id}_" . now()->format('Y-m-d');
+                if (!Cache::has($cacheKey)) {
+                    // Log warning - you can extend this to send emails if needed
+                    \Log::info("Cost usage warning for user {$user->id}: {$usagePercentage}% of limit used");
+                    Cache::put($cacheKey, true, now()->addDay());
+                }
+            }
+
+            // Send critical warning at 95% usage (once per day)
+            if ($usagePercentage >= 95) {
+                $cacheKey = "cost_warning_95_{$user->id}_" . now()->format('Y-m-d');
+                if (!Cache::has($cacheKey)) {
+                    \Log::warning("Critical cost usage warning for user {$user->id}: {$usagePercentage}% of limit used");
+                    Cache::put($cacheKey, true, now()->addDay());
+                }
+            }
+
+            // Log when user exceeds limit
+            if ($monthlyCost > $costLimit) {
+                $excessCost = $monthlyCost - $costLimit;
+                $cacheKey = "cost_exceeded_{$user->id}_" . now()->format('Y-m-d');
+                if (!Cache::has($cacheKey)) {
+                    \Log::warning("User {$user->id} exceeded cost limit by $" . number_format($excessCost, 2));
+                    Cache::put($cacheKey, true, now()->addDay());
+                }
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to check cost limits: ' . $e->getMessage());
         }
     }
 }

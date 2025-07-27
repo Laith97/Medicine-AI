@@ -27,6 +27,83 @@
         border: none;
         height: 100%;
     }
+
+    /* Compact table styles */
+    .table th {
+        padding: 0.5rem 0.4rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        white-space: nowrap;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .table td {
+        padding: 0.4rem 0.4rem;
+        font-size: 0.8rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f4;
+    }
+
+    .table td strong {
+        font-size: 0.85rem;
+    }
+
+    .table td small {
+        font-size: 0.7rem;
+    }
+
+    .table .badge {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.4rem;
+    }
+
+    .table .btn {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7rem;
+    }
+
+    /* Column widths for invoices table */
+    .table th:nth-child(1), .table td:nth-child(1) { width: 12%; }
+    .table th:nth-child(2), .table td:nth-child(2) { width: 18%; }
+    .table th:nth-child(3), .table td:nth-child(3) { width: 20%; }
+    .table th:nth-child(4), .table td:nth-child(4) { width: 10%; }
+    .table th:nth-child(5), .table td:nth-child(5) { width: 10%; }
+    .table th:nth-child(6), .table td:nth-child(6) { width: 10%; }
+    .table th:nth-child(7), .table td:nth-child(7) { width: 10%; }
+    .table th:nth-child(8), .table td:nth-child(8) { width: 10%; }
+
+    /* Pagination styling */
+    .pagination {
+        margin-bottom: 0;
+    }
+
+    .pagination .page-link {
+        color: #DE6262;
+        border: 1px solid #dee2e6;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        border-radius: 0.375rem;
+        margin: 0 0.125rem;
+    }
+
+    .pagination .page-link:hover {
+        color: white;
+        background-color: #DE6262;
+        border-color: #DE6262;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #DE6262;
+        border-color: #DE6262;
+        color: white;
+    }
+
+    .pagination .page-item.disabled .page-link {
+        color: #6c757d;
+        background-color: #fff;
+        border-color: #dee2e6;
+    }
 </style>
 @endpush
 

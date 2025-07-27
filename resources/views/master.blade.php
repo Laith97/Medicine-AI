@@ -46,10 +46,10 @@
 }
 
 </style>
-    <!-- Font Imports -->
+    <!-- Clean Font Imports -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Montserrat:wght@400;700&family=Crete+Round:ital@0;1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <!-- Stylesheets -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
@@ -60,10 +60,10 @@
     <!-- <link rel="stylesheet" href="{{ asset('css/font-icons.css') }}"> -->
     <link rel="stylesheet" href="{{ asset('demos/medical/css/medical-icons.css') }}">
     <link rel="stylesheet" href="{{ asset('css/swiper.css') }}">
-    <!-- Google Fonts -->
+    <!-- Minimal Google Fonts for fallback -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
@@ -74,8 +74,35 @@
 
     <!-- Global Font Styling -->
     <style>
+        /* Clean Medical System Font */
         body, * {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
+            font-weight: 400;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+
+        /* Navigation specific fonts - Clean and readable */
+        .primary-menu .menu-link {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+            font-weight: 400;
+            letter-spacing: 0.01em;
+        }
+
+        /* Headers - Bold but not thick */
+        h1, h2, h3, h4, h5, h6, .heading {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+        }
+
+        /* Medical/clinical text */
+        .medical-text, .diagnosis-text, .case-text {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+            font-weight: 400;
+            line-height: 1.6;
         }
 
         /* FontAwesome Debug - Force display if not loading */
@@ -95,6 +122,333 @@
             font-size: 24px;
             color: red;
             margin: 10px;
+        }
+
+        /* Navigation Improvements */
+        .primary-menu .menu-container {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+        }
+
+        .primary-menu .menu-item {
+            white-space: nowrap;
+            margin-right: 1rem;
+        }
+
+        .primary-menu .menu-link {
+            padding: 0.5rem 1rem;
+            font-size: 15px;
+            font-weight: 400;
+            color: #333333;
+            transition: all 0.3s ease;
+        }
+
+        .primary-menu .menu-item.current .menu-link,
+        .primary-menu .menu-link:hover {
+            color: #DE6262;
+            font-weight: 500;
+        }
+
+        /* Dropdown arrow styling */
+        .primary-menu .fa-chevron-down {
+            font-size: 10px;
+            margin-left: 5px;
+            color: #333333;
+            opacity: 0.8;
+        }
+
+        .primary-menu .menu-item:hover .fa-chevron-down,
+        .primary-menu .menu-item.current .fa-chevron-down {
+            color: #DE6262;
+            opacity: 1;
+        }
+
+        /* Modern Advanced Dropdown Design */
+        .primary-menu .sub-menu-container {
+            /* Positioning & Layout */
+            position: absolute !important;
+            top: calc(100% + 8px) !important;
+            left: 50% !important;
+            transform: translateX(-50%) translateY(-8px) !important;
+            z-index: 9999 !important;
+            
+            /* Dimensions */
+            min-width: 240px !important;
+            width: max-content !important;
+            max-width: 280px !important;
+            
+            /* Modern Glass Design */
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            
+            /* Advanced Shadow & Border */
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.1),
+                0 8px 16px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+            
+            /* Modern Rounded Design */
+            border-radius: 16px !important;
+            
+            /* Spacing */
+            padding: 12px 0 !important;
+            margin: 0 !important;
+            
+            /* Animation */
+            opacity: 0 !important;
+            visibility: hidden !important;
+            
+            /* List Reset */
+            list-style: none !important;
+        }
+
+        /* Hover Bridge - Invisible area to prevent dropdown from closing */
+        .primary-menu .sub-menu-container::after {
+            content: '' !important;
+            position: absolute !important;
+            top: -16px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            width: 100% !important;
+            height: 16px !important;
+            background: transparent !important;
+            z-index: 9998 !important;
+        }
+
+        /* Dropdown Arrow Indicator */
+        .primary-menu .sub-menu-container::before {
+            content: '' !important;
+            position: absolute !important;
+            top: -6px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            width: 12px !important;
+            height: 12px !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(20px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-bottom: none !important;
+            border-right: none !important;
+            transform: translateX(-50%) rotate(45deg) !important;
+            border-radius: 2px 0 0 0 !important;
+            z-index: 9999 !important;
+        }
+
+        /* Show dropdown on hover with perfect positioning */
+        .primary-menu .menu-item:hover .sub-menu-container,
+        .primary-menu .sub-menu-container:hover {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform: translateX(-50%) translateY(0) !important;
+        }
+
+        /* Dropdown Items */
+        .primary-menu .sub-menu-container .menu-item {
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            background: transparent !important;
+            position: relative !important;
+        }
+
+        /* Dropdown Links - Modern Design */
+        .primary-menu .sub-menu-container .menu-link {
+            /* Layout */
+            display: flex !important;
+            align-items: center !important;
+            padding: 12px 20px !important;
+            margin: 0 8px !important;
+            
+            /* Typography */
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            color: #374151 !important;
+            text-decoration: none !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+            
+            /* Modern Styling */
+            border-radius: 10px !important;
+            background: transparent !important;
+            border: none !important;
+            
+            /* Smooth Transitions */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+
+        /* Hover Effect - Modern Gradient */
+        .primary-menu .sub-menu-container .menu-link:hover {
+            background: linear-gradient(135deg, rgba(222, 98, 98, 0.1), rgba(222, 98, 98, 0.05)) !important;
+            color: #DE6262 !important;
+            font-weight: 600 !important;
+            transform: translateX(4px) !important;
+            box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15) !important;
+        }
+
+        /* Active State - Premium Design */
+        .primary-menu .sub-menu-container .menu-item.current .menu-link {
+            background: linear-gradient(135deg, #DE6262, #c55555) !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            box-shadow: 0 4px 16px rgba(222, 98, 98, 0.3) !important;
+        }
+
+        /* Active Hover State */
+        .primary-menu .sub-menu-container .menu-item.current .menu-link:hover {
+            background: linear-gradient(135deg, #c55555, #b04848) !important;
+            transform: translateX(2px) !important;
+            box-shadow: 0 6px 20px rgba(222, 98, 98, 0.4) !important;
+        }
+
+        /* Modern Divider */
+        .primary-menu .menu-divider {
+            height: 1px !important;
+            background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08) 20%, rgba(0, 0, 0, 0.08) 80%, transparent) !important;
+            margin: 8px 16px !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+
+        /* Modern Dropdown Arrow Animation */
+        .primary-menu .fa-chevron-down {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            font-size: 10px !important;
+            margin-left: 6px !important;
+            opacity: 0.7 !important;
+        }
+        
+        .primary-menu .menu-item:hover .fa-chevron-down {
+            transform: rotate(180deg) !important;
+            opacity: 1 !important;
+            color: #DE6262 !important;
+        }
+
+        /* Modern Parent Hover State */
+        .primary-menu .menu-item:hover > .menu-link {
+            background: linear-gradient(135deg, rgba(222, 98, 98, 0.08), rgba(222, 98, 98, 0.04)) !important;
+            border-radius: 8px !important;
+            color: #DE6262 !important;
+            font-weight: 500 !important;
+            box-shadow: 0 2px 8px rgba(222, 98, 98, 0.1) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        /* Dropdown positioning */
+        .primary-menu .menu-item {
+            position: relative;
+        }
+
+        /* Modern Dropdown Overrides */
+        .primary-menu .sub-menu-container,
+        .primary-menu .sub-menu-container * {
+            box-sizing: border-box !important;
+        }
+
+        /* Prevent any theme interference */
+        .primary-menu .menu-item .sub-menu-container {
+            list-style: none !important;
+        }
+
+        /* Better hover persistence */
+        .primary-menu .menu-item {
+            position: relative !important;
+        }
+
+        /* Make dropdown parent more forgiving to hover */
+        .primary-menu .menu-item .menu-link {
+            position: relative !important;
+            z-index: 2 !important;
+        }
+
+        /* Keep dropdown open when hovering over parent or dropdown */
+        .primary-menu .menu-item:hover .sub-menu-container,
+        .primary-menu .menu-item .sub-menu-container:hover {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform: translateX(-50%) translateY(0) !important;
+            transition-delay: 0s !important;
+        }
+
+        /* Add slight delay when leaving to prevent accidental closing */
+        .primary-menu .sub-menu-container {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        /* Immediate show, delayed hide */
+        .primary-menu .menu-item:hover .sub-menu-container {
+            transition-delay: 0s !important;
+        }
+
+        .primary-menu .menu-item:not(:hover) .sub-menu-container {
+            transition-delay: 0.2s !important;
+        }
+
+        /* Modern Responsive Design */
+        @media (max-width: 1200px) {
+            .primary-menu .menu-link {
+                padding: 0.5rem 0.75rem;
+                font-size: 14px;
+            }
+            
+            .primary-menu .sub-menu-container {
+                min-width: 220px !important;
+                max-width: 260px !important;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .primary-menu .menu-link {
+                padding: 0.5rem 0.5rem;
+                font-size: 13px;
+            }
+            
+            .primary-menu .sub-menu-container {
+                min-width: 200px !important;
+                max-width: 240px !important;
+                backdrop-filter: blur(15px) !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .primary-menu .menu-link {
+                font-size: 14px;
+                padding: 0.75rem 1rem;
+            }
+            
+            /* Mobile: Convert to accordion style */
+            .primary-menu .sub-menu-container {
+                position: static !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                transform: none !important;
+                background: rgba(248, 249, 250, 0.95) !important;
+                backdrop-filter: none !important;
+                box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+                border: 1px solid #e9ecef !important;
+                border-radius: 12px !important;
+                margin: 8px 0 !important;
+                padding: 8px 0 !important;
+            }
+            
+            .primary-menu .sub-menu-container::before {
+                display: none !important;
+            }
+            
+            .primary-menu .sub-menu-container .menu-link {
+                margin: 0 4px !important;
+                padding: 10px 16px !important;
+                border-left: 3px solid transparent !important;
+                border-radius: 8px !important;
+            }
+            
+            .primary-menu .sub-menu-container .menu-item.current .menu-link {
+                border-left-color: #DE6262 !important;
+                background: linear-gradient(135deg, rgba(222, 98, 98, 0.15), rgba(222, 98, 98, 0.08)) !important;
+            }
         }
     </style>
 
@@ -227,36 +581,42 @@
                                             <a class="menu-link" href="{{ route('admin.dashboard') }}"><div>Dashboard</div></a>
                                         </li>
                                     @elseif(auth()->user()->role === 'doctor')
-                                        <!-- Doctor Navigation -->
+                                        <!-- Core Medical AI Navigation -->
                                         <li class="menu-item {{ request()->routeIs('dashboard') ? 'current' : '' }}">
                                             <a class="menu-link" href="{{ route('dashboard') }}"><div>Dashboard</div></a>
                                         </li>
                                         <li class="menu-item {{ request()->routeIs('ask-ai') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('ask-ai') }}"><div>Add-Patients</div></a>
+                                            <a class="menu-link" href="{{ route('ask-ai') }}"><div>AI Diagnosis</div></a>
                                         </li>
                                         <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('cases') }}"><div>Cases</div></a>
+                                            <a class="menu-link" href="{{ route('cases') }}"><div>Patient Cases</div></a>
                                         </li>
-                                        <li class="menu-item {{ request()->routeIs('doctor.appointments.index') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('doctor.appointments.index') }}">
-                                                <div><i class="fas fa-calendar mr-2"></i>{{ __('Appointments') }}</div>
-                                            </a>
-                                        </li>
-                                        <li class="menu-item {{ request()->routeIs('doctor.availability.index') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('doctor.availability.index') }}">
-                                                <div><i class="fas fa-clock mr-2"></i>{{ __('Availability') }}</div>
-                                            </a>
-                                        </li>
-                                        <li class="menu-item {{ request()->routeIs('doctor.reviews.index') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('doctor.reviews.index') }}">
-                                                <div><i class="fas fa-star mr-2"></i>{{ __('Reviews') }}</div>
-                                            </a>
-                                        </li>
-                                        <li class="menu-item {{ request()->routeIs('invoices.*') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('invoices.index') }}"><div>Invoices</div></a>
-                                        </li>
-                                        <li class="menu-item {{ request()->routeIs('subscription.manage') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('subscription.manage') }}"><div>Subscription</div></a>
+                                        
+                                        <!-- Additional Features Dropdown -->
+                                        <li class="menu-item {{ request()->routeIs('doctor.*') || request()->routeIs('invoices.*') || request()->routeIs('subscription.*') || request()->routeIs('settings') ? 'current' : '' }}">
+                                            <a class="menu-link" href="#"><div>More <i class="fas fa-chevron-down"></i></div></a>
+                                            <ul class="sub-menu-container">
+                                                <li class="menu-item {{ request()->routeIs('settings') ? 'current' : '' }}">
+                                                    <a class="menu-link" href="{{ route('settings') }}"><div>Settings</div></a>
+                                                </li>
+                                                <li class="menu-item menu-divider"></li>
+                                                <li class="menu-item {{ request()->routeIs('invoices.*') ? 'current' : '' }}">
+                                                    <a class="menu-link" href="{{ route('invoices.index') }}"><div>Billing & Invoices</div></a>
+                                                </li>
+                                                <li class="menu-item {{ request()->routeIs('subscription.*') ? 'current' : '' }}">
+                                                    <a class="menu-link" href="{{ route('subscription.manage') }}"><div>Subscription</div></a>
+                                                </li>
+                                                <li class="menu-item menu-divider"></li>
+                                                <li class="menu-item {{ request()->routeIs('doctor.appointments.*') ? 'current' : '' }}">
+                                                    <a class="menu-link" href="{{ route('doctor.appointments.index') }}"><div>Appointments</div></a>
+                                                </li>
+                                                <li class="menu-item {{ request()->routeIs('doctor.availability.*') ? 'current' : '' }}">
+                                                    <a class="menu-link" href="{{ route('doctor.availability.index') }}"><div>Availability</div></a>
+                                                </li>
+                                                <li class="menu-item {{ request()->routeIs('doctor.reviews.*') ? 'current' : '' }}">
+                                                    <a class="menu-link" href="{{ route('doctor.reviews.index') }}"><div>Reviews</div></a>
+                                                </li>
+                                            </ul>
                                         </li>
                                     @else
                                         <!-- Patient Navigation -->

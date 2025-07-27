@@ -48,6 +48,50 @@
 
     .usage-fill.low { background-color: #28a745; }
     .usage-fill.medium { background-color: #ffc107; }
+
+    /* Compact table styles */
+    .table th {
+        padding: 0.5rem 0.4rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        white-space: nowrap;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .table td {
+        padding: 0.4rem 0.4rem;
+        font-size: 0.8rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f4;
+    }
+
+    .table td strong {
+        font-size: 0.85rem;
+    }
+
+    .table td small {
+        font-size: 0.7rem;
+    }
+
+    .table .badge {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.4rem;
+    }
+
+    .table .btn {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7rem;
+    }
+
+    /* Column widths for billing table */
+    .table th:nth-child(1), .table td:nth-child(1) { width: 20%; }
+    .table th:nth-child(2), .table td:nth-child(2) { width: 15%; }
+    .table th:nth-child(3), .table td:nth-child(3) { width: 15%; }
+    .table th:nth-child(4), .table td:nth-child(4) { width: 15%; }
+    .table th:nth-child(5), .table td:nth-child(5) { width: 15%; }
+    .table th:nth-child(6), .table td:nth-child(6) { width: 10%; }
+    .table th:nth-child(7), .table td:nth-child(7) { width: 10%; }
     .usage-fill.high { background-color: #dc3545; }
 
     .plan-badge {

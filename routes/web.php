@@ -16,6 +16,7 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\Admin\AdminInvoiceController;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Doctor\GoogleController;
+use App\Http\Controllers\Admin\MonthlyInvoiceController;
 use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Route;
 
@@ -95,8 +96,82 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
     Route::get('/invoices/{invoice}/pay', [InvoiceController::class, 'pay'])->name('invoices.pay');
+    Route::get('/invoices/{invoice}/manual-payment', [InvoiceController::class, 'manualPayment'])->name('invoices.manual-payment');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
     Route::post('/invoices/{invoice}/sync', [InvoiceController::class, 'sync'])->name('invoices.sync');
+    
+    // Debug route for testing payment redirects
+    Route::get('/debug/payment/{invoice}', function($invoiceId) {
+        $invoice = \App\Models\StripeInvoice::findOrFail($invoiceId);
+        $service = new \App\Services\StripeInvoiceService();
+        $paymentUrl = $service->getPaymentUrl($invoice);
+        
+        return response()->json([
+            'invoice_id' => $invoice->id,
+            'payment_url' => $paymentUrl,
+            'is_stripe' => strpos($paymentUrl, 'stripe.com') !== false,
+            'url_length' => strlen($paymentUrl)
+        ]);
+    })->name('debug.payment');
+    
+    // Test payment page
+    Route::get('/test-payment', function() {
+        $invoices = \App\Models\StripeInvoice::where('status', '!=', 'paid')
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+        
+        return view('test-payment', compact('invoices'));
+    })->name('test.payment');
+
+    // Test grace period notification
+    Route::get('/test-grace-period', function() {
+        $user = auth()->user();
+        $setting = $user->monthlyInvoiceSetting;
+        
+        if (!$setting) {
+            return response()->json([
+                'error' => 'No monthly invoice setting found for user',
+                'user_id' => $user->id,
+                'user_email' => $user->email
+            ]);
+        }
+        
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+            'subscription' => [
+                'starts_at' => $setting->subscription_starts_at?->format('Y-m-d H:i:s'),
+                'ends_at' => $setting->subscription_ends_at?->format('Y-m-d H:i:s'),
+                'period_months' => $setting->subscription_period_months,
+                'grace_period_days' => $setting->grace_period_days,
+                'warning_period_days' => $setting->warning_period_days,
+                'is_restricted' => $setting->is_restricted,
+                'is_active' => $setting->is_active,
+            ],
+            'status_checks' => [
+                'is_subscription_expired' => $setting->isSubscriptionExpired(),
+                'is_in_grace_period' => $user->isInGracePeriod(),
+                'is_in_warning_period' => $user->isInWarningPeriod(),
+                'is_restricted' => $user->isRestricted(),
+                'subscription_status' => $user->getSubscriptionStatus(),
+                'days_remaining' => $user->getDaysRemainingInCurrentPeriod(),
+            ],
+            'notification_data' => [
+                'should_show_grace_notification' => $user->isInGracePeriod(),
+                'should_show_warning_notification' => $user->isInWarningPeriod(),
+                'should_show_restriction_notification' => $user->isRestricted(),
+                'subscription_end_formatted' => $user->getSubscriptionEndDate()?->format('M d, Y'),
+            ]
+        ]);
+    })->name('test.grace-period');
+
+    // Access restriction routes
+    Route::get('/access/restricted', [App\Http\Controllers\AccessRestrictionController::class, 'restricted'])->name('access.restricted');
+    Route::get('/access/check-status', [App\Http\Controllers\AccessRestrictionController::class, 'checkStatus'])->name('access.check-status');
 });
 
 Route::get('/contact', [ContactController::class, 'show'])->name('contact');
@@ -146,10 +221,19 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
 // Stripe webhook (outside auth middleware)
 Route::post('/stripe/webhook', [SubscriptionController::class, 'webhook'])->name('stripe.webhook');
 
+
+
+
+
+
+
+
+
+
 // Admin authentication routes
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AdminAuthController::class, 'login']);
+    Route::post('/login', [AdminAuthController::class, 'login'])->name('login.submit');
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 });
 
@@ -179,9 +263,24 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::post('/invoices/generate-monthly', [AdminInvoiceController::class, 'generateMonthlyInvoices'])->name('invoices.generate-monthly');
     Route::get('/invoices/export', [AdminInvoiceController::class, 'export'])->name('invoices.export');
 
+    // Monthly invoice management
+    Route::get('/monthly-invoices', [MonthlyInvoiceController::class, 'index'])->name('monthly-invoices.index');
+    Route::get('/monthly-invoices/{user}/edit', [MonthlyInvoiceController::class, 'edit'])->name('monthly-invoices.edit');
+    Route::put('/monthly-invoices/{user}', [MonthlyInvoiceController::class, 'update'])->name('monthly-invoices.update');
+    Route::post('/monthly-invoices/{user}/restrict', [MonthlyInvoiceController::class, 'restrict'])->name('monthly-invoices.restrict');
+    Route::post('/monthly-invoices/{user}/unrestrict', [MonthlyInvoiceController::class, 'unrestrict'])->name('monthly-invoices.unrestrict');
+    Route::post('/monthly-invoices/process-overdue', [MonthlyInvoiceController::class, 'processOverdue'])->name('monthly-invoices.process-overdue');
+    Route::post('/monthly-invoices/process-payments', [MonthlyInvoiceController::class, 'processPayments'])->name('monthly-invoices.process-payments');
+    Route::post('/monthly-invoices/bulk-update', [MonthlyInvoiceController::class, 'bulkUpdate'])->name('monthly-invoices.bulk-update');
+    Route::post('/monthly-invoices/generate', [MonthlyInvoiceController::class, 'generate'])->name('monthly-invoices.generate');
+    
     // Contact submission management
     Route::get('/contact-submissions', [ContactController::class, 'adminIndex'])->name('contact-submissions');
     Route::patch('/contact-submissions/{submission}/mark-read', [ContactController::class, 'markAsRead'])->name('contact-submissions.mark-read');
+    
+    // Manual reminder routes
+    Route::post('/send-reminders', [AdminController::class, 'sendManualReminders'])->name('send-reminders');
+    Route::get('/send-reminders', [AdminController::class, 'showSendRemindersForm'])->name('send-reminders.form');
 });
 
 Route::middleware('auth')->group(function () {

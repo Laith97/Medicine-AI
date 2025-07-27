@@ -47,6 +47,9 @@ class SystemSetting extends Model
                 return (bool) $value;
             case 'integer':
                 return (int) $value;
+            case 'decimal':
+            case 'float':
+                return (float) $value;
             case 'json':
                 return json_decode($value, true);
             default:

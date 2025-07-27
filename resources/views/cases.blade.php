@@ -1674,6 +1674,9 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                     </div>
                 </div>
 
+                <!-- Subscription Status Notifications -->
+                @include('partials.subscription-notifications')
+
                 <!-- Summary Cards -->
                 @if($hasRecords)
                 <div class="row mb-4">

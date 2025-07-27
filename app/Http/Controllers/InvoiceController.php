@@ -24,6 +24,11 @@ class InvoiceController extends Controller
         
         $query = $user->stripeInvoices()->with('user');
 
+        // Filter by invoice type
+        if ($request->filled('type')) {
+            $query->where('invoice_type', $request->type);
+        }
+
         // Filter by status
         if ($request->filled('status')) {
             if ($request->status === 'unpaid') {
@@ -50,17 +55,21 @@ class InvoiceController extends Controller
         // Calculate summary statistics
         $totalUnpaid = $user->getTotalUnpaidAmount();
         $totalPaid = $user->getTotalPaidAmount();
+        $totalUnpaidMonthly = $user->getTotalUnpaidMonthlyAmount();
         $lastPaidInvoice = $user->getLastPaidInvoice();
         $nextDueInvoice = $user->getNextDueInvoice();
         $overdueCount = $user->getOverdueInvoicesCount();
+        $isRestricted = $user->isRestricted();
 
         return view('invoices.index', compact(
             'invoices',
             'totalUnpaid',
             'totalPaid',
+            'totalUnpaidMonthly',
             'lastPaidInvoice',
             'nextDueInvoice',
-            'overdueCount'
+            'overdueCount',
+            'isRestricted'
         ));
     }
 
@@ -95,14 +104,63 @@ class InvoiceController extends Controller
                 ->with('error', 'This invoice has already been paid.');
         }
 
-        $paymentUrl = $this->invoiceService->getPaymentUrl($invoice);
+        try {
+            $paymentUrl = $this->invoiceService->getPaymentUrl($invoice);
 
-        if (!$paymentUrl) {
+            \Log::info('Payment URL generation attempted', [
+                'invoice_id' => $invoice->id,
+                'payment_url' => $paymentUrl,
+                'url_length' => $paymentUrl ? strlen($paymentUrl) : 0,
+                'is_stripe_url' => $paymentUrl ? (strpos($paymentUrl, 'stripe.com') !== false) : false
+            ]);
+
+            if (!$paymentUrl) {
+                \Log::error('Payment URL generation failed', [
+                    'invoice_id' => $invoice->id,
+                    'invoice_type' => $invoice->invoice_type,
+                    'invoice_url' => $invoice->invoice_url,
+                    'is_monthly' => $invoice->isMonthlyInvoice(),
+                    'user_id' => $invoice->user_id,
+                    'stripe_customer_id' => $invoice->user->stripe_customer_id ?? 'null'
+                ]);
+                
+                return redirect()->route('invoices.show', $invoice)
+                    ->with('error', 'Payment URL is not available for this invoice. Please contact support.');
+            }
+
+            // For debugging: Check if this is a Stripe URL
+            if (strpos($paymentUrl, 'stripe.com') !== false) {
+                \Log::info('Redirecting to Stripe checkout', [
+                    'invoice_id' => $invoice->id,
+                    'redirect_url' => $paymentUrl
+                ]);
+                
+                // Check if direct redirect is requested
+                if (request()->has('direct')) {
+                    return redirect()->away($paymentUrl);
+                }
+                
+                // Use intermediate redirect page for better compatibility
+                return view('invoices.redirect-to-payment', compact('paymentUrl', 'invoice'));
+            } else {
+                \Log::info('Redirecting to internal payment page', [
+                    'invoice_id' => $invoice->id,
+                    'redirect_url' => $paymentUrl
+                ]);
+                
+                return redirect($paymentUrl);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Payment URL error: ' . $e->getMessage(), [
+                'invoice_id' => $invoice->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return redirect()->route('invoices.show', $invoice)
-                ->with('error', 'Payment URL is not available for this invoice.');
+                ->with('error', 'Unable to process payment. Please try again or contact support.');
         }
-
-        return redirect($paymentUrl);
     }
 
     /**
@@ -120,6 +178,24 @@ class InvoiceController extends Controller
         $filename = "invoice-{$invoice->id}-" . now()->format('Y-m-d') . ".pdf";
         
         return $pdf->download($filename);
+    }
+
+    /**
+     * Show manual payment page for invoices when Stripe isn't available
+     */
+    public function manualPayment(StripeInvoice $invoice)
+    {
+        // Ensure user can only access their own invoices
+        if ($invoice->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($invoice->isPaid()) {
+            return redirect()->route('invoices.show', $invoice)
+                ->with('success', 'This invoice has already been paid.');
+        }
+
+        return view('invoices.manual-payment', compact('invoice'));
     }
 
     /**

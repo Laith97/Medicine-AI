@@ -7,6 +7,8 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\Twilio\TwilioChannel;
+use NotificationChannels\Twilio\TwilioSmsMessage;
 
 class InvoiceCreated extends Notification implements ShouldQueue
 {
@@ -23,7 +25,14 @@ class InvoiceCreated extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        $channels = ['mail', 'database'];
+        
+        // Add SMS channel if phone number is available and Twilio is configured
+        if ($notifiable->phone && config('services.twilio.sid')) {
+            $channels[] = TwilioChannel::class;
+        }
+        
+        return $channels;
     }
 
     /**
@@ -31,16 +40,44 @@ class InvoiceCreated extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
-            ->subject('New Invoice Created - MedCura AI')
+        $subject = $this->invoice->isMonthlyInvoice() 
+            ? 'Monthly Invoice Created - MedCura AI'
+            : 'New Invoice Created - MedCura AI';
+            
+        $message = (new MailMessage)
+            ->subject($subject)
             ->greeting('Hello ' . $notifiable->name . ',')
             ->line('A new invoice has been created for your account.')
             ->line('Invoice Amount: ' . $this->invoice->getFormattedAmountDue())
-            ->line('Due Date: ' . $this->invoice->due_date->format('M d, Y'))
-            ->line('Description: ' . $this->invoice->description)
-            ->action('View Invoice', route('invoices.show', $this->invoice))
+            ->line('Due Date: ' . $this->invoice->due_date->format('M d, Y'));
+            
+        if ($this->invoice->isMonthlyInvoice()) {
+            $message->line('Period: ' . $this->invoice->getFormattedPeriod());
+            
+            if ($this->invoice->grace_period_ends_at) {
+                $message->line('Grace Period Ends: ' . $this->invoice->grace_period_ends_at->format('M d, Y'));
+            }
+        }
+        
+        $message->line('Description: ' . $this->invoice->description)
+            ->action('View & Pay Invoice', route('invoices.show', $this->invoice))
             ->line('Please ensure payment is made by the due date to avoid any service interruptions.')
             ->line('Thank you for using MedCura AI!');
+            
+        return $message;
+    }
+
+    /**
+     * Get the SMS representation of the notification.
+     */
+    public function toTwilio(object $notifiable): TwilioSmsMessage
+    {
+        $type = $this->invoice->isMonthlyInvoice() ? 'Monthly' : 'New';
+        $amount = $this->invoice->getFormattedAmountDue();
+        $dueDate = $this->invoice->due_date->format('M d');
+        
+        return TwilioSmsMessage::create()
+            ->content("{$type} invoice created: {$amount} due {$dueDate}. View & pay: " . route('invoices.show', $this->invoice));
     }
 
     /**

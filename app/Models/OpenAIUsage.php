@@ -34,12 +34,37 @@ class OpenAIUsage extends Model
     }
 
     /**
-     * Calculate cost based on tokens and model.
+     * Calculate cost based on tokens and model using OpenAI pricing.
      */
-    public static function calculateCost(int $totalTokens, string $model = 'gpt-4'): float
+    public static function calculateCost(int $totalTokens, string $model = 'gpt-4', int $promptTokens = 0, int $completionTokens = 0): float
     {
-        $costPer1k = config('stripe.token_cost_per_1k', 0.002);
-        return ($totalTokens / 1000) * $costPer1k;
+        // OpenAI pricing per 1M tokens (as of 2024)
+        $pricing = [
+            'gpt-4o' => ['input' => 2.50, 'output' => 10.00], // $2.50 input, $10.00 output per 1M tokens
+            'gpt-4o-mini' => ['input' => 0.15, 'output' => 0.60], // $0.15 input, $0.60 output per 1M tokens
+            'gpt-4' => ['input' => 30.00, 'output' => 60.00], // $30.00 input, $60.00 output per 1M tokens
+            'gpt-4-turbo' => ['input' => 10.00, 'output' => 30.00], // $10.00 input, $30.00 output per 1M tokens
+            'gpt-3.5-turbo' => ['input' => 0.50, 'output' => 1.50], // $0.50 input, $1.50 output per 1M tokens
+        ];
+
+        // Default to gpt-4o pricing if model not found
+        $modelPricing = $pricing[$model] ?? $pricing['gpt-4o'];
+        
+        // If we have separate prompt and completion tokens, calculate separately
+        if ($promptTokens > 0 && $completionTokens > 0) {
+            $inputCost = ($promptTokens / 1000000) * $modelPricing['input'];
+            $outputCost = ($completionTokens / 1000000) * $modelPricing['output'];
+            return $inputCost + $outputCost;
+        }
+        
+        // Fallback: assume 70% input, 30% output for total tokens
+        $estimatedPromptTokens = $totalTokens * 0.7;
+        $estimatedCompletionTokens = $totalTokens * 0.3;
+        
+        $inputCost = ($estimatedPromptTokens / 1000000) * $modelPricing['input'];
+        $outputCost = ($estimatedCompletionTokens / 1000000) * $modelPricing['output'];
+        
+        return $inputCost + $outputCost;
     }
 
     /**

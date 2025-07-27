@@ -159,7 +159,7 @@
                         Pricing Section Visibility
                     </div>
                     <div class="setting-description">
-                        Control whether the "Choose Your Plan" section is displayed on the home page. When disabled, visitors won't see the pricing plans.
+                        Control whether the pricing information section is displayed on the home page. When enabled, visitors will see information about personalized pricing.
                     </div>
                     <div class="d-flex align-items-center justify-content-between">
                         <span class="text-muted">
@@ -172,6 +172,55 @@
                                    {{ ($settings['show_pricing_section']->value ?? '1') == '1' ? 'checked' : '' }}>
                             <span class="slider"></span>
                         </label>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <i class="fas fa-calculator me-2" style="color: #DE6262;"></i>
+                        Default Monthly Amount
+                    </div>
+                    <div class="setting-description">
+                        Set the default monthly amount for new user accounts. This will be used when creating users if no specific amount is provided.
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="flex-grow-1 me-3">
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" 
+                                       name="default_monthly_amount" 
+                                       class="form-control"
+                                       value="{{ $settings['default_monthly_amount']->value ?? '99.99' }}"
+                                       step="0.01" 
+                                       min="0" 
+                                       max="9999.99"
+                                       placeholder="99.99">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <i class="fas fa-calendar-alt me-2" style="color: #DE6262;"></i>
+                        Default Grace Period
+                    </div>
+                    <div class="setting-description">
+                        Set the default grace period (in days) for new user accounts before access is restricted for non-payment.
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="flex-grow-1 me-3">
+                            <div class="input-group">
+                                <input type="number" 
+                                       name="default_grace_period" 
+                                       class="form-control"
+                                       value="{{ $settings['default_grace_period']->value ?? '7' }}"
+                                       min="1" 
+                                       max="30"
+                                       placeholder="7">
+                                <span class="input-group-text">days</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

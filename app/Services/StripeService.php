@@ -89,6 +89,49 @@ class StripeService
     }
 
     /**
+     * Create a personalized checkout session based on admin-configured amount
+     */
+    public function createPersonalizedCheckoutSession(User $user, float $monthlyAmount): Session
+    {
+        // Validate Stripe configuration
+        $this->validateStripeConfiguration();
+        
+        $customer = $this->createOrGetCustomer($user);
+        
+        // Convert amount to cents for Stripe
+        $amountInCents = (int) ($monthlyAmount * 100);
+        
+        return Session::create([
+            'customer' => $customer->id,
+            'payment_method_types' => ['card'],
+            'line_items' => [[
+                'price_data' => [
+                    'currency' => 'usd',
+                    'product_data' => [
+                        'name' => 'Medical AI Assistant - Personal Plan',
+                        'description' => 'Personalized medical diagnosis assistance for ' . $user->name,
+                    ],
+                    'unit_amount' => $amountInCents,
+                    'recurring' => [
+                        'interval' => 'month',
+                    ],
+                ],
+                'quantity' => 1,
+            ]],
+            'mode' => 'subscription',
+            'success_url' => route('subscription.success') . '?session_id={CHECKOUT_SESSION_ID}',
+            'cancel_url' => route('subscription.manage'),
+            'metadata' => [
+                'user_id' => $user->id,
+                'plan_name' => 'personal',
+                'billing_cycle' => 'monthly',
+                'billing_amount' => $monthlyAmount,
+                'custom_pricing' => 'true',
+            ],
+        ]);
+    }
+
+    /**
      * Validate Stripe configuration
      */
     private function validateStripeConfiguration(): void
@@ -322,6 +365,13 @@ class StripeService
                 'amount_paid' => $invoiceData['amount_paid'] / 100,
                 'paid_at' => now(),
             ]);
+
+            // Start subscription if this is the first payment and user has monthly invoice settings
+            $user = $invoice->user;
+            if ($user && $user->monthlyInvoiceSetting && !$user->monthlyInvoiceSetting->subscription_starts_at) {
+                $user->monthlyInvoiceSetting->startSubscription();
+                Log::info("Started subscription for user {$user->id} after first payment");
+            }
 
             Log::info("Invoice payment succeeded: {$invoiceData['id']}");
         }

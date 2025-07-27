@@ -28,21 +28,26 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Create checkout session
+     * Create checkout session based on user's admin-configured pricing
      */
     public function checkout(Request $request)
     {
-        $request->validate([
-            'plan' => 'required|string|in:basic,pro,enterprise',
-            'billing_cycle' => 'required|string|in:monthly,yearly',
-        ]);
-
         try {
             $user = Auth::user();
-            $session = $this->stripeService->createCheckoutSession(
+            
+            // Check if user has monthly invoice settings configured by admin
+            $monthlySettings = $user->monthlyInvoiceSetting;
+            
+            if (!$monthlySettings || !$monthlySettings->is_active || $monthlySettings->billing_amount <= 0) {
+                return response()->json([
+                    'error' => 'Your account pricing has not been configured yet. Please contact support to set up your subscription.'
+                ], 400);
+            }
+
+            // Create checkout session with user's personalized pricing
+            $session = $this->stripeService->createPersonalizedCheckoutSession(
                 $user,
-                $request->plan,
-                $request->billing_cycle
+                $monthlySettings->billing_amount
             );
 
             return response()->json([
@@ -62,7 +67,7 @@ class SubscriptionController extends Controller
             if (strpos($e->getMessage(), 'No API key') !== false) {
                 $errorMessage = 'Stripe is not properly configured. Please contact the administrator.';
             } elseif (strpos($e->getMessage(), 'No such price') !== false) {
-                $errorMessage = 'The selected plan is not available. Please contact support.';
+                $errorMessage = 'Your pricing configuration is not available. Please contact support.';
             } elseif (strpos($e->getMessage(), 'No such customer') !== false) {
                 $errorMessage = 'Customer account error. Please try again or contact support.';
             }
@@ -114,21 +119,36 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Show subscription management
+     * Show subscription management page
      */
     public function manage()
     {
         $user = Auth::user();
         $subscription = $user->activeSubscription;
-        $usage = $this->stripeService->getSubscriptionUsage($user);
+        $invoices = $user->stripeInvoices()->orderBy('created_at', 'desc')->limit(10)->get();
+        $setting = $user->monthlyInvoiceSetting;
+        $status = $setting ? $setting->getSubscriptionStatus() : 'setup_pending';
+        $monthlyCost = $user->getMonthlyCostEstimate();
+        $costLimit = $user->monthly_cost_limit;
+        $costUsagePercentage = $user->getCostUsagePercentage();
+        $excessCost = $user->getExcessCost();
+        $remainingCost = $user->getRemainingCostAllowance();
+        $isExpired = $setting && $setting->subscription_ends_at ? $setting->subscription_ends_at->isPast() : false;
         
-        // Get user's invoices
-        $invoices = $user->stripeInvoices()
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get();
+        // Get cost warning message
+        $billingService = new \App\Services\ExcessCostBillingService();
+        $costWarning = $billingService->getWarningMessage($user);
         
-        return view('subscription.manage', compact('subscription', 'usage', 'invoices'));
+        // Additional data for the view
+        $unpaidInvoices = $user->stripeInvoices()->where('status', '!=', 'paid')->get();
+        $totalUnpaid = $unpaidInvoices->sum('amount_due');
+        $lastInvoice = $user->getLastPaidInvoice();
+        
+        return view('subscription.manage', compact(
+            'user', 'subscription', 'invoices', 'setting', 'status', 'monthlyCost', 'costLimit',
+            'costUsagePercentage', 'excessCost', 'remainingCost', 'costWarning', 'isExpired', 
+            'unpaidInvoices', 'totalUnpaid', 'lastInvoice'
+        ));
     }
 
     /**

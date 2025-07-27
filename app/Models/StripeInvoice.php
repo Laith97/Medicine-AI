@@ -11,10 +11,18 @@ class StripeInvoice extends Model
     protected $fillable = [
         'user_id',
         'stripe_invoice_id',
+        'stripe_session_id',
+        'invoice_type',
+        'invoice_month',
+        'invoice_year',
         'amount_due',
         'amount_paid',
         'status',
         'due_date',
+        'grace_period_ends_at',
+        'reminder_count',
+        'last_reminder_sent_at',
+        'auto_generated',
         'paid_at',
         'invoice_url',
         'invoice_pdf',
@@ -27,7 +35,13 @@ class StripeInvoice extends Model
     protected $casts = [
         'amount_due' => 'decimal:2',
         'amount_paid' => 'decimal:2',
+        'invoice_month' => 'integer',
+        'invoice_year' => 'integer',
+        'reminder_count' => 'integer',
+        'auto_generated' => 'boolean',
         'due_date' => 'datetime',
+        'grace_period_ends_at' => 'datetime',
+        'last_reminder_sent_at' => 'datetime',
         'paid_at' => 'datetime',
         'line_items' => 'array',
         'metadata' => 'array',
@@ -281,5 +295,123 @@ class StripeInvoice extends Model
     {
         return $query->where('status', 'open')
                     ->whereBetween('due_date', [now(), now()->addDays(3)]);
+    }
+
+    /**
+     * Scope for monthly invoices
+     */
+    public function scopeMonthly($query)
+    {
+        return $query->where('invoice_type', 'monthly');
+    }
+
+    /**
+     * Scope for invoices past grace period
+     */
+    public function scopePastGracePeriod($query)
+    {
+        return $query->where('status', 'open')
+                    ->whereNotNull('grace_period_ends_at')
+                    ->where('grace_period_ends_at', '<', now());
+    }
+
+    /**
+     * Check if invoice is a monthly invoice
+     */
+    public function isMonthlyInvoice(): bool
+    {
+        return $this->invoice_type === 'monthly';
+    }
+
+    /**
+     * Check if invoice is past grace period
+     */
+    public function isPastGracePeriod(): bool
+    {
+        return $this->status === 'open' && 
+               $this->grace_period_ends_at && 
+               $this->grace_period_ends_at->isPast();
+    }
+
+    /**
+     * Check if invoice needs a reminder
+     */
+    public function needsReminder(): bool
+    {
+        if ($this->status !== 'open' || !$this->isMonthlyInvoice()) {
+            return false;
+        }
+
+        // If past grace period, check reminder frequency
+        if ($this->isPastGracePeriod()) {
+            $user = $this->user;
+            $setting = $user->monthlyInvoiceSetting;
+            
+            if (!$setting) {
+                return false;
+            }
+
+            // If no reminder sent yet, send one
+            if (!$this->last_reminder_sent_at) {
+                return true;
+            }
+
+            // Check if enough time has passed since last reminder
+            return $this->last_reminder_sent_at
+                ->addDays($setting->reminder_frequency_days)
+                ->isPast();
+        }
+
+        return false;
+    }
+
+    /**
+     * Mark reminder as sent
+     */
+    public function markReminderSent(): void
+    {
+        $this->update([
+            'reminder_count' => $this->reminder_count + 1,
+            'last_reminder_sent_at' => now(),
+        ]);
+    }
+
+    /**
+     * Get formatted month/year
+     */
+    public function getFormattedPeriod(): string
+    {
+        if (!$this->invoice_month || !$this->invoice_year) {
+            return '';
+        }
+
+        return Carbon::createFromDate($this->invoice_year, $this->invoice_month, 1)
+            ->format('F Y');
+    }
+
+    /**
+     * Get invoice type badge class
+     */
+    public function getTypeBadgeClass(): string
+    {
+        return match($this->invoice_type) {
+            'monthly' => 'badge bg-primary',
+            'subscription' => 'badge bg-info',
+            'manual' => 'badge bg-secondary',
+            default => 'badge bg-light',
+        };
+    }
+
+    /**
+     * Get human readable invoice type
+     */
+    public function getHumanType(): string
+    {
+        return match($this->invoice_type) {
+            'monthly' => 'Monthly Invoice',
+            'subscription' => 'Subscription',
+            'manual' => 'Manual Invoice',
+            default => ucfirst($this->invoice_type),
+        };
     }
 }
