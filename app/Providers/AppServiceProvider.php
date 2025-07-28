@@ -4,7 +4,10 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Gate;
 use App\Models\StripeInvoice;
+use App\Models\DoctorBlogPost;
+use App\Policies\BlogPostPolicy;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -31,5 +34,13 @@ class AppServiceProvider extends ServiceProvider
             
             return $invoice;
         });
+
+        // Route model binding for DoctorBlogPost
+        Route::bind('post', function ($value) {
+            return DoctorBlogPost::where('slug', $value)->orWhere('id', $value)->firstOrFail();
+        });
+
+        // Register BlogPost policy
+        Gate::policy(DoctorBlogPost::class, BlogPostPolicy::class);
     }
 }

@@ -119,6 +119,35 @@
                     </div>
                 </div>
 
+                <!-- Patient Information -->
+                <div class="table-card mb-4">
+                    <div class="p-4">
+                        <h5 class="mb-3">Patient Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="text-muted mb-1">Name</p>
+                                <p class="mb-3">{{ $appointment->patient_name }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted mb-1">Email</p>
+                                <p class="mb-3">{{ $appointment->patient_email }}</p>
+                            </div>
+                            @if($appointment->patient_phone)
+                                <div class="col-md-6">
+                                    <p class="text-muted mb-1">Phone</p>
+                                    <p class="mb-3">{{ $appointment->patient_phone }}</p>
+                                </div>
+                            @endif
+                            @if($appointment->isGuestAppointment() && $appointment->guest_date_of_birth)
+                                <div class="col-md-6">
+                                    <p class="text-muted mb-1">Date of Birth</p>
+                                    <p class="mb-3">{{ \Carbon\Carbon::parse($appointment->guest_date_of_birth)->format('F j, Y') }}</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Reason for Visit -->
                 <div class="table-card mb-4">
                     <div class="p-4">

@@ -616,6 +616,9 @@
                                                 <li class="menu-item {{ request()->routeIs('doctor.reviews.*') ? 'current' : '' }}">
                                                     <a class="menu-link" href="{{ route('doctor.reviews.index') }}"><div>Reviews</div></a>
                                                 </li>
+                                                <li class="menu-item {{ request()->routeIs('doctor.blog.*') ? 'current' : '' }}">
+                                                    <a class="menu-link" href="{{ route('doctor.blog.index') }}"><div>Blog Posts</div></a>
+                                                </li>
                                             </ul>
                                         </li>
                                     @else
@@ -886,6 +889,7 @@
 
 	<!-- JavaScripts
 	============================================= -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{ asset('js/plugins.min.js') }}"></script>
     <script src="{{ asset('js/functions.bundle.js') }}"></script>
 

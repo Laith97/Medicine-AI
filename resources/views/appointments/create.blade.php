@@ -515,37 +515,51 @@
                     <div class="section-card">
                         <h2 class="section-title">Appointment Type</h2>
                         <div class="row g-3">
-                            <div class="col-md-4">
-                                <div class="appointment-type-card" data-type="in_person">
-                                    <div class="text-center">
-                                        <i class="fas fa-hospital fs-2 text-primary mb-2"></i>
-                                        <h3 class="h6 mb-1">In-Person Visit</h3>
-                                        <small class="text-muted">Visit the clinic</small>
+                            @php
+                                $appointmentTypes = [
+                                    'in_person' => [
+                                        'icon' => 'fas fa-hospital',
+                                        'color' => 'text-primary',
+                                        'title' => 'In-Person Visit',
+                                        'description' => 'Visit the clinic'
+                                    ],
+                                    'video_call' => [
+                                        'icon' => 'fas fa-video',
+                                        'color' => 'text-success',
+                                        'title' => 'Video Call',
+                                        'description' => 'Online consultation'
+                                    ],
+                                    'phone_call' => [
+                                        'icon' => 'fas fa-phone',
+                                        'color' => 'text-info',
+                                        'title' => 'Phone Call',
+                                        'description' => 'Voice consultation'
+                                    ]
+                                ];
+                                $enabledTypes = $doctor->getEnabledAppointmentTypes();
+                                $firstType = reset($enabledTypes);
+                            @endphp
+
+                            @foreach($enabledTypes as $index => $type)
+                                <div class="col-md-4">
+                                    <div class="appointment-type-card" data-type="{{ $type }}">
+                                        <div class="text-center">
+                                            <i class="{{ $appointmentTypes[$type]['icon'] }} fs-2 {{ $appointmentTypes[$type]['color'] }} mb-2"></i>
+                                            <h3 class="h6 mb-1">{{ $appointmentTypes[$type]['title'] }}</h3>
+                                            <small class="text-muted">{{ $appointmentTypes[$type]['description'] }}</small>
+                                        </div>
+                                        <input type="radio" name="appointment_type" value="{{ $type }}" class="d-none" {{ $type === $firstType ? 'checked' : '' }}>
                                     </div>
-                                    <input type="radio" name="appointment_type" value="in_person" class="d-none" checked>
                                 </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="appointment-type-card" data-type="video_call">
-                                    <div class="text-center">
-                                        <i class="fas fa-video fs-2 text-success mb-2"></i>
-                                        <h3 class="h6 mb-1">Video Call</h3>
-                                        <small class="text-muted">Online consultation</small>
-                                    </div>
-                                    <input type="radio" name="appointment_type" value="video_call" class="d-none">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="appointment-type-card" data-type="phone_call">
-                                    <div class="text-center">
-                                        <i class="fas fa-phone fs-2 text-info mb-2"></i>
-                                        <h3 class="h6 mb-1">Phone Call</h3>
-                                        <small class="text-muted">Voice consultation</small>
-                                    </div>
-                                    <input type="radio" name="appointment_type" value="phone_call" class="d-none">
-                                </div>
-                            </div>
+                            @endforeach
                         </div>
+
+                        @if(count($enabledTypes) === 0)
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                This doctor has not enabled any appointment types yet. Please contact them directly.
+                            </div>
+                        @endif
                     </div>
 
                     <!-- Medical Information -->
@@ -788,19 +802,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Appointment type selection
     const appointmentTypeCards = document.querySelectorAll('.appointment-type-card');
-    
+
     appointmentTypeCards.forEach(card => {
         card.addEventListener('click', function() {
             // Remove previous selection
             appointmentTypeCards.forEach(c => c.classList.remove('selected'));
-            
+
             // Add selection to current card
             this.classList.add('selected');
-            
+
             // Check the radio button
             const radio = this.querySelector('input[type="radio"]');
             radio.checked = true;
-            
+
             // Update summary
             const typeMap = {
                 'in_person': 'In-Person Visit',
@@ -810,7 +824,7 @@ document.addEventListener('DOMContentLoaded', function() {
             summaryType.textContent = typeMap[radio.value];
         });
     });
-    
+
     // Set default selection (first card)
     if (appointmentTypeCards.length > 0) {
         appointmentTypeCards[0].click();

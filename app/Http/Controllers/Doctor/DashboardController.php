@@ -338,17 +338,17 @@ class DashboardController extends Controller
         $events = $appointments->map(function ($appointment) {
             return [
                 'id' => $appointment->id,
-                'title' => $appointment->patient->name,
+                'title' => $appointment->patient_name,
                 'start' => $appointment->appointment_date->toISOString(),
                 'end' => $appointment->appointment_end->toISOString(),
                 'color' => $this->getEventColor($appointment->status),
                 'url' => route('doctor.appointments.show', $appointment),
                 'extendedProps' => [
                     'status' => $appointment->status,
-                    'patient' => $appointment->patient->name,
+                    'patient' => $appointment->patient_name,
                     'reason' => $appointment->reason,
                     'type' => $appointment->appointment_type,
-                    'phone' => $appointment->patient->phone,
+                    'phone' => $appointment->patient_phone,
                 ]
             ];
         });
