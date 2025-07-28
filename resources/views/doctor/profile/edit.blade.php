@@ -5,6 +5,36 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
 <link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+<style>
+.appointment-type-preference-card {
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.appointment-type-preference-card.enabled {
+    border-color: #28a745;
+    background-color: #f8fff9;
+}
+
+.appointment-type-preference-card.disabled {
+    border-color: #e9ecef;
+    background-color: #f8f9fa;
+}
+
+.appointment-type-preference-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.appointment-type-toggle:checked {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.appointment-type-toggle:focus {
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+</style>
 @endpush
 
 @section('content')
@@ -184,11 +214,11 @@
                                id="city"
                                value="{{ old('city', $doctor->city) }}"
                                class="form-control">
-                    </div>
+            </div>
 
-                   <!-- Google Integration -->
-                   <div class="table-card">
-                       <h6 class="mb-4"><i class="fab fa-google me-2"></i>Google Integration</h6>
+            <!-- Google Integration -->
+            <div class="table-card">
+                <h6 class="mb-4"><i class="fab fa-google me-2"></i>Google Integration</h6>
 
                        @if($doctor->googleAccount)
                            <div class="alert alert-success mb-4">
@@ -370,6 +400,71 @@
                             @endforeach
                         </select>
                         <small class="form-text text-muted">Patients must cancel at least this many hours before their appointment</small>
+                    </div>
+                    <!-- Appointment Settings -->
+
+                <div class="row g-4">
+                    <div class="col-12">
+                        <label class="form-label">Available Appointment Types</label>
+                        <p class="text-muted small mb-3">Choose which appointment types you want to offer to your patients. Only enabled types will appear as options when patients book appointments.</p>
+
+                        @php
+                            $appointmentTypes = [
+                                'in_person' => [
+                                    'label' => 'In-Person Consultation',
+                                    'description' => 'Face-to-face consultations at your clinic',
+                                    'icon' => 'fas fa-hospital',
+                                    'color' => 'text-primary'
+                                ],
+                                'video_call' => [
+                                    'label' => 'Video Call',
+                                    'description' => 'Online video consultations',
+                                    'icon' => 'fas fa-video',
+                                    'color' => 'text-success'
+                                ],
+                                'phone_call' => [
+                                    'label' => 'Phone Call',
+                                    'description' => 'Phone call consultations',
+                                    'icon' => 'fas fa-phone',
+                                    'color' => 'text-info'
+                                ]
+                            ];
+                        @endphp
+
+                        <div class="row g-3">
+                            @foreach($appointmentTypes as $type => $config)
+                                <div class="col-md-4">
+                                    <div class="card h-100 appointment-type-preference-card {{ $doctor->isAppointmentTypeEnabled($type) ? 'enabled' : 'disabled' }}">
+                                        <div class="card-body text-center">
+                                            <div class="mb-3">
+                                                <i class="{{ $config['icon'] }} fs-2 {{ $config['color'] }}"></i>
+                                            </div>
+                                            <h6 class="card-title mb-2">{{ $config['label'] }}</h6>
+                                            <p class="card-text small text-muted mb-3">{{ $config['description'] }}</p>
+
+                                            <div class="form-check form-switch d-flex justify-content-center">
+                                                <input class="form-check-input appointment-type-toggle"
+                                                    type="checkbox"
+                                                    name="appointment_types[]"
+                                                    value="{{ $type }}"
+                                                    id="appointment_type_{{ $type }}"
+                                                    {{ $doctor->isAppointmentTypeEnabled($type) ? 'checked' : '' }}>
+                                                <label class="form-check-label ms-2" for="appointment_type_{{ $type }}">
+                                                    <span class="status-text">{{ $doctor->isAppointmentTypeEnabled($type) ? 'Enabled' : 'Disabled' }}</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                At least one appointment type must be enabled. Changes are saved automatically.
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -573,6 +668,139 @@ document.addEventListener('DOMContentLoaded', function() {
            });
        });
    }
+});
+
+// Appointment Type Toggle Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const appointmentTypeToggles = document.querySelectorAll('.appointment-type-toggle');
+
+    appointmentTypeToggles.forEach(function(toggle) {
+        const card = toggle.closest('.appointment-type-preference-card');
+        const statusText = toggle.parentElement.querySelector('.status-text');
+
+        // Handle toggle changes
+        toggle.addEventListener('change', function() {
+            const isChecked = this.checked;
+            const appointmentType = this.value;
+
+            // Update card appearance
+            updateCardAppearance(card, statusText, isChecked);
+
+            // Check if at least one type is enabled
+            const enabledToggles = document.querySelectorAll('.appointment-type-toggle:checked');
+            if (enabledToggles.length === 0) {
+                // Prevent disabling all types
+                this.checked = true;
+                updateCardAppearance(card, statusText, true);
+
+                // Show warning
+                showNotification('At least one appointment type must be enabled.', 'warning');
+                return;
+            }
+
+            // Save changes via AJAX
+            saveAppointmentTypePreferences();
+        });
+    });
+
+    function updateCardAppearance(card, statusText, isEnabled) {
+        if (isEnabled) {
+            card.classList.remove('disabled');
+            card.classList.add('enabled');
+            statusText.textContent = 'Enabled';
+        } else {
+            card.classList.remove('enabled');
+            card.classList.add('disabled');
+            statusText.textContent = 'Disabled';
+        }
+    }
+
+    function saveAppointmentTypePreferences() {
+        const enabledTypes = [];
+        document.querySelectorAll('.appointment-type-toggle:checked').forEach(function(toggle) {
+            enabledTypes.push(toggle.value);
+        });
+
+        // Show loading state
+        const loadingToast = showNotification('Saving appointment preferences...', 'info', false);
+
+        // Make AJAX request
+        fetch('{{ route("doctor.settings.appointments.update") }}', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                appointment_types: enabledTypes
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Hide loading toast
+            if (loadingToast) loadingToast.remove();
+
+            if (data.success || data.message) {
+                showNotification(data.message || 'Appointment preferences updated successfully!', 'success');
+            } else {
+                throw new Error(data.error || 'Failed to update preferences');
+            }
+        })
+        .catch(error => {
+            // Hide loading toast
+            if (loadingToast) loadingToast.remove();
+
+            console.error('Error:', error);
+            showNotification('Failed to update appointment preferences. Please try again.', 'error');
+        });
+    }
+
+    function showNotification(message, type = 'info', autoHide = true) {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.appointment-notification');
+        existingNotifications.forEach(notification => notification.remove());
+
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'error' ? 'danger' : type} appointment-notification`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        `;
+
+        const icon = type === 'success' ? 'check-circle' :
+                    type === 'warning' ? 'exclamation-triangle' :
+                    type === 'error' ? 'exclamation-circle' : 'info-circle';
+
+        notification.innerHTML = `
+            <i class="fas fa-${icon} me-2"></i>${message}
+            <button type="button" class="btn-close" aria-label="Close"></button>
+        `;
+
+        // Add close functionality
+        notification.querySelector('.btn-close').addEventListener('click', function() {
+            notification.remove();
+        });
+
+        // Add to page
+        document.body.appendChild(notification);
+
+        // Auto-hide after 3 seconds (except for loading notifications)
+        if (autoHide) {
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 3000);
+        }
+
+        return notification;
+    }
 });
 </script>
 @endpush
