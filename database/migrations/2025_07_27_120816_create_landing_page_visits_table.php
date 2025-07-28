@@ -11,26 +11,28 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('landing_page_visits', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('doctor_id')->constrained()->onDelete('cascade');
-            $table->string('ip_address', 45); // IPv6 support
-            $table->text('user_agent')->nullable();
-            $table->string('referrer_url')->nullable();
-            $table->string('page_url');
-            $table->string('country')->nullable();
-            $table->string('city')->nullable();
-            $table->string('device_type')->nullable(); // mobile, desktop, tablet
-            $table->string('browser')->nullable();
-            $table->string('os')->nullable();
-            $table->integer('session_duration')->nullable(); // in seconds
-            $table->timestamp('visited_at');
-            $table->timestamps();
+        if (!Schema::hasTable('landing_page_visits')) {
+            Schema::create('landing_page_visits', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('doctor_id')->constrained()->onDelete('cascade');
+                $table->string('ip_address', 45); // IPv6 support
+                $table->text('user_agent')->nullable();
+                $table->string('referrer_url')->nullable();
+                $table->string('page_url');
+                $table->string('country')->nullable();
+                $table->string('city')->nullable();
+                $table->string('device_type')->nullable(); // mobile, desktop, tablet
+                $table->string('browser')->nullable();
+                $table->string('os')->nullable();
+                $table->integer('session_duration')->nullable(); // in seconds
+                $table->timestamp('visited_at');
+                $table->timestamps();
 
-            $table->index(['doctor_id', 'visited_at']);
-            $table->index(['ip_address']);
-            $table->index(['visited_at']);
-        });
+                $table->index(['doctor_id', 'visited_at']);
+                $table->index(['ip_address']);
+                $table->index(['visited_at']);
+            });
+        }
     }
 
     /**
@@ -38,6 +40,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('landing_page_visits');
+        if (Schema::hasTable('landing_page_visits')) {
+            Schema::dropIfExists('landing_page_visits');
+        }
     }
 };
