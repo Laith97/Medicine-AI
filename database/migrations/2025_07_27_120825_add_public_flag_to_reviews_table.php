@@ -24,7 +24,9 @@ return new class extends Migration
                 $table->timestamp('approved_at')->nullable()->after('is_public');
             }
 
-            $table->index(['doctor_id', 'is_public']);
+            if (!Schema::hasIndex('reviews', ['doctor_id', 'is_public'])) {
+                $table->index(['doctor_id', 'is_public']);
+            }
         });
     }
 
@@ -34,6 +36,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('reviews', function (Blueprint $table) {
+            if (Schema::hasIndex('reviews', ['doctor_id', 'is_public'])) {
+                $table->dropIndex(['doctor_id', 'is_public']);
+            }
+
             $table->dropColumn(['is_public', 'case_study', 'approved_at']);
         });
     }
