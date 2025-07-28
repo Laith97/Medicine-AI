@@ -68,13 +68,16 @@ class AppointmentController extends Controller
      */
     public function store(Request $request)
     {
+        $doctor = Doctor::findOrFail($request->doctor_id);
+        $enabledTypes = $doctor->getEnabledAppointmentTypes();
+
         // Base validation rules
         $rules = [
             'doctor_id' => 'required|exists:doctors,id',
             'appointment_date' => 'required|date|after:now',
             'reason' => 'required|string|max:500',
             'symptoms' => 'nullable|string|max:1000',
-            'appointment_type' => 'required|in:in_person,video_call,phone_call',
+            'appointment_type' => 'required|in:' . implode(',', $enabledTypes),
             'patient_notes' => 'nullable|string|max:1000',
         ];
 
