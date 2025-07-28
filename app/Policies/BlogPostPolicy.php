@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\BlogPost;
+use App\Models\DoctorBlogPost;
 use App\Models\User;
 
 class BlogPostPolicy
@@ -12,13 +12,13 @@ class BlogPostPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole('doctor');
+        return $user->isDoctor();
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, BlogPost $blogPost): bool
+    public function view(User $user, DoctorBlogPost $blogPost): bool
     {
         return $user->doctor && $user->doctor->id === $blogPost->doctor_id;
     }
@@ -28,13 +28,13 @@ class BlogPostPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('doctor');
+        return $user->isDoctor();
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, BlogPost $blogPost): bool
+    public function update(User $user, DoctorBlogPost $blogPost): bool
     {
         return $user->doctor && $user->doctor->id === $blogPost->doctor_id;
     }
@@ -42,7 +42,7 @@ class BlogPostPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, BlogPost $blogPost): bool
+    public function delete(User $user, DoctorBlogPost $blogPost): bool
     {
         return $user->doctor && $user->doctor->id === $blogPost->doctor_id;
     }
@@ -50,7 +50,7 @@ class BlogPostPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, BlogPost $blogPost): bool
+    public function restore(User $user, DoctorBlogPost $blogPost): bool
     {
         return $user->doctor && $user->doctor->id === $blogPost->doctor_id;
     }
@@ -58,7 +58,7 @@ class BlogPostPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, BlogPost $blogPost): bool
+    public function forceDelete(User $user, DoctorBlogPost $blogPost): bool
     {
         return $user->doctor && $user->doctor->id === $blogPost->doctor_id;
     }

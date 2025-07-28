@@ -181,23 +181,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/access/check-status', [App\Http\Controllers\AccessRestrictionController::class, 'checkStatus'])->name('access.check-status');
 });
 
-// Public Doctor Landing Pages
-Route::get('/doctor/{username}', [PublicLandingPageController::class, 'show'])->name('doctor.landing');
-Route::get('/doctor/{username}/blog/{slug}', [PublicLandingPageController::class, 'showBlogPost'])->name('doctor.blog.post');
 
-// Public Chat Routes
-Route::post('/doctor/{username}/chat/init', [PublicChatController::class, 'initializeChat'])->name('doctor.chat.init');
-Route::post('/doctor/{username}/chat/send', [PublicChatController::class, 'sendMessage'])->name('doctor.chat.send');
-Route::get('/doctor/{username}/chat/history', [PublicChatController::class, 'getChatHistory'])->name('doctor.chat.history');
-
-// Public Testimonials API
-Route::get('/doctor/{username}/testimonials', [TestimonialController::class, 'getPublicTestimonials'])->name('doctor.testimonials.public');
 
 Route::get('/contact', [ContactController::class, 'show'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
 // Contact submission routes moved to admin middleware group below
 Route::get('/about', [UserSettingsController::class, 'about'])->name('about');
+
+
 
 // Doctor routes
 Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(function () {
@@ -247,7 +239,13 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
     });
 
     // Blog Management
-    Route::resource('blog', BlogController::class);
+    Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+    Route::get('/blog/create', [BlogController::class, 'create'])->name('blog.create');
+    Route::post('/blog', [BlogController::class, 'store'])->name('blog.store');
+    Route::get('/blog/{post}', [BlogController::class, 'show'])->name('blog.show');
+    Route::get('/blog/{post}/edit', [BlogController::class, 'edit'])->name('blog.edit');
+    Route::put('/blog/{post}', [BlogController::class, 'update'])->name('blog.update');
+    Route::delete('/blog/{post}', [BlogController::class, 'destroy'])->name('blog.destroy');
     Route::post('/blog/{post}/toggle-publish', [BlogController::class, 'togglePublish'])->name('blog.toggle-publish');
 
     // Chat Management
@@ -272,6 +270,20 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
         Route::get('/data', [AnalyticsController::class, 'getData'])->name('data');
     });
 });
+
+// Public Doctor Landing Pages (must be after doctor middleware group to avoid conflicts)
+Route::get('/doctor/{username}', [PublicLandingPageController::class, 'show'])->name('doctor.landing');
+Route::get('/doctor/{username}/blogs', [PublicLandingPageController::class, 'showBlogs'])->name('doctor.blogs');
+Route::get('/doctor/{username}/blog/{slug}', [PublicLandingPageController::class, 'showBlogPost'])->name('doctor.blog.post');
+
+// Public Chat Routes
+Route::post('/doctor/{username}/chat/init', [PublicChatController::class, 'initializeChat'])->name('doctor.chat.init');
+Route::post('/doctor/{username}/chat/send', [PublicChatController::class, 'sendMessage'])->name('doctor.chat.send');
+Route::get('/doctor/{username}/chat/history', [PublicChatController::class, 'getChatHistory'])->name('doctor.chat.history');
+
+// Public Testimonials API
+Route::get('/doctor/{username}/testimonials', [TestimonialController::class, 'getPublicTestimonials'])->name('doctor.testimonials.public');
+
 // Stripe webhook (outside auth middleware)
 Route::post('/stripe/webhook', [SubscriptionController::class, 'webhook'])->name('stripe.webhook');
 

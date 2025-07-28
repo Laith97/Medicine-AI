@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('master')
 
 @section('title', 'Edit Blog Post')
 
@@ -60,8 +60,7 @@
                                     <textarea class="form-control @error('content') is-invalid @enderror"
                                               id="content"
                                               name="content"
-                                              rows="15"
-                                              required>{{ old('content', $post->content) }}</textarea>
+                                              rows="15">{{ old('content', $post->content) }}</textarea>
                                     @error('content')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -127,17 +126,19 @@
                             </div>
                             <div class="card-body">
                                 <div class="form-check">
+                                    <input type="hidden" name="is_published" value="0">
                                     <input class="form-check-input"
                                            type="checkbox"
                                            id="is_published"
                                            name="is_published"
+                                           value="1"
                                            {{ old('is_published', $post->is_published) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="is_published">
                                         Published
                                     </label>
                                 </div>
                                 <div class="form-text">
-                                    @if($post->is_published)
+                                    @if($post->is_published && $post->published_at)
                                         Published on {{ $post->published_at->format('M j, Y g:i A') }}
                                     @else
                                         Currently saved as draft
@@ -249,6 +250,8 @@
 <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 <script>
 $(document).ready(function() {
+    let editorInstance;
+    
     // Initialize CKEditor
     ClassicEditor
         .create(document.querySelector('#content'), {
@@ -260,9 +263,24 @@ $(document).ready(function() {
                 'undo', 'redo'
             ]
         })
+        .then(editor => {
+            editorInstance = editor;
+        })
         .catch(error => {
             console.error(error);
         });
+
+    // Form validation
+    $('form').on('submit', function(e) {
+        if (editorInstance) {
+            const content = editorInstance.getData().trim();
+            if (!content) {
+                e.preventDefault();
+                alert('Please enter content for your blog post.');
+                return false;
+            }
+        }
+    });
 
     // Image preview
     $('#featured_image').change(function() {
