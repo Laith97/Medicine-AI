@@ -12,11 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('doctors', function (Blueprint $table) {
-            $table->boolean('is_verified')->default(false)->after('is_active');
-            $table->timestamp('verified_at')->nullable()->after('is_verified');
-            $table->string('verification_notes')->nullable()->after('verified_at');
+            if (!Schema::hasColumn('doctors', 'is_verified')) {
+                $table->boolean('is_verified')->default(false)->after('is_active');
+            }
+            if (!Schema::hasColumn('doctors', 'verified_at')) {
+                $table->timestamp('verified_at')->nullable()->after('is_verified');
+            }
+            if (!Schema::hasColumn('doctors', 'verification_notes')) {
+                $table->string('verification_notes')->nullable()->after('verified_at');
+            }
 
-            $table->index(['is_verified']);
+            if (!Schema::hasIndex('doctors', ['is_verified'])) {
+                $table->index(['is_verified']);
+            }
         });
     }
 
@@ -26,8 +34,18 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('doctors', function (Blueprint $table) {
-            $table->dropIndex(['is_verified']);
-            $table->dropColumn(['is_verified', 'verified_at', 'verification_notes']);
+            if (Schema::hasIndex('doctors', ['is_verified'])) {
+                $table->dropIndex(['is_verified']);
+            }
+            if (Schema::hasColumn('doctors', 'verification_notes')) {
+                $table->dropColumn('verification_notes');
+            }
+            if (Schema::hasColumn('doctors', 'verified_at')) {
+                $table->dropColumn('verified_at');
+            }
+            if (Schema::hasColumn('doctors', 'is_verified')) {
+                $table->dropColumn('is_verified');
+            }
         });
     }
 };
