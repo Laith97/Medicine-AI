@@ -12,7 +12,7 @@ class LandingPageVisit extends Model
 
     protected $fillable = [
         'doctor_id',
-        'visitor_ip',
+        'ip_address',
         'user_agent',
         'referrer_url',
         'page_url',
@@ -71,20 +71,30 @@ class LandingPageVisit extends Model
             return null;
         }
 
-        $userAgent = $request->userAgent();
-        $deviceInfo = static::parseUserAgent($userAgent);
+        // Check if table exists before recording
+        if (!\Schema::hasTable('landing_page_visits')) {
+            return null;
+        }
 
-        return static::create([
-            'doctor_id' => $doctorId,
-            'visitor_ip' => $request->ip(),
-            'user_agent' => $userAgent,
-            'referrer_url' => $request->header('referer'),
-            'page_url' => $request->fullUrl(),
-            'device_type' => $deviceInfo['device_type'],
-            'browser' => $deviceInfo['browser'],
-            'os' => $deviceInfo['os'],
-            'visited_at' => now(),
-        ]);
+        try {
+            $userAgent = $request->userAgent();
+            $deviceInfo = static::parseUserAgent($userAgent);
+
+            return static::create([
+                'doctor_id' => $doctorId,
+                'ip_address' => $request->ip(),
+                'user_agent' => $userAgent,
+                'referrer_url' => $request->header('referer'),
+                'page_url' => $request->fullUrl(),
+                'device_type' => $deviceInfo['device_type'],
+                'browser' => $deviceInfo['browser'],
+                'os' => $deviceInfo['os'],
+                'visited_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            // Silently fail if table structure is incorrect
+            return null;
+        }
     }
 
     public static function getDailyVisitsForDoctor($doctorId, $days = 30)
@@ -92,7 +102,7 @@ class LandingPageVisit extends Model
         return static::select(
                 DB::raw('DATE(visited_at) as date'),
                 DB::raw('COUNT(*) as visits'),
-                DB::raw('COUNT(DISTINCT visitor_ip) as unique_visitors')
+                DB::raw('COUNT(DISTINCT ip_address) as unique_visitors')
             )
             ->where('doctor_id', $doctorId)
             ->where('visited_at', '>=', now()->subDays($days))

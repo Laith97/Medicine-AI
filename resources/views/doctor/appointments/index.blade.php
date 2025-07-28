@@ -81,16 +81,16 @@
                                             <div class="me-3">
                                                 <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                                                     <span class="fw-medium text-primary">
-                                                        {{ substr($appointment->patient->name, 0, 1) }}
+                                                        {{ substr($appointment->patient_name, 0, 1) }}
                                                     </span>
                                                 </div>
                                             </div>
                                             <div>
                                                 <div class="fw-medium">
-                                                    {{ $appointment->patient->name }}
+                                                    {{ $appointment->patient_name }}
                                                 </div>
                                                 <div class="text-muted small">
-                                                    {{ $appointment->patient->email }}
+                                                    {{ $appointment->patient_email }}
                                                 </div>
                                             </div>
                                         </div>

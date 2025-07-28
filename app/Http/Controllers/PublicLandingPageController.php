@@ -85,7 +85,7 @@ class PublicLandingPageController extends Controller
 
         // Get published blog posts if health tips section is enabled
         $blogPosts = collect();
-        if ($landingPage->section_visibility['health_tips'] ?? true) {
+        if (($landingPage->section_visibility['health_tips'] ?? true) && \Schema::hasTable('doctor_blog_posts')) {
             $blogPosts = $doctor->publishedBlogPosts()
                 ->latest('published_at')
                 ->limit(3)
@@ -117,6 +117,26 @@ class PublicLandingPageController extends Controller
 
         return view($templateView, compact('landingPage', 'doctor', 'reviews', 'availableSlots', 'blogPosts'))
             ->with('isPreview', false);
+    }
+
+    /**
+     * Show all blogs for a doctor
+     */
+    public function showBlogs($username)
+    {
+        $landingPage = DoctorLandingPage::with(['doctor.user', 'doctor.specialty'])
+            ->byUsername($username)
+            ->published()
+            ->firstOrFail();
+
+        $blogPosts = $landingPage->doctor->publishedBlogPosts()
+            ->latest('published_at')
+            ->paginate(9);
+
+        // Record visit
+        LandingPageVisit::recordVisit($landingPage->doctor->id, request());
+
+        return view('doctor.landing-page.blogs', compact('landingPage', 'blogPosts'));
     }
 
     /**

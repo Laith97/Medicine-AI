@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('master')
 
 @section('content')
 <div class="container-fluid">
@@ -49,6 +49,11 @@
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" id="domain-tab" data-bs-toggle="tab" data-bs-target="#domain" type="button" role="tab">
                                         Domain
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab">
+                                        Analytics
                                     </button>
                                 </li>
                             </ul>
@@ -240,6 +245,44 @@
                                                 <li>Enter your domain above and save</li>
                                                 <li>It may take up to 24 hours for changes to take effect</li>
                                             </ol>
+                                        </div>
+                                    </div>
+
+                                    <!-- Analytics Tab -->
+                                    <div class="tab-pane fade" id="analytics" role="tabpanel">
+                                        <div class="text-center mb-4">
+                                            <h6>Landing Page Analytics</h6>
+                                            <p class="text-muted">Track your landing page performance</p>
+                                        </div>
+
+                                        <div class="row g-3 mb-4">
+                                            <div class="col-6">
+                                                <div class="card text-center">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title text-primary" id="totalVisits">-</h5>
+                                                        <p class="card-text small">Total Visits</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="card text-center">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title text-success" id="uniqueVisitors">-</h5>
+                                                        <p class="card-text small">Unique Visitors</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Device Types</label>
+                                            <div id="deviceStats" class="small text-muted">Loading...</div>
+                                        </div>
+
+                                        <div class="text-center">
+                                            <a href="{{ route('doctor.analytics.index') }}" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-chart-bar"></i> View Full Analytics
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -546,6 +589,41 @@ $(document).ready(function() {
             $('.alert').fadeOut();
         }, 5000);
     }
+
+    // Load analytics data
+    function loadAnalytics() {
+        $.ajax({
+            url: '{{ route("doctor.analytics.data") }}',
+            method: 'GET',
+            data: { period: 30 },
+            success: function(response) {
+                if (response.success) {
+                    $('#totalVisits').text(response.stats.total_visits || 0);
+                    $('#uniqueVisitors').text(response.stats.unique_visitors || 0);
+                    
+                    let deviceHtml = '';
+                    if (response.deviceStats && response.deviceStats.length > 0) {
+                        response.deviceStats.forEach(function(device) {
+                            deviceHtml += `<span class="badge bg-secondary me-1">${device.device_type}: ${device.visits}</span>`;
+                        });
+                    } else {
+                        deviceHtml = 'No visits yet';
+                    }
+                    $('#deviceStats').html(deviceHtml);
+                }
+            },
+            error: function() {
+                $('#totalVisits').text('0');
+                $('#uniqueVisitors').text('0');
+                $('#deviceStats').text('No data available');
+            }
+        });
+    }
+
+    // Load analytics when tab is clicked
+    $('#analytics-tab').on('click', function() {
+        loadAnalytics();
+    });
 });
 
 function copyToClipboard(text) {

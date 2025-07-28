@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Doctor;
 
 use App\Http\Controllers\Controller;
-use App\Models\BlogPost;
+use App\Models\DoctorBlogPost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -43,18 +43,25 @@ class BlogController extends Controller
         ]);
 
         $data = $request->only([
-            'title', 'short_description', 'content', 'is_published',
-            'seo_title', 'seo_description'
+            'title', 'short_description', 'content', 'is_published'
         ]);
 
         $data['doctor_id'] = auth()->user()->doctor->id;
         $data['is_published'] = $request->boolean('is_published');
 
-        // Handle SEO keywords
+        // Handle SEO meta data
+        $seoMeta = [];
+        if ($request->filled('seo_title')) {
+            $seoMeta['title'] = $request->seo_title;
+        }
+        if ($request->filled('seo_description')) {
+            $seoMeta['description'] = $request->seo_description;
+        }
         if ($request->filled('seo_keywords')) {
-            $data['seo_meta'] = [
-                'keywords' => $request->seo_keywords
-            ];
+            $seoMeta['keywords'] = $request->seo_keywords;
+        }
+        if (!empty($seoMeta)) {
+            $data['seo_meta'] = $seoMeta;
         }
 
         // Handle featured image upload
@@ -63,27 +70,27 @@ class BlogController extends Controller
                                                ->store('blog-images', 'public');
         }
 
-        $post = BlogPost::create($data);
+        $post = DoctorBlogPost::create($data);
 
         return redirect()->route('doctor.blog.index')
                         ->with('success', 'Blog post created successfully!');
     }
 
-    public function show(BlogPost $post)
+    public function show(DoctorBlogPost $post)
     {
         $this->authorize('view', $post);
 
         return view('doctor.blog.show', compact('post'));
     }
 
-    public function edit(BlogPost $post)
+    public function edit(DoctorBlogPost $post)
     {
         $this->authorize('update', $post);
 
         return view('doctor.blog.edit', compact('post'));
     }
 
-    public function update(Request $request, BlogPost $post)
+    public function update(Request $request, DoctorBlogPost $post)
     {
         $this->authorize('update', $post);
 
@@ -100,18 +107,23 @@ class BlogController extends Controller
         ]);
 
         $data = $request->only([
-            'title', 'short_description', 'content', 'is_published',
-            'seo_title', 'seo_description'
+            'title', 'short_description', 'content', 'is_published'
         ]);
 
         $data['is_published'] = $request->boolean('is_published');
 
-        // Handle SEO keywords
-        if ($request->filled('seo_keywords')) {
-            $data['seo_meta'] = array_merge($post->seo_meta ?? [], [
-                'keywords' => $request->seo_keywords
-            ]);
+        // Handle SEO meta data
+        $seoMeta = $post->seo_meta ?? [];
+        if ($request->filled('seo_title')) {
+            $seoMeta['title'] = $request->seo_title;
         }
+        if ($request->filled('seo_description')) {
+            $seoMeta['description'] = $request->seo_description;
+        }
+        if ($request->filled('seo_keywords')) {
+            $seoMeta['keywords'] = $request->seo_keywords;
+        }
+        $data['seo_meta'] = $seoMeta;
 
         // Handle image removal
         if ($request->boolean('remove_image') && $post->featured_image) {
@@ -136,7 +148,7 @@ class BlogController extends Controller
                         ->with('success', 'Blog post updated successfully!');
     }
 
-    public function destroy(BlogPost $post)
+    public function destroy(DoctorBlogPost $post)
     {
         $this->authorize('delete', $post);
 
@@ -151,7 +163,7 @@ class BlogController extends Controller
                         ->with('success', 'Blog post deleted successfully!');
     }
 
-    public function togglePublish(Request $request, BlogPost $post)
+    public function togglePublish(Request $request, DoctorBlogPost $post)
     {
         $this->authorize('update', $post);
 

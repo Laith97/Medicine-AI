@@ -194,6 +194,11 @@
                         <a class="nav-link" href="#health-tips">Health Tips</a>
                     </li>
                     @endif
+                    @if($doctor->publishedBlogPosts()->count() > 0)
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('doctor.blogs', $landingPage->username) }}">All Articles</a>
+                    </li>
+                    @endif
                     @if($landingPage->section_visibility['reviews'] ?? true)
                     <li class="nav-item">
                         <a class="nav-link" href="#reviews">Reviews</a>
@@ -382,7 +387,7 @@
             @if($doctor->publishedBlogPosts()->count() > 3)
                 <div class="row">
                     <div class="col-12 text-center mt-4">
-                        <a href="{{ route('doctor.landing', $landingPage->username) }}#health-tips"
+                        <a href="{{ route('doctor.blogs', $landingPage->username) }}"
                            class="btn btn-outline-primary">
                             View All Articles <i class="fas fa-arrow-right ms-1"></i>
                         </a>
@@ -409,23 +414,38 @@
                         <form id="appointmentForm" action="{{ route('appointments.store') }}" method="POST">
                             @csrf
                             <input type="hidden" name="doctor_id" value="{{ $doctor->id }}">
+                            <input type="hidden" name="booking_type" value="guest">
 
                             <div class="row g-4">
                                 <div class="col-md-6">
-                                    <label for="patient_name" class="form-label">Full Name *</label>
-                                    <input type="text" class="form-control" id="patient_name" name="patient_name" required>
+                                    <label for="guest_name" class="form-label">Full Name *</label>
+                                    <input type="text" class="form-control" id="guest_name" name="guest_name" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="patient_email" class="form-label">Email Address *</label>
-                                    <input type="email" class="form-control" id="patient_email" name="patient_email" required>
+                                    <label for="guest_email" class="form-label">Email Address *</label>
+                                    <input type="email" class="form-control" id="guest_email" name="guest_email" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="patient_phone" class="form-label">Phone Number *</label>
-                                    <input type="tel" class="form-control" id="patient_phone" name="patient_phone" required>
+                                    <label for="guest_phone" class="form-label">Phone Number *</label>
+                                    <input type="tel" class="form-control" id="guest_phone" name="guest_phone" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="guest_date_of_birth" class="form-label">Date of Birth *</label>
+                                    <input type="date" class="form-control" id="guest_date_of_birth" name="guest_date_of_birth" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="guest_gender" class="form-label">Gender *</label>
+                                    <select class="form-select" id="guest_gender" name="guest_gender" required>
+                                        <option value="">Select gender</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="other">Other</option>
+                                    </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="appointment_date" class="form-label">Preferred Date *</label>
-                                    <select class="form-select" id="appointment_date" name="appointment_date" required>
+                                    <input type="hidden" id="selected_appointment_datetime" name="appointment_date">
+                                    <select class="form-select" id="appointment_date_select" required>
                                         <option value="">Select a date</option>
                                         @foreach($availableSlots as $date => $slots)
                                         <option value="{{ $date }}">{{ \Carbon\Carbon::parse($date)->format('l, M j, Y') }}</option>
@@ -434,21 +454,34 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label for="appointment_time" class="form-label">Preferred Time *</label>
-                                    <select class="form-select" id="appointment_time" name="appointment_time" required disabled>
+                                    <select class="form-select" id="appointment_time" required disabled>
                                         <option value="">Select a date first</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="appointment_type" class="form-label">Appointment Type</label>
-                                    <select class="form-select" id="appointment_type" name="appointment_type">
-                                        <option value="consultation">General Consultation</option>
-                                        <option value="follow_up">Follow-up</option>
-                                        <option value="emergency">Urgent Care</option>
+                                    <label for="appointment_type" class="form-label">Appointment Type *</label>
+                                    <select class="form-select" id="appointment_type" name="appointment_type" required>
+                                        <option value="">Select appointment type</option>
+                                        <option value="in_person">In-Person Consultation</option>
+                                        <option value="video_call">Video Call</option>
+                                        <option value="phone_call">Phone Call</option>
                                     </select>
                                 </div>
                                 <div class="col-12">
-                                    <label for="reason" class="form-label">Reason for Visit</label>
-                                    <textarea class="form-control" id="reason" name="reason" rows="3" placeholder="Please describe your symptoms or reason for the appointment..."></textarea>
+                                    <label for="guest_address" class="form-label">Address</label>
+                                    <textarea class="form-control" id="guest_address" name="guest_address" rows="2" placeholder="Your address (optional)"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label for="reason" class="form-label">Reason for Visit *</label>
+                                    <textarea class="form-control" id="reason" name="reason" rows="3" placeholder="Please describe your symptoms or reason for the appointment..." required></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label for="symptoms" class="form-label">Symptoms (Optional)</label>
+                                    <textarea class="form-control" id="symptoms" name="symptoms" rows="2" placeholder="Please describe any symptoms you're experiencing..."></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label for="patient_notes" class="form-label">Additional Notes (Optional)</label>
+                                    <textarea class="form-control" id="patient_notes" name="patient_notes" rows="2" placeholder="Any additional information you'd like to share..."></textarea>
                                 </div>
                                 <div class="col-12">
                                     <button type="submit" class="btn btn-primary btn-lg w-100">
@@ -594,11 +627,12 @@
             const availableSlots = @json($availableSlots);
 
             // Handle date selection
-            $('#appointment_date').on('change', function() {
+            $('#appointment_date_select').on('change', function() {
                 const selectedDate = $(this).val();
                 const $timeSelect = $('#appointment_time');
 
                 $timeSelect.empty().prop('disabled', true);
+                $('#selected_appointment_datetime').val('');
 
                 if (selectedDate && availableSlots[selectedDate]) {
                     $timeSelect.append('<option value="">Select a time</option>');
@@ -611,6 +645,12 @@
                 } else {
                     $timeSelect.append('<option value="">No slots available</option>');
                 }
+            });
+
+            // Handle time selection
+            $('#appointment_time').on('change', function() {
+                const selectedDateTime = $(this).val();
+                $('#selected_appointment_datetime').val(selectedDateTime);
             });
 
             // Smooth scrolling for navigation links
@@ -642,6 +682,7 @@
                         alert('Appointment booked successfully! You will receive a confirmation email shortly.');
                         $('#appointmentForm')[0].reset();
                         $('#appointment_time').empty().prop('disabled', true).append('<option value="">Select a date first</option>');
+                        $('#selected_appointment_datetime').val('');
                     },
                     error: function(xhr) {
                         let errorMessage = 'An error occurred while booking your appointment.';

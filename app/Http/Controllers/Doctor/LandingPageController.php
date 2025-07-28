@@ -208,6 +208,15 @@ class LandingPageController extends Controller
         $doctor = $landingPage->doctor;
         $reviews = $doctor->approvedReviews()->with('patient')->latest()->limit(6)->get();
 
+        // Get published blog posts if health tips section is enabled
+        $blogPosts = collect();
+        if (($landingPage->section_visibility['health_tips'] ?? true) && \Schema::hasTable('blog_posts')) {
+            $blogPosts = $doctor->publishedBlogPosts()
+                ->latest('published_at')
+                ->limit(3)
+                ->get();
+        }
+
         // Get available slots for next 7 days
         $availableSlots = [];
         for ($i = 0; $i < 7; $i++) {
@@ -220,6 +229,6 @@ class LandingPageController extends Controller
 
         $templateView = 'doctor.landing-page.templates.' . $landingPage->template;
 
-        return view($templateView, compact('landingPage', 'doctor', 'reviews', 'availableSlots', 'isPreview'));
+        return view($templateView, compact('landingPage', 'doctor', 'reviews', 'availableSlots', 'blogPosts', 'isPreview'));
     }
 }

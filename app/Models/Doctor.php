@@ -132,7 +132,7 @@ class Doctor extends Model
      */
     public function blogPosts()
     {
-        return $this->hasMany(BlogPost::class);
+        return $this->hasMany(DoctorBlogPost::class);
     }
 
     /**
@@ -140,7 +140,7 @@ class Doctor extends Model
      */
     public function publishedBlogPosts()
     {
-        return $this->hasMany(BlogPost::class)->published();
+        return $this->hasMany(DoctorBlogPost::class)->published();
     }
 
     /**
