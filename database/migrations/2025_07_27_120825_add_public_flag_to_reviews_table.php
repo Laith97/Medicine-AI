@@ -12,9 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('reviews', function (Blueprint $table) {
-            $table->boolean('is_public')->default(false)->after('is_anonymous');
-            $table->text('case_study')->nullable()->after('comment');
-            $table->timestamp('approved_at')->nullable()->after('is_public');
+            if (!Schema::hasColumn('reviews', 'is_public')) {
+                $table->boolean('is_public')->default(false)->after('is_anonymous');
+            }
+
+            if (!Schema::hasColumn('reviews', 'case_study')) {
+                $table->text('case_study')->nullable()->after('comment');
+            }
+
+            if (!Schema::hasColumn('reviews', 'approved_at')) {
+                $table->timestamp('approved_at')->nullable()->after('is_public');
+            }
 
             $table->index(['doctor_id', 'is_public']);
         });
