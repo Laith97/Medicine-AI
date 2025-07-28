@@ -52,10 +52,24 @@ class AppointmentSettingsController extends Controller
 
         // Ensure at least one appointment type is enabled
         if (!array_filter($preferences)) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'At least one appointment type must be enabled.'
+                ], 422);
+            }
             return back()->withErrors(['appointment_types' => 'At least one appointment type must be enabled.']);
         }
 
         $doctor->updateAppointmentTypePreferences($preferences);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Appointment type preferences updated successfully!',
+                'preferences' => $preferences
+            ]);
+        }
 
         return back()->with('success', 'Appointment type preferences updated successfully!');
     }
