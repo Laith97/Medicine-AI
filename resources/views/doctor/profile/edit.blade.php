@@ -385,6 +385,22 @@
             </div>
         </form>
 
+        <!-- Landing Page Section -->
+        <div class="table-card">
+            <h6 class="mb-4"><i class="fas fa-globe me-2"></i>Your Landing Page</h6>
+            <p class="text-muted mb-3">Create a personalized landing page to showcase your practice and attract patients.</p>
+            <div class="d-flex gap-3">
+                <a href="{{ route('doctor.landing-page.index') }}" class="btn btn-primary">
+                    <i class="fas fa-edit me-2"></i>Manage Landing Page
+                </a>
+                @if($doctor->landingPage && $doctor->landingPage->is_published)
+                    <a href="{{ $doctor->landingPage->url }}" target="_blank" class="btn btn-outline-primary">
+                        <i class="fas fa-external-link-alt me-2"></i>View Public Page
+                    </a>
+                @endif
+            </div>
+        </div>
+
         <!-- Preview Section -->
         <div class="table-card">
             <h6 class="mb-4"><i class="fas fa-eye me-2"></i>Profile Preview</h6>
