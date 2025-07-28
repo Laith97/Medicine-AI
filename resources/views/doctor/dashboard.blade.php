@@ -81,7 +81,7 @@
                                 <!-- Patient Info -->
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-items-center mb-1">
-                                        <h6 class="mb-0 me-2">{{ $appointment->patient->name }}</h6>
+                                        <h6 class="mb-0 me-2">{{ $appointment->patient_name }}</h6>
                                         <span class="badge {{ $appointment->status == 'confirmed' ? 'bg-success' : 'bg-warning' }}">
                                             {{ ucfirst($appointment->status) }}
                                         </span>
@@ -122,8 +122,17 @@
                         <a href="{{ route('doctor.availability.index') }}" class="btn btn-success">
                             <i class="fas fa-clock me-2"></i>Manage Availability
                         </a>
+                        <a href="{{ route('doctor.settings.appointments') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-cog me-2"></i>Appointment Settings
+                        </a>
+                        <a href="{{ route('doctor.landing-page.index') }}" class="btn btn-warning">
+                            <i class="fas fa-globe me-2"></i>Landing Page
+                        </a>
                         <a href="{{ route('doctor.reviews.index') }}" class="btn btn-info">
                             <i class="fas fa-star me-2"></i>View Reviews
+                        </a>
+                        <a href="{{ route('doctor.blog.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-blog me-2"></i>Manage Blog
                         </a>
                     </div>
                 </div>
@@ -136,7 +145,7 @@
                             <div class="alert alert-warning p-3 mb-2">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <div class="fw-medium">{{ $appointment->patient->name }}</div>
+                                        <div class="fw-medium">{{ $appointment->patient_name }}</div>
                                         <small class="text-muted">{{ $appointment->appointment_date->format('M j, g:i A') }}</small>
                                     </div>
                                     <div class="d-flex gap-1">
@@ -183,7 +192,7 @@
                                     <p class="small mb-1">{{ Str::limit($review->comment, 80) }}</p>
                                 @endif
                                 <small class="text-muted">
-                                    by {{ $review->is_anonymous ? 'Anonymous' : $review->patient->name }}
+                                    by {{ $review->is_anonymous ? 'Anonymous' : $review->patient_name }}
                                 </small>
                             </div>
                         @endforeach
@@ -202,7 +211,7 @@
                         @foreach($upcomingAppointments as $appointment)
                             <div class="d-flex justify-content-between align-items-center p-3 border rounded mb-2">
                                 <div>
-                                    <div class="fw-medium">{{ $appointment->patient->name }}</div>
+                                    <div class="fw-medium">{{ $appointment->patient_name }}</div>
                                     <small class="text-muted">{{ $appointment->appointment_date->format('M j, g:i A') }}</small>
                                 </div>
                                 <span class="badge {{ $appointment->status == 'confirmed' ? 'bg-success' : 'bg-warning' }}">

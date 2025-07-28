@@ -16,6 +16,13 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\Admin\AdminInvoiceController;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Doctor\GoogleController;
+use App\Http\Controllers\Doctor\LandingPageController;
+use App\Http\Controllers\PublicLandingPageController;
+use App\Http\Controllers\Doctor\BlogController;
+use App\Http\Controllers\Doctor\ChatController;
+use App\Http\Controllers\Doctor\TestimonialController;
+use App\Http\Controllers\Doctor\AnalyticsController;
+use App\Http\Controllers\PublicChatController;
 use App\Http\Controllers\Admin\MonthlyInvoiceController;
 use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Route;
@@ -99,13 +106,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoices/{invoice}/manual-payment', [InvoiceController::class, 'manualPayment'])->name('invoices.manual-payment');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
     Route::post('/invoices/{invoice}/sync', [InvoiceController::class, 'sync'])->name('invoices.sync');
-    
+
     // Debug route for testing payment redirects
     Route::get('/debug/payment/{invoice}', function($invoiceId) {
         $invoice = \App\Models\StripeInvoice::findOrFail($invoiceId);
         $service = new \App\Services\StripeInvoiceService();
         $paymentUrl = $service->getPaymentUrl($invoice);
-        
+
         return response()->json([
             'invoice_id' => $invoice->id,
             'payment_url' => $paymentUrl,
@@ -113,14 +120,14 @@ Route::middleware('auth')->group(function () {
             'url_length' => strlen($paymentUrl)
         ]);
     })->name('debug.payment');
-    
+
     // Test payment page
     Route::get('/test-payment', function() {
         $invoices = \App\Models\StripeInvoice::where('status', '!=', 'paid')
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
-        
+
         return view('test-payment', compact('invoices'));
     })->name('test.payment');
 
@@ -128,7 +135,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/test-grace-period', function() {
         $user = auth()->user();
         $setting = $user->monthlyInvoiceSetting;
-        
+
         if (!$setting) {
             return response()->json([
                 'error' => 'No monthly invoice setting found for user',
@@ -136,7 +143,7 @@ Route::middleware('auth')->group(function () {
                 'user_email' => $user->email
             ]);
         }
-        
+
         return response()->json([
             'user' => [
                 'id' => $user->id,
@@ -174,11 +181,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/access/check-status', [App\Http\Controllers\AccessRestrictionController::class, 'checkStatus'])->name('access.check-status');
 });
 
+
+
 Route::get('/contact', [ContactController::class, 'show'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
 // Contact submission routes moved to admin middleware group below
 Route::get('/about', [UserSettingsController::class, 'about'])->name('about');
+
+
 
 // Doctor routes
 Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(function () {
@@ -208,6 +219,10 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
     Route::get('/profile', [DoctorDashboardController::class, 'profile'])->name('profile.edit');
     Route::patch('/profile', [DoctorDashboardController::class, 'updateProfile'])->name('profile.update');
 
+    // Appointment Settings
+    Route::get('/settings/appointments', [App\Http\Controllers\Doctor\AppointmentSettingsController::class, 'index'])->name('settings.appointments');
+    Route::put('/settings/appointments', [App\Http\Controllers\Doctor\AppointmentSettingsController::class, 'updateAppointmentTypes'])->name('settings.appointments.update');
+
     // Google integration
     Route::prefix('google')->name('google.')->group(function () {
         Route::get('/redirect', [GoogleController::class, 'redirectToGoogle'])->name('redirect');
@@ -217,7 +232,62 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
         Route::get('/locations', [GoogleController::class, 'getLocations'])->name('locations');
         Route::post('/account-location', [GoogleController::class, 'setAccountLocation'])->name('account-location');
     });
+
+    // Landing Page Management
+    Route::prefix('landing-page')->name('landing-page.')->group(function () {
+        Route::get('/', [LandingPageController::class, 'index'])->name('index');
+        Route::post('/update', [LandingPageController::class, 'update'])->name('update');
+        Route::post('/upload-hero-image', [LandingPageController::class, 'uploadHeroImage'])->name('upload-hero-image');
+        Route::post('/toggle-publish', [LandingPageController::class, 'togglePublish'])->name('toggle-publish');
+        Route::get('/preview/{username}', [LandingPageController::class, 'preview'])->name('preview');
+    });
+
+    // Blog Management
+    Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+    Route::get('/blog/create', [BlogController::class, 'create'])->name('blog.create');
+    Route::post('/blog', [BlogController::class, 'store'])->name('blog.store');
+    Route::get('/blog/{post}', [BlogController::class, 'show'])->name('blog.show');
+    Route::get('/blog/{post}/edit', [BlogController::class, 'edit'])->name('blog.edit');
+    Route::put('/blog/{post}', [BlogController::class, 'update'])->name('blog.update');
+    Route::delete('/blog/{post}', [BlogController::class, 'destroy'])->name('blog.destroy');
+    Route::post('/blog/{post}/toggle-publish', [BlogController::class, 'togglePublish'])->name('blog.toggle-publish');
+
+    // Chat Management
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::get('/', [ChatController::class, 'index'])->name('index');
+        Route::get('/{sessionId}', [ChatController::class, 'show'])->name('show');
+        Route::post('/{sessionId}/send', [ChatController::class, 'sendMessage'])->name('send');
+        Route::get('/unread/count', [ChatController::class, 'getUnreadCount'])->name('unread-count');
+        Route::post('/mark-all-read', [ChatController::class, 'markAllAsRead'])->name('mark-all-read');
+    });
+
+    // Testimonials Management
+    Route::prefix('testimonials')->name('testimonials.')->group(function () {
+        Route::get('/', [TestimonialController::class, 'index'])->name('index');
+        Route::post('/{review}/toggle-public', [TestimonialController::class, 'togglePublic'])->name('toggle-public');
+        Route::post('/{review}/case-study', [TestimonialController::class, 'updateCaseStudy'])->name('case-study');
+    });
+
+    // Analytics
+    Route::prefix('analytics')->name('analytics.')->group(function () {
+        Route::get('/', [AnalyticsController::class, 'index'])->name('index');
+        Route::get('/data', [AnalyticsController::class, 'getData'])->name('data');
+    });
 });
+
+// Public Doctor Landing Pages (must be after doctor middleware group to avoid conflicts)
+Route::get('/doctor/{username}', [PublicLandingPageController::class, 'show'])->name('doctor.landing');
+Route::get('/doctor/{username}/blogs', [PublicLandingPageController::class, 'showBlogs'])->name('doctor.blogs');
+Route::get('/doctor/{username}/blog/{slug}', [PublicLandingPageController::class, 'showBlogPost'])->name('doctor.blog.post');
+
+// Public Chat Routes
+Route::post('/doctor/{username}/chat/init', [PublicChatController::class, 'initializeChat'])->name('doctor.chat.init');
+Route::post('/doctor/{username}/chat/send', [PublicChatController::class, 'sendMessage'])->name('doctor.chat.send');
+Route::get('/doctor/{username}/chat/history', [PublicChatController::class, 'getChatHistory'])->name('doctor.chat.history');
+
+// Public Testimonials API
+Route::get('/doctor/{username}/testimonials', [TestimonialController::class, 'getPublicTestimonials'])->name('doctor.testimonials.public');
+
 // Stripe webhook (outside auth middleware)
 Route::post('/stripe/webhook', [SubscriptionController::class, 'webhook'])->name('stripe.webhook');
 
@@ -273,11 +343,11 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::post('/monthly-invoices/process-payments', [MonthlyInvoiceController::class, 'processPayments'])->name('monthly-invoices.process-payments');
     Route::post('/monthly-invoices/bulk-update', [MonthlyInvoiceController::class, 'bulkUpdate'])->name('monthly-invoices.bulk-update');
     Route::post('/monthly-invoices/generate', [MonthlyInvoiceController::class, 'generate'])->name('monthly-invoices.generate');
-    
+
     // Contact submission management
     Route::get('/contact-submissions', [ContactController::class, 'adminIndex'])->name('contact-submissions');
     Route::patch('/contact-submissions/{submission}/mark-read', [ContactController::class, 'markAsRead'])->name('contact-submissions.mark-read');
-    
+
     // Manual reminder routes
     Route::post('/send-reminders', [AdminController::class, 'sendManualReminders'])->name('send-reminders');
     Route::get('/send-reminders', [AdminController::class, 'showSendRemindersForm'])->name('send-reminders.form');

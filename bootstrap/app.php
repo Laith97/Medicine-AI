@@ -23,23 +23,26 @@ return Application::configure(basePath: dirname(__DIR__))
             'stripe.configured' => \App\Http\Middleware\CheckStripeConfiguration::class,
             'access.restrictions' => \App\Http\Middleware\CheckAccessRestrictions::class,
         ]);
-        
+
         // Apply access restrictions to authenticated routes
         $middleware->appendToGroup('web', \App\Http\Middleware\CheckAccessRestrictions::class);
+
+        // Handle doctor domains and subdomains
+        $middleware->prependToGroup('web', \App\Http\Middleware\HandleDoctorDomains::class);
     })
     ->withSchedule(function (Schedule $schedule) {
         // Generate monthly invoices on the 1st of each month at 2 AM
         $schedule->job(new CreateMonthlyInvoices())->monthlyOn(1, '02:00');
-        
+
         // Process overdue invoices and send reminders daily at 9 AM
         $schedule->job(new ProcessOverdueInvoices())->dailyAt('09:00');
-        
+
         // Process invoice payments and remove restrictions every 2 hours
         $schedule->job(new ProcessInvoicePayments())->everyTwoHours();
-        
+
         // Send invoice notifications daily at 10 AM
         $schedule->job(new SendInvoiceNotifications())->dailyAt('10:00');
-        
+
         // Sync invoice statuses every 4 hours
         $schedule->job(new SyncStripeInvoices())->everyFourHours();
     })

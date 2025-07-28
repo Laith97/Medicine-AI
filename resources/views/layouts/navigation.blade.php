@@ -30,6 +30,9 @@
                             <x-nav-link :href="route('doctor.availability.index')" :active="request()->routeIs('doctor.availability.*')">
                                 <i class="fas fa-clock mr-2"></i>{{ __('Availability') }}
                             </x-nav-link>
+                            <x-nav-link :href="route('doctor.landing-page.index')" :active="request()->routeIs('doctor.landing-page.*')">
+                                <i class="fas fa-globe mr-2"></i>{{ __('Landing Page') }}
+                            </x-nav-link>
                             <x-nav-link :href="route('doctor.reviews.index')" :active="request()->routeIs('doctor.reviews.*')">
                                 <i class="fas fa-star mr-2"></i>{{ __('Reviews') }}
                             </x-nav-link>
@@ -154,6 +157,9 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('doctor.availability.index')" :active="request()->routeIs('doctor.availability.*')">
                         <i class="fas fa-clock mr-2"></i>{{ __('Availability') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('doctor.landing-page.index')" :active="request()->routeIs('doctor.landing-page.*')">
+                        <i class="fas fa-globe mr-2"></i>{{ __('Landing Page') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('doctor.reviews.index')" :active="request()->routeIs('doctor.reviews.*')">
                         <i class="fas fa-star mr-2"></i>{{ __('Reviews') }}
