@@ -219,6 +219,10 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
     Route::get('/profile', [DoctorDashboardController::class, 'profile'])->name('profile.edit');
     Route::patch('/profile', [DoctorDashboardController::class, 'updateProfile'])->name('profile.update');
 
+    // Appointment Settings
+    Route::get('/settings/appointments', [App\Http\Controllers\Doctor\AppointmentSettingsController::class, 'index'])->name('settings.appointments');
+    Route::put('/settings/appointments', [App\Http\Controllers\Doctor\AppointmentSettingsController::class, 'updateAppointmentTypes'])->name('settings.appointments.update');
+
     // Google integration
     Route::prefix('google')->name('google.')->group(function () {
         Route::get('/redirect', [GoogleController::class, 'redirectToGoogle'])->name('redirect');
