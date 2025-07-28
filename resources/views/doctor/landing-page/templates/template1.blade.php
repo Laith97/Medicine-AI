@@ -462,9 +462,16 @@
                                     <label for="appointment_type" class="form-label">Appointment Type *</label>
                                     <select class="form-select" id="appointment_type" name="appointment_type" required>
                                         <option value="">Select appointment type</option>
-                                        <option value="in_person">In-Person Consultation</option>
-                                        <option value="video_call">Video Call</option>
-                                        <option value="phone_call">Phone Call</option>
+                                        @php
+                                            $appointmentTypeLabels = [
+                                                'in_person' => 'In-Person Consultation',
+                                                'video_call' => 'Video Call',
+                                                'phone_call' => 'Phone Call'
+                                            ];
+                                        @endphp
+                                        @foreach($doctor->getEnabledAppointmentTypes() as $type)
+                                            <option value="{{ $type }}">{{ $appointmentTypeLabels[$type] }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                                 <div class="col-12">

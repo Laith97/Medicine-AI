@@ -36,6 +36,7 @@ class Doctor extends Model
         'is_active',
         'is_verified',
         'verified_at',
+        'appointment_type_preferences',
     ];
 
     protected $casts = [
@@ -53,6 +54,7 @@ class Doctor extends Model
         'total_reviews' => 'integer',
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
+        'appointment_type_preferences' => 'array',
     ];
 
     /**
@@ -304,5 +306,54 @@ class Doctor extends Model
 
         $hoursUntilAppointment = Carbon::now()->diffInHours(Carbon::parse($appointmentDate));
         return $hoursUntilAppointment >= $this->cancellation_hours;
+    }
+
+    /**
+     * Get enabled appointment types
+     */
+    public function getEnabledAppointmentTypes()
+    {
+        $preferences = $this->appointment_type_preferences ?? [
+            'in_person' => true,
+            'video_call' => false,
+            'phone_call' => false
+        ];
+
+        return array_keys(array_filter($preferences));
+    }
+
+    /**
+     * Check if an appointment type is enabled
+     */
+    public function isAppointmentTypeEnabled($type)
+    {
+        $preferences = $this->appointment_type_preferences ?? [
+            'in_person' => true,
+            'video_call' => false,
+            'phone_call' => false
+        ];
+
+        return $preferences[$type] ?? false;
+    }
+
+    /**
+     * Get appointment type preferences with defaults
+     */
+    public function getAppointmentTypePreferences()
+    {
+        return $this->appointment_type_preferences ?? [
+            'in_person' => true,
+            'video_call' => false,
+            'phone_call' => false
+        ];
+    }
+
+    /**
+     * Update appointment type preferences
+     */
+    public function updateAppointmentTypePreferences($preferences)
+    {
+        $this->appointment_type_preferences = $preferences;
+        $this->save();
     }
 }
