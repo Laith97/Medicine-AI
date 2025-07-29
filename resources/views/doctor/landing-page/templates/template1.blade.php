@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ $language ?? 'en' }}" dir="{{ ($language ?? 'en') === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $landingPage->getSeoTitle() }}</title>
-    <meta name="description" content="{{ $landingPage->getSeoDescription() }}">
+    <title>{{ $translatedContent['page_title'] ?: $landingPage->getSeoTitle() }}</title>
+    <meta name="description" content="{{ $translatedContent['page_description'] ?: $landingPage->getSeoDescription() }}">
     <meta name="robots" content="index, follow">
 
     <!-- Open Graph -->
-    <meta property="og:title" content="{{ $landingPage->getSeoTitle() }}">
-    <meta property="og:description" content="{{ $landingPage->getSeoDescription() }}">
+    <meta property="og:title" content="{{ $translatedContent['page_title'] ?: $landingPage->getSeoTitle() }}">
+    <meta property="og:description" content="{{ $translatedContent['page_description'] ?: $landingPage->getSeoDescription() }}">
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ $landingPage->url }}">
     @if($landingPage->hero_image)
@@ -139,6 +139,44 @@
             width: 20px;
         }
 
+        /* RTL Support */
+        [dir="rtl"] {
+            text-align: right;
+        }
+
+        [dir="rtl"] .navbar-nav {
+            margin-left: 0;
+            margin-right: auto;
+        }
+
+        [dir="rtl"] .me-2 {
+            margin-left: 0.5rem !important;
+            margin-right: 0 !important;
+        }
+
+        [dir="rtl"] .ms-auto {
+            margin-left: 0 !important;
+            margin-right: auto !important;
+        }
+
+        [dir="rtl"] .pe-lg-5 {
+            padding-left: 3rem !important;
+            padding-right: 0 !important;
+        }
+
+        [dir="rtl"] .text-lg-start {
+            text-align: right !important;
+        }
+
+        [dir="rtl"] .justify-content-lg-start {
+            justify-content: flex-end !important;
+        }
+
+        [dir="rtl"] .mx-lg-0 {
+            margin-left: auto !important;
+            margin-right: 0 !important;
+        }
+
         @media (max-width: 768px) {
             .hero-section {
                 padding: 60px 0;
@@ -177,16 +215,16 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#home">Home</a>
+                        <a class="nav-link" href="#home">{{ $translatedContent['nav_home'] ?: (($language ?? 'en') === 'ar' ? 'الرئيسية' : 'Home') }}</a>
                     </li>
                     @if($landingPage->section_visibility['about'] ?? true)
                     <li class="nav-item">
-                        <a class="nav-link" href="#about">About</a>
+                        <a class="nav-link" href="#about">{{ $translatedContent['nav_about'] ?: (($language ?? 'en') === 'ar' ? 'نبذة عني' : 'About') }}</a>
                     </li>
                     @endif
                     @if($landingPage->section_visibility['appointments'] ?? true)
                     <li class="nav-item">
-                        <a class="nav-link" href="#appointments">Book Appointment</a>
+                        <a class="nav-link" href="#appointments">{{ $translatedContent['nav_appointments'] ?: (($language ?? 'en') === 'ar' ? 'حجز موعد' : 'Book Appointment') }}</a>
                     </li>
                     @endif
                     @if($landingPage->section_visibility['health_tips'] ?? true)
@@ -201,14 +239,26 @@
                     @endif
                     @if($landingPage->section_visibility['reviews'] ?? true)
                     <li class="nav-item">
-                        <a class="nav-link" href="#reviews">Reviews</a>
+                        <a class="nav-link" href="#reviews">{{ $translatedContent['nav_reviews'] ?: (($language ?? 'en') === 'ar' ? 'آراء المرضى' : 'Reviews') }}</a>
                     </li>
                     @endif
                     @if($landingPage->section_visibility['contact'] ?? true)
                     <li class="nav-item">
-                        <a class="nav-link" href="#contact">Contact</a>
+                        <a class="nav-link" href="#contact">{{ $translatedContent['nav_contact'] ?: (($language ?? 'en') === 'ar' ? 'اتصل بنا' : 'Contact') }}</a>
                     </li>
                     @endif
+
+                    <!-- Language Switcher -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-globe me-1"></i>
+                            {{ ($language ?? 'en') === 'ar' ? 'العربية' : 'English' }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="?lang=en">🇺🇸 English</a></li>
+                            <li><a class="dropdown-item" href="?lang=ar">🇸🇦 العربية</a></li>
+                        </ul>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -232,8 +282,8 @@
                         <h1 class="display-4 fw-bold mb-3">Dr. {{ $doctor->user->name }}</h1>
                         <h3 class="h4 mb-4 opacity-90">{{ $doctor->specialty->name ?? 'Medical Professional' }}</h3>
 
-                        @if($landingPage->tagline)
-                        <p class="lead mb-4">{{ $landingPage->tagline }}</p>
+                        @if($translatedContent['tagline'] ?: $landingPage->tagline)
+                        <p class="lead mb-4">{{ $translatedContent['tagline'] ?: $landingPage->tagline }}</p>
                         @endif
 
                         <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center justify-content-lg-start">
@@ -279,16 +329,16 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-8 mx-auto text-center">
-                    <h2 class="display-5 fw-bold mb-5">About Dr. {{ $doctor->user->name }}</h2>
+                    <h2 class="display-5 fw-bold mb-5">{{ $translatedContent['about_title'] ?: (($language ?? 'en') === 'ar' ? 'نبذة عن د. ' . $doctor->user->name : 'About Dr. ' . $doctor->user->name) }}</h2>
                 </div>
             </div>
             <div class="row align-items-center">
                 <div class="col-lg-6">
                     <div class="pe-lg-5">
-                        @if($landingPage->about_text)
-                        <p class="lead">{{ $landingPage->about_text }}</p>
+                        @if($translatedContent['about_text'] ?: $landingPage->about_text)
+                        <p class="lead">{{ $translatedContent['about_text'] ?: $landingPage->about_text }}</p>
                         @else
-                        <p class="lead">{{ $doctor->bio ?? 'Experienced medical professional dedicated to providing quality healthcare.' }}</p>
+                        <p class="lead">{{ $doctor->bio ?? (($language ?? 'en') === 'ar' ? 'طبيب محترف ذو خبرة مكرس لتقديم رعاية صحية عالية الجودة.' : 'Experienced medical professional dedicated to providing quality healthcare.') }}</p>
                         @endif
 
                         <div class="row g-4 mt-4">
@@ -404,8 +454,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-8 mx-auto text-center mb-5">
-                    <h2 class="display-5 fw-bold mb-4">Book Your Appointment</h2>
-                    <p class="lead">Schedule a consultation at your convenience. Choose from available time slots below.</p>
+                    <h2 class="display-5 fw-bold mb-4">{{ $translatedContent['appointment_title'] ?: (($language ?? 'en') === 'ar' ? 'احجز موعدك' : 'Book Your Appointment') }}</h2>
+                    <p class="lead">{{ $translatedContent['appointment_subtitle'] ?: (($language ?? 'en') === 'ar' ? 'حدد موعد استشارة في الوقت المناسب لك. اختر من الأوقات المتاحة أدناه.' : 'Schedule a consultation at your convenience. Choose from available time slots below.') }}</p>
                 </div>
             </div>
             <div class="row justify-content-center">
@@ -418,15 +468,15 @@
 
                             <div class="row g-4">
                                 <div class="col-md-6">
-                                    <label for="guest_name" class="form-label">Full Name *</label>
+                                    <label for="guest_name" class="form-label">{{ $translatedContent['form_name_label'] ?: (($language ?? 'en') === 'ar' ? 'الاسم الكامل *' : 'Full Name *') }}</label>
                                     <input type="text" class="form-control" id="guest_name" name="guest_name" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="guest_email" class="form-label">Email Address *</label>
+                                    <label for="guest_email" class="form-label">{{ $translatedContent['form_email_label'] ?: (($language ?? 'en') === 'ar' ? 'البريد الإلكتروني *' : 'Email Address *') }}</label>
                                     <input type="email" class="form-control" id="guest_email" name="guest_email" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="guest_phone" class="form-label">Phone Number *</label>
+                                    <label for="guest_phone" class="form-label">{{ $translatedContent['form_phone_label'] ?: (($language ?? 'en') === 'ar' ? 'رقم الهاتف *' : 'Phone Number *') }}</label>
                                     <input type="tel" class="form-control" id="guest_phone" name="guest_phone" required>
                                 </div>
                                 <div class="col-md-6">
@@ -443,17 +493,17 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="appointment_date" class="form-label">Preferred Date *</label>
+                                    <label for="appointment_date" class="form-label">{{ $translatedContent['form_date_label'] ?: (($language ?? 'en') === 'ar' ? 'التاريخ المفضل *' : 'Preferred Date *') }}</label>
                                     <input type="hidden" id="selected_appointment_datetime" name="appointment_date">
                                     <select class="form-select" id="appointment_date_select" required>
-                                        <option value="">Select a date</option>
+                                        <option value="">{{ ($language ?? 'en') === 'ar' ? 'اختر تاريخاً' : 'Select a date' }}</option>
                                         @foreach($availableSlots as $date => $slots)
                                         <option value="{{ $date }}">{{ \Carbon\Carbon::parse($date)->format('l, M j, Y') }}</option>
                                         @endforeach
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="appointment_time" class="form-label">Preferred Time *</label>
+                                    <label for="appointment_time" class="form-label">{{ $translatedContent['form_time_label'] ?: (($language ?? 'en') === 'ar' ? 'الوقت المفضل *' : 'Preferred Time *') }}</label>
                                     <select class="form-select" id="appointment_time" required disabled>
                                         <option value="">Select a date first</option>
                                     </select>
@@ -487,12 +537,12 @@
                                     <textarea class="form-control" id="symptoms" name="symptoms" rows="2" placeholder="Please describe any symptoms you're experiencing..."></textarea>
                                 </div>
                                 <div class="col-12">
-                                    <label for="patient_notes" class="form-label">Additional Notes (Optional)</label>
-                                    <textarea class="form-control" id="patient_notes" name="patient_notes" rows="2" placeholder="Any additional information you'd like to share..."></textarea>
+                                    <label for="patient_notes" class="form-label">{{ $translatedContent['form_message_label'] ?: (($language ?? 'en') === 'ar' ? 'ملاحظات إضافية (اختيارية)' : 'Additional Notes (Optional)') }}</label>
+                                    <textarea class="form-control" id="patient_notes" name="patient_notes" rows="2" placeholder="{{ ($language ?? 'en') === 'ar' ? 'أي معلومات إضافية تود مشاركتها...' : 'Any additional information you\'d like to share...' }}"></textarea>
                                 </div>
                                 <div class="col-12">
                                     <button type="submit" class="btn btn-primary btn-lg w-100">
-                                        <i class="fas fa-calendar-check me-2"></i>Book Appointment
+                                        <i class="fas fa-calendar-check me-2"></i>{{ $translatedContent['form_submit_button'] ?: (($language ?? 'en') === 'ar' ? 'احجز موعد' : 'Book Appointment') }}
                                     </button>
                                 </div>
                             </div>
@@ -504,35 +554,45 @@
     </section>
     @endif
 
-    @if(($landingPage->section_visibility['reviews'] ?? true) && $reviews->count() > 0)
+    @if($landingPage->section_visibility['reviews'] ?? true)
     <!-- Reviews Section -->
     <section id="reviews" class="section-padding">
         <div class="container">
             <div class="row">
                 <div class="col-lg-8 mx-auto text-center mb-5">
-                    <h2 class="display-5 fw-bold mb-4">What Patients Say</h2>
-                    <p class="lead">Read testimonials from our satisfied patients.</p>
+                    <h2 class="display-5 fw-bold mb-4">{{ ($language ?? 'en') === 'ar' ? 'آراء المرضى' : 'What Patients Say' }}</h2>
+                    <p class="lead">{{ ($language ?? 'en') === 'ar' ? 'اقرأ شهادات مرضانا الراضين.' : 'Read testimonials from our satisfied patients.' }}</p>
                 </div>
             </div>
             <div class="row g-4">
-                @foreach($reviews as $review)
-                <div class="col-lg-4 col-md-6">
-                    <div class="card review-card h-100 p-4">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="star-rating me-3">
-                                @for($i = 1; $i <= 5; $i++)
-                                    <i class="fas fa-star{{ $i <= $review->rating ? '' : ' text-muted' }}"></i>
-                                @endfor
+                @if($reviews->count() > 0)
+                    @foreach($reviews as $review)
+                    <div class="col-lg-4 col-md-6">
+                        <div class="card review-card h-100 p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="star-rating me-3">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        <i class="fas fa-star{{ $i <= $review->rating ? '' : ' text-muted' }}"></i>
+                                    @endfor
+                                </div>
+                                <small class="text-muted">{{ $review->formatted_date }}</small>
                             </div>
-                            <small class="text-muted">{{ $review->formatted_date }}</small>
-                        </div>
-                        <p class="mb-3">"{{ $review->comment }}"</p>
-                        <div class="mt-auto">
-                            <strong>{{ $review->patient_display_name }}</strong>
+                            <p class="mb-3">"{{ $review->comment }}"</p>
+                            <div class="mt-auto">
+                                <strong>{{ $review->patient_display_name }}</strong>
+                            </div>
                         </div>
                     </div>
-                </div>
-                @endforeach
+                    @endforeach
+                @else
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="fas fa-star fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">{{ ($language ?? 'en') === 'ar' ? 'لا توجد مراجعات بعد' : 'No reviews yet' }}</h5>
+                            <p class="text-muted">{{ ($language ?? 'en') === 'ar' ? 'كن أول من يترك مراجعة!' : 'Be the first to leave a review!' }}</p>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </section>
@@ -618,10 +678,12 @@
     </footer>
 
     <!-- Chat Widget -->
+    @if($landingPage->section_visibility['chat_widget'] ?? true)
     @include('components.chat-widget', [
         'doctorUsername' => $landingPage->username,
         'doctorName' => $doctor->user->name
     ])
+    @endif
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -706,5 +768,7 @@
             });
         });
     </script>
+
+    @stack('scripts')
 </body>
 </html>

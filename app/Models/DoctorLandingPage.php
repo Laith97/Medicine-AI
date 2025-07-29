@@ -24,12 +24,15 @@ class DoctorLandingPage extends Model
         'custom_domain',
         'subdomain_enabled',
         'seo_settings',
+        'default_language',
+        'translations',
     ];
 
     protected $casts = [
         'colors' => 'array',
         'section_visibility' => 'array',
         'seo_settings' => 'array',
+        'translations' => 'array',
         'is_published' => 'boolean',
         'subdomain_enabled' => 'boolean',
     ];
@@ -71,6 +74,7 @@ class DoctorLandingPage extends Model
             'appointments' => true,
             'reviews' => true,
             'contact' => true,
+            'chat_widget' => true,
         ];
     }
 
@@ -150,5 +154,68 @@ class DoctorLandingPage extends Model
     public function scopeByCustomDomain($query, $domain)
     {
         return $query->where('custom_domain', $domain);
+    }
+
+    /**
+     * Get translated content for a specific language
+     */
+    public function getTranslatedContent($language = null)
+    {
+        $language = $language ?: $this->default_language ?: 'en';
+        $translations = $this->translations ?: [];
+
+        return [
+            'page_title' => $translations[$language]['page_title'] ?? $this->page_title,
+            'page_description' => $translations[$language]['page_description'] ?? $this->page_description,
+            'tagline' => $translations[$language]['tagline'] ?? $this->tagline,
+            'about_text' => $translations[$language]['about_text'] ?? $this->about_text,
+
+            // Appointment form translations
+            'appointment_title' => $translations[$language]['appointment_title'] ?? null,
+            'appointment_subtitle' => $translations[$language]['appointment_subtitle'] ?? null,
+            'form_name_label' => $translations[$language]['form_name_label'] ?? null,
+            'form_email_label' => $translations[$language]['form_email_label'] ?? null,
+            'form_phone_label' => $translations[$language]['form_phone_label'] ?? null,
+            'form_date_label' => $translations[$language]['form_date_label'] ?? null,
+            'form_time_label' => $translations[$language]['form_time_label'] ?? null,
+            'form_message_label' => $translations[$language]['form_message_label'] ?? null,
+            'form_submit_button' => $translations[$language]['form_submit_button'] ?? null,
+
+            // Navigation translations
+            'nav_home' => $translations[$language]['nav_home'] ?? null,
+            'nav_about' => $translations[$language]['nav_about'] ?? null,
+            'nav_appointments' => $translations[$language]['nav_appointments'] ?? null,
+            'nav_reviews' => $translations[$language]['nav_reviews'] ?? null,
+            'nav_contact' => $translations[$language]['nav_contact'] ?? null,
+            'about_title' => $translations[$language]['about_title'] ?? null,
+        ];
+    }
+
+    /**
+     * Set translation for a specific language
+     */
+    public function setTranslation($language, $field, $value)
+    {
+        $translations = $this->translations ?: [];
+        $translations[$language][$field] = $value;
+        $this->translations = $translations;
+        $this->save();
+    }
+
+    /**
+     * Get available languages
+     */
+    public function getAvailableLanguages()
+    {
+        $translations = $this->translations ?: [];
+        $languages = ['en']; // Default English
+
+        foreach (array_keys($translations) as $lang) {
+            if (!in_array($lang, $languages)) {
+                $languages[] = $lang;
+            }
+        }
+
+        return $languages;
     }
 }

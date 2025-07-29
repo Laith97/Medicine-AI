@@ -49,6 +49,12 @@
                     <div class="col-12">
                         <input type="email" id="visitor-email" class="form-control form-control-sm" placeholder="Your email (optional)">
                     </div>
+                    <div class="col-12">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Fill these out before sending your first message
+                        </small>
+                    </div>
                 </div>
             </div>
 
@@ -160,6 +166,8 @@ class ChatWidget {
         this.sessionId = null;
         this.isInitialized = false;
         this.contactInfoProvided = false;
+        this.lastMessageId = null;
+        this.pollingInterval = null;
 
         this.initializeElements();
         this.bindEvents();
@@ -177,50 +185,97 @@ class ChatWidget {
         this.visitorEmailInput = document.getElementById('visitor-email');
         this.typingIndicator = document.getElementById('typing-indicator');
         this.chatMessages = document.getElementById('chat-messages');
+
+        // Debug: Check if elements exist
+        console.log('Chat elements:', {
+            toggle: !!this.chatToggleBtn,
+            box: !!this.chatBox,
+            close: !!this.chatCloseBtn,
+            messages: !!this.messagesContainer,
+            input: !!this.messageInput,
+            send: !!this.sendBtn
+        });
     }
 
     bindEvents() {
-        this.chatToggleBtn.addEventListener('click', () => this.toggleChat());
-        this.chatCloseBtn.addEventListener('click', () => this.closeChat());
-        this.sendBtn.addEventListener('click', () => this.sendMessage());
-        this.messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.sendMessage();
-            }
+        console.log('Binding chat widget events');
+
+        if (!this.chatToggleBtn) {
+            console.error('Chat toggle button not found!');
+            return;
+        }
+
+        console.log('Adding click event listener to chat toggle button');
+        this.chatToggleBtn.addEventListener('click', (e) => {
+            console.log('Chat toggle button clicked!', e);
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggleChat();
         });
 
-        // Hide contact form after first message
-        this.messageInput.addEventListener('focus', () => {
-            if (!this.contactInfoProvided) {
-                this.contactInfoProvided = true;
-                setTimeout(() => {
-                    $(this.contactForm).fadeOut();
-                }, 2000);
-            }
-        });
+        if (this.chatCloseBtn) {
+            this.chatCloseBtn.addEventListener('click', () => {
+                console.log('Chat close button clicked');
+                this.closeChat();
+            });
+        }
+
+        if (this.sendBtn) {
+            this.sendBtn.addEventListener('click', () => this.sendMessage());
+        }
+
+        if (this.messageInput) {
+            this.messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.sendMessage();
+                }
+            });
+
+            // Don't hide contact form on focus - let user fill it out
+        }
     }
 
     async toggleChat() {
+        console.log('toggleChat called');
+        console.log('chatBox element:', this.chatBox);
+        console.log('chatBox classes:', this.chatBox?.className);
+
+        if (!this.chatBox) {
+            console.error('Chat box element not found!');
+            return;
+        }
+
         if (this.chatBox.classList.contains('d-none')) {
+            console.log('Opening chat...');
             await this.openChat();
         } else {
+            console.log('Closing chat...');
             this.closeChat();
         }
     }
 
     async openChat() {
+        console.log('openChat called');
+        console.log('Removing d-none class from chat box');
         this.chatBox.classList.remove('d-none');
+        console.log('Chat box classes after removing d-none:', this.chatBox.className);
 
         if (!this.isInitialized) {
+            console.log('Chat not initialized, initializing...');
             await this.initializeChat();
+        } else {
+            console.log('Chat already initialized');
         }
 
         this.scrollToBottom();
-        this.messageInput.focus();
+        if (this.messageInput) {
+            this.messageInput.focus();
+        }
     }
 
     closeChat() {
         this.chatBox.classList.add('d-none');
+        this.stopPolling();
     }
 
     async initializeChat() {
@@ -241,6 +296,9 @@ class ChatWidget {
 
                 // Add welcome message
                 this.addMessage(data.welcome_message, 'bot', 'now');
+
+                // Start polling for new messages
+                this.startPolling();
             }
         } catch (error) {
             console.error('Failed to initialize chat:', error);
@@ -259,6 +317,14 @@ class ChatWidget {
         // Add user message to chat
         this.addMessage(message, 'visitor', 'now');
         this.messageInput.value = '';
+
+        // Hide contact form after first message is sent
+        if (!this.contactInfoProvided && this.contactForm) {
+            this.contactInfoProvided = true;
+            setTimeout(() => {
+                $(this.contactForm).fadeOut();
+            }, 1000); // Give 1 second delay so they can see their message was sent
+        }
 
         // Show typing indicator
         this.showTypingIndicator();
@@ -280,12 +346,17 @@ class ChatWidget {
 
             const data = await response.json();
 
-            if (data.success && data.bot_response) {
-                // Simulate typing delay
-                setTimeout(() => {
+            if (data.success) {
+                if (data.bot_response) {
+                    // Simulate typing delay for AI response
+                    setTimeout(() => {
+                        this.hideTypingIndicator();
+                        this.addMessage(data.bot_response, 'bot', data.formatted_time);
+                    }, 1000 + Math.random() * 2000); // 1-3 seconds delay
+                } else {
+                    // No AI response - just hide typing indicator
                     this.hideTypingIndicator();
-                    this.addMessage(data.bot_response, 'bot', data.formatted_time);
-                }, 1000 + Math.random() * 2000); // 1-3 seconds delay
+                }
             } else {
                 this.hideTypingIndicator();
             }
@@ -296,9 +367,12 @@ class ChatWidget {
         }
     }
 
-    addMessage(message, senderType, time) {
+    addMessage(message, senderType, time, messageId = null) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `chat-message ${senderType}`;
+        if (messageId) {
+            messageDiv.dataset.messageId = messageId;
+        }
 
         messageDiv.innerHTML = `
             <div class="message-bubble">${this.escapeHtml(message)}</div>
@@ -307,6 +381,11 @@ class ChatWidget {
 
         this.messagesContainer.appendChild(messageDiv);
         this.scrollToBottom();
+
+        // Update last message ID for polling
+        if (messageId && senderType === 'doctor') {
+            this.lastMessageId = messageId;
+        }
     }
 
     showTypingIndicator() {
@@ -324,6 +403,50 @@ class ChatWidget {
         }, 100);
     }
 
+    startPolling() {
+        // Poll for new messages every 3 seconds
+        this.pollingInterval = setInterval(() => {
+            this.checkForNewMessages();
+        }, 3000);
+    }
+
+    stopPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+        }
+    }
+
+    async checkForNewMessages() {
+        if (!this.sessionId) return;
+
+        try {
+            const url = new URL(`/doctor/${this.doctorUsername}/chat/check-new`, window.location.origin);
+            url.searchParams.append('session_id', this.sessionId);
+            if (this.lastMessageId) {
+                url.searchParams.append('last_message_id', this.lastMessageId);
+            }
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.new_messages.length > 0) {
+                data.new_messages.forEach(message => {
+                    this.addMessage(message.message, 'doctor', message.created_at, message.id);
+                });
+            }
+        } catch (error) {
+            console.error('Failed to check for new messages:', error);
+        }
+    }
+
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
@@ -333,9 +456,46 @@ class ChatWidget {
 
 // Initialize chat widget when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded - Starting chat widget initialization');
     const doctorUsername = '{{ $doctorUsername ?? "" }}';
+    console.log('Doctor username:', doctorUsername);
+
+    // Check if elements exist before initializing
+    const toggleBtn = document.getElementById('chat-toggle-btn');
+    const chatBox = document.getElementById('chat-box');
+
+    console.log('Chat elements found:', {
+        toggleBtn: !!toggleBtn,
+        chatBox: !!chatBox
+    });
+
+    if (!toggleBtn) {
+        console.error('Chat toggle button not found in DOM!');
+        return;
+    }
+
+    console.log('Chat toggle button found, proceeding with ChatWidget initialization');
+
     if (doctorUsername) {
-        window.chatWidget = new ChatWidget(doctorUsername);
+        // Add delay to ensure all elements are rendered
+        setTimeout(() => {
+            try {
+                console.log('Creating ChatWidget instance...');
+                window.chatWidget = new ChatWidget(doctorUsername);
+                console.log('Chat widget initialized successfully');
+            } catch (error) {
+                console.error('Error initializing chat widget:', error);
+                console.error('Error stack:', error.stack);
+            }
+        }, 500);
+    } else {
+        console.error('No doctor username provided for chat widget');
+
+        // Still try to add basic click handler for testing
+        toggleBtn.addEventListener('click', function() {
+            console.log('Chat button clicked - but no doctor username available');
+            alert('Chat not available - missing doctor username');
+        });
     }
 });
 </script>
