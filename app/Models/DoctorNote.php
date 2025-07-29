@@ -11,16 +11,11 @@ class DoctorNote extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'doctor_id',
-        'patient_id',
-        'appointment_id',
-        'note_type',
-        'note_text',
-        'transcript',
-        'audio_file_path',
-        'appointment_date',
-        'title',
-        'tags',
+        'doctor_id', 'patient_id', 'appointment_id', 'title', 'note_text',
+        'note_type', 'appointment_date', 'is_voice_note', 'audio_file_path',
+        'transcript', 'audio_duration', 'is_private', 'tags', 'category',
+        'follow_up_required', 'follow_up_date', 'shared_with_patient',
+        'shared_at'
     ];
 
     protected $casts = [
@@ -29,6 +24,13 @@ class DoctorNote extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
+        'is_voice_note' => 'boolean',
+        'is_private' => 'boolean',
+        'follow_up_required' => 'boolean',
+        'shared_with_patient' => 'boolean',
+        'follow_up_date' => 'datetime',
+        'shared_at' => 'datetime',
+        'audio_duration' => 'integer',
     ];
 
     /**
@@ -85,6 +87,30 @@ class DoctorNote extends Model
     public function isPatientNote()
     {
         return !is_null($this->patient_id);
+    }
+
+    /**
+     * Check if this is a private note
+     */
+    public function isPrivate()
+    {
+        return $this->is_private;
+    }
+
+    /**
+     * Check if this note is shared with patient
+     */
+    public function isSharedWithPatient()
+    {
+        return $this->shared_with_patient;
+    }
+
+    /**
+     * Check if this note requires follow up
+     */
+    public function requiresFollowUp()
+    {
+        return $this->follow_up_required;
     }
 
     /**
@@ -172,6 +198,50 @@ class DoctorNote extends Model
     }
 
     /**
+     * Scope for private notes
+     */
+    public function scopePrivate($query)
+    {
+        return $query->where('is_private', true);
+    }
+
+    /**
+     * Scope for shared notes
+     */
+    public function scopeShared($query)
+    {
+        return $query->where('shared_with_patient', true);
+    }
+
+    /**
+     * Scope for notes by category
+     */
+    public function scopeByCategory($query, $category)
+    {
+        return $query->where('category', $category);
+    }
+
+    /**
+     * Scope for notes requiring follow up
+     */
+    public function scopeRequiresFollowUp($query)
+    {
+        return $query->where('follow_up_required', true);
+    }
+
+    /**
+     * Scope for search
+     */
+    public function scopeSearch($query, $term)
+    {
+        return $query->where(function ($q) use ($term) {
+            $q->where('title', 'like', "%{$term}%")
+              ->orWhere('note_text', 'like', "%{$term}%")
+              ->orWhere('transcript', 'like', "%{$term}%");
+        });
+    }
+
+    /**
      * Get formatted creation date
      */
     public function getFormattedDateAttribute()
@@ -193,5 +263,148 @@ class DoctorNote extends Model
     public function getTypeIcon()
     {
         return $this->isVoiceNote() ? 'fas fa-microphone' : 'fas fa-file-text';
+    }
+
+    /**
+     * Get truncated content attribute
+     */
+    public function getTruncatedContentAttribute()
+    {
+        $content = $this->isVoiceNote() && $this->transcript
+            ? $this->transcript
+            : $this->note_text;
+
+        if (strlen($content) <= 200) {
+            return $content;
+        }
+
+        return substr($content, 0, 197) . '...';
+    }
+
+    /**
+     * Get word count attribute
+     */
+    public function getWordCountAttribute()
+    {
+        $content = $this->isVoiceNote() && $this->transcript
+            ? $this->transcript
+            : $this->note_text;
+
+        return str_word_count(strip_tags($content));
+    }
+
+    /**
+     * Get reading time attribute (in minutes)
+     */
+    public function getReadingTimeAttribute()
+    {
+        $wordCount = $this->word_count;
+        $readingTime = ceil($wordCount / 200); // 200 words per minute
+        return max(1, $readingTime); // Minimum 1 minute
+    }
+
+    /**
+     * Share note with patient
+     */
+    public function shareWithPatient()
+    {
+        $this->update([
+            'shared_with_patient' => true,
+            'shared_at' => now(),
+        ]);
+    }
+
+    /**
+     * Unshare note with patient
+     */
+    public function unshareWithPatient()
+    {
+        $this->update([
+            'shared_with_patient' => false,
+            'shared_at' => null,
+        ]);
+    }
+
+    /**
+     * Mark note as private
+     */
+    public function markPrivate()
+    {
+        $this->update(['is_private' => true]);
+    }
+
+    /**
+     * Mark note as public
+     */
+    public function markPublic()
+    {
+        $this->update(['is_private' => false]);
+    }
+
+    /**
+     * Add tag to note
+     */
+    public function addTag($tag)
+    {
+        $tags = $this->tags ?? [];
+        if (!in_array($tag, $tags)) {
+            $tags[] = $tag;
+            $this->update(['tags' => $tags]);
+        }
+    }
+
+    /**
+     * Remove tag from note
+     */
+    public function removeTag($tag)
+    {
+        $tags = $this->tags ?? [];
+        $tags = array_values(array_filter($tags, fn($t) => $t !== $tag));
+        $this->update(['tags' => $tags]);
+    }
+
+    /**
+     * Check if note has tag
+     */
+    public function hasTag($tag)
+    {
+        return in_array($tag, $this->tags ?? []);
+    }
+
+    /**
+     * Set follow up for note
+     */
+    public function setFollowUp($date)
+    {
+        $this->update([
+            'follow_up_required' => true,
+            'follow_up_date' => $date,
+        ]);
+    }
+
+    /**
+     * Clear follow up for note
+     */
+    public function clearFollowUp()
+    {
+        $this->update([
+            'follow_up_required' => false,
+            'follow_up_date' => null,
+        ]);
+    }
+
+    /**
+     * Get formatted audio duration
+     */
+    public function getAudioDurationFormatted()
+    {
+        if (!$this->audio_duration) {
+            return '0:00';
+        }
+
+        $minutes = floor($this->audio_duration / 60);
+        $seconds = $this->audio_duration % 60;
+
+        return sprintf('%d:%02d', $minutes, $seconds);
     }
 }

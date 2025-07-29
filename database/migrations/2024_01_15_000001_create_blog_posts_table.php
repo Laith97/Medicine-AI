@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('blog_posts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('doctor_id')->constrained('doctors')->onDelete('cascade');
+            $table->unsignedBigInteger('doctor_id');
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('short_description');
@@ -33,6 +33,13 @@ return new class extends Migration
             $table->index(['slug']);
             $table->index(['published_at']);
         });
+
+        // Add foreign key constraint only if doctors table exists
+        if (Schema::hasTable('doctors')) {
+            Schema::table('blog_posts', function (Blueprint $table) {
+                $table->foreign('doctor_id')->references('id')->on('doctors')->onDelete('cascade');
+            });
+        }
     }
 
     /**

@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('monthly_invoice_settings', function (Blueprint $table) {
-            $table->renameColumn('monthly_amount', 'billing_amount');
-        });
+        if (Schema::hasTable('monthly_invoice_settings') && Schema::hasColumn('monthly_invoice_settings', 'monthly_amount')) {
+            Schema::table('monthly_invoice_settings', function (Blueprint $table) {
+                $table->renameColumn('monthly_amount', 'billing_amount');
+            });
+        }
     }
 
     /**
@@ -21,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('monthly_invoice_settings', function (Blueprint $table) {
-            $table->renameColumn('billing_amount', 'monthly_amount');
-        });
+        if (Schema::hasTable('monthly_invoice_settings') && Schema::hasColumn('monthly_invoice_settings', 'billing_amount')) {
+            Schema::table('monthly_invoice_settings', function (Blueprint $table) {
+                $table->renameColumn('billing_amount', 'monthly_amount');
+            });
+        }
     }
 };

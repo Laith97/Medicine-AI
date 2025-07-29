@@ -90,7 +90,7 @@
                             @foreach($appointments as $appointment)
                                 <option value="{{ $appointment->id }}"
                                         {{ old('appointment_id', $note->appointment_id) == $appointment->id ? 'selected' : '' }}>
-                                    {{ $appointment->patient->name }} - {{ $appointment->appointment_date->format('M j, Y g:i A') }}
+                                    {{ $appointment->patient->name ?? 'Unknown Patient' }} - {{ $appointment->appointment_date->format('M j, Y g:i A') }}
                                 </option>
                             @endforeach
                         </select>

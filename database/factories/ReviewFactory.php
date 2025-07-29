@@ -38,8 +38,7 @@ class ReviewFactory extends Factory
             'posted_to_google' => $this->faker->boolean(30), // 30% posted to Google
             'google_review_id' => $this->faker->optional()->uuid(),
             'google_posted_at' => $this->faker->optional()->dateTime(),
-            'source' => $this->faker->randomElement(['medcura', 'google']),
-            'consent_google_posting' => $this->faker->boolean(50), // 50% consent to Google posting
+            'source' => $this->faker->randomElement(['medcura', 'google'])
         ];
     }
 
@@ -62,7 +61,7 @@ class ReviewFactory extends Factory
     public function withGoogleConsent(): static
     {
         return $this->state(fn (array $attributes) => [
-            'consent_google_posting' => true,
+            'posted_to_google' => true,
         ]);
     }
 

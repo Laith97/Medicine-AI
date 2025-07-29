@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('landing_pages', function (Blueprint $table) {
-            // Add health_tips to section_visibility JSON field
-            // This will be handled in the model/controller logic
-            // No schema change needed as section_visibility is already JSON
-        });
+        if (Schema::hasTable('landing_pages')) {
+            Schema::table('landing_pages', function (Blueprint $table) {
+                // Add health_tips to section_visibility JSON field
+                // This will be handled in the model/controller logic
+                // No schema change needed as section_visibility is already JSON
+            });
+        }
     }
 
     /**

@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('monthly_invoice_settings', function (Blueprint $table) {
-            $table->integer('warning_period_days')->default(3)->after('grace_period_days');
-        });
+        if (Schema::hasTable('monthly_invoice_settings')) {
+            Schema::table('monthly_invoice_settings', function (Blueprint $table) {
+                if (!Schema::hasColumn('monthly_invoice_settings', 'warning_period_days')) {
+                    $table->integer('warning_period_days')->default(3)->after('grace_period_days');
+                }
+            });
+        }
     }
 
     /**
