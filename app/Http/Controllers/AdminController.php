@@ -16,6 +16,7 @@ use App\Models\PatientAnalysis;
 use App\Models\SystemSetting;
 use App\Models\MonthlyInvoiceSetting;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules;
 use Carbon\Carbon;
 
@@ -26,7 +27,7 @@ class AdminController extends Controller
      */
     public function index()
     {
-        $users = User::with(['setting', 'patientAnalyses', 'monthlyInvoiceSetting'])
+        $users = User::with(['setting', 'patientAnalyses', 'monthlyInvoiceSetting', 'doctor'])
                     ->orderBy('created_at', 'desc')
                     ->paginate(15);
 
@@ -668,6 +669,7 @@ class AdminController extends Controller
         try {
             // Log the request data for debugging
             \Log::info('Manual reminders request data:', $request->all());
+            \Log::info('Manual reminders started by admin: ' . auth('admin')->user()->email);
             
             $request->validate([
                 'reminder_type' => 'required|in:grace_period,warning_period,overdue,all',
@@ -776,6 +778,11 @@ class AdminController extends Controller
     private function sendGracePeriodReminders($userIds = null, $forceSend = false)
     {
         $results = ['grace_reminders_sent' => 0, 'errors' => []];
+        
+        \Log::info('Starting sendGracePeriodReminders', [
+            'userIds' => $userIds,
+            'forceSend' => $forceSend
+        ]);
 
         $query = User::whereHas('monthlyInvoiceSetting', function($query) {
             $query->where('is_active', true);
@@ -788,6 +795,11 @@ class AdminController extends Controller
         $users = $query->get()->filter(function($user) {
             return $user->isInGracePeriod();
         });
+        
+        \Log::info('Found users in grace period', [
+            'total_users' => $users->count(),
+            'user_emails' => $users->pluck('email')->toArray()
+        ]);
 
         foreach ($users as $user) {
             try {
@@ -801,8 +813,27 @@ class AdminController extends Controller
                     }
                 }
 
-                // Send notification
-                $user->notify(new \App\Notifications\GracePeriodReminder($setting));
+                // Send email directly like contact form
+                \Log::info('Sending grace period reminder', [
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'user_name' => $user->name
+                ]);
+                
+                try {
+                    // Send immediately like contact form (bypass queue)
+                    config(['queue.default' => 'sync']);
+                    \Mail::to($user->email)->send(new \App\Mail\ManualReminderMail($user, $setting, 'grace_period'));
+                    \Log::info('Grace period reminder sent successfully', [
+                        'user_email' => $user->email
+                    ]);
+                } catch (\Exception $mailException) {
+                    \Log::error('Failed to send grace period reminder email', [
+                        'user_email' => $user->email,
+                        'error' => $mailException->getMessage()
+                    ]);
+                    throw $mailException;
+                }
                 
                 // Update timestamp
                 $setting->update(['last_reminder_sent_at' => now()]);
@@ -810,6 +841,12 @@ class AdminController extends Controller
                 $results['grace_reminders_sent']++;
 
             } catch (\Exception $e) {
+                \Log::error('Failed to send grace period reminder', [
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
                 $results['errors'][] = "User {$user->id} ({$user->name}): " . $e->getMessage();
             }
         }
@@ -824,17 +861,40 @@ class AdminController extends Controller
     {
         $results = ['warning_reminders_sent' => 0, 'errors' => []];
 
+        \Log::info('sendWarningPeriodReminders called', [
+            'userIds' => $userIds,
+            'forceSend' => $forceSend
+        ]);
+
         $query = User::whereHas('monthlyInvoiceSetting', function($query) {
             $query->where('is_active', true);
         })->with('monthlyInvoiceSetting');
 
         if ($userIds && is_array($userIds) && count($userIds) > 0) {
             $query->whereIn('id', $userIds);
+            \Log::info('Filtering by user IDs', ['userIds' => $userIds]);
         }
 
-        $users = $query->get()->filter(function($user) {
-            return $user->isInWarningPeriod();
+        $allUsers = $query->get();
+        \Log::info('Users with monthly invoice settings found', [
+            'count' => $allUsers->count(),
+            'user_ids' => $allUsers->pluck('id')->toArray()
+        ]);
+
+        $users = $allUsers->filter(function($user) {
+            $isInWarning = $user->isInWarningPeriod();
+            \Log::info('Checking user warning period status', [
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'isInWarningPeriod' => $isInWarning
+            ]);
+            return $isInWarning;
         });
+
+        \Log::info('Users in warning period after filtering', [
+            'count' => $users->count(),
+            'user_ids' => $users->pluck('id')->toArray()
+        ]);
 
         foreach ($users as $user) {
             try {
@@ -842,14 +902,45 @@ class AdminController extends Controller
                 
                 // Check if we should send reminder (unless forced)
                 if (!$forceSend) {
+                    \Log::info('Checking reminder frequency', [
+                        'user_id' => $user->id,
+                        'last_reminder_sent_at' => $setting->last_reminder_sent_at ? $setting->last_reminder_sent_at->format('Y-m-d H:i:s') : null,
+                        'reminder_frequency_days' => $setting->reminder_frequency_days,
+                        'next_reminder_allowed_at' => $setting->last_reminder_sent_at ? $setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->format('Y-m-d H:i:s') : null,
+                        'is_past' => $setting->last_reminder_sent_at ? $setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->isPast() : true
+                    ]);
+                    
                     if ($setting->last_reminder_sent_at && 
                         !$setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->isPast()) {
+                        \Log::info('Skipping reminder - too soon since last reminder', [
+                            'user_id' => $user->id,
+                            'user_email' => $user->email
+                        ]);
                         continue; // Skip - too soon since last reminder
                     }
                 }
 
-                // Send notification
-                $user->notify(new \App\Notifications\FinalWarning($setting));
+                // Send email directly like contact form
+                \Log::info('Sending warning period reminder', [
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'user_name' => $user->name
+                ]);
+                
+                try {
+                    // Send immediately like contact form (bypass queue)
+                    config(['queue.default' => 'sync']);
+                    Mail::to($user->email)->send(new \App\Mail\ManualReminderMail($user, $setting, 'warning_period'));
+                    \Log::info('Warning period reminder sent successfully', [
+                        'user_email' => $user->email
+                    ]);
+                } catch (\Exception $mailException) {
+                    \Log::error('Failed to send warning period reminder email', [
+                        'user_email' => $user->email,
+                        'error' => $mailException->getMessage()
+                    ]);
+                    throw $mailException;
+                }
                 
                 // Update timestamp
                 $setting->update(['last_reminder_sent_at' => now()]);
@@ -893,8 +984,40 @@ class AdminController extends Controller
                         continue; // Skip - doesn't need reminder yet
                     }
 
-                    // Send notification
-                    $user->notify(new \App\Notifications\InvoiceOverdue($invoice));
+                    // Send email directly like contact form
+                    \Log::info('Sending overdue reminder', [
+                        'user_id' => $user->id,
+                        'user_email' => $user->email,
+                        'user_name' => $user->name,
+                        'invoice_id' => $invoice->id
+                    ]);
+                    
+                    try {
+                        // For overdue, we need to pass the invoice data differently
+                        // Create a fake setting for the email template
+                        $fakeSetting = new \App\Models\MonthlyInvoiceSetting([
+                            'billing_amount' => $invoice->amount_due / 100, // Convert from cents
+                            'subscription_period_months' => 1,
+                            'subscription_starts_at' => $invoice->created_at,
+                            'subscription_ends_at' => $invoice->due_date,
+                            'grace_period_days' => 7,
+                            'warning_period_days' => 3,
+                            'is_active' => true,
+                        ]);
+                        
+                        Mail::to($user->email)->send(new \App\Mail\ManualReminderMail($user, $fakeSetting, 'overdue'));
+                        \Log::info('Overdue reminder sent successfully', [
+                            'user_email' => $user->email,
+                            'invoice_id' => $invoice->id
+                        ]);
+                    } catch (\Exception $mailException) {
+                        \Log::error('Failed to send overdue reminder email', [
+                            'user_email' => $user->email,
+                            'invoice_id' => $invoice->id,
+                            'error' => $mailException->getMessage()
+                        ]);
+                        throw $mailException;
+                    }
                     
                     // Update invoice reminder tracking
                     $invoice->markReminderSent();
@@ -908,5 +1031,31 @@ class AdminController extends Controller
         }
 
         return $results;
+    }
+
+    /**
+     * Toggle doctor account status (activate/deactivate)
+     */
+    public function toggleDoctorStatus(User $user)
+    {
+        try {
+            // Check if user has a doctor profile
+            if (!$user->doctor) {
+                return redirect()->back()->with('error', 'This user does not have a doctor profile.');
+            }
+
+            // Toggle the is_active status
+            $newStatus = !$user->doctor->is_active;
+            $user->doctor->update(['is_active' => $newStatus]);
+
+            $statusText = $newStatus ? 'activated' : 'deactivated';
+            $message = "Doctor account for {$user->name} has been {$statusText} successfully.";
+
+            return redirect()->back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            \Log::error('Error toggling doctor status: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update doctor status. Please try again.');
+        }
     }
 }
