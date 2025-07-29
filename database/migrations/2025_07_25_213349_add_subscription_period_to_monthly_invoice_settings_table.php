@@ -11,11 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('monthly_invoice_settings', function (Blueprint $table) {
-            $table->integer('subscription_period_months')->default(1)->after('monthly_amount');
-            $table->timestamp('subscription_starts_at')->nullable()->after('subscription_period_months');
-            $table->timestamp('subscription_ends_at')->nullable()->after('subscription_starts_at');
-        });
+        if (Schema::hasTable('monthly_invoice_settings')) {
+            Schema::table('monthly_invoice_settings', function (Blueprint $table) {
+                if (!Schema::hasColumn('monthly_invoice_settings', 'subscription_period_months')) {
+                    $table->integer('subscription_period_months')->default(1)->after('monthly_amount');
+                }
+                if (!Schema::hasColumn('monthly_invoice_settings', 'subscription_starts_at')) {
+                    $table->timestamp('subscription_starts_at')->nullable()->after('subscription_period_months');
+                }
+                if (!Schema::hasColumn('monthly_invoice_settings', 'subscription_ends_at')) {
+                    $table->timestamp('subscription_ends_at')->nullable()->after('subscription_starts_at');
+                }
+            });
+        }
     }
 
     /**

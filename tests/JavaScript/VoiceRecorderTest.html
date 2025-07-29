@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Recorder JavaScript Tests</title>
+    <meta name="csrf-token" content="test-csrf-token">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .test-pass { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .test-fail { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .test-section { margin: 20px 0; border: 1px solid #ddd; padding: 15px; }
+        #testResults { margin-top: 20px; }
+
+        /* Mock UI elements for testing */
+        .voice-recorder-container { border: 2px dashed #dee2e6; padding: 20px; margin: 10px 0; }
+        .transcription-enhanced { border-left: 4px solid #28a745; background-color: #f8fff9; }
+        .transcription-processing { border-left: 4px solid #007bff; background-color: #f8f9ff; }
+    </style>
+</head>
+<body>
+    <h1>Voice Recorder JavaScript Unit Tests</h1>
+
+    <!-- Mock DOM elements that the VoiceRecorder class expects -->
+    <div id="mockElements" style="display: none;">
+        <button id="startRecording">Start Recording</button>
+        <button id="stopRecording">Stop Recording</button>
+        <button id="playRecording">Play</button>
+        <button id="clearRecording">Clear</button>
+        <button id="transcribeBtn">Transcribe & Format</button>
+
+        <div id="recordingStatus"></div>
+        <span id="statusText"></span>
+        <span id="recordingTimer"></span>
+
+        <audio id="audioPlayer"></audio>
+        <div id="audioPlayerContainer"></div>
+        <div id="transcriptionSection"></div>
+        <div id="transcriptionLoading"></div>
+        <textarea id="transcript"></textarea>
+        <div class="voice-recorder-container"></div>
+    </div>
+
+    <div id="testResults"></div>
+
+    <script>
+        // Mock VoiceRecorder class (simplified version for testing)
+        class VoiceRecorder {
+            constructor() {
+                this.mediaRecorder = null;
+                this.audioChunks = [];
+                this.audioBlob = null;
+                this.audioUrl = null;
+                this.isRecording = false;
+                this.recordingStartTime = null;
+                this.timerInterval = null;
+
+                this.initializeElements();
+                this.bindEvents();
+            }
+
+            initializeElements() {
+                this.startBtn = document.getElementById('startRecording');
+                this.stopBtn = document.getElementById('stopRecording');
+                this.playBtn = document.getElementById('playRecording');
+                this.clearBtn = document.getElementById('clearRecording');
+                this.transcribeBtn = document.getElementById('transcribeBtn');
+                this.statusDiv = document.getElementById('recordingStatus');
+                this.statusText = document.getElementById('statusText');
+                this.timerSpan = document.getElementById('recordingTimer');
+                this.audioPlayer = document.getElementById('audioPlayer');
+                this.audioPlayerContainer = document.getElementById('audioPlayerContainer');
+                this.transcriptionSection = document.getElementById('transcriptionSection');
+                this.transcriptionLoading = document.getElementById('transcriptionLoading');
+                this.transcriptTextarea = document.getElementById('transcript');
+                this.recorderContainer = document.querySelector('.voice-recorder-container');
+            }
+
+            bindEvents() {
+                this.startBtn.addEventListener('click', () => this.startRecording());
+                this.stopBtn.addEventListener('click', () => this.stopRecording());
+                this.playBtn.addEventListener('click', () => this.playRecording());
+                this.clearBtn.addEventListener('click', () => this.clearRecording());
+                this.transcribeBtn.addEventListener('click', () => this.transcribeAudio());
+            }
+
+            // Mock methods for testing
+            async startRecording() {
+                this.isRecording = true;
+                this.recordingStartTime = Date.now();
+                this.updateUI();
+            }
+
+            stopRecording() {
+                this.isRecording = false;
+                this.updateUI();
+                // Mock audio blob creation
+                this.audioBlob = new Blob(['fake audio data'], { type: 'audio/webm' });
+                this.showAudioPlayer();
+                this.showTranscriptionSection();
+            }
+
+            playRecording() {
+                // Mock play functionality
+                return true;
+            }
+
+            clearRecording() {
+                this.audioChunks = [];
+                this.audioBlob = null;
+                this.transcriptTextarea.value = '';
+                this.transcriptTextarea.className = 'form-control';
+                this.hideAudioPlayer();
+                this.hideTranscriptionSection();
+                this.updateUI();
+            }
+
+            async transcribeAudio() {
+                if (!this.audioBlob) {
+                    throw new Error('No audio recording found');
+                }
+
+                this.showTranscriptionLoading();
+
+                // Mock API call
+                try {
+                    const mockResponse = {
+                        success: true,
+                        transcript: "**Chief Complaint:**\n• Acute tonsillitis\n\n**Assessment:**\n• Patient diagnosed with acute tonsillitis"
+                    };
+
+                    this.transcriptTextarea.value = mockResponse.transcript;
+                    this.showTranscriptionSuccess();
+
+                    return mockResponse;
+                } catch (error) {
+                    this.hideTranscriptionLoading();
+                    throw error;
+                }
+            }
+
+            updateUI() {
+                // Mock UI updates
+                this.startBtn.style.display = this.isRecording ? 'none' : 'inline-block';
+                this.stopBtn.style.display = this.isRecording ? 'inline-block' : 'none';
+            }
+
+            showAudioPlayer() {
+                this.audioPlayerContainer.style.display = 'block';
+            }
+
+            hideAudioPlayer() {
+                this.audioPlayerContainer.style.display = 'none';
+            }
+
+            showTranscriptionSection() {
+                this.transcriptionSection.style.display = 'block';
+            }
+
+            hideTranscriptionSection() {
+                this.transcriptionSection.style.display = 'none';
+            }
+
+            showTranscriptionLoading() {
+                this.transcriptionLoading.style.display = 'block';
+                this.transcribeBtn.disabled = true;
+                this.transcriptTextarea.className = 'form-control transcription-processing';
+            }
+
+            hideTranscriptionLoading() {
+                this.transcriptionLoading.style.display = 'none';
+                this.transcribeBtn.disabled = false;
+                this.transcriptTextarea.className = 'form-control transcription-enhanced';
+            }
+
+            showTranscriptionSuccess() {
+                this.hideTranscriptionLoading();
+
+                const successDiv = document.createElement('div');
+                successDiv.className = 'alert alert-success alert-dismissible fade show mt-2';
+                successDiv.innerHTML = `
+                    <strong>Success!</strong> Audio transcribed and formatted with medical structure.
+                `;
+
+                const labelDiv = this.transcriptionSection.querySelector('.d-flex') || this.transcriptionSection;
+                if (labelDiv.parentNode) {
+                    labelDiv.parentNode.insertBefore(successDiv, labelDiv.nextSibling);
+                }
+
+                setTimeout(() => {
+                    if (successDiv.parentNode) {
+                        successDiv.remove();
+                    }
+                }, 5000);
+            }
+        }
+
+        // Test Suite
+        class VoiceRecorderTestSuite {
+            constructor() {
+                this.tests = [];
+                this.results = [];
+            }
+
+            addTest(name, testFunction) {
+                this.tests.push({ name, testFunction });
+            }
+
+            async runTests() {
+                const resultsDiv = document.getElementById('testResults');
+                resultsDiv.innerHTML = '<h2>Test Results</h2>';
+
+                for (const test of this.tests) {
+                    try {
+                        await test.testFunction();
+                        this.results.push({ name: test.name, passed: true, error: null });
+                        this.displayResult(test.name, true, null);
+                    } catch (error) {
+                        this.results.push({ name: test.name, passed: false, error: error.message });
+                        this.displayResult(test.name, false, error.message);
+                    }
+                }
+
+                this.displaySummary();
+            }
+
+            displayResult(testName, passed, error) {
+                const resultsDiv = document.getElementById('testResults');
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `test-result ${passed ? 'test-pass' : 'test-fail'}`;
+                resultDiv.innerHTML = `
+                    <strong>${passed ? '✓' : '✗'} ${testName}</strong>
+                    ${error ? `<br><small>Error: ${error}</small>` : ''}
+                `;
+                resultsDiv.appendChild(resultDiv);
+            }
+
+            displaySummary() {
+                const passed = this.results.filter(r => r.passed).length;
+                const total = this.results.length;
+                const resultsDiv = document.getElementById('testResults');
+
+                const summaryDiv = document.createElement('div');
+                summaryDiv.className = `test-result ${passed === total ? 'test-pass' : 'test-fail'}`;
+                summaryDiv.innerHTML = `<strong>Summary: ${passed}/${total} tests passed</strong>`;
+                resultsDiv.appendChild(summaryDiv);
+            }
+        }
+
+        // Initialize test suite
+        const testSuite = new VoiceRecorderTestSuite();
+
+        // Test: VoiceRecorder can be instantiated
+        testSuite.addTest('VoiceRecorder can be instantiated', async () => {
+            const recorder = new VoiceRecorder();
+            if (!recorder) throw new Error('VoiceRecorder not instantiated');
+            if (typeof recorder.startRecording !== 'function') throw new Error('startRecording method missing');
+        });
+
+        // Test: Elements are properly initialized
+        testSuite.addTest('Elements are properly initialized', async () => {
+            const recorder = new VoiceRecorder();
+            if (!recorder.startBtn) throw new Error('Start button not found');
+            if (!recorder.transcriptTextarea) throw new Error('Transcript textarea not found');
+            if (!recorder.transcriptionSection) throw new Error('Transcription section not found');
+        });
+
+        // Test: Recording state management
+        testSuite.addTest('Recording state management works', async () => {
+            const recorder = new VoiceRecorder();
+
+            // Initially not recording
+            if (recorder.isRecording) throw new Error('Should not be recording initially');
+
+            // Start recording
+            await recorder.startRecording();
+            if (!recorder.isRecording) throw new Error('Should be recording after start');
+
+            // Stop recording
+            recorder.stopRecording();
+            if (recorder.isRecording) throw new Error('Should not be recording after stop');
+        });
+
+        // Test: UI updates correctly during recording
+        testSuite.addTest('UI updates correctly during recording', async () => {
+            const recorder = new VoiceRecorder();
+
+            // Check initial state
+            if (recorder.startBtn.style.display === 'none') throw new Error('Start button should be visible initially');
+
+            // Start recording
+            await recorder.startRecording();
+            if (recorder.startBtn.style.display !== 'none') throw new Error('Start button should be hidden during recording');
+            if (recorder.stopBtn.style.display === 'none') throw new Error('Stop button should be visible during recording');
+
+            // Stop recording
+            recorder.stopRecording();
+            if (recorder.startBtn.style.display === 'none') throw new Error('Start button should be visible after stopping');
+        });
+
+        // Test: Transcription process
+        testSuite.addTest('Transcription process works', async () => {
+            const recorder = new VoiceRecorder();
+
+            // Need audio blob for transcription
+            recorder.audioBlob = new Blob(['fake audio'], { type: 'audio/webm' });
+
+            // Test transcription
+            const result = await recorder.transcribeAudio();
+            if (!result.success) throw new Error('Transcription should succeed');
+            if (!result.transcript.includes('Acute tonsillitis')) throw new Error('Transcript should contain medical content');
+            if (!recorder.transcriptTextarea.value) throw new Error('Transcript textarea should be populated');
+        });
+
+        // Test: CSS classes are applied correctly
+        testSuite.addTest('CSS classes are applied correctly', async () => {
+            const recorder = new VoiceRecorder();
+
+            // Test processing state
+            recorder.showTranscriptionLoading();
+            if (!recorder.transcriptTextarea.className.includes('transcription-processing')) {
+                throw new Error('Processing CSS class not applied');
+            }
+
+            // Test enhanced state
+            recorder.hideTranscriptionLoading();
+            if (!recorder.transcriptTextarea.className.includes('transcription-enhanced')) {
+                throw new Error('Enhanced CSS class not applied');
+            }
+        });
+
+        // Test: Clear recording functionality
+        testSuite.addTest('Clear recording functionality works', async () => {
+            const recorder = new VoiceRecorder();
+
+            // Set up some data
+            recorder.audioBlob = new Blob(['fake audio'], { type: 'audio/webm' });
+            recorder.transcriptTextarea.value = 'Test transcript';
+            recorder.transcriptTextarea.className = 'form-control transcription-enhanced';
+
+            // Clear recording
+            recorder.clearRecording();
+
+            // Check everything is cleared
+            if (recorder.audioBlob) throw new Error('Audio blob should be cleared');
+            if (recorder.transcriptTextarea.value) throw new Error('Transcript should be cleared');
+            if (recorder.transcriptTextarea.className !== 'form-control') throw new Error('CSS class should be reset');
+        });
+
+        // Test: Error handling for transcription without audio
+        testSuite.addTest('Error handling for transcription without audio', async () => {
+            const recorder = new VoiceRecorder();
+
+            // Try to transcribe without audio blob
+            try {
+                await recorder.transcribeAudio();
+                throw new Error('Should have thrown an error');
+            } catch (error) {
+                if (!error.message.includes('No audio recording found')) {
+                    throw new Error('Wrong error message: ' + error.message);
+                }
+            }
+        });
+
+        // Test: Success message display
+        testSuite.addTest('Success message display works', async () => {
+            const recorder = new VoiceRecorder();
+
+            // Add a mock div element for the transcription section
+            const mockDiv = document.createElement('div');
+            mockDiv.className = 'd-flex';
+            recorder.transcriptionSection.appendChild(mockDiv);
+
+            // Show success message
+            recorder.showTranscriptionSuccess();
+
+            // Check if success message was added
+            const successMessage = recorder.transcriptionSection.querySelector('.alert-success');
+            if (!successMessage) throw new Error('Success message not displayed');
+            if (!successMessage.innerHTML.includes('Audio transcribed and formatted')) {
+                throw new Error('Success message content incorrect');
+            }
+        });
+
+        // Run all tests when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            testSuite.runTests();
+        });
+    </script>
+</body>
+</html>

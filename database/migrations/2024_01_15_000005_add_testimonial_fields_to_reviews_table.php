@@ -11,21 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('reviews', function (Blueprint $table) {
-            if (!Schema::hasColumn('reviews', 'is_public')) {
-                $table->boolean('is_public')->default(false)->after('comment');
-            }
-            if (!Schema::hasColumn('reviews', 'case_study')) {
-                $table->text('case_study')->nullable()->after('is_public');
-            }
-            if (!Schema::hasColumn('reviews', 'is_anonymous')) {
-                $table->boolean('is_anonymous')->default(false)->after('case_study');
-            }
+        if (Schema::hasTable('reviews')) {
+            Schema::table('reviews', function (Blueprint $table) {
+                if (!Schema::hasColumn('reviews', 'is_public')) {
+                    $table->boolean('is_public')->default(false)->after('comment');
+                }
+                if (!Schema::hasColumn('reviews', 'case_study')) {
+                    $table->text('case_study')->nullable()->after('is_public');
+                }
+                if (!Schema::hasColumn('reviews', 'is_anonymous')) {
+                    $table->boolean('is_anonymous')->default(false)->after('case_study');
+                }
 
-            if (!Schema::hasIndex('reviews', ['doctor_id', 'is_public'])) {
-                $table->index(['doctor_id', 'is_public']);
-            }
-        });
+                if (!Schema::hasIndex('reviews', ['doctor_id', 'is_public'])) {
+                    $table->index(['doctor_id', 'is_public']);
+                }
+            });
+        }
     }
 
     /**

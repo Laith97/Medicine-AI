@@ -382,7 +382,7 @@ public function getMonthlyInvoices(int $month = null, int $year = null)
 {
     $month = $month ?: now()->month;
     $year = $year ?: now()->year;
-    
+
     return $this->stripeInvoices()
         ->where('invoice_type', 'monthly')
         ->where('invoice_month', $month)
@@ -498,6 +498,22 @@ public function getSubscriptionEndDate(): ?\Carbon\Carbon
 {
     $setting = $this->monthlyInvoiceSetting;
     return $setting ? $setting->subscription_ends_at : null;
+}
+
+/**
+ * Doctor notes relationship (for doctors)
+ */
+public function doctorNotes()
+{
+    return $this->hasMany(DoctorNote::class, 'doctor_id');
+}
+
+/**
+ * Patient notes relationship (for patients - notes about them)
+ */
+public function patientNotes()
+{
+    return $this->hasMany(DoctorNote::class, 'patient_id');
 }
 
 }
