@@ -60,7 +60,7 @@
                                 @if($review->is_anonymous)
                                     <i class="fas fa-user-secret me-1"></i>Posted anonymously
                                 @else
-                                    <i class="fas fa-user me-1"></i>Posted by {{ $review->patient->name }}
+                                    <i class="fas fa-user me-1"></i>Posted by {{ $review->patient->name ?? 'Unknown Patient' }}
                                 @endif
                             </span>
                             <span>{{ $review->created_at->format('M j, Y') }}</span>

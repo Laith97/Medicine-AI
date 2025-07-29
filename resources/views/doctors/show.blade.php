@@ -360,7 +360,7 @@
                                         <p class="mb-2">{{ $review->comment }}</p>
                                     @endif
                                     <small class="text-muted">
-                                        - {{ $review->is_anonymous ? 'Anonymous Patient' : $review->patient->name }}
+                                        - {{ $review->is_anonymous ? 'Anonymous Patient' : ($review->patient->name ?? 'Unknown Patient') }}
                                     </small>
                                 </div>
                             @endforeach

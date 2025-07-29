@@ -104,7 +104,7 @@
                         <div class="mb-3">
                             <strong>Related Appointment:</strong>
                             <div class="mt-1">
-                                <div>{{ $note->appointment->patient->name }}</div>
+                                <div>{{ $note->appointment->patient->name ?? 'Unknown Patient' }}</div>
                                 <small class="text-muted">{{ $note->appointment->appointment_date->format('M j, Y g:i A') }}</small>
                             </div>
                         </div>

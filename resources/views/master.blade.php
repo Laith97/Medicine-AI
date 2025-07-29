@@ -172,35 +172,35 @@
             left: 50% !important;
             transform: translateX(-50%) translateY(-8px) !important;
             z-index: 9999 !important;
-            
+
             /* Dimensions */
             min-width: 240px !important;
             width: max-content !important;
             max-width: 280px !important;
-            
+
             /* Modern Glass Design */
             background: rgba(255, 255, 255, 0.95) !important;
             backdrop-filter: blur(20px) !important;
             -webkit-backdrop-filter: blur(20px) !important;
-            
+
             /* Advanced Shadow & Border */
             border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            box-shadow: 
+            box-shadow:
                 0 20px 40px rgba(0, 0, 0, 0.1),
                 0 8px 16px rgba(0, 0, 0, 0.08),
                 inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
-            
+
             /* Modern Rounded Design */
             border-radius: 16px !important;
-            
+
             /* Spacing */
             padding: 12px 0 !important;
             margin: 0 !important;
-            
+
             /* Animation */
             opacity: 0 !important;
             visibility: hidden !important;
-            
+
             /* List Reset */
             list-style: none !important;
         }
@@ -261,19 +261,19 @@
             align-items: center !important;
             padding: 12px 20px !important;
             margin: 0 8px !important;
-            
+
             /* Typography */
             font-size: 14px !important;
             font-weight: 500 !important;
             color: #374151 !important;
             text-decoration: none !important;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-            
+
             /* Modern Styling */
             border-radius: 10px !important;
             background: transparent !important;
             border: none !important;
-            
+
             /* Smooth Transitions */
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
             position: relative !important;
@@ -320,7 +320,7 @@
             margin-left: 6px !important;
             opacity: 0.7 !important;
         }
-        
+
         .primary-menu .menu-item:hover .fa-chevron-down {
             transform: rotate(180deg) !important;
             opacity: 1 !important;
@@ -393,7 +393,7 @@
                 padding: 0.5rem 0.75rem;
                 font-size: 14px;
             }
-            
+
             .primary-menu .sub-menu-container {
                 min-width: 220px !important;
                 max-width: 260px !important;
@@ -405,7 +405,7 @@
                 padding: 0.5rem 0.5rem;
                 font-size: 13px;
             }
-            
+
             .primary-menu .sub-menu-container {
                 min-width: 200px !important;
                 max-width: 240px !important;
@@ -418,7 +418,7 @@
                 font-size: 14px;
                 padding: 0.75rem 1rem;
             }
-            
+
             /* Mobile: Convert to accordion style */
             .primary-menu .sub-menu-container {
                 position: static !important;
@@ -433,18 +433,18 @@
                 margin: 8px 0 !important;
                 padding: 8px 0 !important;
             }
-            
+
             .primary-menu .sub-menu-container::before {
                 display: none !important;
             }
-            
+
             .primary-menu .sub-menu-container .menu-link {
                 margin: 0 4px !important;
                 padding: 10px 16px !important;
                 border-left: 3px solid transparent !important;
                 border-radius: 8px !important;
             }
-            
+
             .primary-menu .sub-menu-container .menu-item.current .menu-link {
                 border-left-color: #DE6262 !important;
                 background: linear-gradient(135deg, rgba(222, 98, 98, 0.15), rgba(222, 98, 98, 0.08)) !important;
@@ -591,7 +591,7 @@
                                         <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
                                             <a class="menu-link" href="{{ route('cases') }}"><div>Patient Cases</div></a>
                                         </li>
-                                        
+
                                         <!-- Additional Features Dropdown -->
                                         <li class="menu-item {{ request()->routeIs('doctor.*') || request()->routeIs('invoices.*') || request()->routeIs('subscription.*') || request()->routeIs('settings') ? 'current' : '' }}">
                                             <a class="menu-link" href="#"><div>More <i class="fas fa-chevron-down"></i></div></a>
@@ -618,6 +618,9 @@
                                                 </li>
                                                 <li class="menu-item {{ request()->routeIs('doctor.blog.*') ? 'current' : '' }}">
                                                     <a class="menu-link" href="{{ route('doctor.blog.index') }}"><div>Blog Posts</div></a>
+                                                </li>
+                                                <li class="menu-item {{ request()->routeIs('doctor.notes.index') ? 'current' : '' }}">
+                                                    <a class="menu-link" href="{{ route('doctor.notes.index') }}"><div>My Notes</div></a>
                                                 </li>
                                             </ul>
                                         </li>

@@ -71,7 +71,7 @@
                             <option value="">No specific appointment</option>
                             @foreach($appointments as $appointment)
                                 <option value="{{ $appointment->id }}">
-                                    {{ $appointment->patient->name }} - {{ $appointment->appointment_date->format('M j, Y g:i A') }}
+                                    {{ $appointment->patient->name ?? 'Unknown Patient' }} - {{ $appointment->appointment_date->format('M j, Y g:i A') }}
                                 </option>
                             @endforeach
                         </select>
@@ -123,17 +123,23 @@
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <label class="form-label fw-bold mb-0">Transcription</label>
                                 <button type="button" id="transcribeBtn" class="btn btn-sm btn-primary">
-                                    <i class="fas fa-language me-1"></i>Transcribe Audio
+                                    <i class="fas fa-language me-1"></i>Transcribe & Format
                                 </button>
                             </div>
                             <div id="transcriptionLoading" class="text-center py-3" style="display: none;">
                                 <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Transcribing...</span>
+                                    <span class="visually-hidden">Processing...</span>
                                 </div>
-                                <div class="mt-2">Transcribing audio...</div>
+                                <div class="mt-2">
+                                    <div class="fw-bold">Processing audio transcription...</div>
+                                    <small class="text-muted">Auto-detecting language and formatting medical content</small>
+                                </div>
                             </div>
-                            <textarea class="form-control" id="transcript" name="transcript" rows="6" placeholder="Transcription will appear here..."></textarea>
-                            <div class="form-text">You can edit the transcription before saving</div>
+                            <textarea class="form-control" id="transcript" name="transcript" rows="8" placeholder="Formatted medical transcription will appear here with organized sections and bullet points..."></textarea>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                The transcription will be automatically formatted with medical sections and preserve the original language. You can edit it before saving.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -188,6 +194,16 @@
 #recordingTimer {
     font-family: 'Courier New', monospace;
     font-weight: bold;
+}
+
+.transcription-enhanced {
+    border-left: 4px solid #28a745;
+    background-color: #f8fff9;
+}
+
+.transcription-processing {
+    border-left: 4px solid #007bff;
+    background-color: #f8f9ff;
 }
 </style>
 @endpush
@@ -288,6 +304,7 @@ class VoiceRecorder {
         }
         this.audioPlayer.src = '';
         this.transcriptTextarea.value = '';
+        this.transcriptTextarea.className = 'form-control'; // Reset styling
         this.hideAudioPlayer();
         this.hideTranscriptionSection();
         this.updateUI();
@@ -306,6 +323,12 @@ class VoiceRecorder {
             reader.onload = async () => {
                 const base64Audio = reader.result;
 
+                // Validate base64 audio data
+                if (!base64Audio || base64Audio.length < 100) {
+                    alert('Invalid audio data');
+                    return;
+                }
+
                 const response = await fetch('{{ route("doctor.notes.transcribe-audio") }}', {
                     method: 'POST',
                     headers: {
@@ -322,7 +345,11 @@ class VoiceRecorder {
                 if (data.success) {
                     this.transcriptTextarea.value = data.transcript;
                     document.getElementById('note_text').value = data.transcript;
+
+                    // Show success message
+                    this.showTranscriptionSuccess();
                 } else {
+                    console.error('Transcription failed:', data);
                     alert('Transcription failed: ' + (data.message || 'Unknown error'));
                 }
             };
@@ -331,7 +358,7 @@ class VoiceRecorder {
 
         } catch (error) {
             console.error('Transcription error:', error);
-            alert('Transcription failed');
+            alert('Transcription failed: ' + error.message);
         } finally {
             this.hideTranscriptionLoading();
         }
@@ -401,11 +428,13 @@ class VoiceRecorder {
     showTranscriptionLoading() {
         this.transcriptionLoading.style.display = 'block';
         this.transcribeBtn.disabled = true;
+        this.transcriptTextarea.className = 'form-control transcription-processing';
     }
 
     hideTranscriptionLoading() {
         this.transcriptionLoading.style.display = 'none';
         this.transcribeBtn.disabled = false;
+        this.transcriptTextarea.className = 'form-control transcription-enhanced';
     }
 
     getAudioData() {
@@ -417,6 +446,31 @@ class VoiceRecorder {
             });
         }
         return null;
+    }
+
+    showTranscriptionSuccess() {
+        // Hide loading indicator
+        this.hideTranscriptionLoading();
+
+        // Show a brief success message
+        const successDiv = document.createElement('div');
+        successDiv.className = 'alert alert-success alert-dismissible fade show mt-2';
+        successDiv.innerHTML = `
+            <i class="fas fa-check-circle me-2"></i>
+            <strong>Success!</strong> Audio transcribed and formatted with medical structure.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        // Insert after the transcription section label
+        const labelDiv = this.transcriptionSection.querySelector('.d-flex');
+        labelDiv.parentNode.insertBefore(successDiv, labelDiv.nextSibling);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (successDiv.parentNode) {
+                successDiv.remove();
+            }
+        }, 5000);
     }
 }
 
@@ -457,13 +511,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Validate required fields
         if (noteType === 'text') {
             const noteText = formData.get('note_text');
-            if (!noteText.trim()) {
+            if (!noteText || !noteText.trim()) {
                 alert('Please enter note content');
                 return;
             }
         } else if (noteType === 'voice') {
             const transcript = formData.get('transcript');
-            if (!transcript.trim()) {
+            if (!transcript || !transcript.trim()) {
                 alert('Please record audio and transcribe it first');
                 return;
             }
@@ -471,6 +525,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add audio data
             const audioData = await voiceRecorder.getAudioData();
             if (audioData) {
+                // Validate audio data
+                if (audioData.length < 100) {
+                    alert('Invalid audio data');
+                    return;
+                }
                 formData.append('audio_file', audioData);
             }
         }
@@ -478,7 +537,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Convert FormData to JSON
         const jsonData = {};
         for (let [key, value] of formData.entries()) {
-            jsonData[key] = value;
+            // Skip the audio_file if it's already been added as a blob
+            if (key !== 'audio_file') {
+                jsonData[key] = value;
+            }
+        }
+
+        // Add audio data to JSON if it exists
+        if (formData.has('audio_file')) {
+            jsonData.audio_file = formData.get('audio_file');
         }
 
         // Submit form
@@ -492,6 +559,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
                 body: JSON.stringify(jsonData)
@@ -502,11 +570,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 window.location.href = '{{ route("doctor.notes.index") }}';
             } else {
+                console.error('Error saving note:', data);
                 alert('Error saving note: ' + (data.message || 'Unknown error'));
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Error saving note');
+            alert('Error saving note: ' + error.message);
         } finally {
             saveBtn.innerHTML = originalText;
             saveBtn.disabled = false;
