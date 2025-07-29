@@ -10,6 +10,9 @@
                 <h1 class="h3 mb-0">Chat Management</h1>
                 <div class="d-flex align-items-center">
                     <span id="unread-count" class="badge bg-danger me-3" style="display: none;">0 unread</span>
+                    <a href="{{ route('doctor.chat.settings') }}" class="btn btn-outline-info btn-sm me-2">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
                     <button id="mark-all-read-btn" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-check-double"></i> Mark All Read
                     </button>

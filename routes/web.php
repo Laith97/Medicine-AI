@@ -274,10 +274,12 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
     // Chat Management
     Route::prefix('chat')->name('chat.')->group(function () {
         Route::get('/', [ChatController::class, 'index'])->name('index');
-        Route::get('/{sessionId}', [ChatController::class, 'show'])->name('show');
-        Route::post('/{sessionId}/send', [ChatController::class, 'sendMessage'])->name('send');
+        Route::get('/settings', [ChatController::class, 'settings'])->name('settings');
+        Route::post('/settings', [ChatController::class, 'updateSettings'])->name('update-settings');
         Route::get('/unread/count', [ChatController::class, 'getUnreadCount'])->name('unread-count');
         Route::post('/mark-all-read', [ChatController::class, 'markAllAsRead'])->name('mark-all-read');
+        Route::get('/{sessionId}', [ChatController::class, 'show'])->name('show');
+        Route::post('/{sessionId}/send', [ChatController::class, 'sendMessage'])->name('send');
     });
 
     // Testimonials Management
@@ -303,6 +305,7 @@ Route::get('/doctor/{username}/blog/{slug}', [PublicLandingPageController::class
 Route::post('/doctor/{username}/chat/init', [PublicChatController::class, 'initializeChat'])->name('doctor.chat.init');
 Route::post('/doctor/{username}/chat/send', [PublicChatController::class, 'sendMessage'])->name('doctor.chat.send');
 Route::get('/doctor/{username}/chat/history', [PublicChatController::class, 'getChatHistory'])->name('doctor.chat.history');
+Route::get('/doctor/{username}/chat/check-new', [PublicChatController::class, 'checkNewMessages'])->name('doctor.chat.check-new');
 
 // Public Testimonials API
 Route::get('/doctor/{username}/testimonials', [TestimonialController::class, 'getPublicTestimonials'])->name('doctor.testimonials.public');

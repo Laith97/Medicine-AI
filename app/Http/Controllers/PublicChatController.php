@@ -5,10 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Doctor;
 use App\Models\ChatSession;
 use App\Models\ChatMessage;
+use App\Services\ChatService;
 use Illuminate\Http\Request;
 
 class PublicChatController extends Controller
 {
+    protected $chatService;
+
+    public function __construct(ChatService $chatService)
+    {
+        $this->chatService = $chatService;
+    }
+
     public function initializeChat(Request $request, $username)
     {
         $doctor = Doctor::whereHas('landingPage', function ($query) use ($username) {
@@ -24,14 +32,14 @@ class PublicChatController extends Controller
 
         // Create welcome message if this is a new session
         if ($session->messages()->count() === 0) {
-            $welcomeMessage = $this->generateWelcomeMessage($doctor);
+            $welcomeMessage = $this->chatService->generateWelcomeMessage($doctor);
             ChatMessage::createBotMessage($session->id, $welcomeMessage);
         }
 
         return response()->json([
             'success' => true,
             'session_id' => $session->session_id,
-            'welcome_message' => $this->generateWelcomeMessage($doctor)
+            'welcome_message' => $this->chatService->generateWelcomeMessage($doctor)
         ]);
     }
 
@@ -71,13 +79,18 @@ class PublicChatController extends Controller
         // Update session activity
         $session->updateActivity();
 
-        // Generate bot response
-        $botResponse = $this->generateBotResponse($request->message, $doctor);
-        ChatMessage::createBotMessage($session->id, $botResponse);
+        // Detect language and generate bot response
+        $language = $this->chatService->detectLanguage($request->message);
+        $botResponse = $this->chatService->generateBotResponse($request->message, $doctor, $language);
+
+        // Only create bot response if AI is enabled
+        if ($doctor->ai_chat_enabled) {
+            ChatMessage::createBotMessage($session->id, $botResponse);
+        }
 
         return response()->json([
             'success' => true,
-            'bot_response' => $botResponse,
+            'bot_response' => $doctor->ai_chat_enabled ? $botResponse : null,
             'formatted_time' => now()->format('g:i A')
         ]);
     }
@@ -113,60 +126,41 @@ class PublicChatController extends Controller
         ]);
     }
 
-    private function generateWelcomeMessage($doctor)
+    public function checkNewMessages(Request $request, $username)
     {
-        $messages = [
-            "Hello! I'm Dr. {$doctor->user->name}'s AI assistant. How can I help you today?",
-            "Welcome! I'm here to help answer your questions about Dr. {$doctor->user->name}'s services. What would you like to know?",
-            "Hi there! I'm Dr. {$doctor->user->name}'s virtual assistant. Feel free to ask me about appointments, services, or any health-related questions.",
-        ];
+        $request->validate([
+            'session_id' => 'required|string',
+            'last_message_id' => 'nullable|integer',
+        ]);
 
-        return $messages[array_rand($messages)];
-    }
+        $doctor = Doctor::whereHas('landingPage', function ($query) use ($username) {
+            $query->where('username', $username);
+        })->firstOrFail();
 
-    private function generateBotResponse($message, $doctor)
-    {
-        $message = strtolower($message);
+        $session = ChatSession::where('session_id', $request->session_id)
+                             ->where('doctor_id', $doctor->id)
+                             ->firstOrFail();
 
-        // Simple keyword-based responses
-        if (str_contains($message, 'appointment') || str_contains($message, 'book') || str_contains($message, 'schedule')) {
-            return "I'd be happy to help you book an appointment with Dr. {$doctor->user->name}. You can schedule directly through this page or call our office. What type of consultation are you looking for?";
+        $query = $session->messages()
+                        ->where('sender_type', 'doctor')
+                        ->orderBy('created_at');
+
+        if ($request->last_message_id) {
+            $query->where('id', '>', $request->last_message_id);
         }
 
-        if (str_contains($message, 'price') || str_contains($message, 'cost') || str_contains($message, 'fee')) {
-            $fee = $doctor->consultation_fee_dollars ? "$" . $doctor->consultation_fee_dollars : "varies";
-            return "Dr. {$doctor->user->name}'s consultation fee is {$fee}. This may vary depending on the type of consultation. Would you like to know more about our services?";
-        }
+        $newMessages = $query->get()->map(function ($message) {
+            return [
+                'id' => $message->id,
+                'message' => $message->message,
+                'sender_type' => $message->sender_type,
+                'created_at' => $message->created_at->format('g:i A'),
+            ];
+        });
 
-        if (str_contains($message, 'location') || str_contains($message, 'address') || str_contains($message, 'where')) {
-            $location = $doctor->city ? "in {$doctor->city}" : "at our clinic";
-            return "Dr. {$doctor->user->name} practices {$location}. For the exact address and directions, please check the contact information on this page.";
-        }
-
-        if (str_contains($message, 'hours') || str_contains($message, 'time') || str_contains($message, 'open')) {
-            return "Our office hours vary by day. You can see available appointment slots on this page, or contact us directly for more information about our schedule.";
-        }
-
-        if (str_contains($message, 'insurance') || str_contains($message, 'coverage')) {
-            return "For insurance coverage and payment options, please contact our office directly. We'll be happy to verify your benefits and discuss payment plans if needed.";
-        }
-
-        if (str_contains($message, 'emergency') || str_contains($message, 'urgent')) {
-            return "For medical emergencies, please call 911 or go to your nearest emergency room immediately. For urgent but non-emergency concerns, please contact our office directly.";
-        }
-
-        if (str_contains($message, 'specialty') || str_contains($message, 'specializes')) {
-            $specialty = $doctor->specialty ? $doctor->specialty->name : "general practice";
-            return "Dr. {$doctor->user->name} specializes in {$specialty}. Would you like to know more about the specific services we offer?";
-        }
-
-        // Default responses
-        $defaultResponses = [
-            "Thank you for your question! For specific medical advice or detailed information, I recommend scheduling a consultation with Dr. {$doctor->user->name}. Is there anything else I can help you with?",
-            "That's a great question! Dr. {$doctor->user->name} would be the best person to provide you with detailed information about that. Would you like to book an appointment?",
-            "I understand your concern. For personalized medical advice, please consider scheduling a consultation with Dr. {$doctor->user->name}. Can I help you with anything else?",
-        ];
-
-        return $defaultResponses[array_rand($defaultResponses)];
+        return response()->json([
+            'success' => true,
+            'new_messages' => $newMessages
+        ]);
     }
 }

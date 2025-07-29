@@ -53,13 +53,16 @@ class LandingPageController extends Controller
             'section_visibility' => 'nullable|array',
             'custom_domain' => 'nullable|string|max:255|regex:/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/',
             'subdomain_enabled' => 'boolean',
+            'default_language' => 'nullable|string|in:en,ar',
+            'translations' => 'nullable|array',
         ]);
 
         $landingPage = $doctor->landingPage ?: new DoctorLandingPage(['doctor_id' => $doctor->id]);
 
         $landingPage->fill($request->only([
             'username', 'template', 'page_title', 'page_description',
-            'tagline', 'about_text', 'custom_domain', 'subdomain_enabled'
+            'tagline', 'about_text', 'custom_domain', 'subdomain_enabled',
+            'default_language'
         ]));
 
         // Handle colors
@@ -70,6 +73,11 @@ class LandingPageController extends Controller
         // Handle section visibility
         if ($request->has('section_visibility')) {
             $landingPage->section_visibility = $request->section_visibility;
+        }
+
+        // Handle translations
+        if ($request->has('translations')) {
+            $landingPage->translations = $request->translations;
         }
 
         $landingPage->save();
@@ -143,7 +151,7 @@ class LandingPageController extends Controller
     /**
      * Preview the landing page
      */
-    public function preview($username)
+    public function preview($username, Request $request)
     {
         $landingPage = DoctorLandingPage::with(['doctor.user', 'doctor.specialty'])
             ->byUsername($username)
@@ -159,7 +167,10 @@ class LandingPageController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        return $this->renderLandingPage($landingPage, true);
+        // Get language from request or use default
+        $language = $request->get('lang', $landingPage->default_language ?: 'en');
+
+        return $this->renderLandingPage($landingPage, true, $language);
     }
 
     /**
@@ -203,10 +214,10 @@ class LandingPageController extends Controller
     /**
      * Render landing page with template
      */
-    private function renderLandingPage($landingPage, $isPreview = false)
+    private function renderLandingPage($landingPage, $isPreview = false, $language = 'en')
     {
         $doctor = $landingPage->doctor;
-        $reviews = $doctor->approvedReviews()->with('patient')->latest()->limit(6)->get();
+        $reviews = $doctor->publicReviews()->with('patient')->latest()->limit(6)->get();
 
         // Get published blog posts if health tips section is enabled
         $blogPosts = collect();
@@ -227,8 +238,11 @@ class LandingPageController extends Controller
             }
         }
 
+        // Get translated content
+        $translatedContent = $landingPage->getTranslatedContent($language);
+
         $templateView = 'doctor.landing-page.templates.' . $landingPage->template;
 
-        return view($templateView, compact('landingPage', 'doctor', 'reviews', 'availableSlots', 'blogPosts', 'isPreview'));
+        return view($templateView, compact('landingPage', 'doctor', 'reviews', 'availableSlots', 'blogPosts', 'isPreview', 'language', 'translatedContent'));
     }
 }

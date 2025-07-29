@@ -616,6 +616,12 @@
                                                 <li class="menu-item {{ request()->routeIs('doctor.reviews.*') ? 'current' : '' }}">
                                                     <a class="menu-link" href="{{ route('doctor.reviews.index') }}"><div>Reviews</div></a>
                                                 </li>
+                                                <li class="menu-item {{ request()->routeIs('doctor.chat.*') ? 'current' : '' }}">
+                                                    <a class="menu-link" href="{{ route('doctor.chat.index') }}"><div>Chat Messages</div></a>
+                                                </li>
+                                                <li class="menu-item {{ request()->routeIs('doctor.landing-page*') ? 'current' : '' }}">
+                                                    <a class="menu-link" href="{{ route('doctor.landing-page.index') }}"><div>Landing Page</div></a>
+                                                </li>
                                                 <li class="menu-item {{ request()->routeIs('doctor.blog.*') ? 'current' : '' }}">
                                                     <a class="menu-link" href="{{ route('doctor.blog.index') }}"><div>Blog Posts</div></a>
                                                 </li>
