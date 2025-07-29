@@ -200,6 +200,7 @@
                             <th>Email</th>
                             <th>Phone</th>
                             <th>Specialty</th>
+                            <th>Doctor Status</th>
                             <th>Monthly Amount</th>
                             <th>Cost Limit</th>
                             <th>Joined</th>
@@ -240,6 +241,21 @@
                                             <span class="text-muted">Not set</span>
                                         @endif
                                     </span>
+                                </td>
+                                <td>
+                                    @if($user->doctor)
+                                        @if($user->doctor->is_active)
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i>Active
+                                            </span>
+                                        @else
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-x-circle me-1"></i>Inactive
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span class="badge bg-secondary">No Doctor Profile</span>
+                                    @endif
                                 </td>
                                 <td>
                                     @if($user->monthlyInvoiceSetting && $user->monthlyInvoiceSetting->is_active)
@@ -286,6 +302,17 @@
                                             <i class="bi bi-pencil"></i>
                                         </a>
 
+                                        @if($user->doctor)
+                                            <form action="{{ route('admin.users.toggle-doctor-status', $user) }}" method="POST" class="d-inline"
+                                                  onsubmit="return confirm('Are you sure you want to {{ $user->doctor->is_active ? 'deactivate' : 'activate' }} this doctor account?')">
+                                                @csrf
+                                                <button type="submit" class="action-btn btn {{ $user->doctor->is_active ? 'btn-outline-secondary' : 'btn-outline-success' }} btn-sm" 
+                                                        title="{{ $user->doctor->is_active ? 'Deactivate' : 'Activate' }} Doctor">
+                                                    <i class="bi {{ $user->doctor->is_active ? 'bi-pause-circle' : 'bi-play-circle' }}"></i>
+                                                </button>
+                                            </form>
+                                        @endif
+
                                         @if($user->id !== auth()->id())
                                             <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline"
                                                   onsubmit="return confirm('Are you sure you want to delete this user?')">
@@ -303,7 +330,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-5">
+                                <td colspan="10" class="text-center py-5">
                                     <i class="bi bi-people display-4 text-muted"></i>
                                     <p class="text-muted mt-2">No users found.</p>
                                 </td>

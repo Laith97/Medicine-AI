@@ -10,7 +10,7 @@ use Illuminate\Notifications\Notification;
 use NotificationChannels\Twilio\TwilioChannel;
 use NotificationChannels\Twilio\TwilioSmsMessage;
 
-class GracePeriodReminder extends Notification implements ShouldQueue
+class GracePeriodReminder extends Notification
 {
     use Queueable;
 
