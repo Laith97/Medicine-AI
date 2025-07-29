@@ -117,4 +117,35 @@ class ChatController extends Controller
             'message' => 'All messages marked as read'
         ]);
     }
+
+    public function settings()
+    {
+
+        $doctor = auth()->user()->doctor;
+
+        return view('doctor.chat.settings', compact('doctor'));
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $request->validate([
+            'ai_chat_enabled' => 'boolean',
+            'ai_welcome_message' => 'nullable|string|max:500',
+            'ai_fallback_message' => 'nullable|string|max:500',
+        ]);
+
+        $doctor = auth()->user()->doctor;
+
+        $aiSettings = $doctor->ai_chat_settings ?? [];
+        $aiSettings['welcome_message'] = $request->ai_welcome_message;
+        $aiSettings['fallback_message'] = $request->ai_fallback_message;
+
+        $doctor->update([
+            'ai_chat_enabled' => $request->boolean('ai_chat_enabled'),
+            'ai_chat_settings' => $aiSettings,
+        ]);
+
+        return redirect()->route('doctor.chat.settings')
+                        ->with('success', 'Chat settings updated successfully!');
+    }
 }

@@ -37,6 +37,8 @@ class Doctor extends Model
         'is_verified',
         'verified_at',
         'appointment_type_preferences',
+        'ai_chat_enabled',
+        'ai_chat_settings',
     ];
 
     protected $casts = [
@@ -55,6 +57,8 @@ class Doctor extends Model
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
         'appointment_type_preferences' => 'array',
+        'ai_chat_enabled' => 'boolean',
+        'ai_chat_settings' => 'array',
     ];
 
     /**
@@ -182,7 +186,7 @@ class Doctor extends Model
      */
     public function publicReviews()
     {
-        return $this->hasMany(Review::class)->where('is_public', true)->where('is_approved', true);
+        return $this->hasMany(Review::class)->where('is_approved', true)->verified();
     }
 
     /**
