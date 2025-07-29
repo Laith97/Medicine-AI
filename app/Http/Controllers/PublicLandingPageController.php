@@ -22,7 +22,10 @@ class PublicLandingPageController extends Controller
             abort(404, 'Doctor landing page not found.');
         }
 
-        return $this->renderLandingPage($landingPage, $request);
+        // Get language from request or use default
+        $language = $request->get('lang', $landingPage->default_language ?: 'en');
+
+        return $this->renderLandingPage($landingPage, $request, $language);
     }
 
     /**
@@ -41,7 +44,10 @@ class PublicLandingPageController extends Controller
             abort(404, 'Doctor landing page not found.');
         }
 
-        return $this->renderLandingPage($landingPage, $request);
+        // Get language from request or use default
+        $language = $request->get('lang', $landingPage->default_language ?: 'en');
+
+        return $this->renderLandingPage($landingPage, $request, $language);
     }
 
     /**
@@ -68,13 +74,16 @@ class PublicLandingPageController extends Controller
             abort(404, 'Doctor landing page not found.');
         }
 
-        return $this->renderLandingPage($landingPage, $request);
+        // Get language from request or use default
+        $language = $request->get('lang', $landingPage->default_language ?: 'en');
+
+        return $this->renderLandingPage($landingPage, $request, $language);
     }
 
     /**
      * Render landing page with template
      */
-    private function renderLandingPage($landingPage, Request $request = null)
+    private function renderLandingPage($landingPage, Request $request = null, $language = 'en')
     {
         $doctor = $landingPage->doctor;
 
@@ -113,9 +122,12 @@ class PublicLandingPageController extends Controller
             }
         }
 
+        // Get translated content
+        $translatedContent = $landingPage->getTranslatedContent($language);
+
         $templateView = 'doctor.landing-page.templates.' . $landingPage->template;
 
-        return view($templateView, compact('landingPage', 'doctor', 'reviews', 'availableSlots', 'blogPosts'))
+        return view($templateView, compact('landingPage', 'doctor', 'reviews', 'availableSlots', 'blogPosts', 'language', 'translatedContent'))
             ->with('isPreview', false);
     }
 

@@ -52,6 +52,11 @@
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="language-tab" data-bs-toggle="tab" data-bs-target="#language" type="button" role="tab">
+                                        Language
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
                                     <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab">
                                         Analytics
                                     </button>
@@ -197,6 +202,14 @@
                                                 <div class="text-muted small">Your contact information and location</div>
                                             </label>
                                         </div>
+
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="section_chat_widget" name="section_visibility[chat_widget]" {{ ($landingPage->section_visibility['chat_widget'] ?? true) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="section_chat_widget">
+                                                <strong>Live Chat Widget</strong>
+                                                <div class="text-muted small">Allow visitors to chat with you directly</div>
+                                            </label>
+                                        </div>
                                     </div>
 
                                     <!-- Domain Settings -->
@@ -245,6 +258,105 @@
                                                 <li>Enter your domain above and save</li>
                                                 <li>It may take up to 24 hours for changes to take effect</li>
                                             </ol>
+                                        </div>
+                                    </div>
+
+                                    <!-- Language Settings -->
+                                    <div class="tab-pane fade" id="language" role="tabpanel">
+                                        <div class="mb-3">
+                                            <label for="default_language" class="form-label">Default Language</label>
+                                            <select class="form-select" id="default_language" name="default_language">
+                                                <option value="en" {{ ($landingPage->default_language ?? 'en') === 'en' ? 'selected' : '' }}>English</option>
+                                                <option value="ar" {{ ($landingPage->default_language ?? 'en') === 'ar' ? 'selected' : '' }}>العربية (Arabic)</option>
+                                            </select>
+                                            <div class="form-text">This will be the default language for your landing page.</div>
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <h6>Arabic Translations</h6>
+                                            <p class="text-muted small">Provide Arabic translations for your content. If left empty, the default English content will be used.</p>
+
+                                            <div class="mb-3">
+                                                <label for="ar_page_title" class="form-label">Page Title (Arabic)</label>
+                                                <input type="text" class="form-control" id="ar_page_title" name="translations[ar][page_title]" value="{{ $landingPage->translations['ar']['page_title'] ?? '' }}" maxlength="255">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label for="ar_page_description" class="form-label">Page Description (Arabic)</label>
+                                                <textarea class="form-control" id="ar_page_description" name="translations[ar][page_description]" rows="3" maxlength="500">{{ $landingPage->translations['ar']['page_description'] ?? '' }}</textarea>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label for="ar_tagline" class="form-label">Tagline (Arabic)</label>
+                                                <input type="text" class="form-control" id="ar_tagline" name="translations[ar][tagline]" value="{{ $landingPage->translations['ar']['tagline'] ?? '' }}" maxlength="255">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label for="ar_about_text" class="form-label">About Text (Arabic)</label>
+                                                <textarea class="form-control" id="ar_about_text" name="translations[ar][about_text]" rows="5" maxlength="2000">{{ $landingPage->translations['ar']['about_text'] ?? '' }}</textarea>
+                                            </div>
+
+                                            <h6 class="mt-4 mb-3">Appointment Form Translations</h6>
+
+                                            <div class="mb-3">
+                                                <label for="ar_appointment_title" class="form-label">Appointment Section Title (Arabic)</label>
+                                                <input type="text" class="form-control" id="ar_appointment_title" name="translations[ar][appointment_title]" value="{{ $landingPage->translations['ar']['appointment_title'] ?? '' }}" maxlength="255">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label for="ar_appointment_subtitle" class="form-label">Appointment Section Subtitle (Arabic)</label>
+                                                <input type="text" class="form-control" id="ar_appointment_subtitle" name="translations[ar][appointment_subtitle]" value="{{ $landingPage->translations['ar']['appointment_subtitle'] ?? '' }}" maxlength="255">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label for="ar_form_labels" class="form-label">Form Labels (Arabic)</label>
+                                                <div class="row g-2">
+                                                    <div class="col-6">
+                                                        <input type="text" class="form-control form-control-sm" name="translations[ar][form_name_label]" placeholder="Name label" value="{{ $landingPage->translations['ar']['form_name_label'] ?? '' }}">
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <input type="text" class="form-control form-control-sm" name="translations[ar][form_email_label]" placeholder="Email label" value="{{ $landingPage->translations['ar']['form_email_label'] ?? '' }}">
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <input type="text" class="form-control form-control-sm" name="translations[ar][form_phone_label]" placeholder="Phone label" value="{{ $landingPage->translations['ar']['form_phone_label'] ?? '' }}">
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <input type="text" class="form-control form-control-sm" name="translations[ar][form_date_label]" placeholder="Date label" value="{{ $landingPage->translations['ar']['form_date_label'] ?? '' }}">
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <input type="text" class="form-control form-control-sm" name="translations[ar][form_time_label]" placeholder="Time label" value="{{ $landingPage->translations['ar']['form_time_label'] ?? '' }}">
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <input type="text" class="form-control form-control-sm" name="translations[ar][form_message_label]" placeholder="Message label" value="{{ $landingPage->translations['ar']['form_message_label'] ?? '' }}">
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <input type="text" class="form-control form-control-sm" name="translations[ar][form_submit_button]" placeholder="Submit button text" value="{{ $landingPage->translations['ar']['form_submit_button'] ?? '' }}">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <h6 class="mt-4 mb-3">Navigation & Section Titles</h6>
+
+                                            <div class="row g-2">
+                                                <div class="col-6">
+                                                    <input type="text" class="form-control form-control-sm" name="translations[ar][nav_home]" placeholder="Home" value="{{ $landingPage->translations['ar']['nav_home'] ?? '' }}">
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="text" class="form-control form-control-sm" name="translations[ar][nav_about]" placeholder="About" value="{{ $landingPage->translations['ar']['nav_about'] ?? '' }}">
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="text" class="form-control form-control-sm" name="translations[ar][nav_appointments]" placeholder="Appointments" value="{{ $landingPage->translations['ar']['nav_appointments'] ?? '' }}">
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="text" class="form-control form-control-sm" name="translations[ar][nav_reviews]" placeholder="Reviews" value="{{ $landingPage->translations['ar']['nav_reviews'] ?? '' }}">
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="text" class="form-control form-control-sm" name="translations[ar][nav_contact]" placeholder="Contact" value="{{ $landingPage->translations['ar']['nav_contact'] ?? '' }}">
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="text" class="form-control form-control-sm" name="translations[ar][about_title]" placeholder="About section title" value="{{ $landingPage->translations['ar']['about_title'] ?? '' }}">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -600,7 +712,7 @@ $(document).ready(function() {
                 if (response.success) {
                     $('#totalVisits').text(response.stats.total_visits || 0);
                     $('#uniqueVisitors').text(response.stats.unique_visitors || 0);
-                    
+
                     let deviceHtml = '';
                     if (response.deviceStats && response.deviceStats.length > 0) {
                         response.deviceStats.forEach(function(device) {
