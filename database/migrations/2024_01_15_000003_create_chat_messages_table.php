@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('chat_messages', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('chat_session_id')->constrained('chat_sessions')->onDelete('cascade');
+            $table->unsignedBigInteger('chat_session_id');
             $table->text('message');
             $table->enum('sender_type', ['visitor', 'doctor', 'bot'])->default('visitor');
             $table->boolean('is_read')->default(false);
@@ -23,6 +23,13 @@ return new class extends Migration
             $table->index(['chat_session_id', 'created_at']);
             $table->index(['sender_type', 'is_read']);
         });
+
+        // Add foreign key constraint only if chat_sessions table exists
+        if (Schema::hasTable('chat_sessions')) {
+            Schema::table('chat_messages', function (Blueprint $table) {
+                $table->foreign('chat_session_id')->references('id')->on('chat_sessions')->onDelete('cascade');
+            });
+        }
     }
 
     /**

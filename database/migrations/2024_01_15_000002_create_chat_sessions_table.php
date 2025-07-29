@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('chat_sessions', function (Blueprint $table) {
             $table->id();
             $table->string('session_id')->unique();
-            $table->foreignId('doctor_id')->constrained('doctors')->onDelete('cascade');
+            $table->unsignedBigInteger('doctor_id');
             $table->string('visitor_name')->nullable();
             $table->string('visitor_email')->nullable();
             $table->ipAddress('visitor_ip');
@@ -27,6 +27,13 @@ return new class extends Migration
             $table->index(['session_id']);
             $table->index(['last_activity_at']);
         });
+
+        // Add foreign key constraint only if doctors table exists
+        if (Schema::hasTable('doctors')) {
+            Schema::table('chat_sessions', function (Blueprint $table) {
+                $table->foreign('doctor_id')->references('id')->on('doctors')->onDelete('cascade');
+            });
+        }
     }
 
     /**

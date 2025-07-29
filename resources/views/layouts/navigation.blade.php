@@ -36,6 +36,9 @@
                             <x-nav-link :href="route('doctor.reviews.index')" :active="request()->routeIs('doctor.reviews.*')">
                                 <i class="fas fa-star mr-2"></i>{{ __('Reviews') }}
                             </x-nav-link>
+                            <x-nav-link :href="route('doctor.notes.index')" :active="request()->routeIs('doctor.notes.*')">
+                                <i class="fas fa-sticky-note mr-2"></i>{{ __('Notes') }}
+                            </x-nav-link>
                         @elseif(auth()->user()->role === 'admin')
                             <!-- Admin Navigation -->
                             <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
@@ -163,6 +166,9 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('doctor.reviews.index')" :active="request()->routeIs('doctor.reviews.*')">
                         <i class="fas fa-star mr-2"></i>{{ __('Reviews') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('doctor.notes.index')" :active="request()->routeIs('doctor.notes.*')">
+                        <i class="fas fa-sticky-note mr-2"></i>{{ __('Notes') }}
                     </x-responsive-nav-link>
                 @elseif(auth()->user()->role === 'admin')
                     <!-- Admin Mobile Navigation -->

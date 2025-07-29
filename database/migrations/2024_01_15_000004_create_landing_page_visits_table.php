@@ -15,7 +15,7 @@ return new class extends Migration
         if (!Schema::hasTable('landing_page_visits')) {
             Schema::create('landing_page_visits', function (Blueprint $table) {
                 $table->id();
-                $table->foreignId('doctor_id')->constrained('doctors')->onDelete('cascade');
+                $table->unsignedBigInteger('doctor_id');
                 $table->ipAddress('visitor_ip');
                 $table->text('user_agent')->nullable();
                 $table->string('referrer_url')->nullable();
@@ -33,6 +33,13 @@ return new class extends Migration
                 $table->index(['visitor_ip']);
                 $table->index(['visited_at']);
             });
+
+            // Add foreign key constraint only if doctors table exists
+            if (Schema::hasTable('doctors')) {
+                Schema::table('landing_page_visits', function (Blueprint $table) {
+                    $table->foreign('doctor_id')->references('id')->on('doctors')->onDelete('cascade');
+                });
+            }
         }
     }
 

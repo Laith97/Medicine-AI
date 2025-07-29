@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class PatientAnalysis extends Model
 {
+    use HasFactory;
+
     protected $table = 'patient_data';
 
     protected $fillable = [

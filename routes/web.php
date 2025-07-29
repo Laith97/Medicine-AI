@@ -131,6 +131,11 @@ Route::middleware('auth')->group(function () {
         return view('test-payment', compact('invoices'));
     })->name('test.payment');
 
+    // Test voice notes functionality
+    Route::get('/test-notes', function() {
+        return view('test-notes');
+    })->name('test.notes');
+
     // Test grace period notification
     Route::get('/test-grace-period', function() {
         $user = auth()->user();
@@ -233,6 +238,20 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
         Route::post('/account-location', [GoogleController::class, 'setAccountLocation'])->name('account-location');
     });
 
+    // Doctor Notes routes
+    Route::prefix('notes')->name('notes.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'store'])->name('store');
+        Route::get('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'show'])->name('show');
+        Route::get('/{note}/edit', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'edit'])->name('edit');
+        Route::put('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'update'])->name('update');
+        Route::delete('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'destroy'])->name('destroy');
+
+        // AJAX routes
+        Route::post('/transcribe-audio', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'transcribeAudio'])->name('transcribe-audio');
+        Route::get('/patients/search', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'getPatients'])->name('patients.search');
+    });
     // Landing Page Management
     Route::prefix('landing-page')->name('landing-page.')->group(function () {
         Route::get('/', [LandingPageController::class, 'index'])->name('index');

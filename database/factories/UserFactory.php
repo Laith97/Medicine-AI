@@ -29,6 +29,21 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'role' => fake()->randomElement(['patient', 'doctor']),
+            'phone' => fake()->phoneNumber(),
+            'date_of_birth' => fake()->date(),
+            'gender' => fake()->randomElement(['male', 'female', 'other']),
+            'address' => fake()->streetAddress(),
+            'city' => fake()->city(),
+            'state' => fake()->state(),
+            'zip_code' => fake()->postcode(),
+            'emergency_contact_name' => fake()->name(),
+            'emergency_contact_phone' => fake()->phoneNumber(),
+            'stripe_customer_id' => 'cus_' . Str::random(14),
+            'current_plan' => fake()->randomElement(['basic', 'premium', 'pro']),
+            'monthly_cost_limit' => fake()->randomFloat(2, 50, 500),
+            'subscription_ends_at' => fake()->dateTimeBetween('now', '+1 year'),
+            'subscription_active' => fake()->boolean(80), // 80% chance of being active
         ];
     }
 
