@@ -312,6 +312,7 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::resource('users', AdminController::class);
     Route::get('/users/{user}/patient-analyses', [AdminController::class, 'userPatientAnalyses'])->name('users.patient-analyses');
+    Route::post('/users/{user}/toggle-doctor-status', [AdminController::class, 'toggleDoctorStatus'])->name('users.toggle-doctor-status');
 
     // Billing and subscription management
     Route::get('/billing', [AdminController::class, 'billing'])->name('billing');

@@ -10,7 +10,7 @@ use Illuminate\Notifications\Notification;
 use NotificationChannels\Twilio\TwilioChannel;
 use NotificationChannels\Twilio\TwilioSmsMessage;
 
-class InvoiceOverdue extends Notification implements ShouldQueue
+class InvoiceOverdue extends Notification
 {
     use Queueable;
 

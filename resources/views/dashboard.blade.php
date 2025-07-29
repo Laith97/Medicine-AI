@@ -384,6 +384,61 @@
         border-top-color: #2c3e50;
     }
 
+    /* Fix modal z-index issues */
+    .modal {
+        z-index: 10000 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 9999 !important;
+    }
+
+    /* Ensure patient modal is above everything */
+    #patientModal {
+        z-index: 10001 !important;
+    }
+
+    #patientModal .modal-backdrop {
+        z-index: 10000 !important;
+    }
+
+    /* Fix modal interaction issues */
+    .modal.show {
+        display: block !important;
+        pointer-events: auto !important;
+    }
+
+    .modal-dialog {
+        pointer-events: auto !important;
+        position: relative !important;
+        z-index: 10002 !important;
+    }
+
+    /* Ensure modal content is clickable */
+    .modal-content {
+        pointer-events: auto !important;
+        position: relative !important;
+        z-index: 10003 !important;
+    }
+
+    /* Fix modal backdrop positioning */
+    .modal-backdrop.show {
+        opacity: 0.5 !important;
+        z-index: 9999 !important;
+    }
+
+    /* Ensure modal is properly centered and visible */
+    .modal.fade.show {
+        display: block !important;
+        opacity: 1 !important;
+    }
+
+    /* Fix any potential body scroll issues */
+    body.modal-open {
+        overflow: hidden !important;
+        padding-right: 0 !important;
+    }
+
     /* AI Analysis Styling */
     .ai-response {
         background-color: #f8f9fa;
@@ -1600,8 +1655,6 @@
                                     <td>
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-sm btn-view-patient btn-primary-custom"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#patientModal"
                                                     data-patient-key="{{ $key }}"
                                                     data-patient-name="{{ $group['patient']->name }}"
                                                     data-patient-age="{{ $group['patient']->age }}"
@@ -1725,6 +1778,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Set up export functionality
     setupExportFunctionality();
+
+    // Set up patient modal functionality (using event delegation)
+    setupPatientModal();
 });
 
 // Main chart initialization function
@@ -2402,9 +2458,6 @@ function setupTableFunctionality() {
 
     // Set up patient filter functionality
     setupPatientFilters();
-
-    // Set up patient modal functionality
-    setupPatientModal();
 }
 
 // Set up patient filters
@@ -2591,18 +2644,20 @@ function setupPatientModal() {
     const visitDetailsContent = document.getElementById('visit-details-content');
     const newVisitBtn = document.getElementById('new-visit-btn');
 
-    // View patient buttons
-    const viewPatientBtns = document.querySelectorAll('.btn-view-patient');
-
     if (!patientModal) return;
 
-    // Handle patient modal opening
-    viewPatientBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const patientKey = this.getAttribute('data-patient-key');
-            const patientName = this.getAttribute('data-patient-name');
-            const patientAge = this.getAttribute('data-patient-age');
-            const patientGender = this.getAttribute('data-patient-gender');
+    // Use event delegation for patient view buttons - this ensures it works after filtering/pagination
+    document.addEventListener('click', function(e) {
+        // Handle patient modal opening
+        if (e.target.closest('.btn-view-patient')) {
+            e.preventDefault(); // Prevent any default behavior
+            console.log('Patient view button clicked');
+            
+            const btn = e.target.closest('.btn-view-patient');
+            const patientKey = btn.getAttribute('data-patient-key');
+            const patientName = btn.getAttribute('data-patient-name');
+            const patientAge = btn.getAttribute('data-patient-age');
+            const patientGender = btn.getAttribute('data-patient-gender');
 
             // Set patient info in modal
             if (patientNameEl) patientNameEl.textContent = patientName;
@@ -2696,32 +2751,68 @@ function setupPatientModal() {
                 visitHistoryBody.appendChild(row);
             });
 
-            // Add event listeners to view visit details buttons
-            const viewVisitDetailsBtns = visitHistoryBody.querySelectorAll('.view-visit-details');
-            viewVisitDetailsBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const visitId = this.getAttribute('data-visit-id');
-                    const visit = allRecords.find(record => record.id == visitId);
+            // Show the modal using Bootstrap's JavaScript API
+            try {
+                const modal = new bootstrap.Modal(patientModal, {
+                    backdrop: true,
+                    keyboard: true,
+                    focus: true
+                });
+                modal.show();
+                console.log('Patient modal opened successfully');
+                
+                // Force modal to appear above everything with extreme z-index
+                setTimeout(() => {
+                    // Set modal z-index
+                    patientModal.style.zIndex = '999999';
+                    patientModal.style.position = 'fixed';
+                    
+                    // Set backdrop z-index
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.style.zIndex = '999998';
+                        console.log('Modal and backdrop z-index forced to maximum');
+                    }
+                    
+                    // Move modal to end of body to escape any stacking contexts
+                    document.body.appendChild(patientModal);
+                    console.log('Modal moved to end of body');
+                }, 50);
+                
+            } catch (error) {
+                console.error('Error opening patient modal:', error);
+                // Fallback: try to show modal using jQuery if available
+                if (typeof $ !== 'undefined') {
+                    $(patientModal).modal('show');
+                }
+            }
+        }
 
-                    if (!visit) return;
+        // Handle visit details buttons (also using event delegation)
+        if (e.target.closest('.view-visit-details')) {
+            const btn = e.target.closest('.view-visit-details');
+            const visitId = btn.getAttribute('data-visit-id');
+            const visit = allRecords.find(record => record.id == visitId);
 
-                    // Show visit details section
-                    if (visitDetailsSection) visitDetailsSection.style.display = 'block';
+            if (!visit) return;
 
-                    // Format visit details
-                    let detailsHTML = `
-                        <div class="card">
-                            <div class="card-header bg-light">
-                                <strong>Visit #${visit.visit_number || '1'} - ${new Date(visit.created_at).toLocaleDateString()}</strong>
-                            </div>
-                            <div class="card-body">
-                    `;
+            // Show visit details section
+            if (visitDetailsSection) visitDetailsSection.style.display = 'block';
 
-                    // Add symptoms with better formatting
-                    detailsHTML += '<h6 class="mb-2">Symptoms:</h6>';
-                    if (visit.symptoms) {
-                        try {
-                            let symptoms = JSON.parse(visit.symptoms);
+            // Format visit details
+            let detailsHTML = `
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <strong>Visit #${visit.visit_number || '1'} - ${new Date(visit.created_at).toLocaleDateString()}</strong>
+                    </div>
+                    <div class="card-body">
+            `;
+
+            // Add symptoms with better formatting
+            detailsHTML += '<h6 class="mb-2">Symptoms:</h6>';
+            if (visit.symptoms) {
+                try {
+                    let symptoms = JSON.parse(visit.symptoms);
 
                             // Handle different formats of symptoms data
                             if (Array.isArray(symptoms) && symptoms.length > 0) {
@@ -2793,14 +2884,12 @@ function setupPatientModal() {
                         </div>
                     `;
 
-                    // Set visit details content
-                    if (visitDetailsContent) visitDetailsContent.innerHTML = detailsHTML;
+            // Set visit details content
+            if (visitDetailsContent) visitDetailsContent.innerHTML = detailsHTML;
 
-                    // Scroll to visit details
-                    visitDetailsSection.scrollIntoView({ behavior: 'smooth' });
-                });
-            });
-        });
+            // Scroll to visit details
+            visitDetailsSection.scrollIntoView({ behavior: 'smooth' });
+        }
     });
 }
 
