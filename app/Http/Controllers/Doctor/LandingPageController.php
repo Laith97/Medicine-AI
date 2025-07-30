@@ -44,7 +44,7 @@ class LandingPageController extends Controller
 
         $request->validate([
             'username' => 'required|string|max:50|regex:/^[a-zA-Z0-9_-]+$/|unique:doctor_landing_pages,username,' . ($doctor->landingPage->id ?? 'NULL'),
-            'template' => 'required|in:template1,template2',
+            'template' => 'required|in:template1,template2,template3,template4',
             'page_title' => 'nullable|string|max:255',
             'page_description' => 'nullable|string|max:500',
             'tagline' => 'nullable|string|max:255',
@@ -55,6 +55,17 @@ class LandingPageController extends Controller
             'subdomain_enabled' => 'boolean',
             'default_language' => 'nullable|string|in:en,ar',
             'translations' => 'nullable|array',
+            // Page builder fields
+            'page_sections' => 'nullable|array',
+            'navbar_config' => 'nullable|array',
+            'animations_config' => 'nullable|array',
+            'custom_css' => 'nullable|array',
+            'fonts_config' => 'nullable|array',
+            'background_config' => 'nullable|array',
+            'button_styles' => 'nullable|array',
+            'spacing_config' => 'nullable|array',
+            'enable_animations' => 'boolean',
+            'page_layout' => 'nullable|string|in:default,fullwidth,boxed,sidebar',
         ]);
 
         $landingPage = $doctor->landingPage ?: new DoctorLandingPage(['doctor_id' => $doctor->id]);
@@ -62,7 +73,7 @@ class LandingPageController extends Controller
         $landingPage->fill($request->only([
             'username', 'template', 'page_title', 'page_description',
             'tagline', 'about_text', 'custom_domain', 'subdomain_enabled',
-            'default_language'
+            'default_language', 'enable_animations', 'page_layout'
         ]));
 
         // Handle colors
@@ -78,6 +89,39 @@ class LandingPageController extends Controller
         // Handle translations
         if ($request->has('translations')) {
             $landingPage->translations = $request->translations;
+        }
+
+        // Handle page builder fields
+        if ($request->has('page_sections')) {
+            $landingPage->page_sections = $request->page_sections;
+        }
+
+        if ($request->has('navbar_config')) {
+            $landingPage->navbar_config = $request->navbar_config;
+        }
+
+        if ($request->has('animations_config')) {
+            $landingPage->animations_config = $request->animations_config;
+        }
+
+        if ($request->has('custom_css')) {
+            $landingPage->custom_css = $request->custom_css;
+        }
+
+        if ($request->has('fonts_config')) {
+            $landingPage->fonts_config = $request->fonts_config;
+        }
+
+        if ($request->has('background_config')) {
+            $landingPage->background_config = $request->background_config;
+        }
+
+        if ($request->has('button_styles')) {
+            $landingPage->button_styles = $request->button_styles;
+        }
+
+        if ($request->has('spacing_config')) {
+            $landingPage->spacing_config = $request->spacing_config;
         }
 
         $landingPage->save();
@@ -244,5 +288,266 @@ class LandingPageController extends Controller
         $templateView = 'doctor.landing-page.templates.' . $landingPage->template;
 
         return view($templateView, compact('landingPage', 'doctor', 'reviews', 'availableSlots', 'blogPosts', 'isPreview', 'language', 'translatedContent'));
+    }
+
+    /**
+     * Show page builder interface
+     */
+    public function pageBuilder()
+    {
+        $doctor = auth()->user()->doctor;
+
+        if (!$doctor) {
+            return redirect()->route('dashboard')->with('error', 'Doctor profile not found.');
+        }
+
+        $landingPage = $doctor->landingPage;
+
+        // Create default landing page if it doesn't exist
+        if (!$landingPage) {
+            $landingPage = $this->createDefaultLandingPage($doctor);
+        }
+
+        // Get available section templates
+        $sectionTemplates = $this->getSectionTemplates();
+
+        return view('doctor.landing-page.page-builder', compact('landingPage', 'sectionTemplates'));
+    }
+
+    /**
+     * Update page sections
+     */
+    public function updateSections(Request $request)
+    {
+        $doctor = auth()->user()->doctor;
+
+        if (!$doctor || !$doctor->landingPage) {
+            return response()->json(['error' => 'Landing page not found.'], 404);
+        }
+
+        $request->validate([
+            'sections' => 'required|array',
+            'sections.*.id' => 'required|string',
+            'sections.*.type' => 'required|string',
+            'sections.*.config' => 'required|array',
+            'sections.*.order' => 'required|integer',
+        ]);
+
+        $landingPage = $doctor->landingPage;
+        $landingPage->page_sections = $request->sections;
+        $landingPage->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sections updated successfully!'
+        ]);
+    }
+
+    /**
+     * Get available section templates
+     */
+    public function getSectionTemplates()
+    {
+        return [
+            'hero' => [
+                'name' => 'Hero Section',
+                'type' => 'hero',
+                'category' => 'header',
+                'description' => 'Main banner with title, subtitle, and call-to-action',
+                'preview_image' => '/images/sections/hero-preview.jpg',
+                'default_config' => [
+                    'title' => 'Welcome to My Practice',
+                    'subtitle' => 'Providing quality healthcare with compassion',
+                    'background_type' => 'image',
+                    'background_image' => '',
+                    'background_color' => '#3b82f6',
+                    'text_color' => '#ffffff',
+                    'button_text' => 'Book Appointment',
+                    'button_link' => '#appointments',
+                    'animation' => 'fadeInUp',
+                    'overlay_opacity' => 0.5,
+                ]
+            ],
+            'about' => [
+                'name' => 'About Section',
+                'type' => 'about',
+                'category' => 'content',
+                'description' => 'Professional bio and credentials',
+                'preview_image' => '/images/sections/about-preview.jpg',
+                'default_config' => [
+                    'title' => 'About Dr. [Name]',
+                    'content' => 'Your professional bio goes here...',
+                    'image' => '',
+                    'layout' => 'image-left',
+                    'background_color' => '#ffffff',
+                    'text_color' => '#374151',
+                    'animation' => 'fadeInLeft',
+                ]
+            ],
+            'services' => [
+                'name' => 'Services Section',
+                'type' => 'services',
+                'category' => 'content',
+                'description' => 'List of medical services offered',
+                'preview_image' => '/images/sections/services-preview.jpg',
+                'default_config' => [
+                    'title' => 'Our Services',
+                    'subtitle' => 'Comprehensive healthcare solutions',
+                    'services' => [
+                        ['title' => 'General Consultation', 'description' => 'Comprehensive health checkups', 'icon' => 'fas fa-stethoscope'],
+                        ['title' => 'Preventive Care', 'description' => 'Regular health screenings', 'icon' => 'fas fa-shield-alt'],
+                        ['title' => 'Treatment Plans', 'description' => 'Personalized treatment approaches', 'icon' => 'fas fa-prescription-bottle-alt'],
+                    ],
+                    'layout' => 'grid-3',
+                    'background_color' => '#f8fafc',
+                    'animation' => 'fadeInUp',
+                ]
+            ],
+            'testimonials' => [
+                'name' => 'Testimonials Section',
+                'type' => 'testimonials',
+                'category' => 'social-proof',
+                'description' => 'Patient reviews and testimonials',
+                'preview_image' => '/images/sections/testimonials-preview.jpg',
+                'default_config' => [
+                    'title' => 'What Patients Say',
+                    'subtitle' => 'Real experiences from our patients',
+                    'layout' => 'carousel',
+                    'show_ratings' => true,
+                    'background_color' => '#ffffff',
+                    'animation' => 'fadeIn',
+                ]
+            ],
+            'contact' => [
+                'name' => 'Contact Section',
+                'type' => 'contact',
+                'category' => 'footer',
+                'description' => 'Contact information and form',
+                'preview_image' => '/images/sections/contact-preview.jpg',
+                'default_config' => [
+                    'title' => 'Get In Touch',
+                    'subtitle' => 'Contact us for appointments or inquiries',
+                    'show_form' => true,
+                    'show_map' => true,
+                    'background_color' => '#f8fafc',
+                    'animation' => 'fadeInUp',
+                ]
+            ],
+            'cta' => [
+                'name' => 'Call to Action',
+                'type' => 'cta',
+                'category' => 'conversion',
+                'description' => 'Prominent call-to-action section',
+                'preview_image' => '/images/sections/cta-preview.jpg',
+                'default_config' => [
+                    'title' => 'Ready to Get Started?',
+                    'subtitle' => 'Book your appointment today',
+                    'button_text' => 'Book Now',
+                    'button_link' => '#appointments',
+                    'background_type' => 'gradient',
+                    'background_color' => '#3b82f6',
+                    'text_color' => '#ffffff',
+                    'animation' => 'pulse',
+                ]
+            ],
+            'gallery' => [
+                'name' => 'Image Gallery',
+                'type' => 'gallery',
+                'category' => 'media',
+                'description' => 'Photo gallery of clinic/practice',
+                'preview_image' => '/images/sections/gallery-preview.jpg',
+                'default_config' => [
+                    'title' => 'Our Facility',
+                    'subtitle' => 'Take a look at our modern clinic',
+                    'images' => [],
+                    'layout' => 'masonry',
+                    'columns' => 3,
+                    'animation' => 'zoomIn',
+                ]
+            ],
+            'faq' => [
+                'name' => 'FAQ Section',
+                'type' => 'faq',
+                'category' => 'content',
+                'description' => 'Frequently asked questions',
+                'preview_image' => '/images/sections/faq-preview.jpg',
+                'default_config' => [
+                    'title' => 'Frequently Asked Questions',
+                    'subtitle' => 'Common questions about our services',
+                    'faqs' => [
+                        ['question' => 'How do I book an appointment?', 'answer' => 'You can book online or call our office.'],
+                        ['question' => 'What insurance do you accept?', 'answer' => 'We accept most major insurance plans.'],
+                    ],
+                    'layout' => 'accordion',
+                    'animation' => 'fadeInUp',
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Upload section image
+     */
+    public function uploadSectionImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'section_id' => 'required|string',
+        ]);
+
+        $doctor = auth()->user()->doctor;
+
+        if (!$doctor || !$doctor->landingPage) {
+            return response()->json(['error' => 'Landing page not found.'], 404);
+        }
+
+        // Store image
+        $path = $request->file('image')->store('landing-pages/sections', 'public');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Image uploaded successfully!',
+            'image_url' => Storage::url($path),
+            'path' => $path
+        ]);
+    }
+
+    /**
+     * Get animation presets
+     */
+    public function getAnimationPresets()
+    {
+        return [
+            'entrance' => [
+                'fadeIn' => 'Fade In',
+                'fadeInUp' => 'Fade In Up',
+                'fadeInDown' => 'Fade In Down',
+                'fadeInLeft' => 'Fade In Left',
+                'fadeInRight' => 'Fade In Right',
+                'slideInUp' => 'Slide In Up',
+                'slideInDown' => 'Slide In Down',
+                'slideInLeft' => 'Slide In Left',
+                'slideInRight' => 'Slide In Right',
+                'zoomIn' => 'Zoom In',
+                'zoomInUp' => 'Zoom In Up',
+                'bounceIn' => 'Bounce In',
+                'bounceInUp' => 'Bounce In Up',
+                'rotateIn' => 'Rotate In',
+                'flipInX' => 'Flip In X',
+                'flipInY' => 'Flip In Y',
+            ],
+            'attention' => [
+                'bounce' => 'Bounce',
+                'flash' => 'Flash',
+                'pulse' => 'Pulse',
+                'rubberBand' => 'Rubber Band',
+                'shake' => 'Shake',
+                'swing' => 'Swing',
+                'tada' => 'Tada',
+                'wobble' => 'Wobble',
+                'jello' => 'Jello',
+                'heartBeat' => 'Heart Beat',
+            ]
+        ];
     }
 }
