@@ -7,6 +7,9 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h3 mb-0">Landing Page Management</h1>
                 <div class="btn-group">
+                    <a href="{{ route('doctor.landing-page.page-builder') }}" class="btn btn-primary">
+                        <i class="fas fa-magic"></i> Page Builder
+                    </a>
                     <button type="button" class="btn btn-outline-primary" id="previewBtn">
                         <i class="fas fa-eye"></i> Preview
                     </button>
@@ -83,7 +86,12 @@
                                             <select class="form-select" id="template" name="template">
                                                 <option value="template1" {{ $landingPage->template === 'template1' ? 'selected' : '' }}>Modern Professional</option>
                                                 <option value="template2" {{ $landingPage->template === 'template2' ? 'selected' : '' }}>Clean Minimal</option>
+                                                <option value="template3" {{ $landingPage->template === 'template3' ? 'selected' : '' }}>Advanced Builder</option>
+                                                <option value="template4" {{ $landingPage->template === 'template4' ? 'selected' : '' }}>Medical Focus</option>
                                             </select>
+                                            <div class="form-text">
+                                                <strong>Advanced Builder</strong> template supports the page builder with custom sections and animations.
+                                            </div>
                                         </div>
 
                                         <div class="mb-3">

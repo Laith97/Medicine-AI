@@ -255,10 +255,14 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
     // Landing Page Management
     Route::prefix('landing-page')->name('landing-page.')->group(function () {
         Route::get('/', [LandingPageController::class, 'index'])->name('index');
+        Route::get('/page-builder', [LandingPageController::class, 'pageBuilder'])->name('page-builder');
         Route::post('/update', [LandingPageController::class, 'update'])->name('update');
+        Route::post('/update-sections', [LandingPageController::class, 'updateSections'])->name('update-sections');
         Route::post('/upload-hero-image', [LandingPageController::class, 'uploadHeroImage'])->name('upload-hero-image');
+        Route::post('/upload-section-image', [LandingPageController::class, 'uploadSectionImage'])->name('upload-section-image');
         Route::post('/toggle-publish', [LandingPageController::class, 'togglePublish'])->name('toggle-publish');
         Route::get('/preview/{username}', [LandingPageController::class, 'preview'])->name('preview');
+        Route::get('/animation-presets', [LandingPageController::class, 'getAnimationPresets'])->name('animation-presets');
     });
 
     // Blog Management
