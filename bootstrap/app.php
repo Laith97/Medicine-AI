@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'doctor' => \App\Http\Middleware\EnsureUserIsDoctor::class,
+            'patient' => \App\Http\Middleware\EnsureUserIsPatient::class,
+            'role' => \App\Http\Middleware\EnsureUserRole::class,
             'stripe.configured' => \App\Http\Middleware\CheckStripeConfiguration::class,
             'access.restrictions' => \App\Http\Middleware\CheckAccessRestrictions::class,
         ]);
