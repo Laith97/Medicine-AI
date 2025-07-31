@@ -23,9 +23,11 @@ class PatientAnalysisRequest extends FormRequest
     {
         return [
             // Basic patient info
-            'name' => 'required_if:patient_selection,new|nullable|string|max:255',
-            'age' => 'required_if:patient_selection,new|nullable|integer|min:0|max:150',
-            'gender' => 'required_if:patient_selection,new|nullable|in:male,female',
+            'name' => 'required_if:assigned_patient_selection,new|nullable|string|max:255',
+            'age' => 'required_if:assigned_patient_selection,new|nullable|integer|min:0|max:150',
+            'gender' => 'required_if:assigned_patient_selection,new|nullable|in:male,female',
+            'email' => 'required_if:assigned_patient_selection,new|nullable|email|max:255|unique:users,email',
+            'phone' => 'nullable|string|max:20',
 
             // Physical attributes
             'weight' => 'nullable|numeric|min:0|max:1000',
@@ -120,7 +122,7 @@ class PatientAnalysisRequest extends FormRequest
             'reports.*' => 'file|max:10240', // 10MB max per file
 
             // Patient selection
-            'patient_selection' => 'required|string',
+            'assigned_patient_selection' => 'required|string',
         ];
     }
 
@@ -133,6 +135,10 @@ class PatientAnalysisRequest extends FormRequest
             'name.required_if' => 'Patient name is required for new patients.',
             'age.required_if' => 'Patient age is required for new patients.',
             'gender.required_if' => 'Patient gender is required for new patients.',
+            'email.required_if' => 'Patient email is required for new patients.',
+            'email.email' => 'Please enter a valid email address.',
+            'email.unique' => 'This email is already registered. Please use a different email address.',
+            'assigned_patient_selection.required' => 'Please select a patient or choose to add a new patient.',
             'age.min' => 'Age must be at least 0.',
             'age.max' => 'Age cannot exceed 150 years.',
             'weight.min' => 'Weight must be a positive number.',
