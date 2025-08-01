@@ -63,6 +63,7 @@ class OpenAIControllerTest extends TestCase
         $viewData = $response->getData();
         $this->assertArrayHasKey('symptoms', $viewData);
         $this->assertArrayHasKey('existingPatients', $viewData);
+        $this->assertArrayHasKey('assignedPatients', $viewData);
     }
 
     public function test_show_form_with_existing_patients()
@@ -133,5 +134,38 @@ class OpenAIControllerTest extends TestCase
         $this->assertArrayHasKey('simplifiedVisits', $viewData);
         $this->assertArrayHasKey($patientKey, $viewData['simplifiedVisits']);
         $this->assertEquals(2, $viewData['simplifiedVisits'][$patientKey]['count']);
+    }
+
+    public function test_show_form_includes_assigned_patients()
+    {
+        // Create assigned patients (User accounts with role 'patient')
+        $assignedPatient1 = User::factory()->create([
+            'role' => 'patient',
+            'primary_doctor_id' => $this->user->id,
+            'name' => 'Alice Johnson',
+            'email' => 'alice@example.com',
+            'age' => 25,
+            'gender' => 'female'
+        ]);
+
+        $assignedPatient2 = User::factory()->create([
+            'role' => 'patient',
+            'primary_doctor_id' => $this->user->id,
+            'name' => 'Bob Smith',
+            'email' => 'bob@example.com',
+            'age' => 40,
+            'gender' => 'male'
+        ]);
+
+        $request = Request::create('/openai', 'GET');
+        $response = $this->controller->showForm($request);
+
+        $viewData = $response->getData();
+        $this->assertArrayHasKey('assignedPatients', $viewData);
+        $this->assertCount(2, $viewData['assignedPatients']);
+
+        $assignedPatients = $viewData['assignedPatients'];
+        $this->assertEquals('Alice Johnson', $assignedPatients[0]->name);
+        $this->assertEquals('Bob Smith', $assignedPatients[1]->name);
     }
 }

@@ -39,6 +39,9 @@
                             <x-nav-link :href="route('doctor.notes.index')" :active="request()->routeIs('doctor.notes.*')">
                                 <i class="fas fa-sticky-note mr-2"></i>{{ __('Notes') }}
                             </x-nav-link>
+                            <x-nav-link :href="route('diagnosis.index')" :active="request()->routeIs('diagnosis.*')">
+                                <i class="fas fa-clipboard-check mr-2"></i>{{ __('Diagnoses') }}
+                            </x-nav-link>
                         @elseif(auth()->user()->role === 'admin')
                             <!-- Admin Navigation -->
                             <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
@@ -56,6 +59,9 @@
                             </x-nav-link>
                             <x-nav-link :href="route('appointments.index')" :active="request()->routeIs('appointments.*')">
                                 <i class="fas fa-calendar mr-2"></i>{{ __('My Appointments') }}
+                            </x-nav-link>
+                            <x-nav-link :href="route('diagnosis.patient.index')" :active="request()->routeIs('diagnosis.patient.*')">
+                                <i class="fas fa-file-medical mr-2"></i>{{ __('My Diagnoses') }}
                             </x-nav-link>
                         @endif
                     @else
@@ -170,6 +176,9 @@
                     <x-responsive-nav-link :href="route('doctor.notes.index')" :active="request()->routeIs('doctor.notes.*')">
                         <i class="fas fa-sticky-note mr-2"></i>{{ __('Notes') }}
                     </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('diagnosis.index')" :active="request()->routeIs('diagnosis.*')">
+                        <i class="fas fa-clipboard-check mr-2"></i>{{ __('Diagnoses') }}
+                    </x-responsive-nav-link>
                 @elseif(auth()->user()->role === 'admin')
                     <!-- Admin Mobile Navigation -->
                     <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
@@ -191,6 +200,9 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('appointments.index')" :active="request()->routeIs('appointments.*')">
                         <i class="fas fa-calendar mr-2"></i>{{ __('My Appointments') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('diagnosis.patient.index')" :active="request()->routeIs('diagnosis.patient.*')">
+                        <i class="fas fa-file-medical mr-2"></i>{{ __('My Diagnoses') }}
                     </x-responsive-nav-link>
                 @endif
             @else

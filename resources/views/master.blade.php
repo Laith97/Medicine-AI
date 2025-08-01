@@ -591,6 +591,9 @@
                                         <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
                                             <a class="menu-link" href="{{ route('cases') }}"><div>Patient Cases</div></a>
                                         </li>
+                                        <li class="menu-item {{ request()->routeIs('diagnosis.*') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('diagnosis.index') }}"><div>Manual Diagnoses</div></a>
+                                        </li>
 
                                         <!-- Additional Features Dropdown -->
                                         <li class="menu-item {{ request()->routeIs('doctor.*') || request()->routeIs('invoices.*') || request()->routeIs('subscription.*') || request()->routeIs('settings') ? 'current' : '' }}">
@@ -640,6 +643,11 @@
                                         <li class="menu-item {{ request()->routeIs('appointments.index') ? 'current' : '' }}">
                                             <a class="menu-link" href="{{ route('appointments.index') }}">
                                                 <div><i class="fas fa-calendar mr-2"></i>My Appointments</div>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item {{ request()->routeIs('diagnosis.patient.*') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('diagnosis.patient.index') }}">
+                                                <div><i class="fas fa-file-medical mr-2"></i>My Diagnoses</div>
                                             </a>
                                         </li>
                                     @endif

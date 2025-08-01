@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DiagnosisController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\OpenAIController;
 use App\Http\Controllers\ProfileController;
@@ -87,6 +88,30 @@ Route::middleware('auth')->group(function () {
     Route::resource('reviews', ReviewController::class);
     Route::get('/appointments/{appointment}/review', [ReviewController::class, 'create'])->name('appointments.review');
 
+    // Diagnosis routes
+    Route::prefix('diagnosis')->name('diagnosis.')->group(function () {
+
+        // Patient routes
+        Route::middleware('role:patient')->group(function () {
+            // Specific routes first
+            Route::get('/my-diagnoses', [DiagnosisController::class, 'patientIndex'])->name('patient.index');
+            Route::get('/{diagnosis}/view', [DiagnosisController::class, 'patientView'])->name('patient.view');
+            Route::post('/{diagnosis}/follow-up', [DiagnosisController::class, 'storeFollowUp'])->name('follow-up.store');
+            Route::post('/{diagnosis}/review', [DiagnosisController::class, 'storeReview'])->name('review.store');
+        });
+
+        // Doctor routes
+        Route::middleware('role:doctor')->group(function () {
+            Route::get('/', [DiagnosisController::class, 'index'])->name('index');
+            Route::get('/create', [DiagnosisController::class, 'create'])->name('create');
+            Route::post('/', [DiagnosisController::class, 'store'])->name('store');
+
+            // Moved after /create to prevent route clash
+            Route::get('/{diagnosis}', [DiagnosisController::class, 'show'])->name('show');
+        });
+
+    });
+
     // Subscription routes
     Route::get('/pricing', [SubscriptionController::class, 'pricing'])->name('subscription.pricing');
     Route::post('/subscription/checkout', [SubscriptionController::class, 'checkout'])
@@ -135,6 +160,30 @@ Route::middleware('auth')->group(function () {
     Route::get('/test-notes', function() {
         return view('test-notes');
     })->name('test.notes');
+
+    // Test diagnosis system access
+    Route::get('/test-diagnosis-access', function() {
+        return view('test-diagnosis-access');
+    })->name('test.diagnosis.access');
+
+    // Test diagnosis system
+    Route::get('/test-diagnosis', function() {
+        $user = auth()->user();
+        return response()->json([
+            'user_role' => $user->role,
+            'is_doctor' => $user->isDoctor(),
+            'is_patient' => $user->isPatient(),
+            'diagnosis_routes' => [
+                'doctor_index' => route('diagnosis.index'),
+                'doctor_create' => route('diagnosis.create'),
+                'patient_index' => route('diagnosis.patient.index'),
+            ],
+            'diagnosis_count' => [
+                'doctor_diagnoses' => $user->isDoctor() ? $user->doctorDiagnoses()->count() : 'N/A',
+                'patient_diagnoses' => $user->isPatient() ? $user->patientDiagnoses()->count() : 'N/A',
+            ]
+        ]);
+    })->name('test.diagnosis');
 
     // Test grace period notification
     Route::get('/test-grace-period', function() {
@@ -387,4 +436,3 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
-

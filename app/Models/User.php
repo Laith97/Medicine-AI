@@ -22,9 +22,9 @@ class User extends Authenticatable
         'name',
         'email',
         'phone',
+        'age',
         'password',
         'role',
-        'phone',
         'date_of_birth',
         'gender',
         'address',
@@ -39,6 +39,7 @@ class User extends Authenticatable
         'monthly_cost_limit',
         'subscription_ends_at',
         'subscription_active',
+        'primary_doctor_id',
     ];
 
     /**
@@ -514,6 +515,46 @@ public function doctorNotes()
 public function patientNotes()
 {
     return $this->hasMany(DoctorNote::class, 'patient_id');
+}
+
+/**
+ * Diagnoses made by this doctor
+ */
+public function doctorDiagnoses()
+{
+    return $this->hasMany(Diagnosis::class, 'doctor_id');
+}
+
+/**
+ * Diagnoses received by this patient
+ */
+public function patientDiagnoses()
+{
+    return $this->hasMany(Diagnosis::class, 'patient_id');
+}
+
+/**
+ * Primary doctor relationship (for patients)
+ */
+public function primaryDoctor()
+{
+    return $this->belongsTo(User::class, 'primary_doctor_id');
+}
+
+/**
+ * Patients assigned to this doctor (for doctors)
+ */
+public function assignedPatients()
+{
+    return $this->hasMany(User::class, 'primary_doctor_id')->where('role', 'patient');
+}
+
+/**
+ * Follow-up questions asked by this patient
+ */
+public function diagnosisFollowUps()
+{
+    return $this->hasMany(DiagnosisFollowUp::class, 'patient_id');
 }
 
 }
