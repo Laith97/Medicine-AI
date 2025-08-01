@@ -1627,16 +1627,74 @@ class OpenAIController extends Controller
 
     public function getCases()
     {
-        // Get all records belonging to the current user
-        $records = PatientAnalysis::with('user')
-            ->where('user_id', auth()->id())
+        $user = auth()->user();
+        $allCases = collect();
+
+        // Get PatientAnalysis records (legacy format)
+        $patientAnalysisRecords = PatientAnalysis::with('user')
+            ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Group records by patient_key to calculate total visits
-        $patientGroups = [];
+        // Transform PatientAnalysis records to unified format
+        foreach ($patientAnalysisRecords as $record) {
+            $allCases->push((object)[
+                'id' => $record->id,
+                'name' => $record->name, // Keep original property name for view compatibility
+                'age' => $record->age,
+                'gender' => $record->gender,
+                'height' => $record->height,
+                'weight' => $record->weight,
+                'type' => 'legacy', // PatientAnalysis records
+                'ai_response' => $record->ai_response ?? 'No diagnosis available',
+                'created_at' => $record->created_at,
+                'updated_at' => $record->updated_at,
+                'visit_number' => $record->visit_number ?? 1,
+                'total_visits' => 1, // Will be calculated later
+                'patient_key' => $record->patient_key,
+                'source_model' => 'PatientAnalysis',
+                'source_id' => $record->id,
+            ]);
+        }
 
-        foreach ($records as $record) {
+        // Get Diagnosis records (new format) - both AI and manual
+        if ($user->isDoctor()) {
+            $diagnosisRecords = Diagnosis::with(['patient', 'doctor'])
+                ->where('doctor_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Transform Diagnosis records to unified format
+            foreach ($diagnosisRecords as $record) {
+                $patientData = is_array($record->patient_data) ? $record->patient_data : [];
+
+                $allCases->push((object)[
+                    'id' => $record->id,
+                    'name' => $record->patient->name ?? 'Unknown Patient', // Keep original property name for view compatibility
+                    'age' => $patientData['patient_age'] ?? $record->patient->age ?? 'N/A',
+                    'gender' => $patientData['patient_gender'] ?? $record->patient->gender ?? 'N/A',
+                    'height' => $patientData['height'] ?? 'N/A',
+                    'weight' => $patientData['weight'] ?? 'N/A',
+                    'type' => $record->type, // 'ai' or 'manual'
+                    'ai_response' => $record->diagnosis_text ?? $record->ai_response ?? 'No diagnosis available',
+                    'created_at' => $record->created_at,
+                    'updated_at' => $record->updated_at,
+                    'visit_number' => 1, // Will be calculated later if needed
+                    'total_visits' => 1, // Will be calculated later if needed
+                    'patient_key' => null, // Diagnosis records don't use patient_key
+                    'source_model' => 'Diagnosis',
+                    'source_id' => $record->id,
+                    'patient_id' => $record->patient_id,
+                ]);
+            }
+        }
+
+        // Sort all cases by creation date (newest first)
+        $allCases = $allCases->sortByDesc('created_at');
+
+        // Group records by patient_key for PatientAnalysis records to calculate total visits
+        $patientGroups = [];
+        foreach ($patientAnalysisRecords as $record) {
             // If patient_key is not set, generate it and update the record
             if (!$record->patient_key) {
                 $patientKey = PatientAnalysis::generatePatientKey(
@@ -1670,18 +1728,18 @@ class OpenAIController extends Controller
             if (!isset($patientGroups[$record->patient_key])) {
                 $patientGroups[$record->patient_key] = [];
             }
-
             $patientGroups[$record->patient_key][] = $record;
         }
 
-        // Calculate total_visits for each record
-        foreach ($records as $record) {
-            if (isset($patientGroups[$record->patient_key])) {
-                $record->total_visits = count($patientGroups[$record->patient_key]);
-            } else {
-                $record->total_visits = 1;
+        // Update total_visits for PatientAnalysis records in the unified collection
+        foreach ($allCases as $case) {
+            if ($case->source_model === 'PatientAnalysis' && $case->patient_key && isset($patientGroups[$case->patient_key])) {
+                $case->total_visits = count($patientGroups[$case->patient_key]);
             }
         }
+
+        // Keep as collection for the view (it expects count() method)
+        $records = $allCases->values();
 
         return view('cases', compact('records'));
     }
