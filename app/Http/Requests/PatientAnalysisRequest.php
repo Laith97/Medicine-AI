@@ -22,12 +22,15 @@ class PatientAnalysisRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Basic patient info
-            'name' => 'required_if:assigned_patient_selection,new|nullable|string|max:255',
-            'age' => 'required_if:assigned_patient_selection,new|nullable|integer|min:0|max:150',
-            'gender' => 'required_if:assigned_patient_selection,new|nullable|in:male,female',
-            'email' => 'required_if:assigned_patient_selection,new|nullable|email|max:255|unique:users,email',
-            'phone' => 'nullable|string|max:20',
+            // Patient selection
+            'existing_patient' => 'nullable|exists:users,id',
+
+            // Basic patient info (for new patients)
+            'patient_name' => 'required_without:existing_patient|string|max:255',
+            'patient_email' => 'required_without:existing_patient|email|max:255',
+            'patient_phone' => 'nullable|string|max:20',
+            'patient_age' => 'required_without:existing_patient|integer|min:1|max:150',
+            'patient_gender' => 'required_without:existing_patient|in:male,female,other',
 
             // Physical attributes
             'weight' => 'nullable|numeric|min:0|max:1000',
@@ -121,8 +124,7 @@ class PatientAnalysisRequest extends FormRequest
             'reports' => 'nullable|array',
             'reports.*' => 'file|max:10240', // 10MB max per file
 
-            // Patient selection
-            'assigned_patient_selection' => 'required|string',
+
         ];
     }
 
@@ -132,13 +134,12 @@ class PatientAnalysisRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required_if' => 'Patient name is required for new patients.',
-            'age.required_if' => 'Patient age is required for new patients.',
-            'gender.required_if' => 'Patient gender is required for new patients.',
-            'email.required_if' => 'Patient email is required for new patients.',
-            'email.email' => 'Please enter a valid email address.',
-            'email.unique' => 'This email is already registered. Please use a different email address.',
-            'assigned_patient_selection.required' => 'Please select a patient or choose to add a new patient.',
+            'patient_name.required_without' => 'Patient name is required for new patients.',
+            'patient_age.required_without' => 'Patient age is required for new patients.',
+            'patient_gender.required_without' => 'Patient gender is required for new patients.',
+            'patient_email.required_without' => 'Patient email is required for new patients.',
+            'patient_email.email' => 'Please enter a valid email address.',
+            'existing_patient.exists' => 'Selected patient not found.',
             'age.min' => 'Age must be at least 0.',
             'age.max' => 'Age cannot exceed 150 years.',
             'weight.min' => 'Weight must be a positive number.',

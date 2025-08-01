@@ -450,52 +450,76 @@
 
                     <!-- Patient Selection -->
                     <div class="medical-form-section">
-                        <h6>Patient Selection</h6>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <label for="patient_selection" class="form-label">Select Patient:</label>
-                                <select id="patient_selection" name="patient_selection" class="form-select">
-                                    <option value="new">New Patient</option>
-                                    <!-- Patient visit counts are now passed from the controller -->
+                        <h6><i class="fas fa-user me-2"></i>Patient Information</h6>
 
-                                    @foreach($existingPatients as $patient)
-                                        @php
-                                            $key = $patient->name . '-' . $patient->age . '-' . $patient->gender;
-                                            $visitCount = isset($simplifiedVisits[$key]) ? $simplifiedVisits[$key]['count'] : 1;
-                                        @endphp
-                                        <option value="{{ $patient->id }}">
-                                            {{ $patient->name }} ({{ $patient->age }}y, {{ ucfirst($patient->gender) }})
-                                            @if($visitCount > 1)
-                                                - {{ $visitCount }} visits
-                                            @endif
+                        <!-- Patient Selection -->
+                        <div class="mb-4">
+                            <label for="existing_patient" class="form-label">Select Existing Patient</label>
+                            <select class="form-select" id="existing_patient" name="existing_patient">
+                                <option value="">-- Select from your patients or add new --</option>
+                                @if(isset($assignedPatients))
+                                    @foreach($assignedPatients as $patient)
+                                        <option value="{{ $patient->id }}"
+                                                data-name="{{ $patient->name }}"
+                                                data-email="{{ $patient->email }}"
+                                                data-phone="{{ $patient->phone }}"
+                                                data-age="{{ $patient->age }}"
+                                                data-gender="{{ $patient->gender }}">
+                                            {{ $patient->name }} ({{ $patient->email }})
                                         </option>
                                     @endforeach
-                                </select>
-                                <small class="form-text text-muted mt-1">
-                                    <i class="fas fa-info-circle"></i> Select "New Patient" for first-time visits or choose an existing patient to access their medical history.
-                                </small>
+                                @endif
+                            </select>
+                            <div class="form-text">
+                                @if(isset($assignedPatients) && $assignedPatients->count() > 0)
+                                    You have {{ $assignedPatients->count() }} patient(s). Select one or add a new patient below.
+                                @else
+                                    You don't have any patients yet. Add a new patient below.
+                                @endif
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Patient Info (only shown for new patients) -->
-                    <div class="medical-form-section" id="new_patient_info">
-                        <h6>Patient Information</h6>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <label for="name" class="form-label required">Name:</label>
-                                <input type="text" id="name" name="name" class="form-control" value="{{ $patientToEdit->name ?? '' }}" required>
+                        <!-- New Patient Form (shown by default, hidden when existing patient selected) -->
+                        <div id="new_patient_form">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Adding New Patient:</strong> Fill in the details below to create a new patient account.
                             </div>
-                            <div class="col-md-2">
-                                <label for="age" class="form-label required">Age:</label>
-                                <input type="number" id="age" name="age" class="form-control" value="{{ $patientToEdit->age ?? '' }}" required>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="patient_name" class="form-label">Patient Name *</label>
+                                    <input type="text" class="form-control" id="patient_name" name="patient_name"
+                                           value="{{ old('patient_name') }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="patient_email" class="form-label">Patient Email *</label>
+                                    <input type="email" class="form-control" id="patient_email" name="patient_email"
+                                           value="{{ old('patient_email') }}" required>
+                                    <div class="form-text">A new account will be created and assigned to you.</div>
+                                </div>
                             </div>
-                            <div class="col-md-2">
-                                <label for="gender" class="form-label required">Gender:</label>
-                                <select name="gender" id="gender" class="form-select">
-                                    <option value="male" {{ isset($patientToEdit) && $patientToEdit->gender == 'male' ? 'selected' : '' }}>Male</option>
-                                    <option value="female" {{ isset($patientToEdit) && $patientToEdit->gender == 'female' ? 'selected' : '' }}>Female</option>
-                                </select>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="patient_phone" class="form-label">Phone Number</label>
+                                    <input type="tel" class="form-control" id="patient_phone" name="patient_phone"
+                                           value="{{ old('patient_phone') }}">
+                                    <div class="form-text">Optional - for SMS notifications</div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="patient_age" class="form-label">Age *</label>
+                                    <input type="number" class="form-control" id="patient_age" name="patient_age"
+                                           value="{{ old('patient_age') }}" min="1" max="150" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="patient_gender" class="form-label">Gender *</label>
+                                    <select class="form-select" id="patient_gender" name="patient_gender" required>
+                                        <option value="">Select Gender</option>
+                                        <option value="male" {{ old('patient_gender') == 'male' ? 'selected' : '' }}>Male</option>
+                                        <option value="female" {{ old('patient_gender') == 'female' ? 'selected' : '' }}>Female</option>
+                                        <option value="other" {{ old('patient_gender') == 'other' ? 'selected' : '' }}>Other</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2072,9 +2096,9 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             text-align: left !important;
         }
 
-        .response-modal-body h1, 
-        .response-modal-body h2, 
-        .response-modal-body h3, 
+        .response-modal-body h1,
+        .response-modal-body h2,
+        .response-modal-body h3,
         .response-modal-body h4,
         .response-modal-body h5,
         .response-modal-body h6 {
@@ -2240,9 +2264,9 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             line-height: 1.4 !important;
         }
 
-        .response-modal-body h1, 
-        .response-modal-body h2, 
-        .response-modal-body h3, 
+        .response-modal-body h1,
+        .response-modal-body h2,
+        .response-modal-body h3,
         .response-modal-body h4,
         .response-modal-body h5,
         .response-modal-body h6 {
@@ -3887,27 +3911,55 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
     <!-- Patient Selection Script -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Handle patient selection
-            const patientSelection = document.getElementById('patient_selection');
-            const newPatientInfo = document.getElementById('new_patient_info');
-            const nameInput = document.getElementById('name');
-            const ageInput = document.getElementById('age');
-            const genderSelect = document.getElementById('gender');
+            // Handle patient selection similar to manual diagnosis
+            const existingPatientSelect = document.getElementById('existing_patient');
+            const newPatientForm = document.getElementById('new_patient_form');
+            const patientNameInput = document.getElementById('patient_name');
+            const patientEmailInput = document.getElementById('patient_email');
+            const patientPhoneInput = document.getElementById('patient_phone');
+            const patientAgeInput = document.getElementById('patient_age');
+            const patientGenderSelect = document.getElementById('patient_gender');
 
-            const patientHistoryInfo = document.getElementById('patient_history_info');
-            const visitCountBadge = document.getElementById('visit_count_badge');
-            const patientHistoryText = document.getElementById('patient_history_text');
+            // Function to toggle patient form visibility
+            function togglePatientForm() {
+                if (existingPatientSelect.value === '') {
+                    // Show new patient form
+                    newPatientForm.style.display = 'block';
 
-            // Store patient data for quick access
-            const patientData = @json($existingPatients);
+                    // Make new patient fields required
+                    patientNameInput.required = true;
+                    patientEmailInput.required = true;
+                    patientAgeInput.required = true;
+                    patientGenderSelect.required = true;
 
-            // Store visit counts - simplifiedVisits contains both patient_key and name-age-gender keys
-            const patientVisits = @json($simplifiedVisits ?? []);
+                    // Clear any pre-filled data
+                    patientNameInput.value = '';
+                    patientEmailInput.value = '';
+                    patientPhoneInput.value = '';
+                    patientAgeInput.value = '';
+                    patientGenderSelect.value = '';
+                } else {
+                    // Hide new patient form and populate with selected patient data
+                    newPatientForm.style.display = 'none';
 
-            // Debug: Log available keys for troubleshooting
-            console.log('Available patient visit keys:', Object.keys(patientVisits));
-            console.log('Patient data:', patientData);
-            console.log('Patient visits:', patientVisits);
+                    // Remove required attributes
+                    patientNameInput.required = false;
+                    patientEmailInput.required = false;
+                    patientAgeInput.required = false;
+                    patientGenderSelect.required = false;
+
+                    // Get selected patient data
+                    const selectedOption = existingPatientSelect.options[existingPatientSelect.selectedIndex];
+                    if (selectedOption) {
+                        // Populate form with selected patient data (for display purposes)
+                        patientNameInput.value = selectedOption.dataset.name || '';
+                        patientEmailInput.value = selectedOption.dataset.email || '';
+                        patientPhoneInput.value = selectedOption.dataset.phone || '';
+                        patientAgeInput.value = selectedOption.dataset.age || '';
+                        patientGenderSelect.value = selectedOption.dataset.gender || '';
+                    }
+                }
+            }
 
             // Function to toggle patient info visibility
             function togglePatientInfo() {
@@ -3989,20 +4041,40 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                 }
             }
 
-            // Initial toggle
-            togglePatientInfo();
+            // Initial toggle on page load
+            togglePatientForm();
 
-            // Add event listener
-            patientSelection.addEventListener('change', togglePatientInfo);
+            // Add event listener for patient selection changes
+            existingPatientSelect.addEventListener('change', togglePatientForm);
 
-            // Validate form before submission
+            // Form validation before submission
             document.getElementById('openaiForm').addEventListener('submit', function(e) {
-                const patientSelectionField = document.getElementById('patient_selection');
-
-                if (patientSelectionField && patientSelectionField.value === '') {
-                    e.preventDefault();
-                    alert('Please select a patient');
-                    return false;
+                // If no existing patient selected, validate new patient form
+                if (existingPatientSelect.value === '') {
+                    if (!patientNameInput.value.trim()) {
+                        e.preventDefault();
+                        alert('Please enter patient name');
+                        patientNameInput.focus();
+                        return false;
+                    }
+                    if (!patientEmailInput.value.trim()) {
+                        e.preventDefault();
+                        alert('Please enter patient email');
+                        patientEmailInput.focus();
+                        return false;
+                    }
+                    if (!patientAgeInput.value) {
+                        e.preventDefault();
+                        alert('Please enter patient age');
+                        patientAgeInput.focus();
+                        return false;
+                    }
+                    if (!patientGenderSelect.value) {
+                        e.preventDefault();
+                        alert('Please select patient gender');
+                        patientGenderSelect.focus();
+                        return false;
+                    }
                 }
             });
         });
