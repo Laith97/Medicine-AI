@@ -7,18 +7,27 @@ use App\Models\Symptom;
 use App\Models\Appointment;
 use App\Models\Review;
 use App\Models\OpenAIUsage;
+use App\Models\User;
+use App\Models\Diagnosis;
 use App\Mail\UsageWarning;
+use App\Mail\PatientAccountCreated;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
 use App\Http\Requests\PatientAnalysisRequest;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use OpenAI\Laravel\Facades\OpenAI;
 use Illuminate\Support\Facades\Auth;
 
 class OpenAIController extends Controller
 {
-    public function __construct()
+    protected $smsService;
+
+    public function __construct(SmsService $smsService)
     {
+        $this->smsService = $smsService;
         $this->middleware(function ($request, $next) {
             if (!Auth::user()->isDoctor() || !Auth::user()->doctor) {
                 abort(403, 'Access denied. Doctor profile required.');
@@ -31,72 +40,45 @@ class OpenAIController extends Controller
     {
         $symptoms = Symptom::all();
 
-        // Check if we're editing an existing patient
-        $patientToEdit = null;
-        if ($request->has('edit_patient')) {
-            $patientToEdit = PatientAnalysis::where('id', $request->edit_patient)
-                ->where('user_id', auth()->id())
-                ->first();
-        }
-
-        // Get all patient records for the current user
-        $allPatientRecords = PatientAnalysis::where('user_id', auth()->id())
-            ->select('id', 'name', 'age', 'gender', 'created_at', 'patient_key', 'visit_number', 'weight', 'height', 'symptoms', 'test_results')
-            ->orderBy('created_at', 'desc')
+        // Get doctor's assigned patients (actual User accounts)
+        $assignedPatients = Auth::user()->assignedPatients()
+            ->select('id', 'name', 'email', 'phone', 'age', 'gender')
+            ->orderBy('name')
             ->get();
 
-        // Group patients by patient_key to count visits and get the most recent record
-        $patientGroups = [];
-        $patientVisits = [];
-
-        foreach ($allPatientRecords as $record) {
-            // If patient_key is not set, use the name-age-gender combination
-            $key = $record->patient_key ?? ($record->name . '-' . $record->age . '-' . $record->gender);
-
-            if (!isset($patientGroups[$key])) {
-                $patientGroups[$key] = $record; // Store the most recent record (first one due to ordering)
-                $patientVisits[$key] = ['count' => 0, 'patient' => $record];
-            }
-
-            $patientVisits[$key]['count']++;
-        }
-
-        // Convert the grouped patients back to a collection
-        $existingPatients = collect(array_values($patientGroups));
-
-        // Create a simplified version of patientVisits for JavaScript
-        // We'll use both patient_key and name-age-gender as keys to ensure compatibility
-        $simplifiedVisits = [];
-        foreach ($existingPatients as $patient) {
-            $nameAgeGenderKey = $patient->name . '-' . $patient->age . '-' . $patient->gender;
-            $patientKey = $patient->patient_key ?? $nameAgeGenderKey;
-
-            if (isset($patientVisits[$patientKey])) {
-                // Add entry with patient_key if it exists
-                if ($patient->patient_key) {
-                    $simplifiedVisits[$patient->patient_key] = $patientVisits[$patientKey];
-                }
-
-                // Also add entry with name-age-gender key for backward compatibility
-                $simplifiedVisits[$nameAgeGenderKey] = $patientVisits[$patientKey];
-            } else {
-                // Fallback if the key doesn't exist
-                $simplifiedVisits[$nameAgeGenderKey] = ['count' => 1, 'patient' => $patient];
-                if ($patient->patient_key) {
-                    $simplifiedVisits[$patient->patient_key] = ['count' => 1, 'patient' => $patient];
-                }
-            }
-        }
-
-        // Pass both simplifiedVisits and patientVisits to the view for backward compatibility
-        return view('openai', compact('symptoms', 'existingPatients', 'simplifiedVisits', 'patientVisits', 'patientToEdit'));
+        return view('openai', compact('symptoms', 'assignedPatients'));
     }
 
 
     public function getResponse(PatientAnalysisRequest $request)
     {
         try {
-            \Log::info('Form submitted with patient_selection: ' . $request->patient_selection);
+            // Validate patient information
+            $validator = Validator::make($request->all(), [
+                'existing_patient' => 'nullable|exists:users,id',
+                'patient_name' => 'required_without:existing_patient|string|max:255',
+                'patient_email' => 'required_without:existing_patient|email|max:255',
+                'patient_phone' => 'nullable|string|max:20',
+                'patient_age' => 'required_without:existing_patient|integer|min:1|max:150',
+                'patient_gender' => 'required_without:existing_patient|in:male,female,other',
+            ]);
+
+            if ($validator->fails()) {
+                return back()->withErrors($validator)->withInput();
+            }
+
+            // Get or create patient
+            if ($request->existing_patient) {
+                // Use existing patient
+                $patient = Auth::user()->assignedPatients()->findOrFail($request->existing_patient);
+                $isNewPatient = false;
+            } else {
+                // Create new patient
+                $patient = $this->findOrCreatePatient($request);
+                $isNewPatient = $patient->wasRecentlyCreated;
+            }
+
+            \Log::info('Processing AI diagnosis for patient: ' . $patient->name . ' (ID: ' . $patient->id . ')');
 
             $files = $request->file('reports');
 
@@ -259,9 +241,17 @@ class OpenAIController extends Controller
 
                 $filteredMessage = $this->filterReponse($rawMessage);
 
-                $patientRecord = $this->insertTotable($request,$filteredMessage);
+                // Create AI diagnosis record
+                $diagnosis = $this->createAIDiagnosis($patient, $filteredMessage, $request);
+
+                // Send notifications if new patient
+                if ($isNewPatient) {
+                    $this->sendPatientNotifications($patient, $diagnosis);
+                }
+
                 return redirect()->back()->with([
                     'openai_result' => $filteredMessage,
+                    'success' => 'AI diagnosis completed successfully!' . ($isNewPatient ? ' Patient has been notified via email and SMS.' : ''),
                 ]);
 
             }
@@ -397,8 +387,13 @@ class OpenAIController extends Controller
             $this->trackTokenUsage($response, 'diagnosis');
 
             $filteredMessage = $this->filterReponse($rawMessage);
-            // ✅ Save to database
-            $patientRecord = $this->insertTotable($request, $filteredMessage);
+            // Create AI diagnosis record
+            $diagnosis = $this->createAIDiagnosis($patient, $filteredMessage, $request);
+
+            // Send notifications if new patient
+            if ($isNewPatient) {
+                $this->sendPatientNotifications($patient, $diagnosis);
+            }
 
             // Create a conversation ID for follow-up messages
             $conversationId = uniqid('conv_');
@@ -502,8 +497,13 @@ class OpenAIController extends Controller
 
                 $lastMessage = $this->filterReponse($lastMessage);
 
-                // Save to database
-                $patientRecord = $this->insertTotable($request, $lastMessage);
+                // Create AI diagnosis record
+                $diagnosis = $this->createAIDiagnosis($patient, $lastMessage, $request);
+
+                // Send notifications if new patient
+                if ($isNewPatient) {
+                    $this->sendPatientNotifications($patient, $diagnosis);
+                }
 
                 // Get the conversation ID from session
                 $conversationId = session('conversation_id');
@@ -545,27 +545,33 @@ class OpenAIController extends Controller
 
     private function collectPatientData(Request $request)
     {
+        // Get patient information from either existing patient or new patient form
+        $patientName = $request->existing_patient ?
+            Auth::user()->assignedPatients()->find($request->existing_patient)->name :
+            $request->patient_name;
+
+        $patientAge = $request->existing_patient ?
+            Auth::user()->assignedPatients()->find($request->existing_patient)->age :
+            $request->patient_age;
+
+        $patientGender = $request->existing_patient ?
+            Auth::user()->assignedPatients()->find($request->existing_patient)->gender :
+            $request->patient_gender;
+
         // Check if we're using an existing patient
-        if ($request->patient_selection && $request->patient_selection != 'new') {
+        if ($request->existing_patient) {
             // Get the existing patient data
-            $existingPatient = PatientAnalysis::find($request->patient_selection);
+            $existingPatient = Auth::user()->assignedPatients()->find($request->existing_patient);
 
             if ($existingPatient) {
-                // Get the patient's history using patient_key if available
-                $patientHistory = $existingPatient->getPatientHistory();
+                // Get the patient's previous diagnoses for history
+                $patientHistory = $existingPatient->patientDiagnoses()->orderBy('created_at', 'desc')->get();
 
                 // Get the latest record for this patient
                 $latestRecord = $patientHistory->sortByDesc('visit_number')->first();
 
-                // Use the latest record if available, otherwise use the selected one
-                $patientRecord = $latestRecord ?? $existingPatient;
-
                 // Count the number of visits
                 $visitCount = $patientHistory->count();
-
-                // Calculate the visit number for this specific visit
-                // This will be the next visit number (count + 1) since we're creating a new record
-                $currentVisitNumber = $visitCount + 1;
 
                 // Get previous medical history from past visits
                 $previousMedicalHistory = '';
@@ -574,9 +580,9 @@ class OpenAIController extends Controller
                     $previousMedicalHistory .= "Total previous visits: " . $visitCount . "\n\n";
 
                     // Get the previous visits with more detailed information
-                    $previousVisits = $patientHistory->sortByDesc('created_at')->take(3)->map(function($record, $index) {
+                    $previousVisits = $patientHistory->take(3)->map(function($record, $index) {
                         $date = $record->created_at->format('M d, Y');
-                        $visitNum = $record->visit_number ?? ($index + 1);
+                        $visitNum = $index + 1;
 
                         $visitSummary = "VISIT #$visitNum ($date):\n";
 
@@ -637,11 +643,11 @@ class OpenAIController extends Controller
                 }
 
                 return [
-                    'name' => $patientRecord->name,
-                    'age' => $patientRecord->age,
-                    'gender' => $patientRecord->gender,
-                    'weight' => $request->weight ?: $patientRecord->weight,
-                    'height' => $request->height ?: $patientRecord->height,
+                    'name' => $patientName,
+                    'age' => $patientAge,
+                    'gender' => $patientGender,
+                    'weight' => $request->weight,
+                    'height' => $request->height,
                     'symptoms' => $this->processSymptoms($request->current_symptoms, $request->custom_symptoms),
                     'test_results' => $request->test_results,
                     'clinical_status' => [
@@ -725,9 +731,9 @@ class OpenAIController extends Controller
 
         // New patient or existing patient not found
         return [
-            'name' => $request->name,
-            'age' => $request->age,
-            'gender' => $request->gender,
+            'name' => $patientName,
+            'age' => $patientAge,
+            'gender' => $patientGender,
             'weight' => $request->weight,
             'height' => $request->height,
             'symptoms' => $this->processSymptoms($request->current_symptoms, $request->custom_symptoms),
@@ -1019,6 +1025,131 @@ class OpenAIController extends Controller
         }
 
         return '';
+    }
+
+    /**
+     * Find or create patient similar to DiagnosisController
+     */
+    private function findOrCreatePatient(Request $request)
+    {
+        // First check if patient exists and is already assigned to this doctor
+        $patient = Auth::user()->assignedPatients()
+            ->where('email', $request->patient_email)
+            ->first();
+
+        if (!$patient) {
+            // Check if patient exists but is assigned to another doctor
+            $existingPatient = User::where('email', $request->patient_email)
+                ->where('role', 'patient')
+                ->first();
+
+            if ($existingPatient) {
+                // Patient exists but belongs to another doctor - not allowed
+                throw new \Exception('This patient is already registered with another doctor. Please use a different email address.');
+            }
+
+            // Create new patient and assign to current doctor
+            $tempPass = Hash::make('temporary');
+
+            $patient = User::create([
+                'name' => $request->patient_name,
+                'email' => $request->patient_email,
+                'phone' => $request->patient_phone,
+                'age' => $request->patient_age,
+                'gender' => $request->patient_gender,
+                'role' => 'patient',
+                'primary_doctor_id' => Auth::id(), // Assign to current doctor
+                'password' => $tempPass, // Will be updated with real temp password
+            ]);
+        }
+
+        return $patient;
+    }
+
+    /**
+     * Create AI diagnosis record
+     */
+    private function createAIDiagnosis($patient, $aiResponse, $request)
+    {
+        // Collect patient data for the diagnosis
+        $patientData = [
+            'symptoms' => $request->current_symptoms ? json_encode($request->current_symptoms) : null,
+            'chief_complaint' => $request->chief_complaint,
+            'symptom_duration' => $request->symptom_duration,
+            'past_medical_history' => $request->past_medical_history,
+            'medication_history' => $request->medication_history,
+            'allergies' => $request->allergies,
+            'family_history' => $request->family_history,
+            'social_history' => $request->social_history,
+            'test_results' => $request->test_results,
+            'preliminary_diagnosis' => $request->preliminary_diagnosis,
+            'vital_signs' => [
+                'weight' => $request->weight,
+                'height' => $request->height,
+                'temperature' => $request->temperature,
+                'blood_pressure' => $request->blood_pressure,
+                'blood_sugar' => $request->blood_sugar,
+                'heart_rate' => $request->heart_rate,
+                'respiratory_rate' => $request->respiratory_rate,
+                'oxygen_saturation' => $request->oxygen_saturation,
+            ],
+            'physical_assessment' => [
+                'consciousness_level' => $request->consciousness_level,
+                'mood_behavior' => $request->mood_behavior,
+                'speech_clarity' => $request->speech_clarity,
+                'hygiene_level' => $request->hygiene_level,
+                'scalp_condition' => $request->scalp_condition,
+                'pupil_reactivity' => $request->pupil_reactivity,
+                'vision_issues' => $request->vision_issues ? 1 : 0,
+                'hearing_issues' => $request->hearing_issues ? 1 : 0,
+                'oral_findings' => $request->oral_findings,
+                'orientation_level' => $request->orientation_level,
+                'limb_strength' => $request->limb_strength,
+                'reflexes' => $request->reflexes,
+                'sensation_findings' => $request->sensation_findings,
+            ],
+            'additional_notes' => $request->additional_notes,
+            'physician_notes' => $request->physician_notes,
+        ];
+
+        // Create diagnosis record
+        $diagnosis = Diagnosis::create([
+            'doctor_id' => Auth::id(),
+            'patient_id' => $patient->id,
+            'type' => 'ai',
+            'diagnosis_text' => $aiResponse,
+            'patient_data' => $patientData,
+        ]);
+
+        return $diagnosis;
+    }
+
+    /**
+     * Send notifications to new patient
+     */
+    private function sendPatientNotifications($patient, $diagnosis)
+    {
+        $tempPassword = SmsService::generateTempPassword();
+        \Log::info('Creating new patient account via AI diagnosis', [
+            'email' => $patient->email,
+            'name' => $patient->name,
+            'password' => $tempPassword,
+        ]);
+
+        $patient->update(['password' => Hash::make($tempPassword)]);
+
+        // Send email notification
+        Mail::to($patient->email)->send(
+            new PatientAccountCreated($patient, Auth::user(), $diagnosis, $tempPassword)
+        );
+
+        // Send SMS notification if phone provided
+        if ($patient->phone) {
+            $smsMessage = "Hello {$patient->name}, Dr. " . Auth::user()->name . " has created your medical account. Check your email for login details. Diagnosis ID: {$diagnosis->id}";
+            $this->smsService->send($patient->phone, $smsMessage);
+        }
+
+        $diagnosis->update(['patient_notified' => true]);
     }
 
     private function insertTotable($request, $aiResponse){
