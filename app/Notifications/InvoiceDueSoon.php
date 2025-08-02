@@ -34,15 +34,20 @@ class InvoiceDueSoon extends Notification implements ShouldQueue
         $daysUntilDue = now()->diffInDays($this->invoice->due_date, false);
         
         return (new MailMessage)
-            ->subject('Invoice Due Soon - MedCura AI')
+            ->subject('MedCura AI - Payment Due Soon')
+            ->from(config('mail.from.address'), 'MedCura AI')
+            ->replyTo(config('mail.from.address'), 'MedCura AI Support')
+
             ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('This is a reminder that you have an invoice due soon.')
+            ->line('We wanted to remind you that your MedCura AI invoice will be due soon.')
             ->line('Invoice Amount: ' . $this->invoice->getFormattedAmountDue())
             ->line('Due Date: ' . $this->invoice->due_date->format('M d, Y') . ' (' . abs($daysUntilDue) . ' days)')
             ->line('Description: ' . $this->invoice->description)
-            ->action('Pay Now', route('invoices.show', $this->invoice))
-            ->line('Please make your payment before the due date to avoid any service interruptions.')
-            ->line('Thank you for using MedCura AI!');
+            ->action('View Invoice & Pay', route('invoices.show', $this->invoice))
+            ->line('To continue enjoying uninterrupted access to MedCura AI, please complete your payment before the due date.')
+            ->line('If you have any questions, our support team is here to help at ' . config('mail.from.address'))
+            ->line('Thank you for choosing MedCura AI!')
+            ->salutation('Best regards,<br>The MedCura AI Team');
     }
 
     /**

@@ -9,14 +9,7 @@ use Illuminate\Support\Facades\Config;
 class EmailService
 {
     private $fallbackConfigs = [
-        // Primary: Gmail SMTP
-        'gmail' => [
-            'driver' => 'smtp',
-            'host' => 'smtp.gmail.com',
-            'port' => 587,
-            'encryption' => 'tls',
-        ],
-        // Fallback 1: Hostinger SMTP (if enabled)
+        // Primary: Hostinger SMTP (working configuration)
         'hostinger' => [
             'driver' => 'smtp',
             'host' => 'smtp.hostinger.com',
@@ -25,10 +18,17 @@ class EmailService
             'username' => 'info@medcuraai.com',
             'password' => '!SWeG>1wI',
         ],
-        // Fallback 2: System sendmail
+        // Fallback 1: System sendmail
         'sendmail' => [
             'driver' => 'sendmail',
             'path' => '/usr/sbin/sendmail -bs',
+        ],
+        // Fallback 2: Gmail SMTP (if needed)
+        'gmail' => [
+            'driver' => 'smtp',
+            'host' => 'smtp.gmail.com',
+            'port' => 587,
+            'encryption' => 'tls',
         ],
     ];
 
@@ -45,7 +45,11 @@ class EmailService
 
             try {
                 $attempts++;
-                Log::info("Attempting to send email using: $configName (attempt $attempts)");
+                Log::info("Attempting to send email using: $configName (attempt $attempts)", [
+                    'to' => $to,
+                    'subject' => $subject,
+                    'view' => $view
+                ]);
 
                 // Temporarily set mail configuration
                 $this->setMailConfig($config);
@@ -53,11 +57,21 @@ class EmailService
                 // Clear any cached config
                 app()->forgetInstance('mailer');
 
-                // Send email
+                // Send email with anti-spam headers
                 Mail::send($view, $data, function ($message) use ($to, $subject) {
                     $message->to($to);
                     $message->subject($subject);
                     $message->from(config('mail.from.address'), config('mail.from.name'));
+                    
+                    // Add anti-spam headers
+                    $message->getHeaders()
+                        ->addTextHeader('X-Mailer', 'MedCura AI System')
+                        ->addTextHeader('X-Priority', '3')
+                        ->addTextHeader('List-Unsubscribe', '<mailto:unsubscribe@medcuraai.com>')
+                        ->addTextHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN');
+                    
+                    // Set return path properly
+                    $message->returnPath(config('mail.from.address'));
                 });
 
                 Log::info("Email sent successfully using: $configName to: $to");
@@ -65,7 +79,11 @@ class EmailService
 
             } catch (\Exception $e) {
                 $lastError = $e->getMessage();
-                Log::warning("Failed to send email using $configName: " . $lastError);
+                Log::warning("Failed to send email using $configName: " . $lastError, [
+                    'to' => $to,
+                    'view' => $view,
+                    'error_trace' => $e->getTraceAsString()
+                ]);
                 
                 // Reset mail config for next attempt
                 $this->resetMailConfig();
@@ -74,7 +92,11 @@ class EmailService
         }
 
         // All methods failed, log final error
-        Log::error("Failed to send email after $attempts attempts. Last error: $lastError");
+        Log::error("Failed to send email after $attempts attempts. Last error: $lastError", [
+            'to' => $to,
+            'subject' => $subject,
+            'view' => $view
+        ]);
         
         // Try basic PHP mail as last resort
         return $this->fallbackPHPMail($to, $subject, $data);

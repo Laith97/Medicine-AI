@@ -7,24 +7,16 @@
     .admin-page {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         min-height: 100vh;
-        padding: 2rem 0;
-    }
-
-    .admin-header {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        color: white;
-        padding: 2rem;
-        border-radius: 20px;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(44, 62, 80, 0.3);
+        padding: 1rem 0;
     }
 
     .form-card {
         background: white;
-        border-radius: 15px;
-        padding: 2rem;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
         border: none;
+        margin-bottom: 1.5rem;
     }
 
     .form-control:focus {
@@ -98,9 +90,32 @@ function updateSpecialtyValue() {
     }
 }
 
+function updatePlanDetailsEdit() {
+    const select = document.getElementById('subscription_plan_id');
+    const planDetails = document.getElementById('plan-details-edit');
+    const planInfo = document.getElementById('plan-info-edit');
+    
+    if (select.value) {
+        const option = select.options[select.selectedIndex];
+        const price = option.getAttribute('data-price');
+        const period = option.getAttribute('data-period');
+        const cycle = option.getAttribute('data-cycle');
+        
+        planInfo.innerHTML = `
+            <div><strong>Price:</strong> $${parseFloat(price).toFixed(2)}</div>
+            <div><strong>Billing:</strong> ${cycle === 'monthly' ? 'Monthly' : 'Yearly'}</div>
+            <div><strong>Period:</strong> ${period} month${period != 1 ? 's' : ''}</div>
+        `;
+        planDetails.style.display = 'block';
+    } else {
+        planDetails.style.display = 'none';
+    }
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     toggleMedicalSpecialty();
+    updatePlanDetailsEdit();
 
     // Set initial values
     const currentSpecialty = document.getElementById('specialty').value;
@@ -343,35 +358,61 @@ document.addEventListener('DOMContentLoaded', function() {
                             @enderror
                         </div>
 
-                        <!-- Monthly Invoice Settings -->
+                        <!-- Subscription Pricing Settings -->
                         <div class="card mb-4" style="border: 2px solid #e9ecef; border-radius: 10px;">
                             <div class="card-header bg-light">
                                 <h6 class="mb-0 fw-bold">
-                                    <i class="bi bi-credit-card me-2"></i>Monthly Invoice Settings
+                                    <i class="bi bi-credit-card me-2"></i>Subscription Pricing
                                 </h6>
-                                <small class="text-muted">Configure monthly billing for this user</small>
+                                <small class="text-muted">Update monthly and yearly subscription prices</small>
                             </div>
                             <div class="card-body">
                                 @php
-                                    $monthlySettings = $user->monthlyInvoiceSetting;
+                                    $userSetting = $user->monthlyInvoiceSetting;
+                                    $currentMonthlyPrice = $userSetting->monthly_price ?? 99.00;
+                                    $currentYearlyPrice = $userSetting->yearly_price ?? 950.00;
                                 @endphp
                                 <div class="row">
-                                    <div class="col-md-4">
-                                        <label for="billing_amount" class="form-label fw-bold">Billing Amount ($)</label>
-                                        <input id="billing_amount" type="number" name="billing_amount" 
-                                               value="{{ old('billing_amount', $monthlySettings->billing_amount ?? '') }}" 
+                                    <div class="col-md-6">
+                                        <label for="monthly_price" class="form-label fw-bold">Monthly Price ($)</label>
+                                        <input id="monthly_price" type="number" name="monthly_price" 
+                                               value="{{ old('monthly_price', $currentMonthlyPrice) }}" 
                                                step="0.01" min="0" max="99999.99"
-                                               class="form-control @error('billing_amount') is-invalid @enderror"
-                                               placeholder="e.g., 199.99">
-                                        <small class="text-muted">Amount charged per billing period</small>
-                                        @error('billing_amount')
+                                               class="form-control @error('monthly_price') is-invalid @enderror"
+                                               placeholder="99.00">
+                                        <small class="text-muted">Current: ${{ number_format($currentMonthlyPrice, 2) }}</small>
+                                        @error('monthly_price')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
+                                    <div class="col-md-6">
+                                        <label for="yearly_price" class="form-label fw-bold">Yearly Price ($)</label>
+                                        <input id="yearly_price" type="number" name="yearly_price" 
+                                               value="{{ old('yearly_price', $currentYearlyPrice) }}" 
+                                               step="0.01" min="0" max="99999.99"
+                                               class="form-control @error('yearly_price') is-invalid @enderror"
+                                               placeholder="950.00">
+                                        <small class="text-muted">Current: ${{ number_format($currentYearlyPrice, 2) }}</small>
+                                        @error('yearly_price')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="alert alert-info">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            <strong>Note:</strong> These prices are specific to this user only and will not affect other users.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-3">
                                     <div class="col-md-4">
                                         <label for="grace_period_days" class="form-label fw-bold">Grace Period (Days)</label>
                                         <input id="grace_period_days" type="number" name="grace_period_days" 
-                                               value="{{ old('grace_period_days', $monthlySettings->grace_period_days ?? 7) }}" 
+                                               value="{{ old('grace_period_days', $userSetting->grace_period_days ?? 7) }}" 
                                                min="1" max="30"
                                                class="form-control @error('grace_period_days') is-invalid @enderror">
                                         <small class="text-muted">Days after due date before restrictions</small>
@@ -382,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="col-md-4">
                                         <label for="reminder_frequency_days" class="form-label fw-bold">Reminder Frequency (Days)</label>
                                         <input id="reminder_frequency_days" type="number" name="reminder_frequency_days" 
-                                               value="{{ old('reminder_frequency_days', $monthlySettings->reminder_frequency_days ?? 3) }}" 
+                                               value="{{ old('reminder_frequency_days', $userSetting->reminder_frequency_days ?? 3) }}" 
                                                min="1" max="30"
                                                class="form-control @error('reminder_frequency_days') is-invalid @enderror">
                                         <small class="text-muted">Days between reminder notifications</small>
@@ -392,21 +433,21 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </div>
                                 </div>
                                 
-                                @if($monthlySettings)
+                                @if($userSetting)
                                     <div class="row mt-3">
                                         <div class="col-12">
                                             <div class="alert alert-info">
                                                 <i class="bi bi-info-circle me-2"></i>
                                                 <strong>Current Status:</strong> 
-                                                @if($monthlySettings->is_active)
+                                                @if($userSetting->is_active)
                                                     <span class="badge bg-success">Active</span>
-                                                    Billing is enabled for {{ $monthlySettings->getAmountWithPeriod() }}
+                                                    Billing is enabled for {{ $userSetting->getAmountWithPeriod() }}
                                                 @else
                                                     <span class="badge bg-secondary">Inactive</span>
                                                     Monthly billing is disabled
                                                 @endif
                                                 
-                                                @if($monthlySettings->is_restricted)
+                                                @if($userSetting->is_restricted)
                                                     <br><span class="badge bg-danger mt-1">Restricted</span>
                                                     User access is currently restricted due to unpaid invoices
                                                 @endif

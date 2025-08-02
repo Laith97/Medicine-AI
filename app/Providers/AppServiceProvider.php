@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
 use App\Models\StripeInvoice;
 use App\Models\DoctorBlogPost;
@@ -24,6 +25,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Use custom pagination view for admin pages
+        Paginator::defaultView('custom.pagination');
+        Paginator::defaultSimpleView('custom.pagination');
+
         // Custom route model binding for StripeInvoice to ensure URLs are strings
         Route::bind('invoice', function ($value) {
             $invoice = StripeInvoice::findOrFail($value);

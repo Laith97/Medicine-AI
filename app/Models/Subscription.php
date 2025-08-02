@@ -64,19 +64,23 @@ class Subscription extends Model
     }
 
     /**
-     * Get the plan configuration.
+     * Get the plan configuration (deprecated - use user's monthlyInvoiceSetting).
      */
     public function getPlanConfig(): array
     {
-        return config("stripe.plans.{$this->plan_name}", []);
+        // Return default config for backward compatibility
+        return [
+            'name' => $this->plan_name ?? 'Custom Plan',
+            'token_limit' => -1, // Unlimited
+            'monthly_cost_limit' => $this->user->monthly_cost_limit ?? 100,
+        ];
     }
 
     /**
-     * Get the token limit for this subscription.
+     * Get the cost limit for this subscription (replaces token limit).
      */
-    public function getTokenLimit(): int
+    public function getCostLimit(): float
     {
-        $config = $this->getPlanConfig();
-        return $config['token_limit'] ?? 0;
+        return $this->user->monthly_cost_limit ?? 100;
     }
 }

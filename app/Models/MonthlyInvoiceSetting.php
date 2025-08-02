@@ -11,7 +11,10 @@ class MonthlyInvoiceSetting extends Model
     use HasFactory;
     protected $fillable = [
         'user_id',
+        'subscription_plan_id',
         'billing_amount',
+        'monthly_price',
+        'yearly_price',
         'subscription_period_months',
         'subscription_starts_at',
         'subscription_ends_at',
@@ -27,6 +30,8 @@ class MonthlyInvoiceSetting extends Model
 
     protected $casts = [
         'billing_amount' => 'decimal:2',
+        'monthly_price' => 'decimal:2',
+        'yearly_price' => 'decimal:2',
         'subscription_period_months' => 'integer',
         'subscription_starts_at' => 'datetime',
         'subscription_ends_at' => 'datetime',
@@ -48,6 +53,14 @@ class MonthlyInvoiceSetting extends Model
     }
 
     /**
+     * Get the subscription plan associated with this setting
+     */
+    public function subscriptionPlan(): BelongsTo
+    {
+        return $this->belongsTo(SubscriptionPlan::class);
+    }
+
+    /**
      * Get default restricted pages
      */
     public static function getDefaultRestrictedPages(): array
@@ -56,6 +69,8 @@ class MonthlyInvoiceSetting extends Model
             'ask-ai',
             'cases',
             'dashboard',
+            'appointments',
+            'reviews',
             'settings',
         ];
     }
@@ -69,6 +84,9 @@ class MonthlyInvoiceSetting extends Model
             'ask-ai' => 'AI Assistant',
             'cases' => 'Patient Cases',
             'dashboard' => 'Dashboard',
+            'appointments' => 'Appointments',
+            'availability' => 'Doctor Availability',
+            'reviews' => 'Reviews',
             'settings' => 'Settings',
             'profile.edit' => 'Profile',
         ];
@@ -83,7 +101,53 @@ class MonthlyInvoiceSetting extends Model
             return false;
         }
 
-        return in_array($routeName, $this->restricted_pages);
+        // Map related routes to their main page restrictions
+        $routeMapping = [
+            // AI Assistant related routes
+            'ask-ai' => ['ask-ai', 'openai.respond', 'openai.follow-up', 'patient.summary'],
+            // Cases related routes  
+            'cases' => ['cases'],
+            // Dashboard related routes
+            'dashboard' => ['dashboard'],
+            // Appointments related routes
+            'appointments' => [
+                'appointments.index', 'appointments.show', 'appointments.cancel', 
+                'appointments.reschedule', 'appointments.calendar.events',
+                // Doctor appointment routes
+                'doctor.appointments.index', 'doctor.appointments.show', 
+                'doctor.appointments.confirm', 'doctor.appointments.cancel',
+                'doctor.appointments.complete', 'doctor.appointments.no-show',
+                'doctor.appointments.calendar.events'
+            ],
+            // Availability related routes
+            'availability' => [
+                'doctor.availability.index', 'doctor.availability.create', 'doctor.availability.store',
+                'doctor.availability.show', 'doctor.availability.edit', 'doctor.availability.update',
+                'doctor.availability.destroy', 'doctor.availability.toggle', 'doctor.availability.bulk'
+            ],
+            // Reviews related routes
+            'reviews' => [
+                'reviews.index', 'reviews.show', 'reviews.create', 'reviews.store',
+                'reviews.edit', 'reviews.update', 'reviews.destroy', 'appointments.review',
+                // Doctor review routes
+                'doctor.reviews.index'
+            ],
+            // Settings related routes
+            'settings' => ['settings', 'settings.update'],
+            // Profile related routes
+            'profile.edit' => ['profile.edit', 'profile.update', 'profile.destroy'],
+        ];
+
+        // Check if current route should be restricted based on admin configuration
+        foreach ($this->restricted_pages as $restrictedPage) {
+            if (isset($routeMapping[$restrictedPage])) {
+                if (in_array($routeName, $routeMapping[$restrictedPage])) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -104,7 +168,7 @@ class MonthlyInvoiceSetting extends Model
             return true;
         }
 
-        return $this->last_reminder_sent_at->addDays($this->reminder_frequency_days)->isPast();
+        return $this->last_reminder_sent_at->addDays((int) $this->reminder_frequency_days)->isPast();
     }
 
     /**
@@ -155,6 +219,26 @@ class MonthlyInvoiceSetting extends Model
     public function isUnlimitedSubscription(): bool
     {
         return $this->subscription_period_months === -1;
+    }
+
+    /**
+     * Check if subscription is currently active
+     */
+    public function isActiveSubscription(): bool
+    {
+        if (!$this->is_active) {
+            return false;
+        }
+
+        if ($this->isUnlimitedSubscription()) {
+            return true;
+        }
+
+        if (!$this->subscription_ends_at) {
+            return false;
+        }
+
+        return $this->subscription_ends_at->isFuture();
     }
 
     /**
@@ -233,7 +317,7 @@ class MonthlyInvoiceSetting extends Model
             return null;
         }
 
-        return $this->subscription_starts_at->copy()->addMonths($this->subscription_period_months);
+        return $this->subscription_starts_at->copy()->addMonths((int) $this->subscription_period_months);
     }
 
     /**
@@ -242,7 +326,15 @@ class MonthlyInvoiceSetting extends Model
     public function startSubscription(): void
     {
         $startDate = now();
-        $endDate = $this->isUnlimitedSubscription() ? null : $startDate->copy()->addMonths($this->subscription_period_months);
+        
+        if ($this->isUnlimitedSubscription()) {
+            $endDate = null;
+        } else {
+            // Determine billing cycle based on billing_amount
+            $isYearly = $this->billing_amount == $this->yearly_price && $this->yearly_price > 0;
+            $months = $isYearly ? 12 : 1;
+            $endDate = $startDate->copy()->addMonths($months);
+        }
 
         $this->update([
             'subscription_starts_at' => $startDate,
@@ -308,7 +400,7 @@ class MonthlyInvoiceSetting extends Model
             return false;
         }
 
-        $gracePeriodEnd = $this->subscription_ends_at->copy()->addDays($this->grace_period_days);
+        $gracePeriodEnd = $this->subscription_ends_at->copy()->addDays((int) $this->grace_period_days);
         return now()->isBefore($gracePeriodEnd);
     }
 
@@ -321,9 +413,9 @@ class MonthlyInvoiceSetting extends Model
             return false;
         }
 
-        $gracePeriodEnd = $this->subscription_ends_at->copy()->addDays($this->grace_period_days);
-        $warningPeriodEnd = $gracePeriodEnd->copy()->addDays($this->warning_period_days);
-
+        $gracePeriodEnd = $this->subscription_ends_at->copy()->addDays((int) $this->grace_period_days);
+        $warningPeriodEnd = $gracePeriodEnd->copy()->addDays((int) $this->warning_period_days);
+        
         return now()->isAfter($gracePeriodEnd) && now()->isBefore($warningPeriodEnd);
     }
 
@@ -336,9 +428,9 @@ class MonthlyInvoiceSetting extends Model
             return false;
         }
 
-        $gracePeriodEnd = $this->subscription_ends_at->copy()->addDays($this->grace_period_days);
-        $warningPeriodEnd = $gracePeriodEnd->copy()->addDays($this->warning_period_days);
-
+        $gracePeriodEnd = $this->subscription_ends_at->copy()->addDays((int) $this->grace_period_days);
+        $warningPeriodEnd = $gracePeriodEnd->copy()->addDays((int) $this->warning_period_days);
+        
         return now()->isAfter($warningPeriodEnd);
     }
 
@@ -351,7 +443,7 @@ class MonthlyInvoiceSetting extends Model
             return null;
         }
 
-        return $this->subscription_ends_at->copy()->addDays($this->grace_period_days);
+        return $this->subscription_ends_at->copy()->addDays((int) $this->grace_period_days);
     }
 
     /**
@@ -364,7 +456,7 @@ class MonthlyInvoiceSetting extends Model
             return null;
         }
 
-        return $gracePeriodEnd->copy()->addDays($this->warning_period_days);
+        return $gracePeriodEnd->copy()->addDays((int) $this->warning_period_days);
     }
 
     /**
@@ -442,6 +534,82 @@ class MonthlyInvoiceSetting extends Model
             'unlimited' => 'Enjoy unlimited lifetime access',
             'should_be_restricted' => 'Account should be restricted - contact admin',
             default => 'Contact support for assistance'
+        };
+    }
+
+    /**
+     * Get user's monthly plan data
+     */
+    public function getMonthlyPlan(): array
+    {
+        $monthlyPrice = (float) ($this->monthly_price ?? 0);
+        
+        return [
+            'id' => 'monthly',
+            'name' => 'Monthly Plan',
+            'price' => $monthlyPrice,
+            'billing_cycle' => 'monthly',
+            'billing_period_months' => 1,
+            'formatted_price' => '$' . number_format($monthlyPrice, 2) . '/month',
+            'description' => 'Billed monthly',
+        ];
+    }
+
+    /**
+     * Get user's yearly plan data
+     */
+    public function getYearlyPlan(): array
+    {
+        $monthlyPrice = (float) ($this->monthly_price ?? 0);
+        $yearlyPrice = (float) ($this->yearly_price ?? 0);
+        $monthlySavings = $monthlyPrice > 0 ? (($monthlyPrice * 12) - $yearlyPrice) : 0;
+        $savingsPercentage = $monthlyPrice > 0 ? round(($monthlySavings / ($monthlyPrice * 12)) * 100) : 0;
+
+        return [
+            'id' => 'yearly',
+            'name' => 'Yearly Plan',
+            'price' => $yearlyPrice,
+            'billing_cycle' => 'yearly',
+            'billing_period_months' => 12,
+            'formatted_price' => '$' . number_format($yearlyPrice, 2) . '/year',
+            'monthly_equivalent' => '$' . number_format($yearlyPrice > 0 ? $yearlyPrice / 12 : 0, 2) . '/month',
+            'description' => 'Billed annually',
+            'savings' => $monthlySavings,
+            'savings_percentage' => $savingsPercentage,
+        ];
+    }
+
+    /**
+     * Get both user plans
+     */
+    public function getUserPlans(): array
+    {
+        return [
+            'monthly' => $this->getMonthlyPlan(),
+            'yearly' => $this->getYearlyPlan(),
+        ];
+    }
+
+    /**
+     * Set pricing for user
+     */
+    public function setPricing(float $monthlyPrice, float $yearlyPrice): void
+    {
+        $this->update([
+            'monthly_price' => $monthlyPrice,
+            'yearly_price' => $yearlyPrice,
+        ]);
+    }
+
+    /**
+     * Get price for specific billing cycle
+     */
+    public function getPriceForCycle(string $cycle): float
+    {
+        return match($cycle) {
+            'monthly' => $this->monthly_price ?? 0,
+            'yearly' => $this->yearly_price ?? 0,
+            default => 0,
         };
     }
 }
