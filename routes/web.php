@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DiagnosisController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\OpenAIController;
 use App\Http\Controllers\ProfileController;
@@ -16,6 +17,13 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\Admin\AdminInvoiceController;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Doctor\GoogleController;
+use App\Http\Controllers\Doctor\LandingPageController;
+use App\Http\Controllers\PublicLandingPageController;
+use App\Http\Controllers\Doctor\BlogController;
+use App\Http\Controllers\Doctor\ChatController;
+use App\Http\Controllers\Doctor\TestimonialController;
+use App\Http\Controllers\Doctor\AnalyticsController;
+use App\Http\Controllers\PublicChatController;
 use App\Http\Controllers\Admin\MonthlyInvoiceController;
 use App\Http\Controllers\Admin\SubscriptionPlanController;
 use App\Models\SystemSetting;
@@ -81,6 +89,30 @@ Route::middleware('auth')->group(function () {
     Route::resource('reviews', ReviewController::class);
     Route::get('/appointments/{appointment}/review', [ReviewController::class, 'create'])->name('appointments.review');
 
+    // Diagnosis routes
+    Route::prefix('diagnosis')->name('diagnosis.')->group(function () {
+
+        // Patient routes
+        Route::middleware('role:patient')->group(function () {
+            // Specific routes first
+            Route::get('/my-diagnoses', [DiagnosisController::class, 'patientIndex'])->name('patient.index');
+            Route::get('/{diagnosis}/view', [DiagnosisController::class, 'patientView'])->name('patient.view');
+            Route::post('/{diagnosis}/follow-up', [DiagnosisController::class, 'storeFollowUp'])->name('follow-up.store');
+            Route::post('/{diagnosis}/review', [DiagnosisController::class, 'storeReview'])->name('review.store');
+        });
+
+        // Doctor routes
+        Route::middleware('role:doctor')->group(function () {
+            Route::get('/', [DiagnosisController::class, 'index'])->name('index');
+            Route::get('/create', [DiagnosisController::class, 'create'])->name('create');
+            Route::post('/', [DiagnosisController::class, 'store'])->name('store');
+
+            // Moved after /create to prevent route clash
+            Route::get('/{diagnosis}', [DiagnosisController::class, 'show'])->name('show');
+        });
+
+    });
+
     // Subscription routes
     Route::get('/pricing', [SubscriptionController::class, 'pricing'])->name('subscription.pricing');
     Route::post('/subscription/checkout', [SubscriptionController::class, 'checkout'])
@@ -100,13 +132,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoices/{invoice}/manual-payment', [InvoiceController::class, 'manualPayment'])->name('invoices.manual-payment');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
     Route::post('/invoices/{invoice}/sync', [InvoiceController::class, 'sync'])->name('invoices.sync');
-    
+
     // Debug route for testing payment redirects
     Route::get('/debug/payment/{invoice}', function($invoiceId) {
         $invoice = \App\Models\StripeInvoice::findOrFail($invoiceId);
         $service = new \App\Services\StripeInvoiceService();
         $paymentUrl = $service->getPaymentUrl($invoice);
-        
+
         return response()->json([
             'invoice_id' => $invoice->id,
             'payment_url' => $paymentUrl,
@@ -114,22 +146,51 @@ Route::middleware('auth')->group(function () {
             'url_length' => strlen($paymentUrl)
         ]);
     })->name('debug.payment');
-    
+
     // Test payment page
     Route::get('/test-payment', function() {
         $invoices = \App\Models\StripeInvoice::where('status', '!=', 'paid')
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
-        
+
         return view('test-payment', compact('invoices'));
     })->name('test.payment');
+
+    // Test voice notes functionality
+    Route::get('/test-notes', function() {
+        return view('test-notes');
+    })->name('test.notes');
+
+    // Test diagnosis system access
+    Route::get('/test-diagnosis-access', function() {
+        return view('test-diagnosis-access');
+    })->name('test.diagnosis.access');
+
+    // Test diagnosis system
+    Route::get('/test-diagnosis', function() {
+        $user = auth()->user();
+        return response()->json([
+            'user_role' => $user->role,
+            'is_doctor' => $user->isDoctor(),
+            'is_patient' => $user->isPatient(),
+            'diagnosis_routes' => [
+                'doctor_index' => route('diagnosis.index'),
+                'doctor_create' => route('diagnosis.create'),
+                'patient_index' => route('diagnosis.patient.index'),
+            ],
+            'diagnosis_count' => [
+                'doctor_diagnoses' => $user->isDoctor() ? $user->doctorDiagnoses()->count() : 'N/A',
+                'patient_diagnoses' => $user->isPatient() ? $user->patientDiagnoses()->count() : 'N/A',
+            ]
+        ]);
+    })->name('test.diagnosis');
 
     // Test grace period notification
     Route::get('/test-grace-period', function() {
         $user = auth()->user();
         $setting = $user->monthlyInvoiceSetting;
-        
+
         if (!$setting) {
             return response()->json([
                 'error' => 'No monthly invoice setting found for user',
@@ -137,7 +198,7 @@ Route::middleware('auth')->group(function () {
                 'user_email' => $user->email
             ]);
         }
-        
+
         return response()->json([
             'user' => [
                 'id' => $user->id,
@@ -205,11 +266,15 @@ Route::middleware('auth')->group(function () {
     })->name('test.restriction-status');
 });
 
+
+
 Route::get('/contact', [ContactController::class, 'show'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
 // Contact submission routes moved to admin middleware group below
 Route::get('/about', [UserSettingsController::class, 'about'])->name('about');
+
+
 
 // Doctor routes
 Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(function () {
@@ -239,6 +304,10 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
     Route::get('/profile', [DoctorDashboardController::class, 'profile'])->name('profile.edit');
     Route::patch('/profile', [DoctorDashboardController::class, 'updateProfile'])->name('profile.update');
 
+    // Appointment Settings
+    Route::get('/settings/appointments', [App\Http\Controllers\Doctor\AppointmentSettingsController::class, 'index'])->name('settings.appointments');
+    Route::put('/settings/appointments', [App\Http\Controllers\Doctor\AppointmentSettingsController::class, 'updateAppointmentTypes'])->name('settings.appointments.update');
+
     // Google integration
     Route::prefix('google')->name('google.')->group(function () {
         Route::get('/redirect', [GoogleController::class, 'redirectToGoogle'])->name('redirect');
@@ -248,7 +317,83 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
         Route::get('/locations', [GoogleController::class, 'getLocations'])->name('locations');
         Route::post('/account-location', [GoogleController::class, 'setAccountLocation'])->name('account-location');
     });
+
+    // Doctor Notes routes
+    Route::prefix('notes')->name('notes.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'store'])->name('store');
+        Route::get('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'show'])->name('show');
+        Route::get('/{note}/edit', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'edit'])->name('edit');
+        Route::put('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'update'])->name('update');
+        Route::delete('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'destroy'])->name('destroy');
+
+        // AJAX routes
+        Route::post('/transcribe-audio', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'transcribeAudio'])->name('transcribe-audio');
+        Route::get('/patients/search', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'getPatients'])->name('patients.search');
+    });
+    // Landing Page Management
+    Route::prefix('landing-page')->name('landing-page.')->group(function () {
+        Route::get('/', [LandingPageController::class, 'index'])->name('index');
+        Route::get('/page-builder', [LandingPageController::class, 'pageBuilder'])->name('page-builder');
+        Route::post('/update', [LandingPageController::class, 'update'])->name('update');
+        Route::post('/update-sections', [LandingPageController::class, 'updateSections'])->name('update-sections');
+        Route::post('/upload-hero-image', [LandingPageController::class, 'uploadHeroImage'])->name('upload-hero-image');
+        Route::post('/upload-section-image', [LandingPageController::class, 'uploadSectionImage'])->name('upload-section-image');
+        Route::post('/toggle-publish', [LandingPageController::class, 'togglePublish'])->name('toggle-publish');
+        Route::get('/preview/{username}', [LandingPageController::class, 'preview'])->name('preview');
+        Route::get('/animation-presets', [LandingPageController::class, 'getAnimationPresets'])->name('animation-presets');
+    });
+
+    // Blog Management
+    Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+    Route::get('/blog/create', [BlogController::class, 'create'])->name('blog.create');
+    Route::post('/blog', [BlogController::class, 'store'])->name('blog.store');
+    Route::get('/blog/{post}', [BlogController::class, 'show'])->name('blog.show');
+    Route::get('/blog/{post}/edit', [BlogController::class, 'edit'])->name('blog.edit');
+    Route::put('/blog/{post}', [BlogController::class, 'update'])->name('blog.update');
+    Route::delete('/blog/{post}', [BlogController::class, 'destroy'])->name('blog.destroy');
+    Route::post('/blog/{post}/toggle-publish', [BlogController::class, 'togglePublish'])->name('blog.toggle-publish');
+
+    // Chat Management
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::get('/', [ChatController::class, 'index'])->name('index');
+        Route::get('/settings', [ChatController::class, 'settings'])->name('settings');
+        Route::post('/settings', [ChatController::class, 'updateSettings'])->name('update-settings');
+        Route::get('/unread/count', [ChatController::class, 'getUnreadCount'])->name('unread-count');
+        Route::post('/mark-all-read', [ChatController::class, 'markAllAsRead'])->name('mark-all-read');
+        Route::get('/{sessionId}', [ChatController::class, 'show'])->name('show');
+        Route::post('/{sessionId}/send', [ChatController::class, 'sendMessage'])->name('send');
+    });
+
+    // Testimonials Management
+    Route::prefix('testimonials')->name('testimonials.')->group(function () {
+        Route::get('/', [TestimonialController::class, 'index'])->name('index');
+        Route::post('/{review}/toggle-public', [TestimonialController::class, 'togglePublic'])->name('toggle-public');
+        Route::post('/{review}/case-study', [TestimonialController::class, 'updateCaseStudy'])->name('case-study');
+    });
+
+    // Analytics
+    Route::prefix('analytics')->name('analytics.')->group(function () {
+        Route::get('/', [AnalyticsController::class, 'index'])->name('index');
+        Route::get('/data', [AnalyticsController::class, 'getData'])->name('data');
+    });
 });
+
+// Public Doctor Landing Pages (must be after doctor middleware group to avoid conflicts)
+Route::get('/doctor/{username}', [PublicLandingPageController::class, 'show'])->name('doctor.landing');
+Route::get('/doctor/{username}/blogs', [PublicLandingPageController::class, 'showBlogs'])->name('doctor.blogs');
+Route::get('/doctor/{username}/blog/{slug}', [PublicLandingPageController::class, 'showBlogPost'])->name('doctor.blog.post');
+
+// Public Chat Routes
+Route::post('/doctor/{username}/chat/init', [PublicChatController::class, 'initializeChat'])->name('doctor.chat.init');
+Route::post('/doctor/{username}/chat/send', [PublicChatController::class, 'sendMessage'])->name('doctor.chat.send');
+Route::get('/doctor/{username}/chat/history', [PublicChatController::class, 'getChatHistory'])->name('doctor.chat.history');
+Route::get('/doctor/{username}/chat/check-new', [PublicChatController::class, 'checkNewMessages'])->name('doctor.chat.check-new');
+
+// Public Testimonials API
+Route::get('/doctor/{username}/testimonials', [TestimonialController::class, 'getPublicTestimonials'])->name('doctor.testimonials.public');
+
 // Stripe webhook (outside auth middleware)
 Route::post('/stripe/webhook', [SubscriptionController::class, 'webhook'])->name('stripe.webhook');
 
@@ -294,6 +439,12 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::put('/user-pricing/{user}', [App\Http\Controllers\Admin\UserPricingController::class, 'update'])->name('user-pricing.update');
     Route::post('/user-pricing/bulk-update', [App\Http\Controllers\Admin\UserPricingController::class, 'bulkUpdate'])->name('user-pricing.bulk-update');
 
+    // SMS settings with country-based provider management
+    Route::get('/sms-settings', [AdminController::class, 'smsSettings'])->name('sms-settings');
+    Route::post('/sms-settings/assign-countries', [AdminController::class, 'assignCountriesToProvider'])->name('sms-settings.assign-countries');
+    Route::post('/sms-settings/remove-assignments', [AdminController::class, 'removeProviderCountryAssignments'])->name('sms-settings.remove-assignments');
+    Route::post('/sms-settings/test', [AdminController::class, 'sendTestSms'])->name('sms-settings.test');
+
     // Invoice management for admin
     Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
     Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');
@@ -315,11 +466,11 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::post('/monthly-invoices/process-payments', [MonthlyInvoiceController::class, 'processPayments'])->name('monthly-invoices.process-payments');
     Route::post('/monthly-invoices/bulk-update', [MonthlyInvoiceController::class, 'bulkUpdate'])->name('monthly-invoices.bulk-update');
     Route::post('/monthly-invoices/generate', [MonthlyInvoiceController::class, 'generate'])->name('monthly-invoices.generate');
-    
+
     // Contact submission management
     Route::get('/contact-submissions', [ContactController::class, 'adminIndex'])->name('contact-submissions');
     Route::patch('/contact-submissions/{submission}/mark-read', [ContactController::class, 'markAsRead'])->name('contact-submissions.mark-read');
-    
+
     // Manual reminder routes
     Route::post('/send-reminders', [AdminController::class, 'sendManualReminders'])->name('send-reminders');
     Route::get('/send-reminders', [AdminController::class, 'showSendRemindersForm'])->name('send-reminders.form');
@@ -333,4 +484,3 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
-

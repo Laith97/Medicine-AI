@@ -60,6 +60,53 @@
             </div>
         </div>
 
+        <!-- Second Row of Stats -->
+        <div class="row">
+            <!-- Total Notes -->
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                        <i class="fas fa-sticky-note"></i>
+                    </div>
+                    <p class="stats-number">{{ $stats['total_notes'] }}</p>
+                    <p class="stats-label">Total Notes</p>
+                </div>
+            </div>
+
+            <!-- Voice Notes -->
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #fd7e14 0%, #e55a4e 100%);">
+                        <i class="fas fa-microphone"></i>
+                    </div>
+                    <p class="stats-number">{{ $stats['voice_notes'] }}</p>
+                    <p class="stats-label">Voice Notes</p>
+                </div>
+            </div>
+
+            <!-- Notes This Month -->
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);">
+                        <i class="fas fa-calendar-plus"></i>
+                    </div>
+                    <p class="stats-number">{{ $stats['this_month_notes'] }}</p>
+                    <p class="stats-label">Notes This Month</p>
+                </div>
+            </div>
+
+            <!-- Quick Add Note -->
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stats-card clickable-card" onclick="window.location.href='{{ route('doctor.notes.create') }}'">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <p class="stats-number">+</p>
+                    <p class="stats-label">Add New Note</p>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <!-- Today's Schedule -->
             <div class="col-lg-8 mb-4">
@@ -81,7 +128,7 @@
                                 <!-- Patient Info -->
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-items-center mb-1">
-                                        <h6 class="mb-0 me-2">{{ $appointment->patient->name }}</h6>
+                                        <h6 class="mb-0 me-2">{{ $appointment->patient_name }}</h6>
                                         <span class="badge {{ $appointment->status == 'confirmed' ? 'bg-success' : 'bg-warning' }}">
                                             {{ ucfirst($appointment->status) }}
                                         </span>
@@ -122,8 +169,22 @@
                         <a href="{{ route('doctor.availability.index') }}" class="btn btn-success">
                             <i class="fas fa-clock me-2"></i>Manage Availability
                         </a>
+                        <a href="{{ route('doctor.settings.appointments') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-cog me-2"></i>Appointment Settings
+                        </a>
+                        <a href="{{ route('doctor.landing-page.index') }}" class="btn btn-warning">
+                            <i class="fas fa-globe me-2"></i>Landing Page
+                        </a>
                         <a href="{{ route('doctor.reviews.index') }}" class="btn btn-info">
                             <i class="fas fa-star me-2"></i>View Reviews
+                        </a>
+                        <a href="{{ route('doctor.notes.index') }}" class="btn btn-warning">
+                            <i class="fas fa-sticky-note me-2"></i>My Notes
+                        </a>
+                        <a href="{{ route('doctor.notes.create') }}" class="btn btn-success">
+                            <i class="fas fa-plus me-2"></i>Add Note
+                        <a href="{{ route('doctor.blog.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-blog me-2"></i>Manage Blog
                         </a>
                     </div>
                 </div>
@@ -136,7 +197,7 @@
                             <div class="alert alert-warning p-3 mb-2">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <div class="fw-medium">{{ $appointment->patient->name }}</div>
+                                        <div class="fw-medium">{{ $appointment->patient_name }}</div>
                                         <small class="text-muted">{{ $appointment->appointment_date->format('M j, g:i A') }}</small>
                                     </div>
                                     <div class="d-flex gap-1">
@@ -183,13 +244,54 @@
                                     <p class="small mb-1">{{ Str::limit($review->comment, 80) }}</p>
                                 @endif
                                 <small class="text-muted">
-                                    by {{ $review->is_anonymous ? 'Anonymous' : $review->patient->name }}
+                                    by {{ $review->is_anonymous ? 'Anonymous' : $review->patient_name }}
                                 </small>
                             </div>
                         @endforeach
                         <div class="text-center">
                             <a href="{{ route('doctor.reviews.index') }}" class="btn btn-smbtn-primary-custom">
                                 View all reviews →
+                            </a>
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Recent Notes -->
+                @if($recentNotes->count() > 0)
+                    <div class="table-card mb-4">
+                        <h6 class="mb-3"><i class="fas fa-sticky-note me-2"></i>Recent Notes</h6>
+                        @foreach($recentNotes as $note)
+                            <div class="border rounded p-3 mb-2">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge {{ $note->getTypeBadgeClass() }} me-2">
+                                            <i class="{{ $note->getTypeIcon() }} me-1"></i>
+                                            {{ ucfirst($note->note_type) }}
+                                        </span>
+                                        <small class="text-muted">{{ $note->created_at->diffForHumans() }}</small>
+                                    </div>
+                                    <a href="{{ route('doctor.notes.show', $note) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                                <div class="mb-1">
+                                    <strong>{{ $note->getDisplayTitle() }}</strong>
+                                </div>
+                                <p class="small mb-1 text-muted">{{ $note->getPreview(60) }}</p>
+                                @if($note->patient)
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>{{ $note->patient->name }}
+                                    </small>
+                                @else
+                                    <small class="text-muted">
+                                        <i class="fas fa-file me-1"></i>General Note
+                                    </small>
+                                @endif
+                            </div>
+                        @endforeach
+                        <div class="text-center">
+                            <a href="{{ route('doctor.notes.index') }}" class="btn btn-sm btn-primary-custom">
+                                View all notes →
                             </a>
                         </div>
                     </div>
@@ -202,7 +304,7 @@
                         @foreach($upcomingAppointments as $appointment)
                             <div class="d-flex justify-content-between align-items-center p-3 border rounded mb-2">
                                 <div>
-                                    <div class="fw-medium">{{ $appointment->patient->name }}</div>
+                                    <div class="fw-medium">{{ $appointment->patient_name }}</div>
                                     <small class="text-muted">{{ $appointment->appointment_date->format('M j, g:i A') }}</small>
                                 </div>
                                 <span class="badge {{ $appointment->status == 'confirmed' ? 'bg-success' : 'bg-warning' }}">
@@ -217,3 +319,21 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+<style>
+.clickable-card {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.clickable-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.badge {
+    font-size: 0.7rem;
+}
+</style>
+@endpush

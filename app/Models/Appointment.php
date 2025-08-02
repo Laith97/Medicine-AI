@@ -11,26 +11,20 @@ class Appointment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'doctor_id',
-        'patient_id',
+        'patient_id', 'doctor_id', 'appointment_date', 'status',
+        'appointment_type', 'duration', 'fee', 'notes', 'cancellation_reason',
+        'cancelled_by', 'cancelled_at', 'confirmed_at', 'completed_at',
+        'payment_status', 'payment_intent_id', 'meeting_link', 'meeting_id',
+        'reminder_sent_at', 'follow_up_required', 'follow_up_date',
+        'prescription_given', 'visit_number',
         'appointment_number',
-        'appointment_date',
         'appointment_end',
-        'status',
         'reason',
         'symptoms',
         'doctor_notes',
         'patient_notes',
         'consultation_fee',
-        'appointment_type',
-        'meeting_link',
-        'cancelled_at',
-        'cancelled_by',
-        'cancellation_reason',
-        'confirmed_at',
-        'completed_at',
         'reminder_sent',
-        'follow_up_required',
         // Guest patient fields
         'guest_name',
         'guest_email',
@@ -55,6 +49,11 @@ class Appointment extends Model
         'guest_date_of_birth' => 'date',
         'token_expires_at' => 'datetime',
         'is_verified' => 'boolean',
+        'duration' => 'integer',
+        'fee' => 'integer',
+        'prescription_given' => 'boolean',
+        'reminder_sent_at' => 'datetime',
+        'follow_up_date' => 'datetime',
     ];
 
     /**
@@ -144,6 +143,78 @@ class Appointment extends Model
     }
 
     /**
+     * Scope for completed appointments
+     */
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
+    }
+
+    /**
+     * Scope for cancelled appointments
+     */
+    public function scopeCancelled($query)
+    {
+        return $query->where('status', 'cancelled');
+    }
+
+    /**
+     * Check if appointment is pending
+     */
+    public function isPending()
+    {
+        return $this->status === 'pending';
+    }
+
+    /**
+     * Check if appointment is confirmed
+     */
+    public function isConfirmed()
+    {
+        return $this->status === 'confirmed';
+    }
+
+    /**
+     * Check if appointment is completed
+     */
+    public function isCompleted()
+    {
+        return $this->status === 'completed';
+    }
+
+    /**
+     * Check if appointment is cancelled
+     */
+    public function isCancelled()
+    {
+        return $this->status === 'cancelled';
+    }
+
+    /**
+     * Check if appointment is today
+     */
+    public function isToday()
+    {
+        return $this->appointment_date->isToday();
+    }
+
+    /**
+     * Check if appointment is upcoming
+     */
+    public function isUpcoming()
+    {
+        return $this->appointment_date->isFuture();
+    }
+
+    /**
+     * Check if appointment is past
+     */
+    public function isPast()
+    {
+        return $this->appointment_date->isPast();
+    }
+
+    /**
      * Check if appointment can be cancelled
      */
     public function canBeCancelled()
@@ -152,7 +223,12 @@ class Appointment extends Model
             return false;
         }
 
-        return $this->doctor->canCancelWithinHours($this->appointment_date);
+        // Can't cancel past appointments
+        if ($this->appointment_date->isPast()) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -160,21 +236,17 @@ class Appointment extends Model
      */
     public function canBeRescheduled()
     {
-        if (!$this->doctor->allow_rescheduling) {
-            return false;
-        }
-
         if (in_array($this->status, ['cancelled', 'completed'])) {
             return false;
         }
 
-        return $this->doctor->canCancelWithinHours($this->appointment_date);
+        return true;
     }
 
     /**
      * Cancel the appointment
      */
-    public function cancel($cancelledBy, $reason = null)
+    public function cancel($reason = null, $cancelledBy = null)
     {
         $this->update([
             'status' => 'cancelled',
@@ -207,6 +279,57 @@ class Appointment extends Model
     }
 
     /**
+     * Reschedule the appointment
+     */
+    public function reschedule($newDate)
+    {
+        $this->update([
+            'appointment_date' => $newDate,
+            'status' => 'pending',
+            'confirmed_at' => null,
+        ]);
+    }
+
+    /**
+     * Get duration in hours
+     */
+    public function getDurationInHours()
+    {
+        return $this->duration ? $this->duration / 60 : 0;
+    }
+
+    /**
+     * Get end time based on duration
+     */
+    public function getEndTime()
+    {
+        if ($this->duration) {
+            return $this->appointment_date->copy()->addMinutes($this->duration);
+        }
+        return $this->appointment_end;
+    }
+
+    /**
+     * Check if appointment needs reminder
+     */
+    public function needsReminder()
+    {
+        $reminderSent = $this->reminder_sent || $this->reminder_sent_at;
+        return !$reminderSent && $this->appointment_date->isFuture();
+    }
+
+    /**
+     * Mark reminder as sent
+     */
+    public function markReminderSent()
+    {
+        $this->update([
+            'reminder_sent' => true,
+            'reminder_sent_at' => now(),
+        ]);
+    }
+
+    /**
      * Mark as no show
      */
     public function markAsNoShow()
@@ -221,7 +344,7 @@ class Appointment extends Model
      */
     public function getFormattedDateAttribute()
     {
-        return $this->appointment_date->format('M d, Y');
+        return $this->appointment_date->format('M j, Y g:i A');
     }
 
     /**
@@ -229,7 +352,15 @@ class Appointment extends Model
      */
     public function getFormattedTimeAttribute()
     {
-        return $this->appointment_date->format('g:i A') . ' - ' . $this->appointment_end->format('g:i A');
+        return $this->appointment_date->format('g:i A');
+    }
+
+    /**
+     * Get fee in dollars
+     */
+    public function getFeeDollarsAttribute()
+    {
+        return $this->fee ? $this->fee / 100 : 0;
     }
 
     /**
@@ -246,12 +377,12 @@ class Appointment extends Model
     public function getStatusColorAttribute()
     {
         return match($this->status) {
-            'pending' => 'yellow',
-            'confirmed' => 'green',
-            'cancelled' => 'red',
-            'completed' => 'blue',
-            'no_show' => 'gray',
-            default => 'gray'
+            'pending' => 'warning',
+            'confirmed' => 'primary',
+            'cancelled' => 'danger',
+            'completed' => 'success',
+            'no_show' => 'secondary',
+            default => 'secondary'
         };
     }
 

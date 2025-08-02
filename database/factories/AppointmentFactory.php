@@ -27,17 +27,24 @@ class AppointmentFactory extends Factory
     public function definition(): array
     {
         $appointmentDate = $this->faker->dateTimeBetween('+1 day', '+1 month');
+        $appointmentEnd = $this->faker->dateTimeBetween($appointmentDate, $appointmentDate->format('Y-m-d H:i:s') . ' +2 hours');
 
         return [
             'doctor_id' => Doctor::factory(),
             'patient_id' => User::factory(),
+            'appointment_number' => 'APT-' . strtoupper($this->faker->bothify('??########')),
             'appointment_date' => $appointmentDate,
-            'appointment_type' => $this->faker->randomElement(['consultation', 'follow_up', 'checkup']),
+            'appointment_end' => $appointmentEnd,
+            'appointment_type' => $this->faker->randomElement(['in_person', 'video_call', 'phone_call']),
             'reason' => $this->faker->sentence(),
+            'symptoms' => $this->faker->optional()->paragraph(),
+            'doctor_notes' => $this->faker->optional()->paragraph(),
+            'patient_notes' => $this->faker->optional()->paragraph(),
             'status' => $this->faker->randomElement(['pending', 'confirmed', 'completed', 'cancelled', 'no_show']),
             'consultation_fee' => $this->faker->numberBetween(5000, 50000), // In cents
-            'payment_status' => $this->faker->randomElement(['pending', 'paid', 'refunded']),
-            'notes' => $this->faker->optional()->paragraph(),
+            'meeting_link' => $this->faker->optional()->url(),
+            'reminder_sent' => $this->faker->boolean(30),
+            'follow_up_required' => $this->faker->boolean(20),
         ];
     }
 
@@ -48,7 +55,7 @@ class AppointmentFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'completed',
-            'payment_status' => 'paid',
+            'completed_at' => now(),
         ]);
     }
 

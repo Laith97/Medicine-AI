@@ -1105,8 +1105,14 @@
                 <a href="{{ route('ask-ai') }}" class="btn-custom-primary">
                     <i class="fas fa-user-plus me-2"></i> Add New Patient
                 </a>
+                <a href="{{ route('diagnosis.create') }}" class="btn-custom-primary">
+                    <i class="fas fa-file-medical me-2"></i> Create Diagnosis
+                </a>
                 <a href="{{ route('cases') }}" class="btn-custom-secondary">
                     <i class="fas fa-list me-2"></i> View All Cases
+                </a>
+                <a href="{{ route('diagnosis.index') }}" class="btn-custom-secondary">
+                    <i class="fas fa-clipboard-list me-2"></i> View Diagnoses
                 </a>
             </div>
         </div>
@@ -1231,6 +1237,56 @@
             </div>
         </div>
 
+        <!-- Diagnosis Statistics Cards -->
+        <div class="row mb-5">
+            <div class="col-md-3 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">
+                        <i class="fas fa-file-medical"></i>
+                    </div>
+                    <p class="stats-number">{{ auth()->user()->doctorDiagnoses()->count() }}</p>
+                    <p class="stats-label">Total Diagnoses</p>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #16a085 0%, #138d75 100%);">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <p class="stats-number">{{ auth()->user()->doctorDiagnoses()->whereDate('created_at', today())->count() }}</p>
+                    <p class="stats-label">Today's Diagnoses</p>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <p class="stats-number">{{ auth()->user()->doctorDiagnoses()->withCount('followUps')->get()->sum('follow_ups_count') }}</p>
+                    <p class="stats-label">Follow-up Questions</p>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-4">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="stats-number">
+                        @php
+                            // Use existing review system instead of diagnosis-specific ratings
+                            $doctorReviews = auth()->user()->doctor ? auth()->user()->doctor->reviews() : collect();
+                            $avgRating = $doctorReviews->avg('rating');
+                        @endphp
+                        {{ $avgRating ? number_format($avgRating, 1) : 'N/A' }}
+                    </p>
+                    <p class="stats-label">Doctor Rating</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Doctor Dashboard Content -->
         <div class="row mb-5">
             <!-- Today's Schedule -->
@@ -1263,7 +1319,7 @@
                                                 <small class="text-muted">{{ $appointment->appointment_date->diffInMinutes($appointment->appointment_end) }}min</small>
                                             </td>
                                             <td>
-                                                <strong>{{ $appointment->patient->name }}</strong><br>
+                                                <strong>{{ $appointment->patient->name ?? 'Unknown Patient' }}</strong><br>
                                                 <small class="text-muted">{{ $appointment->reason }}</small>
                                             </td>
                                             <td>
@@ -1307,6 +1363,12 @@
                         <a href="{{ route('doctor.appointments.index') }}" class="btn btn-primary-custom btn-sm">
                             <i class="fas fa-calendar me-2"></i>View All Appointments
                         </a>
+                        <a href="{{ route('diagnosis.create') }}" class="btn btn-primary-custom btn-sm">
+                            <i class="fas fa-file-medical me-2"></i>Create Diagnosis
+                        </a>
+                        <a href="{{ route('diagnosis.index') }}" class="btn btn-secondary-custom btn-sm">
+                            <i class="fas fa-clipboard-list me-2"></i>View Diagnoses
+                        </a>
                         <a href="{{ route('doctor.availability.index') }}" class="btn btn-secondary-custom btn-sm">
                             <i class="fas fa-clock me-2"></i>Manage Availability
                         </a>
@@ -1315,6 +1377,23 @@
                         </a>
                         <a href="{{ route('doctor.profile.edit') }}" class="btn btn-secondary-custom btn-sm">
                             <i class="fas fa-user-edit me-2"></i>Edit Profile
+                        </a>
+                        <a href="{{ route('doctor.settings.appointments') }}" class="btn btn-secondary-custom btn-sm">
+                            <i class="fas fa-cog me-2"></i>Appointment Settings
+                        </a>
+                        <a href="{{ route('doctor.landing-page.index') }}" class="btn btn-secondary-custom btn-sm">
+                            <i class="fas fa-globe me-2"></i>Landing Page
+                        </a>
+                        <a href="{{ route('doctor.reviews.index') }}" class="btn btn-secondary-custom btn-sm">
+                            <i class="fas fa-star me-2"></i>View Reviews
+                        </a>
+                        <a href="{{ route('doctor.notes.index') }}" class="btn btn-secondary-custom btn-sm">
+                            <i class="fas fa-sticky-note me-2"></i>My Notes
+                        </a>
+                        <a href="{{ route('doctor.notes.create') }}" class="btn btn-secondary-custom btn-sm">
+                            <i class="fas fa-plus me-2"></i>Add Note
+                        <a href="{{ route('doctor.blog.index') }}" class="btn btn-secondary-custom btn-sm">
+                            <i class="fas fa-blog me-2"></i>Manage Blog
                         </a>
                     </div>
                 </div>
@@ -1330,7 +1409,7 @@
                                 <div class="list-group-item border-0 px-0 py-2">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>
-                                            <strong class="text-dark">{{ $appointment->patient->name }}</strong><br>
+                                            <strong class="text-dark">{{ $appointment->patient->name ?? 'Unknown Patient' }}</strong><br>
                                             <small class="text-muted">{{ $appointment->appointment_date->format('M j, g:i A') }}</small>
                                         </div>
                                         <div class="btn-group-sm">
@@ -1380,7 +1459,7 @@
                                         <p class="mb-1 small">{{ Str::limit($review->comment, 60) }}</p>
                                     @endif
                                     <small class="text-muted">
-                                        by {{ $review->is_anonymous ? 'Anonymous' : $review->patient->name }} •
+                                        by {{ $review->is_anonymous ? 'Anonymous' : ($review->patient->name ?? 'Unknown Patient') }} •
                                         {{ $review->created_at->diffForHumans() }}
                                     </small>
                                 </div>
@@ -2708,7 +2787,7 @@ function setupPatientModal() {
         if (e.target.closest('.btn-view-patient')) {
             e.preventDefault(); // Prevent any default behavior
             console.log('Patient view button clicked');
-            
+
             const btn = e.target.closest('.btn-view-patient');
             const patientKey = btn.getAttribute('data-patient-key');
             const patientName = btn.getAttribute('data-patient-name');
@@ -2816,25 +2895,25 @@ function setupPatientModal() {
                 });
                 modal.show();
                 console.log('Patient modal opened successfully');
-                
+
                 // Force modal to appear above everything with extreme z-index
                 setTimeout(() => {
                     // Set modal z-index
                     patientModal.style.zIndex = '999999';
                     patientModal.style.position = 'fixed';
-                    
+
                     // Set backdrop z-index
                     const backdrop = document.querySelector('.modal-backdrop');
                     if (backdrop) {
                         backdrop.style.zIndex = '999998';
                         console.log('Modal and backdrop z-index forced to maximum');
                     }
-                    
+
                     // Move modal to end of body to escape any stacking contexts
                     document.body.appendChild(patientModal);
                     console.log('Modal moved to end of body');
                 }, 50);
-                
+
             } catch (error) {
                 console.error('Error opening patient modal:', error);
                 // Fallback: try to show modal using jQuery if available
