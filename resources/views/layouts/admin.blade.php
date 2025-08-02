@@ -23,7 +23,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
@@ -31,13 +31,13 @@
     <link rel="stylesheet" href="{{ asset('css/admin-enhancements.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin-tables.css') }}">
     @stack('styles')
-    
+
     <!-- Global Font Styling -->
     <style>
         body, * {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
         }
-        
+
         /* FontAwesome Debug - Force display if not loading */
         .fa, .fas, .far, .fab {
             font-family: "Font Awesome 6 Free" !important;
@@ -183,7 +183,7 @@
             margin-right: 0.75rem;
         }
     </style>
-    
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Admin Panel | MedCura AI')</title>
 </head>
@@ -290,7 +290,13 @@
                         <span>System Settings</span>
                     </a>
                 </div>
-         
+                <div class="nav-item">
+                    <a href="{{ route('admin.sms-settings') }}" class="nav-link {{ request()->routeIs('admin.sms-settings*') ? 'active' : '' }}">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>SMS Settings</span>
+                    </a>
+                </div>
+
             </div>
 
             <!-- User Info -->
@@ -394,10 +400,10 @@
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('adminSidebar');
             const toggle = document.querySelector('.mobile-toggle');
-            
-            if (window.innerWidth <= 768 && 
-                !sidebar.contains(event.target) && 
-                !toggle.contains(event.target) && 
+
+            if (window.innerWidth <= 768 &&
+                !sidebar.contains(event.target) &&
+                !toggle.contains(event.target) &&
                 sidebar.classList.contains('show')) {
                 sidebar.classList.remove('show');
             }

@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\User;
 use App\Models\Doctor;
+use App\Models\Specialty;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -30,7 +31,7 @@ class DoctorFactory extends Factory
 
         return [
             'user_id' => $user->id,
-            'specialty_id' => null, // Will be set in tests as needed
+            'specialty_id' => Specialty::factory(),
             'license_number' => $this->faker->unique()->regexify('[A-Z]{2}[0-9]{6}'),
             'phone' => $this->faker->phoneNumber(),
             'bio' => $this->faker->optional()->paragraph(),
@@ -53,6 +54,11 @@ class DoctorFactory extends Factory
             'total_reviews' => $this->faker->numberBetween(0, 100),
             'is_active' => true,
             'is_verified' => $this->faker->boolean(90), // 90% verified
+            'appointment_type_preferences' => [
+                'in_person' => $this->faker->boolean(90),
+                'video_call' => $this->faker->boolean(70),
+                'phone_call' => $this->faker->boolean(50),
+            ]
         ];
     }
 

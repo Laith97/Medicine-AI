@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OpenAIUsage extends Model
 {
+    use HasFactory;
     protected $table = 'openai_usages';
-    
+
     protected $fillable = [
         'user_id',
         'request_type',
@@ -49,21 +51,21 @@ class OpenAIUsage extends Model
 
         // Default to gpt-4o pricing if model not found
         $modelPricing = $pricing[$model] ?? $pricing['gpt-4o'];
-        
+
         // If we have separate prompt and completion tokens, calculate separately
         if ($promptTokens > 0 && $completionTokens > 0) {
             $inputCost = ($promptTokens / 1000000) * $modelPricing['input'];
             $outputCost = ($completionTokens / 1000000) * $modelPricing['output'];
             return $inputCost + $outputCost;
         }
-        
+
         // Fallback: assume 70% input, 30% output for total tokens
         $estimatedPromptTokens = $totalTokens * 0.7;
         $estimatedCompletionTokens = $totalTokens * 0.3;
-        
+
         $inputCost = ($estimatedPromptTokens / 1000000) * $modelPricing['input'];
         $outputCost = ($estimatedCompletionTokens / 1000000) * $modelPricing['output'];
-        
+
         return $inputCost + $outputCost;
     }
 
@@ -73,11 +75,11 @@ class OpenAIUsage extends Model
     public static function getUserUsageStats(int $userId, $startDate = null, $endDate = null): array
     {
         $query = self::where('user_id', $userId);
-        
+
         if ($startDate) {
             $query->where('created_at', '>=', $startDate);
         }
-        
+
         if ($endDate) {
             $query->where('created_at', '<=', $endDate);
         }

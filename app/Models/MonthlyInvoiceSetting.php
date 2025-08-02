@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MonthlyInvoiceSetting extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'user_id',
         'subscription_plan_id',
@@ -153,7 +155,7 @@ class MonthlyInvoiceSetting extends Model
      */
     public function getRestrictionMessage(): string
     {
-        return $this->restriction_message ?: 
+        return $this->restriction_message ?:
             'Your access has been restricted due to unpaid invoices. Please pay your outstanding invoices to restore access.';
     }
 
@@ -249,7 +251,7 @@ class MonthlyInvoiceSetting extends Model
         }
 
         $months = $this->subscription_period_months;
-        
+
         return match($months) {
             1 => 'Monthly',
             3 => 'Quarterly',
@@ -271,11 +273,11 @@ class MonthlyInvoiceSetting extends Model
         }
 
         $months = $this->subscription_period_months;
-        
+
         return match($months) {
             1 => 'Every month',
             3 => 'Every 3 months',
-            6 => 'Every 6 months', 
+            6 => 'Every 6 months',
             12 => 'Every year',
             24 => 'Every 2 years',
             36 => 'Every 3 years',
@@ -467,15 +469,15 @@ class MonthlyInvoiceSetting extends Model
         switch ($status) {
             case 'active':
                 return $this->getDaysRemaining();
-            
+
             case 'grace_period':
                 $gracePeriodEnd = $this->getGracePeriodEndDate();
                 return max(0, now()->diffInDays($gracePeriodEnd, false));
-            
+
             case 'warning_period':
                 $warningPeriodEnd = $this->getWarningPeriodEndDate();
                 return max(0, now()->diffInDays($warningPeriodEnd, false));
-            
+
             default:
                 return 0;
         }

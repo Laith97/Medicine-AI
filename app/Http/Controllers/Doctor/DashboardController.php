@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Doctor;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Review;
+use App\Models\DoctorNote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -55,6 +56,13 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Get recent notes
+        $recentNotes = Auth::user()->doctorNotes()
+            ->with(['patient'])
+            ->latest()
+            ->limit(5)
+            ->get();
+
         // Calculate statistics
         $stats = $this->getDashboardStats($doctor);
 
@@ -64,6 +72,7 @@ class DashboardController extends Controller
             'upcomingAppointments',
             'pendingAppointments',
             'recentReviews',
+            'recentNotes',
             'stats'
         ));
     }
@@ -329,17 +338,17 @@ class DashboardController extends Controller
         $events = $appointments->map(function ($appointment) {
             return [
                 'id' => $appointment->id,
-                'title' => $appointment->patient->name,
+                'title' => $appointment->patient_name,
                 'start' => $appointment->appointment_date->toISOString(),
                 'end' => $appointment->appointment_end->toISOString(),
                 'color' => $this->getEventColor($appointment->status),
                 'url' => route('doctor.appointments.show', $appointment),
                 'extendedProps' => [
                     'status' => $appointment->status,
-                    'patient' => $appointment->patient->name,
+                    'patient' => $appointment->patient_name,
                     'reason' => $appointment->reason,
                     'type' => $appointment->appointment_type,
-                    'phone' => $appointment->patient->phone,
+                    'phone' => $appointment->patient_phone,
                 ]
             ];
         });
@@ -370,6 +379,9 @@ class DashboardController extends Controller
                 ->where('status', 'completed')
                 ->whereDate('appointment_date', '>=', $thisMonth)
                 ->sum('consultation_fee') / 100, // Convert from cents to dollars
+            'total_notes' => Auth::user()->doctorNotes()->count(),
+            'voice_notes' => Auth::user()->doctorNotes()->where('note_type', 'voice')->count(),
+            'this_month_notes' => Auth::user()->doctorNotes()->whereDate('created_at', '>=', $thisMonth)->count(),
         ];
     }
 

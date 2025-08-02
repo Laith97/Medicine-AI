@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class PatientAnalysis extends Model
 {
+    use HasFactory;
+
     protected $table = 'patient_data';
 
     protected $fillable = [
@@ -22,6 +25,7 @@ class PatientAnalysis extends Model
         'preliminary_diagnosis',
         'ai_response',
         'user_id',
+        'assigned_patient_id',
         'previous_record_id',
         'visit_number',
         'patient_key',
@@ -99,6 +103,14 @@ class PatientAnalysis extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the assigned patient (User) for this analysis
+     */
+    public function assignedPatient()
+    {
+        return $this->belongsTo(User::class, 'assigned_patient_id');
     }
 
     /**

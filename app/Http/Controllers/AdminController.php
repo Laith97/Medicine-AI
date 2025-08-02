@@ -114,7 +114,7 @@ class AdminController extends Controller
             if (!$doctorSpecialty) {
                 $doctorSpecialty = Specialty::first(); // Use first available specialty
             }
-            
+
             if ($doctorSpecialty) {
                 $user->doctor()->create([
                     'specialty_id' => $doctorSpecialty->id,
@@ -128,19 +128,26 @@ class AdminController extends Controller
             }
         }
 
-        // Create user-specific pricing (NOT system-wide)
-        if ($request->monthly_price || $request->yearly_price) {
+        // Create user-specific pricing and monthly invoice setting
+        if ($request->monthly_price || $request->yearly_price || $request->billing_amount) {
             // Create user-specific monthly invoice setting
             $setting = $user->getOrCreateMonthlyInvoiceSetting();
             
+            // Prepare update data with defaults
             $updateData = [
                 'grace_period_days' => (int) ($request->grace_period_days ?? 7),
                 'warning_period_days' => (int) ($request->warning_period_days ?? 3),
                 'reminder_frequency_days' => (int) ($request->reminder_frequency_days ?? 3),
+                'subscription_period_months' => $request->subscription_period_months ?? 1,
                 'is_active' => true,
                 'is_restricted' => false,
                 'restricted_pages' => ['ask-ai', 'dashboard', 'cases'],
             ];
+            
+            // Set billing amount (support both billing_amount and monthly_price)
+            if ($request->billing_amount) {
+                $updateData['billing_amount'] = $request->billing_amount;
+            }
             
             // Set user-specific pricing
             if ($request->monthly_price) {
@@ -651,6 +658,88 @@ class AdminController extends Controller
     }
 
     /**
+     * Display SMS settings page with country-based provider management
+     */
+    public function smsSettings()
+    {
+        $smsService = app(\App\Services\SmsService::class);
+        $providers = $smsService->getAvailableProviders();
+        $activeProvidersWithCountries = $smsService->getActiveProvidersWithCountries();
+        $allCountries = \App\Models\SmsProviderCountry::getAllCountries();
+        $unassignedCountries = \App\Models\SmsProviderCountry::getUnassignedCountries();
+
+        return view('admin.sms-settings', compact(
+            'providers',
+            'activeProvidersWithCountries',
+            'allCountries',
+            'unassignedCountries'
+        ));
+    }
+
+    /**
+     * Assign countries to SMS provider
+     */
+    public function assignCountriesToProvider(Request $request)
+    {
+        $request->validate([
+            'provider' => 'required|string|in:twilio,plivo,messagebird,unifonic,smsgatewayhub,log',
+            'countries' => 'required|array|min:1',
+            'countries.*.code' => 'required|string|size:2',
+            'countries.*.name' => 'required|string|max:255'
+        ]);
+
+        $smsService = app(\App\Services\SmsService::class);
+
+        if ($smsService->assignCountriesToProvider($request->provider, $request->countries)) {
+            $countryNames = collect($request->countries)->pluck('name')->join(', ');
+            return redirect()->back()->with('success',
+                "Successfully assigned {$countryNames} to {$request->provider} provider."
+            );
+        }
+
+        return redirect()->back()->with('error', 'Failed to assign countries to provider');
+    }
+
+    /**
+     * Remove country assignments from provider
+     */
+    public function removeProviderCountryAssignments(Request $request)
+    {
+        $request->validate([
+            'provider' => 'required|string|in:twilio,plivo,messagebird,unifonic,smsgatewayhub,log'
+        ]);
+
+        $smsService = app(\App\Services\SmsService::class);
+
+        if ($smsService->removeProviderCountryAssignments($request->provider)) {
+            return redirect()->back()->with('success',
+                "Successfully removed all country assignments from {$request->provider} provider."
+            );
+        }
+
+        return redirect()->back()->with('error', 'Failed to remove country assignments');
+    }
+
+    /**
+     * Send test SMS with country-based routing
+     */
+    public function sendTestSms(Request $request)
+    {
+        $request->validate([
+            'test_phone' => 'required|string|max:20'
+        ]);
+
+        $smsService = app(\App\Services\SmsService::class);
+        $result = $smsService->send($request->test_phone, 'Test SMS from MedcuraAI - Country-based routing is working!');
+
+        if ($result['success']) {
+            return redirect()->back()->with('success', 'Test SMS sent successfully! ' . $result['message']);
+        }
+
+        return redirect()->back()->with('error', 'Failed to send test SMS: ' . $result['message']);
+    }
+
+    /**
      * Show the manual reminders form
      */
     public function showSendRemindersForm()
@@ -687,11 +776,11 @@ class AdminController extends Controller
 
             return view('admin.send-reminders', compact(
                 'gracePeriodUsers',
-                'warningPeriodUsers', 
+                'warningPeriodUsers',
                 'overdueUsers',
                 'allEligibleUsers'
             ));
-            
+
         } catch (\Exception $e) {
             \Log::error('Error in showSendRemindersForm: ' . $e->getMessage());
             return redirect()->route('admin.dashboard')
@@ -743,7 +832,7 @@ class AdminController extends Controller
             if ($userIds && !is_array($userIds)) {
                 $userIds = [$userIds];
             }
-            
+
             switch ($request->reminder_type) {
                 case 'grace_period':
                     $graceResults = $this->sendGracePeriodReminders($userIds, $request->boolean('force_send'));
@@ -754,7 +843,7 @@ class AdminController extends Controller
                         'errors' => $graceResults['errors']
                     ];
                     break;
-                    
+
                 case 'warning_period':
                     $warningResults = $this->sendWarningPeriodReminders($userIds, $request->boolean('force_send'));
                     $results = [
@@ -764,7 +853,7 @@ class AdminController extends Controller
                         'errors' => $warningResults['errors']
                     ];
                     break;
-                    
+
                 case 'overdue':
                     $overdueResults = $this->sendOverdueReminders($userIds, $request->boolean('force_send'));
                     $results = [
@@ -774,12 +863,12 @@ class AdminController extends Controller
                         'errors' => $overdueResults['errors']
                     ];
                     break;
-                    
+
                 case 'all':
                     $graceResults = $this->sendGracePeriodReminders(null, $request->boolean('force_send'));
                     $warningResults = $this->sendWarningPeriodReminders(null, $request->boolean('force_send'));
                     $overdueResults = $this->sendOverdueReminders(null, $request->boolean('force_send'));
-                    
+
                     $results = [
                         'grace_reminders_sent' => $graceResults['grace_reminders_sent'],
                         'warning_reminders_sent' => $warningResults['warning_reminders_sent'],
@@ -791,7 +880,7 @@ class AdminController extends Controller
 
             $totalSent = $results['grace_reminders_sent'] + $results['warning_reminders_sent'] + $results['overdue_reminders_sent'];
             $message = "Successfully sent {$totalSent} reminder(s). ";
-            
+
             if ($results['grace_reminders_sent'] > 0) {
                 $message .= "{$results['grace_reminders_sent']} grace period, ";
             }
@@ -801,9 +890,9 @@ class AdminController extends Controller
             if ($results['overdue_reminders_sent'] > 0) {
                 $message .= "{$results['overdue_reminders_sent']} overdue, ";
             }
-            
+
             $message = rtrim($message, ', ') . '.';
-            
+
             if (count($results['errors']) > 0) {
                 $message .= ' ' . count($results['errors']) . ' error(s) occurred.';
                 // Store detailed errors in session for debugging
@@ -823,7 +912,7 @@ class AdminController extends Controller
     private function sendGracePeriodReminders($userIds = null, $forceSend = false)
     {
         $results = ['grace_reminders_sent' => 0, 'errors' => []];
-        
+
         \Log::info('Starting sendGracePeriodReminders', [
             'userIds' => $userIds,
             'forceSend' => $forceSend
@@ -854,10 +943,10 @@ class AdminController extends Controller
         foreach ($users as $user) {
             try {
                 $setting = $user->monthlyInvoiceSetting;
-                
+
                 // Check if we should send reminder (unless forced)
                 if (!$forceSend) {
-                    if ($setting->last_reminder_sent_at && 
+                    if ($setting->last_reminder_sent_at &&
                         !$setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->isPast()) {
                         \Log::info('Skipping reminder - too soon since last reminder', [
                             'user_id' => $user->id,
@@ -876,7 +965,7 @@ class AdminController extends Controller
                     'user_email' => $user->email,
                     'user_name' => $user->name
                 ]);
-                
+
                 try {
                     \Log::info('About to send grace period reminder email', [
                         'user_email' => $user->email,
@@ -907,10 +996,10 @@ class AdminController extends Controller
                     $results['errors'][] = "User {$user->id} ({$user->name}): " . $mailException->getMessage();
                     continue; // Continue to next user instead of throwing exception
                 }
-                
+
                 // Update timestamp
                 $setting->update(['last_reminder_sent_at' => now()]);
-                
+
                 $results['grace_reminders_sent']++;
 
             } catch (\Exception $e) {
@@ -981,7 +1070,7 @@ class AdminController extends Controller
         foreach ($users as $user) {
             try {
                 $setting = $user->monthlyInvoiceSetting;
-                
+
                 // Check if we should send reminder (unless forced)
                 if (!$forceSend) {
                     \Log::info('Checking reminder frequency', [
@@ -991,8 +1080,8 @@ class AdminController extends Controller
                         'next_reminder_allowed_at' => $setting->last_reminder_sent_at ? $setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->format('Y-m-d H:i:s') : null,
                         'is_past' => $setting->last_reminder_sent_at ? $setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->isPast() : true
                     ]);
-                    
-                    if ($setting->last_reminder_sent_at && 
+
+                    if ($setting->last_reminder_sent_at &&
                         !$setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->isPast()) {
                         \Log::info('Skipping reminder - too soon since last reminder', [
                             'user_id' => $user->id,
@@ -1008,7 +1097,7 @@ class AdminController extends Controller
                     'user_email' => $user->email,
                     'user_name' => $user->name
                 ]);
-                
+
                 try {
                     $emailService = new EmailService();
                     $emailService->sendEmail(
@@ -1032,10 +1121,10 @@ class AdminController extends Controller
                     $results['errors'][] = "User {$user->id} ({$user->name}): " . $mailException->getMessage();
                     continue; // Continue to next user instead of throwing exception
                 }
-                
+
                 // Update timestamp
                 $setting->update(['last_reminder_sent_at' => now()]);
-                
+
                 $results['warning_reminders_sent']++;
 
             } catch (\Exception $e) {
@@ -1082,7 +1171,7 @@ class AdminController extends Controller
                         'user_name' => $user->name,
                         'invoice_id' => $invoice->id
                     ]);
-                    
+
                     try {
                         // For overdue, we need to pass the invoice data differently
                         // Create a fake setting for the email template
@@ -1119,10 +1208,10 @@ class AdminController extends Controller
                         $results['errors'][] = "Invoice {$invoice->id} for user {$user->id} ({$user->name}): " . $mailException->getMessage();
                         continue; // Continue to next invoice instead of throwing exception
                     }
-                    
+
                     // Update invoice reminder tracking
                     $invoice->markReminderSent();
-                    
+
                     $results['overdue_reminders_sent']++;
 
                 } catch (\Exception $e) {
