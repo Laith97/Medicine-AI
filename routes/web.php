@@ -398,6 +398,12 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::get('/system-settings', [AdminController::class, 'systemSettings'])->name('system-settings');
     Route::post('/system-settings', [AdminController::class, 'updateSystemSettings'])->name('system-settings.update');
 
+    // SMS settings with country-based provider management
+    Route::get('/sms-settings', [AdminController::class, 'smsSettings'])->name('sms-settings');
+    Route::post('/sms-settings/assign-countries', [AdminController::class, 'assignCountriesToProvider'])->name('sms-settings.assign-countries');
+    Route::post('/sms-settings/remove-assignments', [AdminController::class, 'removeProviderCountryAssignments'])->name('sms-settings.remove-assignments');
+    Route::post('/sms-settings/test', [AdminController::class, 'sendTestSms'])->name('sms-settings.test');
+
     // Invoice management for admin
     Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
     Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');
