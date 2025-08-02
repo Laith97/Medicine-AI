@@ -44,26 +44,30 @@ class InvoiceOverdue extends Notification
         $isRestricted = $notifiable->isRestricted();
         
         $message = (new MailMessage)
-            ->subject('URGENT: Invoice Overdue - MedCura AI')
+            ->subject('MedCura AI - Payment Required')
+            ->from(config('mail.from.address'), 'MedCura AI')
+            ->replyTo(config('mail.from.address'), 'MedCura AI Support')
+
             ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('Your invoice is now overdue and requires immediate attention.')
+            ->line('We wanted to let you know that your MedCura AI invoice payment is now overdue.')
             ->line('Invoice Amount: ' . $this->invoice->getFormattedAmountDue())
-            ->line('Due Date: ' . $this->invoice->due_date->format('M d, Y') . ' (' . $daysOverdue . ' days overdue)');
+            ->line('Due Date: ' . $this->invoice->due_date->format('M d, Y') . ' (' . $daysOverdue . ' days ago)');
             
         if ($this->invoice->isMonthlyInvoice()) {
-            $message->line('Period: ' . $this->invoice->getFormattedPeriod());
+            $message->line('Billing Period: ' . $this->invoice->getFormattedPeriod());
             $message->line('Reminder #' . ($this->invoice->reminder_count + 1));
         }
         
         if ($isRestricted) {
-            $message->line('⚠️ Your account access has been restricted due to this overdue payment.');
+            $message->line('Please note: Your account access has been temporarily limited due to this outstanding payment.');
         }
         
         $message->line('Description: ' . $this->invoice->description)
-            ->action('Pay Now', route('invoices.show', $this->invoice))
-            ->line('Please make your payment immediately to restore full access to your account.')
-            ->line('If you have any questions, please contact our support team.')
-            ->line('Thank you for using MedCura AI!');
+            ->action('View Invoice & Pay', route('invoices.show', $this->invoice))
+            ->line('To restore full access to your MedCura AI account, please complete your payment as soon as possible.')
+            ->line('If you have any questions or need assistance, our support team is here to help at ' . config('mail.from.address'))
+            ->line('Thank you for your prompt attention to this matter.')
+            ->salutation('Best regards,<br>The MedCura AI Team');
             
         return $message;
     }

@@ -550,35 +550,30 @@
                         <div class="user-pricing-info p-4 rounded" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #DE6262;">
                             <h4 class="text-theme-primary mb-3">Your Personalized Plan</h4>
                             @if(Auth::user()->monthlyInvoiceSetting && Auth::user()->monthlyInvoiceSetting->is_active)
-                                <div class="price-display mb-3">
-                                    <span class="h2 text-theme-primary">${{ number_format(Auth::user()->monthlyInvoiceSetting->billing_amount, 2) }}</span>
-                                    <span class="text-muted">
-                                        @if(Auth::user()->monthlyInvoiceSetting->isUnlimitedSubscription())
-                                            (one-time)
-                                        @else
-                                            /{{ Auth::user()->monthlyInvoiceSetting->subscription_period_months == 1 ? 'month' : 
-                                                (Auth::user()->monthlyInvoiceSetting->subscription_period_months == 12 ? 'year' : 
-                                                Auth::user()->monthlyInvoiceSetting->subscription_period_months . ' months') }}
-                                        @endif
-                                    </span>
-                                </div>
-                                <div class="subscription-details mb-3">
+                                @php
+                                    $setting = Auth::user()->monthlyInvoiceSetting;
+                                    $monthlyPrice = $setting->monthly_price ?? 0;
+                                    $yearlyPrice = $setting->yearly_price ?? 0;
+                                @endphp
+                                <div class="pricing-options mb-3">
                                     <div class="row text-center">
                                         <div class="col-md-6">
-                                            <small class="text-muted d-block">Billing</small>
-                                            <strong class="text-theme-primary">{{ Auth::user()->monthlyInvoiceSetting->getSubscriptionPeriodText() }}</strong>
+                                            <div class="price-option p-3 rounded" style="background: rgba(222, 98, 98, 0.1);">
+                                                <small class="text-muted d-block">Monthly</small>
+                                                <span class="h4 text-theme-primary">${{ number_format($monthlyPrice, 0) }}</span>
+                                                <small class="text-muted">/month</small>
+                                            </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <small class="text-muted d-block">Status</small>
-                                            @if(Auth::user()->monthlyInvoiceSetting->subscription_starts_at)
-                                                <strong class="text-success">Active</strong>
-                                            @else
-                                                <strong class="text-warning">Pending</strong>
-                                            @endif
+                                            <div class="price-option p-3 rounded" style="background: rgba(222, 98, 98, 0.1);">
+                                                <small class="text-muted d-block">Yearly</small>
+                                                <span class="h4 text-theme-primary">${{ number_format($yearlyPrice, 0) }}</span>
+                                                <small class="text-muted">/year</small>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <p class="text-muted mb-3">{{ Auth::user()->monthlyInvoiceSetting->getBillingFrequencyText() }} - Custom plan configured by our team</p>
+                                <p class="text-muted mb-3">Your personalized pricing - Choose monthly or yearly billing</p>
                                 <a href="{{ route('subscription.manage') }}" class="btn btn-theme-primary">
                                     <i class="fas fa-cog me-2"></i>
                                     Manage Subscription

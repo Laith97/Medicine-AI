@@ -36,7 +36,7 @@
                         <i class="fas fa-exclamation-triangle me-2"></i>Subscription Expired - Grace Period
                     </h5>
                     <p class="mb-2">
-                        <strong>Your subscription expired on {{ Auth::user()->getSubscriptionEndDate()->format('M d, Y') }}</strong>
+                        <strong>Your subscription expired on {{ Auth::user()->getSubscriptionEndDate() ? Auth::user()->getSubscriptionEndDate()->format('M d, Y') : 'Unknown Date' }}</strong>
                         <br>
                         You have <strong>{{ Auth::user()->getDaysRemainingInCurrentPeriod() }} days remaining</strong> in your grace period
                     </p>
@@ -64,7 +64,7 @@
                         <i class="fas fa-exclamation-triangle me-2"></i>Final Warning - Account Will Be Restricted Soon
                     </h5>
                     <p class="mb-2">
-                        <strong>Your subscription expired on {{ Auth::user()->getSubscriptionEndDate()->format('M d, Y') }}</strong>
+                        <strong>Your subscription expired on {{ Auth::user()->getSubscriptionEndDate() ? Auth::user()->getSubscriptionEndDate()->format('M d, Y') : 'Unknown Date' }}</strong>
                         <br>
                         You have <strong>{{ Auth::user()->getDaysRemainingInCurrentPeriod() }} days remaining</strong> before your account is restricted
                     </p>

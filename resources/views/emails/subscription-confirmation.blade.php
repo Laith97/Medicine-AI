@@ -1,191 +1,232 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subscription Confirmed</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f8f9fa;
-        }
-        .email-container {
-            background: white;
-            border-radius: 12px;
-            padding: 40px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #DE6262;
-        }
-        .logo {
-            color: #DE6262;
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .plan-badge {
-            background: linear-gradient(135deg, #DE6262, #E87A7A);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 25px;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 14px;
-            display: inline-block;
-            margin: 20px 0;
-        }
-        .subscription-details {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding: 5px 0;
-        }
-        .detail-label {
-            font-weight: 600;
-            color: #495057;
-        }
-        .detail-value {
-            color: #2c3e50;
-        }
-        .features-list {
-            list-style: none;
-            padding: 0;
-            margin: 20px 0;
-        }
-        .features-list li {
-            padding: 8px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-        .features-list li:last-child {
-            border-bottom: none;
-        }
-        .check-icon {
-            color: #28a745;
-            margin-right: 10px;
-        }
-        .cta-button {
-            background: linear-gradient(135deg, #DE6262, #E87A7A);
-            color: white;
-            padding: 15px 30px;
-            text-decoration: none;
-            border-radius: 25px;
-            font-weight: 600;
-            display: inline-block;
-            margin: 20px 0;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #e9ecef;
-            color: #6c757d;
-            font-size: 14px;
-        }
-        .support-info {
-            background: #e3f2fd;
-            border-left: 4px solid #2196f3;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
-        }
-    </style>
-</head>
-<body>
-    <div class="email-container">
-        <div class="header">
-            <div class="logo">
-                🏥 {{ config('app.name') }}
-            </div>
-            <h1>Welcome to Your New Plan!</h1>
-            <p>Your subscription has been successfully activated.</p>
+@extends('emails.layouts.master')
+
+@section('title', 'Subscription Confirmed - ' . config('app.name'))
+@section('email-title', '🎉 Welcome to Your New Plan!')
+@section('email-subtitle', 'Your subscription has been successfully activated and is ready to use')
+
+@push('email-styles')
+<style>
+    .plan-badge {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 25px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 14px;
+        display: inline-block;
+        margin: 20px 0;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+    
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin: 25px 0;
+    }
+    
+    .feature-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(222, 98, 98, 0.1);
+    }
+    
+    .feature-item:last-child {
+        border-bottom: none;
+    }
+    
+    .feature-icon {
+        width: 24px;
+        height: 24px;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+    
+    .next-steps {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+        border-radius: 15px;
+        padding: 25px;
+        margin: 30px 0;
+        border-left: 5px solid #2196f3;
+    }
+    
+    .next-steps h3 {
+        color: #1976d2;
+        margin-top: 0;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .step-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .step-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        padding: 8px 0;
+    }
+    
+    .step-number {
+        width: 24px;
+        height: 24px;
+        background: #1976d2;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 600;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+</style>
+@endpush
+
+@section('content')
+    <div class="greeting">Hello {{ $user->name }}! 👋</div>
+    
+    <div class="alert alert-success">
+        <strong>🎉 Congratulations!</strong> Your {{ ucfirst($subscription->plan) }} subscription is now active and ready to use. Welcome to the future of AI-powered medical assistance!
+    </div>
+    
+    <p class="content-text">
+        Thank you for choosing {{ config('app.name') }} to enhance your medical practice. Your subscription gives you access to cutting-edge AI technology designed specifically for healthcare professionals.
+    </p>
+    
+    <div style="text-align: center;">
+        <div class="plan-badge">{{ ucfirst($subscription->plan) }} Plan Active</div>
+    </div>
+    
+    <!-- Subscription Details -->
+    <div class="info-card">
+        <div class="info-card-header">
+            <div class="info-card-icon">📋</div>
+            Subscription Details
         </div>
-
-        <div class="content">
-            <p>Hi {{ $user->name }},</p>
-            
-            <p>Thank you for subscribing to {{ config('app.name') }}! Your <strong>{{ ucfirst($subscription->plan) }}</strong> plan is now active and ready to use.</p>
-
-            <div class="plan-badge">{{ ucfirst($subscription->plan) }} Plan</div>
-
-            <div class="subscription-details">
-                <h3 style="margin-top: 0; color: #2c3e50;">Subscription Details</h3>
-                
-                <div class="detail-row">
-                    <span class="detail-label">Plan:</span>
-                    <span class="detail-value">{{ $planConfig['name'] ?? ucfirst($subscription->plan) }}</span>
-                </div>
-                
-                <div class="detail-row">
-                    <span class="detail-label">Billing Cycle:</span>
-                    <span class="detail-value">{{ ucfirst($subscription->billing_cycle) }}</span>
-                </div>
-                
-                <div class="detail-row">
-                    <span class="detail-label">Amount:</span>
-                    <span class="detail-value">${{ number_format($subscription->amount, 2) }}/{{ $subscription->billing_cycle === 'yearly' ? 'year' : 'month' }}</span>
-                </div>
-                
-                <div class="detail-row">
-                    <span class="detail-label">Next Billing Date:</span>
-                    <span class="detail-value">{{ $subscription->ends_at->format('F j, Y') }}</span>
-                </div>
-                
-                <div class="detail-row">
-                    <span class="detail-label">Status:</span>
-                    <span class="detail-value" style="color: #28a745; font-weight: 600;">Active</span>
-                </div>
-            </div>
-
-            @if(isset($planConfig['features']))
-            <h3 style="color: #2c3e50;">What's Included in Your Plan</h3>
-            <ul class="features-list">
-                @foreach($planConfig['features'] as $feature)
-                <li>
-                    <span class="check-icon">✓</span>{{ $feature }}
-                </li>
-                @endforeach
-            </ul>
-            @endif
-
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{{ route('dashboard') }}" class="cta-button">
-                    Get Started Now
-                </a>
-            </div>
-
-            <div class="support-info">
-                <h4 style="margin-top: 0; color: #1976d2;">Need Help Getting Started?</h4>
-                <p style="margin-bottom: 0;">Our support team is here to help you make the most of your subscription. Visit your dashboard to start using AI-powered medical diagnosis tools right away.</p>
-            </div>
-
-            <p>You can manage your subscription, view usage statistics, and update your billing information anytime from your <a href="{{ route('subscription.manage') }}" style="color: #DE6262;">subscription dashboard</a>.</p>
-
-            <p>Thank you for choosing {{ config('app.name') }} to enhance your medical practice!</p>
-
-            <p>Best regards,<br>
-            The {{ config('app.name') }} Team</p>
+        
+        <table class="data-table">
+            <tr>
+                <td><strong>Plan Name</strong></td>
+                <td>{{ $planConfig['name'] ?? ucfirst($subscription->plan) }}</td>
+            </tr>
+            <tr>
+                <td><strong>Billing Cycle</strong></td>
+                <td>{{ ucfirst($subscription->billing_cycle) }}</td>
+            </tr>
+            <tr>
+                <td><strong>Amount</strong></td>
+                <td><strong>${{ number_format($subscription->amount, 2) }}</strong>/{{ $subscription->billing_cycle === 'yearly' ? 'year' : 'month' }}</td>
+            </tr>
+            <tr>
+                <td><strong>Next Billing Date</strong></td>
+                <td>{{ $subscription->ends_at->format('F j, Y') }}</td>
+            </tr>
+            <tr>
+                <td><strong>Status</strong></td>
+                <td><span class="status-badge status-active">✅ Active</span></td>
+            </tr>
+        </table>
+    </div>
+    
+    @if(isset($planConfig['features']) && count($planConfig['features']) > 0)
+    <!-- Plan Features -->
+    <div class="info-card">
+        <div class="info-card-header">
+            <div class="info-card-icon">⭐</div>
+            What's Included in Your Plan
         </div>
-
-        <div class="footer">
-            <p>This email was sent to {{ $user->email }} because you subscribed to {{ config('app.name') }}.</p>
-            <p>If you have any questions, please contact us at <a href="mailto:support@medcuraai.com" style="color: #DE6262;">support@medcuraai.com</a></p>
-            <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
+        
+        <div class="features-grid">
+            @foreach($planConfig['features'] as $feature)
+            <div class="feature-item">
+                <div class="feature-icon">✓</div>
+                <span>{{ $feature }}</span>
+            </div>
+            @endforeach
         </div>
     </div>
-</body>
-</html>
+    @endif
+    
+    <!-- Next Steps -->
+    <div class="next-steps">
+        <h3>🚀 Ready to Get Started?</h3>
+        <p>Here's how to make the most of your new subscription:</p>
+        
+        <ol class="step-list">
+            <li class="step-item">
+                <div class="step-number">1</div>
+                <div>
+                    <strong>Access Your Dashboard</strong><br>
+                    <small>Start using AI-powered medical diagnosis tools right away</small>
+                </div>
+            </li>
+            <li class="step-item">
+                <div class="step-number">2</div>
+                <div>
+                    <strong>Explore Features</strong><br>
+                    <small>Discover all the tools available in your plan</small>
+                </div>
+            </li>
+            <li class="step-item">
+                <div class="step-number">3</div>
+                <div>
+                    <strong>Get Support</strong><br>
+                    <small>Our team is here to help you succeed</small>
+                </div>
+            </li>
+        </ol>
+    </div>
+    
+    <!-- Call to Action -->
+    <div class="btn-container">
+        <a href="{{ route('dashboard') }}" class="btn btn-primary">
+            🏥 Access Your Dashboard
+        </a>
+        <a href="{{ route('subscription.manage') }}" class="btn btn-secondary">
+            ⚙️ Manage Subscription
+        </a>
+    </div>
+    
+    <div class="alert alert-info">
+        <strong>💡 Pro Tip:</strong> Bookmark your dashboard and subscription management page for quick access. You can monitor your usage, update billing information, and access support anytime.
+    </div>
+    
+    <p class="content-text">
+        Our support team is standing by to help you get the most out of your subscription. If you have any questions or need assistance getting started, don't hesitate to reach out.
+    </p>
+    
+    <p class="content-text">
+        Thank you for trusting {{ config('app.name') }} with your medical practice. We're excited to be part of your journey toward more efficient and effective patient care.
+    </p>
+    
+    <p class="content-text">
+        <strong>Best regards,</strong><br>
+        The {{ config('app.name') }} Team 🏥
+    </p>
+@endsection
+
+@section('footer-content')
+    <p style="margin-top: 15px; font-size: 13px; color: #6c757d;">
+        <strong>Need Help?</strong> Contact our support team at 
+        <a href="mailto:support@{{ strtolower(str_replace(' ', '', config('app.name'))) }}.com" style="color: #DE6262;">
+            support@{{ strtolower(str_replace(' ', '', config('app.name'))) }}.com
+        </a>
+    </p>
+@endsection

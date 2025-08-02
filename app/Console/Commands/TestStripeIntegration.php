@@ -102,12 +102,20 @@ class TestStripeIntegration extends Command
         }
         
         try {
-            // Test users table has subscription fields
+            // Test monthly_invoice_settings table
+            \DB::table('monthly_invoice_settings')->count();
+            $this->info('   ✅ monthly_invoice_settings table exists');
+        } catch (\Exception $e) {
+            $this->error('   ❌ monthly_invoice_settings table missing');
+        }
+        
+        try {
+            // Test users table has cost limit field
             $user = \DB::table('users')->first();
-            if ($user && property_exists($user, 'current_plan')) {
-                $this->info('   ✅ users table has subscription fields');
+            if ($user && property_exists($user, 'monthly_cost_limit')) {
+                $this->info('   ✅ users table has new cost limit field');
             } else {
-                $this->warn('   ⚠️  users table missing subscription fields');
+                $this->warn('   ⚠️  users table missing monthly_cost_limit field');
             }
         } catch (\Exception $e) {
             $this->error('   ❌ Error checking users table');
@@ -121,10 +129,10 @@ class TestStripeIntegration extends Command
         try {
             // Test User model methods
             $user = new User();
-            if (method_exists($user, 'subscriptions')) {
-                $this->info('   ✅ User->subscriptions() relationship exists');
+            if (method_exists($user, 'monthlyInvoiceSetting')) {
+                $this->info('   ✅ User->monthlyInvoiceSetting() relationship exists');
             } else {
-                $this->error('   ❌ User->subscriptions() relationship missing');
+                $this->error('   ❌ User->monthlyInvoiceSetting() relationship missing');
             }
             
             if (method_exists($user, 'openaiUsages')) {
@@ -133,10 +141,16 @@ class TestStripeIntegration extends Command
                 $this->error('   ❌ User->openaiUsages() relationship missing');
             }
             
-            if (method_exists($user, 'getPlanConfig')) {
-                $this->info('   ✅ User->getPlanConfig() method exists');
+            if (method_exists($user, 'hasActiveSubscription')) {
+                $this->info('   ✅ User->hasActiveSubscription() method exists');
             } else {
-                $this->error('   ❌ User->getPlanConfig() method missing');
+                $this->error('   ❌ User->hasActiveSubscription() method missing');
+            }
+            
+            if (method_exists($user, 'getMonthlyCost')) {
+                $this->info('   ✅ User->getMonthlyCost() method exists');
+            } else {
+                $this->error('   ❌ User->getMonthlyCost() method missing');
             }
             
         } catch (\Exception $e) {

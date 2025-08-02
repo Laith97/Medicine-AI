@@ -1,157 +1,231 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Reset Your MedCura AI Password</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            margin: 0;
-            padding: 0;
-            background-color: #f5f8fa;
-        }
-        .container {
-            max-width: 600px;
-            margin: 20px auto;
-            padding: 0;
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-        }
-        .header {
-            text-align: center;
-            padding: 30px 0;
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-        }
-        .logo {
-            font-size: 28px;
-            font-weight: bold;
-            letter-spacing: 0.5px;
-        }
-        .logo-accent {
-            color: #DE6262;
-        }
-        .content {
-            padding: 40px 30px;
-        }
-        .title {
-            color: #2c3e50;
-            font-size: 24px;
-            margin-top: 0;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .button-container {
-            text-align: center;
-            margin: 30px 0;
-        }
-        .button {
-            display: inline-block;
-            padding: 14px 30px;
-            background: linear-gradient(135deg, #DE6262 0%, #c44a4a 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
-            box-shadow: 0 4px 10px rgba(222, 98, 98, 0.3);
-            transition: all 0.3s ease;
-        }
-        .button:hover {
-            background: linear-gradient(135deg, #c44a4a 0%, #b03c3c 100%);
-            box-shadow: 0 6px 15px rgba(222, 98, 98, 0.4);
-        }
-        .footer {
-            text-align: center;
-            padding: 25px 20px;
-            color: #7f8c8d;
-            font-size: 13px;
-            background-color: #f9f9f9;
-            border-top: 1px solid #eee;
-        }
-        .note {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 30px;
-            font-size: 14px;
-            color: #7f8c8d;
-            border-left: 4px solid #DE6262;
-        }
-        .expiry-notice {
-            font-size: 14px;
-            color: #e74c3c;
-            text-align: center;
-            margin: 20px 0;
-        }
-        p {
-            margin: 16px 0;
-            color: #34495e;
-        }
-        .social-links {
-            margin-top: 15px;
-        }
-        .social-link {
-            display: inline-block;
-            margin: 0 8px;
-            color: #DE6262;
-            text-decoration: none;
-        }
-        @media only screen and (max-width: 620px) {
-            .container {
-                width: 100%;
-                margin: 0;
-                border-radius: 0;
-            }
-            .content {
-                padding: 30px 20px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">
-                <span class="logo-accent">Med</span>Cura AI
-            </div>
+@extends('emails.layouts.master')
+
+@section('title', 'Reset Your Password - ' . config('app.name'))
+@section('email-title', '🔐 Password Reset Request')
+@section('email-subtitle', 'Secure your account with a new password')
+
+@push('email-styles')
+<style>
+    .security-notice {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border-left: 5px solid #ffc107;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 25px 0;
+        text-align: center;
+    }
+    
+    .security-notice h4 {
+        color: #856404;
+        margin-top: 0;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .expiry-timer {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        border: 2px solid #dc3545;
+        border-radius: 15px;
+        padding: 20px;
+        margin: 25px 0;
+        text-align: center;
+    }
+    
+    .timer-display {
+        font-size: 24px;
+        font-weight: 700;
+        color: #dc3545;
+        margin: 10px 0;
+    }
+    
+    .security-tips {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-left: 5px solid #2196f3;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 25px 0;
+    }
+    
+    .security-tips h4 {
+        color: #1976d2;
+        margin-top: 0;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .tip-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 10px;
+        color: #0c5460;
+    }
+    
+    .tip-icon {
+        color: #2196f3;
+        margin-right: 10px;
+        margin-top: 2px;
+    }
+    
+    .backup-url {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 20px 0;
+        word-break: break-all;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        color: #DE6262;
+        text-align: center;
+    }
+    
+    .security-contact {
+        background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+        border-left: 5px solid #9c27b0;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 25px 0;
+        text-align: center;
+    }
+    
+    .security-contact h4 {
+        color: #7b1fa2;
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+</style>
+@endpush
+
+@section('content')
+    <div class="greeting">Hello! 👋</div>
+    
+    <div class="alert alert-info">
+        <strong>🔐 Password Reset Requested:</strong> We received a request to reset the password for your {{ config('app.name') }} account. Your account security is our top priority.
+    </div>
+    
+    <p class="content-text">
+        Someone (hopefully you!) requested a password reset for your {{ config('app.name') }} account. If this was you, click the button below to create a new secure password.
+    </p>
+    
+    <!-- Security Notice -->
+    <div class="security-notice">
+        <h4>🛡️ Account Security Notice</h4>
+        <p style="margin-bottom: 0; color: #856404;">
+            This password reset was requested from a secure connection. Your account data and patient information remain fully protected during this process.
+        </p>
+    </div>
+    
+    <!-- Reset Button -->
+    <div class="btn-container">
+        <a href="{{ $url }}" class="btn btn-primary">
+            🔐 Reset My Password
+        </a>
+    </div>
+    
+    <!-- Expiry Timer -->
+    <div class="expiry-timer">
+        <h4 style="margin-top: 0; color: #dc3545;">⏰ Time Sensitive</h4>
+        <div class="timer-display">60 Minutes</div>
+        <p style="margin-bottom: 0; color: #721c24;">
+            This secure link expires in 60 minutes for your protection. If you need a new link after expiration, simply request another password reset.
+        </p>
+    </div>
+    
+    <!-- Account Information -->
+    <div class="info-card">
+        <div class="info-card-header">
+            <div class="info-card-icon">📋</div>
+            Reset Request Details
         </div>
         
-        <div class="content">
-            <h2 class="title">Reset Your Password</h2>
-            
-            <p>Hello,</p>
-            
-            <p>We received a request to reset your password for your MedCura AI account. To proceed with the password reset, please click the button below:</p>
-            
-            <div class="button-container">
-                <a href="{{ $url }}" class="button">Reset Password</a>
-            </div>
-            
-            <p class="expiry-notice">This password reset link will expire in 60 minutes.</p>
-            
-            <p>If you did not request a password reset, please ignore this email or contact our support team if you have concerns about your account security.</p>
-            
-            <div class="note">
-                <p>If you're having trouble clicking the "Reset Password" button, copy and paste the URL below into your web browser:</p>
-                <p style="word-break: break-all; font-size: 13px; color: #DE6262;">{{ $url }}</p>
-            </div>
+        <table class="data-table">
+            <tr>
+                <td><strong>Request Time</strong></td>
+                <td>{{ now()->format('F j, Y \a\t g:i A T') }}</td>
+            </tr>
+            <tr>
+                <td><strong>Account Type</strong></td>
+                <td>Medical Professional</td>
+            </tr>
+            <tr>
+                <td><strong>Security Level</strong></td>
+                <td><span class="status-badge status-active">🔒 High Security</span></td>
+            </tr>
+            <tr>
+                <td><strong>Link Expires</strong></td>
+                <td><strong style="color: #dc3545;">{{ now()->addMinutes(60)->format('g:i A T') }}</strong></td>
+            </tr>
+        </table>
+    </div>
+    
+    <!-- Security Tips -->
+    <div class="security-tips">
+        <h4>💡 Password Security Tips:</h4>
+        <div class="tip-item">
+            <span class="tip-icon">•</span>
+            <span><strong>Use 12+ characters</strong> with a mix of letters, numbers, and symbols</span>
         </div>
-        
-        <div class="footer">
-            <p>&copy; {{ date('Y') }} MedCura AI. All rights reserved.</p>
-            <p>This is an automated message, please do not reply to this email.</p>
-            <div class="social-links">
-                <a href="#" class="social-link">Privacy Policy</a> | 
-                <a href="#" class="social-link">Terms of Service</a> | 
-                <a href="#" class="social-link">Contact Us</a>
-            </div>
+        <div class="tip-item">
+            <span class="tip-icon">•</span>
+            <span><strong>Avoid personal information</strong> like names, birthdays, or medical terms</span>
+        </div>
+        <div class="tip-item">
+            <span class="tip-icon">•</span>
+            <span><strong>Consider a passphrase</strong> like "Coffee!Morning@Clinic2024"</span>
+        </div>
+        <div class="tip-item">
+            <span class="tip-icon">•</span>
+            <span><strong>Use a password manager</strong> to generate and store secure passwords</span>
         </div>
     </div>
-</body>
-</html>
+    
+    <!-- Backup URL -->
+    <div class="info-card">
+        <div class="info-card-header">
+            <div class="info-card-icon">🔗</div>
+            Alternative Access
+        </div>
+        <p>If the button above doesn't work, copy and paste this secure link into your browser:</p>
+        <div class="backup-url">{{ $url }}</div>
+    </div>
+    
+    <!-- Security Contact -->
+    <div class="security-contact">
+        <h4>🚨 Didn't Request This Reset?</h4>
+        <p>If you didn't request this password reset, your account may be at risk. Please contact our security team immediately.</p>
+        <p style="margin-bottom: 0;">
+            <strong>Security Hotline:</strong> <a href="tel:+1-555-SECURITY" style="color: #7b1fa2;">(555) SECURITY</a><br>
+            <strong>Email:</strong> <a href="mailto:security@{{ strtolower(str_replace(' ', '', config('app.name'))) }}.com" style="color: #7b1fa2;">security@{{ strtolower(str_replace(' ', '', config('app.name'))) }}.com</a>
+        </p>
+    </div>
+    
+    <div class="alert alert-warning">
+        <strong>⚠️ Important:</strong> Never share your password with anyone. {{ config('app.name') }} staff will never ask for your password via email or phone.
+    </div>
+    
+    <p class="content-text">
+        After resetting your password, we recommend reviewing your account security settings and enabling two-factor authentication if available.
+    </p>
+    
+    <p class="content-text">
+        <strong>Stay secure,</strong><br>
+        The {{ config('app.name') }} Security Team 🛡️
+    </p>
+@endsection
+
+@section('footer-content')
+    <p style="margin-top: 15px; font-size: 13px; color: #6c757d;">
+        <strong>Security Concerns?</strong> Contact our security team at 
+        <a href="mailto:security@{{ strtolower(str_replace(' ', '', config('app.name'))) }}.com" style="color: #DE6262;">
+            security@{{ strtolower(str_replace(' ', '', config('app.name'))) }}.com
+        </a>
+    </p>
+    <p style="font-size: 12px; color: #6c757d; margin-top: 10px;">
+        This is an automated security message. Do not reply to this email.
+    </p>
+@endsection

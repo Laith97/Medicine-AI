@@ -98,9 +98,32 @@ function updateSpecialtyValue() {
     }
 }
 
+function updatePlanDetails() {
+    const select = document.getElementById('subscription_plan_id');
+    const planDetails = document.getElementById('plan-details');
+    const planInfo = document.getElementById('plan-info');
+    
+    if (select.value) {
+        const option = select.options[select.selectedIndex];
+        const price = option.getAttribute('data-price');
+        const period = option.getAttribute('data-period');
+        const cycle = option.getAttribute('data-cycle');
+        
+        planInfo.innerHTML = `
+            <div><strong>Price:</strong> $${parseFloat(price).toFixed(2)}</div>
+            <div><strong>Billing:</strong> ${cycle === 'monthly' ? 'Monthly' : 'Yearly'}</div>
+            <div><strong>Period:</strong> ${period} month${period != 1 ? 's' : ''}</div>
+        `;
+        planDetails.style.display = 'block';
+    } else {
+        planDetails.style.display = 'none';
+    }
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     toggleMedicalSpecialty();
+    updatePlanDetails();
 
     // Add event listeners
     const customInput = document.getElementById('custom_specialty');
@@ -318,48 +341,54 @@ document.addEventListener('DOMContentLoaded', function() {
                             @enderror
                         </div>
 
-                        <!-- Subscription Settings -->
+                        <!-- Subscription Pricing Settings -->
                         <div class="card mb-4" style="border: 2px solid #e9ecef; border-radius: 10px;">
                             <div class="card-header bg-light">
                                 <h6 class="mb-0 fw-bold">
-                                    <i class="bi bi-credit-card me-2"></i>Subscription Settings
+                                    <i class="bi bi-credit-card me-2"></i>Subscription Pricing
                                 </h6>
-                                <small class="text-muted">Configure billing period and amount for this user (optional)</small>
+                                <small class="text-muted">Set monthly and yearly subscription prices</small>
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-3">
-                                        <label for="subscription_period_months" class="form-label fw-bold">Billing Period</label>
-                                        <select id="subscription_period_months" name="subscription_period_months" 
-                                                class="form-control @error('subscription_period_months') is-invalid @enderror"
-                                                onchange="updateAmountLabel()">
-                                            <option value="1" {{ old('subscription_period_months', 1) == 1 ? 'selected' : '' }}>Monthly (1 Month)</option>
-                                            <option value="3" {{ old('subscription_period_months') == 3 ? 'selected' : '' }}>Quarterly (3 Months)</option>
-                                            <option value="6" {{ old('subscription_period_months') == 6 ? 'selected' : '' }}>Semi-Annual (6 Months)</option>
-                                            <option value="12" {{ old('subscription_period_months') == 12 ? 'selected' : '' }}>Annual (12 Months)</option>
-                                            <option value="24" {{ old('subscription_period_months') == 24 ? 'selected' : '' }}>Biennial (24 Months)</option>
-                                            <option value="36" {{ old('subscription_period_months') == 36 ? 'selected' : '' }}>Triennial (36 Months)</option>
-                                            <option value="-1" {{ old('subscription_period_months') == -1 ? 'selected' : '' }}>Unlimited</option>
-                                        </select>
-                                        <small class="text-muted">How often they will be billed</small>
-                                        @error('subscription_period_months')
+                                    <div class="col-md-6">
+                                        <label for="monthly_price" class="form-label fw-bold">Monthly Price ($)</label>
+                                        <input id="monthly_price" type="number" name="monthly_price" 
+                                               value="{{ old('monthly_price', 99.00) }}" 
+                                               step="0.01" min="0" max="99999.99"
+                                               class="form-control @error('monthly_price') is-invalid @enderror"
+                                               placeholder="99.00">
+                                        <small class="text-muted">Price charged per month</small>
+                                        @error('monthly_price')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    <div class="col-md-3">
-                                        <label for="billing_amount" class="form-label fw-bold">
-                                            <span id="amount_label">Amount ($)</span>
-                                        </label>
-                                        <input id="billing_amount" type="number" name="billing_amount" 
-                                               value="{{ old('billing_amount') }}" step="0.01" min="0" max="99999.99"
-                                               class="form-control @error('billing_amount') is-invalid @enderror"
-                                               placeholder="e.g., 199.99">
-                                        <small class="text-muted" id="amount_help">Amount charged per billing period</small>
-                                        @error('billing_amount')
+                                    <div class="col-md-6">
+                                        <label for="yearly_price" class="form-label fw-bold">Yearly Price ($)</label>
+                                        <input id="yearly_price" type="number" name="yearly_price" 
+                                               value="{{ old('yearly_price', 950.00) }}" 
+                                               step="0.01" min="0" max="99999.99"
+                                               class="form-control @error('yearly_price') is-invalid @enderror"
+                                               placeholder="950.00">
+                                        <small class="text-muted">Price charged per year</small>
+                                        @error('yearly_price')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    <div class="col-md-3">
+                                </div>
+                                
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="alert alert-info">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            <strong>Note:</strong> These prices are specific to this user only and will not affect other users.
+                                            The user will be able to choose between these two options on their subscription page.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-3">
+                                    <div class="col-md-4">
                                         <label for="grace_period_days" class="form-label fw-bold">Grace Period (Days)</label>
                                         <input id="grace_period_days" type="number" name="grace_period_days" 
                                                value="{{ old('grace_period_days', 7) }}" min="1" max="30"
@@ -369,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <label for="warning_period_days" class="form-label fw-bold">Warning Period (Days)</label>
                                         <input id="warning_period_days" type="number" name="warning_period_days" 
                                                value="{{ old('warning_period_days', 3) }}" min="1" max="14"
@@ -379,9 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <label for="reminder_frequency_days" class="form-label fw-bold">Reminder Frequency (Days)</label>
                                         <input id="reminder_frequency_days" type="number" name="reminder_frequency_days" 
                                                value="{{ old('reminder_frequency_days', 3) }}" min="1" max="30"
@@ -427,6 +454,27 @@ document.addEventListener('DOMContentLoaded', function() {
                                 Set to 0 for no limit. Excess costs will be added to monthly invoices.
                             </small>
                             @error('monthly_cost_limit')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Trial Days -->
+                        <div class="mb-4">
+                            <label for="trial_days" class="form-label fw-bold">Trial Period (Days)</label>
+                            <div class="input-group">
+                                <input id="trial_days" type="number" name="trial_days" 
+                                       value="{{ old('trial_days', 7) }}" 
+                                       min="0" max="365"
+                                       class="form-control @error('trial_days') is-invalid @enderror"
+                                       placeholder="7">
+                                <span class="input-group-text">days</span>
+                            </div>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Number of days the user can access the system for free. Set to 0 for no trial period.
+                                After trial expires, user will be restricted until they pay their first invoice.
+                            </small>
+                            @error('trial_days')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -510,30 +558,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function updateAmountLabel() {
-    const periodSelect = document.getElementById('subscription_period_months');
-    const amountLabel = document.getElementById('amount_label');
-    const amountHelp = document.getElementById('amount_help');
-    
-    const periodLabels = {
-        '1': { label: 'Monthly Amount ($)', help: 'Amount charged every month' },
-        '3': { label: 'Quarterly Amount ($)', help: 'Amount charged every 3 months' },
-        '6': { label: 'Semi-Annual Amount ($)', help: 'Amount charged every 6 months' },
-        '12': { label: 'Annual Amount ($)', help: 'Amount charged every year' },
-        '24': { label: 'Biennial Amount ($)', help: 'Amount charged every 2 years' },
-        '36': { label: 'Triennial Amount ($)', help: 'Amount charged every 3 years' },
-        '-1': { label: 'One-time Amount ($)', help: 'One-time payment for unlimited access' }
-    };
-    
-    const selected = periodLabels[periodSelect.value] || periodLabels['1'];
-    amountLabel.textContent = selected.label;
-    amountHelp.textContent = selected.help;
-}
-
-// Initialize amount label on page load
-document.addEventListener('DOMContentLoaded', function() {
-    updateAmountLabel();
-});
+// Removed obsolete updateAmountLabel function - now using separate monthly/yearly pricing fields
 </script>
 
 <style>

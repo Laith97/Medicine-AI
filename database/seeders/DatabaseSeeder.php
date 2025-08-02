@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class, // Add the admin seeder
             SpecialtySeeder::class,
             DoctorSeeder::class,
+            SubscriptionPlanSeeder::class, // Add subscription plans
         ]);
     }
 }

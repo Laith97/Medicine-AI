@@ -79,7 +79,8 @@ class StripeInvoiceService
             $stripeInvoice = Invoice::create([
                 'customer' => $user->stripe_customer_id,
                 'description' => "OpenAI Token Usage - {$startDate->format('M Y')}",
-                'due_date' => now()->addDays(30)->timestamp,
+                'collection_method' => 'send_invoice',
+                'days_until_due' => 30,
                 'metadata' => [
                     'period_start' => $startDate->toDateString(),
                     'period_end' => $endDate->toDateString(),
@@ -155,25 +156,28 @@ class StripeInvoiceService
             $stripeInvoice = Invoice::create([
                 'customer' => $user->stripe_customer_id,
                 'description' => $description ?? 'Manual Invoice',
-                'due_date' => now()->addDays(30)->timestamp,
+                'collection_method' => 'send_invoice',
+                'days_until_due' => 30,
+                'auto_advance' => false, // Prevent auto-finalization
             ]);
 
-            // Finalize the invoice
+            // Finalize the invoice to make it payable
             $stripeInvoice->finalizeInvoice();
 
-            // Store in our database
+            // Store in our database - force status to 'open' for manual invoices
             $localInvoice = StripeInvoice::create([
                 'user_id' => $user->id,
                 'stripe_invoice_id' => $stripeInvoice->id,
-                'amount_due' => $stripeInvoice->amount_due / 100,
-                'amount_paid' => $stripeInvoice->amount_paid / 100,
-                'status' => $stripeInvoice->status,
+                'amount_due' => max($stripeInvoice->amount_due / 100, $totalAmount / 100), // Ensure amount is correct
+                'amount_paid' => 0, // Manual invoices start unpaid
+                'status' => $stripeInvoice->status === 'paid' ? 'open' : $stripeInvoice->status, // Force open if Stripe says paid
                 'due_date' => Carbon::createFromTimestamp($stripeInvoice->due_date),
                 'invoice_url' => $stripeInvoice->hosted_invoice_url,
                 'invoice_pdf' => $stripeInvoice->invoice_pdf,
                 'currency' => $stripeInvoice->currency,
                 'description' => $stripeInvoice->description,
                 'line_items' => $lineItems,
+                'invoice_type' => 'manual', // Mark as manual invoice
             ]);
 
             return $localInvoice;
@@ -227,6 +231,27 @@ class StripeInvoiceService
                 'paid_at' => now(),
             ]);
 
+            // Unrestrict user when their invoice is marked as paid
+            $user = $invoice->user;
+            if ($user && $user->monthlyInvoiceSetting) {
+                $setting = $user->monthlyInvoiceSetting;
+                
+                // If user was restricted, unrestrict them
+                if ($setting->is_restricted) {
+                    $setting->update([
+                        'is_restricted' => false,
+                        'subscription_starts_at' => $setting->subscription_starts_at ?: now(),
+                        'subscription_ends_at' => now()->addMonth(), // Extend subscription for one month
+                    ]);
+                    
+                    Log::info('User unrestricted after manual payment marking', [
+                        'user_id' => $user->id,
+                        'invoice_id' => $invoice->id,
+                        'subscription_ends_at' => now()->addMonth()->toDateString(),
+                    ]);
+                }
+            }
+
             return $invoice;
 
         } catch (\Exception $e) {
@@ -263,29 +288,7 @@ class StripeInvoiceService
     public function getPaymentUrl(StripeInvoice $invoice): ?string
     {
         try {
-            // For monthly invoices, create a Stripe checkout session if not already available
-            if ($invoice->isMonthlyInvoice() && !$invoice->invoice_url) {
-                Log::info('Creating payment session for monthly invoice', ['invoice_id' => $invoice->id]);
-                
-                // Try to create Stripe session, fallback if it fails
-                $stripeUrl = $this->createPaymentSessionForMonthlyInvoice($invoice);
-                if ($stripeUrl) {
-                    return $stripeUrl;
-                }
-                
-                // Fallback: Create a manual payment URL only if Stripe truly fails
-                Log::warning('Stripe session creation failed, using fallback payment method', [
-                    'invoice_id' => $invoice->id
-                ]);
-                
-                // Create a fallback payment URL
-                $fallbackUrl = route('invoices.manual-payment', $invoice);
-                
-                // Don't update the invoice_url here - let it remain null so we can retry Stripe later
-                // Only return the fallback URL for immediate use
-                return $fallbackUrl;
-            }
-            
+            // First, try to get the existing invoice URL
             $url = $invoice->invoice_url;
             
             // Handle case where URL might be an array
@@ -293,15 +296,49 @@ class StripeInvoiceService
                 $url = isset($url[0]) ? $url[0] : '';
             }
             
-            $result = $url && is_string($url) ? $url : null;
+            // If we have a valid URL, return it
+            if ($url && is_string($url) && filter_var($url, FILTER_VALIDATE_URL)) {
+                Log::info('Using existing payment URL', [
+                    'invoice_id' => $invoice->id,
+                    'url' => $url
+                ]);
+                return $url;
+            }
             
-            Log::info('Payment URL retrieved', [
-                'invoice_id' => $invoice->id,
-                'has_url' => !empty($result),
-                'is_monthly' => $invoice->isMonthlyInvoice()
+            // If no URL, try to sync from Stripe first
+            Log::info('No payment URL found, syncing from Stripe', ['invoice_id' => $invoice->id]);
+            $syncedInvoice = $this->syncInvoiceStatus($invoice);
+            
+            // Check if sync provided a URL
+            $syncedUrl = $syncedInvoice->invoice_url;
+            if (is_array($syncedUrl)) {
+                $syncedUrl = isset($syncedUrl[0]) ? $syncedUrl[0] : '';
+            }
+            
+            if ($syncedUrl && is_string($syncedUrl) && filter_var($syncedUrl, FILTER_VALIDATE_URL)) {
+                Log::info('Got payment URL from sync', [
+                    'invoice_id' => $invoice->id,
+                    'url' => $syncedUrl
+                ]);
+                return $syncedUrl;
+            }
+            
+            // For monthly invoices, create a Stripe checkout session
+            if ($invoice->isMonthlyInvoice()) {
+                Log::info('Creating payment session for monthly invoice', ['invoice_id' => $invoice->id]);
+                
+                $stripeUrl = $this->createPaymentSessionForMonthlyInvoice($invoice);
+                if ($stripeUrl) {
+                    return $stripeUrl;
+                }
+            }
+            
+            // Last resort: return fallback URL
+            Log::warning('Using fallback payment method', [
+                'invoice_id' => $invoice->id
             ]);
             
-            return $result;
+            return route('invoices.manual-payment', $invoice);
             
         } catch (\Exception $e) {
             Log::error('Error getting payment URL: ' . $e->getMessage(), [

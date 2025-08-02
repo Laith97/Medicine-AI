@@ -1,113 +1,45 @@
 @extends('layouts.admin')
 
-@section('title', 'Monthly Invoice Management')
+@section('title', 'Subscription Management')
 
 @push('styles')
 <style>
-    /* Compact table styles */
-    .table th {
-        padding: 0.5rem 0.4rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        white-space: nowrap;
-        border-bottom: 2px solid #dee2e6;
-    }
-
-    .table td {
-        padding: 0.4rem 0.4rem;
-        font-size: 0.8rem;
-        vertical-align: middle;
-        border-bottom: 1px solid #f1f3f4;
-    }
-
-    .table td strong {
-        font-size: 0.85rem;
-    }
-
-    .table td small {
-        font-size: 0.7rem;
-    }
-
-    .table .badge {
-        font-size: 0.65rem;
-        padding: 0.2rem 0.4rem;
-    }
-
-    .table .btn {
-        padding: 0.2rem 0.4rem;
-        font-size: 0.7rem;
-    }
-
-    /* Column widths for monthly invoices table */
-    .table th:nth-child(1), .table td:nth-child(1) { width: 5%; }
-    .table th:nth-child(2), .table td:nth-child(2) { width: 20%; }
-    .table th:nth-child(3), .table td:nth-child(3) { width: 15%; }
-    .table th:nth-child(4), .table td:nth-child(4) { width: 12%; }
-    .table th:nth-child(5), .table td:nth-child(5) { width: 12%; }
-    .table th:nth-child(6), .table td:nth-child(6) { width: 12%; }
-    .table th:nth-child(7), .table td:nth-child(7) { width: 12%; }
-    .table th:nth-child(8), .table td:nth-child(8) { width: 12%; }
-
-    /* Pagination styling */
-    .pagination {
-        margin-bottom: 0;
-    }
-
-    .pagination .page-link {
-        color: #DE6262;
-        border: 1px solid #dee2e6;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.875rem;
-        border-radius: 0.375rem;
-        margin: 0 0.125rem;
-    }
-
-    .pagination .page-link:hover {
-        color: white;
-        background-color: #DE6262;
-        border-color: #DE6262;
-    }
-
-    .pagination .page-item.active .page-link {
-        background-color: #DE6262;
-        border-color: #DE6262;
-        color: white;
-    }
-
-    .pagination .page-item.disabled .page-link {
-        color: #6c757d;
-        background-color: #fff;
-        border-color: #dee2e6;
-    }
+    /* Page-specific styles if needed */
 </style>
 @endpush
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0">Monthly Invoice Management</h1>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#generateInvoicesModal">
-                        <i class="fas fa-plus"></i> Generate Monthly Invoices
+<div class="admin-page">
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h1 class="text-white">Subscription Management</h1>
+                    <p class="mb-0">Manage user subscriptions and billing settings (monthly & yearly)</p>
+                </div>
+                <div class="d-flex gap-2 mt-2 mt-md-0 flex-wrap">
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#generateInvoicesModal">
+                        <i class="fas fa-plus me-1"></i> Generate Invoices
                     </button>
-                    <button type="button" class="btn btn-warning" onclick="processOverdue()" title="Process overdue invoices and send reminders to users">
-                        <i class="fas fa-exclamation-triangle"></i> Process Overdue
+                    <button type="button" class="btn btn-warning btn-sm" onclick="processOverdue()" title="Process overdue invoices and send reminders to users">
+                        <i class="fas fa-exclamation-triangle me-1"></i> Process Overdue
                     </button>
-                    <button type="button" class="btn btn-success" onclick="processPayments()" title="Check for paid invoices and remove user restrictions">
-                        <i class="fas fa-sync"></i> Process Payments
+                    <button type="button" class="btn btn-success btn-sm" onclick="processPayments()" title="Check for paid invoices and remove user restrictions">
+                        <i class="fas fa-sync me-1"></i> Process Payments
                     </button>
                 </div>
             </div>
+        </div>
 
-            <!-- Info Alert -->
-            <div class="alert alert-info mb-4">
-                <h6><i class="fas fa-info-circle me-2"></i>Button Functions:</h6>
+        <!-- Info Alert -->
+        <div class="admin-alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <h6 class="mb-2">Button Functions:</h6>
                 <div class="row">
                     <div class="col-md-4">
-                        <strong>Generate Monthly Invoices:</strong> Creates new monthly invoices for all active users based on their subscription settings.
+                        <strong>Generate Invoices:</strong> Creates new invoices for all active users based on their chosen billing cycle (monthly or yearly).
                     </div>
                     <div class="col-md-4">
                         <strong>Process Overdue:</strong> Identifies overdue invoices, sends reminder notifications to users, and may restrict access for non-payment.
@@ -117,124 +49,94 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Statistics Cards -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card bg-primary text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="card-title">{{ $totalActiveUsers }}</h4>
-                                    <p class="card-text">Active Users</p>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-users fa-2x"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-danger text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="card-title">{{ $totalRestrictedUsers }}</h4>
-                                    <p class="card-text">Restricted Users</p>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-ban fa-2x"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-success text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="card-title">${{ number_format($totalMonthlyRevenue, 2) }}</h4>
-                                    <p class="card-text">Monthly Revenue</p>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-dollar-sign fa-2x"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-info text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="card-title">{{ $users->total() }}</h4>
-                                    <p class="card-text">Total Users</p>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-user-md fa-2x"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Statistics Cards -->
+        <div class="admin-stats">
+            <div class="admin-stat-card">
+                <i class="fas fa-users"></i>
+                <h3>{{ $totalActiveUsers }}</h3>
+                <p>Active Users</p>
             </div>
-
-            <!-- Filters -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <form method="GET" action="{{ route('admin.monthly-invoices.index') }}" class="row g-3">
-                        <div class="col-md-3">
-                            <label for="status" class="form-label">Status</label>
-                            <select name="status" id="status" class="form-select">
-                                <option value="">All Users</option>
-                                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
-                                <option value="restricted" {{ request('status') === 'restricted' ? 'selected' : '' }}>Restricted</option>
-                                <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="search" class="form-label">Search</label>
-                            <input type="text" name="search" id="search" class="form-control" 
-                                   placeholder="Search by name or email..." value="{{ request('search') }}">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">&nbsp;</label>
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search"></i> Filter
-                                </button>
-                                <a href="{{ route('admin.monthly-invoices.index') }}" class="btn btn-secondary">
-                                    <i class="fas fa-times"></i> Clear
-                                </a>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+            <div class="admin-stat-card">
+                <i class="fas fa-ban"></i>
+                <h3>{{ $totalRestrictedUsers }}</h3>
+                <p>Restricted Users</p>
             </div>
+            <div class="admin-stat-card">
+                <i class="fas fa-calendar-month"></i>
+                <h3>${{ number_format($totalMonthlyRevenue, 0) }}</h3>
+                <p>Monthly Potential</p>
+            </div>
+            <div class="admin-stat-card">
+                <i class="fas fa-calendar-year"></i>
+                <h3>${{ number_format($totalYearlyRevenue, 0) }}</h3>
+                <p>Yearly Potential</p>
+            </div>
+            <div class="admin-stat-card">
+                <i class="fas fa-user-md"></i>
+                <h3>{{ $users->total() }}</h3>
+                <p>Total Users</p>
+            </div>
+        </div>
 
-            <!-- Users Table -->
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Users & Monthly Invoice Settings</h5>
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="showBulkUpdateModal()">
-                        <i class="fas fa-edit"></i> Bulk Update
-                    </button>
-                </div>
-                <div class="card-body">
-                    @if($users->count() > 0)
-                        <form id="bulkForm">
-                            <div class="table-responsive">
-                                <table class="table table-striped">
+        <!-- Filters -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5 class="mb-0">Filters</h5>
+            </div>
+            <div class="admin-card-body" style="padding: 1rem 1.5rem;">
+                <form method="GET" action="{{ route('admin.monthly-invoices.index') }}" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="">All Users</option>
+                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+                            <option value="restricted" {{ request('status') === 'restricted' ? 'selected' : '' }}>Restricted</option>
+                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" name="search" id="search" class="form-control" 
+                               placeholder="Search by name or email..." value="{{ request('search') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-search me-1"></i> Filter
+                            </button>
+                            <a href="{{ route('admin.monthly-invoices.index') }}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-times me-1"></i> Clear
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5 class="mb-0">Users & Monthly Invoice Settings</h5>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="showBulkUpdateModal()">
+                    <i class="fas fa-edit me-1"></i> Bulk Update
+                </button>
+            </div>
+            <div class="admin-card-body">
+                @if($users->count() > 0)
+                    <form id="bulkForm">
+                        <div class="admin-table-container">
+                            <table class="admin-table invoices-table">
                                     <thead>
                                         <tr>
                                             <th>
                                                 <input type="checkbox" id="selectAll" class="form-check-input">
                                             </th>
                                             <th>User</th>
-                                            <th>Monthly Amount</th>
+                                            <th>Pricing (M/Y)</th>
+                                            <th>Current Cycle</th>
                                             <th>Grace Period</th>
                                             <th>Reminder Frequency</th>
                                             <th>Status</th>
@@ -251,9 +153,8 @@
                                                     <input type="checkbox" name="user_ids[]" value="{{ $user->id }}" class="form-check-input user-checkbox">
                                                 </td>
                                                 <td>
-                                                    <div>
-                                                        <strong>{{ $user->name }}</strong>
-                                                        <br>
+                                                    <div class="user-info">
+                                                        <h6>{{ $user->name }}</h6>
                                                         <small class="text-muted">{{ $user->email }}</small>
                                                         @if($user->phone)
                                                             <br>
@@ -263,21 +164,64 @@
                                                 </td>
                                                 <td>
                                                     @if($setting)
-                                                        <span class="fw-bold">{{ $setting->getAmountWithPeriod() }}</span>
+                                                        @php
+                                                            $monthlyPrice = $setting->monthly_price ?? 0;
+                                                            $yearlyPrice = $setting->yearly_price ?? 0;
+                                                        @endphp
+                                                        <div class="d-flex flex-column">
+                                                            <span class="admin-badge {{ $monthlyPrice > 0 ? 'success' : 'secondary' }} mb-1">
+                                                                <i class="bi bi-calendar-month"></i>${{ number_format($monthlyPrice, 0) }}/mo
+                                                            </span>
+                                                            <span class="admin-badge {{ $yearlyPrice > 0 ? 'info' : 'secondary' }}">
+                                                                <i class="bi bi-calendar-year"></i>${{ number_format($yearlyPrice, 0) }}/yr
+                                                            </span>
+                                                        </div>
                                                     @else
-                                                        <span class="text-muted">Not configured</span>
+                                                        <span class="admin-badge secondary">Not configured</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if($setting && $setting->billing_amount > 0)
+                                                        @php
+                                                            $billingAmount = $setting->billing_amount;
+                                                            $monthlyPrice = $setting->monthly_price ?? 0;
+                                                            $yearlyPrice = $setting->yearly_price ?? 0;
+                                                            
+                                                            if ($billingAmount == $yearlyPrice && $yearlyPrice > 0) {
+                                                                $currentCycle = 'yearly';
+                                                                $badgeClass = 'info';
+                                                                $icon = 'bi-calendar-year';
+                                                                $text = 'Yearly';
+                                                            } elseif ($billingAmount == $monthlyPrice && $monthlyPrice > 0) {
+                                                                $currentCycle = 'monthly';
+                                                                $badgeClass = 'success';
+                                                                $icon = 'bi-calendar-month';
+                                                                $text = 'Monthly';
+                                                            } else {
+                                                                $currentCycle = 'unknown';
+                                                                $badgeClass = 'warning';
+                                                                $icon = 'bi-question-circle';
+                                                                $text = 'Unknown';
+                                                            }
+                                                        @endphp
+                                                        <span class="admin-badge {{ $badgeClass }}">
+                                                            <i class="bi {{ $icon }}"></i> {{ $text }}
+                                                        </span>
+                                                        <br><small class="text-muted">${{ number_format($billingAmount, 2) }}</small>
+                                                    @else
+                                                        <span class="admin-badge secondary">Not chosen</span>
                                                     @endif
                                                 </td>
                                                 <td>
                                                     @if($setting)
-                                                        {{ $setting->grace_period_days }} days
+                                                        <span class="admin-badge info">{{ $setting->grace_period_days }} days</span>
                                                     @else
                                                         <span class="text-muted">-</span>
                                                     @endif
                                                 </td>
                                                 <td>
                                                     @if($setting)
-                                                        {{ $setting->reminder_frequency_days }} days
+                                                        <span class="admin-badge info">{{ $setting->reminder_frequency_days }} days</span>
                                                     @else
                                                         <span class="text-muted">-</span>
                                                     @endif
@@ -285,32 +229,34 @@
                                                 <td>
                                                     @if($setting)
                                                         @if($setting->is_restricted)
-                                                            <span class="badge bg-danger">Restricted</span>
+                                                            <span class="admin-badge danger">Restricted</span>
                                                         @elseif($setting->is_active)
-                                                            <span class="badge bg-success">Active</span>
+                                                            <span class="admin-badge success">Active</span>
                                                         @else
-                                                            <span class="badge bg-secondary">Inactive</span>
+                                                            <span class="admin-badge secondary">Inactive</span>
                                                         @endif
                                                     @else
-                                                        <span class="badge bg-light text-dark">Not configured</span>
+                                                        <span class="admin-badge secondary">Not configured</span>
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    <div class="btn-group btn-group-sm">
-                                                        <a href="{{ route('admin.monthly-invoices.edit', $user) }}" class="btn btn-outline-primary">
+                                                    <div class="admin-actions">
+                                                        <a href="{{ route('admin.monthly-invoices.edit', $user) }}" class="admin-btn primary">
                                                             <i class="fas fa-edit"></i>
                                                         </a>
                                                         @if($setting && $setting->is_restricted)
                                                             <form method="POST" action="{{ route('admin.monthly-invoices.unrestrict', $user) }}" class="d-inline">
                                                                 @csrf
-                                                                <button type="submit" class="btn btn-outline-success" 
-                                                                        onclick="return confirm('Are you sure you want to unrestrict this user?')">
+                                                                <button type="submit" class="admin-btn success" 
+                                                                        onclick="return confirm('Are you sure you want to unrestrict this user?')"
+                                                                        title="Unrestrict User">
                                                                     <i class="fas fa-unlock"></i>
                                                                 </button>
                                                             </form>
                                                         @else
-                                                            <button type="button" class="btn btn-outline-warning" 
-                                                                    onclick="showRestrictModal({{ $user->id }}, '{{ $user->name }}')">
+                                                            <button type="button" class="admin-btn warning" 
+                                                                    onclick="showRestrictModal({{ $user->id }}, '{{ $user->name }}')"
+                                                                    title="Restrict User">
                                                                 <i class="fas fa-ban"></i>
                                                             </button>
                                                         @endif
@@ -322,19 +268,23 @@
                                 </table>
                             </div>
                         </form>
-
-                        <!-- Pagination -->
-                        <div class="d-flex justify-content-center">
-                            {{ $users->appends(request()->query())->links() }}
-                        </div>
                     @else
-                        <div class="text-center py-4">
-                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                            <h5>No users found</h5>
-                            <p class="text-muted">No users match your current filters.</p>
+                        <div class="admin-empty-state">
+                            <i class="fas fa-users"></i>
+                            <p>No users match your current filters.</p>
                         </div>
                     @endif
                 </div>
+                
+                <!-- Pagination -->
+                @if($users->hasPages())
+                    <div class="admin-pagination">
+                        {{ $users->appends(request()->query())->links() }}
+                        <div class="pagination-info">
+                            Showing {{ $users->firstItem() }} to {{ $users->lastItem() }} of {{ $users->total() }} users
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -347,15 +297,19 @@
             <form method="POST" action="{{ route('admin.monthly-invoices.generate') }}">
                 @csrf
                 <div class="modal-header">
-                    <h5 class="modal-title">Generate Monthly Invoices</h5>
+                    <h5 class="modal-title">Generate Invoices</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="month" class="form-label">Month</label>
+                        <label for="month" class="form-label">Billing Period</label>
                         <input type="month" name="month" id="month" class="form-control" 
                                value="{{ now()->format('Y-m') }}" required>
-                        <div class="form-text">Select the month for which to generate invoices.</div>
+                        <div class="form-text">
+                            Select the billing period. The system will generate invoices based on each user's chosen billing cycle:
+                            <br>• <strong>Monthly users:</strong> Will get invoices for this month
+                            <br>• <strong>Yearly users:</strong> Will get invoices if their annual billing is due
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -404,6 +358,29 @@
                             <label for="bulk_reminder_frequency" class="form-label">Reminder Frequency (days)</label>
                             <input type="number" name="reminder_frequency_days" id="bulk_reminder_frequency" 
                                    class="form-control" min="1" max="14">
+                        </div>
+                    </div>
+                    
+                    <!-- Restriction Settings (shown only for restrict action) -->
+                    <div id="bulk_restriction_settings" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">Pages to Restrict</label>
+                            <div class="form-text mb-2">Select which pages should be restricted for users</div>
+                            @foreach(\App\Models\MonthlyInvoiceSetting::getAvailablePages() as $route => $name)
+                                <div class="form-check">
+                                    <input type="checkbox" name="restricted_pages[]" value="{{ $route }}" 
+                                           class="form-check-input" id="bulk_page_{{ $route }}" checked>
+                                    <label class="form-check-label" for="bulk_page_{{ $route }}">
+                                        {{ $name }}
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="bulk_restriction_message" class="form-label">Custom Restriction Message</label>
+                            <textarea name="restriction_message" id="bulk_restriction_message" class="form-control" rows="3"
+                                      placeholder="Leave empty for default message"></textarea>
                         </div>
                     </div>
                     
@@ -489,10 +466,17 @@ document.querySelectorAll('.user-checkbox').forEach(checkbox => {
 // Show/hide bulk settings based on action
 document.getElementById('bulk_action').addEventListener('change', function() {
     const settingsDiv = document.getElementById('bulk_settings');
+    const restrictionDiv = document.getElementById('bulk_restriction_settings');
+    
     if (this.value === 'activate') {
         settingsDiv.style.display = 'block';
+        restrictionDiv.style.display = 'none';
+    } else if (this.value === 'restrict') {
+        settingsDiv.style.display = 'none';
+        restrictionDiv.style.display = 'block';
     } else {
         settingsDiv.style.display = 'none';
+        restrictionDiv.style.display = 'none';
     }
 });
 
