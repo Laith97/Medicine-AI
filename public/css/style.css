@@ -7341,6 +7341,7 @@ textarea.form-control-lg {
 
 .d-inline {
   display: inline !important;
+  margin: 0px;
 }
 
 .d-inline-block {

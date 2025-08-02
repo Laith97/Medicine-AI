@@ -57,7 +57,7 @@
     </div>
     
     <div class="content">
-        <h2>Hello {{ $user->name }},</h2>
+        <h2>Hello {{ $userName }},</h2>
         
         <div class="alert">
             <strong>URGENT:</strong> Your account will be restricted soon if payment is not received.
@@ -67,10 +67,10 @@
         
         <h3>Account Details:</h3>
         <ul>
-            <li><strong>Amount Due:</strong> ${{ number_format($setting->billing_amount, 2) }}</li>
-            <li><strong>Original Due Date:</strong> {{ $setting->subscription_ends_at ? $setting->subscription_ends_at->format('M d, Y') : 'N/A' }}</li>
-            <li><strong>Days Overdue:</strong> {{ $setting->subscription_ends_at ? $setting->subscription_ends_at->diffInDays(now()) : 0 }} days</li>
-            <li><strong>Warning Period:</strong> {{ $setting->warning_period_days }} days</li>
+            <li><strong>Amount Due:</strong> ${{ number_format($billingAmount, 2) }}</li>
+            <li><strong>Original Due Date:</strong> {{ $subscriptionEndsAt ? $subscriptionEndsAt->format('M d, Y') : 'N/A' }}</li>
+            <li><strong>Days Overdue:</strong> {{ $subscriptionEndsAt ? $subscriptionEndsAt->diffInDays(now()) : 0 }} days</li>
+            <li><strong>Warning Period:</strong> {{ $gracePeriodDays }} days</li>
         </ul>
         
         <p><strong>What happens next:</strong></p>

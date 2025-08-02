@@ -92,6 +92,9 @@ class RegisteredUserController extends Controller
             'cancellation_hours' => 24, // Default 24 hours notice
         ]);
 
+        // Start free trial for new user
+        $user->startTrial();
+
         event(new Registered($user));
 
         Auth::login($user);

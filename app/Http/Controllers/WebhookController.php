@@ -115,6 +115,27 @@ class WebhookController extends Controller
                 'paid_at' => now(),
             ]);
 
+            // Unrestrict user when they pay their invoice
+            $user = $invoice->user;
+            if ($user && $user->monthlyInvoiceSetting) {
+                $setting = $user->monthlyInvoiceSetting;
+                
+                // If user was restricted, unrestrict them
+                if ($setting->is_restricted) {
+                    $setting->update([
+                        'is_restricted' => false,
+                        'subscription_starts_at' => $setting->subscription_starts_at ?: now(),
+                        'subscription_ends_at' => now()->addMonth(), // Extend subscription for one month
+                    ]);
+                    
+                    Log::info('User unrestricted after payment', [
+                        'user_id' => $user->id,
+                        'invoice_id' => $invoice->id,
+                        'subscription_ends_at' => now()->addMonth()->toDateString(),
+                    ]);
+                }
+            }
+
             Log::info('Invoice payment succeeded', [
                 'invoice_id' => $invoice->id,
                 'stripe_invoice_id' => $stripeInvoice->id,
