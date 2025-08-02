@@ -27,11 +27,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('monthly_invoice_settings', function (Blueprint $table) {
-            if (Schema::hasColumn('monthly_invoice_settings', 'monthly_price')) {
-                $table->dropColumn('monthly_price');
-            }
             if (Schema::hasColumn('monthly_invoice_settings', 'yearly_price')) {
                 $table->dropColumn('yearly_price');
+            }
+            if (Schema::hasColumn('monthly_invoice_settings', 'monthly_price')) {
+                $table->dropColumn('monthly_price');
             }
         });
     }
