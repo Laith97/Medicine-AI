@@ -27,6 +27,19 @@ return new class extends Migration
             $table->string('custom_domain')->nullable();
             $table->boolean('subdomain_enabled')->default(false);
             $table->json('seo_settings')->nullable(); // Store SEO meta tags
+            $table->string('default_language', 5)->default('en');
+            $table->json('translations')->nullable();
+            // Page builder specific fields
+            $table->json('page_sections')->nullable(); // Store custom sections with order
+            $table->json('navbar_config')->nullable(); // Custom navbar links and styling
+            $table->json('animations_config')->nullable(); // Animation settings
+            $table->json('custom_css')->nullable(); // Custom CSS styles
+            $table->json('fonts_config')->nullable(); // Font settings
+            $table->json('background_config')->nullable(); // Background settings (images, gradients, etc.)
+            $table->json('button_styles')->nullable(); // Custom button styles
+            $table->json('spacing_config')->nullable(); // Margin/padding configurations
+            $table->boolean('enable_animations')->default(true); // Global animation toggle
+            $table->string('page_layout', 50)->default('default'); // Layout type
             $table->timestamps();
 
             $table->index(['username', 'is_published']);

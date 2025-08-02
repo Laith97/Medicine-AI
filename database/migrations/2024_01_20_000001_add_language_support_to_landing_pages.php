@@ -11,10 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('doctor_landing_pages', function (Blueprint $table) {
-            $table->string('default_language', 5)->default('en')->after('seo_settings');
-            $table->json('translations')->nullable()->after('default_language');
-        });
+        // Check if table exists and columns don't already exist
+        if (Schema::hasTable('doctor_landing_pages')) {
+            Schema::table('doctor_landing_pages', function (Blueprint $table) {
+                if (!Schema::hasColumn('doctor_landing_pages', 'default_language')) {
+                    $table->string('default_language', 5)->default('en')->after('seo_settings');
+                }
+                if (!Schema::hasColumn('doctor_landing_pages', 'translations')) {
+                    $table->json('translations')->nullable()->after('default_language');
+                }
+            });
+        }
     }
 
     /**
@@ -22,8 +29,15 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('doctor_landing_pages', function (Blueprint $table) {
-            $table->dropColumn(['default_language', 'translations']);
-        });
+        if (Schema::hasTable('doctor_landing_pages')) {
+            Schema::table('doctor_landing_pages', function (Blueprint $table) {
+                if (Schema::hasColumn('doctor_landing_pages', 'default_language')) {
+                    $table->dropColumn('default_language');
+                }
+                if (Schema::hasColumn('doctor_landing_pages', 'translations')) {
+                    $table->dropColumn('translations');
+                }
+            });
+        }
     }
 };
