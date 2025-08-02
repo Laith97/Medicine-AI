@@ -751,6 +751,7 @@
     </div><!-- #wrapper end -->
 			</div>
 
+@if (!auth()->check())
 		<!-- Footer -->
 <footer id="footer" class="text-white py-5" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
     <div class="container">
@@ -877,6 +878,7 @@
         </div>
     </div>
 </footer>
+@endif
 
 <style>
 .hover-link:hover {

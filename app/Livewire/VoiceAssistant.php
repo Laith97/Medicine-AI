@@ -4,7 +4,9 @@ namespace App\Livewire;
 
 use App\Models\VoiceTranscription;
 use App\Models\User;
+use App\Models\Diagnosis;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -18,9 +20,10 @@ class VoiceAssistant extends Component
     public array $extractedData = [];
     public string $aiAnalysis = '';
     public array $structuredChart = [];
-    public ?int $selectedPatient = null;
+    public $selectedPatient = null;
     public array $patients = [];
     public bool $isProcessing = false;
+    public string $processingStage = '';
     public bool $showConfirmation = false;
 
     // Chart fields
@@ -32,11 +35,42 @@ class VoiceAssistant extends Component
     public string $diagnosis = '';
     public string $carePlan = '';
 
+    // New patient creation fields
+    public bool $showNewPatientForm = false;
+    public string $newPatientName = '';
+    public string $newPatientEmail = '';
+    public int $newPatientAge = 0;
+    public string $newPatientGender = '';
+    public string $newPatientPhone = '';
+
+    // Diagnosis approval
+    public bool $showDiagnosisApproval = false;
+    public bool $diagnosisApproved = false;
+
     protected $listeners = [
         'transcriptionReceived' => 'handleTranscription',
         'voiceRecordingStarted' => 'startRecording',
         'voiceRecordingStopped' => 'stopRecording',
     ];
+
+    public function updatedSelectedPatient($value)
+    {
+        \Log::info('Patient selection changed', [
+            'selectedPatient' => $value,
+            'canStartRecording' => $this->canStartRecording()
+        ]);
+    }
+
+    public function testLivewire()
+    {
+        session()->flash('success', 'Livewire is working! Button clicked successfully.');
+        \Log::info('Test Livewire method called');
+    }
+
+    public function getCanStartRecordingProperty()
+    {
+        return !empty($this->selectedPatient) && !$this->isRecording;
+    }
 
     public function mount()
     {
@@ -48,15 +82,40 @@ class VoiceAssistant extends Component
                 ->orderBy('name')
                 ->get()
                 ->toArray();
+
+            \Log::info('Patients loaded in mount', [
+                'count' => count($this->patients),
+                'patients' => $this->patients
+            ]);
         } catch (\Exception $e) {
-            // If assignedPatients relationship doesn't exist, use empty array
-            $this->patients = [];
-            \Log::warning('Could not load assigned patients: ' . $e->getMessage());
+            \Log::warning('Could not load assigned patients, trying fallback: ' . $e->getMessage());
+
+            // Fallback: load all patients with role 'patient' for this doctor
+            try {
+                $this->patients = User::where('role', 'patient')
+                    ->where('primary_doctor_id', Auth::id())
+                    ->select('id', 'name', 'email', 'age', 'gender')
+                    ->orderBy('name')
+                    ->get()
+                    ->toArray();
+
+                \Log::info('Patients loaded via fallback', [
+                    'count' => count($this->patients)
+                ]);
+            } catch (\Exception $e2) {
+                $this->patients = [];
+                \Log::error('Could not load patients at all: ' . $e2->getMessage());
+            }
         }
     }
 
     public function startSession()
     {
+        if (!$this->selectedPatient) {
+            session()->flash('error', 'Please select a patient first.');
+            return;
+        }
+
         $this->sessionId = Str::uuid()->toString();
         $this->isRecording = true;
         $this->transcription = '';
@@ -64,6 +123,12 @@ class VoiceAssistant extends Component
         $this->aiAnalysis = '';
         $this->structuredChart = [];
         $this->resetChartFields();
+
+        // Debug log
+        \Log::info('Start session called', [
+            'selectedPatient' => $this->selectedPatient,
+            'isRecording' => $this->isRecording
+        ]);
 
         // Create initial transcription record
         VoiceTranscription::create([
@@ -103,21 +168,56 @@ class VoiceAssistant extends Component
 
     public function handleTranscription($text)
     {
-        $this->transcription .= ' ' . $text;
+        // Clean and validate the input
+        $cleanText = trim($text);
+        if (empty($cleanText)) {
+            return;
+        }
+
+        // Avoid duplicate processing of the same text
+        if ($this->transcription === $cleanText) {
+            return;
+        }
+
+        $this->transcription = $cleanText;
         $this->isProcessing = true;
+        $this->processingStage = 'Processing voice transcription...';
 
-        // Update the transcription in database
-        VoiceTranscription::where('session_id', $this->sessionId)
-            ->update(['raw_transcription' => $this->transcription]);
+        try {
+            // Update the transcription in database
+            VoiceTranscription::where('session_id', $this->sessionId)
+                ->update([
+                    'raw_transcription' => $this->transcription,
+                    'updated_at' => now()
+                ]);
 
-        // Process with AI to extract medical data
-        $this->processWithAI($text);
+            // Process with AI to extract medical data (run in background to avoid timeout)
+            $this->processWithAI($cleanText);
+
+        } catch (\Exception $e) {
+            \Log::error('Handle transcription error: ' . $e->getMessage());
+            $this->processingStage = 'Transcription processing failed.';
+        }
+
+        $this->isProcessing = false;
+        $this->processingStage = '';
     }
 
     private function processWithAI($newText)
     {
+        // Skip processing if transcription is too short or hasn't changed significantly
+        if (strlen($this->transcription) < 10) {
+            $this->isProcessing = false;
+            return;
+        }
+
+        // Set longer timeout for AI processing
+        set_time_limit(120); // 2 minutes
+
+        $this->processingStage = 'Analyzing medical content with AI...';
+
         try {
-            // Use OpenAI to extract medical information
+            // Use OpenAI to extract medical information with improved prompt
             $response = OpenAI::chat()->create([
                 'model' => 'gpt-4o',
                 'messages' => [
@@ -125,40 +225,69 @@ class VoiceAssistant extends Component
                         'role' => 'system',
                         'content' => 'You are a medical AI assistant helping to extract structured medical information from doctor-patient consultations. Extract and categorize the following information from the transcription:
 
-                        1. Symptoms (patient complaints, pain descriptions, etc.)
-                        2. Medical History (past conditions, surgeries, family history)
-                        3. Physical Findings (examination results, observations)
-                        4. Medications (current medications, allergies)
-                        5. Vital Signs (blood pressure, temperature, heart rate, etc.)
-                        6. Potential Diagnosis (based on symptoms and findings)
-                        7. Care Plan (treatment recommendations, follow-up)
+                        1. Symptoms: Patient complaints, pain descriptions, discomfort, functional limitations
+                        2. Medical History: Past conditions, surgeries, family history, previous treatments
+                        3. Physical Findings: Examination results, observations, clinical signs
+                        4. Medications: Current medications, dosages, allergies, drug interactions
+                        5. Vital Signs: Blood pressure, temperature, heart rate, respiratory rate, oxygen saturation, weight, height
+                        6. Diagnosis: Potential diagnoses, differential diagnoses, clinical impressions
+                        7. Care Plan: Treatment recommendations, follow-up instructions, referrals, lifestyle modifications
+
+                        IMPORTANT:
+                        - Extract information in both Arabic and English if present
+                        - Be comprehensive but accurate - only include explicitly mentioned information
+                        - For vital signs, include units and normal/abnormal indicators
+                        - For medications, include dosage, frequency, and route if mentioned
+                        - For symptoms, include severity, duration, and quality descriptors
 
                         Return the response in JSON format with these exact keys: symptoms, medical_history, physical_findings, medications, vital_signs, diagnosis, care_plan.
-                        Only include information that is explicitly mentioned in the transcription. If a category has no information, return an empty string.'
+                        If a category has no information, return an empty string.'
                     ],
                     [
                         'role' => 'user',
-                        'content' => "Extract medical information from this consultation transcription: \n\n" . $this->transcription
+                        'content' => "Extract medical information from this consultation transcription (may contain Arabic and English): \n\n" . $this->transcription
                     ]
                 ],
-                'temperature' => 0.3,
+                'temperature' => 0.2, // Lower temperature for more consistent extraction
+                'max_tokens' => 1500, // Limit tokens to avoid timeout
             ]);
 
             $aiResponse = $response['choices'][0]['message']['content'] ?? '';
 
-            // Try to parse JSON response
-            $extractedData = json_decode($aiResponse, true);
+            $this->processingStage = 'Parsing AI response and extracting medical data...';
 
-            if ($extractedData) {
-                $this->extractedData = $extractedData;
-                $this->updateChartFields($extractedData);
+            // Clean the response to extract JSON
+            $jsonStart = strpos($aiResponse, '{');
+            $jsonEnd = strrpos($aiResponse, '}');
 
-                // Generate AI analysis
-                $this->generateAIAnalysis();
+            if ($jsonStart !== false && $jsonEnd !== false) {
+                $jsonString = substr($aiResponse, $jsonStart, $jsonEnd - $jsonStart + 1);
+                $extractedData = json_decode($jsonString, true);
+
+                if ($extractedData && is_array($extractedData)) {
+                    $this->processingStage = 'Updating medical chart fields...';
+                    $this->extractedData = $extractedData;
+                    $this->updateChartFields($extractedData);
+
+                    $this->processingStage = 'Medical data extraction completed!';
+
+                    \Log::info('Medical data extracted successfully', [
+                        'session_id' => $this->sessionId,
+                        'extracted_fields' => array_keys($extractedData)
+                    ]);
+                } else {
+                    $this->processingStage = 'Failed to parse AI response.';
+                    \Log::warning('Failed to parse AI response as JSON', [
+                        'response' => $aiResponse
+                    ]);
+                }
             }
 
         } catch (\Exception $e) {
-            \Log::error('Voice AI processing error: ' . $e->getMessage());
+            \Log::error('Voice AI processing error: ' . $e->getMessage(), [
+                'session_id' => $this->sessionId,
+                'transcription_length' => strlen($this->transcription)
+            ]);
         }
 
         $this->isProcessing = false;
@@ -166,25 +295,58 @@ class VoiceAssistant extends Component
 
     private function updateChartFields($data)
     {
-        $this->symptoms = $this->appendToField($this->symptoms, $data['symptoms'] ?? '');
-        $this->medicalHistory = $this->appendToField($this->medicalHistory, $data['medical_history'] ?? '');
-        $this->physicalFindings = $this->appendToField($this->physicalFindings, $data['physical_findings'] ?? '');
-        $this->medications = $this->appendToField($this->medications, $data['medications'] ?? '');
-        $this->vitalSigns = $this->appendToField($this->vitalSigns, $data['vital_signs'] ?? '');
-        $this->diagnosis = $this->appendToField($this->diagnosis, $data['diagnosis'] ?? '');
-        $this->carePlan = $this->appendToField($this->carePlan, $data['care_plan'] ?? '');
+        // Update fields with smart merging to avoid duplicates
+        $this->symptoms = $this->smartAppendToField($this->symptoms, $data['symptoms'] ?? '');
+        $this->medicalHistory = $this->smartAppendToField($this->medicalHistory, $data['medical_history'] ?? '');
+        $this->physicalFindings = $this->smartAppendToField($this->physicalFindings, $data['physical_findings'] ?? '');
+        $this->medications = $this->smartAppendToField($this->medications, $data['medications'] ?? '');
+        $this->vitalSigns = $this->smartAppendToField($this->vitalSigns, $data['vital_signs'] ?? '');
+        $this->diagnosis = $this->smartAppendToField($this->diagnosis, $data['diagnosis'] ?? '');
+        $this->carePlan = $this->smartAppendToField($this->carePlan, $data['care_plan'] ?? '');
+
+        // Log the updated fields for debugging
+        \Log::info('Chart fields updated', [
+            'session_id' => $this->sessionId,
+            'symptoms_length' => strlen($this->symptoms),
+            'medical_history_length' => strlen($this->medicalHistory),
+            'physical_findings_length' => strlen($this->physicalFindings),
+            'medications_length' => strlen($this->medications),
+            'vital_signs_length' => strlen($this->vitalSigns),
+            'diagnosis_length' => strlen($this->diagnosis),
+            'care_plan_length' => strlen($this->carePlan),
+        ]);
     }
 
-    private function appendToField($existing, $new)
+    private function smartAppendToField($existing, $new)
     {
         if (empty($new)) return $existing;
         if (empty($existing)) return $new;
-        return $existing . "\n" . $new;
+
+        // Clean and normalize text
+        $existing = trim($existing);
+        $new = trim($new);
+
+        // Avoid duplicating similar content
+        $existingWords = explode(' ', strtolower($existing));
+        $newWords = explode(' ', strtolower($new));
+        $commonWords = array_intersect($existingWords, $newWords);
+
+        // If more than 70% of words are common, replace instead of append
+        if (count($commonWords) > 0.7 * count($newWords)) {
+            return $new; // Replace with newer, potentially more complete information
+        }
+
+        return $existing . "\n\n" . $new;
     }
 
     private function generateAIAnalysis()
     {
+        // Set longer timeout for AI analysis
+        set_time_limit(120); // 2 minutes
+
         try {
+            $this->processingStage = 'Preparing medical analysis parameters...';
+
             // Get the user's specialty and use the existing preparePrompt function logic
             $specialty = Auth::user()->setting->specialty ?? 'Internal Medicine';
 
@@ -203,6 +365,8 @@ class VoiceAssistant extends Component
                 'additional_notes' => $this->carePlan,
             ];
 
+            $this->processingStage = 'Generating comprehensive medical analysis...';
+
             // Use the same prompt structure as the existing OpenAI controller
             $prompt = $this->prepareVoicePrompt($inputData, $criterion);
 
@@ -218,6 +382,8 @@ class VoiceAssistant extends Component
             ]);
 
             $this->aiAnalysis = $response['choices'][0]['message']['content'] ?? '';
+
+            $this->processingStage = 'Saving analysis results to database...';
 
             // Update database
             VoiceTranscription::where('session_id', $this->sessionId)
@@ -235,9 +401,53 @@ class VoiceAssistant extends Component
                     ]
                 ]);
 
+            $this->processingStage = 'AI analysis completed successfully!';
+
         } catch (\Exception $e) {
+            $this->processingStage = 'AI analysis failed. Please try again.';
             \Log::error('AI analysis error: ' . $e->getMessage());
         }
+    }
+
+    public function generateAnalysis()
+    {
+        if (empty($this->transcription)) {
+            session()->flash('error', 'No transcription available. Please record some audio first.');
+            return;
+        }
+
+        if (!$this->selectedPatient) {
+            session()->flash('error', 'Please select a patient first.');
+            return;
+        }
+
+        $this->isProcessing = true;
+        $this->processingStage = 'Initializing AI analysis...';
+
+        // Set longer timeout for AI processing
+        set_time_limit(120); // 2 minutes
+
+        try {
+            // First, extract structured data from transcription if not already done
+            if (empty($this->extractedData)) {
+                $this->processingStage = 'Extracting medical data from transcription...';
+                $this->processWithAI($this->transcription);
+            }
+
+            // Generate comprehensive AI analysis
+            $this->processingStage = 'Generating comprehensive medical analysis...';
+            $this->generateAIAnalysis();
+
+            $this->processingStage = 'Analysis completed successfully!';
+            session()->flash('success', 'AI analysis generated successfully!');
+        } catch (\Exception $e) {
+            \Log::error('Generate analysis error: ' . $e->getMessage());
+            $this->processingStage = 'Analysis failed. Please try again.';
+            session()->flash('error', 'Failed to generate analysis. Please try again.');
+        }
+
+        $this->isProcessing = false;
+        $this->processingStage = '';
     }
 
     public function confirmAndSave()
@@ -270,21 +480,6 @@ class VoiceAssistant extends Component
 
         session()->flash('success', 'Voice consultation has been saved successfully!');
         $this->resetSession();
-    }
-
-    public function resetSession()
-    {
-        $this->sessionId = Str::uuid()->toString();
-        $this->isRecording = false;
-        $this->isHandsFreeMode = false;
-        $this->transcription = '';
-        $this->extractedData = [];
-        $this->aiAnalysis = '';
-        $this->structuredChart = [];
-        $this->selectedPatient = null;
-        $this->isProcessing = false;
-        $this->showConfirmation = false;
-        $this->resetChartFields();
     }
 
     private function resetChartFields()
@@ -420,6 +615,175 @@ class VoiceAssistant extends Component
         CRITICAL INSTRUCTION: Base your entire analysis on the comprehensive clinical data provided. If data is missing, acknowledge it briefly but don't let it overwhelm the output. Prioritize patient safety above all else.
 
         PATIENT DATA FOR ANALYSIS: " . json_encode($inputData);
+    }
+
+    // New Patient Creation Methods
+    public function showNewPatientForm()
+    {
+        $this->showNewPatientForm = true;
+        $this->resetNewPatientFields();
+
+        // Debug log
+        \Log::info('Show new patient form called', [
+            'showNewPatientForm' => $this->showNewPatientForm
+        ]);
+
+        // Add a flash message to confirm the method was called
+        session()->flash('info', 'New patient form opened');
+    }
+
+    public function hideNewPatientForm()
+    {
+        $this->showNewPatientForm = false;
+        $this->resetNewPatientFields();
+    }
+
+    public function createNewPatient()
+    {
+        $this->validate([
+            'newPatientName' => 'required|string|max:255',
+            'newPatientEmail' => 'required|email|unique:users,email',
+            'newPatientAge' => 'required|integer|min:1|max:150',
+            'newPatientGender' => 'required|in:male,female,other',
+            'newPatientPhone' => 'nullable|string|max:20',
+        ]);
+
+        // Create new patient user
+        $patient = User::create([
+            'name' => $this->newPatientName,
+            'email' => $this->newPatientEmail,
+            'password' => Hash::make('patient123'), // Default password
+            'role' => 'patient',
+            'age' => $this->newPatientAge,
+            'gender' => $this->newPatientGender,
+            'phone' => $this->newPatientPhone,
+            'primary_doctor_id' => Auth::id(), // Assign current doctor as primary
+            'email_verified_at' => now(), // Auto-verify for doctor-created accounts
+        ]);
+
+        // Add to patients list
+        $this->patients[] = [
+            'id' => $patient->id,
+            'name' => $patient->name,
+            'email' => $patient->email,
+            'age' => $patient->age,
+            'gender' => $patient->gender,
+        ];
+
+        // Select the new patient
+        $this->selectedPatient = $patient->id;
+
+        // Hide form and reset fields
+        $this->showNewPatientForm = false;
+        $this->resetNewPatientFields();
+
+        session()->flash('success', 'New patient created successfully! Default password is "patient123" - please inform the patient to change it.');
+    }
+
+    private function resetNewPatientFields()
+    {
+        $this->newPatientName = '';
+        $this->newPatientEmail = '';
+        $this->newPatientAge = 0;
+        $this->newPatientGender = '';
+        $this->newPatientPhone = '';
+    }
+
+    // Diagnosis Approval Methods
+    public function showDiagnosisApproval()
+    {
+        if (empty($this->aiAnalysis) || !$this->selectedPatient) {
+            session()->flash('error', 'Please generate AI analysis and select a patient first.');
+            return;
+        }
+
+        $this->showDiagnosisApproval = true;
+    }
+
+    public function approveDiagnosis()
+    {
+        if (!$this->selectedPatient || empty($this->aiAnalysis)) {
+            session()->flash('error', 'Cannot approve diagnosis without patient selection and AI analysis.');
+            return;
+        }
+
+        // Create diagnosis record similar to manual diagnosis
+        $diagnosis = Diagnosis::create([
+            'doctor_id' => Auth::id(),
+            'patient_id' => $this->selectedPatient,
+            'type' => 'voice_ai', // New type for voice-based AI diagnosis
+            'diagnosis_text' => $this->diagnosis ?: 'AI-generated diagnosis from voice consultation',
+            'voice_transcript' => $this->transcription,
+            'patient_data' => [
+                'symptoms' => $this->symptoms,
+                'medical_history' => $this->medicalHistory,
+                'physical_findings' => $this->physicalFindings,
+                'medications' => $this->medications,
+                'vital_signs' => $this->vitalSigns,
+                'care_plan' => $this->carePlan,
+                'session_id' => $this->sessionId,
+            ],
+            'ai_response' => $this->aiAnalysis,
+            'follow_up_count' => 0,
+            'patient_notified' => false,
+            'patient_reviewed' => false,
+        ]);
+
+        // Update the voice transcription record
+        VoiceTranscription::where('session_id', $this->sessionId)
+            ->update([
+                'diagnosis_id' => $diagnosis->id,
+                'status' => 'approved',
+            ]);
+
+        $this->diagnosisApproved = true;
+        $this->showDiagnosisApproval = false;
+
+        session()->flash('success', 'Diagnosis approved and saved! The patient can now view it from their account.');
+    }
+
+    public function rejectDiagnosis()
+    {
+        $this->showDiagnosisApproval = false;
+        session()->flash('info', 'Diagnosis not approved. You can continue editing or generate a new analysis.');
+    }
+
+    // Fix the Start Recording button issue
+    public function canStartRecording()
+    {
+        return $this->selectedPatient !== null && !$this->isRecording;
+    }
+
+    // Updated resetSession to include new fields
+    public function resetSession()
+    {
+        // Stop any ongoing recording first
+        if ($this->isRecording) {
+            $this->stopSession();
+        }
+
+        $this->sessionId = Str::uuid()->toString();
+        $this->isRecording = false;
+        $this->isHandsFreeMode = false;
+        $this->transcription = '';
+        $this->extractedData = [];
+        $this->aiAnalysis = '';
+        $this->structuredChart = [];
+        $this->isProcessing = false;
+        $this->processingStage = '';
+        $this->showConfirmation = false;
+        $this->showDiagnosisApproval = false;
+        $this->diagnosisApproved = false;
+        $this->resetChartFields();
+
+        // Don't reset selectedPatient and new patient fields to maintain user selection
+        // $this->selectedPatient = null;
+        // $this->resetNewPatientFields();
+
+        session()->flash('success', 'Session reset successfully!');
+
+        // Dispatch event to stop voice recording on frontend
+        $this->dispatch('stopVoiceRecording');
     }
 
     public function render()

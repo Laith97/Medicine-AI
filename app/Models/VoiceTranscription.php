@@ -10,6 +10,7 @@ class VoiceTranscription extends Model
     protected $fillable = [
         'doctor_id',
         'patient_id',
+        'diagnosis_id',
         'session_id',
         'raw_transcription',
         'extracted_data',
@@ -39,6 +40,11 @@ class VoiceTranscription extends Model
     public function patient(): BelongsTo
     {
         return $this->belongsTo(User::class, 'patient_id');
+    }
+
+    public function diagnosis(): BelongsTo
+    {
+        return $this->belongsTo(Diagnosis::class);
     }
 
     public function scopeBySession($query, $sessionId)

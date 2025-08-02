@@ -1765,7 +1765,7 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                                                     data-patient-age="{{ $record->age }}"
                                                     data-patient-gender="{{ $record->gender }}"
                                                     data-patient-key="{{ $record->patient_key }}"
-                                                    title="View Patient Summary">
+                                                    title="View Patient Visits Summary">
                                                 <i class="fas fa-history"></i>
                                             </button>
                                             <a href="{{ route('ask-ai', ['edit_patient' => $record->id]) }}"
