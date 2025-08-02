@@ -23,31 +23,60 @@ class SubscriptionController extends Controller
      */
     public function pricing()
     {
-        $plans = config('stripe.plans');
-        return view('subscription.pricing', compact('plans'));
+        $user = Auth::user();
+        
+        // Get fresh monthly invoice setting (no caching)
+        $setting = $user->getFreshMonthlyInvoiceSetting();
+        if (!$setting) {
+            $setting = $user->getOrCreateMonthlyInvoiceSetting();
+        }
+        
+        // Get user-specific plans
+        $plans = $setting->getUserPlans();
+        
+        return view('subscription.pricing', compact('plans', 'setting'));
     }
 
     /**
-     * Create checkout session based on user's admin-configured pricing
+     * Create checkout session based on selected subscription plan
      */
     public function checkout(Request $request)
     {
+        $request->validate([
+            'plan_type' => ['required', 'in:monthly,yearly']
+        ]);
+
         try {
             $user = Auth::user();
             
             // Check if user has monthly invoice settings configured by admin
-            $monthlySettings = $user->monthlyInvoiceSetting;
+            $monthlySettings = $user->getFreshMonthlyInvoiceSetting();
             
-            if (!$monthlySettings || !$monthlySettings->is_active || $monthlySettings->billing_amount <= 0) {
+            if (!$monthlySettings) {
                 return response()->json([
-                    'error' => 'Your account pricing has not been configured yet. Please contact support to set up your subscription.'
+                    'error' => 'Your account has not been configured yet. Please contact support to set up your subscription.'
                 ], 400);
             }
 
-            // Create checkout session with user's personalized pricing
+            // Get the price for the selected plan type
+            $planType = $request->plan_type;
+            $price = $monthlySettings->getPriceForCycle($planType);
+            
+            if ($price <= 0) {
+                return response()->json([
+                    'error' => 'Pricing not configured for this plan. Please contact support.'
+                ], 400);
+            }
+
+            // Update the user's billing amount for the selected plan type
+            $monthlySettings->update([
+                'billing_amount' => $price, // Set current billing amount for Stripe
+            ]);
+
+            // Create checkout session with selected plan pricing
             $session = $this->stripeService->createPersonalizedCheckoutSession(
                 $user,
-                $monthlySettings->billing_amount
+                $price
             );
 
             return response()->json([
@@ -135,6 +164,9 @@ class SubscriptionController extends Controller
         $remainingCost = $user->getRemainingCostAllowance();
         $isExpired = $setting && $setting->subscription_ends_at ? $setting->subscription_ends_at->isPast() : false;
         
+        // Get user-specific subscription plans for selection
+        $userPlans = $setting ? $setting->getUserPlans() : [];
+        
         // Get cost warning message
         $billingService = new \App\Services\ExcessCostBillingService();
         $costWarning = $billingService->getWarningMessage($user);
@@ -144,10 +176,16 @@ class SubscriptionController extends Controller
         $totalUnpaid = $unpaidInvoices->sum('amount_due');
         $lastInvoice = $user->getLastPaidInvoice();
         
+        // Check if user has an active paid subscription
+        $hasActivePaidSubscription = $setting && 
+                                   $setting->subscription_starts_at && 
+                                   !$setting->isSubscriptionExpired() && 
+                                   !$user->isRestricted();
+        
         return view('subscription.manage', compact(
             'user', 'subscription', 'invoices', 'setting', 'status', 'monthlyCost', 'costLimit',
             'costUsagePercentage', 'excessCost', 'remainingCost', 'costWarning', 'isExpired', 
-            'unpaidInvoices', 'totalUnpaid', 'lastInvoice'
+            'unpaidInvoices', 'totalUnpaid', 'lastInvoice', 'userPlans', 'hasActivePaidSubscription'
         ));
     }
 

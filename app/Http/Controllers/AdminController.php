@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ManualReminderMail;
+use App\Services\EmailService;
 use App\Models\User;
 use App\Models\Setting;
 use App\Models\Doctor;
@@ -18,6 +20,7 @@ use App\Models\MonthlyInvoiceSetting;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules;
+
 use Carbon\Carbon;
 
 class AdminController extends Controller
@@ -55,12 +58,13 @@ class AdminController extends Controller
             'specialty_select' => ['nullable', 'string', 'max:255'],
             'custom_specialty' => ['nullable', 'string', 'max:255'],
             'specialty' => ['required', 'string', 'max:255'],
-            'billing_amount' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'monthly_price' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'yearly_price' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'monthly_cost_limit' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
-            'subscription_period_months' => ['nullable', 'integer', 'in:1,3,6,12,24,36,-1'],
             'grace_period_days' => ['nullable', 'integer', 'min:1', 'max:30'],
             'warning_period_days' => ['nullable', 'integer', 'min:1', 'max:14'],
             'reminder_frequency_days' => ['nullable', 'integer', 'min:1', 'max:30'],
+            'trial_days' => ['nullable', 'integer', 'min:0', 'max:365'],
         ];
 
         // Validate the request
@@ -79,6 +83,10 @@ class AdminController extends Controller
             return back()->withErrors(['specialty' => 'Please select a medical specialty.'])->withInput();
         }
 
+        // Calculate trial end date
+        $trialDays = (int) ($request->trial_days ?? 7);
+        $trialEndsAt = $trialDays > 0 ? now()->addDays($trialDays) : null;
+
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
@@ -86,6 +94,8 @@ class AdminController extends Controller
             'password' => Hash::make($request->password),
             'monthly_cost_limit' => $request->monthly_cost_limit ?? 0,
             'role' => 'doctor', // Set role to doctor for medical AI users
+            'trial_ends_at' => $trialEndsAt,
+            'trial_used' => $trialDays > 0, // Mark trial as used if trial period is set
         ];
 
         // Create the user first
@@ -118,29 +128,30 @@ class AdminController extends Controller
             }
         }
 
-        // Create monthly invoice setting using provided amount or system defaults
-        $monthlyAmount = $request->billing_amount;
-        $subscriptionPeriod = $request->subscription_period_months ?? 1;
-        $gracePeriod = $request->grace_period_days ?? SystemSetting::get('default_grace_period', 7);
-        $warningPeriod = $request->warning_period_days ?? 3;
-        $reminderFrequency = $request->reminder_frequency_days ?? 3;
-        
-        // Use system default if no amount provided
-        if (!$monthlyAmount && SystemSetting::get('default_monthly_amount')) {
-            $monthlyAmount = SystemSetting::get('default_monthly_amount');
-        }
-        
-        if ($monthlyAmount && $monthlyAmount > 0) {
-            $user->monthlyInvoiceSetting()->create([
-                'billing_amount' => $monthlyAmount,
-                'subscription_period_months' => $subscriptionPeriod,
+        // Create user-specific pricing (NOT system-wide)
+        if ($request->monthly_price || $request->yearly_price) {
+            // Create user-specific monthly invoice setting
+            $setting = $user->getOrCreateMonthlyInvoiceSetting();
+            
+            $updateData = [
+                'grace_period_days' => (int) ($request->grace_period_days ?? 7),
+                'warning_period_days' => (int) ($request->warning_period_days ?? 3),
+                'reminder_frequency_days' => (int) ($request->reminder_frequency_days ?? 3),
                 'is_active' => true,
-                'grace_period_days' => $gracePeriod,
-                'warning_period_days' => $warningPeriod,
-                'reminder_frequency_days' => $reminderFrequency,
-                'restricted_pages' => ['ask-ai', 'dashboard', 'cases'],
                 'is_restricted' => false,
-            ]);
+                'restricted_pages' => ['ask-ai', 'dashboard', 'cases'],
+            ];
+            
+            // Set user-specific pricing
+            if ($request->monthly_price) {
+                $updateData['monthly_price'] = $request->monthly_price;
+            }
+            
+            if ($request->yearly_price) {
+                $updateData['yearly_price'] = $request->yearly_price;
+            }
+            
+            $setting->update($updateData);
         }
 
         return redirect()->route('admin.users.index')
@@ -178,10 +189,12 @@ class AdminController extends Controller
             'specialty_select' => ['nullable', 'string', 'max:255'],
             'custom_specialty' => ['nullable', 'string', 'max:255'],
             'specialty' => ['required', 'string', 'max:255'],
-            'billing_amount' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'monthly_price' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'yearly_price' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'monthly_cost_limit' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'grace_period_days' => ['nullable', 'integer', 'min:1', 'max:30'],
             'reminder_frequency_days' => ['nullable', 'integer', 'min:1', 'max:30'],
+            'is_verified' => ['nullable', 'boolean'],
         ];
 
         // Validate the request
@@ -197,6 +210,11 @@ class AdminController extends Controller
 
         if ($request->filled('password')) {
             $userData['password'] = Hash::make($request->password);
+        }
+
+        // Handle email verification status
+        if ($request->has('is_verified')) {
+            $userData['email_verified_at'] = $request->boolean('is_verified') ? now() : null;
         }
 
         // Process specialty field based on form input
@@ -226,25 +244,26 @@ class AdminController extends Controller
             ]);
         }
 
-        // Update or create monthly invoice setting
-        if ($request->filled('billing_amount') && $request->billing_amount > 0) {
-            $monthlyData = [
-                'billing_amount' => $request->billing_amount,
-                'is_active' => true,
-                'grace_period_days' => $request->grace_period_days ?? 7,
-                'reminder_frequency_days' => $request->reminder_frequency_days ?? 3,
-                'restricted_pages' => ['ask-ai', 'dashboard', 'cases'],
+        // Update user-specific pricing (NOT system-wide)
+        if ($request->monthly_price || $request->yearly_price) {
+            // Get or create user-specific monthly invoice setting
+            $setting = $user->monthlyInvoiceSetting ?? $user->getOrCreateMonthlyInvoiceSetting();
+            
+            $updateData = [
+                'grace_period_days' => (int) ($request->grace_period_days ?? 7),
+                'reminder_frequency_days' => (int) ($request->reminder_frequency_days ?? 3),
             ];
-
-            if ($user->monthlyInvoiceSetting) {
-                $user->monthlyInvoiceSetting->update($monthlyData);
-            } else {
-                $monthlyData['is_restricted'] = false;
-                $user->monthlyInvoiceSetting()->create($monthlyData);
+            
+            // Update user-specific pricing
+            if ($request->monthly_price) {
+                $updateData['monthly_price'] = $request->monthly_price;
             }
-        } elseif ($user->monthlyInvoiceSetting) {
-            // If monthly amount is removed, deactivate the setting
-            $user->monthlyInvoiceSetting->update(['is_active' => false]);
+            
+            if ($request->yearly_price) {
+                $updateData['yearly_price'] = $request->yearly_price;
+            }
+            
+            $setting->update($updateData);
         }
 
         return redirect()->route('admin.users.index')
@@ -347,8 +366,8 @@ class AdminController extends Controller
                 $endDate = Carbon::now()->endOfMonth();
         }
 
-        // Get users with their subscription and usage data
-        $users = User::with(['activeSubscription', 'openaiUsages' => function($query) use ($startDate, $endDate) {
+        // Get users with their monthly invoice settings and usage data
+        $users = User::with(['monthlyInvoiceSetting', 'openaiUsages' => function($query) use ($startDate, $endDate) {
             $query->whereBetween('created_at', [$startDate, $endDate]);
         }])
         ->withCount(['openaiUsages as total_requests' => function($query) use ($startDate, $endDate) {
@@ -357,29 +376,42 @@ class AdminController extends Controller
         ->get()
         ->map(function ($user) use ($startDate, $endDate) {
             $usage = OpenAIUsage::getUserUsageStats($user->id, $startDate, $endDate);
+            $setting = $user->monthlyInvoiceSetting;
 
             return [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'current_plan' => $user->current_plan,
-                'subscription_active' => $user->subscription_active,
-                'subscription_ends_at' => $user->subscription_ends_at,
+                'phone' => $user->phone,
+                'role' => $user->role,
                 'stripe_customer_id' => $user->stripe_customer_id,
                 'total_requests' => $usage['total_requests'],
                 'total_tokens' => $usage['total_tokens'],
                 'total_cost' => $usage['total_cost'],
                 'monthly_usage' => $user->getMonthlyTokenUsage(),
-                'token_limit' => $user->getPlanConfig()['token_limit'] ?? 0,
-                'usage_percentage' => $this->calculateUsagePercentage($user),
-                'subscription' => $user->activeSubscription,
+                'monthly_cost_limit' => $user->monthly_cost_limit,
+                'cost_usage_percentage' => $user->getCostUsagePercentage(),
+                // Monthly Invoice Settings Data
+                'monthly_price' => $setting->monthly_price ?? 0,
+                'yearly_price' => $setting->yearly_price ?? 0,
+                'billing_amount' => $setting->billing_amount ?? 0,
+                'subscription_status' => $setting ? $setting->getSubscriptionStatus() : 'setup_pending',
+                'subscription_starts_at' => $setting->subscription_starts_at ?? null,
+                'subscription_ends_at' => $setting->subscription_ends_at ?? null,
+                'is_active' => $setting->is_active ?? false,
+                'is_restricted' => $setting->is_restricted ?? false,
+                'grace_period_days' => $setting->grace_period_days ?? 0,
+                'warning_period_days' => $setting->warning_period_days ?? 0,
+                'days_remaining' => $setting ? $setting->getDaysRemaining() : null,
+                'setting' => $setting,
             ];
         });
 
         // Calculate totals
         $totals = [
             'total_users' => $users->count(),
-            'active_subscribers' => $users->where('subscription_active', true)->count(),
+            'active_subscribers' => $users->where('is_active', true)->count(),
+            'restricted_users' => $users->where('is_restricted', true)->count(),
             'total_requests' => $users->sum('total_requests'),
             'total_tokens' => $users->sum('total_tokens'),
             'total_cost' => $users->sum('total_cost'),
@@ -415,24 +447,27 @@ class AdminController extends Controller
                 $endDate = Carbon::now()->endOfMonth();
         }
 
-        $users = User::with(['activeSubscription'])
+        $users = User::with(['monthlyInvoiceSetting'])
             ->get()
             ->map(function ($user) use ($startDate, $endDate) {
                 $usage = OpenAIUsage::getUserUsageStats($user->id, $startDate, $endDate);
+                $setting = $user->monthlyInvoiceSetting;
                 return [
                     'User ID' => $user->id,
                     'Name' => $user->name,
                     'Email' => $user->email,
-                    'Current Plan' => ucfirst($user->current_plan),
-                    'Subscription Active' => $user->subscription_active ? 'Yes' : 'No',
-                    'Subscription Ends' => $user->subscription_ends_at ? $user->subscription_ends_at->format('Y-m-d') : 'N/A',
+                    'Monthly Price' => $setting ? '$' . number_format($setting->monthly_price, 2) : 'N/A',
+                    'Yearly Price' => $setting ? '$' . number_format($setting->yearly_price, 2) : 'N/A',
+                    'Current Billing' => $setting && $setting->billing_amount > 0 ? '$' . number_format($setting->billing_amount, 2) : 'Not chosen',
+                    'Subscription Status' => $setting ? $setting->getSubscriptionStatus() : 'setup_pending',
+                    'Subscription Ends' => $user->getSubscriptionEndDate() ? $user->getSubscriptionEndDate()->format('Y-m-d') : 'N/A',
                     'Stripe Customer ID' => $user->stripe_customer_id ?? 'N/A',
                     'Total Requests' => $usage['total_requests'],
                     'Total Tokens' => number_format($usage['total_tokens']),
                     'Estimated Cost' => '$' . number_format($usage['total_cost'], 4),
                     'Monthly Token Usage' => number_format($user->getMonthlyTokenUsage()),
-                    'Token Limit' => $user->getPlanConfig()['token_limit'] === -1 ? 'Unlimited' : number_format($user->getPlanConfig()['token_limit'] ?? 0),
-                    'Usage Percentage' => number_format($this->calculateUsagePercentage($user), 2) . '%',
+                    'Cost Limit' => $user->monthly_cost_limit ? '$' . number_format($user->monthly_cost_limit, 2) : 'Unlimited',
+                    'Cost Usage Percentage' => number_format($user->getCostUsagePercentage(), 2) . '%',
                 ];
             });
 
@@ -579,6 +614,7 @@ class AdminController extends Controller
             'show_pricing_section' => 'boolean',
             'default_monthly_amount' => 'nullable|numeric|min:0|max:9999.99',
             'default_grace_period' => 'nullable|integer|min:1|max:30',
+            'trial_days' => 'nullable|integer|min:1|max:365',
         ]);
 
         // Update pricing section visibility
@@ -589,15 +625,7 @@ class AdminController extends Controller
             'Show/hide the pricing information section on the home page'
         );
 
-        // Update default monthly amount
-        if ($request->filled('default_monthly_amount')) {
-            SystemSetting::set(
-                'default_monthly_amount',
-                $request->default_monthly_amount,
-                'decimal',
-                'Default monthly amount for new user accounts'
-            );
-        }
+        // Note: default_monthly_amount setting is deprecated - now using per-user pricing
 
         // Update default grace period
         if ($request->filled('default_grace_period')) {
@@ -606,6 +634,16 @@ class AdminController extends Controller
                 $request->default_grace_period,
                 'integer',
                 'Default grace period in days for new user accounts'
+            );
+        }
+
+        // Update trial days
+        if ($request->filled('trial_days')) {
+            SystemSetting::set(
+                'trial_days',
+                $request->trial_days,
+                'integer',
+                'Number of free trial days for new users'
             );
         }
 
@@ -670,6 +708,13 @@ class AdminController extends Controller
             // Log the request data for debugging
             \Log::info('Manual reminders request data:', $request->all());
             \Log::info('Manual reminders started by admin: ' . auth('admin')->user()->email);
+            
+            // Log mail configuration for debugging
+            \Log::info('Mail configuration check:', [
+                'mail_mailer' => config('mail.default'),
+                'mail_host' => config('mail.mailers.smtp.host'),
+                'mail_from' => config('mail.from.address')
+            ]);
             
             $request->validate([
                 'reminder_type' => 'required|in:grace_period,warning_period,overdue,all',
@@ -792,9 +837,14 @@ class AdminController extends Controller
             $query->whereIn('id', $userIds);
         }
 
-        $users = $query->get()->filter(function($user) {
-            return $user->isInGracePeriod();
-        });
+        $users = $query->get();
+        
+        // Only filter by grace period status if not forcing send
+        if (!$forceSend) {
+            $users = $users->filter(function($user) {
+                return $user->isInGracePeriod();
+            });
+        }
         
         \Log::info('Found users in grace period', [
             'total_users' => $users->count(),
@@ -809,6 +859,13 @@ class AdminController extends Controller
                 if (!$forceSend) {
                     if ($setting->last_reminder_sent_at && 
                         !$setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->isPast()) {
+                        \Log::info('Skipping reminder - too soon since last reminder', [
+                            'user_id' => $user->id,
+                            'user_email' => $user->email,
+                            'last_reminder_sent_at' => $setting->last_reminder_sent_at,
+                            'reminder_frequency_days' => $setting->reminder_frequency_days,
+                            'next_reminder_allowed_at' => $setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)
+                        ]);
                         continue; // Skip - too soon since last reminder
                     }
                 }
@@ -821,18 +878,34 @@ class AdminController extends Controller
                 ]);
                 
                 try {
-                    // Send immediately like contact form (bypass queue)
-                    config(['queue.default' => 'sync']);
-                    \Mail::to($user->email)->send(new \App\Mail\ManualReminderMail($user, $setting, 'grace_period'));
+                    \Log::info('About to send grace period reminder email', [
+                        'user_email' => $user->email,
+                        'timestamp' => now()->format('Y-m-d H:i:s.u')
+                    ]);
+                    
+                    $emailService = new EmailService();
+                    $emailService->sendEmail(
+                        $user->email,
+                        'MedCura AI - Payment Reminder',
+                        'emails.reminders.grace-period-simple',
+                        [
+                            'userName' => $user->name,
+                            'userEmail' => $user->email,
+                            'billingAmount' => $setting->billing_amount ?? 0,
+                            'gracePeriodDays' => $setting->grace_period_days ?? 7,
+                            'subscriptionEndsAt' => $setting->subscription_ends_at,
+                            'reminderType' => 'grace_period',
+                        ]
+                    );
+                    
                     \Log::info('Grace period reminder sent successfully', [
-                        'user_email' => $user->email
+                        'user_email' => $user->email,
+                        'timestamp' => now()->format('Y-m-d H:i:s.u')
                     ]);
                 } catch (\Exception $mailException) {
-                    \Log::error('Failed to send grace period reminder email', [
-                        'user_email' => $user->email,
-                        'error' => $mailException->getMessage()
-                    ]);
-                    throw $mailException;
+                    \Log::error('Failed to send grace period reminder email to ' . $user->email . ': ' . $mailException->getMessage());
+                    $results['errors'][] = "User {$user->id} ({$user->name}): " . $mailException->getMessage();
+                    continue; // Continue to next user instead of throwing exception
                 }
                 
                 // Update timestamp
@@ -881,15 +954,24 @@ class AdminController extends Controller
             'user_ids' => $allUsers->pluck('id')->toArray()
         ]);
 
-        $users = $allUsers->filter(function($user) {
-            $isInWarning = $user->isInWarningPeriod();
-            \Log::info('Checking user warning period status', [
-                'user_id' => $user->id,
-                'user_email' => $user->email,
-                'isInWarningPeriod' => $isInWarning
+        // Only filter by warning period status if not forcing send
+        if (!$forceSend) {
+            $users = $allUsers->filter(function($user) {
+                $isInWarning = $user->isInWarningPeriod();
+                \Log::info('Checking user warning period status', [
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'isInWarningPeriod' => $isInWarning
+                ]);
+                return $isInWarning;
+            });
+        } else {
+            $users = $allUsers;
+            \Log::info('Force send enabled - including all selected users', [
+                'user_count' => $users->count(),
+                'user_ids' => $users->pluck('id')->toArray()
             ]);
-            return $isInWarning;
-        });
+        }
 
         \Log::info('Users in warning period after filtering', [
             'count' => $users->count(),
@@ -928,18 +1010,27 @@ class AdminController extends Controller
                 ]);
                 
                 try {
-                    // Send immediately like contact form (bypass queue)
-                    config(['queue.default' => 'sync']);
-                    Mail::to($user->email)->send(new \App\Mail\ManualReminderMail($user, $setting, 'warning_period'));
+                    $emailService = new EmailService();
+                    $emailService->sendEmail(
+                        $user->email,
+                        'MedCura AI - Payment Due',
+                        'emails.reminders.warning-period',
+                        [
+                            'userName' => $user->name,
+                            'userEmail' => $user->email,
+                            'billingAmount' => $setting->billing_amount ?? 0,
+                            'gracePeriodDays' => $setting->grace_period_days ?? 7,
+                            'subscriptionEndsAt' => $setting->subscription_ends_at,
+                            'reminderType' => 'warning_period',
+                        ]
+                    );
                     \Log::info('Warning period reminder sent successfully', [
                         'user_email' => $user->email
                     ]);
                 } catch (\Exception $mailException) {
-                    \Log::error('Failed to send warning period reminder email', [
-                        'user_email' => $user->email,
-                        'error' => $mailException->getMessage()
-                    ]);
-                    throw $mailException;
+                    \Log::error('Failed to send warning period reminder email to ' . $user->email . ': ' . $mailException->getMessage());
+                    $results['errors'][] = "User {$user->id} ({$user->name}): " . $mailException->getMessage();
+                    continue; // Continue to next user instead of throwing exception
                 }
                 
                 // Update timestamp
@@ -1005,18 +1096,28 @@ class AdminController extends Controller
                             'is_active' => true,
                         ]);
                         
-                        Mail::to($user->email)->send(new \App\Mail\ManualReminderMail($user, $fakeSetting, 'overdue'));
+                        $emailService = new EmailService();
+                        $emailService->sendEmail(
+                            $user->email,
+                            'MedCura AI - Account Update Needed',
+                            'emails.reminders.overdue-simple',
+                            [
+                                'userName' => $user->name,
+                                'userEmail' => $user->email,
+                                'billingAmount' => $invoice->amount_due / 100,
+                                'gracePeriodDays' => 7,
+                                'subscriptionEndsAt' => $invoice->due_date,
+                                'reminderType' => 'overdue',
+                            ]
+                        );
                         \Log::info('Overdue reminder sent successfully', [
                             'user_email' => $user->email,
                             'invoice_id' => $invoice->id
                         ]);
                     } catch (\Exception $mailException) {
-                        \Log::error('Failed to send overdue reminder email', [
-                            'user_email' => $user->email,
-                            'invoice_id' => $invoice->id,
-                            'error' => $mailException->getMessage()
-                        ]);
-                        throw $mailException;
+                        \Log::error('Failed to send overdue reminder email to ' . $user->email . ': ' . $mailException->getMessage());
+                        $results['errors'][] = "Invoice {$invoice->id} for user {$user->id} ({$user->name}): " . $mailException->getMessage();
+                        continue; // Continue to next invoice instead of throwing exception
                     }
                     
                     // Update invoice reminder tracking

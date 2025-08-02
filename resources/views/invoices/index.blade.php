@@ -299,9 +299,19 @@
             @endif
 
             @if($totalUnpaidMonthly > 0)
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Outstanding Monthly Invoices:</strong> You have ${{ number_format($totalUnpaidMonthly, 2) }} in unpaid monthly service fees.
+                    @if($isRestricted)
+                        <br><small><strong>Note:</strong> Your account is currently restricted due to unpaid invoices. Pay outstanding invoices to restore access.</small>
+                    @endif
+                </div>
+            @endif
+
+            @if($isRestricted && $totalUnpaidMonthly == 0)
                 <div class="alert alert-info" role="alert">
                     <i class="fas fa-info-circle"></i>
-                    <strong>Monthly Invoices:</strong> You have ${{ number_format($totalUnpaidMonthly, 2) }} in unpaid monthly service fees.
+                    <strong>Account Status:</strong> Your account is currently restricted. If you believe this is an error, please contact support.
                 </div>
             @endif
 
@@ -367,11 +377,11 @@
                                 <thead>
                                     <tr>
                                         <th>Invoice #</th>
-                                        <th>Period & Type</th>
+                                        <th>Service Period</th>
                                         <th>Amount</th>
-                                        <th>Status</th>
-                                        <th>Due Date</th>
-                                        <th>Grace Expires</th>
+                                        <th>Payment Status</th>
+                                        <th>Payment Date</th>
+                                        <th>Subscription Status</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -384,17 +394,23 @@
                                                 <small class="text-muted" style="font-size: 0.75rem;">{{ $invoice->created_at->format('M d, Y') }}</small>
                                             </td>
                                             <td>
-                                                <span class="{{ $invoice->getTypeBadgeClass() }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                                @if($invoice->line_items && count($invoice->line_items) > 0 && isset($invoice->line_items[0]['period_start']) && isset($invoice->line_items[0]['period_end']))
+                                                    @php
+                                                        $periodStart = \Carbon\Carbon::parse($invoice->line_items[0]['period_start']);
+                                                        $periodEnd = \Carbon\Carbon::parse($invoice->line_items[0]['period_end']);
+                                                    @endphp
+                                                    <strong class="text-primary">{{ $periodStart->format('M j') }} - {{ $periodEnd->format('M j, Y') }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">{{ $periodStart->diffInDays($periodEnd) }} days of service</small>
+                                                @else
+                                                    <strong class="text-primary">{{ $invoice->created_at->format('M Y') }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">One-time payment</small>
+                                                @endif
+                                                <br>
+                                                <span class="badge bg-light text-dark" style="font-size: 0.7rem;">
                                                     {{ $invoice->getHumanType() }}
                                                 </span>
-                                                @if($invoice->isMonthlyInvoice() && $invoice->getFormattedPeriod())
-                                                    <br>
-                                                    <small class="text-muted" style="font-size: 0.7rem;">{{ $invoice->getFormattedPeriod() }}</small>
-                                                @endif
-                                                @if($invoice->description && strlen($invoice->description) < 50)
-                                                    <br>
-                                                    <small class="text-muted" style="font-size: 0.7rem;">{{ $invoice->description }}</small>
-                                                @endif
                                             </td>
                                             <td>
                                                 <strong style="color: #2c3e50; font-size: 1.1rem;">{{ $invoice->getFormattedAmountDue() }}</strong>
@@ -415,46 +431,54 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                @if($invoice->due_date)
-                                                    <strong style="color: #2c3e50;">{{ $invoice->due_date->format('M d, Y') }}</strong>
+                                                @if($invoice->paid_at)
+                                                    <strong class="text-success">{{ $invoice->paid_at->format('M j, Y') }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">{{ $invoice->paid_at->format('g:i A') }}</small>
+                                                @elseif($invoice->due_date)
+                                                    <strong class="text-warning">Due: {{ $invoice->due_date->format('M j, Y') }}</strong>
                                                     @if($invoice->isOverdue())
                                                         <br>
-                                                        <small class="text-danger" style="font-size: 0.75rem;">
-                                                            {{ $invoice->due_date->diffForHumans() }}
-                                                        </small>
-                                                    @elseif($invoice->isDueSoon())
-                                                        <br>
-                                                        <small class="text-warning" style="font-size: 0.75rem;">
-                                                            Due {{ $invoice->due_date->diffForHumans() }}
+                                                        <small class="text-danger">
+                                                            <i class="fas fa-exclamation-triangle"></i> Overdue
                                                         </small>
                                                     @endif
                                                 @else
-                                                    <span class="text-muted">N/A</span>
+                                                    <span class="text-warning">
+                                                        <i class="fas fa-clock me-1"></i>Payment Required
+                                                    </span>
                                                 @endif
                                             </td>
                                             <td>
-                                                @if($invoice->due_date && auth()->user()->monthlyInvoiceSetting)
-                                                    @php
-                                                        $expirationDate = $invoice->due_date->copy()->addDays(auth()->user()->monthlyInvoiceSetting->grace_period_days);
-                                                        $isExpired = $expirationDate->isPast();
-                                                        $isExpiringSoon = $expirationDate->isAfter(now()) && $expirationDate->isBefore(now()->addDays(7));
-                                                    @endphp
-                                                    <strong style="color: {{ $isExpired ? '#DE6262' : ($isExpiringSoon ? '#f39c12' : '#2c3e50') }};">
-                                                        {{ $expirationDate->format('M d, Y') }}
-                                                    </strong>
-                                                    @if($isExpired)
+                                                @if(auth()->user()->monthlyInvoiceSetting)
+                                                    @php $setting = auth()->user()->monthlyInvoiceSetting; @endphp
+                                                    @if($setting->subscription_ends_at && !$setting->isSubscriptionExpired())
+                                                        <strong class="text-success">
+                                                            <i class="fas fa-check-circle me-1"></i>Active
+                                                        </strong>
                                                         <br>
-                                                        <small class="text-danger" style="font-size: 0.75rem;">
-                                                            <i class="fas fa-times-circle"></i> Expired
+                                                        <small class="text-muted">
+                                                            Until {{ $setting->subscription_ends_at->format('M j, Y') }}
                                                         </small>
-                                                    @elseif($isExpiringSoon)
+                                                    @elseif($setting->isSubscriptionExpired())
+                                                        <strong class="text-danger">
+                                                            <i class="fas fa-times-circle me-1"></i>Expired
+                                                        </strong>
                                                         <br>
-                                                        <small class="text-warning" style="font-size: 0.75rem;">
-                                                            <i class="fas fa-clock"></i> Expires soon
+                                                        <small class="text-danger">
+                                                            {{ $setting->subscription_ends_at->format('M j, Y') }}
                                                         </small>
+                                                    @else
+                                                        <strong class="text-warning">
+                                                            <i class="fas fa-clock me-1"></i>Starting
+                                                        </strong>
+                                                        <br>
+                                                        <small class="text-muted">Setting up...</small>
                                                     @endif
                                                 @else
-                                                    <span class="text-muted">N/A</span>
+                                                    <span class="text-muted">
+                                                        <i class="fas fa-question-circle me-1"></i>No Subscription
+                                                    </span>
                                                 @endif
                                             </td>
                                             <td>
@@ -486,7 +510,19 @@
                         <div class="text-center py-5">
                             <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>
                             <h5>No invoices found</h5>
-                            <p class="text-muted">You don't have any invoices yet.</p>
+                            <p class="text-muted">
+                                @if(request()->hasAny(['type', 'status', 'date_from', 'date_to']))
+                                    No invoices match your current filters. <a href="{{ route('invoices.index') }}">Clear filters</a> to see all invoices.
+                                @else
+                                    You don't have any invoices yet. Your first invoice will appear here when generated.
+                                @endif
+                            </p>
+                            @if($isRestricted)
+                                <div class="alert alert-warning mt-3">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Account Restricted:</strong> If you're expecting invoices but don't see them, please contact support.
+                                </div>
+                            @endif
                         </div>
                     @endif
                 </div>

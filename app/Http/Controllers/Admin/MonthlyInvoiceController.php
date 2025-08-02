@@ -65,14 +65,17 @@ class MonthlyInvoiceController extends Controller
             $q->where('is_restricted', true);
         })->count();
 
-        $totalMonthlyRevenue = MonthlyInvoiceSetting::where('is_active', true)
-            ->sum('billing_amount');
+        // Calculate potential monthly and yearly revenue
+        $activeSettings = MonthlyInvoiceSetting::where('is_active', true)->get();
+        $totalMonthlyRevenue = $activeSettings->sum('monthly_price');
+        $totalYearlyRevenue = $activeSettings->sum('yearly_price');
 
         return view('admin.monthly-invoices.index', compact(
             'users',
             'totalActiveUsers',
             'totalRestrictedUsers',
-            'totalMonthlyRevenue'
+            'totalMonthlyRevenue',
+            'totalYearlyRevenue'
         ));
     }
 
@@ -92,6 +95,13 @@ class MonthlyInvoiceController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        // Safety check: prevent updating admin users with restrictions
+        if ($user->role === 'admin' && $request->filled('restricted_pages')) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Cannot set page restrictions for admin users.');
+        }
+
         $request->validate([
             'billing_amount' => 'required|numeric|min:0',
             'grace_period_days' => 'required|integer|min:1|max:30',
@@ -113,7 +123,7 @@ class MonthlyInvoiceController extends Controller
             ]);
 
             return redirect()->route('admin.monthly-invoices.index')
-                ->with('success', 'Monthly invoice settings updated successfully.');
+                ->with('success', "Monthly invoice settings for {$user->name} updated successfully.");
 
         } catch (\Exception $e) {
             return redirect()->back()
@@ -127,6 +137,18 @@ class MonthlyInvoiceController extends Controller
      */
     public function restrict(Request $request, User $user)
     {
+        // Safety check: prevent restricting admin users
+        if ($user->role === 'admin') {
+            return redirect()->back()
+                ->with('error', 'Cannot restrict admin users.');
+        }
+
+        // Safety check: prevent restricting current admin user
+        if ($user->id === auth()->id()) {
+            return redirect()->back()
+                ->with('error', 'Cannot restrict your own account.');
+        }
+
         $request->validate([
             'restricted_pages' => 'nullable|array',
             'restricted_pages.*' => 'string',
@@ -141,7 +163,7 @@ class MonthlyInvoiceController extends Controller
             );
 
             return redirect()->route('admin.monthly-invoices.index')
-                ->with('success', 'User has been restricted successfully.');
+                ->with('success', "User {$user->name} has been restricted successfully.");
 
         } catch (\Exception $e) {
             return redirect()->back()
@@ -158,7 +180,7 @@ class MonthlyInvoiceController extends Controller
             $this->monthlyInvoiceService->unrestrictUser($user);
 
             return redirect()->route('admin.monthly-invoices.index')
-                ->with('success', 'User has been unrestricted successfully.');
+                ->with('success', "User {$user->name} has been unrestricted successfully.");
 
         } catch (\Exception $e) {
             return redirect()->back()
@@ -262,6 +284,9 @@ class MonthlyInvoiceController extends Controller
             'billing_amount' => 'nullable|numeric|min:0',
             'grace_period_days' => 'nullable|integer|min:1|max:30',
             'reminder_frequency_days' => 'nullable|integer|min:1|max:14',
+            'restricted_pages' => 'nullable|array',
+            'restricted_pages.*' => 'string',
+            'restriction_message' => 'nullable|string|max:500',
         ]);
 
         $users = User::whereIn('id', $request->user_ids)->get();
@@ -270,6 +295,18 @@ class MonthlyInvoiceController extends Controller
 
         foreach ($users as $user) {
             try {
+                // Safety check: skip admin users for restriction actions
+                if (in_array($request->action, ['restrict']) && $user->role === 'admin') {
+                    $errors[] = "User {$user->name}: Cannot restrict admin users";
+                    continue;
+                }
+
+                // Safety check: skip current admin user for any destructive actions
+                if ($user->id === auth()->id() && in_array($request->action, ['restrict', 'deactivate'])) {
+                    $errors[] = "User {$user->name}: Cannot perform this action on your own account";
+                    continue;
+                }
+
                 switch ($request->action) {
                     case 'activate':
                         $data = ['is_active' => true];
@@ -290,7 +327,11 @@ class MonthlyInvoiceController extends Controller
                         break;
 
                     case 'restrict':
-                        $this->monthlyInvoiceService->restrictUser($user);
+                        $this->monthlyInvoiceService->restrictUser(
+                            $user,
+                            $request->restricted_pages,
+                            $request->restriction_message
+                        );
                         break;
 
                     case 'unrestrict':

@@ -28,6 +28,8 @@
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
     <link rel="stylesheet" href="{{ asset('css/responsive-modals.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin-enhancements.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin-tables.css') }}">
     @stack('styles')
     
     <!-- Global Font Styling -->
@@ -255,6 +257,13 @@
                     <a href="{{ route('admin.monthly-invoices.index') }}" class="nav-link {{ request()->routeIs('admin.monthly-invoices.*') ? 'active' : '' }}">
                         <i class="fas fa-calendar-alt"></i>
                         <span>Monthly Invoices</span>
+                    </a>
+                </div>
+
+                <div class="nav-item">
+                    <a href="{{ route('admin.user-pricing.index') }}" class="nav-link {{ request()->routeIs('admin.user-pricing.*') ? 'active' : '' }}">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>User Pricing</span>
                     </a>
                 </div>
 

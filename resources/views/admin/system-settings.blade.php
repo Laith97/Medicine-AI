@@ -178,10 +178,12 @@
                 <div class="setting-item">
                     <div class="setting-label">
                         <i class="fas fa-calculator me-2" style="color: #DE6262;"></i>
-                        Default Monthly Amount
+                        Default Monthly Pricing
+                        <span class="badge bg-warning ms-2">Deprecated</span>
                     </div>
                     <div class="setting-description">
-                        Set the default monthly amount for new user accounts. This will be used when creating users if no specific amount is provided.
+                        <strong>⚠️ This setting is deprecated.</strong> The system now uses per-user pricing instead of default amounts. 
+                        Set individual pricing when creating/editing users in the <a href="{{ route('admin.users.index') }}">Manage Users</a> section.
                     </div>
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="flex-grow-1 me-3">
@@ -217,6 +219,31 @@
                                        value="{{ $settings['default_grace_period']->value ?? '7' }}"
                                        min="1" 
                                        max="30"
+                                       placeholder="7">
+                                <span class="input-group-text">days</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trial Days Setting -->
+                <div class="setting-item">
+                    <div class="setting-title">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        Free Trial Days
+                    </div>
+                    <div class="setting-description">
+                        Set the number of free trial days for new users. Users can access all features during this period without payment.
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="flex-grow-1 me-3">
+                            <div class="input-group">
+                                <input type="number" 
+                                       name="trial_days" 
+                                       class="form-control"
+                                       value="{{ $settings['trial_days']->value ?? '7' }}"
+                                       min="1" 
+                                       max="365"
                                        placeholder="7">
                                 <span class="input-group-text">days</span>
                             </div>
