@@ -42,6 +42,9 @@
                             <x-nav-link :href="route('diagnosis.index')" :active="request()->routeIs('diagnosis.*')">
                                 <i class="fas fa-clipboard-check mr-2"></i>{{ __('Diagnoses') }}
                             </x-nav-link>
+                            <x-nav-link :href="route('voice-assistant.index')" :active="request()->routeIs('voice-assistant.*')">
+                                <i class="fas fa-microphone mr-2"></i>{{ __('Voice Assistant') }}
+                            </x-nav-link>
                         @elseif(auth()->user()->role === 'admin')
                             <!-- Admin Navigation -->
                             <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
