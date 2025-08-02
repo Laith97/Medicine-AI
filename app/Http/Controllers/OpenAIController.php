@@ -1146,7 +1146,15 @@ class OpenAIController extends Controller
         // Send SMS notification if phone provided
         if ($patient->phone) {
             $smsMessage = "Hello {$patient->name}, Dr. " . Auth::user()->name . " has created your medical account. Check your email for login details. Diagnosis ID: {$diagnosis->id}";
-            $this->smsService->send($patient->phone, $smsMessage);
+            $result = $this->smsService->send($patient->phone, $smsMessage);
+
+            if (!$result['success']) {
+                \Log::warning('Failed to send SMS notification to patient', [
+                    'patient_id' => $patient->id,
+                    'phone' => $patient->phone,
+                    'error' => $result['message']
+                ]);
+            }
         }
 
         $diagnosis->update(['patient_notified' => true]);

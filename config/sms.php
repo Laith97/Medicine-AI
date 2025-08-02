@@ -10,7 +10,7 @@ return [
     | SMS messages. You may set this to any of the providers defined in the
     | "providers" array below.
     |
-    | Supported: "twilio", "nexmo", "log"
+    | Supported: "twilio", "plivo", "messagebird", "unifonic", "smsgatewayhub", "log"
     |
     */
 
@@ -33,14 +33,48 @@ return [
             'from_number' => env('TWILIO_FROM_NUMBER'),
         ],
 
-        'nexmo' => [
-            'api_key' => env('NEXMO_API_KEY'),
-            'api_secret' => env('NEXMO_API_SECRET'),
-            'from_number' => env('NEXMO_FROM_NUMBER'),
+        'plivo' => [
+            'auth_id' => env('PLIVO_AUTH_ID'),
+            'auth_token' => env('PLIVO_AUTH_TOKEN'),
+            'from_number' => env('PLIVO_FROM_NUMBER'),
+        ],
+
+        'messagebird' => [
+            'access_key' => env('MESSAGEBIRD_ACCESS_KEY'),
+            'from_number' => env('MESSAGEBIRD_FROM_NUMBER'),
+        ],
+
+        'unifonic' => [
+            'app_sid' => env('UNIFONIC_APP_SID'),
+            'sender_id' => env('UNIFONIC_SENDER_ID'),
+        ],
+
+        'smsgatewayhub' => [
+            'email' => env('SMSGATEWAYHUB_EMAIL'),
+            'password' => env('SMSGATEWAYHUB_PASSWORD'),
+            'device' => env('SMSGATEWAYHUB_DEVICE'),
         ],
 
         'log' => [
             // No configuration needed for log provider
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Available Providers
+    |--------------------------------------------------------------------------
+    |
+    | List of available SMS providers for admin selection
+    |
+    */
+
+    'available_providers' => [
+        'twilio' => 'Twilio',
+        'plivo' => 'Plivo',
+        'messagebird' => 'MessageBird',
+        'unifonic' => 'Unifonic',
+        'smsgatewayhub' => 'SMS Gateway Hub',
+        'log' => 'Log Only (Testing)',
     ],
 ];
