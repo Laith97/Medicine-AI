@@ -62,6 +62,13 @@ class Doctor extends Model
     ];
 
     /**
+     * The model's default values for attributes.
+     */
+    protected $attributes = [
+        'appointment_type_preferences' => '{"in_person": true, "video_call": false, "phone_call": false}',
+    ];
+
+    /**
      * Get the user that owns the doctor profile
      */
     public function user()
