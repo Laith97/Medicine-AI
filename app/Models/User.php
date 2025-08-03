@@ -35,8 +35,9 @@ class User extends Authenticatable
         'emergency_contact_phone',
         'email_verified_at',
         'stripe_customer_id',
-        'current_plan',
         'monthly_cost_limit',
+        'trial_ends_at',
+        'trial_used',
         'subscription_ends_at',
         'subscription_active',
         'primary_doctor_id',
@@ -64,8 +65,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'date_of_birth' => 'date',
             'monthly_cost_limit' => 'decimal:2',
-            'subscription_ends_at' => 'datetime',
-            'subscription_active' => 'boolean',
+            'trial_ends_at' => 'datetime',
+            'trial_used' => 'boolean',
         ];
     }
 
@@ -124,6 +125,14 @@ public function monthlyInvoiceSetting()
     return $this->hasOne(MonthlyInvoiceSetting::class);
 }
 
+/**
+ * Get fresh monthly invoice setting (no caching)
+ */
+public function getFreshMonthlyInvoiceSetting()
+{
+    return MonthlyInvoiceSetting::where('user_id', $this->id)->first();
+}
+
 
 
     /**
@@ -173,17 +182,21 @@ public function monthlyInvoiceSetting()
      */
     public function hasActiveSubscription(): bool
     {
-        return $this->subscription_active &&
-            $this->subscription_ends_at &&
-            $this->subscription_ends_at->isFuture();
+        return $this->monthlyInvoiceSetting && 
+               $this->monthlyInvoiceSetting->isActiveSubscription();
     }
 
     /**
-     * Get the user's current plan configuration
+     * Get the user's current plan configuration (deprecated - use monthlyInvoiceSetting)
      */
     public function getPlanConfig(): array
     {
-        return config("stripe.plans.{$this->current_plan}", []);
+        // Return default config for backward compatibility
+        return [
+            'name' => 'Custom Plan',
+            'token_limit' => -1, // Unlimited
+            'monthly_cost_limit' => $this->monthly_cost_limit ?? 100,
+        ];
     }
 
     /**
@@ -200,37 +213,46 @@ public function monthlyInvoiceSetting()
     }
 
     /**
-     * Check if user has exceeded their token limit
+     * Check if user has exceeded their cost limit (replaces token limit)
      */
     public function hasExceededTokenLimit(): bool
     {
-        $planConfig = $this->getPlanConfig();
-        $tokenLimit = $planConfig['token_limit'] ?? 0;
-
-        // Unlimited plan
-        if ($tokenLimit === -1) {
-            return false;
-        }
-
-        $monthlyUsage = $this->getMonthlyTokenUsage();
-        return $monthlyUsage >= $tokenLimit;
+        return $this->hasExceededCostLimit();
     }
 
     /**
-     * Get remaining tokens for current month
+     * Check if user has exceeded their monthly cost limit
+     */
+    public function hasExceededCostLimit(): bool
+    {
+        if (!$this->monthly_cost_limit || $this->monthly_cost_limit <= 0) {
+            return false; // No limit set
+        }
+
+        $monthlyCost = $this->getMonthlyCost();
+        return $monthlyCost >= $this->monthly_cost_limit;
+    }
+
+    /**
+     * Get remaining tokens for current month (deprecated - use cost limits)
      */
     public function getRemainingTokens(): int
     {
-        $planConfig = $this->getPlanConfig();
-        $tokenLimit = $planConfig['token_limit'] ?? 0;
+        // Return unlimited for backward compatibility
+        return -1;
+    }
 
-        // Unlimited plan
-        if ($tokenLimit === -1) {
-            return -1;
+    /**
+     * Get remaining cost allowance for current month
+     */
+    public function getRemainingCostAllowance(): float
+    {
+        if (!$this->monthly_cost_limit || $this->monthly_cost_limit <= 0) {
+            return -1; // Unlimited
         }
 
-        $monthlyUsage = $this->getMonthlyTokenUsage();
-        return max(0, $tokenLimit - $monthlyUsage);
+        $monthlyCost = $this->getMonthlyCost();
+        return max(0, $this->monthly_cost_limit - $monthlyCost);
     }
 
     /**
@@ -247,9 +269,9 @@ public function monthlyInvoiceSetting()
     }
 
     /**
-     * Get the estimated cost for this month
+     * Get the actual cost for this month
      */
-    public function getMonthlyCostEstimate(): float
+    public function getMonthlyCost(): float
     {
         $startOfMonth = now()->startOfMonth();
         $endOfMonth = now()->endOfMonth();
@@ -260,17 +282,14 @@ public function monthlyInvoiceSetting()
     }
 
     /**
-     * Check if user has exceeded their monthly cost limit
+     * Get the estimated cost for this month (alias for getMonthlyCost)
      */
-    public function hasExceededCostLimit(): bool
+    public function getMonthlyCostEstimate(): float
     {
-        if ($this->monthly_cost_limit <= 0) {
-            return false; // No limit set
-        }
-
-        $monthlyCost = $this->getMonthlyCostEstimate();
-        return $monthlyCost > $this->monthly_cost_limit;
+        return $this->getMonthlyCost();
     }
+
+
 
     /**
      * Get the excess cost over the limit
@@ -285,18 +304,7 @@ public function monthlyInvoiceSetting()
         return max(0, $monthlyCost - $this->monthly_cost_limit);
     }
 
-    /**
-     * Get remaining cost allowance for this month
-     */
-    public function getRemainingCostAllowance(): float
-    {
-        if ($this->monthly_cost_limit <= 0) {
-            return -1; // Unlimited
-        }
 
-        $monthlyCost = $this->getMonthlyCostEstimate();
-        return max(0, $this->monthly_cost_limit - $monthlyCost);
-    }
 
     /**
      * Get cost usage percentage
@@ -420,6 +428,11 @@ public function getTotalUnpaidMonthlyAmount(): float
  */
 public function isRestricted(): bool
 {
+    // If user is in trial period, they are not restricted
+    if ($this->isInTrialPeriod()) {
+        return false;
+    }
+    
     $setting = $this->monthlyInvoiceSetting;
     return $setting && $setting->is_restricted;
 }
@@ -429,6 +442,11 @@ public function isRestricted(): bool
  */
 public function isPageRestricted(string $routeName): bool
 {
+    // If user is in trial period, no pages are restricted
+    if ($this->isInTrialPeriod()) {
+        return false;
+    }
+    
     $setting = $this->monthlyInvoiceSetting;
     return $setting && $setting->isPageRestricted($routeName);
 }
@@ -449,6 +467,8 @@ public function getOrCreateMonthlyInvoiceSetting(): MonthlyInvoiceSetting
 {
     return $this->monthlyInvoiceSetting ?: $this->monthlyInvoiceSetting()->create([
         'billing_amount' => 0,
+        'monthly_price' => 0,
+        'yearly_price' => 0,
         'grace_period_days' => 7,
         'reminder_frequency_days' => 3,
         'is_restricted' => false,
@@ -499,6 +519,67 @@ public function getSubscriptionEndDate(): ?\Carbon\Carbon
 {
     $setting = $this->monthlyInvoiceSetting;
     return $setting ? $setting->subscription_ends_at : null;
+}
+
+/**
+ * Check if user is in trial period
+ */
+public function isInTrialPeriod(): bool
+{
+    return $this->trial_ends_at && $this->trial_ends_at->isFuture();
+}
+
+/**
+ * Check if user has used their trial
+ */
+public function hasUsedTrial(): bool
+{
+    return $this->trial_used;
+}
+
+/**
+ * Start trial for user
+ */
+public function startTrial(): void
+{
+    if ($this->hasUsedTrial()) {
+        return; // User already used their trial
+    }
+    
+    $trialDays = SystemSetting::get('trial_days', 7);
+    
+    $this->update([
+        'trial_ends_at' => now()->addDays($trialDays),
+        'trial_used' => true,
+    ]);
+}
+
+/**
+ * Get trial days remaining
+ */
+public function getTrialDaysRemaining(): int
+{
+    if (!$this->isInTrialPeriod()) {
+        return 0;
+    }
+    
+    return max(0, (int) now()->diffInDays($this->trial_ends_at, false));
+}
+
+/**
+ * Get trial status
+ */
+public function getTrialStatus(): string
+{
+    if (!$this->hasUsedTrial()) {
+        return 'not_started';
+    }
+    
+    if ($this->isInTrialPeriod()) {
+        return 'active';
+    }
+    
+    return 'expired';
 }
 
 /**

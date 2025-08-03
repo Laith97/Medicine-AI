@@ -22,8 +22,10 @@ class GracePeriodReminder extends Notification
     {
         $channels = ['mail'];
         
-        // Add SMS if user has phone number
-        if ($notifiable->phone) {
+        // Add SMS if user has phone number AND Twilio is configured
+        if ($notifiable->phone && 
+            config('services.twilio.sid') && 
+            config('services.twilio.token')) {
             $channels[] = TwilioChannel::class;
         }
         

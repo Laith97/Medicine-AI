@@ -1865,7 +1865,20 @@ class OpenAIController extends Controller
             ];
         }
 
-        return view('dashboard', compact('records', 'weeklyCount', 'chartLabels', 'chartData', 'doctorData', 'patientGroups'));
+        // Add trial information - only show trial if user doesn't have active subscription
+        $hasActiveSubscription = $user->monthlyInvoiceSetting && 
+                                $user->monthlyInvoiceSetting->subscription_starts_at && 
+                                !$user->monthlyInvoiceSetting->isSubscriptionExpired();
+        
+        $trialInfo = [
+            'is_in_trial' => $user->isInTrialPeriod() && !$hasActiveSubscription,
+            'trial_days_remaining' => $user->getTrialDaysRemaining(),
+            'trial_status' => $user->getTrialStatus(),
+            'has_used_trial' => $user->hasUsedTrial(),
+            'has_active_subscription' => $hasActiveSubscription,
+        ];
+
+        return view('dashboard', compact('records', 'weeklyCount', 'chartLabels', 'chartData', 'doctorData', 'patientGroups', 'trialInfo'));
     }
 
     /**
@@ -2941,11 +2954,10 @@ class OpenAIController extends Controller
                 ]
             ]);
 
-            // Check if user is approaching their token limit
+            // Check if user is approaching their cost limit
             $user = auth()->user();
             if ($user) {
                 $this->checkTokenLimits($user);
-                $this->checkCostLimits($user);
             }
 
         } catch (\Exception $e) {
@@ -2954,30 +2966,30 @@ class OpenAIController extends Controller
     }
 
     /**
-     * Check if user is approaching token limits and send notifications
+     * Check if user is approaching cost limits and send notifications
      */
     private function checkTokenLimits($user): void
     {
         try {
-            $monthlyUsage = $user->getMonthlyTokenUsage();
-            $planConfig = $user->getPlanConfig();
-            $tokenLimit = $planConfig['token_limit'] ?? 0;
-
-            // Skip check for unlimited plans
-            if ($tokenLimit === -1) {
+            // Skip if no cost limit is set
+            if (!$user->monthly_cost_limit || $user->monthly_cost_limit <= 0) {
                 return;
             }
 
-            // Calculate usage percentage
-            $usagePercentage = $tokenLimit > 0 ? ($monthlyUsage / $tokenLimit) * 100 : 0;
+            $monthlyCost = $user->getMonthlyCost();
+            $costLimit = $user->monthly_cost_limit;
+            $monthlyUsage = $user->getMonthlyTokenUsage();
+
+            // Calculate usage percentage based on cost
+            $usagePercentage = ($monthlyCost / $costLimit) * 100;
 
             // Send warning at 80% usage (once per day)
             if ($usagePercentage >= 80 && $usagePercentage < 95) {
                 $cacheKey = "usage_warning_80_{$user->id}_" . now()->format('Y-m-d');
                 if (!Cache::has($cacheKey)) {
-                    Mail::to($user->email)->send(new UsageWarning($user, (int)$usagePercentage, $monthlyUsage, $tokenLimit));
+                    Mail::to($user->email)->send(new UsageWarning($user, (int)$usagePercentage, $monthlyUsage, $costLimit));
                     Cache::put($cacheKey, true, now()->addDay());
-                    \Log::info("Usage warning email sent to user {$user->id} at {$usagePercentage}% usage");
+                    \Log::info("Cost usage warning email sent to user {$user->id} at {$usagePercentage}% usage");
                 }
             }
 
@@ -2985,7 +2997,7 @@ class OpenAIController extends Controller
             if ($usagePercentage >= 95) {
                 $cacheKey = "usage_warning_95_{$user->id}_" . now()->format('Y-m-d');
                 if (!Cache::has($cacheKey)) {
-                    Mail::to($user->email)->send(new UsageWarning($user, (int)$usagePercentage, $monthlyUsage, $tokenLimit));
+                    Mail::to($user->email)->send(new UsageWarning($user, (int)$usagePercentage, $monthlyUsage, $costLimit));
                     Cache::put($cacheKey, true, now()->addDay());
                     \Log::warning("Critical usage warning email sent to user {$user->id} at {$usagePercentage}% usage");
                 }
@@ -2996,51 +3008,5 @@ class OpenAIController extends Controller
         }
     }
 
-    /**
-     * Check if user is approaching cost limits and send notifications
-     */
-    private function checkCostLimits($user): void
-    {
-        try {
-            if ($user->monthly_cost_limit <= 0) {
-                return; // No limit set
-            }
 
-            $monthlyCost = $user->getMonthlyCostEstimate();
-            $costLimit = $user->monthly_cost_limit;
-            $usagePercentage = $user->getCostUsagePercentage();
-
-            // Send warning at 80% usage (once per day)
-            if ($usagePercentage >= 80 && $usagePercentage < 95) {
-                $cacheKey = "cost_warning_80_{$user->id}_" . now()->format('Y-m-d');
-                if (!Cache::has($cacheKey)) {
-                    // Log warning - you can extend this to send emails if needed
-                    \Log::info("Cost usage warning for user {$user->id}: {$usagePercentage}% of limit used");
-                    Cache::put($cacheKey, true, now()->addDay());
-                }
-            }
-
-            // Send critical warning at 95% usage (once per day)
-            if ($usagePercentage >= 95) {
-                $cacheKey = "cost_warning_95_{$user->id}_" . now()->format('Y-m-d');
-                if (!Cache::has($cacheKey)) {
-                    \Log::warning("Critical cost usage warning for user {$user->id}: {$usagePercentage}% of limit used");
-                    Cache::put($cacheKey, true, now()->addDay());
-                }
-            }
-
-            // Log when user exceeds limit
-            if ($monthlyCost > $costLimit) {
-                $excessCost = $monthlyCost - $costLimit;
-                $cacheKey = "cost_exceeded_{$user->id}_" . now()->format('Y-m-d');
-                if (!Cache::has($cacheKey)) {
-                    \Log::warning("User {$user->id} exceeded cost limit by $" . number_format($excessCost, 2));
-                    Cache::put($cacheKey, true, now()->addDay());
-                }
-            }
-
-        } catch (\Exception $e) {
-            \Log::error('Failed to check cost limits: ' . $e->getMessage());
-        }
-    }
 }

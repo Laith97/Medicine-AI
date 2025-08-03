@@ -339,10 +339,10 @@
             <h5 class="mb-3"><i class="fas fa-cog me-2"></i>Options</h5>
             
             <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="force_send" id="force_send" value="1">
+                <input class="form-check-input" type="checkbox" name="force_send" id="force_send" value="1" checked>
                 <label class="form-check-label" for="force_send">
                     <strong>Force Send</strong>
-                    <br><small class="text-muted">Ignore reminder frequency limits and send reminders immediately</small>
+                    <br><small class="text-muted">Ignore reminder frequency limits and send reminders immediately (recommended for manual sending)</small>
                 </label>
             </div>
         </div>

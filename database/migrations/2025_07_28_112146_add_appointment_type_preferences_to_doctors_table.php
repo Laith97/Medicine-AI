@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('doctors', function (Blueprint $table) {
-            $table->json('appointment_type_preferences')->default('{"in_person": true, "video_call": false, "phone_call": false}');
+            $table->json('appointment_type_preferences')->nullable();
         });
     }
 
