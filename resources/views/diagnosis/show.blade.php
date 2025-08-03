@@ -117,12 +117,16 @@
                         <div class="row">
                             @foreach($diagnosis->patient_data as $key => $value)
                                 @if($value)
-                                    <div class="col-md-6 mb-3">
-                                        <h6 class="text-capitalize">{{ str_replace('_', ' ', $key) }}</h6>
-                                        <div class="bg-light p-2 rounded">
-                                            {{ $value }}
-                                        </div>
-                                    </div>
+                            <div class="col-md-6 mb-3">
+                                <h6 class="text-capitalize">{{ str_replace('_', ' ', $key) }}</h6>
+                                <div class="bg-light p-2 rounded">
+                                    @if(is_array($value))
+                                        <pre>{{ json_encode($value, JSON_PRETTY_PRINT) }}</pre>
+                                    @else
+                                        {{ $value }}
+                                    @endif
+                                </div>
+                            </div>
                                 @endif
                             @endforeach
                         </div>

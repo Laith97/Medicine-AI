@@ -70,6 +70,7 @@
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
     <link rel="stylesheet" href="{{ asset('css/responsive-modals.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom-buttons.css') }}">
+    @livewireStyles
     @stack('styles')
 
     <!-- Global Font Styling -->
@@ -588,11 +589,15 @@
                                         <li class="menu-item {{ request()->routeIs('ask-ai') ? 'current' : '' }}">
                                             <a class="menu-link" href="{{ route('ask-ai') }}"><div>AI Diagnosis</div></a>
                                         </li>
+                                        <li class="menu-item {{ request()->routeIs('voice-assistant.index') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('voice-assistant.index') }}"><div><i class="fas fa-microphone mr-2"></i>{{ __('Voice Assistant') }}</div></a>
+                                        </li>
+
+                                        <li class="menu-item {{ request()->routeIs('diagnosis.*') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('diagnosis.index') }}"><div>Diagnoses</div></a>
+                                        </li>
                                         <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
                                             <a class="menu-link" href="{{ route('cases') }}"><div>Patient Cases</div></a>
-                                        </li>
-                                        <li class="menu-item {{ request()->routeIs('diagnosis.*') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('diagnosis.index') }}"><div>Manual Diagnoses</div></a>
                                         </li>
 
                                         <!-- Additional Features Dropdown -->
@@ -746,6 +751,7 @@
     </div><!-- #wrapper end -->
 			</div>
 
+@if (!auth()->check())
 		<!-- Footer -->
 <footer id="footer" class="text-white py-5" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
     <div class="container">
@@ -872,6 +878,7 @@
         </div>
     </div>
 </footer>
+@endif
 
 <style>
 .hover-link:hover {
@@ -910,6 +917,7 @@
     <script src="{{ asset('js/plugins.min.js') }}"></script>
     <script src="{{ asset('js/functions.bundle.js') }}"></script>
 
+    @livewireScripts
     @stack('scripts')
 
 </body>
