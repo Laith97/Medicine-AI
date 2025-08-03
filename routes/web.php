@@ -74,6 +74,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/openai/follow-up', [OpenAIController::class, 'followUp'])->name('openai.follow-up');
     Route::post('/patient/summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient.summary');
 
+    // Voice Assistant routes
+    Route::prefix('voice-assistant')->name('voice-assistant.')->group(function () {
+        Route::get('/', [App\Http\Controllers\VoiceAssistantController::class, 'index'])->name('index');
+        Route::get('/history', [App\Http\Controllers\VoiceAssistantController::class, 'history'])->name('history');
+        Route::get('/{transcription}', [App\Http\Controllers\VoiceAssistantController::class, 'show'])->name('show');
+    });
+
     Route::get('/settings', [UserSettingsController::class, 'index'])->name('settings');
     Route::put('/user/settings/update', [UserSettingsController::class, 'update'])->name('settings.update');
     Route::get('/cases', [OpenAIController::class, 'getCases'])->name('cases');

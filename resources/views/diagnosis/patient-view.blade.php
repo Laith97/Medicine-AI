@@ -91,7 +91,13 @@
                                 @if($value)
                                     <div class="col-md-6 mb-3">
                                         <h6 class="text-capitalize">{{ str_replace('_', ' ', $key) }}</h6>
-                                        <p class="text-muted">{{ $value }}</p>
+                                        <div class="text-muted">
+                                            @if(is_array($value))
+                                                <pre>{{ json_encode($value, JSON_PRETTY_PRINT) }}</pre>
+                                            @else
+                                                {{ $value }}
+                                            @endif
+                                        </div>
                                     </div>
                                 @endif
                             @endforeach
