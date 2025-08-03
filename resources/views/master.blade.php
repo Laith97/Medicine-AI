@@ -36,13 +36,95 @@
 .top-link:hover::after {
     width: 100%;
 }
+/* Header Dropdown Styling - Match Menu Sub-Menu Style */
+.dropdown-menu {
+    /* Modern Glass Design - Same as sub-menu-container */
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    
+    /* Advanced Shadow & Border - Same as sub-menu-container */
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        0 8px 16px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+    
+    /* Modern Rounded Design - Same as sub-menu-container */
+    border-radius: 16px !important;
+    
+    /* Spacing - Same as sub-menu-container */
+    padding: 12px 0 !important;
+    margin: 0 !important;
+    
+    /* Dimensions */
+    min-width: 240px !important;
+}
+
+.dropdown-item {
+    /* Layout - Same as sub-menu menu-link */
+    display: flex !important;
+    align-items: center !important;
+    padding: 12px 20px !important;
+    margin: 0 8px !important;
+    
+    /* Typography - Same as sub-menu menu-link */
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: #374151 !important;
+    text-decoration: none !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+    
+    /* Modern Styling - Same as sub-menu menu-link */
+    border-radius: 10px !important;
+    background: transparent !important;
+    border: none !important;
+    
+    /* Smooth Transitions - Same as sub-menu menu-link */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+/* Hover Effect - Same as sub-menu menu-link hover */
+.dropdown-item:hover {
+    background: linear-gradient(135deg, rgba(222, 98, 98, 0.1), rgba(222, 98, 98, 0.05)) !important;
+    color: #DE6262 !important;
+    font-weight: 600 !important;
+    transform: translateX(4px) !important;
+    box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15) !important;
+}
+
+/* Focus states - Same as sub-menu styling */
 .dropdown-item:focus, .dropdown-item:active,
 .dropdown-item:focus-visible,
 .dropdown-item:focus-within {
     outline: none !important;
-    box-shadow: 0 0 0 0.2rem rgba(222,98,98,0.25) !important;
-    background-color: rgba(222,98,98,0.08) !important;
+    background: linear-gradient(135deg, rgba(222, 98, 98, 0.1), rgba(222, 98, 98, 0.05)) !important;
     color: #DE6262 !important;
+    font-weight: 600 !important;
+    transform: translateX(4px) !important;
+    box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15) !important;
+}
+
+/* Danger/Logout button styling */
+.dropdown-item.text-danger {
+    color: #dc3545 !important;
+}
+
+.dropdown-item.text-danger:hover {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.05)) !important;
+    color: #dc3545 !important;
+    font-weight: 600 !important;
+}
+
+/* Dropdown divider - Same as menu divider */
+.dropdown-divider {
+    height: 1px !important;
+    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08) 20%, rgba(0, 0, 0, 0.08) 80%, transparent) !important;
+    margin: 8px 16px !important;
+    border: none !important;
+    padding: 0 !important;
 }
 
 </style>
