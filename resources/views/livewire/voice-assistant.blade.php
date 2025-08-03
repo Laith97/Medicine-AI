@@ -441,19 +441,24 @@
         </div>
     </div>
 
-    <!-- Approve Diagnosis Button -->
-    @if($aiAnalysis && !$diagnosisApproved)
+    <!-- Create AI Assistant Result Button -->
+    @if($aiAnalysis && !$showManualDiagnosisForm && !$diagnosisCreated)
         <div class="row mb-3">
             <div class="col-12">
                 <div class="d-flex justify-content-end">
                     <button
-                        type="button"
-                        class="btn btn-success"
-                        data-bs-toggle="modal"
-                        data-bs-target="#diagnosisApprovalModal"
+                        wire:click="createAiAssistantResult"
+                        class="btn btn-primary"
+                        wire:loading.attr="disabled"
                     >
-                        <i class="fas fa-check-circle me-2"></i>
-                        Approve Diagnosis
+                        <span wire:loading.remove>
+                            <i class="fas fa-arrow-right me-2"></i>
+                            Proceed to Write Diagnosis
+                        </span>
+                        <span wire:loading>
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            Processing...
+                        </span>
                     </button>
                 </div>
             </div>
@@ -464,17 +469,17 @@
     @if($aiAnalysis)
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card @if($diagnosisApproved) border-success @endif">
-                    <div class="card-header @if($diagnosisApproved) bg-success text-white @endif">
+                <div class="card @if($diagnosisCreated) border-success @endif">
+                    <div class="card-header @if($diagnosisCreated) bg-success text-white @else bg-info text-white @endif">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">
                                 <i class="fas fa-robot me-2"></i>
                                 AI Clinical Analysis
                             </h5>
-                            @if($diagnosisApproved)
+                            @if($diagnosisCreated)
                                 <span class="badge bg-light text-success">
                                     <i class="fas fa-check-circle me-1"></i>
-                                    Approved & Saved
+                                    Linked to Diagnosis
                                 </span>
                             @endif
                         </div>
@@ -489,55 +494,65 @@
         </div>
     @endif
 
-    <!-- Diagnosis Approval Modal -->
-    <div class="modal fade" id="diagnosisApprovalModal" tabindex="-1" aria-labelledby="diagnosisApprovalModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-warning">
-                <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title" id="diagnosisApprovalModalLabel">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Approve Diagnosis for Patient Record
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Review Before Approval:</strong> Please carefully review the AI analysis above. Once approved, this diagnosis will be saved to the patient's medical record and they will be able to view it from their account.
+    <!-- Manual Diagnosis Form -->
+    @if($showManualDiagnosisForm)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user-md me-2"></i>
+                            Write Your Professional Diagnosis
+                        </h5>
+                        <small>Based on the AI analysis above, write your professional diagnosis</small>
                     </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="manualDiagnosisText" class="form-label">
+                                <strong>Your Professional Diagnosis:</strong>
+                            </label>
+                            <textarea
+                                wire:model.defer="manualDiagnosisText"
+                                id="manualDiagnosisText"
+                                class="form-control"
+                                rows="6"
+                                placeholder="Write your professional diagnosis based on the AI analysis and your clinical judgment..."
+                                required
+                            ></textarea>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                This diagnosis will be saved to the patient's record and the AI analysis will be linked as supporting information.
+                            </div>
+                        </div>
 
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <strong>Patient:</strong>
-                            @php
-                                $selectedPatientData = collect($patients)->firstWhere('id', $selectedPatient);
-                            @endphp
-                            {{ $selectedPatientData ? $selectedPatientData['name'] : 'Unknown' }}
-                        </div>
-                        <div class="col-md-6">
-                            <strong>Session Date:</strong> {{ now()->format('M d, Y - H:i A') }}
+                        <div class="d-flex justify-content-end gap-2">
+                            <button
+                                wire:click="$set('showManualDiagnosisForm', false)"
+                                class="btn btn-secondary"
+                            >
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </button>
+                            <button
+                                wire:click="createManualDiagnosis"
+                                class="btn btn-success"
+                                wire:loading.attr="disabled"
+                            >
+                                <span wire:loading.remove>
+                                    <i class="fas fa-save me-1"></i>Save Diagnosis
+                                </span>
+                                <span wire:loading>
+                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                    Saving...
+                                </span>
+                            </button>
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>
-                        Cancel - Continue Editing
-                    </button>
-                    <button wire:click="approveDiagnosis" class="btn btn-success" wire:loading.attr="disabled" onclick="setTimeout(hideDiagnosisModal, 100)">
-                        <span wire:loading.remove>
-                            <i class="fas fa-check-circle me-2"></i>
-                            Yes, Approve & Save to Patient Record
-                        </span>
-                        <span wire:loading>
-                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                            Processing...
-                        </span>
-                    </button>
                 </div>
             </div>
         </div>
-    </div>
+    @endif
+
+
 
     <!-- Confirmation Section -->
     @if($showConfirmation)
@@ -911,22 +926,9 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 });
 
-// Function to hide the diagnosis approval modal
-function hideDiagnosisModal() {
-    const modalElement = document.getElementById('diagnosisApprovalModal');
-    if (modalElement) {
-        const modal = bootstrap.Modal.getInstance(modalElement);
-        if (modal) {
-            modal.hide();
-        }
-    }
-}
-
-// Listen for Livewire updates to close the modal when diagnosis is approved
+// Listen for Livewire updates to handle diagnosis creation
 document.addEventListener('livewire:updated', function () {
-    // Check if diagnosis was approved
-    if (@this.diagnosisApproved) {
-        hideDiagnosisModal();
-    }
+    // Handle any post-diagnosis creation updates if needed
+    console.log('Voice assistant updated');
 });
 </script>

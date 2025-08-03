@@ -184,7 +184,7 @@ class DiagnosisController extends Controller
         }
 
         $diagnosis->markAsViewed();
-        $diagnosis->load(['doctor', 'followUps']);
+        $diagnosis->load(['doctor', 'followUps', 'aiAssistantResults']);
 
         return view('diagnosis.patient-view', compact('diagnosis'));
     }
@@ -324,7 +324,7 @@ class DiagnosisController extends Controller
         }
 
         $diagnoses = Auth::user()->patientDiagnoses()
-            ->with(['doctor'])
+            ->with(['doctor', 'aiAssistantResults'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 

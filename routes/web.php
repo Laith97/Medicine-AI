@@ -72,6 +72,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/ask-ai', [OpenAIController::class, 'showForm'])->name('ask-ai');
     Route::post('/openai/respond', [OpenAIController::class, 'getResponse'])->name('openai.respond');
     Route::post('/openai/follow-up', [OpenAIController::class, 'followUp'])->name('openai.follow-up');
+    Route::post('/openai/create-manual-diagnosis', [OpenAIController::class, 'createManualDiagnosis'])->name('openai.create-manual-diagnosis');
     Route::post('/patient/summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient.summary');
 
     // Voice Assistant routes
@@ -241,17 +242,17 @@ Route::middleware('auth')->group(function () {
     // Access restriction routes
     Route::get('/access/restricted', [App\Http\Controllers\AccessRestrictionController::class, 'restricted'])->name('access.restricted');
     Route::get('/access/check-status', [App\Http\Controllers\AccessRestrictionController::class, 'checkStatus'])->name('access.check-status');
-    
+
     // Test route to verify restriction system
     Route::get('/test/restriction-status', function() {
         $user = auth()->user();
         if (!$user) {
             return response()->json(['error' => 'Not authenticated']);
         }
-        
+
         $setting = $user->monthlyInvoiceSetting;
         $testRoutes = ['ask-ai', 'cases', 'dashboard', 'appointments', 'reviews', 'settings', 'profile.edit'];
-        
+
         $results = [];
         foreach ($testRoutes as $route) {
             $results[$route] = [
@@ -260,7 +261,7 @@ Route::middleware('auth')->group(function () {
                 'configured_pages' => $setting ? $setting->restricted_pages : null,
             ];
         }
-        
+
         return response()->json([
             'user_id' => $user->id,
             'user_name' => $user->name,

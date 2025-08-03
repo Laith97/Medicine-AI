@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\VoiceTranscription;
 use App\Models\User;
 use App\Models\Diagnosis;
+use App\Models\AiAssistantResult;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -44,9 +45,12 @@ class VoiceAssistant extends Component
     public string $newPatientGender = '';
     public string $newPatientPhone = '';
 
-    // Diagnosis approval
+    // AI result and manual diagnosis
     public bool $showDiagnosisApproval = false;
-    public bool $diagnosisApproved = false;
+    public bool $showManualDiagnosisForm = false;
+    public string $manualDiagnosisText = '';
+    public $aiResultId = null;
+    public bool $diagnosisCreated = false;
 
     protected $listeners = [
         'transcriptionReceived' => 'handleTranscription',
@@ -737,20 +741,21 @@ class VoiceAssistant extends Component
         ]);
     }
 
-    public function approveDiagnosis()
+    public function createAiAssistantResult()
     {
         if (!$this->selectedPatient || empty($this->aiAnalysis)) {
-            session()->flash('error', 'Cannot approve diagnosis without patient selection and AI analysis.');
+            session()->flash('error', 'Cannot create AI result without patient selection and AI analysis.');
             return;
         }
 
-        // Create diagnosis record similar to manual diagnosis
-        $diagnosis = Diagnosis::create([
+        // Create AI assistant result record
+        $aiResult = AiAssistantResult::create([
             'doctor_id' => Auth::id(),
             'patient_id' => $this->selectedPatient,
-            'type' => 'ai', // Use 'ai' type for AI-based diagnosis
-            'diagnosis_text' => $this->diagnosis ?: 'AI-generated diagnosis from voice consultation',
+            'source' => 'voice_assistant',
+            'ai_analysis' => $this->aiAnalysis,
             'voice_transcript' => $this->transcription,
+            'session_id' => $this->sessionId,
             'patient_data' => [
                 'symptoms' => $this->symptoms,
                 'medical_history' => $this->medicalHistory,
@@ -760,29 +765,79 @@ class VoiceAssistant extends Component
                 'care_plan' => $this->carePlan,
                 'session_id' => $this->sessionId,
             ],
-            'ai_response' => $this->aiAnalysis,
-            'follow_up_count' => 0,
-            'patient_notified' => false,
-            'patient_reviewed' => false,
+            'status' => 'pending',
         ]);
 
         // Update the voice transcription record
         VoiceTranscription::where('session_id', $this->sessionId)
             ->update([
-                'diagnosis_id' => $diagnosis->id,
-                'status' => 'approved',
+                'ai_assistant_result_id' => $aiResult->id,
+                'status' => 'ai_analysis_complete',
             ]);
 
-        $this->diagnosisApproved = true;
+        $this->aiResultId = $aiResult->id;
         $this->showDiagnosisApproval = false;
+        $this->showManualDiagnosisForm = true;
 
-        session()->flash('success', 'Diagnosis approved and saved! The patient can now view it from their account.');
+        session()->flash('success', 'AI analysis completed! Now write your professional diagnosis.');
+    }
+
+    public function createManualDiagnosis()
+    {
+        if (empty($this->manualDiagnosisText)) {
+            session()->flash('error', 'Please enter your diagnosis text.');
+            return;
+        }
+
+        if (!$this->aiResultId) {
+            session()->flash('error', 'AI result not found. Please generate AI analysis first.');
+            return;
+        }
+
+        try {
+            // Get the AI assistant result
+            $aiResult = AiAssistantResult::findOrFail($this->aiResultId);
+
+            // Get the patient
+            $patient = User::findOrFail($this->selectedPatient);
+
+            // Create the manual diagnosis
+            $diagnosis = Diagnosis::create([
+                'doctor_id' => Auth::id(),
+                'patient_id' => $patient->id,
+                'diagnosis_text' => $this->manualDiagnosisText,
+                'voice_transcript' => $this->transcription,
+                'patient_data' => $aiResult->patient_data,
+            ]);
+
+            // Link the AI result to this diagnosis
+            $aiResult->linkToDiagnosis($diagnosis->id);
+
+            // Update the voice transcription record
+            VoiceTranscription::where('session_id', $this->sessionId)
+                ->update([
+                    'diagnosis_id' => $diagnosis->id,
+                    'status' => 'diagnosis_created',
+                ]);
+
+            $this->diagnosisCreated = true;
+            $this->showManualDiagnosisForm = false;
+
+            session()->flash('success', 'Manual diagnosis created successfully and linked to AI analysis! Patient can now view it from their account.');
+
+            // Redirect to diagnosis view
+            return redirect()->route('diagnosis.show', $diagnosis);
+
+        } catch (\Exception $e) {
+            Log::error('Manual diagnosis creation failed: ' . $e->getMessage());
+            session()->flash('error', 'Failed to create diagnosis. Please try again.');
+        }
     }
 
     public function rejectDiagnosis()
     {
         $this->showDiagnosisApproval = false;
-        session()->flash('info', 'Diagnosis not approved. You can continue editing or generate a new analysis.');
+        session()->flash('info', 'AI analysis not used. You can continue editing or generate a new analysis.');
     }
 
     // Fix the Start Recording button issue
@@ -797,7 +852,7 @@ class VoiceAssistant extends Component
         // Add debugging
         Log::info('resetSession called', [
             'showDiagnosisApproval' => $this->showDiagnosisApproval,
-            'diagnosisApproved' => $this->diagnosisApproved,
+            'showManualDiagnosisForm' => $this->showManualDiagnosisForm,
             'aiAnalysisEmpty' => empty($this->aiAnalysis)
         ]);
 
@@ -817,7 +872,10 @@ class VoiceAssistant extends Component
         $this->processingStage = '';
         $this->showConfirmation = false;
         $this->showDiagnosisApproval = false;
-        $this->diagnosisApproved = false;
+        $this->showManualDiagnosisForm = false;
+        $this->manualDiagnosisText = '';
+        $this->aiResultId = null;
+        $this->diagnosisCreated = false;
         $this->resetChartFields();
 
         // Don't reset selectedPatient and new patient fields to maintain user selection
