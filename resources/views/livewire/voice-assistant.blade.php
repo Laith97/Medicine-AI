@@ -22,18 +22,6 @@
         </div>
     </div>
 
-    <!-- Success Message -->
-    @if (session()->has('success'))
-        <div class="row mb-3">
-            <div class="col-12">
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            </div>
-        </div>
-    @endif
-
     <!-- Patient Selection -->
     <div class="row mb-4">
         <div class="col-12">
@@ -52,21 +40,6 @@
                             <option value="{{ $patient['id'] }}">{{ $patient['name'] }} ({{ $patient['age'] }}y, {{ ucfirst($patient['gender']) }})</option>
                         @endforeach
                     </select>
-
-                    <!-- Debug Info (remove in production) -->
-                    @if(config('app.debug'))
-                        {{-- <small class="text-muted mt-2 d-block">
-                            Debug: Selected Patient = {{ $selectedPatient ?? 'null' }} |
-                            Show Form = {{ $showNewPatientForm ? 'true' : 'false' }} |
-                            Patients Count = {{ count($patients) }}
-                        </small>
-                        <button wire:click="$set('showNewPatientForm', true)" class="btn btn-sm btn-warning mt-2">
-                            Debug: Force Show Form
-                        </button>
-                        <button wire:click="testLivewire" class="btn btn-sm btn-info mt-2 ms-2">
-                            Test Livewire
-                        </button> --}}
-                    @endif
                 </div>
             </div>
         </div>
@@ -217,14 +190,6 @@
                                 <small class="text-muted d-block mt-1">Please select a patient first</small>
                             @endif
 
-                            <!-- Debug Info (remove in production) -->
-                            @if(config('app.debug'))
-                                {{-- <small class="text-muted d-block mt-1">
-                                    Debug: Can Start Recording = {{ $this->canStartRecording ? 'true' : 'false' }} |
-                                    Selected Patient = {{ $selectedPatient ?? 'null' }} |
-                                    Is Recording = {{ $isRecording ? 'true' : 'false' }}
-                                </small> --}}
-                            @endif
                         @else
                             <button
                                 wire:click="stopSession"
@@ -239,6 +204,7 @@
                             wire:click="generateAnalysis"
                             class="btn btn-primary"
                             @if(empty($transcription) || $isProcessing) disabled @endif
+                            onclick="showProgressIndicator()"
                         >
                             @if($isProcessing)
                                 <div class="spinner-border spinner-border-sm me-2" role="status">
@@ -250,16 +216,6 @@
                                 Generate AI Analysis
                             @endif
                         </button>
-
-                        @if($aiAnalysis && !$diagnosisApproved)
-                            <button
-                                wire:click="showDiagnosisApproval"
-                                class="btn btn-success"
-                            >
-                                <i class="fas fa-check-circle me-2"></i>
-                                Approve Diagnosis
-                            </button>
-                        @endif
 
                         <button
                             wire:click="resetSession"
@@ -276,7 +232,49 @@
                         </a>
                     </div>
 
-                    <!-- AI Analysis Progress Indicator -->
+                    <!-- JavaScript-based Progress Indicator (shows immediately) -->
+                    <div id="jsProgressIndicator" class="mt-3" style="display: none; animation: fadeIn 0.5s ease-in;">
+                        <div class="card border-primary shadow-sm" style="background: linear-gradient(135deg, #f8f9ff, #ffffff); border-width: 2px;">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="spinner-border text-primary me-3" role="status" style="animation: spin 1s linear infinite, pulse 2s ease-in-out infinite;">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1 text-primary fw-bold">
+                                            <i class="fas fa-brain me-2" style="animation: pulse 2s ease-in-out infinite;"></i>
+                                            AI Analysis in Progress
+                                        </h6>
+                                        <p class="mb-0 text-muted small" id="jsProcessingStage">
+                                            Initializing AI analysis...
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Animated Progress Bar -->
+                                <div class="progress mt-3" style="height: 8px; border-radius: 10px; background-color: #e9ecef;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                         role="progressbar"
+                                         style="width: 100%; background: linear-gradient(45deg, #007bff, #0056b3); border-radius: 10px;">
+                                    </div>
+                                </div>
+
+                                <!-- Processing Time Indicator -->
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>
+                                        Estimated time: 10-30 seconds
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-robot me-1"></i>
+                                        AI Engine
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Analysis Progress Indicator (Livewire-based) -->
                     @if($isProcessing)
                         <div class="mt-3" style="animation: fadeIn 0.5s ease-in;">
                             <div class="card border-primary shadow-sm" style="background: linear-gradient(135deg, #f8f9ff, #ffffff); border-width: 2px;">
@@ -316,7 +314,7 @@
                                         </small>
                                         <small class="text-muted">
                                             <i class="fas fa-robot me-1"></i>
-                                            AI Engine: GPT-4
+                                            AI Engine
                                         </small>
                                     </div>
                                 </div>
@@ -361,7 +359,17 @@
             transition: all 0.3s ease-in-out;
         }
     </style>
-
+        <!-- Success Message -->
+    @if (session()->has('success'))
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        </div>
+    @endif
     <!-- Main Content Grid -->
     <div class="row">
         <!-- Left Column: Transcription -->
@@ -433,6 +441,25 @@
         </div>
     </div>
 
+    <!-- Approve Diagnosis Button -->
+    @if($aiAnalysis && !$diagnosisApproved)
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="d-flex justify-content-end">
+                    <button
+                        type="button"
+                        class="btn btn-success"
+                        data-bs-toggle="modal"
+                        data-bs-target="#diagnosisApprovalModal"
+                    >
+                        <i class="fas fa-check-circle me-2"></i>
+                        Approve Diagnosis
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- AI Analysis Section -->
     @if($aiAnalysis)
         <div class="row mb-4">
@@ -463,50 +490,54 @@
     @endif
 
     <!-- Diagnosis Approval Modal -->
-    @if($showDiagnosisApproval)
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-warning">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Approve Diagnosis for Patient Record
-                        </h5>
+    <div class="modal fade" id="diagnosisApprovalModal" tabindex="-1" aria-labelledby="diagnosisApprovalModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-warning">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="diagnosisApprovalModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Approve Diagnosis for Patient Record
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Review Before Approval:</strong> Please carefully review the AI analysis above. Once approved, this diagnosis will be saved to the patient's medical record and they will be able to view it from their account.
                     </div>
-                    <div class="card-body">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Review Before Approval:</strong> Please carefully review the AI analysis above. Once approved, this diagnosis will be saved to the patient's medical record and they will be able to view it from their account.
-                        </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <strong>Patient:</strong>
-                                @php
-                                    $selectedPatientData = collect($patients)->firstWhere('id', $selectedPatient);
-                                @endphp
-                                {{ $selectedPatientData ? $selectedPatientData['name'] : 'Unknown' }}
-                            </div>
-                            <div class="col-md-6">
-                                <strong>Session Date:</strong> {{ now()->format('M d, Y - H:i A') }}
-                            </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Patient:</strong>
+                            @php
+                                $selectedPatientData = collect($patients)->firstWhere('id', $selectedPatient);
+                            @endphp
+                            {{ $selectedPatientData ? $selectedPatientData['name'] : 'Unknown' }}
                         </div>
-
-                        <div class="d-flex gap-2">
-                            <button wire:click="approveDiagnosis" class="btn btn-success">
-                                <i class="fas fa-check-circle me-2"></i>
-                                Yes, Approve & Save to Patient Record
-                            </button>
-                            <button wire:click="rejectDiagnosis" class="btn btn-secondary">
-                                <i class="fas fa-times me-2"></i>
-                                Cancel - Continue Editing
-                            </button>
+                        <div class="col-md-6">
+                            <strong>Session Date:</strong> {{ now()->format('M d, Y - H:i A') }}
                         </div>
                     </div>
                 </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancel - Continue Editing
+                    </button>
+                    <button wire:click="approveDiagnosis" class="btn btn-success" wire:loading.attr="disabled" onclick="setTimeout(hideDiagnosisModal, 100)">
+                        <span wire:loading.remove>
+                            <i class="fas fa-check-circle me-2"></i>
+                            Yes, Approve & Save to Patient Record
+                        </span>
+                        <span wire:loading>
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            Processing...
+                        </span>
+                    </button>
+                </div>
             </div>
         </div>
-    @endif
+    </div>
 
     <!-- Confirmation Section -->
     @if($showConfirmation)
@@ -791,7 +822,19 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 console.log('Audio notification not available:', error);
             }
+
+            // Hide the JavaScript progress indicator
+            hideProgressIndicator();
         }
+
+        // Show/hide JavaScript progress indicator based on processing state
+        if (currentProcessingState && !previousProcessingState) {
+            // Processing just started - hide JS indicator after a delay since Livewire one should show
+            setTimeout(() => {
+                hideProgressIndicator();
+            }, 500);
+        }
+
         previousProcessingState = currentProcessingState;
     });
 
@@ -828,6 +871,62 @@ document.addEventListener('DOMContentLoaded', function() {
     if (userLang.startsWith('ar')) {
         document.getElementById('languageSelector').value = 'ar';
         setRecognitionLanguage('ar');
+    }
+
+    // Progress indicator functions
+    window.showProgressIndicator = function() {
+        const indicator = document.getElementById('jsProgressIndicator');
+        if (indicator) {
+            indicator.style.display = 'block';
+
+            // Simulate progress stages
+            const stages = [
+                'Initializing AI analysis...',
+                'Extracting medical data from transcription...',
+                'Analyzing medical content with AI...',
+                'Generating comprehensive medical analysis...',
+                'Processing results...'
+            ];
+
+            let currentStage = 0;
+            const stageElement = document.getElementById('jsProcessingStage');
+
+            const updateStage = () => {
+                if (currentStage < stages.length && indicator.style.display !== 'none') {
+                    stageElement.textContent = stages[currentStage];
+                    currentStage++;
+                    setTimeout(updateStage, 3000); // Update every 3 seconds
+                }
+            };
+
+            setTimeout(updateStage, 1000); // Start after 1 second
+        }
+    };
+
+    window.hideProgressIndicator = function() {
+        const indicator = document.getElementById('jsProgressIndicator');
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
+    };
+});
+
+// Function to hide the diagnosis approval modal
+function hideDiagnosisModal() {
+    const modalElement = document.getElementById('diagnosisApprovalModal');
+    if (modalElement) {
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+            modal.hide();
+        }
+    }
+}
+
+// Listen for Livewire updates to close the modal when diagnosis is approved
+document.addEventListener('livewire:updated', function () {
+    // Check if diagnosis was approved
+    if (@this.diagnosisApproved) {
+        hideDiagnosisModal();
     }
 });
 </script>

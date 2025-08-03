@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Diagnosis;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -383,6 +384,13 @@ class VoiceAssistant extends Component
 
             $this->aiAnalysis = $response['choices'][0]['message']['content'] ?? '';
 
+            // Add debugging
+            Log::info('AI Analysis generated', [
+                'aiAnalysisLength' => strlen($this->aiAnalysis),
+                'aiAnalysisEmpty' => empty($this->aiAnalysis),
+                'diagnosisApproved' => $this->diagnosisApproved
+            ]);
+
             $this->processingStage = 'Saving analysis results to database...';
 
             // Update database
@@ -403,6 +411,11 @@ class VoiceAssistant extends Component
 
             $this->processingStage = 'AI analysis completed successfully!';
 
+            // Add debugging after database update
+            Log::info('AI Analysis saved to database', [
+                'sessionId' => $this->sessionId
+            ]);
+
         } catch (\Exception $e) {
             $this->processingStage = 'AI analysis failed. Please try again.';
             \Log::error('AI analysis error: ' . $e->getMessage());
@@ -421,8 +434,15 @@ class VoiceAssistant extends Component
             return;
         }
 
+        // Force UI update by setting processing state first
         $this->isProcessing = true;
         $this->processingStage = 'Initializing AI analysis...';
+
+        // Force Livewire to update the UI immediately
+        $this->dispatch('$refresh');
+
+        // Add a small delay to ensure UI updates
+        usleep(100000); // 0.1 second delay
 
         // Set longer timeout for AI processing
         set_time_limit(120); // 2 minutes
@@ -692,12 +712,29 @@ class VoiceAssistant extends Component
     // Diagnosis Approval Methods
     public function showDiagnosisApproval()
     {
+        // Add debugging
+        Log::info('showDiagnosisApproval method called', [
+            'aiAnalysis' => !empty($this->aiAnalysis),
+            'selectedPatient' => $this->selectedPatient,
+            'diagnosisApproved' => $this->diagnosisApproved,
+            'showDiagnosisApproval' => $this->showDiagnosisApproval
+        ]);
+
         if (empty($this->aiAnalysis) || !$this->selectedPatient) {
             session()->flash('error', 'Please generate AI analysis and select a patient first.');
+            Log::info('showDiagnosisApproval method - conditions not met', [
+                'aiAnalysisEmpty' => empty($this->aiAnalysis),
+                'selectedPatient' => $this->selectedPatient
+            ]);
             return;
         }
 
         $this->showDiagnosisApproval = true;
+
+        // Add debugging for state change
+        Log::info('showDiagnosisApproval state changed', [
+            'showDiagnosisApproval' => $this->showDiagnosisApproval
+        ]);
     }
 
     public function approveDiagnosis()
@@ -711,7 +748,7 @@ class VoiceAssistant extends Component
         $diagnosis = Diagnosis::create([
             'doctor_id' => Auth::id(),
             'patient_id' => $this->selectedPatient,
-            'type' => 'voice_ai', // New type for voice-based AI diagnosis
+            'type' => 'ai', // Use 'ai' type for AI-based diagnosis
             'diagnosis_text' => $this->diagnosis ?: 'AI-generated diagnosis from voice consultation',
             'voice_transcript' => $this->transcription,
             'patient_data' => [
@@ -757,6 +794,13 @@ class VoiceAssistant extends Component
     // Updated resetSession to include new fields
     public function resetSession()
     {
+        // Add debugging
+        Log::info('resetSession called', [
+            'showDiagnosisApproval' => $this->showDiagnosisApproval,
+            'diagnosisApproved' => $this->diagnosisApproved,
+            'aiAnalysisEmpty' => empty($this->aiAnalysis)
+        ]);
+
         // Stop any ongoing recording first
         if ($this->isRecording) {
             $this->stopSession();
