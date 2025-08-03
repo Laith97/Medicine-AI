@@ -295,6 +295,35 @@
         border: 1px solid rgba(0,0,0,0.05);
     }
 
+    /* AI Assistant Results Styles */
+    .ai-assistant-result {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        border-left: 4px solid #17a2b8;
+        margin-bottom: 15px;
+    }
+
+    .ai-assistant-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 8px;
+    }
+
+    .ai-assistant-header h6 {
+        margin: 0;
+        color: #17a2b8;
+        font-weight: 600;
+    }
+
+    .ai-assistant-content {
+        color: #495057;
+        line-height: 1.6;
+    }
+
     .ai-summary h4 {
         color: #2c3e50;
         margin-top: 20px;
@@ -1828,6 +1857,17 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                                                     data-visit-number="{{ $record->visit_number ?? 1 }}"
                                                     data-record-id="{{ $record->id }}"
                                                     data-patient-key="{{ $record->patient_key }}"
+                                                    data-has-ai-assistant="{{ isset($record->ai_assistant_results) && $record->ai_assistant_results->count() > 0 ? 'true' : 'false' }}"
+                                                    @if(isset($record->ai_assistant_results) && $record->ai_assistant_results->count() > 0)
+                                                        data-ai-assistant-results="{{ htmlentities(json_encode($record->ai_assistant_results->map(function($result) {
+                                                            return [
+                                                                'id' => $result->id,
+                                                                'source' => $result->source,
+                                                                'ai_analysis' => $result->ai_analysis,
+                                                                'created_at' => $result->created_at->format('M d, Y H:i A')
+                                                            ];
+                                                        }))) }}"
+                                                    @endif
                                                     title="View Medical Report">
                                                 <i class="fas fa-eye"></i>
                                             </button>
@@ -1890,10 +1930,21 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                     <!-- Level 1: Core Analysis -->
                     <div class="medcura-level1">
                         <div class="level1-header level-header">
-                            <i class="fas fa-stethoscope me-2"></i>
-                            <span>Core Medical Analysis</span>
+                            <i class="fas fa-user-md me-2"></i>
+                            <span>Doctor's Diagnosis</span>
                         </div>
                         <div id="openaiReply" class="response-text"></div>
+                    </div>
+
+                    <!-- AI Assistant Results Section -->
+                    <div id="ai-assistant-section" class="medcura-ai-assistant" style="display: none;">
+                        <div class="level1-header level-header">
+                            <i class="fas fa-robot me-2"></i>
+                            <span>AI Assistant Analysis</span>
+                        </div>
+                        <div id="ai-assistant-content" class="response-text">
+                            <!-- AI assistant results will be populated here -->
+                        </div>
                     </div>
 
                     <!-- Level 2: Detailed Analysis (Initially Hidden) -->
@@ -2163,13 +2214,17 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             const visitNumber = $(element).data('visit-number') || 1;
             const recordId = $(element).data('record-id');
             const patientKey = $(element).data('patient-key');
+            const hasAiAssistant = $(element).data('has-ai-assistant') === 'true';
+            const aiAssistantResults = $(element).data('ai-assistant-results');
 
             console.log('View button clicked:', {
                 raw: raw ? 'Has data' : 'No data',
                 patientName: patientName,
                 visitNumber: visitNumber,
                 recordId: recordId,
-                patientKey: patientKey
+                patientKey: patientKey,
+                hasAiAssistant: hasAiAssistant,
+                aiAssistantResults: aiAssistantResults ? 'Has AI results' : 'No AI results'
             });
 
             // Check if we have all required data
@@ -2193,11 +2248,11 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             }
 
             // For buttons with response data
-            processResponse(raw, patientName, visitNumber, recordId, patientKey);
+            processResponse(raw, patientName, visitNumber, recordId, patientKey, hasAiAssistant, aiAssistantResults);
         }
 
         // Process and display the response
-        function processResponse(raw, patientName, visitNumber, recordId, patientKey) {
+        function processResponse(raw, patientName, visitNumber, recordId, patientKey, hasAiAssistant = false, aiAssistantResults = null) {
             console.log('Processing response for:', patientName, 'Visit:', visitNumber, 'Record ID:', recordId);
             console.log('Raw parameter received:', raw ? 'Has data' : 'No data');
 
@@ -2251,6 +2306,36 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
 
             // Display the formatted response
             $('#openaiReply').html(finalFormattedHTML);
+
+            // Handle AI Assistant Results
+            if (hasAiAssistant && aiAssistantResults) {
+                try {
+                    const aiResults = JSON.parse(aiAssistantResults);
+                    let aiAssistantHtml = '';
+
+                    aiResults.forEach((result, index) => {
+                        aiAssistantHtml += `
+                            <div class="ai-assistant-result mb-3">
+                                <div class="ai-assistant-header">
+                                    <h6><i class="fas fa-robot me-2"></i>AI Analysis ${index + 1} (${result.source})</h6>
+                                    <small class="text-muted">${result.created_at}</small>
+                                </div>
+                                <div class="ai-assistant-content">
+                                    ${formatAIResponse(result.ai_analysis)}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    $('#ai-assistant-content').html(aiAssistantHtml);
+                    $('#ai-assistant-section').show();
+                } catch (error) {
+                    console.error('Error parsing AI assistant results:', error);
+                    $('#ai-assistant-section').hide();
+                }
+            } else {
+                $('#ai-assistant-section').hide();
+            }
 
             // Sources section is hidden as requested
             try {

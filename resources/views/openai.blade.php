@@ -1446,6 +1446,49 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                         </form>
                     </div>
                 </div>
+
+                <!-- Manual Diagnosis Section -->
+                @if(session('ai_result_id') && session('patient_id'))
+                <div class="manual-diagnosis-section mt-4">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0">
+                                <i class="fas fa-user-md me-2"></i>Write Manual Diagnosis
+                            </h6>
+                            <small>Based on the AI analysis above, write your professional diagnosis</small>
+                        </div>
+                        <div class="card-body">
+                            <form id="manual-diagnosis-form" action="{{ route('openai.create-manual-diagnosis') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="ai_result_id" value="{{ session('ai_result_id') }}">
+                                <input type="hidden" name="patient_id" value="{{ session('patient_id') }}">
+
+                                <div class="mb-3">
+                                    <label for="diagnosis_text" class="form-label">
+                                        <strong>Your Professional Diagnosis:</strong>
+                                    </label>
+                                    <textarea name="diagnosis_text" id="diagnosis_text" class="form-control" rows="6"
+                                              placeholder="Write your professional diagnosis based on the AI analysis and your clinical judgment..."
+                                              required></textarea>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        This diagnosis will be saved to the patient's record and the AI analysis will be linked as supporting information.
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-secondary" onclick="$('#diagnosis_text').val('')">
+                                        <i class="fas fa-eraser me-1"></i>Clear
+                                    </button>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save me-1"></i>Save Diagnosis
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                @endif
                 </div>
             </div>
         </div>
@@ -4197,7 +4240,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
         const fileInput = document.getElementById('reports');
         const selectedFilesContainer = document.getElementById('selected-files');
         const fileStorageContainer = document.getElementById('file-storage-container');
-        const uploadStatus = document.getElementById('upload-status');
+         const uploadStatus = document.getElementById('upload-status');
         const addMoreFilesBtn = document.getElementById('add-more-files-btn');
         const uploadZone = document.querySelector('.upload-zone');
 
@@ -4767,3 +4810,4 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
     });
 </script>
     @endsection
+

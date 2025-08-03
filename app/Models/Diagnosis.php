@@ -12,12 +12,10 @@ class Diagnosis extends Model
     protected $fillable = [
         'doctor_id',
         'patient_id',
-        'type',
         'diagnosis_text',
         'voice_transcript',
         'voice_file_path',
         'patient_data',
-        'ai_response',
         'follow_up_count',
         'patient_notified',
         'patient_viewed_at',
@@ -56,6 +54,14 @@ class Diagnosis extends Model
     }
 
     /**
+     * Get the AI assistant results linked to this diagnosis
+     */
+    public function aiAssistantResults()
+    {
+        return $this->hasMany(AiAssistantResult::class);
+    }
+
+    /**
      * Check if patient can ask more follow-up questions
      */
     public function canAskFollowUp()
@@ -90,18 +96,10 @@ class Diagnosis extends Model
     }
 
     /**
-     * Check if this is an AI diagnosis
+     * Check if this diagnosis has AI assistant results
      */
-    public function isAiDiagnosis()
+    public function hasAiAssistantResults()
     {
-        return $this->type === 'ai';
-    }
-
-    /**
-     * Check if this is a manual diagnosis
-     */
-    public function isManualDiagnosis()
-    {
-        return $this->type === 'manual';
+        return $this->aiAssistantResults()->exists();
     }
 }

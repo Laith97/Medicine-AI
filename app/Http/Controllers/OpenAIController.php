@@ -9,6 +9,7 @@ use App\Models\Review;
 use App\Models\OpenAIUsage;
 use App\Models\User;
 use App\Models\Diagnosis;
+use App\Models\AiAssistantResult;
 use App\Mail\UsageWarning;
 use App\Mail\PatientAccountCreated;
 use App\Services\SmsService;
@@ -241,17 +242,14 @@ class OpenAIController extends Controller
 
                 $filteredMessage = $this->filterReponse($rawMessage);
 
-                // Create AI diagnosis record
-                $diagnosis = $this->createAIDiagnosis($patient, $filteredMessage, $request);
-
-                // Send notifications if new patient
-                if ($isNewPatient) {
-                    $this->sendPatientNotifications($patient, $diagnosis);
-                }
+                // Create AI assistant result record
+                $aiResult = $this->createAIAssistantResult($patient, $filteredMessage, $request);
 
                 return redirect()->back()->with([
                     'openai_result' => $filteredMessage,
-                    'success' => 'AI diagnosis completed successfully!' . ($isNewPatient ? ' Patient has been notified via email and SMS.' : ''),
+                    'ai_result_id' => $aiResult->id,
+                    'patient_id' => $patient->id,
+                    'success' => 'AI analysis completed successfully!' . ($isNewPatient ? ' New patient created.' : ''),
                 ]);
 
             }
@@ -388,12 +386,7 @@ class OpenAIController extends Controller
 
             $filteredMessage = $this->filterReponse($rawMessage);
             // Create AI diagnosis record
-            $diagnosis = $this->createAIDiagnosis($patient, $filteredMessage, $request);
-
-            // Send notifications if new patient
-            if ($isNewPatient) {
-                $this->sendPatientNotifications($patient, $diagnosis);
-            }
+            $aiResult = $this->createAIAssistantResult($patient, $filteredMessage, $request);
 
             // Create a conversation ID for follow-up messages
             $conversationId = uniqid('conv_');
@@ -409,7 +402,10 @@ class OpenAIController extends Controller
 
             return redirect()->back()->with([
                 'openai_result' => $filteredMessage,
+                'ai_result_id' => $aiResult->id,
+                'patient_id' => $patient->id,
                 'conversation_id' => $conversationId,
+                'success' => 'AI analysis completed successfully!' . ($isNewPatient ? ' New patient created.' : ''),
             ]);
         } catch (\Exception $e) {
             \Log::error('=== EXCEPTION IN FORM SUBMISSION ===');
@@ -497,13 +493,8 @@ class OpenAIController extends Controller
 
                 $lastMessage = $this->filterReponse($lastMessage);
 
-                // Create AI diagnosis record
-                $diagnosis = $this->createAIDiagnosis($patient, $lastMessage, $request);
-
-                // Send notifications if new patient
-                if ($isNewPatient) {
-                    $this->sendPatientNotifications($patient, $diagnosis);
-                }
+                // Create AI assistant result record
+                $aiResult = $this->createAIAssistantResult($patient, $lastMessage, $request);
 
                 // Get the conversation ID from session
                 $conversationId = session('conversation_id');
@@ -519,7 +510,10 @@ class OpenAIController extends Controller
 
                 return redirect()->back()->with([
                     'openai_result' => $lastMessage,
+                    'ai_result_id' => $aiResult->id,
+                    'patient_id' => $patient->id,
                     'conversation_id' => $conversationId,
+                    'success' => 'AI analysis completed successfully!' . ($isNewPatient ? ' New patient created.' : ''),
                 ]);
             } else if ($runStatus['status'] === 'failed') {
                 \Log::error("Run failed: " . json_encode($runStatus));
@@ -1067,9 +1061,9 @@ class OpenAIController extends Controller
     }
 
     /**
-     * Create AI diagnosis record
+     * Create AI assistant result record
      */
-    private function createAIDiagnosis($patient, $aiResponse, $request)
+    private function createAIAssistantResult($patient, $aiResponse, $request)
     {
         // Collect patient data for the diagnosis
         $patientData = [
@@ -1112,16 +1106,70 @@ class OpenAIController extends Controller
             'physician_notes' => $request->physician_notes,
         ];
 
-        // Create diagnosis record
-        $diagnosis = Diagnosis::create([
+        // Create AI assistant result record
+        $aiResult = AiAssistantResult::create([
             'doctor_id' => Auth::id(),
             'patient_id' => $patient->id,
-            'type' => 'ai',
-            'diagnosis_text' => $aiResponse,
+            'source' => 'ai_diagnosis',
+            'ai_analysis' => $aiResponse,
             'patient_data' => $patientData,
+            'status' => 'pending',
         ]);
 
-        return $diagnosis;
+        return $aiResult;
+    }
+
+    /**
+     * Create manual diagnosis and link AI assistant result
+     */
+    public function createManualDiagnosis(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'ai_result_id' => 'required|exists:ai_assistant_results,id',
+            'patient_id' => 'required|exists:users,id',
+            'diagnosis_text' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            // Get the AI assistant result
+            $aiResult = AiAssistantResult::findOrFail($request->ai_result_id);
+
+            // Verify the doctor owns this AI result
+            if ($aiResult->doctor_id !== Auth::id()) {
+                abort(403, 'Access denied.');
+            }
+
+            // Get the patient
+            $patient = User::findOrFail($request->patient_id);
+
+            // Create the manual diagnosis
+            $diagnosis = Diagnosis::create([
+                'doctor_id' => Auth::id(),
+                'patient_id' => $patient->id,
+                'diagnosis_text' => $request->diagnosis_text,
+                'patient_data' => $aiResult->patient_data, // Use the same patient data from AI analysis
+            ]);
+
+            // Link the AI result to this diagnosis
+            $aiResult->linkToDiagnosis($diagnosis->id);
+
+            // Send notifications if this is a new patient
+            if ($patient->wasRecentlyCreated || !$patient->password) {
+                $this->sendPatientNotifications($patient, $diagnosis);
+                $diagnosis->update(['patient_notified' => true]);
+            }
+
+            return redirect()->route('diagnosis.show', $diagnosis)
+                ->with('success', 'Manual diagnosis created successfully and linked to AI analysis!');
+
+        } catch (\Exception $e) {
+            \Log::error('Manual diagnosis creation failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to create diagnosis. Please try again.')->withInput();
+        }
     }
 
     /**
@@ -1665,9 +1713,9 @@ class OpenAIController extends Controller
             ]);
         }
 
-        // Get Diagnosis records (new format) - both AI and manual
+        // Get Diagnosis records (new format) - only manual diagnoses with linked AI assistant results
         if ($user->isDoctor()) {
-            $diagnosisRecords = Diagnosis::with(['patient', 'doctor'])
+            $diagnosisRecords = Diagnosis::with(['patient', 'doctor', 'aiAssistantResults'])
                 ->where('doctor_id', $user->id)
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -1683,8 +1731,9 @@ class OpenAIController extends Controller
                     'gender' => $patientData['patient_gender'] ?? $record->patient->gender ?? 'N/A',
                     'height' => $patientData['height'] ?? 'N/A',
                     'weight' => $patientData['weight'] ?? 'N/A',
-                    'type' => $record->type, // 'ai' or 'manual'
-                    'ai_response' => $record->diagnosis_text ?? $record->ai_response ?? 'No diagnosis available',
+                    'type' => 'manual', // All diagnoses are now manual
+                    'ai_response' => $record->diagnosis_text ?? 'No diagnosis available',
+                    'ai_assistant_results' => $record->aiAssistantResults,
                     'created_at' => $record->created_at,
                     'updated_at' => $record->updated_at,
                     'visit_number' => 1, // Will be calculated later if needed
@@ -1797,7 +1846,7 @@ class OpenAIController extends Controller
             ->get();
 
         // Get diagnosis records where user is either doctor or patient
-        $diagnosisRecords = Diagnosis::with(['doctor', 'patient'])
+        $diagnosisRecords = Diagnosis::with(['doctor', 'patient', 'aiAssistantResults'])
             ->where(function($query) {
                 $query->where('doctor_id', auth()->id())
                       ->orWhere('patient_id', auth()->id());
@@ -1817,7 +1866,8 @@ class OpenAIController extends Controller
             $record->age = $patient ? $patient->age : null;
             $record->gender = $patient ? $patient->gender : null;
             $record->symptoms = $patientData['symptoms'] ?? '';
-            $record->ai_response = $diagnosis->ai_response ?? $diagnosis->diagnosis_text;
+            $record->ai_response = $diagnosis->diagnosis_text;
+            $record->ai_assistant_results = $diagnosis->aiAssistantResults;
             $record->created_at = $diagnosis->created_at;
             $record->user_id = $diagnosis->doctor_id; // For compatibility
             $record->patient_key = $patient ? md5($patient->name . '-' . $patient->age . '-' . $patient->gender . '-' . $diagnosis->doctor_id) : 'unknown-' . $diagnosis->id;
