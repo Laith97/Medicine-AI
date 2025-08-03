@@ -594,7 +594,7 @@
                                         </li>
 
                                         <li class="menu-item {{ request()->routeIs('diagnosis.*') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('diagnosis.index') }}"><div>Manual Diagnoses</div></a>
+                                            <a class="menu-link" href="{{ route('diagnosis.index') }}"><div>Diagnoses</div></a>
                                         </li>
                                         <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
                                             <a class="menu-link" href="{{ route('cases') }}"><div>Patient Cases</div></a>
