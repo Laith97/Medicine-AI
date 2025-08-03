@@ -169,7 +169,7 @@ class DiagnosisController extends Controller
             $diagnosis->markAsViewed();
         }
 
-        $diagnosis->load(['doctor', 'patient', 'followUps']);
+        $diagnosis->load(['doctor', 'patient', 'followUps', 'aiAssistantResults']);
 
         return view('diagnosis.show', compact('diagnosis'));
     }
