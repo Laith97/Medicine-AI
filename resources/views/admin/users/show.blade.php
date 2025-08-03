@@ -7,43 +7,35 @@
     .admin-page {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         min-height: 100vh;
-        padding: 2rem 0;
-    }
-
-    .admin-header {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        color: white;
-        padding: 2rem;
-        border-radius: 20px;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(44, 62, 80, 0.3);
+        padding: 1rem 0;
     }
 
     .info-card {
         background: white;
-        border-radius: 15px;
-        padding: 2rem;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
         border: none;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
 
     .user-avatar-large {
-        width: 80px;
-        height: 80px;
-        background: #DE6262;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
         font-weight: 700;
-        font-size: 2rem;
+        font-size: 1.5rem;
         margin-bottom: 1rem;
+        box-shadow: 0 4px 12px rgba(222, 98, 98, 0.3);
     }
 
     .info-item {
-        padding: 1rem 0;
+        padding: 0.75rem 0;
         border-bottom: 1px solid #f1f3f4;
     }
 

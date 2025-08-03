@@ -94,14 +94,28 @@
                                     <div class="form-text mb-2">Select which pages should be restricted when the user has unpaid invoices:</div>
                                     <div class="row">
                                         @foreach($availablePages as $route => $name)
-                                            <div class="col-md-6">
+                                            <div class="col-md-6 mb-2">
                                                 <div class="form-check">
                                                     <input type="checkbox" name="restricted_pages[]" value="{{ $route }}" 
                                                            class="form-check-input @error('restricted_pages') is-invalid @enderror" 
                                                            id="page_{{ $route }}"
                                                            {{ in_array($route, old('restricted_pages', $setting->restricted_pages ?? [])) ? 'checked' : '' }}>
                                                     <label class="form-check-label" for="page_{{ $route }}">
-                                                        {{ $name }}
+                                                        <strong>{{ $name }}</strong>
+                                                        @php
+                                                            $routeMapping = [
+                                                                'ask-ai' => ['ask-ai', 'openai.respond', 'openai.follow-up', 'patient.summary'],
+                                                                'cases' => ['cases'],
+                                                                'dashboard' => ['dashboard'],
+                                                                'appointments' => ['appointments.index', 'appointments.show', 'appointments.cancel', 'appointments.reschedule', 'appointments.calendar.events'],
+                                                                'reviews' => ['reviews.index', 'reviews.show', 'reviews.create', 'reviews.store', 'reviews.edit', 'reviews.update', 'reviews.destroy', 'appointments.review'],
+                                                                'settings' => ['settings', 'settings.update'],
+                                                                'profile.edit' => ['profile.edit', 'profile.update', 'profile.destroy'],
+                                                            ];
+                                                        @endphp
+                                                        @if(isset($routeMapping[$route]))
+                                                            <br><small class="text-muted">Includes: {{ implode(', ', $routeMapping[$route]) }}</small>
+                                                        @endif
                                                     </label>
                                                 </div>
                                             </div>
@@ -110,6 +124,9 @@
                                     @error('restricted_pages')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
+                                    <div class="alert alert-info mt-2">
+                                        <small><i class="fas fa-info-circle"></i> <strong>Note:</strong> When a page is selected, all related routes (including POST/PUT requests) will also be restricted.</small>
+                                    </div>
                                 </div>
 
                                 <div class="mb-3">

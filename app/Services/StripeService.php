@@ -187,12 +187,14 @@ class StripeService
             ]
         );
 
-        // Update user subscription status
-        $user->update([
-            'current_plan' => $planName,
-            'subscription_active' => true,
-            'subscription_ends_at' => $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_end'),
-        ]);
+        // Update user subscription status via MonthlyInvoiceSetting
+        if ($user->monthlyInvoiceSetting) {
+            $user->monthlyInvoiceSetting->update([
+                'subscription_starts_at' => $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_start'),
+                'subscription_ends_at' => $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_end'),
+                'is_active' => true,
+            ]);
+        }
 
         // Send confirmation email
         $subscription = Subscription::where('stripe_subscription_id', $stripeSubscription->id)->first();
@@ -229,11 +231,13 @@ class StripeService
             'canceled_at' => $stripeSubscription->canceled_at ? \Carbon\Carbon::createFromTimestamp($stripeSubscription->canceled_at) : null,
         ]);
 
-        // Update user status
-        $subscription->user->update([
-            'subscription_active' => $stripeSubscription->status === 'active',
-            'subscription_ends_at' => $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_end'),
-        ]);
+        // Update user status via MonthlyInvoiceSetting
+        if ($subscription->user->monthlyInvoiceSetting) {
+            $subscription->user->monthlyInvoiceSetting->update([
+                'is_active' => $stripeSubscription->status === 'active',
+                'subscription_ends_at' => $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_end'),
+            ]);
+        }
 
         Log::info("Subscription updated: {$subscriptionData['id']}");
     }
@@ -255,11 +259,13 @@ class StripeService
             'canceled_at' => now(),
         ]);
 
-        // Update user to free plan
-        $subscription->user->update([
-            'current_plan' => 'free',
-            'subscription_active' => false,
-        ]);
+        // Update user subscription status via MonthlyInvoiceSetting
+        if ($subscription->user->monthlyInvoiceSetting) {
+            $subscription->user->monthlyInvoiceSetting->update([
+                'is_active' => false,
+                'subscription_ends_at' => now(),
+            ]);
+        }
 
         Log::info("Subscription canceled: {$subscriptionData['id']}");
     }
@@ -302,9 +308,12 @@ class StripeService
             'canceled_at' => now(),
         ]);
 
-        $subscription->user->update([
-            'subscription_active' => false,
-        ]);
+        // Update user subscription status via MonthlyInvoiceSetting
+        if ($subscription->user->monthlyInvoiceSetting) {
+            $subscription->user->monthlyInvoiceSetting->update([
+                'is_active' => false,
+            ]);
+        }
     }
 
     /**
@@ -425,17 +434,21 @@ class StripeService
     public function getSubscriptionUsage(User $user): array
     {
         $monthlyUsage = $user->getMonthlyTokenUsage();
-        $planConfig = $user->getPlanConfig();
-        $tokenLimit = $planConfig['token_limit'] ?? 0;
+        $monthlyCost = $user->getMonthlyCost();
+        $setting = $user->monthlyInvoiceSetting;
         
         return [
             'monthly_usage' => $monthlyUsage,
-            'token_limit' => $tokenLimit,
-            'remaining_tokens' => $user->getRemainingTokens(),
-            'usage_percentage' => $tokenLimit > 0 ? ($monthlyUsage / $tokenLimit) * 100 : 0,
-            'plan_name' => $user->current_plan,
-            'subscription_active' => $user->subscription_active,
-            'subscription_ends_at' => $user->subscription_ends_at,
+            'monthly_cost' => $monthlyCost,
+            'cost_limit' => $user->monthly_cost_limit ?? 0,
+            'remaining_cost_allowance' => $user->getRemainingCostAllowance(),
+            'cost_usage_percentage' => $user->getCostUsagePercentage(),
+            'subscription_status' => $setting ? $setting->getSubscriptionStatus() : 'setup_pending',
+            'subscription_active' => $user->hasActiveSubscription(),
+            'subscription_ends_at' => $user->getSubscriptionEndDate(),
+            'monthly_price' => $setting->monthly_price ?? 0,
+            'yearly_price' => $setting->yearly_price ?? 0,
+            'billing_amount' => $setting->billing_amount ?? 0,
         ];
     }
 

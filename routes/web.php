@@ -25,6 +25,7 @@ use App\Http\Controllers\Doctor\TestimonialController;
 use App\Http\Controllers\Doctor\AnalyticsController;
 use App\Http\Controllers\PublicChatController;
 use App\Http\Controllers\Admin\MonthlyInvoiceController;
+use App\Http\Controllers\Admin\SubscriptionPlanController;
 use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Route;
 
@@ -240,6 +241,36 @@ Route::middleware('auth')->group(function () {
     // Access restriction routes
     Route::get('/access/restricted', [App\Http\Controllers\AccessRestrictionController::class, 'restricted'])->name('access.restricted');
     Route::get('/access/check-status', [App\Http\Controllers\AccessRestrictionController::class, 'checkStatus'])->name('access.check-status');
+    
+    // Test route to verify restriction system
+    Route::get('/test/restriction-status', function() {
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json(['error' => 'Not authenticated']);
+        }
+        
+        $setting = $user->monthlyInvoiceSetting;
+        $testRoutes = ['ask-ai', 'cases', 'dashboard', 'appointments', 'reviews', 'settings', 'profile.edit'];
+        
+        $results = [];
+        foreach ($testRoutes as $route) {
+            $results[$route] = [
+                'is_restricted' => $user->isPageRestricted($route),
+                'user_is_restricted' => $user->isRestricted(),
+                'configured_pages' => $setting ? $setting->restricted_pages : null,
+            ];
+        }
+        
+        return response()->json([
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'is_restricted' => $user->isRestricted(),
+            'setting_exists' => !!$setting,
+            'restriction_active' => $setting ? $setting->is_restricted : false,
+            'configured_restricted_pages' => $setting ? $setting->restricted_pages : null,
+            'route_tests' => $results,
+        ]);
+    })->name('test.restriction-status');
 });
 
 
@@ -405,6 +436,16 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::get('/system-settings', [AdminController::class, 'systemSettings'])->name('system-settings');
     Route::post('/system-settings', [AdminController::class, 'updateSystemSettings'])->name('system-settings.update');
 
+    // Subscription plan management
+    Route::resource('subscription-plans', SubscriptionPlanController::class);
+    Route::post('/subscription-plans/{subscriptionPlan}/toggle-active', [SubscriptionPlanController::class, 'toggleActive'])->name('subscription-plans.toggle-active');
+
+    // User pricing management
+    Route::get('/user-pricing', [App\Http\Controllers\Admin\UserPricingController::class, 'index'])->name('user-pricing.index');
+    Route::get('/user-pricing/{user}/edit', [App\Http\Controllers\Admin\UserPricingController::class, 'edit'])->name('user-pricing.edit');
+    Route::put('/user-pricing/{user}', [App\Http\Controllers\Admin\UserPricingController::class, 'update'])->name('user-pricing.update');
+    Route::post('/user-pricing/bulk-update', [App\Http\Controllers\Admin\UserPricingController::class, 'bulkUpdate'])->name('user-pricing.bulk-update');
+
     // SMS settings with country-based provider management
     Route::get('/sms-settings', [AdminController::class, 'smsSettings'])->name('sms-settings');
     Route::post('/sms-settings/assign-countries', [AdminController::class, 'assignCountriesToProvider'])->name('sms-settings.assign-countries');
@@ -446,6 +487,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
 });
 
 require __DIR__.'/auth.php';

@@ -80,7 +80,7 @@
                                     <h6>Invoice Information:</h6>
                                     <p class="mb-1"><strong>Invoice #:</strong> {{ $invoice->id }}</p>
                                     <p class="mb-1"><strong>Stripe ID:</strong> {{ $invoice->stripe_invoice_id }}</p>
-                                    <p class="mb-1"><strong>Date:</strong> {{ $invoice->created_at->format('M d, Y') }}</p>
+                                    <p class="mb-1"><strong>Date:</strong> {{ $invoice->created_at ? $invoice->created_at->format('M d, Y') : 'Unknown' }}</p>
                                     @if($invoice->due_date)
                                         <p class="mb-1"><strong>Due Date:</strong> {{ $invoice->due_date->format('M d, Y') }}</p>
                                     @endif
@@ -91,7 +91,7 @@
                                         </span>
                                     </p>
                                     @if($invoice->paid_at)
-                                        <p class="mb-1"><strong>Paid At:</strong> {{ $invoice->paid_at->format('M d, Y g:i A') }}</p>
+                                        <p class="mb-1"><strong>Paid At:</strong> {{ $invoice->paid_at ? $invoice->paid_at->format('M d, Y g:i A') : 'Unknown' }}</p>
                                     @endif
                                 </div>
                             </div>
@@ -116,10 +116,10 @@
                                         <tbody>
                                             @foreach($invoice->line_items as $item)
                                                 <tr>
-                                                    <td>{{ $item['description'] }}</td>
+                                                    <td>{{ $item['description'] ?? 'N/A' }}</td>
                                                     <td class="text-center">{{ $item['quantity'] ?? 1 }}</td>
-                                                    <td class="text-end">${{ number_format(($item['unit_amount'] ?? $item['amount']) / 100, 2) }}</td>
-                                                    <td class="text-end">${{ number_format($item['amount'] / 100, 2) }}</td>
+                                                    <td class="text-end">${{ number_format(($item['unit_amount'] ?? $item['amount'] ?? 0) / 100, 2) }}</td>
+                                                    <td class="text-end">${{ number_format(($item['amount'] ?? 0) / 100, 2) }}</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
@@ -148,7 +148,7 @@
                                 <div class="alert alert-success">
                                     <i class="fas fa-check-circle"></i>
                                     <strong>Payment Received!</strong>
-                                    This invoice was paid on {{ $invoice->paid_at->format('M d, Y \a\t g:i A') }}.
+                                    This invoice was paid on {{ $invoice->paid_at ? $invoice->paid_at->format('M d, Y \a\t g:i A') : 'Unknown Date' }}.
                                 </div>
                             @elseif($invoice->status === 'void')
                                 <div class="alert alert-secondary">
@@ -160,14 +160,14 @@
                                 <div class="alert alert-danger">
                                     <i class="fas fa-exclamation-triangle"></i>
                                     <strong>Overdue!</strong>
-                                    This invoice was due on {{ $invoice->due_date->format('M d, Y') }} 
-                                    ({{ $invoice->due_date->diffForHumans() }}).
+                                    This invoice was due on {{ $invoice->due_date ? $invoice->due_date->format('M d, Y') : 'Unknown Date' }} 
+                                    @if($invoice->due_date)({{ $invoice->due_date->diffForHumans() }})@endif.
                                 </div>
                             @elseif($invoice->isDueSoon())
                                 <div class="alert alert-warning">
                                     <i class="fas fa-clock"></i>
                                     <strong>Due Soon!</strong>
-                                    This invoice is due {{ $invoice->due_date->diffForHumans() }}.
+                                    This invoice is due {{ $invoice->due_date ? $invoice->due_date->diffForHumans() : 'soon' }}.
                                 </div>
                             @endif
                         </div>
@@ -254,8 +254,8 @@
                                 <span>{{ $invoice->user->email }}</span>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
-                                <span>Current Plan:</span>
-                                <span>{{ $invoice->user->current_plan ?? 'None' }}</span>
+                                <span>Subscription Plan:</span>
+                                <span>{{ $invoice->user->monthlyInvoiceSetting ? 'Custom Plan' : 'None' }}</span>
                             </div>
                             <div class="d-flex justify-content-between">
                                 <span>Total Invoices:</span>
@@ -276,17 +276,41 @@
                             </div>
                             <div class="card-body">
                                 @foreach($invoice->metadata as $key => $value)
+                                    @if($key !== 'stripe_data') {{-- Skip large stripe_data to prevent array conversion errors --}}
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>{{ ucwords(str_replace('_', ' ', $key)) }}:</span>
+                                            <span>
+                                                @if(is_array($value))
+                                                    @if(count($value) > 10)
+                                                        <small class="text-muted">[Large data set - {{ count($value) }} items]</small>
+                                                    @else
+                                                        {{ implode(', ', array_map(function($item) { return is_array($item) ? '[Array]' : $item; }, $value)) }}
+                                                    @endif
+                                                @elseif(is_object($value))
+                                                    <small class="text-muted">[Object]</small>
+                                                @else
+                                                    {{ $value }}
+                                                @endif
+                                            </span>
+                                        </div>
+                                    @endif
+                                @endforeach
+                                
+                                @if(isset($invoice->metadata['stripe_data']))
                                     <div class="d-flex justify-content-between mb-2">
-                                        <span>{{ ucwords(str_replace('_', ' ', $key)) }}:</span>
+                                        <span>Stripe Data:</span>
                                         <span>
-                                            @if(is_array($value))
-                                                {{ implode(', ', $value) }}
-                                            @else
-                                                {{ $value }}
-                                            @endif
+                                            <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#stripeDataCollapse">
+                                                View Details
+                                            </button>
                                         </span>
                                     </div>
-                                @endforeach
+                                    <div class="collapse" id="stripeDataCollapse">
+                                        <div class="card card-body">
+                                            <pre class="small text-muted" style="max-height: 300px; overflow-y: auto;">{{ json_encode($invoice->metadata['stripe_data'], JSON_PRETTY_PRINT) }}</pre>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @endif

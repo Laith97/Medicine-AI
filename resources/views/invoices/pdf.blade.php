@@ -141,7 +141,7 @@
             <div class="section-title">Invoice Details:</div>
             <div><strong>Invoice #:</strong> {{ $invoice->id }}</div>
             <div><strong>Stripe ID:</strong> {{ $invoice->stripe_invoice_id }}</div>
-            <div><strong>Date:</strong> {{ $invoice->created_at->format('M d, Y') }}</div>
+            <div><strong>Date:</strong> {{ $invoice->created_at ? $invoice->created_at->format('M d, Y') : 'Unknown' }}</div>
             @if($invoice->due_date)
                 <div><strong>Due Date:</strong> {{ $invoice->due_date->format('M d, Y') }}</div>
             @endif
@@ -244,12 +244,12 @@
     @if($invoice->isPaid())
         <div style="margin-top: 30px; padding: 15px; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px;">
             <strong style="color: #155724;">✓ Payment Received</strong><br>
-            This invoice was paid on {{ $invoice->paid_at->format('M d, Y \a\t g:i A') }}.
+            This invoice was paid on {{ $invoice->paid_at ? $invoice->paid_at->format('M d, Y \a\t g:i A') : 'Unknown Date' }}.
         </div>
     @elseif($invoice->isOverdue())
         <div style="margin-top: 30px; padding: 15px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px;">
             <strong style="color: #721c24;">⚠ Overdue</strong><br>
-            This invoice was due on {{ $invoice->due_date->format('M d, Y') }}.
+            This invoice was due on {{ $invoice->due_date ? $invoice->due_date->format('M d, Y') : 'Unknown Date' }}.
         </div>
     @endif
 

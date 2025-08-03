@@ -921,7 +921,63 @@
         </div>
 
         @auth
-            @if(Auth::user()->isRestricted())
+            <!-- Trial Status Banner -->
+            @if($trialInfo['is_in_trial'])
+                <div class="alert alert-info alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(13, 202, 240, 0.2);">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-gift fa-2x text-info"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="alert-heading mb-2">
+                                <i class="fas fa-clock me-2"></i>Free Trial Active
+                            </h5>
+                            <p class="mb-2">
+                                You have <strong>{{ $trialInfo['trial_days_remaining'] }} days</strong> remaining in your free trial. 
+                                Enjoy full access to all features!
+                            </p>
+                            <div class="d-flex gap-2">
+                                <a href="{{ route('subscription.pricing') }}" class="btn btn-info btn-sm">
+                                    <i class="fas fa-credit-card me-1"></i>View Pricing
+                                </a>
+                                <a href="{{ route('subscription.manage') }}" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-cog me-1"></i>Manage Subscription
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @elseif($trialInfo['has_active_subscription'])
+                <!-- Active Subscription Banner -->
+                <div class="alert alert-success alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(25, 135, 84, 0.2);">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="alert-heading mb-2">
+                                <i class="fas fa-star me-2"></i>Subscription Active
+                            </h5>
+                            <p class="mb-2">
+                                Your subscription is active and all features are available. 
+                                @if(Auth::user()->monthlyInvoiceSetting && Auth::user()->monthlyInvoiceSetting->subscription_ends_at)
+                                    <strong>Expires: {{ Auth::user()->monthlyInvoiceSetting->subscription_ends_at->format('M d, Y') }}</strong>
+                                @endif
+                            </p>
+                            <div class="d-flex gap-2">
+                                <a href="{{ route('subscription.manage') }}" class="btn btn-success btn-sm">
+                                    <i class="fas fa-cog me-1"></i>Manage Subscription
+                                </a>
+                                <a href="{{ route('invoices.index') }}" class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-file-invoice me-1"></i>View Invoices
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @elseif($trialInfo['trial_status'] === 'expired' && Auth::user()->isRestricted())
                 <!-- Restriction Warning -->
                 <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(220, 53, 69, 0.2);">
                     <div class="d-flex align-items-center">
@@ -930,9 +986,9 @@
                         </div>
                         <div class="flex-grow-1">
                             <h5 class="alert-heading mb-2">
-                                <i class="fas fa-exclamation-triangle me-2"></i>Account Access Restricted
+                                <i class="fas fa-exclamation-triangle me-2"></i>Free Trial Expired - Account Restricted
                             </h5>
-                            <p class="mb-2">{{ Auth::user()->getRestrictionMessage() }}</p>
+                            <p class="mb-2">Your free trial has ended. {{ Auth::user()->getRestrictionMessage() }}</p>
                             <div class="d-flex gap-2">
                                 <a href="{{ route('invoices.index') }}" class="btn btn-danger btn-sm">
                                     <i class="fas fa-credit-card me-1"></i> Pay Outstanding Invoices
@@ -957,7 +1013,7 @@
                                 <i class="fas fa-exclamation-triangle me-2"></i>Subscription Expired - Grace Period
                             </h5>
                             <p class="mb-2">
-                                <strong>Your subscription expired on {{ Auth::user()->getSubscriptionEndDate()->format('M d, Y') }}</strong>
+                                <strong>Your subscription expired on {{ Auth::user()->getSubscriptionEndDate() ? Auth::user()->getSubscriptionEndDate()->format('M d, Y') : 'Unknown Date' }}</strong>
                                 <br>
                                 You have <strong>{{ Auth::user()->getDaysRemainingInCurrentPeriod() }} days remaining</strong> in your grace period
                             </p>
@@ -985,7 +1041,7 @@
                                 <i class="fas fa-exclamation-triangle me-2"></i>Final Warning - Account Will Be Restricted Soon
                             </h5>
                             <p class="mb-2">
-                                <strong>Your subscription expired on {{ Auth::user()->getSubscriptionEndDate()->format('M d, Y') }}</strong>
+                                <strong>Your subscription expired on {{ Auth::user()->getSubscriptionEndDate() ? Auth::user()->getSubscriptionEndDate()->format('M d, Y') : 'Unknown Date' }}</strong>
                                 <br>
                                 You have <strong>{{ Auth::user()->getDaysRemainingInCurrentPeriod() }} days remaining</strong> before your account is restricted
                             </p>
@@ -1730,7 +1786,7 @@
                                     <td>
                                         <span class="badge bg-primary">{{ $group['visit_count'] }}</span>
                                     </td>
-                                    <td data-date="{{ $group['last_visit']->timestamp }}">{{ $group['last_visit']->format('M d, Y') }}</td>
+                                    <td data-date="{{ $group['last_visit']->timestamp }}">{{ $group['last_visit'] ? $group['last_visit']->format('M d, Y') : 'N/A' }}</td>
                                     <td>
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-sm btn-view-patient btn-primary-custom"

@@ -47,6 +47,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Sync invoice statuses every 4 hours
         $schedule->job(new SyncStripeInvoices())->everyFourHours();
+        
+        // Process expired trials daily at 1 AM
+        $schedule->command('trials:process-expired')->dailyAt('01:00');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
