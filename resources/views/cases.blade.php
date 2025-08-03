@@ -1707,6 +1707,79 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                 </div>
                 @endif
 
+                <!-- Patient List Table (Grouped by Patient) -->
+                @if($hasRecords && count($patientGroups) > 0)
+                <div class="subscription-card mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0"><i class="fas fa-users me-2"></i>Patient List</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="input-group input-group-sm me-2 d-inline-flex" style="width: 200px;">
+                                <input type="text" class="form-control" id="patient-search" placeholder="Search patients...">
+                                <button class="btn btn-outline-secondary" type="button" id="search-btn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-custom mb-0" id="patients-table">
+                            <thead>
+                                <tr>
+                                    <th><a href="#" class="sort-link" data-sort="name">Patient Name <i class="fas fa-sort"></i></a></th>
+                                    <th><a href="#" class="sort-link" data-sort="age">Age <i class="fas fa-sort"></i></a></th>
+                                    <th><a href="#" class="sort-link" data-sort="gender">Gender <i class="fas fa-sort"></i></a></th>
+                                    <th><a href="#" class="sort-link" data-sort="visits">Total Visits <i class="fas fa-sort"></i></a></th>
+                                    <th><a href="#" class="sort-link" data-sort="last-visit">Last Visit <i class="fas fa-sort"></i></a></th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($patientGroups as $key => $group)
+                                    <tr data-patient-key="{{ $key }}" data-visits="{{ count($group['visits']) }}" data-last-visit="{{ $group['last_visit']->timestamp }}">
+                                        <td>{{ $group['patient']->name ?? 'N/A' }}</td>
+                                        <td>{{ $group['patient']->age ?? 'N/A' }}</td>
+                                        <td>
+                                            <span class="badge" style="background-color: {{ $group['patient']->gender == 'male' ? '#3498db' : '#e74c3c' }}; color: white; border-radius: 15px; padding: 0.4rem 0.8rem;">
+                                                {{ ucfirst($group['patient']->gender ?? 'N/A') }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ $group['visit_count'] }}</span>
+                                        </td>
+                                        <td data-date="{{ $group['last_visit']->timestamp }}">{{ $group['last_visit'] ? $group['last_visit']->format('M d, Y') : 'N/A' }}</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-sm btn-view-patient btn-custom-primary"
+                                                        data-patient-key="{{ $key }}"
+                                                        data-patient-name="{{ $group['patient']->name }}"
+                                                        data-patient-age="{{ $group['patient']->age }}"
+                                                        data-patient-gender="{{ $group['patient']->gender }}">
+                                                    <i class="fas fa-eye me-1"></i>View
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="showing-entries">
+                            Showing <span id="showing-count">{{ count($patientGroups) }}</span> patients
+                        </div>
+                        <div class="table-pagination">
+                            <button class="btn btn-sm btn-outline-secondary me-1" id="prev-page" disabled>
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span id="current-page">1</span> / <span id="total-pages">1</span>
+                            <button class="btn btn-sm btn-outline-secondary ms-1" id="next-page" disabled>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                @endif
 
                 <!-- Patient Records Table -->
                 <div class="subscription-card">
@@ -1961,6 +2034,70 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Patient Details Modal -->
+<div class="modal fade" id="patientModal" tabindex="-1" aria-labelledby="patientModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content response-modal-content">
+            <div class="modal-header response-modal-header">
+                <h5 class="modal-title" id="patientModalLabel" style="color: #fff">Patient Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body response-modal-body">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="patient-info-card">
+                            <h6 class="text-muted">Patient Name</h6>
+                            <p class="patient-name fs-5 fw-bold">-</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="patient-info-card">
+                            <h6 class="text-muted">Age</h6>
+                            <p class="patient-age fs-5 fw-bold">-</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="patient-info-card">
+                            <h6 class="text-muted">Gender</h6>
+                            <p class="patient-gender fs-5 fw-bold">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="mb-3 border-bottom pb-2">Visit History</h6>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="visit-history-table">
+                        <thead>
+                            <tr>
+                                <th>Visit #</th>
+                                <th>Date</th>
+                                <th>Symptoms</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visit-history-body">
+                            <!-- Visit history will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="visit-details-section" class="mt-4" style="display: none;">
+                    <h6 class="mb-3 border-bottom pb-2">Visit Details</h6>
+                    <div id="visit-details-content">
+                        <!-- Visit details will be populated dynamically -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{{ route('ask-ai') }}" id="new-visit-btn" class="btn btn-custom-primary">
+                    <i class="fas fa-plus me-1"></i> New Visit
+                </a>
             </div>
         </div>
     </div>
@@ -3691,6 +3828,128 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     // Initialize follow-up chat when modal is shown
     $('#responseModal').on('shown.bs.modal', function () {
         setupFollowUpChat();
+    });
+
+    // Patient Table Functionality
+    const patientGroups = @json($patientGroups ?? []);
+    const allRecordsForPatients = @json($records ?? []);
+
+    // Patient search functionality
+    $('#patient-search').on('keyup', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        const table = document.getElementById('patients-table');
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+        for (let i = 0; i < rows.length; i++) {
+            const patientName = rows[i].cells[0].textContent.toLowerCase();
+            if (patientName.includes(searchTerm)) {
+                rows[i].style.display = '';
+            } else {
+                rows[i].style.display = 'none';
+            }
+        }
+    });
+
+    // Patient table sorting
+    $('.sort-link').on('click', function(e) {
+        e.preventDefault();
+        const sortBy = $(this).data('sort');
+        const table = document.getElementById('patients-table');
+        const tbody = table.getElementsByTagName('tbody')[0];
+        const rows = Array.from(tbody.getElementsByTagName('tr'));
+
+        rows.sort((a, b) => {
+            let aVal, bVal;
+
+            switch(sortBy) {
+                case 'name':
+                    aVal = a.cells[0].textContent.toLowerCase();
+                    bVal = b.cells[0].textContent.toLowerCase();
+                    break;
+                case 'age':
+                    aVal = parseInt(a.cells[1].textContent) || 0;
+                    bVal = parseInt(b.cells[1].textContent) || 0;
+                    break;
+                case 'gender':
+                    aVal = a.cells[2].textContent.toLowerCase();
+                    bVal = b.cells[2].textContent.toLowerCase();
+                    break;
+                case 'visits':
+                    aVal = parseInt(a.dataset.visits) || 0;
+                    bVal = parseInt(b.dataset.visits) || 0;
+                    break;
+                case 'last-visit':
+                    aVal = parseInt(a.dataset.lastVisit) || 0;
+                    bVal = parseInt(b.dataset.lastVisit) || 0;
+                    break;
+                default:
+                    return 0;
+            }
+
+            if (aVal < bVal) return -1;
+            if (aVal > bVal) return 1;
+            return 0;
+        });
+
+        // Clear tbody and append sorted rows
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+    });
+
+    // View patient details
+    $(document).on('click', '.btn-view-patient', function() {
+        const patientKey = $(this).data('patient-key');
+        const patientName = $(this).data('patient-name');
+        const patientAge = $(this).data('patient-age');
+        const patientGender = $(this).data('patient-gender');
+
+        // Update modal header
+        $('#patientModalLabel').text('Patient Details - ' + patientName);
+
+        // Update patient info
+        $('.patient-name').text(patientName || 'N/A');
+        $('.patient-age').text(patientAge || 'N/A');
+        $('.patient-gender').text(patientGender ? patientGender.charAt(0).toUpperCase() + patientGender.slice(1) : 'N/A');
+
+        // Find patient visits
+        const patientVisits = allRecordsForPatients.filter(record => {
+            const recordKey = record.patient_key || (record.name + '-' + record.age + '-' + record.gender);
+            return recordKey === patientKey;
+        });
+
+        // Populate visit history
+        const visitHistoryBody = document.getElementById('visit-history-body');
+        visitHistoryBody.innerHTML = '';
+
+        patientVisits.forEach((visit, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>Visit #${index + 1}</td>
+                <td>${new Date(visit.created_at).toLocaleDateString()}</td>
+                <td>${visit.symptoms || 'N/A'}</td>
+                <td>
+                    <button class="btn btn-sm btn-custom-secondary view-visit-details"
+                            data-visit-id="${visit.id}"
+                            data-visit-response="${encodeURIComponent(visit.ai_response || 'No diagnosis available')}">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                </td>
+            `;
+            visitHistoryBody.appendChild(row);
+        });
+
+        // Show modal
+        $('#patientModal').modal('show');
+    });
+
+    // View visit details
+    $(document).on('click', '.view-visit-details', function() {
+        const visitResponse = decodeURIComponent($(this).data('visit-response'));
+
+        const visitDetailsContent = document.getElementById('visit-details-content');
+        visitDetailsContent.innerHTML = `<div class="response-text">${visitResponse}</div>`;
+
+        document.getElementById('visit-details-section').style.display = 'block';
     });
 </script>
 

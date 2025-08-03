@@ -720,10 +720,10 @@ class OpenAIController extends Controller
                         'pain_description' => $request->pain_description,
                     ],
                     'is_existing_patient' => true,
-                    'patient_id' => $patientRecord->id,
-                    'previous_record_id' => $patientRecord->id, // Store the previous record ID for reference
+                    'patient_id' => $existingPatient->id,
+                    'previous_record_id' => $latestRecord->id ?? null, // Store the previous record ID for reference
                     'visit_count' => $visitCount,
-                    'current_visit_number' => $currentVisitNumber,
+                    'current_visit_number' => $visitCount + 1,
                     'previous_medical_history' => $previousMedicalHistory
                 ];
             }
@@ -1749,7 +1749,37 @@ class OpenAIController extends Controller
         // Keep as collection for the view (it expects count() method)
         $records = $allCases->values();
 
-        return view('cases', compact('records'));
+        // Prepare patient groups for the patients table (similar to dashboard)
+        $patientGroups = [];
+        foreach ($records as $record) {
+            $key = $record->patient_key ?? ($record->name . '-' . $record->age . '-' . $record->gender);
+
+            if (!isset($patientGroups[$key])) {
+                // Initialize with the first record
+                $patientGroups[$key] = [
+                    'patient' => $record,
+                    'visits' => [],
+                    'visit_count' => 0,
+                    'last_visit' => $record->created_at
+                ];
+            }
+
+            // Add this record to the visits array
+            $patientGroups[$key]['visits'][] = $record;
+            $patientGroups[$key]['visit_count']++;
+
+            // Update last visit date if this record is more recent
+            if ($record->created_at > $patientGroups[$key]['last_visit']) {
+                $patientGroups[$key]['last_visit'] = $record->created_at;
+            }
+        }
+
+        // Sort by most recent visit
+        uasort($patientGroups, function($a, $b) {
+            return $b['last_visit'] <=> $a['last_visit'];
+        });
+
+        return view('cases', compact('records', 'patientGroups'));
     }
     public function dashboard()
     {
@@ -1760,16 +1790,57 @@ class OpenAIController extends Controller
 
         $user = auth()->user();
 
-        // Filter records by the current authenticated user
-        $records = PatientAnalysis::with('user')
+        // Get records from both old PatientAnalysis and new Diagnosis systems
+        $patientAnalysisRecords = PatientAnalysis::with('user')
             ->where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Count only the current user's records for the past week
-        $weeklyCount = PatientAnalysis::where('user_id', auth()->id())
+        // Get diagnosis records where user is either doctor or patient
+        $diagnosisRecords = Diagnosis::with(['doctor', 'patient'])
+            ->where(function($query) {
+                $query->where('doctor_id', auth()->id())
+                      ->orWhere('patient_id', auth()->id());
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Transform diagnosis records to match PatientAnalysis structure for compatibility
+        $transformedDiagnosisRecords = $diagnosisRecords->map(function($diagnosis) {
+            $patientData = $diagnosis->patient_data ?? [];
+            $patient = $diagnosis->patient; // Get the related patient User model
+
+            // Create a pseudo PatientAnalysis object
+            $record = new \stdClass();
+            $record->id = $diagnosis->id;
+            $record->name = $patient ? $patient->name : 'Unknown Patient';
+            $record->age = $patient ? $patient->age : null;
+            $record->gender = $patient ? $patient->gender : null;
+            $record->symptoms = $patientData['symptoms'] ?? '';
+            $record->ai_response = $diagnosis->ai_response ?? $diagnosis->diagnosis_text;
+            $record->created_at = $diagnosis->created_at;
+            $record->user_id = $diagnosis->doctor_id; // For compatibility
+            $record->patient_key = $patient ? md5($patient->name . '-' . $patient->age . '-' . $patient->gender . '-' . $diagnosis->doctor_id) : 'unknown-' . $diagnosis->id;
+
+            return $record;
+        });
+
+        // Combine both record types
+        $records = $patientAnalysisRecords->concat($transformedDiagnosisRecords)->sortByDesc('created_at');
+
+        // Count records for the past week from both sources
+        $weeklyCountPA = PatientAnalysis::where('user_id', auth()->id())
             ->where('created_at', '>=', now()->subDays(7))
             ->count();
+
+        $weeklyCountDiag = Diagnosis::where(function($query) {
+                $query->where('doctor_id', auth()->id())
+                      ->orWhere('patient_id', auth()->id());
+            })
+            ->where('created_at', '>=', now()->subDays(7))
+            ->count();
+
+        $weeklyCount = $weeklyCountPA + $weeklyCountDiag;
 
         // Prepare chart data safely in the controller
         $chartData = [];
@@ -1866,10 +1937,10 @@ class OpenAIController extends Controller
         }
 
         // Add trial information - only show trial if user doesn't have active subscription
-        $hasActiveSubscription = $user->monthlyInvoiceSetting && 
-                                $user->monthlyInvoiceSetting->subscription_starts_at && 
+        $hasActiveSubscription = $user->monthlyInvoiceSetting &&
+                                $user->monthlyInvoiceSetting->subscription_starts_at &&
                                 !$user->monthlyInvoiceSetting->isSubscriptionExpired();
-        
+
         $trialInfo = [
             'is_in_trial' => $user->isInTrialPeriod() && !$hasActiveSubscription,
             'trial_days_remaining' => $user->getTrialDaysRemaining(),
