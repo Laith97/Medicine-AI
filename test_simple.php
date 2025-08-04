@@ -7,7 +7,7 @@ echo "=== Diagnosis Flow Implementation Test ===\n\n";
 $keyFiles = [
     'app/Models/AiAssistantResult.php' => 'AI Assistant Result Model',
     'database/migrations/2024_01_15_000000_create_ai_assistant_results_table.php' => 'Migration',
-    'resources/views/openai.blade.php' => 'AI Diagnosis Page',
+    'resources/views/openai.blade.php' => 'AI Assistant Page',
     'resources/views/livewire/voice-assistant.blade.php' => 'Voice Assistant Page',
     'resources/views/diagnosis/patient-index.blade.php' => 'Patient Index',
     'resources/views/diagnosis/patient-view.blade.php' => 'Patient View',

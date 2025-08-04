@@ -80,6 +80,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [App\Http\Controllers\VoiceAssistantController::class, 'index'])->name('index');
         Route::get('/history', [App\Http\Controllers\VoiceAssistantController::class, 'history'])->name('history');
         Route::get('/{transcription}', [App\Http\Controllers\VoiceAssistantController::class, 'show'])->name('show');
+
+        // AJAX routes for jQuery implementation
+        Route::post('/start-session', [App\Http\Controllers\VoiceAssistantController::class, 'startSession'])->name('start-session');
+        Route::post('/stop-session', [App\Http\Controllers\VoiceAssistantController::class, 'stopSession'])->name('stop-session');
+        Route::post('/handle-transcription', [App\Http\Controllers\VoiceAssistantController::class, 'handleTranscription'])->name('handle-transcription');
+        Route::post('/process-with-ai', [App\Http\Controllers\VoiceAssistantController::class, 'processWithAI'])->name('process-with-ai');
+        Route::post('/generate-ai-analysis', [App\Http\Controllers\VoiceAssistantController::class, 'generateAIAnalysis'])->name('generate-ai-analysis');
+        Route::post('/create-ai-result', [App\Http\Controllers\VoiceAssistantController::class, 'createAiAssistantResult'])->name('create-ai-result');
+        Route::post('/create-manual-diagnosis', [App\Http\Controllers\VoiceAssistantController::class, 'createManualDiagnosis'])->name('create-manual-diagnosis');
+        Route::post('/create-new-patient', [App\Http\Controllers\VoiceAssistantController::class, 'createNewPatient'])->name('create-new-patient');
+        Route::post('/reset-session', [App\Http\Controllers\VoiceAssistantController::class, 'resetSession'])->name('reset-session');
     });
 
     Route::get('/settings', [UserSettingsController::class, 'index'])->name('settings');
@@ -105,7 +116,6 @@ Route::middleware('auth')->group(function () {
             // Specific routes first
             Route::get('/my-diagnoses', [DiagnosisController::class, 'patientIndex'])->name('patient.index');
             Route::get('/{diagnosis}/view', [DiagnosisController::class, 'patientView'])->name('patient.view');
-            Route::post('/{diagnosis}/follow-up', [DiagnosisController::class, 'storeFollowUp'])->name('follow-up.store');
             Route::post('/{diagnosis}/review', [DiagnosisController::class, 'storeReview'])->name('review.store');
         });
 
@@ -119,6 +129,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/{diagnosis}', [DiagnosisController::class, 'show'])->name('show');
         });
 
+        // Routes accessible to both doctors and patients
+        Route::post('/{diagnosis}/follow-up', [DiagnosisController::class, 'storeFollowUp'])->name('follow-up.store');
     });
 
     // Subscription routes
@@ -275,7 +287,6 @@ Route::middleware('auth')->group(function () {
 });
 
 
-
 Route::get('/contact', [ContactController::class, 'show'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
@@ -334,16 +345,6 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
         Route::get('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'show'])->name('show');
         Route::get('/{note}/edit', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'edit'])->name('edit');
         Route::put('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'update'])->name('update');
-        Route::delete('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'destroy'])->name('destroy');
-
-        // AJAX routes
-        Route::post('/transcribe-audio', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'transcribeAudio'])->name('transcribe-audio');
-        Route::get('/patients/search', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'getPatients'])->name('patients.search');
-    });
-    // Landing Page Management
-    Route::prefix('landing-page')->name('landing-page.')->group(function () {
-        Route::get('/', [LandingPageController::class, 'index'])->name('index');
-        Route::get('/page-builder', [LandingPageController::class, 'pageBuilder'])->name('page-builder');
         Route::post('/update', [LandingPageController::class, 'update'])->name('update');
         Route::post('/update-sections', [LandingPageController::class, 'updateSections'])->name('update-sections');
         Route::post('/upload-hero-image', [LandingPageController::class, 'uploadHeroImage'])->name('upload-hero-image');
@@ -392,6 +393,19 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
 Route::get('/doctor/{username}', [PublicLandingPageController::class, 'show'])->name('doctor.landing');
 Route::get('/doctor/{username}/blogs', [PublicLandingPageController::class, 'showBlogs'])->name('doctor.blogs');
 Route::get('/doctor/{username}/blog/{slug}', [PublicLandingPageController::class, 'showBlogPost'])->name('doctor.blog.post');
+
+// Doctor Landing Page Management Routes
+Route::prefix('doctor/landing-page')->name('doctor.landing-page.')->group(function () {
+    Route::get('/index', [LandingPageController::class, 'index'])->name('index');
+    Route::get('/edit', [LandingPageController::class, 'edit'])->name('edit');
+    Route::post('/update', [LandingPageController::class, 'update'])->name('update');
+    Route::post('/update-sections', [LandingPageController::class, 'updateSections'])->name('update-sections');
+    Route::post('/upload-hero-image', [LandingPageController::class, 'uploadHeroImage'])->name('upload-hero-image');
+    Route::post('/upload-section-image', [LandingPageController::class, 'uploadSectionImage'])->name('upload-section-image');
+    Route::post('/toggle-publish', [LandingPageController::class, 'togglePublish'])->name('toggle-publish');
+    Route::get('/preview/{username}', [LandingPageController::class, 'preview'])->name('preview');
+    Route::get('/animation-presets', [LandingPageController::class, 'getAnimationPresets'])->name('animation-presets');
+});
 
 // Public Chat Routes
 Route::post('/doctor/{username}/chat/init', [PublicChatController::class, 'initializeChat'])->name('doctor.chat.init');

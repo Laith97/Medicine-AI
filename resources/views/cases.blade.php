@@ -3696,7 +3696,8 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                 const typingIndicator = addTypingIndicator();
 
                 // Send to server
-                fetch('{{ route("openai.follow-up") }}', {
+                // Use diagnosis-specific route with the conversation ID as diagnosis ID
+                fetch(`/diagnosis/${conversationId}/follow-up`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -3704,15 +3705,11 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({
-                        message: message,
-                        conversation_id: conversationId
+                        question: message
                     })
                 })
                 .then(response => {
                     if (!response.ok) {
-                        if (response.status === 401) {
-                            throw new Error('API_KEY_ERROR');
-                        }
                         throw new Error('SERVER_ERROR');
                     }
                     return response.json();
@@ -3721,15 +3718,16 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                     removeTypingIndicator(typingIndicator);
 
                     if (data.success) {
-                        addChatMessage(data.message, 'ai');
+                        // Add AI response to chat
+                        addChatMessage(data.followUp.ai_response, 'ai');
 
-                        if (data.conversation_id) {
-                            document.getElementById('conversation-id').value = data.conversation_id;
+                        // Update remaining questions if provided
+                        if (data.remaining_questions !== undefined) {
+                            // We don't have a direct way to show remaining questions in this UI
+                            // but we could implement this if needed
                         }
-                    } else if (data.api_key_error) {
-                        addErrorMessage(data.message || 'OpenAI API key is invalid or expired. Please contact the administrator.', true);
                     } else {
-                        addErrorMessage(data.message || 'An error occurred');
+                        addErrorMessage(data.error || 'An error occurred');
                     }
                 })
                 .catch(error => {

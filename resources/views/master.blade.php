@@ -587,7 +587,7 @@
                                             <a class="menu-link" href="{{ route('dashboard') }}"><div>Dashboard</div></a>
                                         </li>
                                         <li class="menu-item {{ request()->routeIs('ask-ai') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('ask-ai') }}"><div>AI Diagnosis</div></a>
+                                            <a class="menu-link" href="{{ route('ask-ai') }}"><div>AI Assistant</div></a>
                                         </li>
                                         <li class="menu-item {{ request()->routeIs('voice-assistant.index') ? 'current' : '' }}">
                                             <a class="menu-link" href="{{ route('voice-assistant.index') }}"><div><i class="fas fa-microphone mr-2"></i>{{ __('Voice Assistant') }}</div></a>
@@ -789,7 +789,7 @@
                 <ul class="list-unstyled footer-links">
                     @auth
                         <li class="mb-2"><a href="{{ route('dashboard') }}" class="text-white-50 text-decoration-none hover-link">Dashboard</a></li>
-                        <li class="mb-2"><a href="{{ route('ask-ai') }}" class="text-white-50 text-decoration-none hover-link">AI Diagnosis</a></li>
+                        <li class="mb-2"><a href="{{ route('ask-ai') }}" class="text-white-50 text-decoration-none hover-link">AI Assistant</a></li>
                         <li class="mb-2"><a href="{{ route('cases') }}" class="text-white-50 text-decoration-none hover-link">Case Studies</a></li>
                         <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Settings</a></li>
                     @else
