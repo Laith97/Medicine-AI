@@ -42,21 +42,21 @@
     background: rgba(255, 255, 255, 0.95) !important;
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
-    
+
     /* Advanced Shadow & Border - Same as sub-menu-container */
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     box-shadow:
         0 20px 40px rgba(0, 0, 0, 0.1),
         0 8px 16px rgba(0, 0, 0, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
-    
+
     /* Modern Rounded Design - Same as sub-menu-container */
     border-radius: 16px !important;
-    
+
     /* Spacing - Same as sub-menu-container */
     padding: 12px 0 !important;
     margin: 0 !important;
-    
+
     /* Dimensions */
     min-width: 240px !important;
 }
@@ -67,19 +67,19 @@
     align-items: center !important;
     padding: 12px 20px !important;
     margin: 0 8px !important;
-    
+
     /* Typography - Same as sub-menu menu-link */
     font-size: 14px !important;
     font-weight: 500 !important;
     color: #374151 !important;
     text-decoration: none !important;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-    
+
     /* Modern Styling - Same as sub-menu menu-link */
     border-radius: 10px !important;
     background: transparent !important;
     border: none !important;
-    
+
     /* Smooth Transitions - Same as sub-menu menu-link */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     position: relative !important;
@@ -152,7 +152,6 @@
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
     <link rel="stylesheet" href="{{ asset('css/responsive-modals.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom-buttons.css') }}">
-    @livewireStyles
     @stack('styles')
 
     <!-- Global Font Styling -->

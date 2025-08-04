@@ -1786,6 +1786,16 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                                                         data-patient-gender="{{ $group['patient']->gender }}">
                                                     <i class="fas fa-eye me-1"></i>View
                                                 </button>
+                                                <button type="button" class="btn btn-sm btn-custom-secondary patient-summary-btn"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#summaryModal"
+                                                        data-patient-name="{{ $group['patient']->name }}"
+                                                        data-patient-age="{{ $group['patient']->age }}"
+                                                        data-patient-gender="{{ $group['patient']->gender }}"
+                                                        data-patient-key="{{ $key }}"
+                                                        title="View Patient Visits Summary">
+                                                    <i class="fas fa-history"></i>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -1809,102 +1819,6 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                     </div>
                 </div>
                 @endif
-
-                <!-- Patient Records Table -->
-                <div class="subscription-card">
-                    <h5>Cases</h5>
-                    @if($hasRecords)
-                        <div class="table-responsive">
-                            <table id="recordsTable" class="table table-custom align-middle w-100">
-                            <thead>
-                                <tr>
-                                    <th style="width: 60px;">ID</th>
-                                    <th style="width: 15%;">Patient Name</th>
-                                    <th style="width: 60px;">Age</th>
-                                    <th style="width: 80px;">Gender</th>
-                                    <th style="width: 80px;">Height</th>
-                                    <th style="width: 80px;">Weight</th>
-                                    <th style="width: 120px;">Date</th>
-                                    <th style="width: 80px;">Visit #</th>
-                                    <th style="width: 25%;">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($records as $record)
-                                <tr class="text-center">
-                                    <td><strong>#{{ $record->id }}</strong></td>
-                                    <td>
-                                        {{ $record->name }}
-                                    </td>
-                                    <td>{{ $record->age }}</td>
-                                    <td>
-                                        <span class="badge" style="background-color: {{ $record->gender == 'male' ? '#3498db' : '#e74c3c' }}; color: white; border-radius: 15px; padding: 0.4rem 0.8rem;">
-                                            {{ ucfirst($record->gender) }}
-                                        </span>
-                                    </td>
-                                    <td>{{ $record->height ?? 'N/A' }}</td>
-                                    <td>{{ $record->weight ?? 'N/A' }}</td>
-                                    <td data-order="{{ $record->created_at->timestamp }}">{{ $record->created_at->format('M d, Y') }}</td>
-                                    <td>
-                                        <span class="badge bg-secondary">Visit #{{ $record->visit_number ?? 'N/A' }}</span>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex flex-wrap gap-1 justify-content-center">
-                                            <button class="btn btn-custom-secondary btn-sm view-response-btn"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#responseModal"
-                                                    data-response="{{ htmlentities($record->ai_response) }}"
-                                                    data-patient-name="{{ $record->name }}"
-                                                    data-visit-number="{{ $record->visit_number ?? 1 }}"
-                                                    data-record-id="{{ $record->id }}"
-                                                    data-patient-key="{{ $record->patient_key }}"
-                                                    data-has-ai-assistant="{{ isset($record->ai_assistant_results) && $record->ai_assistant_results->count() > 0 ? 'true' : 'false' }}"
-                                                    @if(isset($record->ai_assistant_results) && $record->ai_assistant_results->count() > 0)
-                                                        data-ai-assistant-results="{{ json_encode($record->ai_assistant_results->map(function($result) {
-                                                            return [
-                                                                'id' => $result->id,
-                                                                'source' => $result->source,
-                                                                'ai_analysis' => $result->ai_analysis,
-                                                                'created_at' => $result->created_at->format('M d, Y H:i A')
-                                                            ];
-                                                        })) }}"
-                                                    @endif
-                                                    title="View Medical Report">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="btn btn-custom-primary btn-sm patient-summary-btn"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#summaryModal"
-                                                    data-patient-name="{{ $record->name }}"
-                                                    data-patient-age="{{ $record->age }}"
-                                                    data-patient-gender="{{ $record->gender }}"
-                                                    data-patient-key="{{ $record->patient_key }}"
-                                                    title="View Patient Visits Summary">
-                                                <i class="fas fa-history"></i>
-                                            </button>
-                                            <a href="{{ route('ask-ai', ['edit_patient' => $record->id]) }}"
-                                               class="btn btn-custom-secondary btn-sm"
-                                               title="Edit Patient">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    @else
-                        <div class="text-center py-5">
-                            <i class="fas fa-user-doctor text-muted mb-3" style="font-size: 4rem;"></i>
-                            <h5 class="text-muted">No Patient Records Found</h5>
-                            <p class="text-muted mb-4">Start building your patient database by adding your first case</p>
-                            <a href="{{ route('ask-ai') }}" class="btn-custom-primary">
-                                <i class="fas fa-plus me-2"></i>Add First Patient
-                            </a>
-                        </div>
-                    @endif
-                </div>
             </div>
         </div>
     </div>
@@ -2997,8 +2911,12 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             // Track performance
             const startTime = performance.now();
 
+            // Get the patient ID from the first record (all records belong to the same patient)
+            const patientId = patientRecords.length > 0 ? patientRecords[0].id : null;
+
             // Prepare the data for the AI summary
             const summaryData = {
+                patient_id: patientId,
                 patient_name: $('#summaryPatientName').text(),
                 patient_age: $('#summaryPatientAge').text(),
                 patient_gender: $('#summaryPatientGender').text().toLowerCase(),
@@ -3035,8 +2953,8 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                 url: '{{ route("patient.summary") }}',
                 type: 'POST',
                 data: {
-                    _token: '{{ csrf_token() }}',
-                    summary_data: JSON.stringify(summaryData)
+                    summary_data: JSON.stringify(summaryData),
+                    _token: '{{ csrf_token() }}'
                 },
                 beforeSend: function() {
                     console.log('AI summary request started');
@@ -3080,7 +2998,7 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                             <div class="alert alert-warning">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
                                 ${response.message || 'Failed to generate summary.'}
-                                <br><button class="btn btn-smbtn-primary-custom mt-2" onclick="generateAISummary(currentPatientRecords)">
+                                <br><button class="btn btn-sm btn-primary mt-2" onclick="generateAISummary(currentPatientRecords)">
                                     <i class="fas fa-redo me-1"></i>Try Again
                                 </button>
                             </div>
@@ -3118,7 +3036,7 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             ${errorMessage}
                             <br><small>Status: ${xhr.status} - ${xhr.statusText} (${duration}s)</small>
-                            <br><button class="btn btn-smbtn-primary-custom mt-2" onclick="generateAISummary(currentPatientRecords)">
+                            <br><button class="btn btn-sm btn-primary mt-2" onclick="generateAISummary(currentPatientRecords)">
                                 <i class="fas fa-redo me-1"></i>Try Again
                             </button>
                         </div>

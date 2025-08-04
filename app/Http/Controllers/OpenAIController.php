@@ -10,6 +10,7 @@ use App\Models\OpenAIUsage;
 use App\Models\User;
 use App\Models\Diagnosis;
 use App\Models\AiAssistantResult;
+use App\Models\PatientSummary;
 use App\Mail\UsageWarning;
 use App\Mail\PatientAccountCreated;
 use App\Services\SmsService;
@@ -2157,6 +2158,39 @@ class OpenAIController extends Controller
                 ], 400);
             }
 
+            // Extract patient information
+            $patientId = $summaryData['patient_id'] ?? null;
+            $doctorId = auth()->id();
+
+            if (!$patientId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Patient ID is required.'
+                ], 400);
+            }
+
+            // Check for existing summary in database
+            $existingSummary = PatientSummary::where('patient_id', $patientId)
+                ->where('doctor_id', $doctorId)
+                ->first();
+
+            // Get the latest visit date from the summary data
+            $latestVisitDate = null;
+            if (!empty($summaryData['visits'])) {
+                $latestVisitDate = collect($summaryData['visits'])->max('date');
+            }
+
+            // If we have an existing summary and no new visits since last summary, return it
+            if ($existingSummary && !$this->hasNewVisitsSinceLastSummary($patientId, $existingSummary->last_visit_date, $latestVisitDate)) {
+                \Log::info('Returning existing summary from database for patient: ' . $patientId);
+                return response()->json([
+                    'success' => true,
+                    'summary' => $existingSummary->summary,
+                    'from_database' => true,
+                    'last_updated' => $existingSummary->updated_at->format('Y-m-d H:i:s')
+                ]);
+            }
+
             // Check for cached summary to improve performance
             $cacheKey = 'patient_summary_' . md5(json_encode($summaryData));
             $cachedSummary = cache()->get($cacheKey);
@@ -2165,7 +2199,8 @@ class OpenAIController extends Controller
                 \Log::info('Returning cached summary');
                 return response()->json([
                     'success' => true,
-                    'summary' => $cachedSummary
+                    'summary' => $cachedSummary,
+                    'from_cache' => true
                 ]);
             }
 
@@ -2221,12 +2256,17 @@ class OpenAIController extends Controller
             // Use simple formatting for the summary (let frontend handle styling)
             $formattedSummary = '<div class="ai-content">' . nl2br(htmlspecialchars($summary)) . '</div>';
 
+            // Store or update the summary in database
+            $this->storePatientSummary($patientId, $doctorId, $formattedSummary, $summaryData, $latestVisitDate);
+
             // Cache the result for 30 minutes to improve performance
             cache()->put($cacheKey, $formattedSummary, 1800);
 
             return response()->json([
                 'success' => true,
-                'summary' => $formattedSummary
+                'summary' => $formattedSummary,
+                'from_ai' => true,
+                'last_updated' => now()->format('Y-m-d H:i:s')
             ]);
 
         } catch (\Exception $e) {
@@ -2236,6 +2276,64 @@ class OpenAIController extends Controller
                 'success' => false,
                 'message' => 'Error generating summary: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Check if there are new visits since the last summary
+     */
+    private function hasNewVisitsSinceLastSummary($patientId, $lastSummaryDate, $latestVisitDate)
+    {
+        if (!$lastSummaryDate) {
+            return true; // No summary date means we need to generate one
+        }
+
+        if (!$latestVisitDate) {
+            return false; // No visit dates to compare
+        }
+
+        // Convert dates to comparable format
+        $summaryDate = \Carbon\Carbon::parse($lastSummaryDate);
+        $visitDate = \Carbon\Carbon::parse($latestVisitDate);
+
+        // Return true if there are visits newer than the last summary
+        return $visitDate->greaterThan($summaryDate);
+    }
+
+    /**
+     * Store or update patient summary in database
+     */
+    private function storePatientSummary($patientId, $doctorId, $formattedSummary, $summaryData, $lastVisitDate)
+    {
+        try {
+            $rawData = json_encode([
+                'patient_name' => $summaryData['patient_name'],
+                'patient_age' => $summaryData['patient_age'],
+                'patient_gender' => $summaryData['patient_gender'],
+                'visit_count' => $summaryData['visit_count'],
+                'visits' => $summaryData['visits'],
+                'last_visit_date' => $lastVisitDate
+            ]);
+
+            // Update existing summary or create new one
+            PatientSummary::updateOrCreate(
+                [
+                    'patient_id' => $patientId,
+                    'doctor_id' => $doctorId
+                ],
+                [
+                    'summary' => $formattedSummary,
+                    'raw_data' => $rawData,
+                    'last_visit_date' => $lastVisitDate,
+                    'total_visits' => $summaryData['visit_count'],
+                    'is_ai_generated' => true
+                ]
+            );
+
+            \Log::info('Patient summary stored/updated for patient: ' . $patientId);
+        } catch (\Exception $e) {
+            \Log::error('Error storing patient summary: ' . $e->getMessage());
+            // Don't throw the exception as the summary was still generated successfully
         }
     }
 
