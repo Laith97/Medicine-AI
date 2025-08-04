@@ -208,12 +208,6 @@
                             <i class="fas fa-history me-2"></i>
                             History
                         </a>
-
-                        <!-- Debug button (remove in production) -->
-                        <button id="debugPatientBtn" class="btn btn-warning btn-sm" type="button" onclick="debugPatientSelection()">
-                            <i class="fas fa-bug me-1"></i>
-                            Debug
-                        </button>
                     </div>
 
                     <!-- JavaScript-based Progress Indicator (shows immediately) -->
