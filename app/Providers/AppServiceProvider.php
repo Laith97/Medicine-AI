@@ -6,9 +6,11 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Notification;
 use App\Models\StripeInvoice;
 use App\Models\DoctorBlogPost;
 use App\Policies\BlogPostPolicy;
+use App\Channels\SmsChannel;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -47,5 +49,10 @@ class AppServiceProvider extends ServiceProvider
 
         // Register BlogPost policy
         Gate::policy(DoctorBlogPost::class, BlogPostPolicy::class);
+
+        // Register custom SMS notification channel
+        Notification::extend('sms', function ($app) {
+            return new SmsChannel($app->make(\App\Services\SmsService::class));
+        });
     }
 }
