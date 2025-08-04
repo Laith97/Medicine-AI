@@ -169,7 +169,7 @@ class DiagnosisController extends Controller
             $diagnosis->markAsViewed();
         }
 
-        $diagnosis->load(['doctor', 'patient', 'followUps']);
+        $diagnosis->load(['doctor', 'patient', 'followUps', 'aiAssistantResults']);
 
         return view('diagnosis.show', compact('diagnosis'));
     }
@@ -184,17 +184,23 @@ class DiagnosisController extends Controller
         }
 
         $diagnosis->markAsViewed();
-        $diagnosis->load(['doctor', 'followUps']);
+        $diagnosis->load(['doctor', 'followUps', 'aiAssistantResults']);
 
         return view('diagnosis.patient-view', compact('diagnosis'));
     }
 
     /**
-     * Store follow-up question from patient
+     * Store follow-up question from patient or doctor
      */
     public function storeFollowUp(Request $request, Diagnosis $diagnosis)
     {
-        if (!Auth::user()->isPatient() || $diagnosis->patient_id !== Auth::id()) {
+        $user = Auth::user();
+
+        // Check if user can submit follow-up for this diagnosis
+        $isAuthorized = ($user->isPatient() && $diagnosis->patient_id === $user->id) ||
+                       ($user->isDoctor() && $diagnosis->doctor_id === $user->id);
+
+        if (!$isAuthorized) {
             abort(403, 'Access denied.');
         }
 
@@ -324,7 +330,7 @@ class DiagnosisController extends Controller
         }
 
         $diagnoses = Auth::user()->patientDiagnoses()
-            ->with(['doctor'])
+            ->with(['doctor', 'aiAssistantResults'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
@@ -395,9 +401,19 @@ class DiagnosisController extends Controller
     private function getAiFollowUpResponse(Diagnosis $diagnosis, string $question)
     {
         try {
-            $context = "Original diagnosis: " . $diagnosis->diagnosis_text;
+            // Build context with original diagnosis and AI analysis
+            $context = "Original diagnosis from doctor: " . $diagnosis->diagnosis_text;
+
+            // Include AI assistant results if available
+            if ($diagnosis->aiAssistantResults && $diagnosis->aiAssistantResults->count() > 0) {
+                $context .= "\n\nAI Medical Analysis:\n";
+                foreach ($diagnosis->aiAssistantResults as $index => $result) {
+                    $context .= "\nAI Analysis " . ($index + 1) . ":\n" . $result->ai_analysis;
+                }
+            }
+
             if ($diagnosis->patient_data) {
-                $context .= "\nPatient data: " . json_encode($diagnosis->patient_data);
+                $context .= "\n\nPatient data: " . json_encode($diagnosis->patient_data);
             }
 
             $prompt = "You are a medical AI assistant helping a patient understand their diagnosis.
@@ -406,7 +422,8 @@ class DiagnosisController extends Controller
 
             Patient's follow-up question: {$question}
 
-            Please provide a helpful, accurate, and reassuring response. Keep it concise but informative.
+            Please provide a helpful, accurate, and reassuring response based on the medical context provided above. Keep it concise but informative.
+            Reference specific details from the diagnosis and AI analysis when relevant to answer the patient's question.
             Always remind the patient to consult with their doctor for serious concerns.";
 
             $response = OpenAI::chat()->create([

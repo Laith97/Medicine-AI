@@ -51,10 +51,16 @@
                                                         {{ Str::limit($diagnosis->diagnosis_text, 100) }}
                                                     </p>
                                                     <div class="d-flex gap-2 mb-2">
-                                                        <span class="badge bg-{{ $diagnosis->type === 'ai' ? 'info' : 'success' }}">
-                                                            <i class="fas fa-{{ $diagnosis->type === 'ai' ? 'robot' : 'user-md' }} me-1"></i>
-                                                            {{ ucfirst($diagnosis->type) }}
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-user-md me-1"></i>
+                                                            Doctor's Diagnosis
                                                         </span>
+                                                        @if($diagnosis->aiAssistantResults && $diagnosis->aiAssistantResults->count() > 0)
+                                                            <span class="badge bg-info">
+                                                                <i class="fas fa-robot me-1"></i>
+                                                                AI Assisted
+                                                            </span>
+                                                        @endif
                                                         @if($diagnosis->follow_up_count > 0)
                                                             <span class="badge bg-secondary">
                                                                 {{ $diagnosis->follow_up_count }} follow-ups
