@@ -967,11 +967,13 @@ class AdminController extends Controller
                 ]);
 
                 try {
-                    \Log::info('About to send grace period reminder email', [
+                    \Log::info('About to send grace period reminder email and SMS', [
                         'user_email' => $user->email,
+                        'user_phone' => $user->phone,
                         'timestamp' => now()->format('Y-m-d H:i:s.u')
                     ]);
                     
+                    // Send Email
                     $emailService = new EmailService();
                     $emailService->sendEmail(
                         $user->email,
@@ -987,8 +989,39 @@ class AdminController extends Controller
                         ]
                     );
                     
+                    // Send SMS if user has phone number
+                    if ($user->phone) {
+                        try {
+                            $smsService = new \App\Services\SmsService();
+                            $daysRemaining = $setting->getDaysRemainingInCurrentPeriod();
+                            $renewalUrl = route('subscription.manage');
+                            
+                            $smsMessage = "🔔 MedCura AI: Your subscription expired but you're in grace period. {$daysRemaining} days remaining. Renew now: {$renewalUrl}";
+                            
+                            $smsResult = $smsService->send($user->phone, $smsMessage);
+                            
+                            if ($smsResult['success']) {
+                                \Log::info('Grace period reminder SMS sent successfully', [
+                                    'user_phone' => $user->phone,
+                                    'provider' => $smsResult['data']['provider'] ?? 'unknown'
+                                ]);
+                            } else {
+                                \Log::warning('Failed to send grace period reminder SMS', [
+                                    'user_phone' => $user->phone,
+                                    'error' => $smsResult['message']
+                                ]);
+                            }
+                        } catch (\Exception $smsException) {
+                            \Log::warning('SMS service error for grace period reminder', [
+                                'user_phone' => $user->phone,
+                                'error' => $smsException->getMessage()
+                            ]);
+                        }
+                    }
+                    
                     \Log::info('Grace period reminder sent successfully', [
                         'user_email' => $user->email,
+                        'user_phone' => $user->phone,
                         'timestamp' => now()->format('Y-m-d H:i:s.u')
                     ]);
                 } catch (\Exception $mailException) {
@@ -1099,6 +1132,7 @@ class AdminController extends Controller
                 ]);
 
                 try {
+                    // Send Email
                     $emailService = new EmailService();
                     $emailService->sendEmail(
                         $user->email,
@@ -1113,8 +1147,40 @@ class AdminController extends Controller
                             'reminderType' => 'warning_period',
                         ]
                     );
+                    
+                    // Send SMS if user has phone number
+                    if ($user->phone) {
+                        try {
+                            $smsService = new \App\Services\SmsService();
+                            $daysRemaining = $setting->getDaysRemainingInCurrentPeriod();
+                            $renewalUrl = route('subscription.manage');
+                            
+                            $smsMessage = "🚨 URGENT - MedCura AI: FINAL WARNING! Your account will be RESTRICTED in {$daysRemaining} days. Renew immediately: {$renewalUrl}";
+                            
+                            $smsResult = $smsService->send($user->phone, $smsMessage);
+                            
+                            if ($smsResult['success']) {
+                                \Log::info('Warning period reminder SMS sent successfully', [
+                                    'user_phone' => $user->phone,
+                                    'provider' => $smsResult['data']['provider'] ?? 'unknown'
+                                ]);
+                            } else {
+                                \Log::warning('Failed to send warning period reminder SMS', [
+                                    'user_phone' => $user->phone,
+                                    'error' => $smsResult['message']
+                                ]);
+                            }
+                        } catch (\Exception $smsException) {
+                            \Log::warning('SMS service error for warning period reminder', [
+                                'user_phone' => $user->phone,
+                                'error' => $smsException->getMessage()
+                            ]);
+                        }
+                    }
+                    
                     \Log::info('Warning period reminder sent successfully', [
-                        'user_email' => $user->email
+                        'user_email' => $user->email,
+                        'user_phone' => $user->phone
                     ]);
                 } catch (\Exception $mailException) {
                     \Log::error('Failed to send warning period reminder email to ' . $user->email . ': ' . $mailException->getMessage());
@@ -1185,6 +1251,7 @@ class AdminController extends Controller
                             'is_active' => true,
                         ]);
                         
+                        // Send Email
                         $emailService = new EmailService();
                         $emailService->sendEmail(
                             $user->email,
@@ -1199,8 +1266,43 @@ class AdminController extends Controller
                                 'reminderType' => 'overdue',
                             ]
                         );
+                        
+                        // Send SMS if user has phone number
+                        if ($user->phone) {
+                            try {
+                                $smsService = new \App\Services\SmsService();
+                                $amount = number_format($invoice->amount_due / 100, 2);
+                                $renewalUrl = route('subscription.manage');
+                                
+                                $smsMessage = "⚠️ MedCura AI: Your invoice of \${$amount} is overdue. Update your payment method to avoid service interruption: {$renewalUrl}";
+                                
+                                $smsResult = $smsService->send($user->phone, $smsMessage);
+                                
+                                if ($smsResult['success']) {
+                                    \Log::info('Overdue reminder SMS sent successfully', [
+                                        'user_phone' => $user->phone,
+                                        'invoice_id' => $invoice->id,
+                                        'provider' => $smsResult['data']['provider'] ?? 'unknown'
+                                    ]);
+                                } else {
+                                    \Log::warning('Failed to send overdue reminder SMS', [
+                                        'user_phone' => $user->phone,
+                                        'invoice_id' => $invoice->id,
+                                        'error' => $smsResult['message']
+                                    ]);
+                                }
+                            } catch (\Exception $smsException) {
+                                \Log::warning('SMS service error for overdue reminder', [
+                                    'user_phone' => $user->phone,
+                                    'invoice_id' => $invoice->id,
+                                    'error' => $smsException->getMessage()
+                                ]);
+                            }
+                        }
+                        
                         \Log::info('Overdue reminder sent successfully', [
                             'user_email' => $user->email,
+                            'user_phone' => $user->phone,
                             'invoice_id' => $invoice->id
                         ]);
                     } catch (\Exception $mailException) {
