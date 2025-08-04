@@ -29,7 +29,7 @@
                 <!-- Contact Form -->
                 <div class="col-lg-8">
                     <h3 class="mb-4">Get in Touch with Our Team</h3>
-                    <p class="text-muted mb-4">Have questions about our AI diagnosis system? Need technical support? Our team of medical AI experts is here to help.</p>
+                    <p class="text-muted mb-4">Have questions about our AI Assistant system? Need technical support? Our team of medical AI experts is here to help.</p>
 
                     @if(session('success'))
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -104,7 +104,7 @@
 
                             <div class="col-12 form-group">
                                 <label for="message">Message <small>*</small></label>
-                                <textarea class="form-control required" id="message" name="message" rows="6" cols="30" placeholder="Tell us about your needs or questions regarding our AI diagnosis system..." required>{{ old('message') }}</textarea>
+                                <textarea class="form-control required" id="message" name="message" rows="6" cols="30" placeholder="Tell us about your needs or questions regarding our AI Assistant system..." required>{{ old('message') }}</textarea>
                                 @error('message')
                                     <div class="text-danger mt-1">{{ $message }}</div>
                                 @enderror
@@ -173,29 +173,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitText = document.getElementById('submit-text');
     const submitLoading = document.getElementById('submit-loading');
     const formResult = document.querySelector('.form-result');
-    
+
     // Check if elements exist
     if (!form || !submitBtn || !submitText || !submitLoading || !formResult) {
         console.error('Contact form elements not found');
         return;
     }
-    
+
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         // Show loading state
         submitBtn.disabled = true;
         submitText.style.display = 'none';
         submitLoading.style.display = 'inline';
-        
+
         // Clear previous results
         formResult.innerHTML = '';
-        
+
         // Gather form data
         const formData = new FormData(form);
-        
+
         // Form data ready to submit
-        
+
         // Make AJAX request
         fetch(form.action, {
             method: 'POST',
@@ -288,7 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
             submitLoading.style.display = 'none';
         });
     });
-    
+
     // Add fallback for direct form submission if JavaScript fails
     form.addEventListener('submit', function(e) {
         // If AJAX is not supported or fails, allow normal form submission
@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
         background: linear-gradient(135deg, #0369A1, #0284C7);
         box-shadow: 0 4px 12px rgba(3, 105, 161, 0.3);
     }
-    
+
     .contact-error-notification {
         background: linear-gradient(135deg, #DC2626, #B91C1C);
         box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
@@ -422,15 +422,15 @@ document.addEventListener('DOMContentLoaded', function() {
     .notification-content {
         padding: 15px;
     }
-    
+
     .notification-message h5 {
         font-size: 16px;
     }
-    
+
     .notification-message p {
         font-size: 13px;
     }
-    
+
     .notification-icon {
         margin-right: 12px;
     }

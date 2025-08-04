@@ -295,6 +295,35 @@
         border: 1px solid rgba(0,0,0,0.05);
     }
 
+    /* AI Assistant Results Styles */
+    .ai-assistant-result {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        border-left: 4px solid #17a2b8;
+        margin-bottom: 15px;
+    }
+
+    .ai-assistant-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 8px;
+    }
+
+    .ai-assistant-header h6 {
+        margin: 0;
+        color: #17a2b8;
+        font-weight: 600;
+    }
+
+    .ai-assistant-content {
+        color: #495057;
+        line-height: 1.6;
+    }
+
     .ai-summary h4 {
         color: #2c3e50;
         margin-top: 20px;
@@ -1783,6 +1812,7 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
 
                 <!-- Patient Records Table -->
                 <div class="subscription-card">
+                    <h5>Cases</h5>
                     @if($hasRecords)
                         <div class="table-responsive">
                             <table id="recordsTable" class="table table-custom align-middle w-100">
@@ -1828,6 +1858,17 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                                                     data-visit-number="{{ $record->visit_number ?? 1 }}"
                                                     data-record-id="{{ $record->id }}"
                                                     data-patient-key="{{ $record->patient_key }}"
+                                                    data-has-ai-assistant="{{ isset($record->ai_assistant_results) && $record->ai_assistant_results->count() > 0 ? 'true' : 'false' }}"
+                                                    @if(isset($record->ai_assistant_results) && $record->ai_assistant_results->count() > 0)
+                                                        data-ai-assistant-results="{{ json_encode($record->ai_assistant_results->map(function($result) {
+                                                            return [
+                                                                'id' => $result->id,
+                                                                'source' => $result->source,
+                                                                'ai_analysis' => $result->ai_analysis,
+                                                                'created_at' => $result->created_at->format('M d, Y H:i A')
+                                                            ];
+                                                        })) }}"
+                                                    @endif
                                                     title="View Medical Report">
                                                 <i class="fas fa-eye"></i>
                                             </button>
@@ -1875,7 +1916,7 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         <div class="modal-content response-modal-content">
             <div class="modal-header response-modal-header">
                 <h5 class="modal-title" id="responseModalLabel" style="color: #fff">
-                    <i class="fas fa-stethoscope me-2"></i>AI Recommendations
+                    <i class="fas fa-stethoscope me-2"></i>Diagnosis
                 </h5>
                 <div>
                     <button type="button" class="btn btn-sm btn-light me-2" id="printResponseBtn">
@@ -1890,10 +1931,21 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                     <!-- Level 1: Core Analysis -->
                     <div class="medcura-level1">
                         <div class="level1-header level-header">
-                            <i class="fas fa-stethoscope me-2"></i>
-                            <span>Core Medical Analysis</span>
+                            <i class="fas fa-user-md me-2"></i>
+                            <span>Doctor's Diagnosis</span>
                         </div>
                         <div id="openaiReply" class="response-text"></div>
+                    </div>
+
+                    <!-- AI Assistant Results Section -->
+                    <div id="ai-assistant-section" class="medcura-ai-assistant" style="display: none;">
+                        <div class="level1-header level-header">
+                            <i class="fas fa-robot me-2"></i>
+                            <span>AI Assistant Analysis</span>
+                        </div>
+                        <div id="ai-assistant-content" class="response-text">
+                            <!-- AI assistant results will be populated here -->
+                        </div>
                     </div>
 
                     <!-- Level 2: Detailed Analysis (Initially Hidden) -->
@@ -2163,13 +2215,17 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             const visitNumber = $(element).data('visit-number') || 1;
             const recordId = $(element).data('record-id');
             const patientKey = $(element).data('patient-key');
+            const hasAiAssistant = $(element).data('has-ai-assistant') === 'true';
+            const aiAssistantResults = $(element).data('ai-assistant-results');
 
             console.log('View button clicked:', {
                 raw: raw ? 'Has data' : 'No data',
                 patientName: patientName,
                 visitNumber: visitNumber,
                 recordId: recordId,
-                patientKey: patientKey
+                patientKey: patientKey,
+                hasAiAssistant: hasAiAssistant,
+                aiAssistantResults: aiAssistantResults ? 'Has AI results' : 'No AI results'
             });
 
             // Check if we have all required data
@@ -2193,14 +2249,11 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             }
 
             // For buttons with response data
-            processResponse(raw, patientName, visitNumber, recordId, patientKey);
+            processResponse(raw, patientName, visitNumber, recordId, patientKey, hasAiAssistant, aiAssistantResults);
         }
 
         // Process and display the response
-        function processResponse(raw, patientName, visitNumber, recordId, patientKey) {
-            console.log('Processing response for:', patientName, 'Visit:', visitNumber, 'Record ID:', recordId);
-            console.log('Raw parameter received:', raw ? 'Has data' : 'No data');
-
+        function processResponse(raw, patientName, visitNumber, recordId, patientKey, hasAiAssistant = false, aiAssistantResults = null) {
             // Set conversation ID to the record ID for follow-up questions
             // This allows follow-up questions to reference the original case
             document.getElementById('conversation-id').value = recordId;
@@ -2251,6 +2304,38 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
 
             // Display the formatted response
             $('#openaiReply').html(finalFormattedHTML);
+
+            // Handle AI Assistant Results
+            // Use aiAssistantResults directly instead of relying on hasAiAssistant flag
+            if (aiAssistantResults && Array.isArray(aiAssistantResults) && aiAssistantResults.length > 0) {
+                try {
+                    let aiResults = aiAssistantResults;
+
+                    let aiAssistantHtml = '';
+
+                    aiResults.forEach((result, index) => {
+                        aiAssistantHtml += `
+                            <div class="ai-assistant-result mb-3">
+                                <div class="ai-assistant-header">
+                                    <h6><i class="fas fa-robot me-2"></i>AI Analysis ${index + 1} (${result.source})</h6>
+                                    <small class="text-muted">${result.created_at}</small>
+                                </div>
+                                <div class="ai-assistant-content">
+                                    ${formatAIResponse(result.ai_analysis)}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    $('#ai-assistant-content').html(aiAssistantHtml);
+                    $('#ai-assistant-section').show();
+                } catch (error) {
+                    console.error('Error processing AI assistant results:', error);
+                    $('#ai-assistant-section').hide();
+                }
+            } else {
+                $('#ai-assistant-section').hide();
+            }
 
             // Sources section is hidden as requested
             try {
@@ -3611,7 +3696,8 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                 const typingIndicator = addTypingIndicator();
 
                 // Send to server
-                fetch('{{ route("openai.follow-up") }}', {
+                // Use diagnosis-specific route with the conversation ID as diagnosis ID
+                fetch(`/diagnosis/${conversationId}/follow-up`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -3619,15 +3705,11 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({
-                        message: message,
-                        conversation_id: conversationId
+                        question: message
                     })
                 })
                 .then(response => {
                     if (!response.ok) {
-                        if (response.status === 401) {
-                            throw new Error('API_KEY_ERROR');
-                        }
                         throw new Error('SERVER_ERROR');
                     }
                     return response.json();
@@ -3636,15 +3718,16 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                     removeTypingIndicator(typingIndicator);
 
                     if (data.success) {
-                        addChatMessage(data.message, 'ai');
+                        // Add AI response to chat
+                        addChatMessage(data.followUp.ai_response, 'ai');
 
-                        if (data.conversation_id) {
-                            document.getElementById('conversation-id').value = data.conversation_id;
+                        // Update remaining questions if provided
+                        if (data.remaining_questions !== undefined) {
+                            // We don't have a direct way to show remaining questions in this UI
+                            // but we could implement this if needed
                         }
-                    } else if (data.api_key_error) {
-                        addErrorMessage(data.message || 'OpenAI API key is invalid or expired. Please contact the administrator.', true);
                     } else {
-                        addErrorMessage(data.message || 'An error occurred');
+                        addErrorMessage(data.error || 'An error occurred');
                     }
                 })
                 .catch(error => {
@@ -3930,7 +4013,8 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                 <td>
                     <button class="btn btn-sm btn-custom-secondary view-visit-details"
                             data-visit-id="${visit.id}"
-                            data-visit-response="${encodeURIComponent(visit.ai_response || 'No diagnosis available')}">
+                            data-visit-response="${encodeURIComponent(visit.ai_response || 'No diagnosis available')}"
+                            data-ai-assistant-results="${encodeURIComponent(JSON.stringify(visit.ai_assistant_results || []))}">
                         <i class="fas fa-eye"></i> View
                     </button>
                 </td>
@@ -3945,9 +4029,43 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     // View visit details
     $(document).on('click', '.view-visit-details', function() {
         const visitResponse = decodeURIComponent($(this).data('visit-response'));
+        const aiAssistantResults = JSON.parse(decodeURIComponent($(this).data('ai-assistant-results')));
+
+        let visitDetailsHtml = `<div class="response-text">${visitResponse}</div>`;
+
+        // Add AI assistant results if available
+        if (aiAssistantResults && aiAssistantResults.length > 0) {
+            visitDetailsHtml += `
+                <div class="ai-assistant-section mt-4">
+                    <h6 class="mb-3 border-bottom pb-2"><i class="fas fa-robot me-2"></i>AI Assistant Analysis</h6>
+                    <div class="ai-assistant-results">
+            `;
+
+            aiAssistantResults.forEach((result, index) => {
+                visitDetailsHtml += `
+                    <div class="ai-assistant-result mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0 text-info">
+                                <i class="fas fa-robot me-1"></i>
+                                AI Analysis ${index + 1}
+                            </h6>
+                            <small class="text-muted">${new Date(result.created_at).toLocaleString()}</small>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <div class="response-text">${result.ai_analysis}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            visitDetailsHtml += `
+                    </div>
+                </div>
+            `;
+        }
 
         const visitDetailsContent = document.getElementById('visit-details-content');
-        visitDetailsContent.innerHTML = `<div class="response-text">${visitResponse}</div>`;
+        visitDetailsContent.innerHTML = visitDetailsHtml;
 
         document.getElementById('visit-details-section').style.display = 'block';
     });

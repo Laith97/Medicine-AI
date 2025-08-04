@@ -20,13 +20,13 @@
         box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
         animation: pulse 2s infinite;
     }
-    
+
     @keyframes pulse {
         0% { box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3); }
         50% { box-shadow: 0 6px 20px rgba(220, 53, 69, 0.5); }
         100% { box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3); }
     }
-    
+
     .payment-summary {
         background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
         border: 2px solid #fc8181;
@@ -35,7 +35,7 @@
         margin: 25px 0;
         text-align: center;
     }
-    
+
     .amount-due {
         font-size: 36px;
         font-weight: 700;
@@ -43,7 +43,7 @@
         margin: 10px 0;
         text-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
     }
-    
+
     .overdue-days {
         background: #dc3545;
         color: white;
@@ -54,7 +54,7 @@
         display: inline-block;
         margin: 10px 0;
     }
-    
+
     .consequences-list {
         background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
         border-left: 5px solid #dc3545;
@@ -62,7 +62,7 @@
         padding: 20px;
         margin: 25px 0;
     }
-    
+
     .consequences-list h4 {
         color: #721c24;
         margin-top: 0;
@@ -71,20 +71,20 @@
         align-items: center;
         gap: 10px;
     }
-    
+
     .consequence-item {
         display: flex;
         align-items: flex-start;
         margin-bottom: 10px;
         color: #721c24;
     }
-    
+
     .consequence-icon {
         color: #dc3545;
         margin-right: 10px;
         margin-top: 2px;
     }
-    
+
     .payment-options {
         background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
         border-left: 5px solid #2196f3;
@@ -92,7 +92,7 @@
         padding: 20px;
         margin: 25px 0;
     }
-    
+
     .payment-options h4 {
         color: #1976d2;
         margin-top: 0;
@@ -101,7 +101,7 @@
         align-items: center;
         gap: 10px;
     }
-    
+
     .contact-support {
         background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
         border-left: 5px solid #9c27b0;
@@ -110,7 +110,7 @@
         margin: 25px 0;
         text-align: center;
     }
-    
+
     .contact-support h4 {
         color: #7b1fa2;
         margin-top: 0;
@@ -121,19 +121,19 @@
 
 @section('content')
     <div class="greeting">Hello {{ $user->name }},</div>
-    
+
     <div class="alert alert-danger">
         <strong>🚨 Urgent Action Required:</strong> Your {{ config('app.name') }} subscription payment is significantly overdue. To maintain uninterrupted access to your medical AI tools, please make your payment immediately.
     </div>
-    
+
     <p class="content-text">
         We understand that managing billing can sometimes be overlooked in a busy medical practice. However, your account requires immediate attention to prevent service interruption.
     </p>
-    
+
     <div style="text-align: center;">
         <div class="urgency-indicator">⏰ Immediate Payment Required</div>
     </div>
-    
+
     <!-- Payment Summary -->
     <div class="payment-summary">
         <h3 style="margin-top: 0; color: #dc3545;">Outstanding Balance</h3>
@@ -145,14 +145,14 @@
             <strong>Original Due Date:</strong> {{ $setting->subscription_ends_at ? $setting->subscription_ends_at->format('F j, Y') : 'N/A' }}
         </p>
     </div>
-    
+
     <!-- Account Details -->
     <div class="info-card">
         <div class="info-card-header">
             <div class="info-card-icon">📋</div>
             Account Information
         </div>
-        
+
         <table class="data-table">
             <tr>
                 <td><strong>Account Status</strong></td>
@@ -172,7 +172,7 @@
             </tr>
         </table>
     </div>
-    
+
     <!-- Immediate Actions -->
     <div class="btn-container">
         <a href="{{ route('invoices.index') }}" class="btn btn-danger">
@@ -182,13 +182,13 @@
             ⚙️ Update Payment Method
         </a>
     </div>
-    
+
     <!-- Service Impact -->
     <div class="consequences-list">
         <h4>🚫 Service Impact if Payment is Not Made:</h4>
         <div class="consequence-item">
             <span class="consequence-icon">•</span>
-            <span><strong>Limited Access:</strong> AI diagnosis features will be restricted</span>
+            <span><strong>Limited Access:</strong> AI Assistant features will be restricted</span>
         </div>
         <div class="consequence-item">
             <span class="consequence-icon">•</span>
@@ -203,7 +203,7 @@
             <span><strong>Additional Fees:</strong> Late payment charges may apply</span>
         </div>
     </div>
-    
+
     <!-- Payment Options -->
     <div class="payment-options">
         <h4>💡 Easy Payment Options:</h4>
@@ -215,7 +215,7 @@
             <li><strong>Update Card:</strong> Ensure your payment method is current</li>
         </ul>
     </div>
-    
+
     <!-- Support Contact -->
     <div class="contact-support">
         <h4>🤝 Need Help? We're Here for You</h4>
@@ -225,15 +225,15 @@
             <strong>Email:</strong> <a href="mailto:billing@{{ strtolower(str_replace(' ', '', config('app.name'))) }}.com" style="color: #7b1fa2;">billing@{{ strtolower(str_replace(' ', '', config('app.name'))) }}.com</a>
         </p>
     </div>
-    
+
     <div class="alert alert-info">
         <strong>💡 Important:</strong> Your patient data and case history remain secure and will not be affected. We're committed to supporting your practice while resolving this billing matter.
     </div>
-    
+
     <p class="content-text">
         We value your partnership and want to ensure uninterrupted access to the AI tools that support your medical practice. Please take action today to resolve this matter.
     </p>
-    
+
     <p class="content-text">
         <strong>Thank you for your immediate attention to this matter.</strong><br>
         The {{ config('app.name') }} Billing Team 💼
@@ -242,7 +242,7 @@
 
 @section('footer-content')
     <p style="margin-top: 15px; font-size: 13px; color: #6c757d;">
-        <strong>Questions about this notice?</strong> Contact our billing team at 
+        <strong>Questions about this notice?</strong> Contact our billing team at
         <a href="mailto:billing@{{ strtolower(str_replace(' ', '', config('app.name'))) }}.com" style="color: #DE6262;">
             billing@{{ strtolower(str_replace(' ', '', config('app.name'))) }}.com
         </a>

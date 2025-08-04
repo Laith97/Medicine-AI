@@ -182,7 +182,7 @@ public function getFreshMonthlyInvoiceSetting()
      */
     public function hasActiveSubscription(): bool
     {
-        return $this->monthlyInvoiceSetting && 
+        return $this->monthlyInvoiceSetting &&
                $this->monthlyInvoiceSetting->isActiveSubscription();
     }
 
@@ -432,7 +432,7 @@ public function isRestricted(): bool
     if ($this->isInTrialPeriod()) {
         return false;
     }
-    
+
     $setting = $this->monthlyInvoiceSetting;
     return $setting && $setting->is_restricted;
 }
@@ -446,7 +446,7 @@ public function isPageRestricted(string $routeName): bool
     if ($this->isInTrialPeriod()) {
         return false;
     }
-    
+
     $setting = $this->monthlyInvoiceSetting;
     return $setting && $setting->isPageRestricted($routeName);
 }
@@ -545,9 +545,9 @@ public function startTrial(): void
     if ($this->hasUsedTrial()) {
         return; // User already used their trial
     }
-    
+
     $trialDays = SystemSetting::get('trial_days', 7);
-    
+
     $this->update([
         'trial_ends_at' => now()->addDays($trialDays),
         'trial_used' => true,
@@ -562,7 +562,7 @@ public function getTrialDaysRemaining(): int
     if (!$this->isInTrialPeriod()) {
         return 0;
     }
-    
+
     return max(0, (int) now()->diffInDays($this->trial_ends_at, false));
 }
 
@@ -574,11 +574,11 @@ public function getTrialStatus(): string
     if (!$this->hasUsedTrial()) {
         return 'not_started';
     }
-    
+
     if ($this->isInTrialPeriod()) {
         return 'active';
     }
-    
+
     return 'expired';
 }
 
@@ -636,6 +636,22 @@ public function assignedPatients()
 public function diagnosisFollowUps()
 {
     return $this->hasMany(DiagnosisFollowUp::class, 'patient_id');
+}
+
+/**
+ * AI assistant results created by this doctor
+ */
+public function doctorAiAssistantResults()
+{
+    return $this->hasMany(AiAssistantResult::class, 'doctor_id');
+}
+
+/**
+ * AI assistant results for this patient
+ */
+public function patientAiAssistantResults()
+{
+    return $this->hasMany(AiAssistantResult::class, 'patient_id');
 }
 
 }
