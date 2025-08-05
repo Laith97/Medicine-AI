@@ -2,9 +2,8 @@
 
 namespace App\Channels;
 
-use App\Services\SmsService;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\Log;
+use App\Services\SmsService;
 
 class SmsChannel
 {
@@ -17,45 +16,30 @@ class SmsChannel
 
     /**
      * Send the given notification.
-     *
-     * @param  mixed  $notifiable
-     * @param  \Illuminate\Notifications\Notification  $notification
-     * @return void
      */
-    public function send($notifiable, Notification $notification)
+    public function send(object $notifiable, Notification $notification): void
     {
-        if (!$notifiable->phone) {
-            Log::info('SMS notification skipped - no phone number', [
-                'user_id' => $notifiable->id,
-                'notification' => get_class($notification)
-            ]);
+        $message = $notification->toSms($notifiable);
+
+        if (empty($message)) {
             return;
         }
 
-        if (!method_exists($notification, 'toSms')) {
-            Log::warning('SMS notification skipped - toSms method not found', [
-                'user_id' => $notifiable->id,
-                'notification' => get_class($notification)
-            ]);
+        // Get the phone number from the notifiable
+        $phone = $notifiable->phone ?? $notifiable->routeNotificationFor('sms');
+
+        if (empty($phone)) {
             return;
         }
 
         try {
-            $result = $notification->toSms($notifiable);
-            
-            Log::info('SMS notification processed', [
-                'user_id' => $notifiable->id,
-                'phone' => $notifiable->phone,
-                'notification' => get_class($notification),
-                'success' => $result['success'] ?? false
-            ]);
-            
+            // Send SMS using the SMS service
+            $this->smsService->sendSms($phone, $message);
         } catch (\Exception $e) {
-            Log::error('SMS notification failed', [
-                'user_id' => $notifiable->id,
-                'phone' => $notifiable->phone,
-                'notification' => get_class($notification),
-                'error' => $e->getMessage()
+            // Log SMS sending failure but don't break the notification process
+            \Log::error('Failed to send SMS notification: ' . $e->getMessage(), [
+                'phone' => $phone,
+                'notification_class' => get_class($notification),
             ]);
         }
     }

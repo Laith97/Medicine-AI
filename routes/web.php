@@ -9,6 +9,7 @@ use App\Http\Controllers\OpenAIController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserSettingsController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Doctor\DashboardController as DoctorDashboardController;
 use App\Http\Controllers\Doctor\AvailabilityController;
 use App\Http\Controllers\Auth\PatientRegistrationController;
@@ -131,6 +132,20 @@ Route::middleware('auth')->group(function () {
 
         // Routes accessible to both doctors and patients
         Route::post('/{diagnosis}/follow-up', [DiagnosisController::class, 'storeFollowUp'])->name('follow-up.store');
+    });
+
+    // Notification routes
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::get('/dropdown', [NotificationController::class, 'dropdown'])->name('dropdown');
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');
+        Route::post('/{id}/mark-read', [NotificationController::class, 'markAsRead'])->name('mark-read');
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+        Route::delete('/{id}', [NotificationController::class, 'destroy'])->name('destroy');
+        Route::get('/settings', [NotificationController::class, 'settings'])->name('settings');
+        Route::put('/settings', [NotificationController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/preferences', [NotificationController::class, 'preferences'])->name('preferences');
+        Route::post('/preferences', [NotificationController::class, 'updatePreferences'])->name('preferences.update');
     });
 
     // Subscription routes
