@@ -15,7 +15,7 @@ class LandingPageController extends Controller
      */
     public function index()
     {
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor) {
             return redirect()->route('dashboard')->with('error', 'Doctor profile not found.');
@@ -36,7 +36,7 @@ class LandingPageController extends Controller
      */
     public function update(Request $request)
     {
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor) {
             return response()->json(['error' => 'Doctor profile not found.'], 404);
@@ -142,7 +142,7 @@ class LandingPageController extends Controller
             'hero_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor || !$doctor->landingPage) {
             return response()->json(['error' => 'Landing page not found.'], 404);
@@ -172,7 +172,7 @@ class LandingPageController extends Controller
      */
     public function togglePublish(Request $request)
     {
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor || !$doctor->landingPage) {
             return response()->json(['error' => 'Landing page not found.'], 404);
@@ -206,9 +206,11 @@ class LandingPageController extends Controller
         }
 
         // Check if user owns this landing page or is admin
-        if (auth()->check() &&
-            (auth()->user()->doctor->id !== $landingPage->doctor_id && !auth()->user()->isAdmin())) {
-            abort(403, 'Unauthorized access.');
+        if (auth()->check()) {
+            $effectiveDoctor = auth()->user()->getEffectiveDoctor();
+            if ($effectiveDoctor && $effectiveDoctor->id !== $landingPage->doctor_id && !auth()->user()->isAdmin()) {
+                abort(403, 'Unauthorized access.');
+            }
         }
 
         // Get language from request or use default
@@ -295,7 +297,7 @@ class LandingPageController extends Controller
      */
     public function pageBuilder()
     {
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor) {
             return redirect()->route('dashboard')->with('error', 'Doctor profile not found.');
@@ -319,7 +321,7 @@ class LandingPageController extends Controller
      */
     public function updateSections(Request $request)
     {
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor || !$doctor->landingPage) {
             return response()->json(['error' => 'Landing page not found.'], 404);
@@ -495,7 +497,7 @@ class LandingPageController extends Controller
             'section_id' => 'required|string',
         ]);
 
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor || !$doctor->landingPage) {
             return response()->json(['error' => 'Landing page not found.'], 404);

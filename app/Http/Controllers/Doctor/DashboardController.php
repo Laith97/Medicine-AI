@@ -10,9 +10,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use App\Traits\HandlesEffectiveDoctor;
 
 class DashboardController extends Controller
 {
+    use HandlesEffectiveDoctor;
     public function __construct()
     {
         // Middleware is handled at route level
@@ -23,7 +25,7 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         // Get today's appointments
         $todayAppointments = $doctor->appointments()
@@ -57,7 +59,7 @@ class DashboardController extends Controller
             ->get();
 
         // Get recent notes
-        $recentNotes = Auth::user()->doctorNotes()
+        $recentNotes = $this->getEffectiveDoctorUser()->doctorNotes()
             ->with(['patient'])
             ->latest()
             ->limit(5)
@@ -82,7 +84,7 @@ class DashboardController extends Controller
      */
     public function appointments(Request $request)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         $query = $doctor->appointments()->with(['patient']);
 
@@ -110,7 +112,7 @@ class DashboardController extends Controller
      */
     public function showAppointment(Appointment $appointment)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         // Check if this appointment belongs to the doctor
         if ($appointment->doctor_id !== $doctor->id) {
@@ -127,7 +129,7 @@ class DashboardController extends Controller
      */
     public function confirmAppointment(Appointment $appointment)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         // Check if this appointment belongs to the doctor
         if ($appointment->doctor_id !== $doctor->id) {
@@ -150,7 +152,7 @@ class DashboardController extends Controller
      */
     public function cancelAppointment(Request $request, Appointment $appointment)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         // Check if this appointment belongs to the doctor
         if ($appointment->doctor_id !== $doctor->id) {
@@ -177,7 +179,7 @@ class DashboardController extends Controller
      */
     public function completeAppointment(Request $request, Appointment $appointment)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         // Check if this appointment belongs to the doctor
         if ($appointment->doctor_id !== $doctor->id) {
@@ -210,7 +212,7 @@ class DashboardController extends Controller
      */
     public function markNoShow(Appointment $appointment)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         // Check if this appointment belongs to the doctor
         if ($appointment->doctor_id !== $doctor->id) {
@@ -231,7 +233,7 @@ class DashboardController extends Controller
      */
     public function reviews(Request $request)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         $query = $doctor->reviews()->with(['patient', 'appointment']);
 
@@ -257,7 +259,7 @@ class DashboardController extends Controller
         // Calculate recent reviews (this month)
         $recentReviews = $doctor->reviews()->whereMonth('created_at', now()->month)->count();
 
-        return view('doctor.reviews.index', compact('reviews', 'positiveReviews', 'recentReviews'));
+        return view('doctor.reviews.index', compact('doctor', 'reviews', 'positiveReviews', 'recentReviews'));
     }
 
     /**
@@ -265,7 +267,7 @@ class DashboardController extends Controller
      */
     public function profile()
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
         $doctor->load(['user', 'specialty', 'googleAccount']);
 
         // Get available specialties for the dropdown
@@ -279,7 +281,7 @@ class DashboardController extends Controller
      */
     public function updateProfile(Request $request)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         $request->validate([
             'bio' => 'nullable|string|max:2000',
@@ -326,7 +328,7 @@ class DashboardController extends Controller
      */
     public function getCalendarEvents(Request $request)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
         $start = $request->start;
         $end = $request->end;
 
@@ -379,9 +381,9 @@ class DashboardController extends Controller
                 ->where('status', 'completed')
                 ->whereDate('appointment_date', '>=', $thisMonth)
                 ->sum('consultation_fee') / 100, // Convert from cents to dollars
-            'total_notes' => Auth::user()->doctorNotes()->count(),
-            'voice_notes' => Auth::user()->doctorNotes()->where('note_type', 'voice')->count(),
-            'this_month_notes' => Auth::user()->doctorNotes()->whereDate('created_at', '>=', $thisMonth)->count(),
+            'total_notes' => $this->getEffectiveDoctorUser()->doctorNotes()->count(),
+            'voice_notes' => $this->getEffectiveDoctorUser()->doctorNotes()->where('note_type', 'voice')->count(),
+            'this_month_notes' => $this->getEffectiveDoctorUser()->doctorNotes()->whereDate('created_at', '>=', $thisMonth)->count(),
         ];
     }
 

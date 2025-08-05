@@ -6,15 +6,33 @@ use App\Http\Controllers\Controller;
 use App\Models\AvailabilitySlot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\HandlesEffectiveDoctor;
 
 class AvailabilityController extends Controller
 {
+    use HandlesEffectiveDoctor;
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (!Auth::user()->isDoctor() || !Auth::user()->doctor) {
-                abort(403, 'Access denied. Doctor profile required.');
+            $user = Auth::user();
+            
+            // Handle sub-users - they inherit access from their parent doctor
+            if ($user->isSubUser()) {
+                $parentUser = $user->parentUser;
+                if (!$parentUser || !$parentUser->isDoctor() || !$parentUser->doctor || !$parentUser->doctor->is_active) {
+                    abort(403, 'Access denied. Parent doctor profile required.');
+                }
+            } else {
+                // Handle main users (doctors)
+                if (!$user->isDoctor() || !$user->doctor) {
+                    abort(403, 'Access denied. Doctor profile required.');
+                }
+                
+                if (!$user->doctor->is_active) {
+                    abort(403, 'Access denied. Your doctor account has been deactivated.');
+                }
             }
+            
             return $next($request);
         });
     }
@@ -24,7 +42,7 @@ class AvailabilityController extends Controller
      */
     public function index()
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = Auth::user()->getEffectiveDoctor();
 
         $availabilitySlots = $doctor->availabilitySlots()
             ->orderBy('day_of_week')
@@ -68,7 +86,7 @@ class AvailabilityController extends Controller
      */
     public function store(Request $request)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         $request->validate([
             'day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
@@ -119,7 +137,7 @@ class AvailabilityController extends Controller
      */
     public function edit(AvailabilitySlot $availability)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         // Check if this slot belongs to the doctor
         if ($availability->doctor_id !== $doctor->id) {
@@ -144,7 +162,7 @@ class AvailabilityController extends Controller
      */
     public function update(Request $request, AvailabilitySlot $availability)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         // Check if this slot belongs to the doctor
         if ($availability->doctor_id !== $doctor->id) {
@@ -208,7 +226,7 @@ class AvailabilityController extends Controller
      */
     public function destroy(AvailabilitySlot $availability)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         // Check if this slot belongs to the doctor
         if ($availability->doctor_id !== $doctor->id) {
@@ -236,7 +254,7 @@ class AvailabilityController extends Controller
      */
     public function toggle(AvailabilitySlot $availability)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         // Check if this slot belongs to the doctor
         if ($availability->doctor_id !== $doctor->id) {
@@ -257,7 +275,7 @@ class AvailabilityController extends Controller
      */
     public function bulkStore(Request $request)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         $request->validate([
             'days' => 'required|array|min:1',

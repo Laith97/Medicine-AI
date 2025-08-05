@@ -8,9 +8,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Stripe\Webhook;
 use Stripe\Exception\SignatureVerificationException;
+use App\Traits\HandlesEffectiveDoctor;
 
 class SubscriptionController extends Controller
 {
+    use HandlesEffectiveDoctor;
     protected $stripeService;
 
     public function __construct(StripeService $stripeService)
@@ -23,7 +25,7 @@ class SubscriptionController extends Controller
      */
     public function pricing()
     {
-        $user = Auth::user();
+        $user = $this->getEffectiveDoctorUser();
         
         // Get fresh monthly invoice setting (no caching)
         $setting = $user->getFreshMonthlyInvoiceSetting();
@@ -49,7 +51,7 @@ class SubscriptionController extends Controller
                     'plan_type' => ['required', 'in:monthly,yearly']
                 ]);
 
-                $user = Auth::user();
+                $user = $this->getEffectiveDoctorUser();
                 
                 if (!$user) {
                     return response()->json([
@@ -181,7 +183,7 @@ class SubscriptionController extends Controller
      */
     public function manage()
     {
-        $user = Auth::user();
+        $user = $this->getEffectiveDoctorUser();
         $subscription = $user->activeSubscription;
         $invoices = $user->stripeInvoices()->orderBy('created_at', 'desc')->limit(10)->get();
         $setting = $user->monthlyInvoiceSetting;
@@ -223,7 +225,7 @@ class SubscriptionController extends Controller
      */
     public function cancel(Request $request)
     {
-        $user = Auth::user();
+        $user = $this->getEffectiveDoctorUser();
         $subscription = $user->activeSubscription;
 
         if (!$subscription) {
@@ -245,7 +247,7 @@ class SubscriptionController extends Controller
     public function customerPortal(Request $request)
     {
         try {
-            $user = Auth::user();
+            $user = $this->getEffectiveDoctorUser();
             
             if (!$user->stripe_customer_id) {
                 return redirect()->back()->with('error', 'No billing account found. Please contact support.');

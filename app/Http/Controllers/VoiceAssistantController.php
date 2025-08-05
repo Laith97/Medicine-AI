@@ -18,9 +18,25 @@ class VoiceAssistantController extends Controller
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (!Auth::user()->isDoctor() || !Auth::user()->doctor) {
-                abort(403, 'Access denied. Doctor profile required.');
+            $user = Auth::user();
+            
+            // Handle sub-users - they inherit access from their parent doctor
+            if ($user->isSubUser()) {
+                $parentUser = $user->parentUser;
+                if (!$parentUser || !$parentUser->isDoctor() || !$parentUser->doctor || !$parentUser->doctor->is_active) {
+                    abort(403, 'Access denied. Parent doctor profile required.');
+                }
+            } else {
+                // Handle main users (doctors)
+                if (!$user->isDoctor() || !$user->doctor) {
+                    abort(403, 'Access denied. Doctor profile required.');
+                }
+                
+                if (!$user->doctor->is_active) {
+                    abort(403, 'Access denied. Your doctor account has been deactivated.');
+                }
             }
+            
             return $next($request);
         });
     }
@@ -30,7 +46,7 @@ class VoiceAssistantController extends Controller
         // Load patients for the dropdown
         $patients = [];
         try {
-            $patients = Auth::user()->assignedPatients()
+            $patients = Auth::user()->getEffectiveAssignedPatients()
                 ->select('id', 'name', 'email', 'age', 'gender')
                 ->orderBy('name')
                 ->get()
@@ -40,8 +56,9 @@ class VoiceAssistantController extends Controller
 
             // Fallback: load all patients with role 'patient' for this doctor
             try {
+                $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
                 $patients = User::where('role', 'patient')
-                    ->where('primary_doctor_id', Auth::id())
+                    ->where('primary_doctor_id', $effectiveDoctorId)
                     ->select('id', 'name', 'email', 'age', 'gender')
                     ->orderBy('name')
                     ->get()
