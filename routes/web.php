@@ -36,7 +36,7 @@ Route::get('/', function () {
 
 // Patient registration routes
 Route::get('/register/patient', [PatientRegistrationController::class, 'create'])->name('patient.register');
-Route::post('/register/patient', [PatientRegistrationController::class, 'store'])->name('patient.register');
+Route::post('/register/patient', [PatientRegistrationController::class, 'store'])->name('patient.register.store');
 
 // Public doctor routes
 Route::get('/doctors', [DoctorController::class, 'index'])->name('doctors.index');
@@ -345,13 +345,6 @@ Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(
         Route::get('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'show'])->name('show');
         Route::get('/{note}/edit', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'edit'])->name('edit');
         Route::put('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'update'])->name('update');
-        Route::post('/update', [LandingPageController::class, 'update'])->name('update');
-        Route::post('/update-sections', [LandingPageController::class, 'updateSections'])->name('update-sections');
-        Route::post('/upload-hero-image', [LandingPageController::class, 'uploadHeroImage'])->name('upload-hero-image');
-        Route::post('/upload-section-image', [LandingPageController::class, 'uploadSectionImage'])->name('upload-section-image');
-        Route::post('/toggle-publish', [LandingPageController::class, 'togglePublish'])->name('toggle-publish');
-        Route::get('/preview/{username}', [LandingPageController::class, 'preview'])->name('preview');
-        Route::get('/animation-presets', [LandingPageController::class, 'getAnimationPresets'])->name('animation-presets');
     });
 
     // Blog Management
@@ -408,10 +401,10 @@ Route::prefix('doctor/landing-page')->name('doctor.landing-page.')->group(functi
 });
 
 // Public Chat Routes
-Route::post('/doctor/{username}/chat/init', [PublicChatController::class, 'initializeChat'])->name('doctor.chat.init');
-Route::post('/doctor/{username}/chat/send', [PublicChatController::class, 'sendMessage'])->name('doctor.chat.send');
-Route::get('/doctor/{username}/chat/history', [PublicChatController::class, 'getChatHistory'])->name('doctor.chat.history');
-Route::get('/doctor/{username}/chat/check-new', [PublicChatController::class, 'checkNewMessages'])->name('doctor.chat.check-new');
+Route::post('/doctor/{username}/chat/init', [PublicChatController::class, 'initializeChat'])->name('doctor.public-chat.init');
+Route::post('/doctor/{username}/chat/send', [PublicChatController::class, 'sendMessage'])->name('doctor.public-chat.send');
+Route::get('/doctor/{username}/chat/history', [PublicChatController::class, 'getChatHistory'])->name('doctor.public-chat.history');
+Route::get('/doctor/{username}/chat/check-new', [PublicChatController::class, 'checkNewMessages'])->name('doctor.public-chat.check-new');
 
 // Public Testimonials API
 Route::get('/doctor/{username}/testimonials', [TestimonialController::class, 'getPublicTestimonials'])->name('doctor.testimonials.public');

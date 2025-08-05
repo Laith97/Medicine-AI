@@ -13,7 +13,7 @@
                 </div>
 
                 <div class="table-card">
-                    <form method="POST" action="{{ route('patient.register') }}">
+                    <form method="POST" action="{{ route('patient.register.store') }}">
                         @csrf
 
                         <!-- Full Name -->
