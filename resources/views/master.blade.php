@@ -59,6 +59,10 @@
 
     /* Dimensions */
     min-width: 240px !important;
+    
+    /* CRITICAL: Fix Z-Index for Bootstrap Dropdowns */
+    z-index: 999999 !important;
+    position: absolute !important;
 }
 
 .dropdown-item {
@@ -125,6 +129,46 @@
     margin: 8px 16px !important;
     border: none !important;
     padding: 0 !important;
+}
+
+/* Bootstrap Dropdown Container Fix */
+.dropdown {
+    position: relative !important;
+    z-index: 10003 !important;
+}
+
+/* Bootstrap Dropdown Toggle Button */
+.dropdown-toggle {
+    position: relative !important;
+    z-index: 10004 !important;
+}
+
+/* Ensure dropdown shows above all content */
+.dropdown.show .dropdown-menu {
+    z-index: 999999 !important;
+    display: block !important;
+}
+
+/* Top Bar Dropdown Fix */
+#top-bar .dropdown {
+    position: relative !important;
+    z-index: 10005 !important;
+}
+
+#top-bar .dropdown-menu {
+    z-index: 999999 !important;
+    position: absolute !important;
+}
+
+/* Header Area Dropdown Fix */
+#header .dropdown {
+    position: relative !important;
+    z-index: 10005 !important;
+}
+
+#header .dropdown-menu {
+    z-index: 999999 !important;
+    position: absolute !important;
 }
 
 </style>
@@ -211,11 +255,14 @@
             display: flex;
             flex-wrap: nowrap;
             align-items: center;
+            max-width: 100%;
+            overflow: visible;
         }
 
         .primary-menu .menu-item {
             white-space: nowrap;
             margin-right: 1rem;
+            position: relative;
         }
 
         .primary-menu .menu-link {
@@ -246,154 +293,127 @@
             opacity: 1;
         }
 
-        /* Modern Advanced Dropdown Design */
+        /* Bootstrap Button Style Dropdown Design */
         .primary-menu .sub-menu-container {
             /* Positioning & Layout */
             position: absolute !important;
-            top: calc(100% + 8px) !important;
+            top: 100% !important;
             left: 50% !important;
-            transform: translateX(-50%) translateY(-8px) !important;
-            z-index: 9999 !important;
+            transform: translateX(-50%) !important;
+            z-index: 999999 !important;
 
-            /* Dimensions */
-            min-width: 240px !important;
-            width: max-content !important;
+            /* Bootstrap Button Dimensions */
+            min-width: 200px !important;
+            width: auto !important;
             max-width: 280px !important;
 
-            /* Modern Glass Design */
-            background: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(20px) !important;
-            -webkit-backdrop-filter: blur(20px) !important;
+            /* Bootstrap Button Design */
+            background: #ffffff !important;
+            border: 1px solid #dee2e6 !important;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
 
-            /* Advanced Shadow & Border */
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            box-shadow:
-                0 20px 40px rgba(0, 0, 0, 0.1),
-                0 8px 16px rgba(0, 0, 0, 0.08),
-                inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+            /* Bootstrap Button Rounded Design */
+            border-radius: 0.375rem !important;
 
-            /* Modern Rounded Design */
-            border-radius: 16px !important;
+            /* Bootstrap Button Spacing */
+            padding: 0.5rem 0 !important;
+            margin: 0.25rem 0 0 0 !important;
 
-            /* Spacing */
-            padding: 12px 0 !important;
-            margin: 0 !important;
-
-            /* Animation */
+            /* Simple Animation */
             opacity: 0 !important;
             visibility: hidden !important;
+            transition: all 0.15s ease-in-out !important;
 
             /* List Reset */
             list-style: none !important;
         }
 
-        /* Hover Bridge - Invisible area to prevent dropdown from closing */
-        .primary-menu .sub-menu-container::after {
-            content: '' !important;
-            position: absolute !important;
-            top: -16px !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-            width: 100% !important;
-            height: 16px !important;
-            background: transparent !important;
-            z-index: 9998 !important;
-        }
 
-        /* Dropdown Arrow Indicator */
+
+        /* Add hover bridge to prevent dropdown from closing */
         .primary-menu .sub-menu-container::before {
             content: '' !important;
             position: absolute !important;
-            top: -6px !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-            width: 12px !important;
-            height: 12px !important;
-            background: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(20px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            border-bottom: none !important;
-            border-right: none !important;
-            transform: translateX(-50%) rotate(45deg) !important;
-            border-radius: 2px 0 0 0 !important;
-            z-index: 9999 !important;
+            top: -10px !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: 10px !important;
+            background: transparent !important;
         }
 
-        /* Show dropdown on hover with perfect positioning */
+        /* Fix ONLY the last menu item dropdown positioning */
+        .primary-menu .menu-item:last-child .sub-menu-container {
+            left: auto !important;
+            right: 0 !important;
+            transform: none !important;
+        }
+
+        /* Show dropdown on hover - keep it open when hovering dropdown itself */
         .primary-menu .menu-item:hover .sub-menu-container,
         .primary-menu .sub-menu-container:hover {
             opacity: 1 !important;
             visibility: visible !important;
-            transform: translateX(-50%) translateY(0) !important;
         }
 
-        /* Dropdown Items */
+        /* Bootstrap Button Style Dropdown Items */
         .primary-menu .sub-menu-container .menu-item {
             margin: 0 !important;
             padding: 0 !important;
-            border: none !important;
-            background: transparent !important;
-            position: relative !important;
         }
 
-        /* Dropdown Links - Modern Design */
+        /* Bootstrap Button Style Dropdown Links */
         .primary-menu .sub-menu-container .menu-link {
-            /* Layout */
             display: flex !important;
             align-items: center !important;
-            padding: 12px 20px !important;
-            margin: 0 8px !important;
-
-            /* Typography */
-            font-size: 14px !important;
-            font-weight: 500 !important;
-            color: #374151 !important;
+            gap: 0.5rem !important;
+            padding: 0.375rem 0.75rem !important;
+            margin: 0.125rem 0.5rem !important;
+            font-size: 0.875rem !important;
+            font-weight: 400 !important;
+            line-height: 1.5 !important;
+            color: #212529 !important;
             text-decoration: none !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-
-            /* Modern Styling */
-            border-radius: 10px !important;
-            background: transparent !important;
-            border: none !important;
-
-            /* Smooth Transitions */
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            position: relative !important;
-            overflow: hidden !important;
+            background-color: transparent !important;
+            border: 1px solid transparent !important;
+            border-radius: 0.375rem !important;
+            transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out !important;
         }
 
-        /* Hover Effect - Modern Gradient */
+        /* Bootstrap Button Style Icon */
+        .primary-menu .sub-menu-container .menu-link i {
+            font-size: 0.875rem !important;
+            width: 1rem !important;
+            text-align: center !important;
+        }
+
+        /* Bootstrap Button Style Hover Effect */
         .primary-menu .sub-menu-container .menu-link:hover {
-            background: linear-gradient(135deg, rgba(222, 98, 98, 0.1), rgba(222, 98, 98, 0.05)) !important;
             color: #DE6262 !important;
-            font-weight: 600 !important;
-            transform: translateX(4px) !important;
-            box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15) !important;
+            background-color: #f8f9fa !important;
+            border-color: #dee2e6 !important;
         }
 
-        /* Active State - Premium Design */
+        /* Bootstrap Button Style Active State */
         .primary-menu .sub-menu-container .menu-item.current .menu-link {
-            background: linear-gradient(135deg, #DE6262, #c55555) !important;
             color: #ffffff !important;
-            font-weight: 600 !important;
-            box-shadow: 0 4px 16px rgba(222, 98, 98, 0.3) !important;
+            background-color: #DE6262 !important;
+            border-color: #DE6262 !important;
         }
 
-        /* Active Hover State */
+        /* Bootstrap Button Style Active Hover State */
         .primary-menu .sub-menu-container .menu-item.current .menu-link:hover {
-            background: linear-gradient(135deg, #c55555, #b04848) !important;
-            transform: translateX(2px) !important;
-            box-shadow: 0 6px 20px rgba(222, 98, 98, 0.4) !important;
+            color: #ffffff !important;
+            background-color: #c55555 !important;
+            border-color: #c55555 !important;
         }
 
-        /* Modern Divider */
-        .primary-menu .menu-divider {
-            height: 1px !important;
-            background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08) 20%, rgba(0, 0, 0, 0.08) 80%, transparent) !important;
-            margin: 8px 16px !important;
-            border: none !important;
-            padding: 0 !important;
-        }
+        /* DEBUG: Temporary styling to identify dropdowns */
+        .primary-menu .menu-item:nth-child(1) .sub-menu-container { border-left: 3px solid green !important; }
+        .primary-menu .menu-item:nth-child(2) .sub-menu-container { border-left: 3px solid blue !important; }
+        .primary-menu .menu-item:nth-child(3) .sub-menu-container { border-left: 3px solid orange !important; }
+        .primary-menu .menu-item:nth-child(4) .sub-menu-container { border-left: 3px solid purple !important; }
+        .primary-menu .menu-item:nth-child(5) .sub-menu-container { border-left: 3px solid red !important; }
+        .primary-menu .menu-item:nth-child(6) .sub-menu-container { border-left: 3px solid brown !important; }
 
         /* Modern Dropdown Arrow Animation */
         .primary-menu .fa-chevron-down {
@@ -407,6 +427,137 @@
             transform: rotate(180deg) !important;
             opacity: 1 !important;
             color: #DE6262 !important;
+        }
+
+        /* Responsive Navigation Improvements */
+        @media (max-width: 1200px) {
+            .primary-menu .menu-container {
+                flex-wrap: wrap !important;
+                justify-content: center !important;
+            }
+            
+            .primary-menu .menu-item {
+                margin-right: 0.5rem !important;
+            }
+            
+            .primary-menu .sub-menu-container {
+                min-width: 240px !important;
+                max-width: 280px !important;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .primary-menu .menu-link {
+                padding: 0.4rem 0.8rem !important;
+                font-size: 14px !important;
+            }
+            
+            .primary-menu .sub-menu-container {
+                position: fixed !important;
+                top: 80px !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                width: 90vw !important;
+                max-width: 300px !important;
+            }
+        }
+
+        /* Enhanced Menu Item Spacing */
+        .primary-menu .menu-item + .menu-item {
+            margin-left: 0.5rem !important;
+        }
+
+        /* Modern Badge for Notifications */
+        .menu-badge {
+            position: absolute !important;
+            top: -2px !important;
+            right: -2px !important;
+            background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+            color: white !important;
+            font-size: 10px !important;
+            font-weight: 600 !important;
+            padding: 2px 6px !important;
+            border-radius: 10px !important;
+            min-width: 16px !important;
+            text-align: center !important;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3) !important;
+        }
+
+        /* Prevent Horizontal Scroll */
+        html, body {
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+        }
+
+        .container, .container-fluid {
+            max-width: 100% !important;
+        }
+
+        /* Ensure all elements stay within viewport */
+        * {
+            box-sizing: border-box !important;
+        }
+
+        /* Header Layout - Fix Z-Index Issues */
+        #header {
+            overflow: visible !important;
+            position: relative !important;
+            z-index: 10000 !important;
+        }
+
+        .header-row {
+            overflow: visible !important;
+            position: relative !important;
+            z-index: 10000 !important;
+        }
+
+        .primary-menu {
+            position: relative !important;
+            z-index: 10001 !important;
+        }
+
+        /* Ensure dropdown appears above all content */
+        .primary-menu .menu-item {
+            position: relative !important;
+            z-index: 10002 !important;
+        }
+
+        /* Force dropdown above everything */
+        .primary-menu .sub-menu-container {
+            position: absolute !important;
+            z-index: 999999 !important;
+        }
+
+        /* Fix dropdown positioning to prevent overflow */
+        .primary-menu .sub-menu-container {
+            /* Ensure dropdowns don't cause horizontal scroll */
+            left: 50% !important;
+            transform: translateX(-50%) translateY(-8px) !important;
+            max-width: min(320px, 90vw) !important;
+            width: max-content !important;
+        }
+
+        /* Adjust dropdown positioning for edge cases */
+        .primary-menu .menu-item:first-child .sub-menu-container {
+            left: 0 !important;
+            transform: translateX(0) translateY(-8px) !important;
+        }
+
+        .primary-menu .menu-item:last-child .sub-menu-container {
+            left: auto !important;
+            right: 0 !important;
+            transform: translateX(0) translateY(-8px) !important;
+        }
+
+        /* Keep mobile menu functionality intact */
+        @media (max-width: 991px) {
+            .primary-menu {
+                display: none;
+            }
+            
+            .primary-menu-trigger {
+                display: block;
+            }
         }
 
         /* Modern Parent Hover State */
@@ -572,7 +723,12 @@
                        href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
                        style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
                         <i class="bi bi-person-circle"></i>
-                        <span>{{ Auth::user()->name }}</span>
+                        <div class="d-flex flex-column align-items-start">
+                            <span>{{ Auth::user()->name }}</span>
+                            @if(Auth::user()->isSubUser())
+                                <small class="opacity-75">{{ \App\Helpers\MenuHelper::getUserRoleDisplay(Auth::user()) }}</small>
+                            @endif
+                        </div>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow">
                         @if(Auth::guard('admin')->check())
@@ -599,6 +755,14 @@
                                     <i class="fas fa-user-edit"></i>Edit Profile
                                 </a>
                             </li>
+                            @if(Auth::user()->isMainUser())
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('sub-users.index') }}">
+                                        <i class="fas fa-users"></i> Manage Sub-Users
+                                    </a>
+                                </li>
+                            @endif
                         @endif
                         <li><hr class="dropdown-divider"></li>
                         <li>
@@ -634,138 +798,105 @@
 
 		<!-- Header
 		============================================= -->
-		<header id="header">
-			<div id="header-wrap">
-				<div class="container">
-					<div class="header-row">
+<header id="header">
+    <div id="header-wrap">
+        <div class="container">
+<div class="header-row d-flex align-items-center justify-content-center">
 
-						<!-- Logo
-						============================================= -->
-						<div id="logo">
-							<a href="@auth{{ route('dashboard') }}@else{{ url('/') }}@endauth">
-								<img style="width: 140px" class="logo-default" srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x" src="{{ asset('demos/medical/images/logo-medical.jpeg') }}" alt="Canvas Logo">
-							</a>
-						</div><!-- #logo end -->
+                <!-- Logo and Desktop Nav Container -->
+                <div class="d-flex align-items-center">
+                    <!-- Logo -->
+                    <div id="logo" class="me-4">
+                        <a href="@auth{{ route('dashboard') }}@else{{ url('/') }}@endauth">
+                            <img style="width: 140px" class="logo-default"
+                                 srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x"
+                                 src="{{ asset('demos/medical/images/logo-medical.jpeg') }}"
+                                 alt="Canvas Logo">
+                        </a>
+                    </div>
 
-						<div class="primary-menu-trigger">
-							<button class="cnvs-hamburger" type="button" title="Open Mobile Menu">
-								<span class="cnvs-hamburger-box"><span class="cnvs-hamburger-inner"></span></span>
-							</button>
-						</div>
-
-						<!-- Primary Navigation
-						============================================= -->
-						<nav class="primary-menu style-3 menu-spacing-margin">
-                            <ul class="menu-container">
-                                @auth
-                                    @if (Auth::guard('admin')->check())
-                                        <li class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('admin.dashboard') }}"><div>Dashboard</div></a>
-                                        </li>
-                                    @elseif(auth()->user()->role === 'doctor')
-                                        <!-- Core Medical AI Navigation -->
-                                        <li class="menu-item {{ request()->routeIs('dashboard') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('dashboard') }}"><div>Dashboard</div></a>
-                                        </li>
-                                        <li class="menu-item {{ request()->routeIs('ask-ai') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('ask-ai') }}"><div>AI Assistant</div></a>
-                                        </li>
-                                        <li class="menu-item {{ request()->routeIs('voice-assistant.index') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('voice-assistant.index') }}"><div><i class="fas fa-microphone mr-2"></i>{{ __('Voice Assistant') }}</div></a>
-                                        </li>
-
-                                        <li class="menu-item {{ request()->routeIs('diagnosis.*') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('diagnosis.index') }}"><div>Diagnoses</div></a>
-                                        </li>
-                                        <li class="menu-item {{ request()->routeIs('cases') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('cases') }}"><div>Patient Cases</div></a>
-                                        </li>
-
-                                        <!-- Additional Features Dropdown -->
-                                        <li class="menu-item {{ request()->routeIs('doctor.*') || request()->routeIs('invoices.*') || request()->routeIs('subscription.*') || request()->routeIs('settings') ? 'current' : '' }}">
-                                            <a class="menu-link" href="#"><div>More <i class="fas fa-chevron-down"></i></div></a>
-                                            <ul class="sub-menu-container">
-                                                <li class="menu-item {{ request()->routeIs('settings') ? 'current' : '' }}">
-                                                    <a class="menu-link" href="{{ route('settings') }}"><div>Settings</div></a>
-                                                </li>
-                                                <li class="menu-item menu-divider"></li>
-                                                <li class="menu-item {{ request()->routeIs('invoices.*') ? 'current' : '' }}">
-                                                    <a class="menu-link" href="{{ route('invoices.index') }}"><div>Billing & Invoices</div></a>
-                                                </li>
-                                                <li class="menu-item {{ request()->routeIs('subscription.*') ? 'current' : '' }}">
-                                                    <a class="menu-link" href="{{ route('subscription.manage') }}"><div>Subscription</div></a>
-                                                </li>
-                                                <li class="menu-item menu-divider"></li>
-                                                <li class="menu-item {{ request()->routeIs('doctor.appointments.*') ? 'current' : '' }}">
-                                                    <a class="menu-link" href="{{ route('doctor.appointments.index') }}"><div>Appointments</div></a>
-                                                </li>
-                                                <li class="menu-item {{ request()->routeIs('doctor.availability.*') ? 'current' : '' }}">
-                                                    <a class="menu-link" href="{{ route('doctor.availability.index') }}"><div>Availability</div></a>
-                                                </li>
-                                                <li class="menu-item {{ request()->routeIs('doctor.reviews.*') ? 'current' : '' }}">
-                                                    <a class="menu-link" href="{{ route('doctor.reviews.index') }}"><div>Reviews</div></a>
-                                                </li>
-                                                <li class="menu-item {{ request()->routeIs('doctor.chat.*') ? 'current' : '' }}">
-                                                    <a class="menu-link" href="{{ route('doctor.chat.index') }}"><div>Chat Messages</div></a>
-                                                </li>
-                                                <li class="menu-item {{ request()->routeIs('doctor.landing-page*') ? 'current' : '' }}">
-                                                    <a class="menu-link" href="{{ route('doctor.landing-page.index') }}"><div>Landing Page</div></a>
-                                                </li>
-                                                <li class="menu-item {{ request()->routeIs('doctor.blog.*') ? 'current' : '' }}">
-                                                    <a class="menu-link" href="{{ route('doctor.blog.index') }}"><div>Blog Posts</div></a>
-                                                </li>
-                                                <li class="menu-item {{ request()->routeIs('doctor.notes.index') ? 'current' : '' }}">
-                                                    <a class="menu-link" href="{{ route('doctor.notes.index') }}"><div>My Notes</div></a>
-                                                </li>
-                                            </ul>
-                                        </li>
-                                    @else
-                                        <!-- Patient Navigation -->
-                                        <li class="menu-item {{ request()->routeIs('doctors.index') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('doctors.index') }}">
-                                                <div><i class="fas fa-user-md mr-2"></i>Find Doctors</div>
-                                            </a>
-                                        </li>
-                                        <li class="menu-item {{ request()->routeIs('appointments.index') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('appointments.index') }}">
-                                                <div><i class="fas fa-calendar mr-2"></i>My Appointments</div>
-                                            </a>
-                                        </li>
-                                        <li class="menu-item {{ request()->routeIs('diagnosis.patient.*') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('diagnosis.patient.index') }}">
-                                                <div><i class="fas fa-file-medical mr-2"></i>My Diagnoses</div>
-                                            </a>
-                                        </li>
-                                    @endif
-                                @endauth
-
-                                @guest
-                                    <li class="menu-item {{ request()->is('/') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ url('/') }}"><div>Home</div></a>
+                    <!-- Desktop Navigation -->
+                    <nav class="primary-menu style-3 menu-spacing-margin d-none d-lg-block">
+                        <ul class="menu-container">
+                            @auth
+                                @if (Auth::guard('admin')->check())
+                                    <li class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('admin.dashboard') }}"><div>Dashboard</div></a>
                                     </li>
-                                  <!--  <li class="menu-item">
-                                        <a class="menu-link" href="/#pricing"><div>Pricing</div></a>
-                                    </li>-->
-                                    <li class="menu-item {{ request()->is('about') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('about') }}"><div>About Us</div></a>
-                                    </li>
-                                    <li class="menu-item {{ request()->is('contact') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('contact') }}"><div>Contact</div></a>
-                                    </li>
-                                        <li class="menu-item {{ request()->is('doctors') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('doctors.index') }}"><div>For Patients</div></a>
-                                    </li>
-                                @endguest
-                            </ul>
+                                @else
+                                    @php
+                                        $menuItems = \App\Helpers\MenuHelper::getMenuItems(auth()->user());
+                                    @endphp
 
+                                    @foreach($menuItems as $item)
+                                        @if(isset($item['dropdown']) && $item['dropdown'])
+                                            <!-- Dropdown Menu Item -->
+                                            <li class="menu-item {{ collect($item['items'])->contains(fn($subItem) => request()->routeIs($subItem['route'] ?? '')) ? 'current' : '' }}">
+                                                <a class="menu-link" href="#"><div>{{ $item['name'] }} <i class="fas fa-chevron-down"></i></div></a>
+                                                <ul class="sub-menu-container">
+                                                    @foreach($item['items'] as $subItem)
+                                                        <li class="menu-item {{ request()->routeIs($subItem['route'] ?? '') ? 'current' : '' }}">
+                                                            <a class="menu-link" href="{{ isset($subItem['route']) ? route($subItem['route']) : '#' }}">
+                                                                <div>
+                                                                    @if(isset($subItem['icon']))
+                                                                        <i class="{{ $subItem['icon'] }} me-2"></i>
+                                                                    @endif
+                                                                    {{ $subItem['name'] }}
+                                                                </div>
+                                                            </a>
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            </li>
+                                        @else
+                                            <!-- Regular Menu Item -->
+                                            <li class="menu-item {{ request()->routeIs($item['route'] ?? '') ? 'current' : '' }}">
+                                                <a class="menu-link" href="{{ isset($item['route']) ? route($item['route']) : '#' }}">
+                                                    <div>
+                                                        @if(isset($item['icon']))
+                                                            <i class="{{ $item['icon'] }} me-2"></i>
+                                                        @endif
+                                                        {{ $item['name'] }}
+                                                    </div>
+                                                </a>
+                                            </li>
+                                        @endif
+                                    @endforeach
+                                @endif
+                            @endauth
 
-						</nav><!-- #primary-menu end -->
+                            @guest
+                                <li class="menu-item {{ request()->is('/') ? 'current' : '' }}">
+                                    <a class="menu-link" href="{{ url('/') }}"><div>Home</div></a>
+                                </li>
+                                <li class="menu-item {{ request()->is('about') ? 'current' : '' }}">
+                                    <a class="menu-link" href="{{ route('about') }}"><div>About Us</div></a>
+                                </li>
+                                <li class="menu-item {{ request()->is('contact') ? 'current' : '' }}">
+                                    <a class="menu-link" href="{{ route('contact') }}"><div>Contact</div></a>
+                                </li>
+                                <li class="menu-item {{ request()->is('doctors') ? 'current' : '' }}">
+                                    <a class="menu-link" href="{{ route('doctors.index') }}"><div>For Patients</div></a>
+                                </li>
+                            @endguest
+                        </ul>
+                    </nav>
+                </div>
 
-					</div>
-				</div>
-			</div>
-			<div class="header-wrap-clone"></div>
-		</header><!-- #header end -->
+                <!-- Mobile Hamburger Button -->
+                <div class="primary-menu-trigger d-block d-lg-none">
+                    <button class="cnvs-hamburger" type="button" title="Open Mobile Menu">
+                        <span class="cnvs-hamburger-box"><span class="cnvs-hamburger-inner"></span></span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="header-wrap-clone"></div>
+</header>
+
 
         <!-- Flash Messages -->
         @if(session('success') || session('error') || session('warning') || session('info'))
@@ -999,6 +1130,77 @@
     <script src="{{ asset('js/functions.bundle.js') }}"></script>
 
     @stack('scripts')
+
+    <!-- Debug Menu Structure -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== MENU STRUCTURE DEBUG ===');
+            
+            // Log all menu items and their dropdowns
+            document.querySelectorAll('.primary-menu .menu-item').forEach((item, index) => {
+                const menuLink = item.querySelector(':scope > .menu-link');
+                const dropdown = item.querySelector(':scope > .sub-menu-container');
+                
+                if (menuLink) {
+                    const menuName = menuLink.textContent.trim().replace(' ▼', '');
+                    console.log(`Menu ${index + 1}: "${menuName}"`);
+                    
+                    if (dropdown) {
+                        const subItems = Array.from(dropdown.querySelectorAll('.menu-link')).map(link => 
+                            link.textContent.trim()
+                        );
+                        console.log(`  Dropdown items:`, subItems);
+                        
+                        // Add temporary label to dropdown for visual debugging
+                        const debugLabel = document.createElement('div');
+                        debugLabel.style.cssText = 'background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; font-size: 10px; font-weight: bold;';
+                        debugLabel.textContent = `${menuName} Dropdown`;
+                        dropdown.insertBefore(debugLabel, dropdown.firstChild);
+                    } else {
+                        console.log(`  No dropdown`);
+                    }
+                }
+            });
+            
+            console.log('=== END DEBUG ===');
+            
+            // Improve dropdown hover behavior
+            let hoverTimeout;
+            
+            document.querySelectorAll('.primary-menu .menu-item').forEach(menuItem => {
+                const dropdown = menuItem.querySelector('.sub-menu-container');
+                
+                if (dropdown) {
+                    // Show dropdown immediately on hover
+                    menuItem.addEventListener('mouseenter', function() {
+                        clearTimeout(hoverTimeout);
+                        dropdown.style.opacity = '1';
+                        dropdown.style.visibility = 'visible';
+                    });
+                    
+                    // Delay hiding dropdown when mouse leaves
+                    menuItem.addEventListener('mouseleave', function() {
+                        hoverTimeout = setTimeout(() => {
+                            dropdown.style.opacity = '0';
+                            dropdown.style.visibility = 'hidden';
+                        }, 300); // 300ms delay
+                    });
+                    
+                    // Keep dropdown open when hovering over it
+                    dropdown.addEventListener('mouseenter', function() {
+                        clearTimeout(hoverTimeout);
+                    });
+                    
+                    dropdown.addEventListener('mouseleave', function() {
+                        hoverTimeout = setTimeout(() => {
+                            dropdown.style.opacity = '0';
+                            dropdown.style.visibility = 'hidden';
+                        }, 300);
+                    });
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>

@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\EnsureUserRole::class,
             'stripe.configured' => \App\Http\Middleware\CheckStripeConfiguration::class,
             'access.restrictions' => \App\Http\Middleware\CheckAccessRestrictions::class,
+            'sub.user.permissions' => \App\Http\Middleware\CheckSubUserPermissions::class,
         ]);
 
         // Apply access restrictions to authenticated routes

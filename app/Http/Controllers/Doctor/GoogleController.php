@@ -9,9 +9,11 @@ use App\Services\GoogleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Exception;
+use App\Traits\HandlesEffectiveDoctor;
 
 class GoogleController extends Controller
 {
+    use HandlesEffectiveDoctor;
     protected $googleService;
 
     public function __construct(GoogleService $googleService)
@@ -24,7 +26,7 @@ class GoogleController extends Controller
      */
     public function redirectToGoogle()
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor) {
             return redirect()->back()->withErrors(['error' => 'You must be a doctor to connect Google account.']);
@@ -40,7 +42,7 @@ class GoogleController extends Controller
      */
     public function handleGoogleCallback(Request $request)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor) {
             return redirect()->route('doctor.profile.edit')->withErrors(['error' => 'You must be a doctor to connect Google account.']);

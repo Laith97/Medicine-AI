@@ -8,9 +8,11 @@ use App\Jobs\SyncStripeInvoices;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Traits\HandlesEffectiveDoctor;
 
 class InvoiceController extends Controller
 {
+    use HandlesEffectiveDoctor;
     public function __construct(
         private StripeInvoiceService $invoiceService
     ) {}
@@ -20,7 +22,7 @@ class InvoiceController extends Controller
      */
     public function index(Request $request)
     {
-        $user = Auth::user();
+        $user = $this->getEffectiveDoctorUser();
         
         $query = $user->stripeInvoices()->with('user');
 

@@ -41,6 +41,9 @@ class User extends Authenticatable
         'subscription_ends_at',
         'subscription_active',
         'primary_doctor_id',
+        'parent_user_id',
+        'sub_user_role',
+        'is_sub_user',
     ];
 
     /**
@@ -67,6 +70,7 @@ class User extends Authenticatable
             'monthly_cost_limit' => 'decimal:2',
             'trial_ends_at' => 'datetime',
             'trial_used' => 'boolean',
+            'is_sub_user' => 'boolean',
         ];
     }
 
@@ -149,6 +153,225 @@ public function getFreshMonthlyInvoiceSetting()
     public function isPatient()
     {
         return $this->role === 'patient';
+    }
+
+    /**
+     * Check if user is a sub-user
+     */
+    public function isSubUser()
+    {
+        return $this->is_sub_user;
+    }
+
+    /**
+     * Check if user is a main user (not a sub-user)
+     */
+    public function isMainUser()
+    {
+        return !$this->is_sub_user;
+    }
+
+    /**
+     * Parent user relationship (for sub-users)
+     */
+    public function parentUser()
+    {
+        return $this->belongsTo(User::class, 'parent_user_id');
+    }
+
+    /**
+     * Sub-users relationship (for main users)
+     */
+    public function subUsers()
+    {
+        return $this->hasMany(User::class, 'parent_user_id')->where('is_sub_user', true);
+    }
+
+    /**
+     * Permissions relationship
+     */
+    public function permissions()
+    {
+        return $this->belongsToMany(Permission::class, 'user_permissions')
+                    ->withPivot('granted_by')
+                    ->withTimestamps();
+    }
+
+    /**
+     * User permissions pivot records
+     */
+    public function userPermissions()
+    {
+        return $this->hasMany(UserPermission::class);
+    }
+
+    /**
+     * Check if user has a specific permission
+     */
+    public function hasPermission(string $permissionName): bool
+    {
+        // Main users (non-sub-users) have all permissions except restricted ones
+        if ($this->isMainUser()) {
+            // Check if it's a restricted permission
+            $permission = Permission::where('name', $permissionName)->first();
+            if ($permission && $permission->is_restricted) {
+                // Only doctors can access restricted permissions
+                return $this->isDoctor();
+            }
+            return true;
+        }
+
+        // Sub-users only have explicitly granted permissions
+        return $this->permissions()->where('name', $permissionName)->exists();
+    }
+
+    /**
+     * Check if user can access a specific route
+     */
+    public function canAccessRoute(string $routeName): bool
+    {
+        // Main users can access all routes based on their role
+        if ($this->isMainUser()) {
+            // Check for restricted routes
+            $restrictedPermissions = Permission::where('is_restricted', true)->get();
+            foreach ($restrictedPermissions as $permission) {
+                if ($permission->matchesRoute($routeName)) {
+                    return $this->isDoctor();
+                }
+            }
+            return true;
+        }
+
+        // Sub-users need explicit permission
+        $permissions = $this->permissions;
+        foreach ($permissions as $permission) {
+            if ($permission->matchesRoute($routeName)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Grant permission to this user
+     */
+    public function grantPermission(Permission $permission, User $grantedBy): bool
+    {
+        // Can't grant restricted permissions to sub-users
+        if ($this->isSubUser() && $permission->is_restricted) {
+            return false;
+        }
+
+        // Can't grant permission if already exists
+        if ($this->hasPermission($permission->name)) {
+            return false;
+        }
+
+        $this->permissions()->attach($permission->id, [
+            'granted_by' => $grantedBy->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Revoke permission from this user
+     */
+    public function revokePermission(Permission $permission): bool
+    {
+        return $this->permissions()->detach($permission->id) > 0;
+    }
+
+    /**
+     * Get available permissions for this user (for UI display)
+     */
+    public function getAvailablePermissions()
+    {
+        if ($this->isMainUser()) {
+            // Main users can see all non-restricted permissions for granting to sub-users
+            return Permission::getAvailableForSubUsers();
+        }
+
+        // Sub-users can only see their granted permissions
+        return $this->permissions;
+    }
+
+    /**
+     * Get the effective role for permission checking
+     */
+    public function getEffectiveRole(): string
+    {
+        if ($this->isSubUser()) {
+            return $this->sub_user_role ?? 'sub_user';
+        }
+
+        return $this->role;
+    }
+
+    /**
+     * Get the effective doctor profile (for sub-users, returns parent's doctor profile)
+     */
+    public function getEffectiveDoctor()
+    {
+        if ($this->isSubUser()) {
+            return $this->parentUser ? $this->parentUser->doctor : null;
+        }
+
+        return $this->doctor;
+    }
+
+    /**
+     * Get the effective doctor user (for sub-users, returns parent user)
+     */
+    public function getEffectiveDoctorUser()
+    {
+        if ($this->isSubUser()) {
+            return $this->parentUser;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get assigned patients (works for both main users and sub-users)
+     */
+    public function getEffectiveAssignedPatients()
+    {
+        if ($this->isSubUser()) {
+            return $this->parentUser ? $this->parentUser->assignedPatients() : collect();
+        }
+
+        return $this->assignedPatients();
+    }
+
+    /**
+     * Get effective doctor appointments (for sub-users, returns parent's doctor appointments)
+     */
+    public function getEffectiveDoctorAppointments()
+    {
+        $doctor = $this->getEffectiveDoctor();
+        return $doctor ? $doctor->appointments() : collect();
+    }
+
+    /**
+     * Get effective doctor reviews (for sub-users, returns parent's doctor reviews)
+     */
+    public function getEffectiveDoctorReviews()
+    {
+        $doctor = $this->getEffectiveDoctor();
+        return $doctor ? $doctor->reviews() : collect();
+    }
+
+    /**
+     * Check if user (or their parent) has an active doctor profile
+     */
+    public function hasActiveDoctorProfile(): bool
+    {
+        $doctor = $this->getEffectiveDoctor();
+        return $doctor && $doctor->is_active;
     }
 
     /**
