@@ -235,7 +235,20 @@ function selectPlan(planType) {
             plan_type: planType
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Server returned non-JSON response');
+        }
+        
+        return response.json();
+    })
     .then(data => {
         if (data.checkout_url) {
             // Redirect to Stripe checkout
@@ -246,11 +259,25 @@ function selectPlan(planType) {
             // Restore button
             button.innerHTML = originalText;
             button.disabled = false;
+        } else {
+            // Unexpected response format
+            throw new Error('Unexpected response format');
         }
     })
     .catch(error => {
         console.error('Checkout error:', error);
-        alert('An error occurred while processing your request. Please try again.');
+        
+        // More specific error messages
+        let errorMessage = 'An error occurred while processing your request. Please try again.';
+        
+        if (error.message.includes('non-JSON response')) {
+            errorMessage = 'Server configuration error. Please contact support.';
+        } else if (error.message.includes('HTTP error')) {
+            errorMessage = 'Network error. Please check your connection and try again.';
+        }
+        
+        alert(errorMessage);
+        
         // Restore button
         button.innerHTML = originalText;
         button.disabled = false;

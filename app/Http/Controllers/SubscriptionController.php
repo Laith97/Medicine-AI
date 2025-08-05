@@ -42,69 +42,98 @@ class SubscriptionController extends Controller
      */
     public function checkout(Request $request)
     {
-        $request->validate([
-            'plan_type' => ['required', 'in:monthly,yearly']
-        ]);
+        // Ensure we always return JSON for AJAX requests
+        if ($request->expectsJson() || $request->ajax()) {
+            try {
+                $request->validate([
+                    'plan_type' => ['required', 'in:monthly,yearly']
+                ]);
 
-        try {
-            $user = Auth::user();
-            
-            // Check if user has monthly invoice settings configured by admin
-            $monthlySettings = $user->getFreshMonthlyInvoiceSetting();
-            
-            if (!$monthlySettings) {
+                $user = Auth::user();
+                
+                if (!$user) {
+                    return response()->json([
+                        'error' => 'Authentication required. Please log in and try again.'
+                    ], 401);
+                }
+                
+                // Check if user has monthly invoice settings configured by admin
+                $monthlySettings = $user->getFreshMonthlyInvoiceSetting();
+                
+                if (!$monthlySettings) {
+                    return response()->json([
+                        'error' => 'Your account has not been configured yet. Please contact support to set up your subscription.'
+                    ], 400);
+                }
+
+                // Get the price for the selected plan type
+                $planType = $request->plan_type;
+                $price = $monthlySettings->getPriceForCycle($planType);
+                
+                if ($price <= 0) {
+                    return response()->json([
+                        'error' => 'Pricing not configured for this plan. Please contact support.'
+                    ], 400);
+                }
+
+                // Update the user's billing settings for the selected plan type
+                $subscriptionPeriodMonths = $planType === 'yearly' ? 12 : 1;
+                $monthlySettings->update([
+                    'billing_amount' => $price,
+                    'subscription_period_months' => $subscriptionPeriodMonths,
+                ]);
+
+                // Create checkout session with selected plan pricing
+                $session = $this->stripeService->createPersonalizedCheckoutSession(
+                    $user,
+                    $price,
+                    $planType
+                );
+
                 return response()->json([
-                    'error' => 'Your account has not been configured yet. Please contact support to set up your subscription.'
-                ], 400);
-            }
-
-            // Get the price for the selected plan type
-            $planType = $request->plan_type;
-            $price = $monthlySettings->getPriceForCycle($planType);
-            
-            if ($price <= 0) {
+                    'checkout_url' => $session->url
+                ]);
+            } catch (\Illuminate\Validation\ValidationException $e) {
                 return response()->json([
-                    'error' => 'Pricing not configured for this plan. Please contact support.'
+                    'error' => 'Invalid plan type selected.',
+                    'validation_errors' => $e->errors()
+                ], 422);
+            } catch (\InvalidArgumentException $e) {
+                Log::error('Stripe configuration error: ' . $e->getMessage());
+                return response()->json([
+                    'error' => $e->getMessage()
                 ], 400);
+            } catch (\Stripe\Exception\ApiErrorException $e) {
+                Log::error('Stripe API error: ' . $e->getMessage());
+                return response()->json([
+                    'error' => 'Payment system error. Please try again or contact support.'
+                ], 500);
+            } catch (\Exception $e) {
+                Log::error('Stripe checkout error: ' . $e->getMessage(), [
+                    'user_id' => Auth::id(),
+                    'plan_type' => $request->plan_type ?? 'unknown',
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                // Provide more specific error messages based on the error
+                $errorMessage = 'Unable to create checkout session. Please try again.';
+                
+                if (strpos($e->getMessage(), 'No API key') !== false) {
+                    $errorMessage = 'Stripe is not properly configured. Please contact the administrator.';
+                } elseif (strpos($e->getMessage(), 'No such price') !== false) {
+                    $errorMessage = 'Your pricing configuration is not available. Please contact support.';
+                } elseif (strpos($e->getMessage(), 'No such customer') !== false) {
+                    $errorMessage = 'Customer account error. Please try again or contact support.';
+                }
+                
+                return response()->json([
+                    'error' => $errorMessage
+                ], 500);
             }
-
-            // Update the user's billing amount for the selected plan type
-            $monthlySettings->update([
-                'billing_amount' => $price, // Set current billing amount for Stripe
-            ]);
-
-            // Create checkout session with selected plan pricing
-            $session = $this->stripeService->createPersonalizedCheckoutSession(
-                $user,
-                $price
-            );
-
-            return response()->json([
-                'checkout_url' => $session->url
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            Log::error('Stripe configuration error: ' . $e->getMessage());
-            return response()->json([
-                'error' => $e->getMessage()
-            ], 400);
-        } catch (\Exception $e) {
-            Log::error('Stripe checkout error: ' . $e->getMessage());
-            
-            // Provide more specific error messages based on the error
-            $errorMessage = 'Unable to create checkout session. Please try again.';
-            
-            if (strpos($e->getMessage(), 'No API key') !== false) {
-                $errorMessage = 'Stripe is not properly configured. Please contact the administrator.';
-            } elseif (strpos($e->getMessage(), 'No such price') !== false) {
-                $errorMessage = 'Your pricing configuration is not available. Please contact support.';
-            } elseif (strpos($e->getMessage(), 'No such customer') !== false) {
-                $errorMessage = 'Customer account error. Please try again or contact support.';
-            }
-            
-            return response()->json([
-                'error' => $errorMessage
-            ], 500);
         }
+        
+        // For non-AJAX requests, redirect back with error
+        return redirect()->back()->with('error', 'This endpoint only accepts AJAX requests.');
     }
 
     /**

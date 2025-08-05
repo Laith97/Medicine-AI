@@ -91,7 +91,7 @@ class StripeService
     /**
      * Create a personalized checkout session based on admin-configured amount
      */
-    public function createPersonalizedCheckoutSession(User $user, float $monthlyAmount): Session
+    public function createPersonalizedCheckoutSession(User $user, float $amount, string $billingCycle = 'monthly'): Session
     {
         // Validate Stripe configuration
         $this->validateStripeConfiguration();
@@ -99,7 +99,12 @@ class StripeService
         $customer = $this->createOrGetCustomer($user);
         
         // Convert amount to cents for Stripe
-        $amountInCents = (int) ($monthlyAmount * 100);
+        $amountInCents = (int) ($amount * 100);
+        
+        // Determine Stripe interval and plan name
+        $stripeInterval = $billingCycle === 'yearly' ? 'year' : 'month';
+        $planDisplayName = $billingCycle === 'yearly' ? 'Annual Plan' : 'Monthly Plan';
+        $intervalText = $billingCycle === 'yearly' ? 'year' : 'month';
         
         return Session::create([
             'customer' => $customer->id,
@@ -108,12 +113,12 @@ class StripeService
                 'price_data' => [
                     'currency' => 'usd',
                     'product_data' => [
-                        'name' => 'Medical AI Assistant - Personal Plan',
-                        'description' => 'Personalized medical diagnosis assistance for ' . $user->name,
+                        'name' => "Medical AI Assistant - {$planDisplayName}",
+                        'description' => "Personalized medical diagnosis assistance for {$user->name} - billed {$intervalText}ly",
                     ],
                     'unit_amount' => $amountInCents,
                     'recurring' => [
-                        'interval' => 'month',
+                        'interval' => $stripeInterval,
                     ],
                 ],
                 'quantity' => 1,
@@ -124,8 +129,8 @@ class StripeService
             'metadata' => [
                 'user_id' => $user->id,
                 'plan_name' => 'personal',
-                'billing_cycle' => 'monthly',
-                'billing_amount' => $monthlyAmount,
+                'billing_cycle' => $billingCycle,
+                'billing_amount' => $amount,
                 'custom_pricing' => 'true',
             ],
         ]);
@@ -189,9 +194,12 @@ class StripeService
 
         // Update user subscription status via MonthlyInvoiceSetting
         if ($user->monthlyInvoiceSetting) {
+            $subscriptionPeriodMonths = $billingCycle === 'yearly' ? 12 : 1;
             $user->monthlyInvoiceSetting->update([
                 'subscription_starts_at' => $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_start'),
                 'subscription_ends_at' => $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_end'),
+                'subscription_period_months' => $subscriptionPeriodMonths,
+                'billing_amount' => $stripeSubscription->items->data[0]->price->unit_amount / 100,
                 'is_active' => true,
             ]);
         }

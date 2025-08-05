@@ -1230,13 +1230,25 @@ function selectPlan(planId) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
         },
         body: JSON.stringify({
-            subscription_plan_id: planId
+            plan_type: planId // Should be 'monthly' or 'yearly'
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Server returned non-JSON response');
+        }
+        
+        return response.json();
+    })
     .then(data => {
         if (data.checkout_url) {
             window.location.href = data.checkout_url;
@@ -1248,7 +1260,15 @@ function selectPlan(planId) {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while starting checkout');
+        
+        let errorMessage = 'An error occurred while starting checkout';
+        if (error.message.includes('non-JSON response')) {
+            errorMessage = 'Server configuration error. Please contact support.';
+        } else if (error.message.includes('HTTP error')) {
+            errorMessage = 'Network error. Please check your connection and try again.';
+        }
+        
+        alert(errorMessage);
         button.innerHTML = originalText;
         button.disabled = false;
     });
@@ -1265,13 +1285,25 @@ function startPersonalizedCheckout() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
         },
         body: JSON.stringify({
-            // No plan needed - using personalized pricing
+            plan_type: 'monthly' // Default to monthly for personalized pricing
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Server returned non-JSON response');
+        }
+        
+        return response.json();
+    })
     .then(data => {
         if (data.checkout_url) {
             window.location.href = data.checkout_url;
@@ -1283,7 +1315,15 @@ function startPersonalizedCheckout() {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while starting checkout');
+        
+        let errorMessage = 'An error occurred while starting checkout';
+        if (error.message.includes('non-JSON response')) {
+            errorMessage = 'Server configuration error. Please contact support.';
+        } else if (error.message.includes('HTTP error')) {
+            errorMessage = 'Network error. Please check your connection and try again.';
+        }
+        
+        alert(errorMessage);
         button.innerHTML = originalText;
         button.disabled = false;
     });
