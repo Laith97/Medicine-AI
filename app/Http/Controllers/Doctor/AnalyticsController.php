@@ -18,7 +18,7 @@ class AnalyticsController extends Controller
 
     public function index()
     {
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
         $period = 30; // Default to 30 days
 
         $stats = $this->getStats($doctor->id, $period);
@@ -38,7 +38,7 @@ class AnalyticsController extends Controller
 
     public function getData(Request $request)
     {
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
         $period = $request->get('period', 30);
 
         $stats = $this->getStats($doctor->id, $period);

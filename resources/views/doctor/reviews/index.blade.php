@@ -24,7 +24,7 @@
                     <div class="stats-icon" style="background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%);">
                         <i class="fas fa-star"></i>
                     </div>
-                    <p class="stats-number">{{ number_format(auth()->user()->doctor->average_rating, 1) }}</p>
+                    <p class="stats-number">{{ number_format($doctor->average_rating ?? 0, 1) }}</p>
                     <p class="stats-label">Average Rating</p>
                 </div>
             </div>
@@ -34,7 +34,7 @@
                     <div class="stats-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
                         <i class="fas fa-comments"></i>
                     </div>
-                    <p class="stats-number">{{ auth()->user()->doctor->total_reviews }}</p>
+                    <p class="stats-number">{{ $doctor->total_reviews ?? 0 }}</p>
                     <p class="stats-label">Total Reviews</p>
                 </div>
             </div>

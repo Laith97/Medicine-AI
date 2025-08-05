@@ -21,7 +21,13 @@ class EnsureUserRole
 
         $user = auth()->user();
 
-        if ($user->role !== $role) {
+        // Handle sub-users - they inherit their parent's role for access purposes
+        $effectiveRole = $user->role;
+        if ($user->isSubUser() && $user->parentUser) {
+            $effectiveRole = $user->parentUser->role;
+        }
+
+        if ($effectiveRole !== $role) {
             abort(403, "Access denied. {$role} role required.");
         }
 
