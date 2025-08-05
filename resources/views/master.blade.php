@@ -567,6 +567,38 @@
                     <i class="bi bi-lightning-charge me-1"></i> Quick Diagnosis
                 </a>
 
+                <!-- Notifications Bell -->
+                <div class="dropdown notifications-dropdown">
+                    <button class="btn btn-sm position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                            style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                        <i class="bi bi-bell"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count"
+                              id="notification-count"
+                              style="font-size: 10px; padding: 2px 6px; display: none;">
+                            0
+                        </span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end shadow notifications-dropdown-menu" style="width: 350px; max-height: 400px; overflow-y: auto;">
+                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                            <h6 class="mb-0">Notifications</h6>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-secondary mark-all-read-btn" title="Mark all as read">
+                                    <i class="bi bi-check-all"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary view-all-btn" title="View all notifications">
+                                    <i class="bi bi-list-ul"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="notification-list" id="notification-list">
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-bell-slash display-6 d-block mb-2"></i>
+                                <small>No notifications</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="dropdown">
                     <a class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle"
                        href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
@@ -600,6 +632,12 @@
                                 </a>
                             </li>
                         @endif
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('notifications.index') }}">
+                                <i class="bi bi-gear"></i> Notification Settings
+                            </a>
+                        </li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form method="POST" action="{{ route('logout') }}">
@@ -994,11 +1032,105 @@
 
 	<!-- JavaScripts
 	============================================= -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="{{ asset('js/plugins.min.js') }}"></script>
-    <script src="{{ asset('js/functions.bundle.js') }}"></script>
+	   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	   <script src="{{ asset('js/plugins.min.js') }}"></script>
+	   <script src="{{ asset('js/functions.bundle.js') }}"></script>
+
+	   <!-- Notification System JavaScript -->
+	   <script src="{{ asset('js/notifications.js') }}"></script>
+
+	   <!-- Notification System Styles -->
+	   @include('notifications._styles')
+
+	   <!-- Notification System JavaScript -->
+	   @auth
+	   @include('notifications._realtime_js')
+	   <script>
+	   $(document).ready(function() {
+	       // Load notifications dropdown
+	       function loadNotifications() {
+	           $.ajax({
+	               url: '{{ route("notifications.dropdown") }}',
+	               method: 'GET',
+	               success: function(response) {
+	                   $('#notification-list').html(response.html);
+	                   updateNotificationCount(response.unread_count);
+	               }
+	           });
+	       }
+
+	       // Update notification count badge
+	       function updateNotificationCount(count) {
+	           const $badge = $('#notification-count');
+	           if (count > 0) {
+	               $badge.text(count).show();
+	           } else {
+	               $badge.hide();
+	           }
+	       }
+
+	       // Mark notification as read
+	       $(document).on('click', '.notification-item', function(e) {
+	           e.preventDefault();
+	           const notificationId = $(this).data('notification-id');
+	           const $item = $(this);
+
+	           $.ajax({
+	               url: '{{ route("notifications.mark-read", ":id") }}'.replace(':id', notificationId),
+	               method: 'POST',
+	               data: {
+	                   _token: '{{ csrf_token() }}'
+	               },
+	               success: function() {
+	                   $item.removeClass('unread').addClass('read');
+	                   const currentCount = parseInt($('#notification-count').text() || 0);
+	                   updateNotificationCount(currentCount - 1);
+	               }
+	           });
+	       });
+
+	       // Mark all as read
+	       $(document).on('click', '.mark-all-read-btn', function() {
+	           $.ajax({
+	               url: '{{ route("notifications.mark-all-read") }}',
+	               method: 'POST',
+	               data: {
+	                   _token: '{{ csrf_token() }}'
+	               },
+	               success: function() {
+	                   loadNotifications();
+	               }
+	           });
+	       });
+
+	       // View all notifications
+	       $(document).on('click', '.view-all-btn', function() {
+	           window.location.href = '{{ route("notifications.index") }}';
+	       });
+
+	       // Close dropdown when clicking outside
+	       $(document).on('click', function(e) {
+	           if (!$(e.target).closest('.notifications-dropdown').length) {
+	               $('.notifications-dropdown-menu').removeClass('show');
+	           }
+	       });
+
+	       // Initial load
+	       loadNotifications();
+
+	       // Auto-refresh notifications every 30 seconds
+	       setInterval(loadNotifications, 30000);
+@endif
 
     @stack('scripts')
+
+    <!-- Real-time notifications JavaScript -->
+    @include('notifications._realtime_js')
+	   });
+	   </script>
+	   @endif
+
+	   @stack('scripts')
 
 </body>
 </html>

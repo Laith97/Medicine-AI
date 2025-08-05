@@ -654,4 +654,175 @@ public function patientAiAssistantResults()
     return $this->hasMany(AiAssistantResult::class, 'patient_id');
 }
 
+/**
+ * Get all notifications for this user
+ */
+public function notifications()
+{
+    return $this->morphMany(\Illuminate\Notifications\DatabaseNotification::class, 'notifiable')
+        ->orderBy('created_at', 'desc');
+}
+
+/**
+ * Get unread notifications for this user
+ */
+public function unreadNotifications()
+{
+    return $this->notifications()->whereNull('read_at');
+}
+
+/**
+ * Get read notifications for this user
+ */
+public function readNotifications()
+{
+    return $this->notifications()->whereNotNull('read_at');
+}
+
+/**
+ * Get unread notification count
+ */
+public function unreadNotificationsCount()
+{
+    return $this->unreadNotifications()->count();
+}
+
+/**
+ * Mark all notifications as read
+ */
+public function markAllNotificationsAsRead()
+{
+    $this->unreadNotifications()->update(['read_at' => now()]);
+}
+
+/**
+ * Get notification preferences
+ */
+public function notificationPreferences()
+{
+    return $this->hasOne(\App\Models\NotificationPreference::class);
+}
+
+/**
+ * Get or create notification preferences
+ */
+public function getOrCreateNotificationPreferences()
+{
+    if ($this->notificationPreferences) {
+        return $this->notificationPreferences;
+    }
+
+    return $this->notificationPreferences()->create([
+        'email_enabled' => true,
+        'email_appointment_reminders' => true,
+        'email_diagnosis_updates' => true,
+        'email_review_requests' => true,
+        'email_system_alerts' => true,
+        'email_marketing' => false,
+        'sms_enabled' => false,
+        'sms_appointment_reminders' => false,
+        'sms_urgent_alerts' => true,
+        'in_app_enabled' => true,
+        'in_app_sound' => true,
+        'in_app_desktop' => true,
+        'in_app_vibrate' => false,
+        'frequency' => 'immediate',
+        'quiet_hours_start' => '22:00',
+        'quiet_hours_end' => '08:00',
+        'respect_quiet_hours' => true,
+        'appointment_booked' => true,
+        'appointment_reminder' => true,
+        'diagnosis_submitted' => true,
+        'review_submitted' => true,
+        'voice_transcription_completed' => true,
+        'system_alert' => true,
+    ]);
+}
+
+/**
+ * Check if user wants to receive notifications of a specific type
+ */
+public function wantsNotification(string $type): bool
+{
+    $preferences = $this->getOrCreateNotificationPreferences();
+
+    switch ($type) {
+        case 'appointment_booked':
+            return $preferences->appointment_booked;
+        case 'appointment_reminder':
+            return $preferences->appointment_reminder;
+        case 'diagnosis_submitted':
+            return $preferences->diagnosis_submitted;
+        case 'review_submitted':
+            return $preferences->review_submitted;
+        case 'voice_transcription_completed':
+            return $preferences->voice_transcription_completed;
+        case 'system_alert':
+            return $preferences->system_alert;
+        default:
+            return true;
+    }
+}
+
+/**
+ * Check if user wants to receive notifications via a specific channel
+ */
+public function wantsNotificationChannel(string $channel): bool
+{
+    $preferences = $this->getOrCreateNotificationPreferences();
+
+    switch ($channel) {
+        case 'email':
+            return $preferences->email_enabled;
+        case 'sms':
+            return $preferences->sms_enabled;
+        case 'in_app':
+            return $preferences->in_app_enabled;
+        default:
+            return false;
+    }
+}
+
+/**
+ * Check if it's currently quiet hours for this user
+ */
+public function isQuietHours(): bool
+{
+    $preferences = $this->getOrCreateNotificationPreferences();
+
+    if (!$preferences->respect_quiet_hours) {
+        return false;
+    }
+
+    $now = now();
+    $currentTime = $now->format('H:i');
+    $startTime = $preferences->quiet_hours_start;
+    $endTime = $preferences->quiet_hours_end;
+
+    // Handle overnight quiet hours (e.g., 22:00 to 08:00)
+    if ($startTime > $endTime) {
+        return $currentTime >= $startTime || $currentTime <= $endTime;
+    }
+
+    return $currentTime >= $startTime && $currentTime <= $endTime;
+}
+
+/**
+ * Get notification frequency setting
+ */
+public function getNotificationFrequency(): string
+{
+    return $this->getOrCreateNotificationPreferences()->frequency;
+}
+
+/**
+ * Send notification if user wants to receive it
+ */
+public function notifyIfWants($instance)
+{
+    if ($this->wantsNotification($instance->type ?? 'general')) {
+        $this->notify($instance);
+    }
+}
+
 }
