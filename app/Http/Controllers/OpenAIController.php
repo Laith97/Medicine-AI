@@ -22,18 +22,36 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use OpenAI\Laravel\Facades\OpenAI;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\HandlesEffectiveDoctor;
 
 class OpenAIController extends Controller
 {
+    use HandlesEffectiveDoctor;
     protected $smsService;
 
     public function __construct(SmsService $smsService)
     {
         $this->smsService = $smsService;
         $this->middleware(function ($request, $next) {
-            if (!Auth::user()->isDoctor() || !Auth::user()->doctor) {
-                abort(403, 'Access denied. Doctor profile required.');
+            $user = Auth::user();
+            
+            // Handle sub-users - they inherit access from their parent doctor
+            if ($user->isSubUser()) {
+                $parentUser = $user->parentUser;
+                if (!$parentUser || !$parentUser->isDoctor() || !$parentUser->doctor || !$parentUser->doctor->is_active) {
+                    abort(403, 'Access denied. Parent doctor profile required.');
+                }
+            } else {
+                // Handle main users (doctors)
+                if (!$user->isDoctor() || !$user->doctor) {
+                    abort(403, 'Access denied. Doctor profile required.');
+                }
+                
+                if (!$user->doctor->is_active) {
+                    abort(403, 'Access denied. Your doctor account has been deactivated.');
+                }
             }
+            
             return $next($request);
         });
     }
@@ -43,7 +61,7 @@ class OpenAIController extends Controller
         $symptoms = Symptom::all();
 
         // Get doctor's assigned patients (actual User accounts)
-        $assignedPatients = Auth::user()->assignedPatients()
+        $assignedPatients = Auth::user()->getEffectiveAssignedPatients()
             ->select('id', 'name', 'email', 'phone', 'age', 'gender')
             ->orderBy('name')
             ->get();
@@ -1839,18 +1857,20 @@ class OpenAIController extends Controller
         }
 
         $user = auth()->user();
+        $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+        $effectiveDoctorId = $effectiveDoctorUser ? $effectiveDoctorUser->id : $user->id;
 
         // Get records from both old PatientAnalysis and new Diagnosis systems
         $patientAnalysisRecords = PatientAnalysis::with('user')
-            ->where('user_id', auth()->id())
+            ->where('user_id', $effectiveDoctorId)
             ->orderBy('created_at', 'desc')
             ->get();
 
         // Get diagnosis records where user is either doctor or patient
         $diagnosisRecords = Diagnosis::with(['doctor', 'patient', 'aiAssistantResults'])
-            ->where(function($query) {
-                $query->where('doctor_id', auth()->id())
-                      ->orWhere('patient_id', auth()->id());
+            ->where(function($query) use ($effectiveDoctorId) {
+                $query->where('doctor_id', $effectiveDoctorId)
+                      ->orWhere('patient_id', auth()->id()); // Keep original user ID for patient records
             })
             ->orderBy('created_at', 'desc')
             ->get();
@@ -1880,13 +1900,13 @@ class OpenAIController extends Controller
         $records = $patientAnalysisRecords->concat($transformedDiagnosisRecords)->sortByDesc('created_at');
 
         // Count records for the past week from both sources
-        $weeklyCountPA = PatientAnalysis::where('user_id', auth()->id())
+        $weeklyCountPA = PatientAnalysis::where('user_id', $effectiveDoctorId)
             ->where('created_at', '>=', now()->subDays(7))
             ->count();
 
-        $weeklyCountDiag = Diagnosis::where(function($query) {
-                $query->where('doctor_id', auth()->id())
-                      ->orWhere('patient_id', auth()->id());
+        $weeklyCountDiag = Diagnosis::where(function($query) use ($effectiveDoctorId) {
+                $query->where('doctor_id', $effectiveDoctorId)
+                      ->orWhere('patient_id', auth()->id()); // Keep original user ID for patient records
             })
             ->where('created_at', '>=', now()->subDays(7))
             ->count();
@@ -1938,10 +1958,10 @@ class OpenAIController extends Controller
         // Limit to 10 for dashboard display
         $patientGroups = array_slice($patientGroups, 0, 10, true);
 
-        // Doctor-specific data
+        // Doctor-specific data (works for both main doctors and sub-users)
         $doctorData = null;
-        if ($user->role === 'doctor' && $user->doctor) {
-            $doctor = $user->doctor;
+        $doctor = $user->getEffectiveDoctor();
+        if ($doctor) {
 
             // Get today's appointments
             $todayAppointments = $doctor->appointments()

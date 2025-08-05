@@ -1102,18 +1102,42 @@
         <div class="chart-card">
             <h4><i class="fas fa-bolt me-2"></i>Quick Actions</h4>
             <div class="d-flex flex-wrap gap-2 mt-3">
-                <a href="{{ route('ask-ai') }}" class="btn-custom-primary">
-                    <i class="fas fa-user-plus me-2"></i> Add New Patient
-                </a>
-                <a href="{{ route('diagnosis.create') }}" class="btn-custom-primary">
-                    <i class="fas fa-file-medical me-2"></i> Create Diagnosis
-                </a>
-                <a href="{{ route('cases') }}" class="btn-custom-secondary">
-                    <i class="fas fa-list me-2"></i> View All Cases
-                </a>
-                <a href="{{ route('diagnosis.index') }}" class="btn-custom-secondary">
-                    <i class="fas fa-clipboard-list me-2"></i> View Diagnoses
-                </a>
+                @if(auth()->user()->canAccessRoute('ask-ai'))
+                    <a href="{{ route('ask-ai') }}" class="btn-custom-primary">
+                        <i class="fas fa-user-plus me-2"></i> Add New Patient
+                    </a>
+                @endif
+                
+                @if(auth()->user()->canAccessRoute('diagnosis'))
+                    <a href="{{ route('diagnosis.create') }}" class="btn-custom-primary">
+                        <i class="fas fa-file-medical me-2"></i> Create Diagnosis
+                    </a>
+                @endif
+                
+                @if(auth()->user()->canAccessRoute('cases'))
+                    <a href="{{ route('cases') }}" class="btn-custom-secondary">
+                        <i class="fas fa-list me-2"></i> View All Cases
+                    </a>
+                @endif
+                
+                @if(auth()->user()->canAccessRoute('diagnosis'))
+                    <a href="{{ route('diagnosis.index') }}" class="btn-custom-secondary">
+                        <i class="fas fa-clipboard-list me-2"></i> View Diagnoses
+                    </a>
+                @endif
+
+                <!-- Additional actions for permitted users -->
+                @if(auth()->user()->canAccessRoute('doctor.appointments.index'))
+                    <a href="{{ route('doctor.appointments.index') }}" class="btn-custom-secondary">
+                        <i class="fas fa-calendar me-2"></i> Manage Appointments
+                    </a>
+                @endif
+                
+                @if(auth()->user()->canAccessRoute('settings'))
+                    <a href="{{ route('settings') }}" class="btn-custom-secondary">
+                        <i class="fas fa-cog me-2"></i> Settings
+                    </a>
+                @endif
             </div>
         </div>
 
@@ -1360,46 +1384,76 @@
                         <i class="fas fa-bolt me-2"></i>Quick Actions
                     </h6>
                     <div class="d-grid gap-2">
-                        <a href="{{ route('doctor.appointments.index') }}" class="btn btn-primary-custom btn-sm">
-                            <i class="fas fa-calendar me-2"></i>View All Appointments
-                        </a>
-                        <a href="{{ route('diagnosis.create') }}" class="btn btn-primary-custom btn-sm">
-                            <i class="fas fa-file-medical me-2"></i>Create Diagnosis
-                        </a>
-                        <a href="{{ route('diagnosis.index') }}" class="btn btn-secondary-custom btn-sm">
-                            <i class="fas fa-clipboard-list me-2"></i>View Diagnoses
-                        </a>
-                        <a href="{{ route('doctor.availability.index') }}" class="btn btn-secondary-custom btn-sm">
-                            <i class="fas fa-clock me-2"></i>Manage Availability
-                        </a>
-                        <a href="{{ route('doctor.reviews.index') }}" class="btn btn-secondary-custom btn-sm">
-                            <i class="fas fa-star me-2"></i>View Reviews
-                        </a>
-                        <a href="{{ route('doctor.profile.edit') }}" class="btn btn-secondary-custom btn-sm">
-                            <i class="fas fa-user-edit me-2"></i>Edit Profile
-                        </a>
-                        <a href="{{ route('doctor.settings.appointments') }}" class="btn btn-secondary-custom btn-sm">
-                            <i class="fas fa-cog me-2"></i>Appointment Settings
-                        </a>
-                        <a href="{{ route('doctor.landing-page.index') }}" class="btn btn-secondary-custom btn-sm">
-                            <i class="fas fa-globe me-2"></i>Landing Page
-                        </a>
-                        <a href="{{ route('doctor.reviews.index') }}" class="btn btn-secondary-custom btn-sm">
-                            <i class="fas fa-star me-2"></i>View Reviews
-                        </a>
-                        <a href="{{ route('doctor.notes.index') }}" class="btn btn-secondary-custom btn-sm">
-                            <i class="fas fa-sticky-note me-2"></i>My Notes
-                        </a>
-                        <a href="{{ route('doctor.notes.create') }}" class="btn btn-secondary-custom btn-sm">
-                            <i class="fas fa-plus me-2"></i>Add Note
-                        <a href="{{ route('doctor.blog.index') }}" class="btn btn-secondary-custom btn-sm">
-                            <i class="fas fa-blog me-2"></i>Manage Blog
-                        </a>
+                        @if(auth()->user()->canAccessRoute('doctor.appointments.index'))
+                            <a href="{{ route('doctor.appointments.index') }}" class="btn btn-primary-custom btn-sm">
+                                <i class="fas fa-calendar me-2"></i>View All Appointments
+                            </a>
+                        @endif
+                        
+                        @if(auth()->user()->canAccessRoute('diagnosis'))
+                            <a href="{{ route('diagnosis.create') }}" class="btn btn-primary-custom btn-sm">
+                                <i class="fas fa-file-medical me-2"></i>Create Diagnosis
+                            </a>
+                        @endif
+                        
+                        @if(auth()->user()->canAccessRoute('diagnosis'))
+                            <a href="{{ route('diagnosis.index') }}" class="btn btn-secondary-custom btn-sm">
+                                <i class="fas fa-clipboard-list me-2"></i>View Diagnoses
+                            </a>
+                        @endif
+                        
+                        @if(auth()->user()->canAccessRoute('doctor.availability.index'))
+                            <a href="{{ route('doctor.availability.index') }}" class="btn btn-secondary-custom btn-sm">
+                                <i class="fas fa-clock me-2"></i>Manage Availability
+                            </a>
+                        @endif
+                        
+                        @if(auth()->user()->canAccessRoute('doctor.reviews.index'))
+                            <a href="{{ route('doctor.reviews.index') }}" class="btn btn-secondary-custom btn-sm">
+                                <i class="fas fa-star me-2"></i>View Reviews
+                            </a>
+                        @endif
+                        
+                        @if(auth()->user()->canAccessRoute('doctor.profile.edit'))
+                            <a href="{{ route('doctor.profile.edit') }}" class="btn btn-secondary-custom btn-sm">
+                                <i class="fas fa-user-edit me-2"></i>Edit Profile
+                            </a>
+                        @endif
+                        
+                        @if(auth()->user()->canAccessRoute('doctor.settings.appointments'))
+                            <a href="{{ route('doctor.settings.appointments') }}" class="btn btn-secondary-custom btn-sm">
+                                <i class="fas fa-cog me-2"></i>Appointment Settings
+                            </a>
+                        @endif
+                        
+                        @if(auth()->user()->canAccessRoute('doctor.landing-page.index'))
+                            <a href="{{ route('doctor.landing-page.index') }}" class="btn btn-secondary-custom btn-sm">
+                                <i class="fas fa-globe me-2"></i>Landing Page
+                            </a>
+                        @endif
+                        
+                        @if(auth()->user()->canAccessRoute('doctor.notes.index'))
+                            <a href="{{ route('doctor.notes.index') }}" class="btn btn-secondary-custom btn-sm">
+                                <i class="fas fa-sticky-note me-2"></i>My Notes
+                            </a>
+                        @endif
+                        
+                        @if(auth()->user()->canAccessRoute('doctor.notes.create'))
+                            <a href="{{ route('doctor.notes.create') }}" class="btn btn-secondary-custom btn-sm">
+                                <i class="fas fa-plus me-2"></i>Add Note
+                            </a>
+                        @endif
+                        
+                        @if(auth()->user()->canAccessRoute('doctor.blog.index'))
+                            <a href="{{ route('doctor.blog.index') }}" class="btn btn-secondary-custom btn-sm">
+                                <i class="fas fa-blog me-2"></i>Manage Blog
+                            </a>
+                        @endif
                     </div>
                 </div>
 
                 <!-- Pending Appointments -->
-                @if($doctorData['pendingAppointments']->count() > 0)
+                @if(auth()->user()->canAccessRoute('doctor.appointments.index') && $doctorData['pendingAppointments']->count() > 0)
                     <div class="stats-card" style="margin-bottom: 2rem; position: relative; z-index: 2;">
                         <h6 class="mb-3">
                             <i class="fas fa-clock me-2"></i>Pending Appointments

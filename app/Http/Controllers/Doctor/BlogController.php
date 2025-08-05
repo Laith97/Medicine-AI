@@ -17,7 +17,9 @@ class BlogController extends Controller
 
     public function index()
     {
-        $posts = auth()->user()->doctor->blogPosts()
+        $doctor = $this->getEffectiveDoctor();
+        
+        $posts = $doctor->blogPosts()
                     ->orderBy('created_at', 'desc')
                     ->paginate(10);
 
@@ -46,7 +48,8 @@ class BlogController extends Controller
             'title', 'short_description', 'content', 'is_published'
         ]);
 
-        $data['doctor_id'] = auth()->user()->doctor->id;
+        $doctor = $this->getEffectiveDoctor();
+        $data['doctor_id'] = $doctor->id;
         $data['is_published'] = $request->boolean('is_published');
 
         // Handle SEO meta data

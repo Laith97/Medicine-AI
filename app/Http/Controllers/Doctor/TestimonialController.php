@@ -15,7 +15,7 @@ class TestimonialController extends Controller
 
     public function index()
     {
-        $reviews = auth()->user()->doctor->reviews()
+        $reviews = $this->getEffectiveDoctor()->reviews()
                       ->orderBy('created_at', 'desc')
                       ->paginate(12);
 
@@ -25,7 +25,7 @@ class TestimonialController extends Controller
     public function togglePublic(Request $request, Review $review)
     {
         // Ensure the review belongs to the authenticated doctor
-        if ($review->doctor_id !== auth()->user()->doctor->id) {
+        if ($review->doctor_id !== $this->getEffectiveDoctor()->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'
@@ -48,7 +48,7 @@ class TestimonialController extends Controller
     public function updateCaseStudy(Request $request, Review $review)
     {
         // Ensure the review belongs to the authenticated doctor
-        if ($review->doctor_id !== auth()->user()->doctor->id) {
+        if ($review->doctor_id !== $this->getEffectiveDoctor()->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized'

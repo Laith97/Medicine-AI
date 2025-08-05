@@ -68,12 +68,24 @@ Route::prefix('reviews/guest')->name('reviews.guest.')->group(function () {
     Route::get('/{appointment}/show', [ReviewController::class, 'guestShow'])->name('show');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     Route::get('/ask-ai', [OpenAIController::class, 'showForm'])->name('ask-ai');
     Route::post('/openai/respond', [OpenAIController::class, 'getResponse'])->name('openai.respond');
     Route::post('/openai/follow-up', [OpenAIController::class, 'followUp'])->name('openai.follow-up');
     Route::post('/openai/create-manual-diagnosis', [OpenAIController::class, 'createManualDiagnosis'])->name('openai.create-manual-diagnosis');
     Route::post('/patient/summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient.summary');
+
+    // Sub-user management routes (only for main doctor users)
+    Route::prefix('sub-users')->name('sub-users.')->middleware('role:doctor')->group(function () {
+        Route::get('/', [App\Http\Controllers\SubUserController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\SubUserController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\SubUserController::class, 'store'])->name('store');
+        Route::get('/{subUser}', [App\Http\Controllers\SubUserController::class, 'show'])->name('show');
+        Route::get('/{subUser}/edit', [App\Http\Controllers\SubUserController::class, 'edit'])->name('edit');
+        Route::put('/{subUser}', [App\Http\Controllers\SubUserController::class, 'update'])->name('update');
+        Route::delete('/{subUser}', [App\Http\Controllers\SubUserController::class, 'destroy'])->name('destroy');
+        Route::patch('/{subUser}/toggle-status', [App\Http\Controllers\SubUserController::class, 'toggleStatus'])->name('toggle-status');
+    });
 
     // Voice Assistant routes
     Route::prefix('voice-assistant')->name('voice-assistant.')->group(function () {
@@ -187,6 +199,164 @@ Route::middleware('auth')->group(function () {
         return view('test-diagnosis-access');
     })->name('test.diagnosis.access');
 
+    // Test sub-user permissions
+    Route::get('/test-sub-user-permissions', function() {
+        $user = auth()->user();
+        $menuItems = \App\Helpers\MenuHelper::getMenuItems($user);
+        
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'is_sub_user' => $user->isSubUser(),
+                'sub_user_role' => $user->sub_user_role,
+                'parent_user_id' => $user->parent_user_id,
+            ],
+            'permissions' => $user->permissions->pluck('name'),
+            'menu_items' => $menuItems,
+            'can_access' => [
+                'dashboard' => $user->canAccessRoute('dashboard'),
+                'ask-ai' => $user->canAccessRoute('ask-ai'),
+                'voice-assistant.index' => $user->canAccessRoute('voice-assistant.index'),
+                'diagnosis.index' => $user->canAccessRoute('diagnosis.index'),
+                'cases' => $user->canAccessRoute('cases'),
+                'sub-users.index' => $user->canAccessRoute('sub-users.index'),
+            ],
+        ]);
+    })->name('test.sub-user.permissions');
+
+    // Test sub-user access page
+    Route::get('/test-sub-user-access', function() {
+        return view('test-sub-user-access');
+    })->name('test.sub-user.access');
+
+    // Debug sub-user middleware
+    Route::get('/debug-sub-user', function() {
+        $user = auth()->user();
+        
+        return response()->json([
+            'user_id' => $user->id,
+            'user_email' => $user->email,
+            'user_role' => $user->role,
+            'is_sub_user_field' => $user->is_sub_user,
+            'parent_user_id' => $user->parent_user_id,
+            'sub_user_role' => $user->sub_user_role,
+            'isSubUser_method' => $user->isSubUser(),
+            'isDoctor_method' => $user->isDoctor(),
+            'parent_user' => $user->parentUser ? [
+                'id' => $user->parentUser->id,
+                'name' => $user->parentUser->name,
+                'email' => $user->parentUser->email,
+                'role' => $user->parentUser->role,
+                'has_doctor_profile' => $user->parentUser->doctor ? true : false,
+                'doctor_is_active' => $user->parentUser->doctor ? $user->parentUser->doctor->is_active : null,
+            ] : null,
+            'user_doctor_profile' => $user->doctor ? [
+                'id' => $user->doctor->id,
+                'is_active' => $user->doctor->is_active,
+            ] : null,
+        ]);
+    })->name('debug.sub-user');
+
+    // Simple test route without middleware
+    Route::get('/simple-test', function() {
+        if (!auth()->check()) {
+            return 'Not logged in';
+        }
+        
+        $user = auth()->user();
+        return "Hello {$user->name}! You are logged in as a " . ($user->isSubUser() ? 'sub-user' : 'main user');
+    })->name('simple.test');
+
+    // Sub-user success page
+    Route::get('/sub-user-success', function() {
+        if (!auth()->check() || !auth()->user()->isSubUser()) {
+            return redirect()->route('dashboard');
+        }
+        return view('sub-user-success');
+    })->name('sub-user.success');
+
+    // Test dashboard access for sub-users
+    Route::get('/test-dashboard-access', function() {
+        if (!auth()->check()) {
+            return 'Please login first';
+        }
+        
+        $user = auth()->user();
+        
+        if (!$user->isSubUser()) {
+            return 'This test is only for sub-users';
+        }
+        
+        try {
+            // Test effective doctor access
+            $effectiveDoctor = $user->getEffectiveDoctor();
+            $appointmentsCount = $effectiveDoctor ? $effectiveDoctor->appointments()->count() : 0;
+            $reviewsCount = $effectiveDoctor ? $effectiveDoctor->reviews()->count() : 0;
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Sub-user can access dashboard successfully!',
+                'user' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'is_sub_user' => $user->isSubUser(),
+                    'parent_doctor' => $user->parentUser ? $user->parentUser->name : null,
+                ],
+                'effective_doctor' => [
+                    'id' => $effectiveDoctor ? $effectiveDoctor->id : null,
+                    'appointments_count' => $appointmentsCount,
+                    'reviews_count' => $reviewsCount,
+                ],
+                'permissions' => $user->permissions->pluck('display_name')->toArray(),
+                'accessible_routes' => [
+                    'dashboard' => $user->canAccessRoute('dashboard'),
+                    'appointments' => $user->canAccessRoute('doctor.appointments.index'),
+                    'cases' => $user->canAccessRoute('cases'),
+                    'settings' => $user->canAccessRoute('settings'),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error accessing dashboard: ' . $e->getMessage()
+            ], 500);
+        }
+    })->name('test.dashboard.access');
+
+    // Test blog controller access
+    Route::get('/test-blog-access', function() {
+        if (!auth()->check() || !auth()->user()->isSubUser()) {
+            return 'Please login as sub-user first';
+        }
+        
+        try {
+            $controller = new \App\Http\Controllers\Doctor\BlogController();
+            $doctor = auth()->user()->getEffectiveDoctor();
+            
+            if (!$doctor) {
+                return 'No effective doctor found';
+            }
+            
+            $blogCount = $doctor->blogPosts()->count();
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Blog controller works!',
+                'doctor_id' => $doctor->id,
+                'blog_posts_count' => $blogCount,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    })->name('test.blog.access');
+
     // Test diagnosis system
     Route::get('/test-diagnosis', function() {
         $user = auth()->user();
@@ -295,8 +465,8 @@ Route::get('/about', [UserSettingsController::class, 'about'])->name('about');
 
 
 
-// Doctor routes
-Route::middleware(['auth', 'doctor'])->prefix('doctor')->name('doctor.')->group(function () {
+// Doctor routes (accessible by doctors and their sub-users with permissions)
+Route::middleware(['auth', 'doctor', 'sub.user.permissions'])->prefix('doctor')->name('doctor.')->group(function () {
     // Redirect doctor dashboard to main dashboard
     Route::get('/dashboard', function () {
         return redirect()->route('dashboard');
@@ -390,6 +560,7 @@ Route::get('/doctor/{username}/blog/{slug}', [PublicLandingPageController::class
 // Doctor Landing Page Management Routes
 Route::prefix('doctor/landing-page')->name('doctor.landing-page.')->group(function () {
     Route::get('/index', [LandingPageController::class, 'index'])->name('index');
+    Route::get('/page-builder', [LandingPageController::class, 'pageBuilder'])->name('page-builder');
     Route::get('/edit', [LandingPageController::class, 'edit'])->name('edit');
     Route::post('/update', [LandingPageController::class, 'update'])->name('update');
     Route::post('/update-sections', [LandingPageController::class, 'updateSections'])->name('update-sections');
@@ -411,6 +582,9 @@ Route::get('/doctor/{username}/testimonials', [TestimonialController::class, 'ge
 
 // Stripe webhook (outside auth middleware)
 Route::post('/stripe/webhook', [SubscriptionController::class, 'webhook'])->name('stripe.webhook');
+
+// Include test routes for sub-user functionality
+require __DIR__.'/test-routes.php';
 
 
 
