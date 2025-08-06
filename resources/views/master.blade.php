@@ -407,13 +407,7 @@
             border-color: #c55555 !important;
         }
 
-        /* DEBUG: Temporary styling to identify dropdowns */
-        .primary-menu .menu-item:nth-child(1) .sub-menu-container { border-left: 3px solid green !important; }
-        .primary-menu .menu-item:nth-child(2) .sub-menu-container { border-left: 3px solid blue !important; }
-        .primary-menu .menu-item:nth-child(3) .sub-menu-container { border-left: 3px solid orange !important; }
-        .primary-menu .menu-item:nth-child(4) .sub-menu-container { border-left: 3px solid purple !important; }
-        .primary-menu .menu-item:nth-child(5) .sub-menu-container { border-left: 3px solid red !important; }
-        .primary-menu .menu-item:nth-child(6) .sub-menu-container { border-left: 3px solid brown !important; }
+        /* Remove debug styling - production ready */
 
         /* Modern Dropdown Arrow Animation */
         .primary-menu .fa-chevron-down {
@@ -489,8 +483,12 @@
             max-width: 100vw !important;
         }
 
-        .container, .container-fluid {
+        .container-fluid {
             max-width: 100% !important;
+        }
+        
+        .container {
+            max-width: 1200px !important;
         }
 
         /* Ensure all elements stay within viewport */
@@ -1131,39 +1129,9 @@
 
     @stack('scripts')
 
-    <!-- Debug Menu Structure -->
+    <!-- Improved Dropdown Hover Behavior -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('=== MENU STRUCTURE DEBUG ===');
-            
-            // Log all menu items and their dropdowns
-            document.querySelectorAll('.primary-menu .menu-item').forEach((item, index) => {
-                const menuLink = item.querySelector(':scope > .menu-link');
-                const dropdown = item.querySelector(':scope > .sub-menu-container');
-                
-                if (menuLink) {
-                    const menuName = menuLink.textContent.trim().replace(' ▼', '');
-                    console.log(`Menu ${index + 1}: "${menuName}"`);
-                    
-                    if (dropdown) {
-                        const subItems = Array.from(dropdown.querySelectorAll('.menu-link')).map(link => 
-                            link.textContent.trim()
-                        );
-                        console.log(`  Dropdown items:`, subItems);
-                        
-                        // Add temporary label to dropdown for visual debugging
-                        const debugLabel = document.createElement('div');
-                        debugLabel.style.cssText = 'background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; font-size: 10px; font-weight: bold;';
-                        debugLabel.textContent = `${menuName} Dropdown`;
-                        dropdown.insertBefore(debugLabel, dropdown.firstChild);
-                    } else {
-                        console.log(`  No dropdown`);
-                    }
-                }
-            });
-            
-            console.log('=== END DEBUG ===');
-            
             // Improve dropdown hover behavior
             let hoverTimeout;
             
