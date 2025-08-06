@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('title', 'AI Medical Diagnosis - Smart Healthcare Solutions')
+@section('title', 'MedCura AI - Complete Healthcare Platform | AI Diagnosis, Patient Management & Practice Growth')
 
 @push('styles')
 <style>
@@ -309,10 +309,10 @@
             <div class="col-lg-6">
                 <div class="text-white mb-5">
                     <h1 class="display-3 fw-bold mb-4" data-animate="fadeInUp">
-                        <span style="color: #DE6262;">AI-Powered</span><br><span style="color: #FFE4E1;">Medical Diagnosis</span>
+                        <span style="color: #DE6262;">Complete AI-Powered</span><br><span style="color: #FFE4E1;">Healthcare Platform</span>
                     </h1>
                     <p class="lead mb-4 opacity-90" data-animate="fadeInUp" data-delay="200">
-                        Revolutionary artificial intelligence that empowers doctors with instant, accurate diagnostic insights. Transform patient care with cutting-edge technology.
+                        Revolutionary AI platform combining intelligent diagnosis, voice assistance, patient management, and professional online presence. Transform your medical practice with cutting-edge technology.
                     </p>
                     <div class="d-flex flex-wrap gap-3" data-animate="fadeInUp" data-delay="400">
                         <a href="/login" class="btn btn-theme-primary btn-lg">
@@ -347,8 +347,8 @@
 <section id="features" class="py-5" style="background: #F8F9FA;">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="section-title">Why Choose Our AI System?</h2>
-            <p class="section-subtitle">Advanced technology designed for modern healthcare</p>
+            <h2 class="section-title">Complete Healthcare Solution</h2>
+            <p class="section-subtitle">Everything you need to run a modern medical practice</p>
         </div>
         <div class="row g-4">
             <div class="col-lg-4 col-md-6">
@@ -356,17 +356,35 @@
                     <div class="feature-icon">
                         <i class="fas fa-brain"></i>
                     </div>
-                    <h4 class="mb-3">Advanced AI Analysis</h4>
-                    <p class="text-muted">Machine learning algorithms trained on millions of medical cases provide unprecedented diagnostic accuracy.</p>
+                    <h4 class="mb-3">AI-Powered Diagnosis</h4>
+                    <p class="text-muted">Advanced GPT-4 powered analysis with voice transcription, manual diagnosis creation, and intelligent follow-up questions for comprehensive patient care.</p>
                 </div>
             </div>
             <div class="col-lg-4 col-md-6">
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-bolt"></i>
+                        <i class="fas fa-microphone"></i>
                     </div>
-                    <h4 class="mb-3">Instant Results</h4>
-                    <p class="text-muted">Get comprehensive diagnostic insights within seconds, enabling faster patient care and treatment decisions.</p>
+                    <h4 class="mb-3">Voice Assistant</h4>
+                    <p class="text-muted">Hands-free consultation documentation with real-time speech-to-text, automatic chart filling, and AI-powered clinical analysis.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h4 class="mb-3">Patient Management</h4>
+                    <p class="text-muted">Complete patient lifecycle management with appointment booking, case tracking, automated notifications, and review systems.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <h4 class="mb-3">Professional Online Presence</h4>
+                    <p class="text-muted">Customizable landing pages, blog management, live chat widgets, and patient testimonials to grow your practice online.</p>
                 </div>
             </div>
             <div class="col-lg-4 col-md-6">
@@ -374,8 +392,17 @@
                     <div class="feature-icon">
                         <i class="fas fa-shield-alt"></i>
                     </div>
-                    <h4 class="mb-3">HIPAA Compliant</h4>
-                    <p class="text-muted">Enterprise-grade security ensures all patient data is encrypted and protected according to medical standards.</p>
+                    <h4 class="mb-3">HIPAA Compliant Security</h4>
+                    <p class="text-muted">Enterprise-grade encryption, secure data handling, role-based access control, and comprehensive audit trails for complete compliance.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h4 class="mb-3">Multi-Channel Communication</h4>
+                    <p class="text-muted">Automated email and SMS notifications, real-time chat, appointment reminders, and subscription management across all devices.</p>
                 </div>
             </div>
         </div>
@@ -387,7 +414,7 @@
     <div class="container">
         <div class="text-center mb-5">
             <h2 class="section-title">How It Works</h2>
-            <p class="section-subtitle">Simple 3-step process for AI-powered diagnosis</p>
+            <p class="section-subtitle">Simple process for comprehensive healthcare management</p>
         </div>
         <div class="row g-4">
             <div class="col-lg-4">
@@ -395,8 +422,8 @@
                     <div class="step-number">1</div>
                     <div class="mt-4">
                         <i class="fas fa-user-doctor text-theme-primary mb-3" style="font-size: 3rem;"></i>
-                        <h4 class="mb-3">Input Patient Data</h4>
-                        <p class="text-muted">Securely enter patient symptoms, medical history, and relevant clinical information through our intuitive interface.</p>
+                        <h4 class="mb-3">Register & Setup</h4>
+                        <p class="text-muted">Create your account, customize your profile, set up your professional landing page, and configure your practice preferences.</p>
                     </div>
                 </div>
             </div>
@@ -404,9 +431,9 @@
                 <div class="step-card">
                     <div class="step-number">2</div>
                     <div class="mt-4">
-                        <i class="fas fa-cogs text-theme-primary mb-3" style="font-size: 3rem;"></i>
-                        <h4 class="mb-3">AI Processing</h4>
-                        <p class="text-muted">Our advanced AI analyzes the data against vast medical databases and clinical guidelines for accurate insights.</p>
+                        <i class="fas fa-stethoscope text-theme-primary mb-3" style="font-size: 3rem;"></i>
+                        <h4 class="mb-3">Manage Patients</h4>
+                        <p class="text-muted">Use AI diagnosis tools, voice assistant, appointment booking, and automated patient communication to streamline your practice.</p>
                     </div>
                 </div>
             </div>
@@ -415,8 +442,8 @@
                     <div class="step-number">3</div>
                     <div class="mt-4">
                         <i class="fas fa-chart-line text-theme-primary mb-3" style="font-size: 3rem;"></i>
-                        <h4 class="mb-3">Get Results</h4>
-                        <p class="text-muted">Receive detailed diagnostic suggestions, treatment recommendations, and confidence scores instantly.</p>
+                        <h4 class="mb-3">Grow Your Practice</h4>
+                        <p class="text-muted">Leverage professional landing pages, patient reviews, blog content, and analytics to expand your reach and improve patient outcomes.</p>
                     </div>
                 </div>
             </div>
@@ -430,26 +457,57 @@
         <div class="row">
             <div class="col-lg-3 col-md-6">
                 <div class="stat-item">
-                    <div class="stat-number">15K+</div>
-                    <h5>Diagnoses Generated</h5>
+                    <div class="stat-number">25K+</div>
+                    <h5>AI Diagnoses Created</h5>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
                 <div class="stat-item">
-                    <div class="stat-number">98%</div>
-                    <h5>Accuracy Rate</h5>
+                    <div class="stat-number">1,200+</div>
+                    <h5>Healthcare Professionals</h5>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
                 <div class="stat-item">
-                    <div class="stat-number">500+</div>
-                    <h5>Doctors Using</h5>
+                    <div class="stat-number">50K+</div>
+                    <h5>Patient Appointments</h5>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
                 <div class="stat-item">
-                    <div class="stat-number">24/7</div>
-                    <h5>Available</h5>
+                    <div class="stat-number">99.9%</div>
+                    <h5>System Uptime</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Platform Highlights Section -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Platform Highlights</h2>
+            <p class="section-subtitle">Advanced features that set us apart</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h4 class="mb-3">Enterprise Security</h4>
+                    <p class="text-muted">HIPAA-compliant platform with end-to-end encryption, role-based access control, and comprehensive audit trails for complete data protection.</p>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h4 class="mb-3">Multi-Channel Communication</h4>
+                    <p class="text-muted">Reach patients through SMS (Twilio, Plivo), automated email campaigns, live chat widgets, and appointment reminders across all devices.</p>
                 </div>
             </div>
         </div>
@@ -460,7 +518,7 @@
 <section class="py-5" style="background: #F8F9FA;">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="section-title">What Doctors Say</h2>
+            <h2 class="section-title">What Healthcare Professionals Say</h2>
             <p class="section-subtitle">Trusted by medical professionals worldwide</p>
         </div>
         <div class="row justify-content-center">
@@ -471,7 +529,7 @@
                         <h5 class="mb-1">Dr. Saif Al-Zawahrah</h5>
                         <small class="text-muted">Internal Medicine</small>
                     </div>
-                    <p class="text-muted">This AI system has revolutionized my practice. The accuracy and speed of diagnosis have improved patient outcomes significantly.</p>
+                    <p class="text-muted">This comprehensive AI platform has transformed my practice completely. From AI diagnosis to voice assistant and patient management - everything I need in one place. Patient satisfaction has increased dramatically.</p>
                 </div>
             </div>
             <div class="col-lg-5 col-md-6">
@@ -481,7 +539,7 @@
                         <h5 class="mb-1">Dr. Khaled Mansour</h5>
                         <small class="text-muted">Family Physician</small>
                     </div>
-                    <p class="text-muted">An essential tool for modern healthcare. The AI provides insights I might have missed, making me a better doctor.</p>
+                    <p class="text-muted">The voice assistant and automated patient communication features have saved me hours daily. The professional landing page has brought in 40% more patients. Incredible value!</p>
                 </div>
             </div>
         </div>
@@ -503,35 +561,47 @@
                     <div class="feature-icon mb-4">
                         <i class="fas fa-user-md"></i>
                     </div>
-                    <h3 class="mb-3">Tailored for Healthcare Professionals</h3>
+                    <h3 class="mb-3">Complete Healthcare Platform</h3>
                     <p class="mb-4 text-muted">
-                        Our AI-powered medical diagnosis system is customized for each healthcare provider. 
-                        Each account receives personalized pricing based on practice size, specialty, and usage requirements.
+                        Our comprehensive AI healthcare platform is customized for each medical practice. 
+                        Each account receives personalized pricing based on practice size, specialty, feature requirements, and usage patterns.
                     </p>
                     
                     <div class="features-grid row g-3 mb-4">
                         <div class="col-md-6">
                             <div class="feature-item d-flex align-items-center">
                                 <i class="fas fa-check text-success me-3"></i>
-                                <span>AI-powered diagnosis assistance</span>
+                                <span>AI diagnosis & voice assistant</span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="feature-item d-flex align-items-center">
                                 <i class="fas fa-check text-success me-3"></i>
-                                <span>Advanced patient management</span>
+                                <span>Complete patient management</span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="feature-item d-flex align-items-center">
                                 <i class="fas fa-check text-success me-3"></i>
-                                <span>Secure data handling</span>
+                                <span>Professional online presence</span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="feature-item d-flex align-items-center">
                                 <i class="fas fa-check text-success me-3"></i>
-                                <span>24/7 professional support</span>
+                                <span>Multi-channel communication</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="feature-item d-flex align-items-center">
+                                <i class="fas fa-check text-success me-3"></i>
+                                <span>HIPAA-compliant security</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="feature-item d-flex align-items-center">
+                                <i class="fas fa-check text-success me-3"></i>
+                                <span>24/7 platform support</span>
                             </div>
                         </div>
                     </div>
