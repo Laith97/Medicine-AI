@@ -115,24 +115,32 @@ class AdminController extends Controller
                 $doctorSpecialty = Specialty::first(); // Use first available specialty
             }
 
-            if ($doctorSpecialty) {
-                $user->doctor()->create([
-                    'specialty_id' => $doctorSpecialty->id,
-                    'license_number' => 'LIC' . str_pad($user->id, 6, '0', STR_PAD_LEFT),
-                    'bio' => 'Medical professional using AI-assisted diagnosis system.',
-                    'consultation_fee' => 5000, // $50.00 in cents
-                    'appointment_duration' => 30,
+            // If still no specialty found, create a default one
+            if (!$doctorSpecialty) {
+                $doctorSpecialty = Specialty::create([
+                    'name' => 'General Medicine',
+                    'description' => 'Primary care and general health management',
                     'is_active' => true,
-                    'is_verified' => true
                 ]);
             }
+
+            // Create the doctor profile
+            $user->doctor()->create([
+                'specialty_id' => $doctorSpecialty->id,
+                'license_number' => 'LIC' . str_pad($user->id, 6, '0', STR_PAD_LEFT),
+                'bio' => 'Medical professional using AI-assisted diagnosis system.',
+                'consultation_fee' => 5000, // $50.00 in cents
+                'appointment_duration' => 30,
+                'is_active' => true,
+                'is_verified' => true
+            ]);
         }
 
         // Create user-specific pricing and monthly invoice setting
         if ($request->monthly_price || $request->yearly_price || $request->billing_amount) {
             // Create user-specific monthly invoice setting
             $setting = $user->getOrCreateMonthlyInvoiceSetting();
-            
+
             // Prepare update data with defaults
             $updateData = [
                 'grace_period_days' => (int) ($request->grace_period_days ?? 7),
@@ -143,21 +151,21 @@ class AdminController extends Controller
                 'is_restricted' => false,
                 'restricted_pages' => ['ask-ai', 'dashboard', 'cases'],
             ];
-            
+
             // Set billing amount (support both billing_amount and monthly_price)
             if ($request->billing_amount) {
                 $updateData['billing_amount'] = $request->billing_amount;
             }
-            
+
             // Set user-specific pricing
             if ($request->monthly_price) {
                 $updateData['monthly_price'] = $request->monthly_price;
             }
-            
+
             if ($request->yearly_price) {
                 $updateData['yearly_price'] = $request->yearly_price;
             }
-            
+
             $setting->update($updateData);
         }
 
@@ -255,21 +263,21 @@ class AdminController extends Controller
         if ($request->monthly_price || $request->yearly_price) {
             // Get or create user-specific monthly invoice setting
             $setting = $user->monthlyInvoiceSetting ?? $user->getOrCreateMonthlyInvoiceSetting();
-            
+
             $updateData = [
                 'grace_period_days' => (int) ($request->grace_period_days ?? 7),
                 'reminder_frequency_days' => (int) ($request->reminder_frequency_days ?? 3),
             ];
-            
+
             // Update user-specific pricing
             if ($request->monthly_price) {
                 $updateData['monthly_price'] = $request->monthly_price;
             }
-            
+
             if ($request->yearly_price) {
                 $updateData['yearly_price'] = $request->yearly_price;
             }
-            
+
             $setting->update($updateData);
         }
 
@@ -797,14 +805,14 @@ class AdminController extends Controller
             // Log the request data for debugging
             \Log::info('Manual reminders request data:', $request->all());
             \Log::info('Manual reminders started by admin: ' . auth('admin')->user()->email);
-            
+
             // Log mail configuration for debugging
             \Log::info('Mail configuration check:', [
                 'mail_mailer' => config('mail.default'),
                 'mail_host' => config('mail.mailers.smtp.host'),
                 'mail_from' => config('mail.from.address')
             ]);
-            
+
             $request->validate([
                 'reminder_type' => 'required|in:grace_period,warning_period,overdue,all',
                 'user_ids' => 'nullable|array',
@@ -927,14 +935,14 @@ class AdminController extends Controller
         }
 
         $users = $query->get();
-        
+
         // Only filter by grace period status if not forcing send
         if (!$forceSend) {
             $users = $users->filter(function($user) {
                 return $user->isInGracePeriod();
             });
         }
-        
+
         \Log::info('Found users in grace period', [
             'total_users' => $users->count(),
             'user_emails' => $users->pluck('email')->toArray()
@@ -972,7 +980,7 @@ class AdminController extends Controller
                         'user_phone' => $user->phone,
                         'timestamp' => now()->format('Y-m-d H:i:s.u')
                     ]);
-                    
+
                     // Send Email
                     $emailService = new EmailService();
                     $emailService->sendEmail(
@@ -988,18 +996,18 @@ class AdminController extends Controller
                             'reminderType' => 'grace_period',
                         ]
                     );
-                    
+
                     // Send SMS if user has phone number
                     if ($user->phone) {
                         try {
                             $smsService = new \App\Services\SmsService();
                             $daysRemaining = $setting->getDaysRemainingInCurrentPeriod();
                             $renewalUrl = route('subscription.manage');
-                            
+
                             $smsMessage = "🔔 MedCura AI: Your subscription expired but you're in grace period. {$daysRemaining} days remaining. Renew now: {$renewalUrl}";
-                            
+
                             $smsResult = $smsService->send($user->phone, $smsMessage);
-                            
+
                             if ($smsResult['success']) {
                                 \Log::info('Grace period reminder SMS sent successfully', [
                                     'user_phone' => $user->phone,
@@ -1018,7 +1026,7 @@ class AdminController extends Controller
                             ]);
                         }
                     }
-                    
+
                     \Log::info('Grace period reminder sent successfully', [
                         'user_email' => $user->email,
                         'user_phone' => $user->phone,
@@ -1147,18 +1155,18 @@ class AdminController extends Controller
                             'reminderType' => 'warning_period',
                         ]
                     );
-                    
+
                     // Send SMS if user has phone number
                     if ($user->phone) {
                         try {
                             $smsService = new \App\Services\SmsService();
                             $daysRemaining = $setting->getDaysRemainingInCurrentPeriod();
                             $renewalUrl = route('subscription.manage');
-                            
+
                             $smsMessage = "🚨 URGENT - MedCura AI: FINAL WARNING! Your account will be RESTRICTED in {$daysRemaining} days. Renew immediately: {$renewalUrl}";
-                            
+
                             $smsResult = $smsService->send($user->phone, $smsMessage);
-                            
+
                             if ($smsResult['success']) {
                                 \Log::info('Warning period reminder SMS sent successfully', [
                                     'user_phone' => $user->phone,
@@ -1177,7 +1185,7 @@ class AdminController extends Controller
                             ]);
                         }
                     }
-                    
+
                     \Log::info('Warning period reminder sent successfully', [
                         'user_email' => $user->email,
                         'user_phone' => $user->phone
@@ -1250,7 +1258,7 @@ class AdminController extends Controller
                             'warning_period_days' => 3,
                             'is_active' => true,
                         ]);
-                        
+
                         // Send Email
                         $emailService = new EmailService();
                         $emailService->sendEmail(
@@ -1266,18 +1274,18 @@ class AdminController extends Controller
                                 'reminderType' => 'overdue',
                             ]
                         );
-                        
+
                         // Send SMS if user has phone number
                         if ($user->phone) {
                             try {
                                 $smsService = new \App\Services\SmsService();
                                 $amount = number_format($invoice->amount_due / 100, 2);
                                 $renewalUrl = route('subscription.manage');
-                                
+
                                 $smsMessage = "⚠️ MedCura AI: Your invoice of \${$amount} is overdue. Update your payment method to avoid service interruption: {$renewalUrl}";
-                                
+
                                 $smsResult = $smsService->send($user->phone, $smsMessage);
-                                
+
                                 if ($smsResult['success']) {
                                     \Log::info('Overdue reminder SMS sent successfully', [
                                         'user_phone' => $user->phone,
@@ -1299,7 +1307,7 @@ class AdminController extends Controller
                                 ]);
                             }
                         }
-                        
+
                         \Log::info('Overdue reminder sent successfully', [
                             'user_email' => $user->email,
                             'user_phone' => $user->phone,

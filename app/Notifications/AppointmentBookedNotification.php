@@ -29,7 +29,7 @@ class AppointmentBookedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database', 'mail', 'sms'];
     }
 
     /**
@@ -39,10 +39,12 @@ class AppointmentBookedNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
+
         return [
             'type' => 'appointment_booked',
             'title' => 'New Appointment Booked',
-            'message' => "A new appointment has been booked with {$this->appointment->doctor->name} on {$this->appointment->appointment_date->format('M j, Y g:i A')}",
+            'message' => "A new appointment has been booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}",
             'icon' => 'calendar',
             'link' => route('appointments.show', $this->appointment->id),
             'link_text' => 'View Appointment',
@@ -50,7 +52,7 @@ class AppointmentBookedNotification extends Notification
             'related_id' => $this->appointment->id,
             'data' => [
                 'appointment_id' => $this->appointment->id,
-                'doctor_name' => $this->appointment->doctor->name,
+                'doctor_name' => $doctorName,
                 'appointment_date' => $this->appointment->appointment_date->format('Y-m-d H:i:s'),
                 'appointment_type' => $this->appointment->appointment_type,
             ]
@@ -62,10 +64,12 @@ class AppointmentBookedNotification extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
+        $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
+
         return (new MailMessage)
             ->subject('New Appointment Booked')
             ->greeting('Hello ' . $notifiable->name . ',')
-            ->line("A new appointment has been booked with {$this->appointment->doctor->name} on {$this->appointment->appointment_date->format('M j, Y g:i A')}")
+            ->line("A new appointment has been booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}")
             ->line('Appointment Type: ' . $this->appointment->appointment_type)
             ->action('View Appointment', route('appointments.show', $this->appointment->id))
             ->line('Thank you for using our platform!');
@@ -76,6 +80,8 @@ class AppointmentBookedNotification extends Notification
      */
     public function toSms(object $notifiable): string
     {
-        return "New appointment booked with {$this->appointment->doctor->name} on {$this->appointment->appointment_date->format('M j, Y g:i A')}. View details: " . route('appointments.show', $this->appointment->id);
+        $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
+
+        return "New appointment booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}. View details: " . route('appointments.show', $this->appointment->id);
     }
 }
