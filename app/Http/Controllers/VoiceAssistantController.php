@@ -19,7 +19,7 @@ class VoiceAssistantController extends Controller
     {
         $this->middleware(function ($request, $next) {
             $user = Auth::user();
-            
+
             // Handle sub-users - they inherit access from their parent doctor
             if ($user->isSubUser()) {
                 $parentUser = $user->parentUser;
@@ -31,12 +31,12 @@ class VoiceAssistantController extends Controller
                 if (!$user->isDoctor() || !$user->doctor) {
                     abort(403, 'Access denied. Doctor profile required.');
                 }
-                
+
                 if (!$user->doctor->is_active) {
                     abort(403, 'Access denied. Your doctor account has been deactivated.');
                 }
             }
-            
+
             return $next($request);
         });
     }
@@ -675,7 +675,12 @@ class VoiceAssistantController extends Controller
                         'Voice Diagnosis Completed',
                         "Voice transcription diagnosis completed for patient {$diagnosis->patient->name}. Diagnosis ID: {$diagnosis->id}",
                         'success',
-                        route('diagnosis.show', $diagnosis)
+                        [
+                            'link' => route('diagnosis.show', $diagnosis),
+                            'link_text' => 'View Diagnosis',
+                            'related_type' => 'diagnosis',
+                            'related_id' => $diagnosis->id
+                        ]
                     ));
                 }
             }

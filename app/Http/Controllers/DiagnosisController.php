@@ -484,7 +484,12 @@ class DiagnosisController extends Controller
                         'New Patient Diagnosis',
                         "New diagnosis submitted for patient {$diagnosis->patient->name}. Diagnosis ID: {$diagnosis->id}",
                         'success',
-                        route('diagnosis.show', $diagnosis)
+                        [
+                            'link' => route('diagnosis.show', $diagnosis),
+                            'link_text' => 'View Diagnosis',
+                            'related_type' => 'diagnosis',
+                            'related_id' => $diagnosis->id
+                        ]
                     ));
                 }
             }
@@ -510,7 +515,12 @@ class DiagnosisController extends Controller
                         'Patient Follow-up Question',
                         "Patient {$diagnosis->patient->name} asked a follow-up question for diagnosis #{$diagnosis->id}",
                         'info',
-                        route('diagnosis.show', $diagnosis)
+                        [
+                            'link' => route('diagnosis.show', $diagnosis),
+                            'link_text' => 'View Diagnosis',
+                            'related_type' => 'diagnosis',
+                            'related_id' => $diagnosis->id
+                        ]
                     ));
                 }
             }
@@ -521,7 +531,12 @@ class DiagnosisController extends Controller
                     'AI Response to Your Question',
                     "Dr. {$diagnosis->doctor->user->name} has provided an AI response to your follow-up question.",
                     'info',
-                    route('diagnosis.patient-view', $diagnosis)
+                    [
+                        'link' => route('diagnosis.patient-view', $diagnosis),
+                        'link_text' => 'View Response',
+                        'related_type' => 'diagnosis',
+                        'related_id' => $diagnosis->id
+                    ]
                 ));
             }
 
@@ -554,7 +569,12 @@ class DiagnosisController extends Controller
                         'New Review Submitted',
                         "New review submitted by {$review->getPatientDisplayNameAttribute()} for Dr. {$review->doctor->user->name}. Rating: {$review->rating}/5",
                         'info',
-                        route('admin.reviews.show', $review->id)
+                        [
+                            'link' => route('admin.reviews.show', $review->id),
+                            'link_text' => 'View Review',
+                            'related_type' => 'review',
+                            'related_id' => $review->id
+                        ]
                     ));
                 }
             }

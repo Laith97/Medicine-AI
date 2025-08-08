@@ -28,12 +28,29 @@ class NotificationManager {
     // Load notifications for dropdown
     async loadNotifications() {
         try {
-            const response = await fetch('/notifications/dropdown');
+            console.log('Loading notifications...');
+            const response = await fetch('/notifications/dropdown', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
+            console.log('Notifications loaded successfully:', data);
             this.notifications = data.notifications;
             this.updateDropdown(data.notifications, data.unread_count);
         } catch (error) {
             console.error('Error loading notifications:', error);
+            // Don't fail silently - show user-friendly message
+            this.updateDropdown([], 0);
         }
     }
 
@@ -44,7 +61,7 @@ class NotificationManager {
             if (e.target.closest('.notification-bell')) {
                 e.preventDefault();
                 this.toggleDropdown();
-            } else if (!e.target.closest('.notification-dropdown')) {
+            } else if (!e.target.closest('.notifications-dropdown')) {
                 this.closeDropdown();
             }
         });
@@ -210,7 +227,7 @@ class NotificationManager {
 
     // Toggle notification dropdown
     toggleDropdown() {
-        const dropdown = document.querySelector('.notification-dropdown');
+        const dropdown = document.querySelector('.notifications-dropdown');
         if (dropdown) {
             dropdown.classList.toggle('show');
         }
@@ -218,7 +235,7 @@ class NotificationManager {
 
     // Close notification dropdown
     closeDropdown() {
-        const dropdown = document.querySelector('.notification-dropdown');
+        const dropdown = document.querySelector('.notifications-dropdown');
         if (dropdown) {
             dropdown.classList.remove('show');
         }
@@ -226,10 +243,10 @@ class NotificationManager {
 
     // Update dropdown HTML
     updateDropdown(notifications, unreadCount) {
-        const dropdown = document.querySelector('.notification-dropdown');
+        const dropdown = document.querySelector('.notifications-dropdown');
         if (!dropdown) return;
 
-        const dropdownContent = dropdown.querySelector('.dropdown-content');
+        const dropdownContent = dropdown.querySelector('.notification-list');
         if (!dropdownContent) return;
 
         // Update unread count badge
@@ -386,14 +403,30 @@ class NotificationManager {
 
 // Initialize notification manager when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Check if userId is available (for real-time notifications)
-    const userId = document.querySelector('meta[name="user-id"]')?.content;
-    if (userId) {
-        window.notificationManager = new NotificationManager();
-    } else {
-        // Fallback for non-authenticated users
-        window.notificationManager = new NotificationManager();
-    }
+    // Delay initialization to ensure page is fully loaded and avoid conflicts
+    setTimeout(() => {
+        try {
+            // Only initialize if we're on a page that needs notifications
+            if (document.querySelector('.notification-bell') || document.querySelector('#notification-count')) {
+                console.log('Initializing NotificationManager...');
+
+                // Check if userId is available (for real-time notifications)
+                const userId = document.querySelector('meta[name="user-id"]')?.content;
+                if (userId) {
+                    window.notificationManager = new NotificationManager();
+                } else {
+                    // Fallback for non-authenticated users
+                    window.notificationManager = new NotificationManager();
+                }
+
+                console.log('NotificationManager initialized successfully');
+            } else {
+                console.log('No notification elements found, skipping NotificationManager initialization');
+            }
+        } catch (error) {
+            console.error('Error initializing NotificationManager:', error);
+        }
+    }, 1000); // 1 second delay
 });
 
 // Global functions for external use

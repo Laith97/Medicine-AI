@@ -1041,9 +1041,18 @@ public function getNotificationFrequency(): string
 /**
  * Send notification if user wants to receive it
  */
-public function notifyIfWants($instance)
+public function notifyIfWants($instance, $type = null)
 {
-    if ($this->wantsNotification($instance->type ?? 'general')) {
+    // Try to get type from the notification's toArray method if available
+    if (!$type && method_exists($instance, 'toArray')) {
+        $data = $instance->toArray($this);
+        $type = $data['type'] ?? 'general';
+    }
+
+    // Fallback to general if no type is provided
+    $type = $type ?? 'general';
+
+    if ($this->wantsNotification($type)) {
         $this->notify($instance);
     }
 }

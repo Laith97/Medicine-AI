@@ -158,6 +158,30 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         Route::put('/settings', [NotificationController::class, 'updateSettings'])->name('settings.update');
         Route::get('/preferences', [NotificationController::class, 'preferences'])->name('preferences');
         Route::post('/preferences', [NotificationController::class, 'updatePreferences'])->name('preferences.update');
+
+        // Test route for notifications
+        Route::get('/test', function () {
+            $user = Auth::user();
+
+            // Create a test notification directly in the database
+            $user->notifications()->create([
+                'id' => \Illuminate\Support\Str::uuid(),
+                'type' => 'App\\Notifications\\TestNotification',
+                'data' => [
+                    'type' => 'test',
+                    'title' => 'Test Notification',
+                    'message' => 'This is a test notification to verify the system is working.',
+                    'icon' => 'bell',
+                    'link' => '/dashboard',
+                    'link_text' => 'View Dashboard'
+                ],
+                'read_at' => null,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            return response()->json(['message' => 'Test notification created!']);
+        })->name('test');
     });
 
     // Subscription routes
@@ -218,7 +242,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     Route::get('/test-sub-user-permissions', function() {
         $user = auth()->user();
         $menuItems = \App\Helpers\MenuHelper::getMenuItems($user);
-        
+
         return response()->json([
             'user' => [
                 'id' => $user->id,
@@ -250,7 +274,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     // Debug sub-user middleware
     Route::get('/debug-sub-user', function() {
         $user = auth()->user();
-        
+
         return response()->json([
             'user_id' => $user->id,
             'user_email' => $user->email,
@@ -280,7 +304,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         if (!auth()->check()) {
             return 'Not logged in';
         }
-        
+
         $user = auth()->user();
         return "Hello {$user->name}! You are logged in as a " . ($user->isSubUser() ? 'sub-user' : 'main user');
     })->name('simple.test');
@@ -298,19 +322,19 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         if (!auth()->check()) {
             return 'Please login first';
         }
-        
+
         $user = auth()->user();
-        
+
         if (!$user->isSubUser()) {
             return 'This test is only for sub-users';
         }
-        
+
         try {
             // Test effective doctor access
             $effectiveDoctor = $user->getEffectiveDoctor();
             $appointmentsCount = $effectiveDoctor ? $effectiveDoctor->appointments()->count() : 0;
             $reviewsCount = $effectiveDoctor ? $effectiveDoctor->reviews()->count() : 0;
-            
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Sub-user can access dashboard successfully!',
@@ -346,17 +370,17 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         if (!auth()->check() || !auth()->user()->isSubUser()) {
             return 'Please login as sub-user first';
         }
-        
+
         try {
             $controller = new \App\Http\Controllers\Doctor\BlogController();
             $doctor = auth()->user()->getEffectiveDoctor();
-            
+
             if (!$doctor) {
                 return 'No effective doctor found';
             }
-            
+
             $blogCount = $doctor->blogPosts()->count();
-            
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Blog controller works!',

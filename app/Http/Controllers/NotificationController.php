@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Notifications\DatabaseNotification as Notification;
+use Illuminate\Notifications\DatabaseNotification;
 use App\Models\User;
 use App\Models\NotificationType;
 use App\Models\NotificationPreference;
@@ -45,11 +45,30 @@ class NotificationController extends Controller
     public function dropdown()
     {
         $user = Auth::user();
-        $notifications = $user->unreadNotifications()
-            ->take(10)
-            ->get();
 
-        return view('notifications.dropdown', compact('notifications'));
+        // Get recent notifications (both read and unread) for dropdown
+        $notifications = $user->notifications()
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get()
+            ->map(function ($notification) {
+                return [
+                    'id' => $notification->id,
+                    'type' => $notification->type,
+                    'data' => $notification->data,
+                    'read_at' => $notification->read_at,
+                    'created_at' => $notification->created_at,
+                    'title' => $notification->data['title'] ?? 'Notification',
+                    'message' => $notification->data['message'] ?? 'You have a new notification',
+                ];
+            });
+
+        $unreadCount = $user->unreadNotifications()->count();
+
+        return response()->json([
+            'notifications' => $notifications,
+            'unread_count' => $unreadCount
+        ]);
     }
 
     /**
@@ -57,7 +76,7 @@ class NotificationController extends Controller
      */
     public function markAsRead($id)
     {
-        $notification = Notification::where('id', $id)
+        $notification = DatabaseNotification::where('id', $id)
             ->where('notifiable_id', Auth::id())
             ->where('notifiable_type', get_class(Auth::user()))
             ->first();
@@ -86,7 +105,7 @@ class NotificationController extends Controller
      */
     public function destroy($id)
     {
-        $notification = Notification::where('id', $id)
+        $notification = DatabaseNotification::where('id', $id)
             ->where('notifiable_id', Auth::id())
             ->where('notifiable_type', get_class(Auth::user()))
             ->first();
@@ -104,7 +123,13 @@ class NotificationController extends Controller
      */
     public function unreadCount()
     {
-        $count = Auth::user()->unreadNotifications()->count();
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $count = $user->unreadNotifications()->count();
         return response()->json(['count' => $count]);
     }
 

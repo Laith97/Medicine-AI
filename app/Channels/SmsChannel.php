@@ -34,7 +34,11 @@ class SmsChannel
 
         try {
             // Send SMS using the SMS service
-            $this->smsService->sendSms($phone, $message);
+            $result = $this->smsService->send($phone, $message);
+
+            if (!$result['success']) {
+                throw new \Exception($result['message']);
+            }
         } catch (\Exception $e) {
             // Log SMS sending failure but don't break the notification process
             \Log::error('Failed to send SMS notification: ' . $e->getMessage(), [

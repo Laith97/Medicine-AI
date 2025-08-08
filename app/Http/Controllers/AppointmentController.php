@@ -451,7 +451,7 @@ class AppointmentController extends Controller
 
                 // Check if doctor wants appointment notifications
                 if ($doctor->wantsNotification('appointment_booked')) {
-                    $doctor->notifyIfWants(new \App\Notifications\AppointmentBookedNotification($appointment));
+                    $doctor->notifyIfWants(new \App\Notifications\AppointmentBookedNotification($appointment), 'appointment_booked');
                 }
             }
 
@@ -461,7 +461,7 @@ class AppointmentController extends Controller
 
                 // Check if patient wants appointment notifications
                 if ($patient->wantsNotification('appointment_booked')) {
-                    $patient->notifyIfWants(new \App\Notifications\AppointmentBookedNotification($appointment));
+                    $patient->notifyIfWants(new \App\Notifications\AppointmentBookedNotification($appointment), 'appointment_booked');
                 }
             }
 
@@ -493,7 +493,12 @@ class AppointmentController extends Controller
                         'Appointment Cancelled',
                         "Appointment #{$appointment->appointment_number} has been cancelled by patient. Reason: " . ($reason ?: 'Not specified'),
                         'warning',
-                        route('appointments.index')
+                        [
+                            'link' => route('appointments.index'),
+                            'link_text' => 'View Appointments',
+                            'related_type' => 'appointment',
+                            'related_id' => $appointment->id
+                        ]
                     ));
                 }
             }
@@ -508,7 +513,12 @@ class AppointmentController extends Controller
                         'Appointment Cancelled',
                         "Your appointment #{$appointment->appointment_number} has been cancelled successfully.",
                         'info',
-                        route('appointments.index')
+                        [
+                            'link' => route('appointments.index'),
+                            'link_text' => 'View Appointments',
+                            'related_type' => 'appointment',
+                            'related_id' => $appointment->id
+                        ]
                     ));
                 }
             }
@@ -535,7 +545,12 @@ class AppointmentController extends Controller
                         'Appointment Rescheduled',
                         "Appointment #{$appointment->appointment_number} has been rescheduled to {$newDate->format('M j, Y g:i A')}.",
                         'info',
-                        route('appointments.show', $appointment)
+                        [
+                            'link' => route('appointments.show', $appointment),
+                            'link_text' => 'View Appointment',
+                            'related_type' => 'appointment',
+                            'related_id' => $appointment->id
+                        ]
                     ));
                 }
             }
@@ -550,7 +565,12 @@ class AppointmentController extends Controller
                         'Appointment Rescheduled',
                         "Your appointment #{$appointment->appointment_number} has been rescheduled to {$newDate->format('M j, Y g:i A')}.",
                         'info',
-                        route('appointments.show', $appointment)
+                        [
+                            'link' => route('appointments.show', $appointment),
+                            'link_text' => 'View Appointment',
+                            'related_type' => 'appointment',
+                            'related_id' => $appointment->id
+                        ]
                     ));
                 }
             }

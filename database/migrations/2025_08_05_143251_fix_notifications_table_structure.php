@@ -12,13 +12,28 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('notifications', function (Blueprint $table) {
-            // Drop the foreign key constraint
-            $table->dropForeign(['user_id']);
+            // Drop the foreign key constraint if it exists
+            try {
+                $table->dropForeign(['user_id']);
+            } catch (\Exception $e) {
+                // Foreign key might not exist, ignore the error
+            }
+        });
 
-            // Drop the custom columns we added
-            $table->dropColumn([
-                'user_id', 'title', 'message', 'icon', 'link', 'link_text', 'related_type', 'related_id'
-            ]);
+        Schema::table('notifications', function (Blueprint $table) {
+            // Drop the custom columns we added if they exist
+            $columnsToCheck = ['user_id', 'title', 'message', 'icon', 'link', 'link_text', 'related_type', 'related_id'];
+            $columnsToDrop = [];
+
+            foreach ($columnsToCheck as $column) {
+                if (Schema::hasColumn('notifications', $column)) {
+                    $columnsToDrop[] = $column;
+                }
+            }
+
+            if (!empty($columnsToDrop)) {
+                $table->dropColumn($columnsToDrop);
+            }
         });
     }
 

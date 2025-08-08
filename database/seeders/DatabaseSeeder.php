@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
         // Call the notification type seeder
         $this->call([
             NotificationTypeSeeder::class,
+            SpecialtySeeder::class,
         ]);
     }
 }

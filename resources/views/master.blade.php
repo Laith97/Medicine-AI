@@ -1,177 +1,183 @@
 <!DOCTYPE html>
 <html dir="ltr" lang="en-US">
+
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta http-equiv="x-ua-compatible" content="IE=edge">
     <meta name="author" content="SemiColonWeb">
-    <meta name="description" content="Create Medical Clinic & Hospital Websites with Canvas Template. Get Canvas to build powerful websites easily with the Highly Customizable & Best Selling Bootstrap Template, today.">
-	<meta name="csrf-token" content="{{ csrf_token() }}">
-<style>.top-link {
-    font-size: 16px;
-    font-weight: 500;
-    text-decoration: none;
-    color: #333; /* dark gray */
-    position: relative;
-    padding: 5px 8px;
-    transition: color 0.3s ease;
-}
+    <meta name="description"
+        content="Create Medical Clinic & Hospital Websites with Canvas Template. Get Canvas to build powerful websites easily with the Highly Customizable & Best Selling Bootstrap Template, today.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <style>
+        .top-link {
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            color: #333;
+            /* dark gray */
+            position: relative;
+            padding: 5px 8px;
+            transition: color 0.3s ease;
+        }
 
-.top-link:hover {
-    color: #007bff; /* blue on hover */
-}
+        .top-link:hover {
+            color: #007bff;
+            /* blue on hover */
+        }
 
-/* Add nice underline on hover */
-.top-link::after {
-    content: '';
-    display: block;
-    width: 0;
-    height: 2px;
-    background: #007bff;
-    transition: width 0.3s;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-}
+        /* Add nice underline on hover */
+        .top-link::after {
+            content: '';
+            display: block;
+            width: 0;
+            height: 2px;
+            background: #007bff;
+            transition: width 0.3s;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
 
-.top-link:hover::after {
-    width: 100%;
-}
-/* Header Dropdown Styling - Match Menu Sub-Menu Style */
-.dropdown-menu {
-    /* Modern Glass Design - Same as sub-menu-container */
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
+        .top-link:hover::after {
+            width: 100%;
+        }
 
-    /* Advanced Shadow & Border - Same as sub-menu-container */
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    box-shadow:
-        0 20px 40px rgba(0, 0, 0, 0.1),
-        0 8px 16px rgba(0, 0, 0, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+        /* Header Dropdown Styling - Match Menu Sub-Menu Style */
+        .dropdown-menu {
+            /* Modern Glass Design - Same as sub-menu-container */
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
 
-    /* Modern Rounded Design - Same as sub-menu-container */
-    border-radius: 16px !important;
+            /* Advanced Shadow & Border - Same as sub-menu-container */
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            box-shadow:
+                0 20px 40px rgba(0, 0, 0, 0.1),
+                0 8px 16px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
 
-    /* Spacing - Same as sub-menu-container */
-    padding: 12px 0 !important;
-    margin: 0 !important;
+            /* Modern Rounded Design - Same as sub-menu-container */
+            border-radius: 16px !important;
 
-    /* Dimensions */
-    min-width: 240px !important;
+            /* Spacing - Same as sub-menu-container */
+            padding: 12px 0 !important;
+            margin: 0 !important;
 
-    /* CRITICAL: Fix Z-Index for Bootstrap Dropdowns */
-    z-index: 999999 !important;
-    position: absolute !important;
-}
+            /* Dimensions */
+            min-width: 240px !important;
 
-.dropdown-item {
-    /* Layout - Same as sub-menu menu-link */
-    display: flex !important;
-    align-items: center !important;
-    padding: 12px 20px !important;
-    margin: 0 8px !important;
+            /* CRITICAL: Fix Z-Index for Bootstrap Dropdowns */
+            z-index: 999999 !important;
+            position: absolute !important;
+        }
 
-    /* Typography - Same as sub-menu menu-link */
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    color: #374151 !important;
-    text-decoration: none !important;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+        .dropdown-item {
+            /* Layout - Same as sub-menu menu-link */
+            display: flex !important;
+            align-items: center !important;
+            padding: 12px 20px !important;
+            margin: 0 8px !important;
 
-    /* Modern Styling - Same as sub-menu menu-link */
-    border-radius: 10px !important;
-    background: transparent !important;
-    border: none !important;
+            /* Typography - Same as sub-menu menu-link */
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            color: #374151 !important;
+            text-decoration: none !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 
-    /* Smooth Transitions - Same as sub-menu menu-link */
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    position: relative !important;
-    overflow: hidden !important;
-}
+            /* Modern Styling - Same as sub-menu menu-link */
+            border-radius: 10px !important;
+            background: transparent !important;
+            border: none !important;
 
-/* Hover Effect - Same as sub-menu menu-link hover */
-.dropdown-item:hover {
-    background: linear-gradient(135deg, rgba(222, 98, 98, 0.1), rgba(222, 98, 98, 0.05)) !important;
-    color: #DE6262 !important;
-    font-weight: 600 !important;
-    transform: translateX(4px) !important;
-    box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15) !important;
-}
+            /* Smooth Transitions - Same as sub-menu menu-link */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
 
-/* Focus states - Same as sub-menu styling */
-.dropdown-item:focus, .dropdown-item:active,
-.dropdown-item:focus-visible,
-.dropdown-item:focus-within {
-    outline: none !important;
-    background: linear-gradient(135deg, rgba(222, 98, 98, 0.1), rgba(222, 98, 98, 0.05)) !important;
-    color: #DE6262 !important;
-    font-weight: 600 !important;
-    transform: translateX(4px) !important;
-    box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15) !important;
-}
+        /* Hover Effect - Same as sub-menu menu-link hover */
+        .dropdown-item:hover {
+            background: linear-gradient(135deg, rgba(222, 98, 98, 0.1), rgba(222, 98, 98, 0.05)) !important;
+            color: #DE6262 !important;
+            font-weight: 600 !important;
+            transform: translateX(4px) !important;
+            box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15) !important;
+        }
 
-/* Danger/Logout button styling */
-.dropdown-item.text-danger {
-    color: #dc3545 !important;
-}
+        /* Focus states - Same as sub-menu styling */
+        .dropdown-item:focus,
+        .dropdown-item:active,
+        .dropdown-item:focus-visible,
+        .dropdown-item:focus-within {
+            outline: none !important;
+            background: linear-gradient(135deg, rgba(222, 98, 98, 0.1), rgba(222, 98, 98, 0.05)) !important;
+            color: #DE6262 !important;
+            font-weight: 600 !important;
+            transform: translateX(4px) !important;
+            box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15) !important;
+        }
 
-.dropdown-item.text-danger:hover {
-    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.05)) !important;
-    color: #dc3545 !important;
-    font-weight: 600 !important;
-}
+        /* Danger/Logout button styling */
+        .dropdown-item.text-danger {
+            color: #dc3545 !important;
+        }
 
-/* Dropdown divider - Same as menu divider */
-.dropdown-divider {
-    height: 1px !important;
-    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08) 20%, rgba(0, 0, 0, 0.08) 80%, transparent) !important;
-    margin: 8px 16px !important;
-    border: none !important;
-    padding: 0 !important;
-}
+        .dropdown-item.text-danger:hover {
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.05)) !important;
+            color: #dc3545 !important;
+            font-weight: 600 !important;
+        }
 
-/* Bootstrap Dropdown Container Fix */
-.dropdown {
-    position: relative !important;
-    z-index: 10003 !important;
-}
+        /* Dropdown divider - Same as menu divider */
+        .dropdown-divider {
+            height: 1px !important;
+            background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08) 20%, rgba(0, 0, 0, 0.08) 80%, transparent) !important;
+            margin: 8px 16px !important;
+            border: none !important;
+            padding: 0 !important;
+        }
 
-/* Bootstrap Dropdown Toggle Button */
-.dropdown-toggle {
-    position: relative !important;
-    z-index: 10004 !important;
-}
+        /* Bootstrap Dropdown Container Fix */
+        .dropdown {
+            position: relative !important;
+            z-index: 10003 !important;
+        }
 
-/* Ensure dropdown shows above all content */
-.dropdown.show .dropdown-menu {
-    z-index: 999999 !important;
-    display: block !important;
-}
+        /* Bootstrap Dropdown Toggle Button */
+        .dropdown-toggle {
+            position: relative !important;
+            z-index: 10004 !important;
+        }
 
-/* Top Bar Dropdown Fix */
-#top-bar .dropdown {
-    position: relative !important;
-    z-index: 10005 !important;
-}
+        /* Ensure dropdown shows above all content */
+        .dropdown.show .dropdown-menu {
+            z-index: 999999 !important;
+            display: block !important;
+        }
 
-#top-bar .dropdown-menu {
-    z-index: 999999 !important;
-    position: absolute !important;
-}
+        /* Top Bar Dropdown Fix */
+        #top-bar .dropdown {
+            position: relative !important;
+            z-index: 10005 !important;
+        }
 
-/* Header Area Dropdown Fix */
-#header .dropdown {
-    position: relative !important;
-    z-index: 10005 !important;
-}
+        #top-bar .dropdown-menu {
+            z-index: 999999 !important;
+            position: absolute !important;
+        }
 
-#header .dropdown-menu {
-    z-index: 999999 !important;
-    position: absolute !important;
-}
+        /* Header Area Dropdown Fix */
+        #header .dropdown {
+            position: relative !important;
+            z-index: 10005 !important;
+        }
 
-</style>
+        #header .dropdown-menu {
+            z-index: 999999 !important;
+            position: absolute !important;
+        }
+    </style>
     <!-- Clean Font Imports -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -181,16 +187,13 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <!-- FontAwesome CDN - Priority over local -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
     <!-- Temporarily disabled local font-icons -->
     <!-- <link rel="stylesheet" href="{{ asset('css/font-icons.css') }}"> -->
     <link rel="stylesheet" href="{{ asset('demos/medical/css/medical-icons.css') }}">
     <link rel="stylesheet" href="{{ asset('css/swiper.css') }}">
-    <!-- Minimal Google Fonts for fallback -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
@@ -201,7 +204,8 @@
     <!-- Global Font Styling -->
     <style>
         /* Clean Medical System Font */
-        body, * {
+        body,
+        * {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
             font-weight: 400;
             line-height: 1.5;
@@ -218,21 +222,32 @@
         }
 
         /* Headers - Bold but not thick */
-        h1, h2, h3, h4, h5, h6, .heading {
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        .heading {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
             font-weight: 500;
             letter-spacing: -0.01em;
         }
 
         /* Medical/clinical text */
-        .medical-text, .diagnosis-text, .case-text {
+        .medical-text,
+        .diagnosis-text,
+        .case-text {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
             font-weight: 400;
             line-height: 1.6;
         }
 
         /* FontAwesome Debug - Force display if not loading */
-        .fa, .fas, .far, .fab {
+        .fa,
+        .fas,
+        .far,
+        .fab {
             font-family: "Font Awesome 6 Free" !important;
             font-weight: 900 !important;
             -webkit-font-smoothing: antialiased;
@@ -328,8 +343,6 @@
             list-style: none !important;
         }
 
-
-
         /* Add hover bridge to prevent dropdown from closing */
         .primary-menu .sub-menu-container::before {
             content: '' !important;
@@ -408,12 +421,29 @@
         }
 
         /* DEBUG: Temporary styling to identify dropdowns */
-        .primary-menu .menu-item:nth-child(1) .sub-menu-container { border-left: 3px solid green !important; }
-        .primary-menu .menu-item:nth-child(2) .sub-menu-container { border-left: 3px solid blue !important; }
-        .primary-menu .menu-item:nth-child(3) .sub-menu-container { border-left: 3px solid orange !important; }
-        .primary-menu .menu-item:nth-child(4) .sub-menu-container { border-left: 3px solid purple !important; }
-        .primary-menu .menu-item:nth-child(5) .sub-menu-container { border-left: 3px solid red !important; }
-        .primary-menu .menu-item:nth-child(6) .sub-menu-container { border-left: 3px solid brown !important; }
+        .primary-menu .menu-item:nth-child(1) .sub-menu-container {
+            border-left: 3px solid green !important;
+        }
+
+        .primary-menu .menu-item:nth-child(2) .sub-menu-container {
+            border-left: 3px solid blue !important;
+        }
+
+        .primary-menu .menu-item:nth-child(3) .sub-menu-container {
+            border-left: 3px solid orange !important;
+        }
+
+        .primary-menu .menu-item:nth-child(4) .sub-menu-container {
+            border-left: 3px solid purple !important;
+        }
+
+        .primary-menu .menu-item:nth-child(5) .sub-menu-container {
+            border-left: 3px solid red !important;
+        }
+
+        .primary-menu .menu-item:nth-child(6) .sub-menu-container {
+            border-left: 3px solid brown !important;
+        }
 
         /* Modern Dropdown Arrow Animation */
         .primary-menu .fa-chevron-down {
@@ -463,7 +493,7 @@
         }
 
         /* Enhanced Menu Item Spacing */
-        .primary-menu .menu-item + .menu-item {
+        .primary-menu .menu-item+.menu-item {
             margin-left: 0.5rem !important;
         }
 
@@ -484,12 +514,14 @@
         }
 
         /* Prevent Horizontal Scroll */
-        html, body {
+        html,
+        body {
             overflow-x: hidden !important;
             max-width: 100vw !important;
         }
 
-        .container, .container-fluid {
+        .container,
+        .container-fluid {
             max-width: 100% !important;
         }
 
@@ -561,7 +593,7 @@
         }
 
         /* Modern Parent Hover State */
-        .primary-menu .menu-item:hover > .menu-link {
+        .primary-menu .menu-item:hover>.menu-link {
             background: linear-gradient(135deg, rgba(222, 98, 98, 0.08), rgba(222, 98, 98, 0.04)) !important;
             border-radius: 8px !important;
             color: #DE6262 !important;
@@ -688,302 +720,354 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Medical Demo | Canvas')</title>
 </head>
-<body class="stretched page-transition" data-loader-html="<div id='css3-spinner-svg-pulse-wrapper'><svg id='css3-spinner-svg-pulse' version='1.2' height='210' width='550' xmlns='https://www.w3.org/2000/svg' viewport='0 0 60 60' xmlns:xlink='https://www.w3.org/1999/xlink'><path id='css3-spinner-pulse' stroke='#DE6262' fill='none' stroke-width='2' stroke-linejoin='round' d='M0,90L250,90Q257,60 262,87T267,95 270,88 273,92t6,35 7,-60T290,127 297,107s2,-11 10,-10 1,1 8,-10T319,95c6,4 8,-6 10,-17s2,10 9,11h210'></svg></div>">
+
+<body class="stretched page-transition"
+    data-loader-html="<div id='css3-spinner-svg-pulse-wrapper'><svg id='css3-spinner-svg-pulse' version='1.2' height='210' width='550' xmlns='https://www.w3.org/2000/svg' viewport='0 0 60 60' xmlns:xlink='https://www.w3.org/1999/xlink'><path id='css3-spinner-pulse' stroke='#DE6262' fill='none' stroke-width='2' stroke-linejoin='round' d='M0,90L250,90Q257,60 262,87T267,95 270,88 273,92t6,35 7,-60T290,127 297,107s2,-11 10,-10 1,1 8,-10T319,95c6,4 8,-6 10,-17s2,10 9,11h210'></svg></div>">
 
     <!-- Wrapper -->
     <div id="wrapper">
 
-<!-- Top Bar Start -->
-<div id="top-bar" class="py-2 border-bottom" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white;">
-    <div class="container">
-        <div class="row justify-content-between align-items-center">
+        <!-- Top Bar Start -->
+        <div id="top-bar" class="py-2 border-bottom"
+            style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white;">
+            <div class="container">
+                <div class="row justify-content-between align-items-center">
 
-            <!-- Left Side: Quick Info & Status -->
-            <div class="col-md-auto d-none d-md-flex align-items-center gap-4 small">
-                <div class="d-flex align-items-center">
-                    <div class="status-indicator bg-success rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                    <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
-                </div>
-                <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
-                <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com" class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
-            </div>
-
-            <!-- Right Side: Auth + Quick Actions -->
-            <div class="col-md-auto d-flex justify-content-end align-items-center gap-3">
-
-                @auth
-                <!-- Quick Action Button for Emergency -->
-                <a href="{{ route('ask-ai') }}" class="btn btn-sm px-3 py-1 me-2"
-                   style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; font-size: 12px;">
-                    <i class="bi bi-lightning-charge me-1"></i> Quick Diagnosis
-                </a>
-
-                <!-- Notifications Bell -->
-                <div class="dropdown notifications-dropdown">
-                    <button class="btn btn-sm position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false"
-                            style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
-                        <i class="bi bi-bell"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count"
-                              id="notification-count"
-                              style="font-size: 10px; padding: 2px 6px; display: none;">
-                            0
-                        </span>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-end shadow notifications-dropdown-menu" style="width: 350px; max-height: 400px; overflow-y: auto;">
-                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-                            <h6 class="mb-0">Notifications</h6>
-                            <div class="btn-group btn-group-sm">
-                                <button type="button" class="btn btn-outline-secondary mark-all-read-btn" title="Mark all as read">
-                                    <i class="bi bi-check-all"></i>
-                                </button>
-                                <button type="button" class="btn btn-outline-secondary view-all-btn" title="View all notifications">
-                                    <i class="bi bi-list-ul"></i>
-                                </button>
-                            </div>
+                    <!-- Left Side: Quick Info & Status -->
+                    <div class="col-md-auto d-none d-md-flex align-items-center gap-4 small">
+                        <div class="d-flex align-items-center">
+                            <div class="status-indicator bg-success rounded-circle me-2"
+                                style="width: 8px; height: 8px;"></div>
+                            <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
                         </div>
-                        <div class="notification-list" id="notification-list">
-                            <div class="text-center py-4 text-muted">
-                                <i class="bi bi-bell-slash display-6 d-block mb-2"></i>
-                                <small>No notifications</small>
-                            </div>
-                        </div>
+                        <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
+                        <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com"
+                                class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
                     </div>
-                </div>
 
-                <div class="dropdown">
-                    <a class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle"
-                       href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
-                       style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
-                        <i class="bi bi-person-circle"></i>
-                        <div class="d-flex flex-column align-items-start">
-                            <span>{{ Auth::user()->name }}</span>
-                            @if(Auth::user()->isSubUser())
-                                <small class="opacity-75">{{ \App\Helpers\MenuHelper::getUserRoleDisplay(Auth::user()) }}</small>
-                            @endif
-                        </div>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow">
-                        @if(Auth::guard('admin')->check())
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.dashboard') }}">
-                                    <i class="bi bi-shield-check"></i> Admin Dashboard
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.users.index') }}">
-                                    <i class="bi bi-people"></i> Manage Users
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                        @endif
-                        @if(Auth::user()->isDoctor())
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('settings') }}">
-                                    <i class="bi bi-gear"></i> Settings
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('doctor.profile.edit') }}">
-                                    <i class="fas fa-user-edit"></i>Edit Profile
-                                </a>
-                            </li>
-                            @if(Auth::user()->isMainUser())
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('sub-users.index') }}">
-                                        <i class="fas fa-users"></i> Manage Sub-Users
-                                    </a>
-                                </li>
-                            @endif
-                        @endif
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('notifications.index') }}">
-                                <i class="bi bi-gear"></i> Notification Settings
+                    <!-- Right Side: Auth + Quick Actions -->
+                    <div class="col-md-auto d-flex justify-content-end align-items-center gap-3">
+
+                        @auth
+                            <!-- Quick Action Button for Emergency -->
+                            <a href="{{ route('ask-ai') }}" class="btn btn-sm px-3 py-1 me-2"
+                                style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; font-size: 12px;">
+                                <i class="bi bi-lightning-charge me-1"></i> Quick Diagnosis
                             </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2">
-                                    <i class="bi bi-box-arrow-right"></i> Logout
+
+                            <!-- Notifications Bell -->
+                            <div class="dropdown notifications-dropdown">
+                                <button class="btn btn-sm position-relative notification-bell" type="button" data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                                    <i class="bi bi-bell"></i>
+                                    <span
+                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count"
+                                        id="notification-count" style="font-size: 10px; padding: 2px 6px; display: none;">
+                                        0
+                                    </span>
                                 </button>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
-            @endauth
+                                <div class="dropdown-menu dropdown-menu-end shadow notifications-dropdown-menu"
+                                    style="width: 350px; max-height: 400px; overflow-y: auto;">
+                                    <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                                        <h6 class="mb-0">Notifications</h6>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-secondary mark-all-read-btn"
+                                                title="Mark all as read">
+                                                <i class="bi bi-check-all"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary view-all-btn"
+                                                title="View all notifications">
+                                                <i class="bi bi-list-ul"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="notification-list" id="notification-list">
+                                        <div class="text-center py-4 text-muted">
+                                            <i class="bi bi-bell-slash display-6 d-block mb-2"></i>
+                                            <small>No notifications</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-            @guest
-            <a href="{{ route('login') }}"
-               class="btn btn-sm px-4"
-               style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
-                <i class="bi bi-box-arrow-in-right me-1"></i> Login
-            </a>
-           <!-- <a href="{{ route('register') }}"
-               class="btn btn-sm px-4"
-               style="background: white; color: #DE6262; border: none; font-weight: 500; border-radius: 25px;">
-                <i class="bi bi-person-plus me-1"></i> Register
-            </a>-->
-            @endguest
-
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Top Bar End -->
-
-		<!-- Header
-		============================================= -->
-<header id="header">
-    <div id="header-wrap">
-        <div class="container">
-<div class="header-row d-flex align-items-center justify-content-center">
-
-                <!-- Logo and Desktop Nav Container -->
-                <div class="d-flex align-items-center">
-                    <!-- Logo -->
-                    <div id="logo" class="me-4">
-                        <a href="@auth{{ route('dashboard') }}@else{{ url('/') }}@endauth">
-                            <img style="width: 140px" class="logo-default"
-                                 srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x"
-                                 src="{{ asset('demos/medical/images/logo-medical.jpeg') }}"
-                                 alt="Canvas Logo">
-                        </a>
-                    </div>
-
-                    <!-- Desktop Navigation -->
-                    <nav class="primary-menu style-3 menu-spacing-margin d-none d-lg-block">
-                        <ul class="menu-container">
-                            @auth
-                                @if (Auth::guard('admin')->check())
-                                    <li class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('admin.dashboard') }}"><div>Dashboard</div></a>
-                                    </li>
-                                @else
-                                    @php
-                                        $menuItems = \App\Helpers\MenuHelper::getMenuItems(auth()->user());
-                                    @endphp
-
-                                    @foreach($menuItems as $item)
-                                        @if(isset($item['dropdown']) && $item['dropdown'])
-                                            <!-- Dropdown Menu Item -->
-                                            <li class="menu-item {{ collect($item['items'])->contains(fn($subItem) => request()->routeIs($subItem['route'] ?? '')) ? 'current' : '' }}">
-                                                <a class="menu-link" href="#"><div>{{ $item['name'] }} <i class="fas fa-chevron-down"></i></div></a>
-                                                <ul class="sub-menu-container">
-                                                    @foreach($item['items'] as $subItem)
-                                                        <li class="menu-item {{ request()->routeIs($subItem['route'] ?? '') ? 'current' : '' }}">
-                                                            <a class="menu-link" href="{{ isset($subItem['route']) ? route($subItem['route']) : '#' }}">
-                                                                <div>
-                                                                    @if(isset($subItem['icon']))
-                                                                        <i class="{{ $subItem['icon'] }} me-2"></i>
-                                                                    @endif
-                                                                    {{ $subItem['name'] }}
-                                                                </div>
-                                                            </a>
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
+                            <div class="dropdown">
+                                <a class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle" href="#"
+                                    role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
+                                    <i class="bi bi-person-circle"></i>
+                                    <div class="d-flex flex-column align-items-start">
+                                        <span>{{ Auth::user()->name }}</span>
+                                        @if (Auth::user()->isSubUser())
+                                            <small
+                                                class="opacity-75">{{ \App\Helpers\MenuHelper::getUserRoleDisplay(Auth::user()) }}</small>
+                                        @endif
+                                    </div>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow">
+                                    @if (Auth::guard('admin')->check())
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2"
+                                                href="{{ route('admin.dashboard') }}">
+                                                <i class="bi bi-shield-check"></i> Admin Dashboard
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2"
+                                                href="{{ route('admin.users.index') }}">
+                                                <i class="bi bi-people"></i> Manage Users
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                    @endif
+                                    @if (Auth::user()->isDoctor())
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2"
+                                                href="{{ route('settings') }}">
+                                                <i class="bi bi-gear"></i> Settings
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2"
+                                                href="{{ route('doctor.profile.edit') }}">
+                                                <i class="fas fa-user-edit"></i>Edit Profile
+                                            </a>
+                                        </li>
+                                        @if (Auth::user()->isMainUser())
+                                            <li>
+                                                <hr class="dropdown-divider">
                                             </li>
-                                        @else
-                                            <!-- Regular Menu Item -->
-                                            <li class="menu-item {{ request()->routeIs($item['route'] ?? '') ? 'current' : '' }}">
-                                                <a class="menu-link" href="{{ isset($item['route']) ? route($item['route']) : '#' }}">
-                                                    <div>
-                                                        @if(isset($item['icon']))
-                                                            <i class="{{ $item['icon'] }} me-2"></i>
-                                                        @endif
-                                                        {{ $item['name'] }}
-                                                    </div>
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2"
+                                                    href="{{ route('sub-users.index') }}">
+                                                    <i class="fas fa-users"></i> Manage Sub-Users
                                                 </a>
                                             </li>
                                         @endif
-                                    @endforeach
-                                @endif
-                            @endauth
+                                    @endif
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2"
+                                            href="{{ route('notifications.index') }}">
+                                            <i class="bi bi-gear"></i> Notification Settings
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <form method="POST" action="{{ route('logout') }}">
+                                            @csrf
+                                            <button type="submit"
+                                                class="dropdown-item text-danger d-flex align-items-center gap-2">
+                                                <i class="bi bi-box-arrow-right"></i> Logout
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        @endauth
 
-                            @guest
-                                <li class="menu-item {{ request()->is('/') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ url('/') }}"><div>Home</div></a>
-                                </li>
-                                <li class="menu-item {{ request()->is('about') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('about') }}"><div>About Us</div></a>
-                                </li>
-                                <li class="menu-item {{ request()->is('contact') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('contact') }}"><div>Contact</div></a>
-                                </li>
-                                <li class="menu-item {{ request()->is('doctors') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('doctors.index') }}"><div>For Patients</div></a>
-                                </li>
-                            @endguest
-                        </ul>
-                    </nav>
+                        @guest
+                            <a href="{{ route('login') }}" class="btn btn-sm px-4"
+                                style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                            </a>
+                            <!-- <a href="{{ route('register') }}"
+                   class="btn btn-sm px-4"
+                   style="background: white; color: #DE6262; border: none; font-weight: 500; border-radius: 25px;">
+                    <i class="bi bi-person-plus me-1"></i> Register
+                </a>-->
+                        @endguest
+
+                    </div>
                 </div>
-
-                <!-- Mobile Hamburger Button -->
-                <div class="primary-menu-trigger d-block d-lg-none">
-                    <button class="cnvs-hamburger" type="button" title="Open Mobile Menu">
-                        <span class="cnvs-hamburger-box"><span class="cnvs-hamburger-inner"></span></span>
-                    </button>
-                </div>
-
             </div>
         </div>
-    </div>
+        <!-- Top Bar End -->
 
-    <div class="header-wrap-clone"></div>
-</header>
+        <!-- Header
+  ============================================= -->
+        <header id="header">
+            <div id="header-wrap">
+                <div class="container">
+                    <div class="header-row d-flex align-items-center justify-content-center">
+
+                        <!-- Logo and Desktop Nav Container -->
+                        <div class="d-flex align-items-center">
+                            <!-- Logo -->
+                            <div id="logo" class="me-4">
+                                <a href="@auth {{ route('dashboard') }} @else {{ url('/') }} @endauth">
+                                    <img style="width: 140px" class="logo-default"
+                                        srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x"
+                                        src="{{ asset('demos/medical/images/logo-medical.jpeg') }}"
+                                        alt="Canvas Logo">
+                                </a>
+                            </div>
+
+                            <!-- Desktop Navigation -->
+                            <nav class="primary-menu style-3 menu-spacing-margin d-none d-lg-block">
+                                <ul class="menu-container">
+                                    @auth
+                                        @if (Auth::guard('admin')->check())
+                                            <li
+                                                class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
+                                                <a class="menu-link" href="{{ route('admin.dashboard') }}">
+                                                    <div>Dashboard</div>
+                                                </a>
+                                            </li>
+                                        @else
+                                            @php
+                                                $menuItems = \App\Helpers\MenuHelper::getMenuItems(auth()->user());
+                                            @endphp
+
+                                            @foreach ($menuItems as $item)
+                                                @if (isset($item['dropdown']) && $item['dropdown'])
+                                                    <!-- Dropdown Menu Item -->
+                                                    <li
+                                                        class="menu-item {{ collect($item['items'])->contains(fn($subItem) => request()->routeIs($subItem['route'] ?? '')) ? 'current' : '' }}">
+                                                        <a class="menu-link" href="#">
+                                                            <div>{{ $item['name'] }} <i class="fas fa-chevron-down"></i>
+                                                            </div>
+                                                        </a>
+                                                        <ul class="sub-menu-container">
+                                                            @foreach ($item['items'] as $subItem)
+                                                                <li
+                                                                    class="menu-item {{ request()->routeIs($subItem['route'] ?? '') ? 'current' : '' }}">
+                                                                    <a class="menu-link"
+                                                                        href="{{ isset($subItem['route']) ? route($subItem['route']) : '#' }}">
+                                                                        <div>
+                                                                            @if (isset($subItem['icon']))
+                                                                                <i
+                                                                                    class="{{ $subItem['icon'] }} me-2"></i>
+                                                                            @endif
+                                                                            {{ $subItem['name'] }}
+                                                                        </div>
+                                                                    </a>
+                                                                </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    </li>
+                                                @else
+                                                    <!-- Regular Menu Item -->
+                                                    <li
+                                                        class="menu-item {{ request()->routeIs($item['route'] ?? '') ? 'current' : '' }}">
+                                                        <a class="menu-link"
+                                                            href="{{ isset($item['route']) ? route($item['route']) : '#' }}">
+                                                            <div>
+                                                                @if (isset($item['icon']))
+                                                                    <i class="{{ $item['icon'] }} me-2"></i>
+                                                                @endif
+                                                                {{ $item['name'] }}
+                                                            </div>
+                                                        </a>
+                                                    </li>
+                                                @endif
+                                            @endforeach
+                                        @endif
+                                    @endauth
+
+                                    @guest
+                                        <li class="menu-item {{ request()->is('/') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ url('/') }}">
+                                                <div>Home</div>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item {{ request()->is('about') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('about') }}">
+                                                <div>About Us</div>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item {{ request()->is('contact') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('contact') }}">
+                                                <div>Contact</div>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item {{ request()->is('doctors') ? 'current' : '' }}">
+                                            <a class="menu-link" href="{{ route('doctors.index') }}">
+                                                <div>For Patients</div>
+                                            </a>
+                                        </li>
+                                    @endguest
+                                </ul>
+                            </nav>
+                        </div>
+
+                        <!-- Mobile Hamburger Button -->
+                        <div class="primary-menu-trigger d-block d-lg-none">
+                            <button class="cnvs-hamburger" type="button" title="Open Mobile Menu">
+                                <span class="cnvs-hamburger-box"><span class="cnvs-hamburger-inner"></span></span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="header-wrap-clone"></div>
+        </header>
 
 
         <!-- Flash Messages -->
-        @if(session('success') || session('error') || session('warning') || session('info'))
+        @if (session('success') || session('error') || session('warning') || session('info'))
             <div class="container-fluid px-0">
                 <div class="row">
                     <div class="col-12">
-                        @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
+                        @if (session('success'))
+                            <div class="alert alert-success alert-dismissible fade show m-0 rounded-0 border-0"
+                                role="alert">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-check-circle me-2"></i>
                                         <strong>Success!</strong> {{ session('success') }}
-                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
                                     </div>
                                 </div>
                             </div>
                         @endif
 
-                        @if(session('error'))
-                            <div class="alert alert-danger alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
+                        @if (session('error'))
+                            <div class="alert alert-danger alert-dismissible fade show m-0 rounded-0 border-0"
+                                role="alert">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-exclamation-circle me-2"></i>
                                         <strong>Error!</strong> {{ session('error') }}
-                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
                                     </div>
                                 </div>
                             </div>
                         @endif
 
-                        @if(session('warning'))
-                            <div class="alert alert-warning alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
+                        @if (session('warning'))
+                            <div class="alert alert-warning alert-dismissible fade show m-0 rounded-0 border-0"
+                                role="alert">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-exclamation-triangle me-2"></i>
                                         <strong>Warning!</strong> {{ session('warning') }}
-                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
                                     </div>
                                 </div>
                             </div>
                         @endif
 
-                        @if(session('info'))
-                            <div class="alert alert-info alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
+                        @if (session('info'))
+                            <div class="alert alert-info alert-dismissible fade show m-0 rounded-0 border-0"
+                                role="alert">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-info-circle me-2"></i>
                                         <strong>Info!</strong> {{ session('info') }}
-                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
                                     </div>
                                 </div>
                             </div>
@@ -999,339 +1083,286 @@
         </main>
 
     </div><!-- #wrapper end -->
-			</div>
-
-@if (!auth()->check())
-		<!-- Footer -->
-<footer id="footer" class="text-white py-5" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
-    <div class="container">
-        <div class="row g-4">
-            <!-- Company Info -->
-            <div class="col-lg-4 col-md-6">
-                <div class="footer-brand mb-4">
-                    <h4 class="text-white mb-3" style="color: #DE6262 !important;">
-                        <i class="bi bi-heart-pulse me-2" style="color: #DE6262;"></i>
-                        AI Medical Diagnosis
-                    </h4>
-                    <p class="text-white-50 mb-4">Revolutionizing healthcare with cutting-edge artificial intelligence. Empowering medical professionals with advanced diagnostic tools for superior patient care and outcomes.</p>
-
-                    <!-- Social Links -->
-                    <div class="social-links">
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
-                            <i class="bi bi-facebook"></i>
-                        </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
-                            <i class="bi bi-twitter"></i>
-                        </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
-                            <i class="bi bi-linkedin"></i>
-                        </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
-                            <i class="bi bi-instagram"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quick Links -->
-            <div class="col-lg-2 col-md-6">
-                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Platform</h6>
-                <ul class="list-unstyled footer-links">
-                    @auth
-                        <li class="mb-2"><a href="{{ route('dashboard') }}" class="text-white-50 text-decoration-none hover-link">Dashboard</a></li>
-                        <li class="mb-2"><a href="{{ route('ask-ai') }}" class="text-white-50 text-decoration-none hover-link">AI Assistant</a></li>
-                        <li class="mb-2"><a href="{{ route('cases') }}" class="text-white-50 text-decoration-none hover-link">Case Studies</a></li>
-                        <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Settings</a></li>
-                    @else
-                        <li class="mb-2"><a href="{{ url('/') }}" class="text-white-50 text-decoration-none hover-link">Home</a></li>
-                        <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Us</a></li>
-                        <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact</a></li>
-                        <li class="mb-2"><a href="{{ route('login') }}" class="text-white-50 text-decoration-none hover-link">Login</a></li>
-                    @endauth
-                </ul>
-            </div>
-
-            <!-- Resources -->
-            <div class="col-lg-2 col-md-6">
-                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Support</h6>
-                <ul class="list-unstyled footer-links">
-                    <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Platform</a></li>
-                    <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact Support</a></li>
-                    @auth
-                        <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Profile Settings</a></li>
-                    @endauth
-                </ul>
-            </div>
-
-            <!-- Contact & Support -->
-            <div class="col-lg-4 col-md-6">
-                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Contact & Support</h6>
-
-                <div class="contact-info mb-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-envelope" style="color: #DE6262;"></i>
-                        </div>
-                        <div>
-                            <small class="text-white-50 d-block">Email Support</small>
-                            <a href="info@medcuraai.com" class="text-white text-decoration-none">info@medcuraai.com</a>
-                        </div>
-                    </div>
-
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-headset" style="color: #DE6262;"></i>
-                        </div>
-                        <div>
-                            <small class="text-white-50 d-block">24/7 Support</small>
-                            <span class="text-white">AI-Powered Help Available</span>
-                        </div>
-                    </div>
-
-                    <div class="d-flex align-items-center">
-                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-shield-check" style="color: #DE6262;"></i>
-                        </div>
-                        <div>
-                            <small class="text-white-50 d-block">Security & Privacy</small>
-                            <span class="text-white">HIPAA Compliant Platform</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Contact -->
-                <div class="quick-contact">
-                    <h6 class="text-white mb-2">Need Help?</h6>
-                    <p class="text-white-50 small mb-3">Our AI-powered support is here to assist you</p>
-                    <a href="{{ route('contact') }}" class="btn btn-sm" style="background: #DE6262; color: white; border: none; border-radius: 25px;">
-                        <i class="bi bi-chat-dots me-2"></i>Contact Support
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer Bottom -->
-        <hr class="my-4" style="border-color: rgba(222,98,98,0.2);">
-        <div class="row align-items-center">
-            <div class="col-md-6">
-                <p class="text-white-50 mb-0">
-                    &copy; {{ date('Y') }} AI Medical Diagnosis Platform. All rights reserved.
-                </p>
-            </div>
-            <div class="col-md-6 text-md-end">
-                <div class="footer-legal-links">
-                    <span class="text-white-50 me-3">Secure & HIPAA Compliant</span>
-                    <a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link me-3">Contact Us</a>
-                    <a href="{{ route('admin.login') }}" class="text-white-50 text-decoration-none hover-link" style="font-size: 0.8rem;">Admin</a>
-                </div>
-            </div>
-        </div>
     </div>
-</footer>
-@endif
 
-<style>
-.hover-link:hover {
-    color: #DE6262 !important;
-    transition: color 0.3s ease;
-}
+    @if (!auth()->check())
+        <!-- Footer -->
+        <footer id="footer" class="text-white py-5"
+            style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
+            <div class="container">
+                <div class="row g-4">
+                    <!-- Company Info -->
+                    <div class="col-lg-4 col-md-6">
+                        <div class="footer-brand mb-4">
+                            <h4 class="text-white mb-3" style="color: #DE6262 !important;">
+                                <i class="bi bi-heart-pulse me-2" style="color: #DE6262;"></i>
+                                AI Medical Diagnosis
+                            </h4>
+                            <p class="text-white-50 mb-4">Revolutionizing healthcare with cutting-edge artificial
+                                intelligence. Empowering medical professionals with advanced diagnostic tools for
+                                superior patient care and outcomes.</p>
 
-.social-links a:hover {
-    background-color: #DE6262 !important;
-    border-color: #DE6262 !important;
-    transform: translateY(-2px);
-    transition: all 0.3s ease;
-}
+                            <!-- Social Links -->
+                            <div class="social-links">
+                                <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
+                                    style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                                    <i class="bi bi-facebook"></i>
+                                </a>
+                                <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
+                                    style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                                    <i class="bi bi-twitter"></i>
+                                </a>
+                                <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
+                                    style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                                    <i class="bi bi-linkedin"></i>
+                                </a>
+                                <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
+                                    style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                                    <i class="bi bi-instagram"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
 
-.newsletter-signup input::placeholder {
-    color: rgba(255,255,255,0.6);
-}
+                    <!-- Quick Links -->
+                    <div class="col-lg-2 col-md-6">
+                        <h6 class="text-white mb-3" style="color: #DE6262 !important;">Platform</h6>
+                        <ul class="list-unstyled footer-links">
+                            @auth
+                                <li class="mb-2"><a href="{{ route('dashboard') }}"
+                                        class="text-white-50 text-decoration-none hover-link">Dashboard</a></li>
+                                <li class="mb-2"><a href="{{ route('ask-ai') }}"
+                                        class="text-white-50 text-decoration-none hover-link">AI Assistant</a></li>
+                                <li class="mb-2"><a href="{{ route('cases') }}"
+                                        class="text-white-50 text-decoration-none hover-link">Case Studies</a></li>
+                                <li class="mb-2"><a href="{{ route('settings') }}"
+                                        class="text-white-50 text-decoration-none hover-link">Settings</a></li>
+                            @else
+                                <li class="mb-2"><a href="{{ url('/') }}"
+                                        class="text-white-50 text-decoration-none hover-link">Home</a></li>
+                                <li class="mb-2"><a href="{{ route('about') }}"
+                                        class="text-white-50 text-decoration-none hover-link">About Us</a></li>
+                                <li class="mb-2"><a href="{{ route('contact') }}"
+                                        class="text-white-50 text-decoration-none hover-link">Contact</a></li>
+                                <li class="mb-2"><a href="{{ route('login') }}"
+                                        class="text-white-50 text-decoration-none hover-link">Login</a></li>
+                            @endauth
+                        </ul>
+                    </div>
 
-.newsletter-signup input:focus {
-    background: rgba(255,255,255,0.15);
-    border-color: #DE6262;
-    box-shadow: 0 0 0 0.2rem rgba(222,98,98,0.25);
-    color: white;
-}
-</style>
+                    <!-- Resources -->
+                    <div class="col-lg-2 col-md-6">
+                        <h6 class="text-white mb-3" style="color: #DE6262 !important;">Support</h6>
+                        <ul class="list-unstyled footer-links">
+                            <li class="mb-2"><a href="{{ route('about') }}"
+                                    class="text-white-50 text-decoration-none hover-link">About Platform</a></li>
+                            <li class="mb-2"><a href="{{ route('contact') }}"
+                                    class="text-white-50 text-decoration-none hover-link">Contact Support</a></li>
+                            @auth
+                                <li class="mb-2"><a href="{{ route('settings') }}"
+                                        class="text-white-50 text-decoration-none hover-link">Profile Settings</a></li>
+                            @endauth
+                        </ul>
+                    </div>
 
-	</div><!-- #wrapper end -->
+                    <!-- Contact & Support -->
+                    <div class="col-lg-4 col-md-6">
+                        <h6 class="text-white mb-3" style="color: #DE6262 !important;">Contact & Support</h6>
 
-	<!-- Go To Top
-	============================================= -->
-	<div id="gotoTop" class="fas fa-chevron-up rounded-circle" style="position: fixed; bottom: 20px; right: 20px; width: 40px; height: 40px; background-color: #007bff; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; opacity: 0.8; transition: opacity 0.3s;"></div>
+                        <div class="contact-info mb-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="contact-icon me-3"
+                                    style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-envelope" style="color: #DE6262;"></i>
+                                </div>
+                                <div>
+                                    <small class="text-white-50 d-block">Email Support</small>
+                                    <a href="info@medcuraai.com"
+                                        class="text-white text-decoration-none">info@medcuraai.com</a>
+                                </div>
+                            </div>
 
-	<!-- JavaScripts
-	============================================= -->
-	   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-	   <script src="{{ asset('js/plugins.min.js') }}"></script>
-	   <script src="{{ asset('js/functions.bundle.js') }}"></script>
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="contact-icon me-3"
+                                    style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-headset" style="color: #DE6262;"></i>
+                                </div>
+                                <div>
+                                    <small class="text-white-50 d-block">24/7 Support</small>
+                                    <span class="text-white">AI-Powered Help Available</span>
+                                </div>
+                            </div>
 
-	   <!-- Notification System JavaScript -->
-	   <script src="{{ asset('js/notifications.js') }}"></script>
+                            <div class="d-flex align-items-center">
+                                <div class="contact-icon me-3"
+                                    style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-shield-check" style="color: #DE6262;"></i>
+                                </div>
+                                <div>
+                                    <small class="text-white-50 d-block">Security & Privacy</small>
+                                    <span class="text-white">HIPAA Compliant Platform</span>
+                                </div>
+                            </div>
+                        </div>
 
-	   <!-- Notification System Styles -->
-	   @include('notifications._styles')
+                        <!-- Quick Contact -->
+                        <div class="quick-contact">
+                            <h6 class="text-white mb-2">Need Help?</h6>
+                            <p class="text-white-50 small mb-3">Our AI-powered support is here to assist you</p>
+                            <a href="{{ route('contact') }}" class="btn btn-sm"
+                                style="background: #DE6262; color: white; border: none; border-radius: 25px;">
+                                <i class="bi bi-chat-dots me-2"></i>Contact Support
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-	   <!-- Notification System JavaScript -->
-	   @auth
-	   @include('notifications._realtime_js')
-	   <script>
-	   $(document).ready(function() {
-	       // Load notifications dropdown
-	       function loadNotifications() {
-	           $.ajax({
-	               url: '{{ route("notifications.dropdown") }}',
-	               method: 'GET',
-	               success: function(response) {
-	                   $('#notification-list').html(response.html);
-	                   updateNotificationCount(response.unread_count);
-	               }
-	           });
-	       }
-
-	       // Update notification count badge
-	       function updateNotificationCount(count) {
-	           const $badge = $('#notification-count');
-	           if (count > 0) {
-	               $badge.text(count).show();
-	           } else {
-	               $badge.hide();
-	           }
-	       }
-
-	       // Mark notification as read
-	       $(document).on('click', '.notification-item', function(e) {
-	           e.preventDefault();
-	           const notificationId = $(this).data('notification-id');
-	           const $item = $(this);
-
-	           $.ajax({
-	               url: '{{ route("notifications.mark-read", ":id") }}'.replace(':id', notificationId),
-	               method: 'POST',
-	               data: {
-	                   _token: '{{ csrf_token() }}'
-	               },
-	               success: function() {
-	                   $item.removeClass('unread').addClass('read');
-	                   const currentCount = parseInt($('#notification-count').text() || 0);
-	                   updateNotificationCount(currentCount - 1);
-	               }
-	           });
-	       });
-
-	       // Mark all as read
-	       $(document).on('click', '.mark-all-read-btn', function() {
-	           $.ajax({
-	               url: '{{ route("notifications.mark-all-read") }}',
-	               method: 'POST',
-	               data: {
-	                   _token: '{{ csrf_token() }}'
-	               },
-	               success: function() {
-	                   loadNotifications();
-	               }
-	           });
-	       });
-
-	       // View all notifications
-	       $(document).on('click', '.view-all-btn', function() {
-	           window.location.href = '{{ route("notifications.index") }}';
-	       });
-
-	       // Close dropdown when clicking outside
-	       $(document).on('click', function(e) {
-	           if (!$(e.target).closest('.notifications-dropdown').length) {
-	               $('.notifications-dropdown-menu').removeClass('show');
-	           }
-	       });
-
-	       // Initial load
-	       loadNotifications();
-
-	       // Auto-refresh notifications every 30 seconds
-	       setInterval(loadNotifications, 30000);
+                <!-- Footer Bottom -->
+                <hr class="my-4" style="border-color: rgba(222,98,98,0.2);">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <p class="text-white-50 mb-0">
+                            &copy; {{ date('Y') }} AI Medical Diagnosis Platform. All rights reserved.
+                        </p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <div class="footer-legal-links">
+                            <span class="text-white-50 me-3">Secure & HIPAA Compliant</span>
+                            <a href="{{ route('contact') }}"
+                                class="text-white-50 text-decoration-none hover-link me-3">Contact Us</a>
+                            <a href="{{ route('admin.login') }}"
+                                class="text-white-50 text-decoration-none hover-link"
+                                style="font-size: 0.8rem;">Admin</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
     @endif
 
-    @stack('scripts')
+    <style>
+        .hover-link:hover {
+            color: #DE6262 !important;
+            transition: color 0.3s ease;
+        }
 
-    <!-- Real-time notifications JavaScript -->
-    @include('notifications._realtime_js')
-	   });
-	   </script>
-	   @endif
+        .social-links a:hover {
+            background-color: #DE6262 !important;
+            border-color: #DE6262 !important;
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
 
-	   @stack('scripts')
-    <!-- Debug Menu Structure -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('=== MENU STRUCTURE DEBUG ===');
+        .newsletter-signup input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
 
-            // Log all menu items and their dropdowns
-            document.querySelectorAll('.primary-menu .menu-item').forEach((item, index) => {
-                const menuLink = item.querySelector(':scope > .menu-link');
-                const dropdown = item.querySelector(':scope > .sub-menu-container');
+        .newsletter-signup input:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #DE6262;
+            box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.25);
+            color: white;
+        }
+    </style>
 
-                if (menuLink) {
-                    const menuName = menuLink.textContent.trim().replace(' ▼', '');
-                    console.log(`Menu ${index + 1}: "${menuName}"`);
+    </div><!-- #wrapper end -->
 
-                    if (dropdown) {
-                        const subItems = Array.from(dropdown.querySelectorAll('.menu-link')).map(link =>
-                            link.textContent.trim()
-                        );
-                        console.log(`  Dropdown items:`, subItems);
+    <!-- Go To Top
+ ============================================= -->
+    <div id="gotoTop" class="fas fa-chevron-up rounded-circle"
+        style="position: fixed; bottom: 20px; right: 20px; width: 40px; height: 40px; background-color: #007bff; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; opacity: 0.8; transition: opacity 0.3s;">
+    </div>
 
-                        // Add temporary label to dropdown for visual debugging
-                        const debugLabel = document.createElement('div');
-                        debugLabel.style.cssText = 'background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; font-size: 10px; font-weight: bold;';
-                        debugLabel.textContent = `${menuName} Dropdown`;
-                        dropdown.insertBefore(debugLabel, dropdown.firstChild);
-                    } else {
-                        console.log(`  No dropdown`);
-                    }
-                }
-            });
+    <!-- JavaScripts
+ ============================================= -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ asset('js/plugins.min.js') }}"></script>
+    <script src="{{ asset('js/functions.bundle.js') }}"></script>
 
-            console.log('=== END DEBUG ===');
+    <!-- Vite Assets (Laravel Echo & Pusher) -->
+    @vite(['resources/js/app.js', 'resources/css/app.css'])
 
-            // Improve dropdown hover behavior
-            let hoverTimeout;
+    <!-- Notification System JavaScript -->
+    <script src="{{ asset('js/notifications.js') }}"></script>
 
-            document.querySelectorAll('.primary-menu .menu-item').forEach(menuItem => {
-                const dropdown = menuItem.querySelector('.sub-menu-container');
+    <!-- Notification System Styles -->
+    @include('notifications._styles')
+
+    <!-- Notification System JavaScript -->
+    @auth
+        @include('notifications._realtime_js')
+    @endauth
+
+{{-- Extra scripts --}}
+@stack('scripts')
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('=== MENU STRUCTURE DEBUG ===');
+
+        // Log all menu items and their dropdowns
+        document.querySelectorAll('.primary-menu .menu-item').forEach((item, index) => {
+            const menuLink = item.querySelector(':scope > .menu-link');
+            const dropdown = item.querySelector(':scope > .sub-menu-container');
+
+            if (menuLink) {
+                const menuName = menuLink.textContent.trim().replace(' ▼', '');
+                console.log(`Menu ${index + 1}: "${menuName}"`);
 
                 if (dropdown) {
-                    // Show dropdown immediately on hover
-                    menuItem.addEventListener('mouseenter', function() {
-                        clearTimeout(hoverTimeout);
-                        dropdown.style.opacity = '1';
-                        dropdown.style.visibility = 'visible';
-                    });
+                    const subItems = Array.from(dropdown.querySelectorAll('.menu-link'))
+                        .map(link => link.textContent.trim());
+                    console.log(`  Dropdown items:`, subItems);
 
-                    // Delay hiding dropdown when mouse leaves
-                    menuItem.addEventListener('mouseleave', function() {
-                        hoverTimeout = setTimeout(() => {
-                            dropdown.style.opacity = '0';
-                            dropdown.style.visibility = 'hidden';
-                        }, 300); // 300ms delay
-                    });
-
-                    // Keep dropdown open when hovering over it
-                    dropdown.addEventListener('mouseenter', function() {
-                        clearTimeout(hoverTimeout);
-                    });
-
-                    dropdown.addEventListener('mouseleave', function() {
-                        hoverTimeout = setTimeout(() => {
-                            dropdown.style.opacity = '0';
-                            dropdown.style.visibility = 'hidden';
-                        }, 300);
-                    });
+                    // Add temporary label for visual debugging
+                    const debugLabel = document.createElement('div');
+                    debugLabel.style.cssText =
+                        'background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; font-size: 10px; font-weight: bold;';
+                    debugLabel.textContent = `${menuName} Dropdown`;
+                    dropdown.insertBefore(debugLabel, dropdown.firstChild);
+                } else {
+                    console.log(`  No dropdown`);
                 }
-            });
+            }
         });
-    </script>
 
-</body>
-</html>
+        console.log('=== END DEBUG ===');
+
+        // Improve dropdown hover behavior
+        let hoverTimeout;
+
+        document.querySelectorAll('.primary-menu .menu-item').forEach(menuItem => {
+            const dropdown = menuItem.querySelector('.sub-menu-container');
+
+            if (dropdown) {
+                menuItem.addEventListener('mouseenter', function() {
+                    clearTimeout(hoverTimeout);
+                    dropdown.style.opacity = '1';
+                    dropdown.style.visibility = 'visible';
+                });
+
+                menuItem.addEventListener('mouseleave', function() {
+                    hoverTimeout = setTimeout(() => {
+                        dropdown.style.opacity = '0';
+                        dropdown.style.visibility = 'hidden';
+                    }, 300);
+                });
+
+                dropdown.addEventListener('mouseenter', function() {
+                    clearTimeout(hoverTimeout);
+                });
+
+                dropdown.addEventListener('mouseleave', function() {
+                    hoverTimeout = setTimeout(() => {
+                        dropdown.style.opacity = '0';
+                        dropdown.style.visibility = 'hidden';
+                    }, 300);
+                });
+            }
+        });
+    });
+</script>
+
+    </body>
+
+    </html>
