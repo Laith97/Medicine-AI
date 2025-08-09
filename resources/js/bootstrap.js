@@ -14,13 +14,32 @@ import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 
-window.Echo = new Echo({
-    broadcaster: 'pusher',
-    key: import.meta.env.VITE_PUSHER_APP_KEY,
-    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER ?? 'mt1',
-    wsHost: import.meta.env.VITE_PUSHER_HOST ? import.meta.env.VITE_PUSHER_HOST : `ws-${import.meta.env.VITE_PUSHER_APP_CLUSTER}.pusher-channels.com`,
-    wsPort: import.meta.env.VITE_PUSHER_PORT ?? 80,
-    wssPort: import.meta.env.VITE_PUSHER_PORT ?? 443,
-    forceTLS: (import.meta.env.VITE_PUSHER_SCHEME ?? 'https') === 'https',
-    enabledTransports: ['ws', 'wss'],
-});
+// Debug environment variables
+console.log('🔑 VITE_PUSHER_APP_KEY:', import.meta.env.VITE_PUSHER_APP_KEY);
+console.log('🌍 VITE_PUSHER_APP_CLUSTER:', import.meta.env.VITE_PUSHER_APP_CLUSTER);
+
+// Get CSRF token for authentication
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+// Proper Echo configuration with authentication
+try {
+    window.Echo = new Echo({
+        broadcaster: 'pusher',
+        key: import.meta.env.VITE_PUSHER_APP_KEY,
+        cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap2',
+        forceTLS: true,
+        authEndpoint: '/broadcasting/auth',
+        auth: {
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        },
+    });
+
+    console.log('✅ Echo initialized successfully');
+    console.log('📡 Echo object:', window.Echo);
+    console.log('🔒 CSRF token:', csrfToken ? 'Found' : 'Missing');
+} catch (error) {
+    console.error('❌ Echo initialization failed:', error);
+}

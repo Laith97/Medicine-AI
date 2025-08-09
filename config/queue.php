@@ -39,8 +39,13 @@ return [
             'connection' => env('DB_QUEUE_CONNECTION'),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
-            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),
+            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 10), // Reduced from 90 to 10 seconds
             'after_commit' => false,
+        ],
+
+        // High-priority sync queue for real-time notifications
+        'realtime' => [
+            'driver' => 'sync', // Process immediately
         ],
 
         'beanstalkd' => [

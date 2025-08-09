@@ -17,26 +17,82 @@ class NotificationController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = $user->notifications();
 
-        // Filter by type if specified
-        if ($request->has('type')) {
-            $query->where('type', $request->type);
-        }
+        // Get all notifications
+        $notifications = $user->notifications()
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
 
-        // Filter by read/unread status
-        if ($request->has('read')) {
-            $readStatus = $request->read === 'read';
-            if ($readStatus) {
-                $query->whereNotNull('read_at');
-            } else {
-                $query->whereNull('read_at');
-            }
-        }
+        // Get unread notifications
+        $unreadNotifications = $user->notifications()
+            ->whereNull('read_at')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
 
-        $notifications = $query->orderBy('created_at', 'desc')->paginate(15);
+        // Get appointment notifications
+        $appointmentNotifications = $user->notifications()
+            ->whereJsonContains('data->type', 'appointment_booked')
+            ->orWhere('type', 'LIKE', '%Appointment%')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
 
-        return view('notifications.index', compact('notifications'));
+        // Get diagnosis notifications
+        $diagnosisNotifications = $user->notifications()
+            ->whereJsonContains('data->type', 'diagnosis')
+            ->orWhere('type', 'LIKE', '%Diagnosis%')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        // Get system notifications
+        $systemNotifications = $user->notifications()
+            ->whereJsonContains('data->type', 'system')
+            ->orWhere('type', 'LIKE', '%System%')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        // Get unread count
+        $unreadCount = $user->unreadNotifications()->count();
+
+        return view('notifications.index', compact(
+            'notifications',
+            'unreadNotifications',
+            'appointmentNotifications',
+            'diagnosisNotifications',
+            'systemNotifications',
+            'unreadCount'
+        ));
+    }
+
+    /**
+     * Get notifications for API (used by notification dropdown).
+     */
+    public function apiIndex()
+    {
+        $user = Auth::user();
+
+        // Get recent notifications (both read and unread) for dropdown
+        $notifications = $user->notifications()
+            ->orderBy('created_at', 'desc')
+            ->take(15)
+            ->get()
+            ->map(function ($notification) {
+                return [
+                    'id' => $notification->id,
+                    'type' => $notification->type,
+                    'data' => $notification->data,
+                    'read_at' => $notification->read_at,
+                    'created_at' => $notification->created_at,
+                    'title' => $notification->data['title'] ?? 'Notification',
+                    'message' => $notification->data['message'] ?? 'You have a new notification',
+                ];
+            });
+
+        $unreadCount = $user->unreadNotifications()->count();
+
+        return response()->json([
+            'notifications' => $notifications,
+            'unread_count' => $unreadCount
+        ]);
     }
 
     /**
@@ -76,13 +132,15 @@ class NotificationController extends Controller
      */
     public function markAsRead($id)
     {
+        $userId = Auth::id();
         $notification = DatabaseNotification::where('id', $id)
-            ->where('notifiable_id', Auth::id())
+            ->where('notifiable_id', $userId)
             ->where('notifiable_type', get_class(Auth::user()))
             ->first();
 
         if ($notification) {
             $notification->markAsRead();
+            event(new \App\Events\NotificationRead($userId, $notification->id));
             return response()->json(['success' => true]);
         }
 

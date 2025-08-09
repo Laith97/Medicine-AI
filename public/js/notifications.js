@@ -1,6 +1,7 @@
 // Notification System JavaScript
 class NotificationManager {
-    constructor() {
+    constructor(userId) {
+        this.userId = userId;
         this.unreadCount = 0;
         this.notifications = [];
         this.socket = null;
@@ -101,29 +102,74 @@ class NotificationManager {
         });
     }
 
-    // Setup real-time updates with Laravel Echo
+    // Setup real-time updates with Laravel Echo (with proper window.Echo reference)
     setupRealtimeUpdates() {
-        if (typeof Echo !== 'undefined') {
-            // Listen for new notifications
-            Echo.private(`App.User.${userId}`)
-                .notification((notification) => {
-                    this.addNotification(notification);
-                    this.updateUnreadCount(this.unreadCount + 1);
-                    this.showNotificationToast(notification);
-                });
+        // Check if window.Echo is available (Laravel Echo is attached to window)
+        if (typeof window.Echo === 'undefined') {
+            // Initialize retry counter if not set
+            if (this.echoRetryCount === undefined) {
+                this.echoRetryCount = 0;
+            }
 
-            // Listen for notification read status updates
-            Echo.channel('notification-updates')
-                .listen('NotificationRead', (event) => {
-                    this.updateNotificationReadStatus(event.notificationId);
-                });
+            // Retry up to 10 times with 500ms delay
+            if (this.echoRetryCount < 10) {
+                this.echoRetryCount++;
+                setTimeout(() => this.setupRealtimeUpdates(), 500);
+                console.log(`Retrying Echo initialization... (${this.echoRetryCount}/10)`);
+                return;
+            } else {
+                console.error('Echo failed to initialize after 10 attempts. Check if resources/js/app.js is properly compiled and loaded.');
+                return;
+            }
         }
+
+        // Check if userId is available
+        if (!this.userId) {
+            console.error('userId is missing. Ensure <meta name="user-id"> exists for authenticated users.');
+            return;
+        }
+
+        // Setup the channel using window.Echo (correct global reference)
+        window.Echo.private(`App.User.${this.userId}`)
+            .notification((notificationData) => {
+                // Map server notification structure to client expected format
+                const notification = {
+                    id: notificationData.id,
+                    type: notificationData.type,
+                    data: notificationData.data || notificationData,
+                    read_at: notificationData.read_at || null,
+                    created_at: notificationData.created_at || new Date().toISOString(),
+                    title: notificationData.title || (notificationData.data?.title ?? 'Notification'),
+                    message: notificationData.message || (notificationData.data?.message ?? 'You have a new notification')
+                };
+
+                this.addNotification(notification);
+                this.updateUnreadCount(this.unreadCount + 1);
+                this.showNotificationToast(notification);
+            })
+            .listen('NotificationRead', (event) => {
+                console.log('Received NotificationRead event:', event);
+                this.updateNotificationReadStatus(event.notificationId);
+            });
+
+        console.log('Real-time notification channel established successfully');
     }
 
-    // Add new notification to the list
+    // Add new notification to the list with normalized structure
     addNotification(notification) {
-        this.notifications.unshift(notification);
-        if (notification.read_at === null) {
+        // Normalize notification structure to ensure consistency
+        const normalizedNotification = {
+            id: notification.id,
+            type: notification.type,
+            data: notification.data || {},
+            read_at: notification.read_at,
+            created_at: notification.created_at,
+            title: notification.title || notification.data?.title || 'Notification',
+            message: notification.message || notification.data?.message || 'You have a new notification'
+        };
+
+        this.notifications.unshift(normalizedNotification);
+        if (normalizedNotification.read_at === null) {
             this.unreadCount++;
         }
         this.updateDropdown(this.notifications, this.unreadCount);
@@ -337,22 +383,41 @@ class NotificationManager {
         }
     }
 
-    // Show notification toast
+    // Show notification toast with normalized notification structure
     showNotificationToast(notification) {
+        // Normalize notification structure
+        const normalizedNotification = {
+            id: notification.id,
+            type: notification.type,
+            data: notification.data || {},
+            read_at: notification.read_at,
+            created_at: notification.created_at,
+            title: notification.title || notification.data?.title || 'Notification',
+            message: notification.message || notification.data?.message || 'You have a new notification'
+        };
+
         // Create toast element
         const toast = document.createElement('div');
         toast.className = 'notification-toast';
+
+        // Play notification sound if enabled
+        const soundEnabled = document.querySelector('meta[name="notification-sound-enabled"]')?.content === 'true';
+        if (soundEnabled) {
+            const sound = new Audio('/sounds/notification.mp3');
+            sound.play().catch(e => console.error('Error playing sound:', e));
+        }
+
         toast.innerHTML = `
             <div class="toast-content">
                 <div class="toast-icon">
-                    <i class="${this.getNotificationIcon(notification.type)}"></i>
+                    <i class="${this.getNotificationIcon(normalizedNotification.type)}"></i>
                 </div>
                 <div class="toast-message">
-                    <div class="toast-title">${notification.title}</div>
-                    <div class="toast-text">${notification.message}</div>
+                    <div class="toast-title">${normalizedNotification.title}</div>
+                    <div class="toast-text">${normalizedNotification.message}</div>
                 </div>
                 <div class="toast-actions">
-                    <button class="btn btn-sm btn-primary view-toast-btn" data-id="${notification.id}">
+                    <button class="btn btn-sm btn-primary view-toast-btn" data-id="${normalizedNotification.id}">
                         View
                     </button>
                     <button class="btn btn-sm btn-secondary dismiss-toast-btn">
@@ -413,10 +478,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Check if userId is available (for real-time notifications)
                 const userId = document.querySelector('meta[name="user-id"]')?.content;
                 if (userId) {
-                    window.notificationManager = new NotificationManager();
+                    window.notificationManager = new NotificationManager(userId);
                 } else {
                     // Fallback for non-authenticated users
-                    window.notificationManager = new NotificationManager();
+                    window.notificationManager = new NotificationManager(null);
                 }
 
                 console.log('NotificationManager initialized successfully');
