@@ -1289,7 +1289,7 @@
     @vite(['resources/js/app.js', 'resources/css/app.css'])
 
     <!-- Notification System JavaScript -->
-
+    <script src="{{ asset('js/notifications.js') }}"></script>
 
     <!-- Notification System Styles -->
     @include('notifications._styles')
@@ -1378,81 +1378,55 @@
 <!-- Notification Scripts -->
 <script src="{{ asset('sounds/notification-sound.js') }}"></script>
 @vite(['resources/js/app.js'])
-<script src="{{ asset('js/unified-notifications-v2.js') }}"></script>
+<script src="{{ asset('js/unified-notifications.js') }}"></script>
 
 <!-- Debug Tools (only in development) -->
 @if(config('app.debug'))
-<meta name="app-debug" content="true">
 <script src="{{ asset('js/notification-debug.js') }}"></script>
 <script src="{{ asset('js/echo-debug.js') }}"></script>
 <script src="{{ asset('js/echo-debug-enhanced.js') }}"></script>
 <script src="{{ asset('js/notification-tester.js') }}"></script>
 <script src="{{ asset('js/test-public-notifications.js') }}"></script>
-<script src="{{ asset('js/notification-test-runner.js') }}"></script>
-<script src="{{ asset('js/notification-diagnostics.js') }}"></script>
-<script src="{{ asset('js/pusher-raw-debug.js') }}"></script>
-<script src="{{ asset('js/laravel-notification-catcher.js') }}"></script>
-<script src="{{ asset('js/appointment-notification-debug.js') }}"></script>
-<script src="{{ asset('js/backend-diagnosis.js') }}"></script>
 @endif
 
 <script>
-console.log('🚀 Unified Notification System will auto-initialize');
+// Initialize unified notification system when DOM and Echo are ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Initializing notification system...');
 
-@if(config('app.debug'))
-// Add debug commands to window for testing
-window.testNotifications = () => {
-    if (window.unifiedNotifications) {
-        window.unifiedNotifications.testNotification();
-        console.log('📤 Test notification sent');
-    } else {
-        console.error('❌ Unified notification system not available');
+    // Initialize notification manager immediately
+    if (typeof NotificationManager !== 'undefined') {
+        console.log('📋 Initializing NotificationManager...');
+        window.notificationManager = new NotificationManager({{ auth()->id() }});
     }
-};
 
-window.toggleNotificationSound = (enabled) => {
-    if (window.unifiedNotifications) {
-        window.unifiedNotifications.enableSound(enabled);
-        console.log('🔊 Notification sound ' + (enabled ? 'enabled' : 'disabled'));
-    }
-};
+    // Wait for Echo to be available and initialize NotificationSystem
+    const waitForEcho = () => {
+        if (typeof window.Echo !== 'undefined' && window.Echo.connector) {
+            console.log('✅ Echo is ready, initializing NotificationSystem');
 
-window.toggleNotificationToast = (enabled) => {
-    if (window.unifiedNotifications) {
-        window.unifiedNotifications.enableToast(enabled);
-        console.log('📋 Notification toast ' + (enabled ? 'enabled' : 'disabled'));
-    }
-};
+            // Initialize the NotificationSystem class
+            if (typeof NotificationSystem !== 'undefined') {
+                window.notificationSystem = new NotificationSystem();
+            }
 
-// Additional debug info
-setTimeout(() => {
-    console.log('🧪 System Status:');
-    console.log('  • Echo available:', typeof window.Echo !== 'undefined');
-    console.log('  • NotificationSound available:', typeof window.notificationSound !== 'undefined');
-    console.log('  • UnifiedNotifications available:', typeof window.unifiedNotifications !== 'undefined');
-    console.log('  • User ID:', document.querySelector('meta[name="user-id"]')?.getAttribute('content'));
+            // Show debug panel if available
+            @if(config('app.debug'))
+            if (window.notificationDebugger) {
+                setTimeout(() => {
+                    window.notificationDebugger.show();
+                    window.notificationDebugger.log('🚀 Notification system ready for testing!');
+                }, 1000);
+            }
+            @endif
+        } else {
+            console.log('⏳ Waiting for Echo to be ready...');
+            setTimeout(waitForEcho, 500);
+        }
+    };
 
-    if (window.unifiedNotifications) {
-        console.log('  • Unified system initialized:', window.unifiedNotifications.isInitialized);
-        console.log('  • Sound enabled:', window.unifiedNotifications.soundEnabled);
-        console.log('  • Toast enabled:', window.unifiedNotifications.toastEnabled);
-    }
-}, 3000);
-
-console.log('🛠️ Debug commands available:');
-console.log('  • testNotifications() - Send a test notification');
-console.log('  • toggleNotificationSound(true/false) - Enable/disable sounds');
-console.log('  • toggleNotificationToast(true/false) - Enable/disable toasts');
-console.log('  • notificationDiagnostics.runQuickTest() - Full system diagnostics');
-console.log('  • notificationDiagnostics.testDropdownClick() - Test dropdown click');
-console.log('  • pusherRawDebug.start() - Start capturing ALL Pusher events');
-console.log('  • pusherRawDebug.getUserEvents() - See captured user events');
-console.log('  • laravelNotificationCatcher.getChannels() - List active channels');
-console.log('  • appointmentNotificationDebug.start() - Debug appointment notifications');
-console.log('  • appointmentNotificationDebug.showSummary() - Show debug results');
-console.log('  • diagnoseBackend() - Full backend diagnosis (Laravel/Pusher)');
-console.log('  • backendDiagnosis.suggestFixes() - Show fix suggestions');
-@endif
+    waitForEcho();
+});
 </script>
 @endauth
 

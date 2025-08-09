@@ -4,11 +4,13 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\Appointment;
 
-class AppointmentBookedNotification extends Notification
+class AppointmentBookedNotification extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
@@ -20,6 +22,9 @@ class AppointmentBookedNotification extends Notification
     public function __construct(Appointment $appointment)
     {
         $this->appointment = $appointment;
+
+        // Use realtime queue for instant processing
+        $this->onQueue('realtime');
     }
 
     /**
@@ -29,7 +34,7 @@ class AppointmentBookedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail', 'sms'];
+        return ['database', 'broadcast', 'mail', 'sms'];
     }
 
     /**
@@ -83,5 +88,31 @@ class AppointmentBookedNotification extends Notification
         $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
 
         return "New appointment booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}. View details: " . route('appointments.show', $this->appointment->id);
+    }
+
+    /**
+     * Get the broadcastable representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
+
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'appointment_booked',
+            'title' => 'New Appointment Booked',
+            'message' => "A new appointment has been booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}",
+            'body' => "A new appointment has been booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}",
+            'icon' => 'calendar',
+            'link' => route('appointments.show', $this->appointment->id),
+            'link_text' => 'View Appointment',
+            'data' => [
+                'appointment_id' => $this->appointment->id,
+                'doctor_name' => $doctorName,
+                'appointment_date' => $this->appointment->appointment_date->format('Y-m-d H:i:s'),
+                'appointment_type' => $this->appointment->appointment_type,
+            ],
+            'created_at' => now()->toISOString()
+        ]);
     }
 }

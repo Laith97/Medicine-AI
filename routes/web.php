@@ -29,6 +29,53 @@ use App\Http\Controllers\Admin\MonthlyInvoiceController;
 use App\Http\Controllers\Admin\SubscriptionPlanController;
 use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
+
+// Broadcasting authentication route - simplified
+Broadcast::routes(['middleware' => ['web']]);
+
+// Debug authentication routes (temporary)
+if (config('app.debug')) {
+    Route::middleware(['web'])->group(function () {
+        Route::get('/debug-broadcasting-auth', function (\Illuminate\Http\Request $request) {
+            $user = \Illuminate\Support\Facades\Auth::user();
+
+            return response()->json([
+                'authenticated' => \Illuminate\Support\Facades\Auth::check(),
+                'user_id' => $user ? $user->id : null,
+                'user_name' => $user ? $user->name : null,
+                'user_role' => $user ? $user->role : null,
+                'session_id' => session()->getId(),
+                'csrf_token' => csrf_token(),
+                'pusher_auth_key' => env('VITE_PUSHER_APP_KEY'),
+                'expected_channel' => 'private-App.User.' . ($user ? $user->id : 'null'),
+            ]);
+        });
+
+        // Debug the actual broadcasting auth requests
+        Route::post('/debug-broadcasting-auth-post', function (\Illuminate\Http\Request $request) {
+            \Illuminate\Support\Facades\Log::info('Broadcasting Auth Debug', [
+                'authenticated' => \Illuminate\Support\Facades\Auth::check(),
+                'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                'channel_name' => $request->input('channel_name'),
+                'socket_id' => $request->input('socket_id'),
+                'headers' => $request->headers->all(),
+                'request_data' => $request->all(),
+                'session_id' => session()->getId(),
+            ]);
+
+            $user = \Illuminate\Support\Facades\Auth::user();
+
+            return response()->json([
+                'debug' => true,
+                'authenticated' => \Illuminate\Support\Facades\Auth::check(),
+                'user_id' => $user ? $user->id : null,
+                'channel_name' => $request->input('channel_name'),
+                'socket_id' => $request->input('socket_id'),
+            ]);
+        });
+    });
+}
 
 Route::get('/', function () {
     $showPricingSection = SystemSetting::get('show_pricing_section', true);
@@ -46,6 +93,13 @@ Route::get('/doctors/{doctor}/slots', [DoctorController::class, 'getAvailableSlo
 Route::get('/doctors/{doctor}', [DoctorController::class, 'show'])->name('doctors.show');
 Route::get('/doctors/{doctor}/reviews', [ReviewController::class, 'doctorReviews'])->name('doctors.reviews');
 Route::get('/doctors/{doctor}/reviews/ajax', [ReviewController::class, 'getDoctorReviews'])->name('doctors.reviews.ajax');
+
+// Notification API routes
+Route::middleware('auth')->group(function () {
+    Route::get('/api/notifications', [NotificationController::class, 'apiIndex'])->name('api.notifications.index');
+    Route::post('/api/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('api.notifications.read');
+    Route::post('/api/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('api.notifications.mark-all-read');
+});
 
 // Public appointment booking (for guests)
 Route::get('/appointments/{doctor}/create', [AppointmentController::class, 'create'])->name('appointments.create');
@@ -163,25 +217,41 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         Route::get('/test', function () {
             $user = Auth::user();
 
-            // Create a test notification directly in the database
-            $user->notifications()->create([
-                'id' => \Illuminate\Support\Str::uuid(),
-                'type' => 'App\\Notifications\\TestNotification',
-                'data' => [
-                    'type' => 'test',
-                    'title' => 'Test Notification',
-                    'message' => 'This is a test notification to verify the system is working.',
-                    'icon' => 'bell',
-                    'link' => '/dashboard',
-                    'link_text' => 'View Dashboard'
-                ],
-                'read_at' => null,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
+            // Send a real-time test notification
+            $user->notify(new \App\Notifications\TestNotification([
+                'type' => 'test',
+                'title' => 'Real-time Test Notification',
+                'message' => 'This is a test to verify real-time notifications are working correctly!',
+                'icon' => 'bell',
+                'link' => '/dashboard',
+                'link_text' => 'View Dashboard'
+            ]));
 
-            return response()->json(['message' => 'Test notification created!']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Test notification sent!'
+            ]);
         })->name('test');
+
+        // Notification testing page
+        Route::get('/test-page', function () {
+            return view('test-notifications');
+        })->name('notifications.test-page');
+
+        // Appointment notification testing page
+        Route::get('/test-appointment', function () {
+            return view('test-appointment-notifications');
+        })->name('notifications.test-appointment');
+
+        // Broadcasting auth testing page
+        Route::get('/test-auth', function () {
+            return view('test-auth');
+        })->name('broadcasting.test-auth');
+
+        // Asset debug page
+        Route::get('/debug-assets', function () {
+            return view('debug-assets');
+        })->name('debug.assets');
     });
 
     // Subscription routes
