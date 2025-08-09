@@ -24,6 +24,8 @@ class CheckAccessRestrictions
         $user = Auth::user();
         $currentRoute = $request->route() ? $request->route()->getName() : null;
 
+
+
         // Skip check if route name is null or for certain routes
         $exemptRoutes = [
             'invoices.index',

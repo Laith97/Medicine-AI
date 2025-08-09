@@ -55,14 +55,12 @@
 
     /* Spacing - Same as sub-menu-container */
     padding: 12px 0 !important;
-    margin: 0 !important;
 
     /* Dimensions */
     min-width: 240px !important;
     
-    /* CRITICAL: Fix Z-Index for Bootstrap Dropdowns */
+    /* CRITICAL: Fix Z-Index for Bootstrap Dropdowns - Let Bootstrap handle positioning */
     z-index: 999999 !important;
-    position: absolute !important;
 }
 
 .dropdown-item {
@@ -149,26 +147,33 @@
     display: block !important;
 }
 
-/* Top Bar Dropdown Fix */
-#top-bar .dropdown {
-    position: relative !important;
-    z-index: 10005 !important;
-}
-
-#top-bar .dropdown-menu {
-    z-index: 999999 !important;
+/* Aggressive override for dropdown positioning - highest specificity */
+body .dropdown.show .dropdown-menu.dropdown-menu,
+body .dropdown .dropdown-menu.dropdown-menu-end.show,
+.dropdown-menu.dropdown-menu-end.show {
     position: absolute !important;
-}
-
-/* Header Area Dropdown Fix */
-#header .dropdown {
-    position: relative !important;
-    z-index: 10005 !important;
-}
-
-#header .dropdown-menu {
+    transform: none !important;
+    left: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    margin: 0 !important;
+    will-change: auto !important;
     z-index: 999999 !important;
-    position: absolute !important;
+    /* Disable any CSS animations during positioning */
+    transition: none !important;
+    animation: none !important;
+}
+
+/* Ensure dropdown containers allow dropdowns to escape */
+.table-responsive {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+}
+
+.admin-card,
+.admin-table-container {
+    overflow: visible !important;
 }
 
 </style>
@@ -477,9 +482,10 @@
             box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3) !important;
         }
 
-        /* Prevent Horizontal Scroll */
+        /* Prevent Horizontal Scroll but allow dropdowns */
         html, body {
-            overflow-x: hidden !important;
+            /* Commented out to fix dropdown positioning */
+            /* overflow-x: hidden !important; */
             max-width: 100vw !important;
         }
 
@@ -729,7 +735,7 @@
                         </div>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow">
-                        @if(Auth::guard('admin')->check())
+                        @if(Auth::guard('admin')->check() || session()->has('impersonating_admin_id'))
                             <li>
                                 <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.dashboard') }}">
                                     <i class="bi bi-shield-check"></i> Admin Dashboard
@@ -817,11 +823,13 @@
                     <nav class="primary-menu style-3 menu-spacing-margin d-none d-lg-block">
                         <ul class="menu-container">
                             @auth
-                                @if (Auth::guard('admin')->check())
+                                @if (Auth::guard('admin')->check() && !session()->has('impersonating_admin_id') && !session()->has('impersonating_hospital_admin_id'))
+                                    <!-- Pure Admin View - Only show when admin is not impersonating -->
                                     <li class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
                                         <a class="menu-link" href="{{ route('admin.dashboard') }}"><div>Dashboard</div></a>
                                     </li>
                                 @else
+                                    <!-- User View (Including Admin Impersonation and Hospital Admin Impersonation) -->
                                     @php
                                         $menuItems = \App\Helpers\MenuHelper::getMenuItems(auth()->user());
                                     @endphp
@@ -948,6 +956,104 @@
                                 </div>
                             </div>
                         @endif
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @php
+            // DEBUG: Check session variables for banner display
+            $debugInfo = [
+                'admin_id' => session('impersonating_admin_id'),
+                'hospital_admin_id' => session('impersonating_hospital_admin_id'),
+                'admin_started' => session('admin_impersonation_started_at'),
+                'hospital_started' => session('hospital_admin_impersonation_started_at'),
+                'user_id' => session('impersonating_user_id'),
+                'user_role' => auth()->user()?->role,
+            ];
+        @endphp
+
+        <!-- Chain Impersonation: ONLY if hospital admin started time exists AND we have admin session -->
+        @if(session('impersonating_admin_id') && session('impersonating_hospital_admin_id') && session('hospital_admin_impersonation_started_at') && !empty(session('hospital_admin_impersonation_started_at')) && auth()->check() && auth()->user()->isDoctor())
+            <!-- Chain Impersonation Banner (Sky Blue) -->
+            <div class="bg-info py-2">
+                <div class="container">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-users me-2 text-white"></i>
+                            <small class="mb-0 text-white">
+                                <strong>Chain Impersonation:</strong> 
+                                {{ session('impersonating_admin_name', 'Admin') }} → {{ session('impersonating_hospital_admin_name') }} → Dr. {{ auth()->user()->name }}
+                            </small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <form method="POST" action="{{ route('return-to-hospital-admin') }}" style="display: inline;">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-light btn-sm py-1 px-2">
+                                    <i class="fas fa-arrow-left me-1"></i>Return to Hospital Admin
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ route('return-to-admin') }}" style="display: inline;">
+                                @csrf
+                                <button type="submit" class="btn btn-light btn-sm py-1 px-2">
+                                    <i class="fas fa-arrow-up me-1"></i>Return to Admin
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @elseif(session('impersonating_hospital_admin_id') && empty(session('impersonating_admin_id')) && auth()->check() && auth()->user()->isDoctor())
+            <!-- Direct Hospital Admin Banner (Yellow) - Only when NO admin session -->
+            <div class="bg-warning py-2">
+                <div class="container">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-shield me-2"></i>
+                            <small class="mb-0">
+                                <strong>Hospital Admin Impersonation:</strong> 
+                                {{ session('impersonating_hospital_admin_name') }} is viewing as Dr. {{ auth()->user()->name }}
+                            </small>
+                        </div>
+                        <form method="POST" action="{{ route('return-to-hospital-admin') }}" style="display: inline;">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-dark btn-sm py-1 px-2">
+                                <i class="fas fa-arrow-left me-1"></i>Return to Hospital Admin
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @elseif(session('impersonating_admin_id') && session('impersonating_user_id') && session('admin_impersonation_started_at') && empty(session('hospital_admin_impersonation_started_at')))
+            <!-- Direct Admin Banner (Red) - Only when NO hospital admin session active -->
+            @php
+                $impersonatedUser = auth()->user();
+                $impersonatedUserId = session('impersonating_user_id');
+                
+                // Fallback: if auth()->user() is null, try to get user from session
+                if (!$impersonatedUser && $impersonatedUserId) {
+                    $impersonatedUser = \App\Models\User::find($impersonatedUserId);
+                }
+                
+                $userName = $impersonatedUser?->name ?? 'User';
+                $userRole = $impersonatedUser?->role ?? 'unknown';
+            @endphp
+            <div class="bg-danger py-2">
+                <div class="container">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-shield me-2 text-white"></i>
+                            <small class="mb-0 text-white">
+                                <strong>Admin Impersonation:</strong> 
+                                {{ session('impersonating_admin_name', 'Admin') }} is viewing as {{ $userName }} ({{ ucfirst(str_replace('_', ' ', $userRole)) }})
+                            </small>
+                        </div>
+                        <form method="POST" action="{{ route('return-to-admin') }}" style="display: inline;">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-light btn-sm py-1 px-2">
+                                <i class="fas fa-arrow-left me-1"></i>Return to Admin
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -1165,6 +1271,77 @@
                             dropdown.style.visibility = 'hidden';
                         }, 300);
                     });
+                }
+            });
+        });
+
+        // Simple form submission tracking for debugging (optional)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Track form submissions for debugging
+            document.querySelectorAll('form[action*="return-to"]').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const button = form.querySelector('button[type="submit"]');
+                    if (button) {
+                        // Add simple loading state
+                        const originalText = button.innerHTML;
+                        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Returning...';
+                        button.disabled = true;
+                        
+                        console.log('Form submitted:', form.action);
+                    }
+                });
+            });
+        });
+
+        // Comprehensive Bootstrap dropdown positioning fix
+        document.addEventListener('DOMContentLoaded', function() {
+            // Override all dropdown positioning issues
+            function fixDropdownPositioning() {
+                document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
+                    if (dropdown.classList.contains('show')) {
+                        // Remove any problematic styles
+                        dropdown.style.transform = '';
+                        dropdown.style.left = '';
+                        dropdown.style.top = '';
+                        dropdown.style.right = '';
+                        dropdown.style.bottom = '';
+                        dropdown.style.position = 'absolute';
+                        dropdown.style.zIndex = '999999';
+                        
+                        // Force Popper.js to recalculate position
+                        const dropdownInstance = bootstrap.Dropdown.getInstance(dropdown.previousElementSibling);
+                        if (dropdownInstance && dropdownInstance._popper) {
+                            dropdownInstance._popper.update();
+                        }
+                    }
+                });
+            }
+
+            // Fix on dropdown show
+            document.addEventListener('shown.bs.dropdown', fixDropdownPositioning);
+            
+            // Fix on scroll (in case it moves)
+            document.addEventListener('scroll', function() {
+                fixDropdownPositioning();
+            }, { passive: true });
+            
+            // Initial fix for any already open dropdowns
+            fixDropdownPositioning();
+
+            // Alternative approach - disable Popper.js positioning entirely for problematic dropdowns
+            document.addEventListener('show.bs.dropdown', function(event) {
+                const dropdown = event.target.querySelector('.dropdown-menu');
+                if (dropdown && dropdown.classList.contains('dropdown-menu-end')) {
+                    // Disable Popper.js and handle positioning manually
+                    const button = event.target.querySelector('[data-bs-toggle="dropdown"]');
+                    const rect = button.getBoundingClientRect();
+                    
+                    // Position dropdown manually relative to button (fixed positioning)
+                    dropdown.style.position = 'fixed';
+                    dropdown.style.top = rect.bottom + 'px';
+                    dropdown.style.left = (rect.right - dropdown.offsetWidth) + 'px';
+                    dropdown.style.transform = 'none';
+                    dropdown.style.zIndex = '999999';
                 }
             });
         });

@@ -242,6 +242,14 @@ class MonthlyInvoiceSetting extends Model
     }
 
     /**
+     * Alias for isActiveSubscription() for backward compatibility
+     */
+    public function isActive(): bool
+    {
+        return $this->isActiveSubscription();
+    }
+
+    /**
      * Get subscription period in human readable format
      */
     public function getSubscriptionPeriodText(): string
