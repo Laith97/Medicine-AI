@@ -1856,6 +1856,11 @@ class OpenAIController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
+        // Redirect hospital admins to their specific dashboard
+        if (auth()->user()->isHospitalAdmin()) {
+            return redirect()->route('hospital-admin.dashboard');
+        }
+
         $user = auth()->user();
         $effectiveDoctorUser = $user->getEffectiveDoctorUser();
         $effectiveDoctorId = $effectiveDoctorUser ? $effectiveDoctorUser->id : $user->id;

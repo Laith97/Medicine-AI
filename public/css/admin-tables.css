@@ -162,6 +162,115 @@
 .admin-table.invoices-table th:nth-child(6), .admin-table.invoices-table td:nth-child(6) { min-width: 80px; max-width: 100px; }
 .admin-table.invoices-table th:nth-child(7), .admin-table.invoices-table td:nth-child(7) { min-width: 120px; max-width: 150px; }
 
+/* Doctors Table Specific Styling */
+.admin-table.doctors-table th:nth-child(1), .admin-table.doctors-table td:nth-child(1) { min-width: 200px; max-width: 250px; }
+.admin-table.doctors-table th:nth-child(2), .admin-table.doctors-table td:nth-child(2) { min-width: 180px; max-width: 220px; }
+.admin-table.doctors-table th:nth-child(3), .admin-table.doctors-table td:nth-child(3) { min-width: 140px; max-width: 180px; }
+.admin-table.doctors-table th:nth-child(4), .admin-table.doctors-table td:nth-child(4) { min-width: 120px; max-width: 150px; }
+.admin-table.doctors-table th:nth-child(5), .admin-table.doctors-table td:nth-child(5) { min-width: 80px; max-width: 100px; }
+
+/* Ensure dropdowns don't get clipped - CRITICAL FIXES */
+.admin-card-body {
+    overflow: visible !important;
+}
+
+.admin-table-container {
+    position: static !important;
+    overflow: visible !important;
+}
+
+.admin-table {
+    overflow: visible !important;
+}
+
+.admin-table tbody {
+    overflow: visible !important;
+}
+
+.admin-table tbody tr {
+    position: static !important;
+    overflow: visible !important;
+}
+
+.admin-table tbody td {
+    position: static !important;
+    overflow: visible !important;
+}
+
+.admin-table tbody td:last-child {
+    overflow: visible !important;
+    position: relative;
+}
+
+.admin-table .dropdown {
+    position: static !important;
+}
+
+.admin-table .dropdown-menu {
+    position: fixed !important;
+    z-index: 999999 !important;
+    max-height: 300px !important;
+    overflow-y: auto !important;
+    background: white !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(0,0,0,.125) !important;
+}
+
+/* Global dropdown fixes */
+body .dropdown-menu {
+    position: fixed !important;
+    z-index: 999999 !important;
+}
+
+/* Contact info styling */
+.contact-info {
+    font-size: 0.85rem;
+}
+
+.contact-info i {
+    width: 14px;
+    text-align: center;
+}
+
+/* Fix for doctors table specific issues */
+.admin-table.doctors-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.admin-table.doctors-table tbody td {
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem 0.75rem;
+}
+
+.admin-table.doctors-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* User info in doctors table */
+.admin-table.doctors-table .user-info h6 {
+    color: #2c3e50;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.admin-table.doctors-table .user-info small {
+    color: #6c757d;
+    font-size: 0.75rem;
+}
+
+/* Status column alignment */
+.admin-table.doctors-table td:nth-child(4) {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Actions column */
+.admin-table.doctors-table td:nth-child(5) {
+    text-align: center;
+    vertical-align: middle;
+}
+
 /* User Avatar */
 .user-avatar {
     width: 36px;

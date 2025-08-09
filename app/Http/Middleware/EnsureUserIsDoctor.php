@@ -21,6 +21,11 @@ class EnsureUserIsDoctor
 
         $user = auth()->user();
         
+        // Allow access if admin is impersonating
+        if (session()->has('impersonating_admin_id')) {
+            return $next($request);
+        }
+        
         // Log middleware execution for debugging
         \Log::info('Doctor middleware check', [
             'user_id' => $user->id,

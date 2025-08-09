@@ -19,8 +19,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'admin.impersonation' => \App\Http\Middleware\AdminImpersonation::class,
             'doctor' => \App\Http\Middleware\EnsureUserIsDoctor::class,
             'patient' => \App\Http\Middleware\EnsureUserIsPatient::class,
+            'hospital.admin' => \App\Http\Middleware\HospitalAdminMiddleware::class,
+            'payment.responsible' => \App\Http\Middleware\PaymentResponsibleMiddleware::class,
             'role' => \App\Http\Middleware\EnsureUserRole::class,
             'stripe.configured' => \App\Http\Middleware\CheckStripeConfiguration::class,
             'access.restrictions' => \App\Http\Middleware\CheckAccessRestrictions::class,

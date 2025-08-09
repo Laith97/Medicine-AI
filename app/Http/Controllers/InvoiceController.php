@@ -22,7 +22,15 @@ class InvoiceController extends Controller
      */
     public function index(Request $request)
     {
-        $user = $this->getEffectiveDoctorUser();
+        $currentUser = auth()->user();
+        
+        // For hospital admins, use the hospital admin user directly
+        // For doctors, use the effective doctor user (handles sub-users)
+        if ($currentUser->isHospitalAdmin()) {
+            $user = $currentUser;
+        } else {
+            $user = $this->getEffectiveDoctorUser();
+        }
         
         $query = $user->stripeInvoices()->with('user');
 
@@ -63,16 +71,30 @@ class InvoiceController extends Controller
         $overdueCount = $user->getOverdueInvoicesCount();
         $isRestricted = $user->isRestricted();
 
-        return view('invoices.index', compact(
-            'invoices',
-            'totalUnpaid',
-            'totalPaid',
-            'totalUnpaidMonthly',
-            'lastPaidInvoice',
-            'nextDueInvoice',
-            'overdueCount',
-            'isRestricted'
-        ));
+        // Use different views for hospital admins vs doctors
+        if ($currentUser->isHospitalAdmin()) {
+            return view('hospital-admin.invoices.index', compact(
+                'invoices',
+                'totalUnpaid',
+                'totalPaid',
+                'totalUnpaidMonthly',
+                'lastPaidInvoice',
+                'nextDueInvoice',
+                'overdueCount',
+                'isRestricted'
+            ));
+        } else {
+            return view('invoices.index', compact(
+                'invoices',
+                'totalUnpaid',
+                'totalPaid',
+                'totalUnpaidMonthly',
+                'lastPaidInvoice',
+                'nextDueInvoice',
+                'overdueCount',
+                'isRestricted'
+            ));
+        }
     }
 
     /**

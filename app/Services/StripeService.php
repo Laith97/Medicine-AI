@@ -106,6 +106,15 @@ class StripeService
         $planDisplayName = $billingCycle === 'yearly' ? 'Annual Plan' : 'Monthly Plan';
         $intervalText = $billingCycle === 'yearly' ? 'year' : 'month';
         
+        // Determine success and cancel URLs based on user type
+        if ($user->isHospitalAdmin()) {
+            $successUrl = route('hospital-admin.subscription.success') . '?session_id={CHECKOUT_SESSION_ID}';
+            $cancelUrl = route('hospital-admin.subscription.manage');
+        } else {
+            $successUrl = route('subscription.success') . '?session_id={CHECKOUT_SESSION_ID}';
+            $cancelUrl = route('subscription.manage');
+        }
+
         return Session::create([
             'customer' => $customer->id,
             'payment_method_types' => ['card'],
@@ -124,8 +133,8 @@ class StripeService
                 'quantity' => 1,
             ]],
             'mode' => 'subscription',
-            'success_url' => route('subscription.success') . '?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => route('subscription.manage'),
+            'success_url' => $successUrl,
+            'cancel_url' => $cancelUrl,
             'metadata' => [
                 'user_id' => $user->id,
                 'plan_name' => 'personal',

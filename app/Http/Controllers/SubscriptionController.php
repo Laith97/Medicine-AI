@@ -25,18 +25,46 @@ class SubscriptionController extends Controller
      */
     public function pricing()
     {
-        $user = $this->getEffectiveDoctorUser();
+        $user = auth()->user();
         
-        // Get fresh monthly invoice setting (no caching)
-        $setting = $user->getFreshMonthlyInvoiceSetting();
-        if (!$setting) {
-            $setting = $user->getOrCreateMonthlyInvoiceSetting();
+        // For hospital admins, use the hospital admin user directly
+        // For doctors, use the effective doctor user (handles sub-users)
+        if ($user->isHospitalAdmin()) {
+            $billingUser = $user;
+        } else {
+            $billingUser = $this->getEffectiveDoctorUser();
+        }
+        
+        // Get or create monthly invoice setting
+        $setting = $billingUser->getOrCreateMonthlyInvoiceSetting();
+        
+        // For hospital admins, calculate pricing based on number of doctors
+        $doctorCount = 1; // Default for individual doctors
+        if ($user->isHospitalAdmin() && $user->hospital) {
+            $doctorCount = max(1, $user->hospital->doctors()->count());
+        }
+        
+        // For hospital admins, set default pricing if not configured
+        if ($user->isHospitalAdmin() && ($setting->monthly_price <= 0 || $setting->yearly_price <= 0)) {
+            // Default pricing per doctor: $29/month, $290/year (save ~17%)
+            $setting->update([
+                'monthly_price' => 29 * $doctorCount,
+                'yearly_price' => 290 * $doctorCount,
+                'is_active' => true,
+            ]);
+            
+            $setting->refresh();
         }
         
         // Get user-specific plans
         $plans = $setting->getUserPlans();
         
-        return view('subscription.pricing', compact('plans', 'setting'));
+        // Use different views for hospital admins vs doctors
+        if ($user->isHospitalAdmin()) {
+            return view('hospital-admin.subscription.pricing', compact('plans', 'setting', 'doctorCount'));
+        } else {
+            return view('subscription.pricing', compact('plans', 'setting', 'doctorCount'));
+        }
     }
 
     /**
@@ -47,11 +75,25 @@ class SubscriptionController extends Controller
         // Ensure we always return JSON for AJAX requests
         if ($request->expectsJson() || $request->ajax()) {
             try {
+                Log::info('Checkout request received', [
+                    'user_id' => auth()->id(),
+                    'plan_type' => $request->plan_type,
+                    'user_role' => auth()->user()->role ?? 'unknown'
+                ]);
+
                 $request->validate([
                     'plan_type' => ['required', 'in:monthly,yearly']
                 ]);
 
-                $user = $this->getEffectiveDoctorUser();
+                $currentUser = auth()->user();
+                
+                // For hospital admins, use the hospital admin user directly
+                // For doctors, use the effective doctor user (handles sub-users)
+                if ($currentUser->isHospitalAdmin()) {
+                    $user = $currentUser;
+                } else {
+                    $user = $this->getEffectiveDoctorUser();
+                }
                 
                 if (!$user) {
                     return response()->json([
@@ -59,13 +101,22 @@ class SubscriptionController extends Controller
                     ], 401);
                 }
                 
-                // Check if user has monthly invoice settings configured by admin
-                $monthlySettings = $user->getFreshMonthlyInvoiceSetting();
+                // Get or create monthly invoice settings
+                $monthlySettings = $user->getOrCreateMonthlyInvoiceSetting();
                 
-                if (!$monthlySettings) {
-                    return response()->json([
-                        'error' => 'Your account has not been configured yet. Please contact support to set up your subscription.'
-                    ], 400);
+                // For hospital admins, set default pricing if not configured
+                if ($currentUser->isHospitalAdmin() && ($monthlySettings->monthly_price <= 0 || $monthlySettings->yearly_price <= 0)) {
+                    $doctorCount = $user->hospital ? $user->hospital->doctors()->count() : 1;
+                    $doctorCount = max(1, $doctorCount); // Minimum 1 doctor
+                    
+                    // Default pricing per doctor: $29/month, $290/year (save ~17%)
+                    $monthlySettings->update([
+                        'monthly_price' => 29 * $doctorCount,
+                        'yearly_price' => 290 * $doctorCount,
+                        'is_active' => true,
+                    ]);
+                    
+                    $monthlySettings->refresh();
                 }
 
                 // Get the price for the selected plan type
@@ -92,7 +143,16 @@ class SubscriptionController extends Controller
                     $planType
                 );
 
+                Log::info('Checkout session created successfully', [
+                    'user_id' => $user->id,
+                    'session_id' => $session->id,
+                    'checkout_url' => $session->url,
+                    'price' => $price,
+                    'plan_type' => $planType
+                ]);
+
                 return response()->json([
+                    'success' => true,
                     'checkout_url' => $session->url
                 ]);
             } catch (\Illuminate\Validation\ValidationException $e) {
@@ -168,14 +228,31 @@ class SubscriptionController extends Controller
                     }
                 }
                 
-                return redirect()->route('dashboard')->with('success', 'Subscription activated successfully! Welcome to your new plan.');
+                // Redirect to appropriate dashboard based on user type
+                $user = auth()->user();
+                if ($user->isHospitalAdmin()) {
+                    return redirect()->route('hospital-admin.subscription.manage')->with('success', 'Subscription activated successfully! Welcome to your new plan.');
+                } else {
+                    return redirect()->route('dashboard')->with('success', 'Subscription activated successfully! Welcome to your new plan.');
+                }
             } catch (\Exception $e) {
                 Log::error('Error processing successful checkout: ' . $e->getMessage());
-                return redirect()->route('dashboard')->with('success', 'Payment processed successfully! Your subscription will be activated shortly.');
+                $user = auth()->user();
+                if ($user->isHospitalAdmin()) {
+                    return redirect()->route('hospital-admin.subscription.manage')->with('success', 'Payment processed successfully! Your subscription will be activated shortly.');
+                } else {
+                    return redirect()->route('dashboard')->with('success', 'Payment processed successfully! Your subscription will be activated shortly.');
+                }
             }
         }
 
-        return redirect()->route('dashboard');
+        // Redirect to appropriate dashboard based on user type
+        $user = auth()->user();
+        if ($user->isHospitalAdmin()) {
+            return redirect()->route('hospital-admin.subscription.manage');
+        } else {
+            return redirect()->route('dashboard');
+        }
     }
 
     /**
@@ -183,7 +260,15 @@ class SubscriptionController extends Controller
      */
     public function manage()
     {
-        $user = $this->getEffectiveDoctorUser();
+        $currentUser = auth()->user();
+        
+        // For hospital admins, use the hospital admin user directly
+        // For doctors, use the effective doctor user (handles sub-users)
+        if ($currentUser->isHospitalAdmin()) {
+            $user = $currentUser;
+        } else {
+            $user = $this->getEffectiveDoctorUser();
+        }
         $subscription = $user->activeSubscription;
         $invoices = $user->stripeInvoices()->orderBy('created_at', 'desc')->limit(10)->get();
         $setting = $user->monthlyInvoiceSetting;
@@ -213,11 +298,20 @@ class SubscriptionController extends Controller
                                    !$setting->isSubscriptionExpired() && 
                                    !$user->isRestricted();
         
-        return view('subscription.manage', compact(
-            'user', 'subscription', 'invoices', 'setting', 'status', 'monthlyCost', 'costLimit',
-            'costUsagePercentage', 'excessCost', 'remainingCost', 'costWarning', 'isExpired', 
-            'unpaidInvoices', 'totalUnpaid', 'lastInvoice', 'userPlans', 'hasActivePaidSubscription'
-        ));
+        // Use different views for hospital admins vs doctors
+        if ($currentUser->isHospitalAdmin()) {
+            return view('hospital-admin.subscription.manage', compact(
+                'user', 'subscription', 'invoices', 'setting', 'status', 'monthlyCost', 'costLimit',
+                'costUsagePercentage', 'excessCost', 'remainingCost', 'costWarning', 'isExpired', 
+                'unpaidInvoices', 'totalUnpaid', 'lastInvoice', 'userPlans', 'hasActivePaidSubscription'
+            ));
+        } else {
+            return view('subscription.manage', compact(
+                'user', 'subscription', 'invoices', 'setting', 'status', 'monthlyCost', 'costLimit',
+                'costUsagePercentage', 'excessCost', 'remainingCost', 'costWarning', 'isExpired', 
+                'unpaidInvoices', 'totalUnpaid', 'lastInvoice', 'userPlans', 'hasActivePaidSubscription'
+            ));
+        }
     }
 
     /**
@@ -225,7 +319,15 @@ class SubscriptionController extends Controller
      */
     public function cancel(Request $request)
     {
-        $user = $this->getEffectiveDoctorUser();
+        $currentUser = auth()->user();
+        
+        // For hospital admins, use the hospital admin user directly
+        // For doctors, use the effective doctor user (handles sub-users)
+        if ($currentUser->isHospitalAdmin()) {
+            $user = $currentUser;
+        } else {
+            $user = $this->getEffectiveDoctorUser();
+        }
         $subscription = $user->activeSubscription;
 
         if (!$subscription) {
@@ -247,7 +349,15 @@ class SubscriptionController extends Controller
     public function customerPortal(Request $request)
     {
         try {
-            $user = $this->getEffectiveDoctorUser();
+            $currentUser = auth()->user();
+            
+            // For hospital admins, use the hospital admin user directly
+            // For doctors, use the effective doctor user (handles sub-users)
+            if ($currentUser->isHospitalAdmin()) {
+                $user = $currentUser;
+            } else {
+                $user = $this->getEffectiveDoctorUser();
+            }
             
             if (!$user->stripe_customer_id) {
                 return redirect()->back()->with('error', 'No billing account found. Please contact support.');

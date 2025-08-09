@@ -53,9 +53,16 @@
 @push('scripts')
 <script>
 function toggleMedicalSpecialty() {
-    const userType = document.getElementById('role').value;
+    const roleElement = document.getElementById('role');
     const specialtyField = document.getElementById('specialty-field');
     const specialtySelect = document.getElementById('specialty_select');
+    const customSpecialtyField = document.getElementById('custom_specialty_container_admin');
+
+    if (!roleElement || !specialtyField || !specialtySelect) {
+        return; // Elements don't exist, skip
+    }
+
+    const userType = roleElement.value;
 
     if (userType === 'doctor') {
         specialtyField.style.display = 'block';
@@ -64,17 +71,47 @@ function toggleMedicalSpecialty() {
         specialtyField.style.display = 'none';
         specialtySelect.required = false;
         specialtySelect.value = '';
-        document.getElementById('custom-specialty-field').style.display = 'none';
+        if (customSpecialtyField) {
+            customSpecialtyField.style.display = 'none';
+        }
     }
 }
 
+function toggleHospitalField() {
+    const roleElement = document.getElementById('role');
+    const hospitalAdminNote = document.getElementById('hospital-admin-note');
+
+    if (!roleElement || !hospitalAdminNote) {
+        return; // Elements don't exist, skip
+    }
+
+    const userType = roleElement.value;
+
+    if (userType === 'hospital_admin') {
+        hospitalAdminNote.style.display = 'block';
+    } else {
+        hospitalAdminNote.style.display = 'none';
+    }
+}
+
+// Initialize fields on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize fields based on current values
+    toggleMedicalSpecialty();
+    toggleHospitalField();
+});
+
 function toggleCustomSpecialty() {
     const specialtySelect = document.getElementById('specialty_select');
-    const customField = document.getElementById('custom-specialty-field');
-    const customInput = document.getElementById('custom_specialty');
-    const hiddenSpecialty = document.getElementById('specialty');
+    const customField = document.getElementById('custom_specialty_container_admin');
+    const customInput = document.getElementById('custom_specialty_admin');
+    const hiddenSpecialty = document.getElementById('specialty_admin');
 
-    if (specialtySelect.value === 'custom') {
+    if (!specialtySelect || !customField || !customInput || !hiddenSpecialty) {
+        return; // Elements don't exist, skip
+    }
+
+    if (specialtySelect.value === 'other') {
         customField.style.display = 'block';
         customInput.required = true;
         customInput.value = hiddenSpecialty.value;
@@ -88,10 +125,14 @@ function toggleCustomSpecialty() {
 
 function updateSpecialtyValue() {
     const specialtySelect = document.getElementById('specialty_select');
-    const customInput = document.getElementById('custom_specialty');
-    const hiddenSpecialty = document.getElementById('specialty');
+    const customInput = document.getElementById('custom_specialty_admin');
+    const hiddenSpecialty = document.getElementById('specialty_admin');
 
-    if (specialtySelect.value === 'custom') {
+    if (!specialtySelect || !customInput || !hiddenSpecialty) {
+        return; // Elements don't exist, skip
+    }
+
+    if (specialtySelect.value === 'other') {
         hiddenSpecialty.value = customInput.value;
     } else {
         hiddenSpecialty.value = specialtySelect.value;
@@ -196,6 +237,37 @@ document.addEventListener('DOMContentLoaded', function() {
                             @enderror
                         </div>
 
+                        <!-- User Role -->
+                        <div class="mb-4">
+                            <label for="role" class="form-label fw-bold">User Role <span class="text-danger">*</span></label>
+                            <select id="role" name="role" class="form-control @error('role') is-invalid @enderror" 
+                                    onchange="toggleMedicalSpecialty(); toggleHospitalField();" required>
+                                <option value="">-- Select Role --</option>
+                                <option value="doctor" {{ old('role') == 'doctor' ? 'selected' : '' }}>Doctor</option>
+                                <option value="hospital_admin" {{ old('role') == 'hospital_admin' ? 'selected' : '' }}>Hospital Admin</option>
+                                <option value="patient" {{ old('role') == 'patient' ? 'selected' : '' }}>Patient</option>
+                            </select>
+                            <div class="form-text">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <strong>Doctor:</strong> Individual medical practitioner<br>
+                                    <strong>Hospital Admin:</strong> Manages doctors in a hospital/clinic<br>
+                                    <strong>Patient:</strong> Regular patient user
+                                </small>
+                            </div>
+                            @error('role')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Note for Hospital Admin -->
+                        <div class="mb-4" id="hospital-admin-note" style="display: {{ old('role') == 'hospital_admin' ? 'block' : 'none' }};">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Hospital Admin Account:</strong> Hospital admins will manage their own hospital information after account creation, similar to how individual doctors manage their clinic information.
+                            </div>
+                        </div>
+
                         <!-- Password -->
                         <div class="mb-4">
                             <label for="password" class="form-label fw-bold">Password</label>
@@ -217,9 +289,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
 
                         <!-- Medical Specialty -->
-                        <div class="mb-4">
+                        <div class="mb-4" id="specialty-field" style="display: {{ old('role') == 'doctor' ? 'block' : 'none' }}">
                             <label for="specialty_select" class="form-label fw-bold">Medical Specialty <span class="text-danger">*</span></label>
-                            <select class="form-control @error('specialty') is-invalid @enderror" name="specialty_select" id="specialty_select" onchange="toggleCustomSpecialtyAdmin()" required>
+                            <select class="form-control @error('specialty') is-invalid @enderror" name="specialty_select" id="specialty_select" onchange="toggleCustomSpecialty()" required>
                                 <option value="" {{ old('specialty_select') == '' ? 'selected' : '' }}>-- Select Specialty --</option>
                                 
                                 <optgroup label="🧠 General & Internal Medicine">

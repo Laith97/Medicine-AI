@@ -44,6 +44,7 @@ class User extends Authenticatable
         'parent_user_id',
         'sub_user_role',
         'is_sub_user',
+        'hospital_id',
     ];
 
     /**
@@ -89,6 +90,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(Doctor::class);
     }
+
+    // Hospital relationship
+    public function hospital()
+    {
+        return $this->belongsTo(Hospital::class);
+    }
+
+    // Note: Department relationship removed since we simplified doctor management
 
     // Patient appointments
     public function appointments()
@@ -153,6 +162,22 @@ public function getFreshMonthlyInvoiceSetting()
     public function isPatient()
     {
         return $this->role === 'patient';
+    }
+
+    /**
+     * Check if user is a system admin
+     */
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is a hospital admin
+     */
+    public function isHospitalAdmin()
+    {
+        return $this->role === 'hospital_admin';
     }
 
     /**
@@ -757,7 +782,7 @@ public function isInTrialPeriod(): bool
  */
 public function hasUsedTrial(): bool
 {
-    return $this->trial_used;
+    return (bool) $this->trial_used;
 }
 
 /**
@@ -876,5 +901,87 @@ public function patientAiAssistantResults()
 {
     return $this->hasMany(AiAssistantResult::class, 'patient_id');
 }
+
+/**
+ * Get doctors managed by this hospital admin
+ */
+public function managedDoctors()
+{
+    if (!$this->isHospitalAdmin() || !$this->hospital_id) {
+        return collect();
+    }
+
+    return $this->hospital->doctors();
+}
+
+/**
+ * Check if this hospital admin can manage a specific doctor
+ */
+public function canManageDoctor(User $doctor): bool
+{
+    if (!$this->isHospitalAdmin() || !$doctor->isDoctor()) {
+        return false;
+    }
+
+    return $doctor->hospital_id === $this->hospital_id;
+}
+
+/**
+ * Get hospital admin statistics
+ */
+public function getHospitalAdminStatistics(): array
+{
+    if (!$this->isHospitalAdmin() || !$this->hospital) {
+        return [];
+    }
+
+    return $this->hospital->getStatistics();
+}
+
+/**
+ * Check if user is responsible for payments (hospital admin or standalone doctor)
+ */
+public function isPaymentResponsible(): bool
+{
+    // Hospital admins are always responsible for payments
+    if ($this->isHospitalAdmin()) {
+        return true;
+    }
+
+    // Standalone doctors (not associated with a hospital) are responsible for their own payments
+    if ($this->isDoctor() && !$this->hospital_id) {
+        return true;
+    }
+
+    // Doctors under a hospital are not responsible for payments
+    return false;
+}
+
+/**
+ * Get the user responsible for payments (for billing purposes)
+ */
+public function getPaymentResponsibleUser(): ?User
+{
+    // If this user is payment responsible, return self
+    if ($this->isPaymentResponsible()) {
+        return $this;
+    }
+
+    // If this is a doctor under a hospital, return the hospital admin
+    if ($this->isDoctor() && $this->hospital_id && $this->hospital) {
+        return $this->hospital->admin;
+    }
+
+    // For sub-users, get the payment responsible user of their parent
+    if ($this->isSubUser() && $this->parentUser) {
+        return $this->parentUser->getPaymentResponsibleUser();
+    }
+
+    return null;
+}
+
+
+
+
 
 }
