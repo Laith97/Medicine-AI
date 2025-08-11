@@ -101,6 +101,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('api.notifications.mark-all-read');
 });
 
+// Enhanced notification testing page
+Route::get('/test-enhanced-notifications', function () {
+    return view('test-enhanced-notifications');
+})->name('test.enhanced.notifications');
+
+// Comprehensive notification diagnostics
+Route::get('/notification-diagnostics', function () {
+    return view('notification-diagnostics');
+})->name('notification.diagnostics');
+
 // Public appointment booking (for guests)
 Route::get('/appointments/{doctor}/create', [AppointmentController::class, 'create'])->name('appointments.create');
 Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');

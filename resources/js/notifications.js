@@ -6,13 +6,26 @@ class NotificationSystem {
         this.soundEnabled = true;
         this.toastEnabled = true;
         this.unreadCount = 0;
+        this.echoReady = false;
 
-        // Initialize when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.init());
-        } else {
-            this.init();
-        }
+        // Wait for both DOM and Echo to be ready
+        this.waitForReady();
+    }
+
+    waitForReady() {
+        const checkReady = () => {
+            const domReady = document.readyState === 'complete' || document.readyState === 'interactive';
+            const echoReady = typeof window.Echo !== 'undefined' && window.Echo.connector;
+
+            if (domReady && echoReady) {
+                console.log('✅ DOM and Echo ready, initializing notifications');
+                this.init();
+            } else {
+                console.log('⏳ Waiting for DOM and Echo...', { domReady, echoReady });
+                setTimeout(checkReady, 500);
+            }
+        };
+        checkReady();
     }
 
     init() {
