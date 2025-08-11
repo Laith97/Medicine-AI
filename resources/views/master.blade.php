@@ -506,13 +506,11 @@ body .dropdown .dropdown-menu.dropdown-menu-end.show,
         #header {
             overflow: visible !important;
             position: relative !important;
-            z-index: 10000 !important;
         }
 
         .header-row {
             overflow: visible !important;
             position: relative !important;
-            z-index: 10000 !important;
         }
 
         .primary-menu {
