@@ -92,6 +92,91 @@ class NotificationTestController extends Controller
     }
 
     /**
+     * Send an enhanced test notification for the new system
+     */
+    public function sendEnhancedTestNotification(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $title = $request->input('title', 'Enhanced Test Notification');
+            $message = $request->input('message', 'This is a test from the enhanced notification system');
+
+            Log::info('Sending enhanced test notification', ['user_id' => $user->id, 'title' => $title]);
+
+            // Create enhanced test notification
+            $testNotification = new class($title, $message) extends \Illuminate\Notifications\Notification implements \Illuminate\Contracts\Broadcasting\ShouldBroadcast {
+                use \Illuminate\Bus\Queueable;
+
+                protected $title;
+                protected $message;
+
+                public function __construct($title, $message) {
+                    $this->title = $title;
+                    $this->message = $message;
+                }
+
+                public function via($notifiable) {
+                    return ['database', 'broadcast'];
+                }
+
+                public function toArray($notifiable) {
+                    return [
+                        'type' => 'enhanced_test_notification',
+                        'title' => $this->title,
+                        'message' => $this->message,
+                        'body' => $this->message,
+                        'icon' => 'bell-alert',
+                        'timestamp' => now()->toISOString(),
+                        'test_mode' => true
+                    ];
+                }
+
+                public function toBroadcast($notifiable) {
+                    return new \Illuminate\Notifications\Messages\BroadcastMessage([
+                        'id' => $this->id,
+                        'type' => 'enhanced_test_notification',
+                        'title' => $this->title,
+                        'message' => $this->message,
+                        'body' => $this->message,
+                        'icon' => 'bell-alert',
+                        'timestamp' => now()->toISOString(),
+                        'test_mode' => true,
+                        'created_at' => now()->toISOString()
+                    ]);
+                }
+            };
+
+            // Send the notification
+            $user->notify($testNotification);
+
+            Log::info('Enhanced test notification sent successfully', ['user_id' => $user->id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Enhanced test notification sent successfully',
+                'data' => [
+                    'user_id' => $user->id,
+                    'channel' => 'App.User.' . $user->id,
+                    'title' => $title,
+                    'message' => $message,
+                    'timestamp' => now()->toISOString()
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send enhanced test notification', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to send enhanced test notification: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Send a test appointment notification
      */
     public function sendTestAppointmentNotification(Request $request)

@@ -42,9 +42,15 @@ Route::middleware(['auth:web'])->group(function () {
     // Notification testing and diagnosis routes
     Route::post('/test-notification', [NotificationTestController::class, 'sendTestNotification']);
     Route::post('/test-appointment-notification', [NotificationTestController::class, 'sendTestAppointmentNotification']);
+    Route::post('/test/notification', [NotificationTestController::class, 'sendEnhancedTestNotification']);
     Route::get('/notification-preferences', [NotificationTestController::class, 'getNotificationPreferences']);
     Route::get('/queue-status', [NotificationTestController::class, 'getQueueStatus']);
     Route::get('/pusher-config', [NotificationTestController::class, 'testPusherConfig']);
+    
+    // Direct notification testing (bypasses queue) - import controller
+    Route::post('/test/direct-notification', [\App\Http\Controllers\Api\DirectNotificationTestController::class, 'sendDirectTest']);
+    Route::post('/test/pusher-connection', [\App\Http\Controllers\Api\DirectNotificationTestController::class, 'testPusherConnection']);
+    Route::get('/test/system-status', [\App\Http\Controllers\Api\DirectNotificationTestController::class, 'getSystemStatus']);
 });
 
 // Public routes (for guest access with token verification)

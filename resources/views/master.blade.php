@@ -1288,16 +1288,10 @@
     <!-- Vite Assets (Laravel Echo & Pusher) -->
     @vite(['resources/js/app.js', 'resources/css/app.css'])
 
-    <!-- Notification System JavaScript -->
-
-
     <!-- Notification System Styles -->
     @include('notifications._styles')
 
-    <!-- Notification System JavaScript -->
-    @auth
-        @include('notifications._realtime_js')
-    @endauth
+    <!-- Remove conflicting notification scripts - now handled by Vite -->
 
 {{-- Extra scripts --}}
 @stack('scripts')
@@ -1377,8 +1371,7 @@
 
 <!-- Notification Scripts -->
 <script src="{{ asset('sounds/notification-sound.js') }}"></script>
-@vite(['resources/js/app.js'])
-<script src="{{ asset('js/unified-notifications-v2.js') }}"></script>
+<!-- Unified notifications now handled by Vite/Enhanced system -->
 
 <!-- Debug Tools (only in development) -->
 @if(config('app.debug'))
