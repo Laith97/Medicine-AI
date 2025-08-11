@@ -132,12 +132,19 @@ class AppointmentController extends Controller
                     'role' => 'patient',
                 ]);
 
-                Auth::login($user);
-                $patientId = $user->id;
-            } elseif (Auth::check()) {
-                $patientId = Auth::id();
-            }
 
+                                Auth::login($user);
+                                $patientId = $user->id;
+                            } elseif (Auth::check()) {
+                                $patientId = Auth::id();
+                                $patient = Auth::user();
+
+                                // If patient doesn't have a primary doctor or is booking with a different doctor,
+                                // automatically assign them to this doctor
+                                if (is_null($patient->primary_doctor_id) || $patient->primary_doctor_id != $doctor->user_id) {
+                                    $patient->update(['primary_doctor_id' => $doctor->user_id]);
+                                }
+                            }
             // Create appointment data
             $appointmentData = [
                 'doctor_id' => $doctor->id,
@@ -205,6 +212,15 @@ class AppointmentController extends Controller
         if ($appointment->patient_id !== Auth::id() &&
             (!Auth::user()->isDoctor() || $appointment->doctor->user_id !== Auth::id())) {
             abort(403);
+        }
+
+        // Log doctor access to patient appointment
+        if (Auth::user()->isDoctor() && $appointment->patient_id) {
+            \App\Services\AuditLoggingService::logDoctorAccessPatient(
+                Auth::id(),
+                $appointment->patient_id,
+                ['appointment_id' => $appointment->id]
+            );
         }
 
         $appointment->load(['doctor.user', 'doctor.specialty', 'patient', 'review']);
