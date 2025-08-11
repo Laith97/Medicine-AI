@@ -21,25 +21,25 @@ class DoctorController extends Controller
     {
         $this->middleware(function ($request, $next) {
             $user = Auth::user();
-            
+
             // Allow access if admin is impersonating
             if (session()->has('impersonating_admin_id')) {
                 return $next($request);
             }
-            
+
             // Allow super admin direct access
             if ($user->role === 'admin') {
                 return $next($request);
             }
-            
+
             if (!$user->isHospitalAdmin()) {
                 abort(403, 'Access denied. Hospital admin role required.');
             }
-            
+
             if (!$user->hospital) {
                 abort(403, 'Access denied. Hospital association required.');
             }
-            
+
             return $next($request);
         })->except(['returnToHospitalAdmin']);
     }
@@ -51,9 +51,9 @@ class DoctorController extends Controller
     {
         $user = Auth::user();
         $hospital = $user->hospital;
-        
+
         $query = $hospital->doctors()->with(['doctor.specialty']);
-        
+
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
@@ -62,14 +62,14 @@ class DoctorController extends Controller
                   ->orWhere('email', 'like', "%{$search}%");
             });
         }
-        
+
         // Filter by specialty
         if ($request->filled('specialty')) {
             $query->whereHas('doctor.specialty', function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->specialty}%");
             });
         }
-        
+
         // Filter by status - default to active only
         if ($request->filled('status')) {
             if ($request->status === 'active') {
@@ -89,9 +89,9 @@ class DoctorController extends Controller
                 $q->where('is_active', true);
             });
         }
-        
+
         $doctors = $query->paginate(15);
-        
+
         return view('hospital-admin.doctors.index', compact('doctors', 'hospital'));
     }
 
@@ -102,7 +102,7 @@ class DoctorController extends Controller
     {
         $user = Auth::user();
         $hospital = $user->hospital;
-        
+
         if (!$hospital) {
             return redirect()->route('hospital-admin.dashboard')
                 ->with('error', 'No hospital associated with your account.');
@@ -126,13 +126,13 @@ class DoctorController extends Controller
         ]);
 
         $user = Auth::user();
-        
+
         // Determine the final specialty value
         $specialty = $request->specialty;
         if ($request->specialty === 'other' && $request->filled('custom_specialty')) {
             $specialty = $request->custom_specialty;
         }
-        
+
         // Create the user account
         $doctor = User::create([
             'name' => $request->name,
@@ -181,13 +181,13 @@ class DoctorController extends Controller
     public function show(User $doctor)
     {
         $user = Auth::user();
-        
+
         if (!$user->canManageDoctor($doctor)) {
             abort(403, 'You cannot manage this doctor.');
         }
-        
+
         $doctor->load(['doctor.specialty', 'subUsers']);
-        
+
         // Get doctor statistics
         $statistics = [
             'total_appointments' => $doctor->doctor->appointments()->count(),
@@ -196,7 +196,7 @@ class DoctorController extends Controller
             'average_rating' => $doctor->doctor->reviews()->avg('rating') ?: 0,
             'sub_users_count' => $doctor->subUsers()->count(),
         ];
-        
+
         return view('hospital-admin.doctors.show', compact('doctor', 'statistics'));
     }
 
@@ -206,14 +206,14 @@ class DoctorController extends Controller
     public function edit(User $doctor)
     {
         $user = Auth::user();
-        
+
         if (!$user->canManageDoctor($doctor)) {
             abort(403, 'You cannot manage this doctor.');
         }
-        
+
         $hospital = $user->hospital;
         $doctor->load('doctor');
-        
+
         return view('hospital-admin.doctors.edit', compact('doctor', 'hospital'));
     }
 
@@ -223,7 +223,7 @@ class DoctorController extends Controller
     public function update(Request $request, User $doctor)
     {
         $user = Auth::user();
-        
+
         if (!$user->canManageDoctor($doctor)) {
             abort(403, 'You cannot manage this doctor.');
         }
@@ -282,7 +282,7 @@ class DoctorController extends Controller
     public function toggleStatus(User $doctor)
     {
         $user = Auth::user();
-        
+
         if (!$user->canManageDoctor($doctor)) {
             abort(403, 'You cannot manage this doctor.');
         }
@@ -292,7 +292,7 @@ class DoctorController extends Controller
         ]);
 
         $status = $doctor->doctor->is_active ? 'activated' : 'deactivated';
-        
+
         return back()->with('success', "Doctor {$status} successfully.");
     }
 
@@ -302,14 +302,14 @@ class DoctorController extends Controller
     public function destroy(User $doctor)
     {
         $user = Auth::user();
-        
+
         if (!$user->canManageDoctor($doctor)) {
             abort(403, 'You cannot manage this doctor.');
         }
 
         // Soft delete or deactivate instead of hard delete to preserve data integrity
         $doctor->doctor->update(['is_active' => false]);
-        
+
         return redirect()->route('hospital-admin.doctors.index')
             ->with('success', 'Doctor deactivated successfully.');
     }
@@ -321,9 +321,9 @@ class DoctorController extends Controller
     {
         $user = Auth::user();
         $hospital = $user->hospital;
-        
+
         $doctors = $hospital->doctors()->with(['doctor.specialty'])->get();
-        
+
         $statistics = [];
         foreach ($doctors as $doctor) {
             if ($doctor->doctor) {
@@ -339,7 +339,7 @@ class DoctorController extends Controller
                 ];
             }
         }
-        
+
         return view('hospital-admin.doctors.statistics', compact('statistics', 'hospital'));
     }
 
@@ -349,20 +349,20 @@ class DoctorController extends Controller
     public function loginAs(User $doctor)
     {
         $user = Auth::user();
-        
+
         // Verify the hospital admin can manage this doctor
         if (!$user->canManageDoctor($doctor)) {
             abort(403, 'You cannot login as this doctor.');
         }
-        
+
         // Verify the target is actually a doctor
         if (!$doctor->isDoctor()) {
             abort(403, 'Target user is not a doctor.');
         }
-        
+
         // Check if we're in an admin impersonation session (chain impersonation)
         $isAdminImpersonating = session()->has('impersonating_admin_id');
-        
+
         if ($isAdminImpersonating) {
             // Chain impersonation: Admin -> Hospital Admin -> Doctor
             // Keep the original admin session and add hospital admin info
@@ -373,7 +373,19 @@ class DoctorController extends Controller
                 'hospital_admin_impersonation_started_at' => now()->timestamp,
                 'hospital_admin_impersonation_ip' => request()->ip(),
             ]);
-            
+
+            // Log hospital admin impersonation
+            \App\Services\AuditLoggingService::logHospitalAdminImpersonation(
+                $user->id,
+                $doctor->id,
+                [
+                    'target_user_name' => $doctor->name,
+                    'target_user_email' => $doctor->email,
+                    'target_user_role' => $doctor->role,
+                    'chain_impersonation' => true
+                ]
+            );
+
             \Log::info('Chain impersonation: Admin -> Hospital Admin -> Doctor', [
                 'admin_id' => session('impersonating_admin_id'),
                 'admin_name' => session('impersonating_admin_name'),
@@ -386,13 +398,25 @@ class DoctorController extends Controller
             ]);
         } else {
             // Direct hospital admin impersonation
+            // Log hospital admin impersonation
+            \App\Services\AuditLoggingService::logHospitalAdminImpersonation(
+                $user->id,
+                $doctor->id,
+                [
+                    'target_user_name' => $doctor->name,
+                    'target_user_email' => $doctor->email,
+                    'target_user_role' => $doctor->role,
+                    'chain_impersonation' => false
+                ]
+            );
+
             session([
                 'impersonating_hospital_admin_id' => $user->id,
                 'impersonating_hospital_admin_name' => $user->name,
                 'impersonation_started_at' => now()->timestamp,
                 'impersonation_ip' => request()->ip(),
             ]);
-            
+
             \Log::info('Hospital admin impersonation started', [
                 'hospital_admin_id' => $user->id,
                 'hospital_admin_name' => $user->name,
@@ -405,10 +429,10 @@ class DoctorController extends Controller
                 'user_agent' => request()->userAgent(),
             ]);
         }
-        
+
         // Login as the doctor
         Auth::login($doctor);
-        
+
         return redirect()->route('doctor.dashboard')
             ->with('success', 'You are now logged in as Dr. ' . $doctor->name);
     }
@@ -422,10 +446,10 @@ class DoctorController extends Controller
         if (!session()->has('impersonating_hospital_admin_id')) {
             abort(403, 'No impersonation session found.');
         }
-        
+
         // Check if this is a chain impersonation (Admin -> Hospital Admin -> Doctor)
         $isChainImpersonation = session()->has('impersonating_admin_id');
-        
+
         if ($isChainImpersonation) {
             // Chain impersonation: return to hospital admin but keep admin session
             $sessionIp = session('hospital_admin_impersonation_ip');
@@ -435,9 +459,9 @@ class DoctorController extends Controller
             $sessionIp = session('impersonation_ip');
             $sessionStarted = session('impersonation_started_at');
         }
-        
+
         $currentIp = request()->ip();
-        
+
         // Check if IP changed (potential session hijacking)
         if ($sessionIp && $sessionIp !== $currentIp) {
             $this->clearImpersonationSession($isChainImpersonation);
@@ -449,16 +473,16 @@ class DoctorController extends Controller
             ]);
             abort(403, 'Security violation: Session IP mismatch.');
         }
-        
+
         // Check if session is too old (24 hours limit)
         if ($sessionStarted && (now()->timestamp - $sessionStarted) > 86400) {
             $this->clearImpersonationSession($isChainImpersonation);
             abort(403, 'Impersonation session expired.');
         }
-        
+
         $hospitalAdminId = session('impersonating_hospital_admin_id');
         $hospitalAdmin = User::find($hospitalAdminId);
-        
+
         if (!$hospitalAdmin || !$hospitalAdmin->isHospitalAdmin()) {
             $this->clearImpersonationSession($isChainImpersonation);
             \Log::warning('Invalid hospital admin session during return', [
@@ -469,7 +493,7 @@ class DoctorController extends Controller
             ]);
             abort(403, 'Invalid hospital admin session.');
         }
-        
+
         // Additional security: verify the current user is a doctor from the same hospital
         $currentUser = auth()->user();
         if (!$currentUser->isDoctor() || $currentUser->hospital_id !== $hospitalAdmin->hospital_id) {
@@ -482,9 +506,19 @@ class DoctorController extends Controller
                 'admin_hospital_id' => $hospitalAdmin->hospital_id,
                 'is_chain_impersonation' => $isChainImpersonation,
             ]);
+
+            // Log hospital admin impersonation ended
+            \App\Services\AuditLoggingService::logHospitalAdminImpersonationEnded(
+                $hospitalAdmin->id,
+                [
+                    'impersonated_user_id' => auth()->id(),
+                    'impersonated_user_name' => auth()->user()->name,
+                    'is_chain_impersonation' => $isChainImpersonation
+                ]
+            );
             abort(403, 'Security violation: Invalid impersonation context.');
         }
-        
+
         // Log the end of impersonation
         \Log::info('Hospital admin impersonation ended', [
             'hospital_admin_id' => $hospitalAdmin->id,
@@ -498,37 +532,37 @@ class DoctorController extends Controller
             'user_agent' => request()->userAgent(),
             'is_chain_impersonation' => $isChainImpersonation,
         ]);
-        
+
         if ($isChainImpersonation) {
             // Chain impersonation: update the impersonated user back to hospital admin
             session([
                 'impersonating_user_id' => $hospitalAdmin->id,
             ]);
-            
+
             // Clear only hospital admin specific session data
             session()->forget([
-                'impersonating_hospital_admin_id', 
-                'impersonating_hospital_admin_name', 
-                'hospital_admin_impersonation_started_at', 
+                'impersonating_hospital_admin_id',
+                'impersonating_hospital_admin_name',
+                'hospital_admin_impersonation_started_at',
                 'hospital_admin_impersonation_ip'
             ]);
         } else {
             // Direct impersonation: clear all hospital admin session data
             session()->forget([
-                'impersonating_hospital_admin_id', 
-                'impersonating_hospital_admin_name', 
-                'impersonation_started_at', 
+                'impersonating_hospital_admin_id',
+                'impersonating_hospital_admin_name',
+                'impersonation_started_at',
                 'impersonation_ip'
             ]);
         }
-        
+
         // Login back as hospital admin
         Auth::login($hospitalAdmin);
-        
+
         return redirect()->route('hospital-admin.doctors.index')
             ->with('success', 'Returned to hospital admin dashboard.');
     }
-    
+
     /**
      * Clear impersonation session data
      */
@@ -537,17 +571,17 @@ class DoctorController extends Controller
         if ($isChainImpersonation) {
             // Keep admin session, clear only hospital admin data
             session()->forget([
-                'impersonating_hospital_admin_id', 
-                'impersonating_hospital_admin_name', 
-                'hospital_admin_impersonation_started_at', 
+                'impersonating_hospital_admin_id',
+                'impersonating_hospital_admin_name',
+                'hospital_admin_impersonation_started_at',
                 'hospital_admin_impersonation_ip'
             ]);
         } else {
             // Clear all impersonation data
             session()->forget([
-                'impersonating_hospital_admin_id', 
-                'impersonating_hospital_admin_name', 
-                'impersonation_started_at', 
+                'impersonating_hospital_admin_id',
+                'impersonating_hospital_admin_name',
+                'impersonation_started_at',
                 'impersonation_ip'
             ]);
         }
