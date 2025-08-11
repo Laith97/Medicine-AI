@@ -109,6 +109,13 @@ class DiagnosisController extends Controller
                 'patient_data' => $request->patient_data,
             ]);
 
+            // Log diagnosis creation
+            \App\Services\AuditLoggingService::logDiagnosisCreated(
+                Auth::id(),
+                $patient->id,
+                $diagnosis->id
+            );
+
             // Send notifications if new patient
             if ($isNewPatient) {
                 $tempPassword = SmsService::generateTempPassword();
@@ -162,6 +169,15 @@ class DiagnosisController extends Controller
 
         if (Auth::user()->isPatient() && $diagnosis->patient_id !== Auth::id()) {
             abort(403, 'Access denied.');
+        }
+
+        // Log doctor access to patient diagnosis
+        if (Auth::user()->isDoctor() && $diagnosis->patient_id) {
+            \App\Services\AuditLoggingService::logDoctorAccessPatient(
+                Auth::id(),
+                $diagnosis->patient_id,
+                ['diagnosis_id' => $diagnosis->id]
+            );
         }
 
         // Mark as viewed if patient is viewing
