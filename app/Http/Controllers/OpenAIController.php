@@ -34,7 +34,7 @@ class OpenAIController extends Controller
         $this->smsService = $smsService;
         $this->middleware(function ($request, $next) {
             $user = Auth::user();
-            
+
             // Handle sub-users - they inherit access from their parent doctor
             if ($user->isSubUser()) {
                 $parentUser = $user->parentUser;
@@ -46,12 +46,12 @@ class OpenAIController extends Controller
                 if (!$user->isDoctor() || !$user->doctor) {
                     abort(403, 'Access denied. Doctor profile required.');
                 }
-                
+
                 if (!$user->doctor->is_active) {
                     abort(403, 'Access denied. Your doctor account has been deactivated.');
                 }
             }
-            
+
             return $next($request);
         });
     }
@@ -79,7 +79,6 @@ class OpenAIController extends Controller
                 'patient_name' => 'required_without:existing_patient|string|max:255',
                 'patient_email' => 'required_without:existing_patient|email|max:255',
                 'patient_phone' => 'nullable|string|max:20',
-                'patient_age' => 'required_without:existing_patient|integer|min:1|max:150',
                 'patient_gender' => 'required_without:existing_patient|in:male,female,other',
             ]);
 

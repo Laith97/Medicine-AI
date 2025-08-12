@@ -143,6 +143,9 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
         // Routes accessible to both doctors and patients
         Route::post('/{diagnosis}/follow-up', [DiagnosisController::class, 'storeFollowUp'])->name('follow-up.store');
+
+        // Voice file serving route (secure)
+        Route::get('/{diagnosis}/voice', [DiagnosisController::class, 'serveVoiceFile'])->name('voice');
     });
 
     // Subscription routes (only for payment responsible users)

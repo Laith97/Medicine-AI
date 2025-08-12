@@ -96,9 +96,9 @@
                                 <div class="form-text">Optional - for SMS notifications</div>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label for="patient_age" class="form-label">Age *</label>
+                                <label for="patient_age" class="form-label">Age</label>
                                 <input type="number" class="form-control" id="patient_age" name="patient_age"
-                                       value="{{ old('patient_age') }}" min="1" max="150" required>
+                                       value="{{ old('patient_age') }}" min="1" max="150">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="patient_gender" class="form-label">Gender *</label>
@@ -168,8 +168,19 @@
                                 <div class="file-upload-section">
                                     <label class="form-label">Or Upload Audio File</label>
                                     <input type="file" class="form-control" id="voice_file" name="voice_file"
-                                           accept=".mp3,.wav,.m4a,.ogg" />
-                                    <div class="form-text">Supported formats: MP3, WAV, M4A, OGG (Max: 10MB)</div>
+                                           accept=".mp3,.wav,.m4a,.ogg,.webm" />
+                                    <div class="form-text">
+                                        <strong>Recommended:</strong> MP3, WAV, M4A files work best<br>
+                                        <small class="text-muted">Supported: MP3, WAV, M4A, OGG, WebM (Max: 10MB)</small>
+                                    </div>
+                                </div>
+
+                                <div id="transcription-status" class="mt-2" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Note:</strong> If voice transcription fails, you can still submit the audio file and add text manually,
+                                        or try recording again with a different browser.
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -374,7 +385,24 @@ document.addEventListener('DOMContentLoaded', function() {
     async function startRecording() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
+
+            // Check for supported MIME types, prioritizing formats that work well with OpenAI
+            const mimeTypes = [
+                'audio/wav',
+                'audio/mp4',
+                'audio/webm;codecs=opus',
+                'audio/webm'
+            ];
+
+            let selectedMimeType = 'audio/webm'; // fallback
+            for (const mimeType of mimeTypes) {
+                if (MediaRecorder.isTypeSupported(mimeType)) {
+                    selectedMimeType = mimeType;
+                    break;
+                }
+            }
+
+            mediaRecorder = new MediaRecorder(stream, { mimeType: selectedMimeType });
             audioChunks = [];
 
             mediaRecorder.ondataavailable = event => {
@@ -382,17 +410,34 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             mediaRecorder.onstop = () => {
-                recordedBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                recordedBlob = new Blob(audioChunks, { type: selectedMimeType });
+
+                // Determine file extension based on MIME type
+                let extension = 'webm';
+                let fileName = 'recorded_diagnosis.webm';
+                if (selectedMimeType.includes('wav')) {
+                    extension = 'wav';
+                    fileName = 'recorded_diagnosis.wav';
+                } else if (selectedMimeType.includes('mp4')) {
+                    extension = 'm4a';
+                    fileName = 'recorded_diagnosis.m4a';
+                }
 
                 // Create a file from the blob and set it to the file input
-                const file = new File([recordedBlob], 'recorded_diagnosis.wav', { type: 'audio/wav' });
+                const file = new File([recordedBlob], fileName, { type: selectedMimeType });
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
                 voiceFileInput.files = dataTransfer.files;
 
                 playBtn.disabled = false;
-                recordingStatus.textContent = 'Recording saved';
+                recordingStatus.textContent = `Recording saved (${extension.toUpperCase()})`;
                 recordingStatus.className = 'ms-3 text-success';
+
+                console.log('Recording saved:', {
+                    mimeType: selectedMimeType,
+                    fileName: fileName,
+                    size: recordedBlob.size
+                });
             };
 
             mediaRecorder.start();
@@ -404,7 +449,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error('Error accessing microphone:', error);
-            alert('Error accessing microphone. Please check permissions.');
+            recordingStatus.textContent = 'Microphone access denied';
+            recordingStatus.className = 'ms-3 text-danger';
+            alert('Error accessing microphone. Please check permissions and try again.');
         }
     }
 
@@ -431,10 +478,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const textInput = diagnosisTextarea.value.trim();
         const voiceFile = voiceFileInput.files.length > 0;
 
+        // Remove any previous custom validation messages
+        const existingError = document.querySelector('.input-method-error');
+        if (existingError) existingError.remove();
+
         if (!textInput && !voiceFile) {
             e.preventDefault();
-            alert('Please provide either text diagnosis or voice recording.');
+
+            // Show error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger input-method-error mt-3';
+            errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Please provide either diagnosis text or voice recording.';
+
+            // Insert error message before the form
+            const form = document.getElementById('diagnosisForm');
+            form.parentNode.insertBefore(errorDiv, form);
+
+            // Scroll to error
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
             return false;
+        }
+
+        // Show loading state
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Diagnosis...';
         }
     });
 
