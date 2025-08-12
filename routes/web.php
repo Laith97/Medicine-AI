@@ -635,8 +635,8 @@ Route::get('/doctor/{username}', [PublicLandingPageController::class, 'show'])->
 Route::get('/doctor/{username}/blogs', [PublicLandingPageController::class, 'showBlogs'])->name('doctor.blogs');
 Route::get('/doctor/{username}/blog/{slug}', [PublicLandingPageController::class, 'showBlogPost'])->name('doctor.blog.post');
 
-// Doctor Landing Page Management Routes
-Route::prefix('doctor/landing-page')->name('doctor.landing-page.')->group(function () {
+// Doctor Landing Page Management Routes - Protected by auth middleware
+Route::prefix('doctor/landing-page')->name('doctor.landing-page.')->middleware(['auth', 'role:doctor'])->group(function () {
     Route::get('/index', [LandingPageController::class, 'index'])->name('index');
     Route::get('/page-builder', [LandingPageController::class, 'pageBuilder'])->name('page-builder');
     Route::get('/edit', [LandingPageController::class, 'edit'])->name('edit');
@@ -647,6 +647,8 @@ Route::prefix('doctor/landing-page')->name('doctor.landing-page.')->group(functi
     Route::post('/toggle-publish', [LandingPageController::class, 'togglePublish'])->name('toggle-publish');
     Route::get('/preview/{username}', [LandingPageController::class, 'preview'])->name('preview');
     Route::get('/animation-presets', [LandingPageController::class, 'getAnimationPresets'])->name('animation-presets');
+    Route::get('/analytics', [AnalyticsController::class, 'landingPageAnalytics'])->name('analytics');
+    Route::get('/analytics/data', [AnalyticsController::class, 'getLandingPageAnalyticsData'])->name('analytics.data');
 });
 
 // Public Chat Routes

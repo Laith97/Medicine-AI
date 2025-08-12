@@ -674,6 +674,11 @@ class PageBuilder {
 
         // Global design controls
         this.bindDesignControls();
+
+        // Section editor save button
+        document.getElementById('saveSectionBtn').addEventListener('click', () => {
+            this.saveSectionChanges();
+        });
     }
 
     bindDesignControls() {
@@ -897,6 +902,48 @@ class PageBuilder {
         }
     }
 
+    saveSectionChanges() {
+        if (!this.currentSection) return;
+
+        const form = document.getElementById('sectionEditorForm');
+        if (!form) return;
+
+        const formData = new FormData(form);
+        const config = {};
+
+        // Collect form data
+        for (let [key, value] of formData.entries()) {
+            // Handle checkboxes
+            const input = form.querySelector(`[name="${key}"]`);
+            if (input && input.type === 'checkbox') {
+                config[key] = input.checked;
+            } else {
+                config[key] = value;
+            }
+        }
+
+        // Update section config
+        this.currentSection.config = { ...this.currentSection.config, ...config };
+
+        // Re-render the section in the canvas
+        const sectionElement = document.querySelector(`[data-section-id="${this.currentSection.id}"]`);
+        if (sectionElement) {
+            sectionElement.querySelector('.section-content').innerHTML = this.renderSectionContent(this.currentSection);
+        }
+
+        // Update history
+        this.updateHistory();
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('sectionEditorModal'));
+        if (modal) {
+            modal.hide();
+        }
+
+        // Show success notification
+        this.showNotification('Section updated successfully!', 'success');
+    }
+
     duplicateSection(sectionId) {
         const section = this.sections.find(s => s.id === sectionId);
         if (!section) return;
@@ -1032,71 +1079,117 @@ class PageBuilder {
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         saveBtn.disabled = true;
 
-        // Collect all form data
-        const formData = {
-            page_sections: this.sections,
-            navbar_config: this.getNavbarConfig(),
-            animations_config: this.getAnimationsConfig(),
-            fonts_config: this.getFontsConfig(),
-            colors: this.getColorsConfig(),
-            page_layout: document.querySelector('input[name="pageLayout"]:checked').value,
-            enable_animations: document.getElementById('enableAnimations').checked
-        };
+        try {
+            // Collect all form data with error handling
+            const formData = {
+                sections: this.sections,
+                navbar_config: this.getNavbarConfig(),
+                animations_config: this.getAnimationsConfig(),
+                fonts_config: this.getFontsConfig(),
+                colors: this.getColorsConfig(),
+                page_layout: this.getPageLayout(),
+                enable_animations: this.getEnableAnimations()
+            };
 
-        fetch('{{ route("doctor.landing-page.update-sections") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify(formData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                this.showNotification('Page saved successfully!', 'success');
-            } else {
-                this.showNotification('Error saving page: ' + data.message, 'error');
-            }
-        })
-        .catch(error => {
-            this.showNotification('Error saving page', 'error');
-            console.error('Error:', error);
-        })
-        .finally(() => {
+            console.log('Sending formData:', formData);
+
+            fetch('{{ route("doctor.landing-page.update-sections") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        console.error('Error response text:', text);
+                        throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Success response:', data);
+                if (data.success) {
+                    this.showNotification('Page saved successfully!', 'success');
+                } else {
+                    this.showNotification('Error saving page: ' + (data.message || 'Unknown error'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                this.showNotification('Error saving page: ' + error.message, 'error');
+            })
+            .finally(() => {
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            });
+        } catch (error) {
+            console.error('JavaScript error in savePage:', error);
+            this.showNotification('Error preparing data: ' + error.message, 'error');
             saveBtn.innerHTML = originalText;
             saveBtn.disabled = false;
-        });
+        }
     }
 
     getNavbarConfig() {
+        const stickyNavbar = document.getElementById('stickyNavbar');
+        const navbarStyle = document.getElementById('navbarStyle');
+
         return {
-            sticky: document.getElementById('stickyNavbar').checked,
-            style: document.getElementById('navbarStyle').value,
+            sticky: stickyNavbar ? stickyNavbar.checked : true,
+            style: navbarStyle ? navbarStyle.value : 'default',
             custom_links: [] // TODO: Implement custom links
         };
     }
 
     getAnimationsConfig() {
+        const enableAnimations = document.getElementById('enableAnimations');
+        const animationSpeed = document.getElementById('animationSpeed');
+
         return {
-            enabled: document.getElementById('enableAnimations').checked,
-            speed: document.getElementById('animationSpeed').value
+            enabled: enableAnimations ? enableAnimations.checked : false,
+            speed: animationSpeed ? animationSpeed.value : 'medium'
         };
     }
 
     getFontsConfig() {
+        const primaryFont = document.getElementById('primaryFont');
+        const headingFont = document.getElementById('headingFont');
+
         return {
-            primary: document.getElementById('primaryFont').value,
-            heading: document.getElementById('headingFont').value
+            primary: primaryFont ? primaryFont.value : 'Inter',
+            heading: headingFont ? headingFont.value : 'Inter'
         };
     }
 
     getColorsConfig() {
+        const primary = document.getElementById('globalPrimary');
+        const secondary = document.getElementById('globalSecondary');
+        const accent = document.getElementById('globalAccent');
+
         return {
-            primary: document.getElementById('globalPrimary').value,
-            secondary: document.getElementById('globalSecondary').value,
-            accent: document.getElementById('globalAccent').value
+            primary: primary ? primary.value : '#3b82f6',
+            secondary: secondary ? secondary.value : '#6b7280',
+            accent: accent ? accent.value : '#10b981'
         };
+    }
+
+    getPageLayout() {
+        const checkedLayout = document.querySelector('input[name="pageLayout"]:checked');
+        return checkedLayout ? checkedLayout.value : 'default';
+    }
+
+    getEnableAnimations() {
+        const animationsCheckbox = document.getElementById('enableAnimations');
+        return animationsCheckbox ? animationsCheckbox.checked : false;
     }
 
     previewPage() {
