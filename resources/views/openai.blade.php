@@ -507,9 +507,9 @@
                                     <div class="form-text">Optional - for SMS notifications</div>
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label for="patient_age" class="form-label">Age *</label>
+                                    <label for="patient_age" class="form-label">Age</label>
                                     <input type="number" class="form-control" id="patient_age" name="patient_age"
-                                           value="{{ old('patient_age') }}" min="1" max="150" required>
+                                           value="{{ old('patient_age') }}" min="1" max="150">
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label for="patient_gender" class="form-label">Gender *</label>
