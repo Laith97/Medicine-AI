@@ -187,19 +187,46 @@ class AppointmentController extends Controller
             // TODO: Send email notification to doctor and patient/guest
             // TODO: Add to calendar
 
-            if ($appointment->isGuestAppointment()) {
-                return redirect()->route('appointments.guest.show', [
-                    'appointment' => $appointment->appointment_number,
-                    'email' => $appointment->guest_email
-                ])->with('success', 'Appointment booked successfully! Check your email for verification and appointment details.');
+            // Handle AJAX requests vs regular form submissions
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Appointment booked successfully! ' .
+                        ($appointment->isGuestAppointment() ? 'Check your email for verification and appointment details.' : ''),
+                    'appointment_id' => $appointment->id,
+                    'appointment_number' => $appointment->appointment_number,
+                    'redirect_url' => $appointment->isGuestAppointment() ?
+                        route('appointments.guest.show', [
+                            'appointment' => $appointment->appointment_number,
+                            'email' => $appointment->guest_email
+                        ]) :
+                        route('appointments.show', $appointment)
+                ]);
             } else {
-                return redirect()->route('appointments.show', $appointment)
-                    ->with('success', 'Appointment booked successfully!');
+                if ($appointment->isGuestAppointment()) {
+                    return redirect()->route('appointments.guest.show', [
+                        'appointment' => $appointment->appointment_number,
+                        'email' => $appointment->guest_email
+                    ])->with('success', 'Appointment booked successfully! Check your email for verification and appointment details.');
+                } else {
+                    return redirect()->route('appointments.show', $appointment)
+                        ->with('success', 'Appointment booked successfully!');
+                }
             }
 
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Failed to book appointment. Please try again.']);
+
+            // Handle AJAX requests vs regular form submissions
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to book appointment. Please try again.',
+                    'error' => $e->getMessage()
+                ], 422);
+            } else {
+                return back()->withErrors(['error' => 'Failed to book appointment. Please try again.']);
+            }
         }
     }
 

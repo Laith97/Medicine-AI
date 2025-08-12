@@ -327,22 +327,88 @@ class LandingPageController extends Controller
             return response()->json(['error' => 'Landing page not found.'], 404);
         }
 
+        // Validate the main request data
         $request->validate([
-            'sections' => 'required|array',
-            'sections.*.id' => 'required|string',
-            'sections.*.type' => 'required|string',
-            'sections.*.config' => 'required|array',
-            'sections.*.order' => 'required|integer',
+            'sections' => 'nullable|array',
+            'navbar_config' => 'nullable|array',
+            'animations_config' => 'nullable|array',
+            'fonts_config' => 'nullable|array',
+            'colors' => 'nullable|array',
+            'page_layout' => 'nullable|string|in:default,fullwidth,boxed,sidebar',
+            'enable_animations' => 'boolean'
         ]);
 
+        // If sections are provided, validate their structure
+        if ($request->has('sections') && is_array($request->sections)) {
+            foreach ($request->sections as $index => $section) {
+                $request->validate([
+                    "sections.$index.id" => 'required|string',
+                    "sections.$index.type" => 'required|string',
+                    "sections.$index.config" => 'required|array',
+                    "sections.$index.order" => 'required|integer',
+                ]);
+            }
+        }
+
         $landingPage = $doctor->landingPage;
-        $landingPage->page_sections = $request->sections;
+
+        // Update sections if provided
+        if ($request->has('sections')) {
+            $landingPage->page_sections = $request->sections;
+        }
+
+        // Update additional configuration
+        if ($request->has('navbar_config')) {
+            $landingPage->navbar_config = $request->navbar_config;
+        }
+
+        if ($request->has('animations_config')) {
+            $landingPage->animations_config = $request->animations_config;
+        }
+
+        if ($request->has('fonts_config')) {
+            $landingPage->fonts_config = $request->fonts_config;
+        }
+
+        if ($request->has('colors')) {
+            $landingPage->colors = $request->colors;
+        }
+
+        if ($request->has('page_layout')) {
+            $landingPage->page_layout = $request->page_layout;
+        }
+
+        if ($request->has('enable_animations')) {
+            $landingPage->enable_animations = $request->enable_animations;
+        }
+
         $landingPage->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Sections updated successfully!'
+            'message' => 'Page updated successfully!',
+            'preview_url' => route('doctor.landing-page.preview', $landingPage->username)
         ]);
+    }
+
+    /**
+     * Get effective doctor for the current user
+     */
+    protected function getEffectiveDoctor()
+    {
+        $user = auth()->user();
+
+        // If user is a doctor, return their doctor profile
+        if ($user->role === 'doctor' && $user->doctor) {
+            return $user->doctor;
+        }
+
+        // If user is a sub-user, return their parent doctor's profile
+        if ($user->isSubUser() && $user->parentUser && $user->parentUser->doctor) {
+            return $user->parentUser->doctor;
+        }
+
+        return null;
     }
 
     /**
