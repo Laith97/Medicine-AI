@@ -46,10 +46,28 @@ class SubscriptionController extends Controller
         
         // For hospital admins, set default pricing if not configured
         if ($user->isHospitalAdmin() && ($setting->monthly_price <= 0 || $setting->yearly_price <= 0)) {
-            // Default pricing per doctor: $29/month, $290/year (save ~17%)
+            // Get pricing from system settings
+            $defaultMonthly = \App\Models\SystemSetting::get('saas_professional_monthly', 30);
+            $defaultYearly = \App\Models\SystemSetting::get('saas_professional_yearly', 300);
+            
             $setting->update([
-                'monthly_price' => 29 * $doctorCount,
-                'yearly_price' => 290 * $doctorCount,
+                'monthly_price' => $defaultMonthly * $doctorCount,
+                'yearly_price' => $defaultYearly * $doctorCount,
+                'is_active' => true,
+            ]);
+            
+            $setting->refresh();
+        }
+        
+        // For individual doctors, set default pricing if not configured
+        if (!$user->isHospitalAdmin() && ($setting->monthly_price <= 0 || $setting->yearly_price <= 0)) {
+            // Get pricing from system settings
+            $defaultMonthly = \App\Models\SystemSetting::get('saas_professional_monthly', 30);
+            $defaultYearly = \App\Models\SystemSetting::get('saas_professional_yearly', 300);
+            
+            $setting->update([
+                'monthly_price' => $defaultMonthly,
+                'yearly_price' => $defaultYearly,
                 'is_active' => true,
             ]);
             
@@ -109,10 +127,28 @@ class SubscriptionController extends Controller
                     $doctorCount = $user->hospital ? $user->hospital->doctors()->count() : 1;
                     $doctorCount = max(1, $doctorCount); // Minimum 1 doctor
                     
-                    // Default pricing per doctor: $29/month, $290/year (save ~17%)
+                    // Get pricing from system settings
+                    $defaultMonthly = \App\Models\SystemSetting::get('saas_professional_monthly', 30);
+                    $defaultYearly = \App\Models\SystemSetting::get('saas_professional_yearly', 300);
+                    
                     $monthlySettings->update([
-                        'monthly_price' => 29 * $doctorCount,
-                        'yearly_price' => 290 * $doctorCount,
+                        'monthly_price' => $defaultMonthly * $doctorCount,
+                        'yearly_price' => $defaultYearly * $doctorCount,
+                        'is_active' => true,
+                    ]);
+                    
+                    $monthlySettings->refresh();
+                }
+                
+                // For individual doctors, set default pricing if not configured
+                if (!$currentUser->isHospitalAdmin() && ($monthlySettings->monthly_price <= 0 || $monthlySettings->yearly_price <= 0)) {
+                    // Get pricing from system settings
+                    $defaultMonthly = \App\Models\SystemSetting::get('saas_professional_monthly', 30);
+                    $defaultYearly = \App\Models\SystemSetting::get('saas_professional_yearly', 300);
+                    
+                    $monthlySettings->update([
+                        'monthly_price' => $defaultMonthly,
+                        'yearly_price' => $defaultYearly,
                         'is_active' => true,
                     ]);
                     

@@ -781,15 +781,15 @@ body .dropdown .dropdown-menu.dropdown-menu-end.show,
 
             @guest
             <a href="{{ route('login') }}"
-               class="btn btn-sm px-4"
+               class="btn btn-sm px-4 me-2"
                style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
                 <i class="bi bi-box-arrow-in-right me-1"></i> Login
             </a>
-           <!-- <a href="{{ route('register') }}"
+            <a href="{{ route('register') }}"
                class="btn btn-sm px-4"
                style="background: white; color: #DE6262; border: none; font-weight: 500; border-radius: 25px;">
                 <i class="bi bi-person-plus me-1"></i> Register
-            </a>-->
+            </a>
             @endguest
 
             </div>
@@ -1111,6 +1111,7 @@ body .dropdown .dropdown-menu.dropdown-menu-end.show,
                         <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Us</a></li>
                         <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact</a></li>
                         <li class="mb-2"><a href="{{ route('login') }}" class="text-white-50 text-decoration-none hover-link">Login</a></li>
+                        <li class="mb-2"><a href="{{ route('register') }}" class="text-white-50 text-decoration-none hover-link">Register</a></li>
                     @endauth
                 </ul>
             </div>

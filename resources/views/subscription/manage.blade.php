@@ -559,16 +559,21 @@
                         @elseif($status === 'ready_to_subscribe')
                             <!-- First Time User - Choose Plan -->
                             <div class="py-4">
-                                <div class="text-center mb-4">
-                                    <i class="fas fa-rocket fa-3x text-success mb-3"></i>
-                                    <h4>Choose Your Subscription Plan</h4>
-                                    <p class="text-muted">Select the plan that best fits your needs and start your subscription.</p>
-                                </div>
-
                                 @if(count($userPlans) > 0)
-                                    <div class="row">
+                                    <div class="text-center mb-4">
+                                        <i class="fas fa-rocket fa-3x text-success mb-3"></i>
+                                        <h4>Choose Your Subscription Plan</h4>
+                                        <p class="text-muted">Select the plan that best fits your needs and start your subscription.</p>
+                                        
+                                        <!-- Billing Toggle -->
+                                        <div class="d-inline-flex align-items-center p-2 rounded-pill mt-3" style="background: #f8f9fa; border: 1px solid #e9ecef;">
+                                            <span class="px-3 py-2 billing-period-label" id="monthly-label" style="border-radius: 20px; cursor: pointer; transition: all 0.3s ease; background: #DE6262; color: white;">Monthly</span>
+                                            <span class="px-3 py-2 billing-period-label" id="yearly-label" style="border-radius: 20px; cursor: pointer; transition: all 0.3s ease; margin-left: 5px;">Yearly <small class="text-success">(Save up to 17%)</small></span>
+                                        </div>
+                                    </div>
+                                    <div class="row" id="pricing-plans">
                                         @foreach($userPlans as $planKey => $plan)
-                                            <div class="col-md-6 mb-4">
+                                            <div class="col-md-6 mb-4 plan-card" data-plan="{{ $planKey }}">
                                                 <div class="plan-card h-100 {{ $planKey === 'yearly' ? 'featured-plan' : '' }}" 
                                                      style="border: 2px solid {{ $planKey === 'yearly' ? '#28a745' : '#dee2e6' }}; border-radius: 15px; padding: 2rem; position: relative; background: white;">
                                                     
@@ -1360,5 +1365,56 @@ function cancelSubscription() {
         button.disabled = false;
     });
 }
+
+// Billing Toggle Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const monthlyLabel = document.getElementById('monthly-label');
+    const yearlyLabel = document.getElementById('yearly-label');
+    const planCards = document.querySelectorAll('.plan-card');
+    
+    // Only initialize if toggle exists (when plans are shown)
+    if (!monthlyLabel || !yearlyLabel) return;
+    
+    // Set default to show monthly plans
+    showPlansForPeriod('monthly');
+    
+    monthlyLabel.addEventListener('click', function() {
+        setActiveLabel('monthly');
+        showPlansForPeriod('monthly');
+    });
+    
+    yearlyLabel.addEventListener('click', function() {
+        setActiveLabel('yearly');
+        showPlansForPeriod('yearly');
+    });
+    
+    function setActiveLabel(period) {
+        // Reset both labels
+        monthlyLabel.style.background = 'transparent';
+        monthlyLabel.style.color = '#6c757d';
+        yearlyLabel.style.background = 'transparent';
+        yearlyLabel.style.color = '#6c757d';
+        
+        // Set active label
+        if (period === 'monthly') {
+            monthlyLabel.style.background = '#DE6262';
+            monthlyLabel.style.color = 'white';
+        } else {
+            yearlyLabel.style.background = '#DE6262';
+            yearlyLabel.style.color = 'white';
+        }
+    }
+    
+    function showPlansForPeriod(period) {
+        planCards.forEach(card => {
+            const planType = card.getAttribute('data-plan');
+            if (planType === period) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+});
 </script>
 @endpush

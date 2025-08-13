@@ -56,13 +56,10 @@ class AdminController extends Controller
             'phone' => ['required', 'string', 'regex:/^\+?[1-9]\d{6,14}$/', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'string', 'in:doctor,hospital_admin,patient'],
-            'monthly_price' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
-            'yearly_price' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'monthly_cost_limit' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'grace_period_days' => ['nullable', 'integer', 'min:1', 'max:30'],
             'warning_period_days' => ['nullable', 'integer', 'min:1', 'max:14'],
             'reminder_frequency_days' => ['nullable', 'integer', 'min:1', 'max:30'],
-            'trial_days' => ['nullable', 'integer', 'min:0', 'max:365'],
         ];
 
         // Add role-specific validation rules
@@ -117,8 +114,8 @@ class AdminController extends Controller
             }
         }
 
-        // Calculate trial end date
-        $trialDays = (int) ($request->trial_days ?? 7);
+        // Calculate trial end date using global setting
+        $trialDays = (int) SystemSetting::get('trial_days', 7);
         $trialEndsAt = $trialDays > 0 ? now()->addDays($trialDays) : null;
 
         $userData = [
@@ -175,38 +172,33 @@ class AdminController extends Controller
             ]);
         }
 
-        // Create user-specific pricing and monthly invoice setting
-        if ($request->monthly_price || $request->yearly_price || $request->billing_amount) {
-            // Create user-specific monthly invoice setting
-            $setting = $user->getOrCreateMonthlyInvoiceSetting();
-            
-            // Prepare update data with defaults
-            $updateData = [
-                'grace_period_days' => (int) ($request->grace_period_days ?? 7),
-                'warning_period_days' => (int) ($request->warning_period_days ?? 3),
-                'reminder_frequency_days' => (int) ($request->reminder_frequency_days ?? 3),
-                'subscription_period_months' => $request->subscription_period_months ?? 1,
-                'is_active' => true,
-                'is_restricted' => false,
-                'restricted_pages' => ['ask-ai', 'dashboard', 'cases'],
-            ];
-            
-            // Set billing amount (support both billing_amount and monthly_price)
-            if ($request->billing_amount) {
-                $updateData['billing_amount'] = $request->billing_amount;
-            }
-            
-            // Set user-specific pricing
-            if ($request->monthly_price) {
-                $updateData['monthly_price'] = $request->monthly_price;
-            }
-            
-            if ($request->yearly_price) {
-                $updateData['yearly_price'] = $request->yearly_price;
-            }
-            
-            $setting->update($updateData);
+        // Create monthly invoice setting with global SaaS pricing
+        $setting = $user->getOrCreateMonthlyInvoiceSetting();
+        
+        // Get global SaaS pricing from system settings (default to Professional plan)
+        $monthlyPrice = SystemSetting::get('saas_professional_monthly', 99.00);
+        $yearlyPrice = SystemSetting::get('saas_professional_yearly', 950.00);
+        
+        // Prepare update data with defaults
+        $updateData = [
+            'grace_period_days' => (int) ($request->grace_period_days ?? SystemSetting::get('default_grace_period', 7)),
+            'warning_period_days' => (int) ($request->warning_period_days ?? 3),
+            'reminder_frequency_days' => (int) ($request->reminder_frequency_days ?? 3),
+            'subscription_period_months' => 1, // Default to monthly
+            'is_active' => true,
+            'is_restricted' => false,
+            'restricted_pages' => ['ask-ai', 'dashboard', 'cases'],
+            // Use global SaaS pricing
+            'monthly_price' => $monthlyPrice,
+            'yearly_price' => $yearlyPrice,
+        ];
+        
+        // Set billing amount if provided (for custom billing scenarios)
+        if ($request->billing_amount) {
+            $updateData['billing_amount'] = $request->billing_amount;
         }
+        
+        $setting->update($updateData);
 
         return redirect()->route('admin.users.index')
                         ->with('success', 'User created successfully with monthly invoice settings.');
@@ -243,8 +235,6 @@ class AdminController extends Controller
             'specialty_select' => ['nullable', 'string', 'max:255'],
             'custom_specialty' => ['nullable', 'string', 'max:255'],
             'specialty' => ['required', 'string', 'max:255'],
-            'monthly_price' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
-            'yearly_price' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'monthly_cost_limit' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'grace_period_days' => ['nullable', 'integer', 'min:1', 'max:30'],
             'reminder_frequency_days' => ['nullable', 'integer', 'min:1', 'max:30'],
@@ -298,27 +288,22 @@ class AdminController extends Controller
             ]);
         }
 
-        // Update user-specific pricing (NOT system-wide)
-        if ($request->monthly_price || $request->yearly_price) {
-            // Get or create user-specific monthly invoice setting
-            $setting = $user->monthlyInvoiceSetting ?? $user->getOrCreateMonthlyInvoiceSetting();
-            
-            $updateData = [
-                'grace_period_days' => (int) ($request->grace_period_days ?? 7),
-                'reminder_frequency_days' => (int) ($request->reminder_frequency_days ?? 3),
-            ];
-            
-            // Update user-specific pricing
-            if ($request->monthly_price) {
-                $updateData['monthly_price'] = $request->monthly_price;
-            }
-            
-            if ($request->yearly_price) {
-                $updateData['yearly_price'] = $request->yearly_price;
-            }
-            
-            $setting->update($updateData);
-        }
+        // Update monthly invoice setting with global SaaS pricing
+        $setting = $user->monthlyInvoiceSetting ?? $user->getOrCreateMonthlyInvoiceSetting();
+        
+        // Get global SaaS pricing from system settings
+        $monthlyPrice = SystemSetting::get('saas_professional_monthly', 99.00);
+        $yearlyPrice = SystemSetting::get('saas_professional_yearly', 950.00);
+        
+        $updateData = [
+            'grace_period_days' => (int) ($request->grace_period_days ?? 7),
+            'reminder_frequency_days' => (int) ($request->reminder_frequency_days ?? 3),
+            // Update to use global SaaS pricing
+            'monthly_price' => $monthlyPrice,
+            'yearly_price' => $yearlyPrice,
+        ];
+        
+        $setting->update($updateData);
 
         return redirect()->route('admin.users.index')
                         ->with('success', 'User updated successfully.');
@@ -669,6 +654,11 @@ class AdminController extends Controller
             'default_monthly_amount' => 'nullable|numeric|min:0|max:9999.99',
             'default_grace_period' => 'nullable|integer|min:1|max:30',
             'trial_days' => 'nullable|integer|min:1|max:365',
+            // New SaaS pricing settings
+            'saas_professional_monthly' => 'nullable|numeric|min:0|max:9999.99',
+            'saas_professional_yearly' => 'nullable|numeric|min:0|max:99999.99',
+            'saas_enterprise_monthly' => 'nullable|numeric|min:0|max:9999.99',
+            'saas_enterprise_yearly' => 'nullable|numeric|min:0|max:99999.99',
         ]);
 
         // Update pricing section visibility
@@ -698,6 +688,44 @@ class AdminController extends Controller
                 $request->trial_days,
                 'integer',
                 'Number of free trial days for new users'
+            );
+        }
+
+        // Update SaaS Professional Plan pricing
+        if ($request->filled('saas_professional_monthly')) {
+            SystemSetting::set(
+                'saas_professional_monthly',
+                $request->saas_professional_monthly,
+                'decimal',
+                'Professional plan monthly price'
+            );
+        }
+
+        if ($request->filled('saas_professional_yearly')) {
+            SystemSetting::set(
+                'saas_professional_yearly',
+                $request->saas_professional_yearly,
+                'decimal',
+                'Professional plan yearly price'
+            );
+        }
+
+        // Update SaaS Enterprise Plan pricing
+        if ($request->filled('saas_enterprise_monthly')) {
+            SystemSetting::set(
+                'saas_enterprise_monthly',
+                $request->saas_enterprise_monthly,
+                'decimal',
+                'Enterprise plan monthly price'
+            );
+        }
+
+        if ($request->filled('saas_enterprise_yearly')) {
+            SystemSetting::set(
+                'saas_enterprise_yearly',
+                $request->saas_enterprise_yearly,
+                'decimal',
+                'Enterprise plan yearly price'
             );
         }
 
