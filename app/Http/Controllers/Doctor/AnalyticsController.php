@@ -184,4 +184,131 @@ class AnalyticsController extends Controller
             return collect();
         }
     }
+
+    /**
+     * Landing page specific analytics
+     */
+    public function landingPageAnalytics()
+    {
+        $doctor = $this->getEffectiveDoctor();
+        $period = 30; // Default to 30 days
+
+        $stats = $this->getLandingPageStats($doctor->id, $period);
+        $dailyVisits = $this->getDailyVisits($doctor->id, $period);
+        $deviceStats = $this->getDeviceStats($doctor->id, $period);
+        $topReferrers = $this->getTopReferrers($doctor->id, $period);
+        $browserStats = $this->getBrowserStats($doctor->id, $period);
+
+        return view('doctor.analytics.landing-page', compact(
+            'stats',
+            'dailyVisits',
+            'deviceStats',
+            'topReferrers',
+            'browserStats',
+            'doctor'
+        ));
+    }
+
+    /**
+     * Get landing page analytics data via AJAX
+     */
+    public function getLandingPageAnalyticsData(Request $request)
+    {
+        $doctor = $this->getEffectiveDoctor();
+        $period = $request->get('period', 30);
+
+        $stats = $this->getLandingPageStats($doctor->id, $period);
+        $dailyVisits = $this->getDailyVisits($doctor->id, $period);
+        $deviceStats = $this->getDeviceStats($doctor->id, $period);
+
+        return response()->json([
+            'success' => true,
+            'stats' => $stats,
+            'dailyVisits' => $dailyVisits,
+            'deviceStats' => $deviceStats
+        ]);
+    }
+
+    /**
+     * Get landing page specific stats
+     */
+    private function getLandingPageStats($doctorId, $period)
+    {
+        $startDate = now()->subDays($period);
+
+        // Landing page visits (with table check)
+        $totalVisits = 0;
+        $uniqueVisitors = 0;
+        $avgSessionTime = 0;
+
+        if (\Schema::hasTable('landing_page_visits')) {
+            try {
+                $totalVisits = LandingPageVisit::where('doctor_id', $doctorId)
+                    ->where('visited_at', '>=', $startDate)
+                    ->count();
+
+                $uniqueVisitors = LandingPageVisit::where('doctor_id', $doctorId)
+                    ->where('visited_at', '>=', $startDate)
+                    ->distinct('ip_address')
+                    ->count();
+
+                $avgSessionTime = LandingPageVisit::where('doctor_id', $doctorId)
+                    ->where('visited_at', '>=', $startDate)
+                    ->whereNotNull('session_duration')
+                    ->avg('session_duration') ?? 0;
+            } catch (\Exception $e) {
+                // Silently handle missing columns
+            }
+        }
+
+        return [
+            'total_visits' => $totalVisits,
+            'unique_visitors' => $uniqueVisitors,
+            'avg_session_time' => round($avgSessionTime, 2),
+            'bounce_rate' => $totalVisits > 0 ? round((($totalVisits - $uniqueVisitors) / $totalVisits) * 100, 2) : 0
+        ];
+    }
+
+    /**
+     * Get browser statistics
+     */
+    private function getBrowserStats($doctorId, $period)
+    {
+        if (!\Schema::hasTable('landing_page_visits')) {
+            return collect();
+        }
+
+        try {
+            return LandingPageVisit::select('browser', DB::raw('COUNT(*) as visits'))
+                ->where('doctor_id', $doctorId)
+                ->where('visited_at', '>=', now()->subDays($period))
+                ->whereNotNull('browser')
+                ->groupBy('browser')
+                ->orderByDesc('visits')
+                ->limit(10)
+                ->get();
+        } catch (\Exception $e) {
+            return collect();
+        }
+    }
+
+    /**
+     * Get effective doctor for the current user
+     */
+    protected function getEffectiveDoctor()
+    {
+        $user = auth()->user();
+
+        // If user is a doctor, return their doctor profile
+        if ($user->role === 'doctor' && $user->doctor) {
+            return $user->doctor;
+        }
+
+        // If user is a sub-user, return their parent doctor's profile
+        if ($user->isSubUser() && $user->parentUser && $user->parentUser->doctor) {
+            return $user->parentUser->doctor;
+        }
+
+        return null;
+    }
 }

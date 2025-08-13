@@ -209,6 +209,9 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
         // Routes accessible to both doctors and patients
         Route::post('/{diagnosis}/follow-up', [DiagnosisController::class, 'storeFollowUp'])->name('follow-up.store');
+
+        // Voice file serving route (secure)
+        Route::get('/{diagnosis}/voice', [DiagnosisController::class, 'serveVoiceFile'])->name('voice');
     });
 
     // Subscription routes (only for payment responsible users)
@@ -275,7 +278,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     Route::get('/test-sub-user-permissions', function() {
         $user = auth()->user();
         $menuItems = \App\Helpers\MenuHelper::getMenuItems($user);
-        
+
         return response()->json([
             'user' => [
                 'id' => $user->id,
@@ -307,7 +310,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     // Debug sub-user middleware
     Route::get('/debug-sub-user', function() {
         $user = auth()->user();
-        
+
         return response()->json([
             'user_id' => $user->id,
             'user_email' => $user->email,
@@ -337,7 +340,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         if (!auth()->check()) {
             return 'Not logged in';
         }
-        
+
         $user = auth()->user();
         return "Hello {$user->name}! You are logged in as a " . ($user->isSubUser() ? 'sub-user' : 'main user');
     })->name('simple.test');
@@ -355,19 +358,19 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         if (!auth()->check()) {
             return 'Please login first';
         }
-        
+
         $user = auth()->user();
-        
+
         if (!$user->isSubUser()) {
             return 'This test is only for sub-users';
         }
-        
+
         try {
             // Test effective doctor access
             $effectiveDoctor = $user->getEffectiveDoctor();
             $appointmentsCount = $effectiveDoctor ? $effectiveDoctor->appointments()->count() : 0;
             $reviewsCount = $effectiveDoctor ? $effectiveDoctor->reviews()->count() : 0;
-            
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Sub-user can access dashboard successfully!',
@@ -403,17 +406,17 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         if (!auth()->check() || !auth()->user()->isSubUser()) {
             return 'Please login as sub-user first';
         }
-        
+
         try {
             $controller = new \App\Http\Controllers\Doctor\BlogController();
             $doctor = auth()->user()->getEffectiveDoctor();
-            
+
             if (!$doctor) {
                 return 'No effective doctor found';
             }
-            
+
             $blogCount = $doctor->blogPosts()->count();
-            
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Blog controller works!',
@@ -628,7 +631,7 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
 Route::middleware(['auth', 'admin.impersonation', 'hospital.admin'])->prefix('hospital-admin')->name('hospital-admin.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [App\Http\Controllers\HospitalAdmin\DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Doctor Management
     Route::prefix('doctors')->name('doctors.')->group(function () {
         Route::get('/', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'index'])->name('index');
@@ -642,13 +645,13 @@ Route::middleware(['auth', 'admin.impersonation', 'hospital.admin'])->prefix('ho
         Route::post('/{doctor}/login-as', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'loginAs'])->name('login-as');
         Route::delete('/{doctor}', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'destroy'])->name('destroy');
     });
-    
+
     // Hospital Settings
     Route::prefix('hospital')->name('hospital.')->group(function () {
         Route::get('/profile', [App\Http\Controllers\HospitalAdmin\HospitalController::class, 'profile'])->name('profile');
         Route::put('/profile', [App\Http\Controllers\HospitalAdmin\HospitalController::class, 'updateProfile'])->name('update-profile');
     });
-    
+
     // Departments Management
     Route::prefix('departments')->name('departments.')->group(function () {
         Route::get('/', [App\Http\Controllers\HospitalAdmin\DepartmentController::class, 'index'])->name('index');
@@ -659,7 +662,7 @@ Route::middleware(['auth', 'admin.impersonation', 'hospital.admin'])->prefix('ho
         Route::put('/{department}', [App\Http\Controllers\HospitalAdmin\DepartmentController::class, 'update'])->name('update');
         Route::delete('/{department}', [App\Http\Controllers\HospitalAdmin\DepartmentController::class, 'destroy'])->name('destroy');
     });
-    
+
     // Subscription Management (using HospitalAdmin subscription controller)
     Route::prefix('subscription')->name('subscription.')->group(function () {
         Route::get('/manage', [App\Http\Controllers\HospitalAdmin\SubscriptionController::class, 'manage'])->name('manage');
@@ -670,7 +673,7 @@ Route::middleware(['auth', 'admin.impersonation', 'hospital.admin'])->prefix('ho
         Route::get('/customer-portal', [App\Http\Controllers\SubscriptionController::class, 'customerPortal'])->name('customer-portal');
         Route::get('/success', [App\Http\Controllers\SubscriptionController::class, 'success'])->name('success');
     });
-    
+
     // Invoice Management (using HospitalAdmin invoice controller)
     Route::prefix('invoices')->name('invoices.')->group(function () {
         Route::get('/', [App\Http\Controllers\HospitalAdmin\InvoiceController::class, 'index'])->name('index');
@@ -678,14 +681,14 @@ Route::middleware(['auth', 'admin.impersonation', 'hospital.admin'])->prefix('ho
         Route::get('/{invoice}/pdf', [App\Http\Controllers\HospitalAdmin\InvoiceController::class, 'downloadPdf'])->name('pdf');
         Route::post('/sync', [App\Http\Controllers\HospitalAdmin\InvoiceController::class, 'sync'])->name('sync');
     });
-    
+
     // Analytics
     Route::prefix('analytics')->name('analytics.')->group(function () {
         Route::get('/overview', [App\Http\Controllers\HospitalAdmin\AnalyticsController::class, 'overview'])->name('overview');
         Route::get('/doctors', [App\Http\Controllers\HospitalAdmin\AnalyticsController::class, 'doctors'])->name('doctors');
         Route::get('/financial', [App\Http\Controllers\HospitalAdmin\AnalyticsController::class, 'financial'])->name('financial');
     });
-    
+
     // Usage Reports
     Route::prefix('usage')->name('usage.')->group(function () {
         Route::get('/', [App\Http\Controllers\HospitalAdmin\UsageController::class, 'index'])->name('index');
@@ -698,8 +701,8 @@ Route::get('/doctor/{username}', [PublicLandingPageController::class, 'show'])->
 Route::get('/doctor/{username}/blogs', [PublicLandingPageController::class, 'showBlogs'])->name('doctor.blogs');
 Route::get('/doctor/{username}/blog/{slug}', [PublicLandingPageController::class, 'showBlogPost'])->name('doctor.blog.post');
 
-// Doctor Landing Page Management Routes
-Route::prefix('doctor/landing-page')->name('doctor.landing-page.')->group(function () {
+// Doctor Landing Page Management Routes - Protected by auth middleware
+Route::prefix('doctor/landing-page')->name('doctor.landing-page.')->middleware(['auth', 'role:doctor'])->group(function () {
     Route::get('/index', [LandingPageController::class, 'index'])->name('index');
     Route::get('/page-builder', [LandingPageController::class, 'pageBuilder'])->name('page-builder');
     Route::get('/edit', [LandingPageController::class, 'edit'])->name('edit');
@@ -710,6 +713,8 @@ Route::prefix('doctor/landing-page')->name('doctor.landing-page.')->group(functi
     Route::post('/toggle-publish', [LandingPageController::class, 'togglePublish'])->name('toggle-publish');
     Route::get('/preview/{username}', [LandingPageController::class, 'preview'])->name('preview');
     Route::get('/animation-presets', [LandingPageController::class, 'getAnimationPresets'])->name('animation-presets');
+    Route::get('/analytics', [AnalyticsController::class, 'landingPageAnalytics'])->name('analytics');
+    Route::get('/analytics/data', [AnalyticsController::class, 'getLandingPageAnalyticsData'])->name('analytics.data');
 });
 
 // Public Chat Routes
@@ -818,10 +823,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
+
     // Return to hospital admin from doctor impersonation
     Route::post('/return-to-hospital-admin', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'returnToHospitalAdmin'])->name('return-to-hospital-admin');
-    
+
     // Return to admin from user impersonation - requires web auth (impersonated user)
     Route::post('/return-to-admin', [AdminController::class, 'returnToAdmin'])->name('return-to-admin');
 });
@@ -841,6 +846,13 @@ Route::get('/test-return-admin', function() {
             'admin_user_id' => auth('admin')->id(),
         ]
     ]);
+});
+
+// Security dashboard routes
+Route::middleware('auth:admin')->prefix('security')->name('security.')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Security\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/audit-logs/{auditLog}', [App\Http\Controllers\Security\DashboardController::class, 'show'])->name('audit-logs.show');
+    Route::get('/export', [App\Http\Controllers\Security\DashboardController::class, 'export'])->name('export');
 });
 
 require __DIR__.'/auth.php';

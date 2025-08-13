@@ -119,6 +119,15 @@ class DashboardController extends Controller
             abort(403);
         }
 
+        // Log doctor access to patient appointment
+        if ($appointment->patient_id) {
+            \App\Services\AuditLoggingService::logDoctorAccessPatient(
+                $this->getEffectiveDoctorUser()->id,
+                $appointment->patient_id,
+                ['appointment_id' => $appointment->id]
+            );
+        }
+
         $appointment->load(['patient', 'review']);
 
         return view('doctor.appointments.show', compact('appointment'));

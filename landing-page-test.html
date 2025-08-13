@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Landing Page Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Landing Page Component Test</h1>
+
+        <div class="row">
+            <div class="col-md-6">
+                <h3>Book Appointment Button Test</h3>
+                <a href="#appointments" class="btn btn-primary btn-lg" id="testBookBtn">
+                    <i class="fas fa-calendar-plus me-2"></i>Book Appointment
+                </a>
+                <p class="mt-2 text-muted">Click this button to test if it scrolls to the appointments section.</p>
+            </div>
+
+            <div class="col-md-6">
+                <h3>Analytics Test</h3>
+                <button class="btn btn-info" id="testAnalyticsBtn">Test Analytics Call</button>
+                <div id="analyticsResult" class="mt-2"></div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-12">
+                <h3>Page Builder Save Test</h3>
+                <button class="btn btn-success" id="testSaveBtn">Test Save Functionality</button>
+                <div id="saveResult" class="mt-2"></div>
+            </div>
+        </div>
+
+        <!-- Mock appointments section -->
+        <section id="appointments" class="mt-5 p-5 bg-light">
+            <h2>Appointments Section</h2>
+            <p>This is the appointments section that should appear when clicking "Book Appointment" button.</p>
+
+            <!-- Basic appointment form -->
+            <form id="appointmentForm" class="mt-4">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" name="guest_name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="guest_email" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Book Appointment</button>
+            </form>
+        </section>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Test smooth scrolling
+            $('a[href^="#"]').on('click', function(e) {
+                e.preventDefault();
+                const target = $($(this).attr('href'));
+                if (target.length) {
+                    $('html, body').animate({
+                        scrollTop: target.offset().top - 80
+                    }, 800);
+                }
+            });
+
+            // Test analytics
+            $('#testAnalyticsBtn').click(function() {
+                $('#analyticsResult').html('<p class="text-info">Testing analytics endpoint...</p>');
+
+                $.ajax({
+                    url: '/doctor/landing-page/analytics/data',
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        $('#analyticsResult').html('<p class="text-success">✅ Analytics endpoint working!</p>');
+                    },
+                    error: function(xhr) {
+                        $('#analyticsResult').html('<p class="text-danger">❌ Error: ' + xhr.responseText + '</p>');
+                    }
+                });
+            });
+
+            // Test page builder save
+            $('#testSaveBtn').click(function() {
+                $('#saveResult').html('<p class="text-info">Testing save endpoint...</p>');
+
+                const testData = {
+                    sections: [
+                        {
+                            id: 'test_section',
+                            type: 'hero',
+                            config: { title: 'Test Title' },
+                            order: 0
+                        }
+                    ]
+                };
+
+                $.ajax({
+                    url: '/doctor/landing-page/update-sections',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: JSON.stringify(testData),
+                    success: function(response) {
+                        $('#saveResult').html('<p class="text-success">✅ Save endpoint working!</p>');
+                    },
+                    error: function(xhr) {
+                        $('#saveResult').html('<p class="text-danger">❌ Error: ' + xhr.responseText + '</p>');
+                    }
+                });
+            });
+
+            // Test appointment form
+            $('#appointmentForm').on('submit', function(e) {
+                e.preventDefault();
+                alert('Form submission test - this would normally submit to the backend!');
+            });
+        });
+    </script>
+</body>
+</html>

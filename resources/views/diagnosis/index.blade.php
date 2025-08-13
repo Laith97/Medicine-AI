@@ -158,9 +158,46 @@
 
 <script>
 function playVoice(diagnosisId) {
-    // This would need to be implemented to play voice files
-    // For now, show a placeholder message
-    alert('Voice playback feature would be implemented here for diagnosis ID: ' + diagnosisId);
+    // Create audio element
+    const audio = new Audio();
+    const voiceUrl = `/diagnosis/${diagnosisId}/voice`;
+
+    // Set audio source
+    audio.src = voiceUrl;
+
+    // Add loading state
+    const playButton = document.querySelector(`button[onclick="playVoice('${diagnosisId}')"]`);
+    if (playButton) {
+        const originalContent = playButton.innerHTML;
+        playButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        playButton.disabled = true;
+
+        // Reset button after audio ends or on error
+        const resetButton = () => {
+            playButton.innerHTML = originalContent;
+            playButton.disabled = false;
+        };
+
+        audio.addEventListener('ended', resetButton);
+        audio.addEventListener('error', () => {
+            resetButton();
+            alert('Error playing voice file. Please try again.');
+        });
+
+        audio.addEventListener('loadeddata', () => {
+            resetButton();
+        });
+    }
+
+    // Play the audio
+    audio.play().catch(error => {
+        console.error('Error playing audio:', error);
+        if (playButton) {
+            playButton.innerHTML = '<i class="fas fa-volume-up"></i>';
+            playButton.disabled = false;
+        }
+        alert('Could not play voice file. Please check if the file exists.');
+    });
 }
 </script>
 @endsection

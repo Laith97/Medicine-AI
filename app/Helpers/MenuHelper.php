@@ -77,7 +77,7 @@ class MenuHelper
                 'icon' => 'fas fa-tachometer-alt',
                 'permission' => 'dashboard',
             ],
-            
+
             // AI Tools Dropdown
             [
                 'name' => 'AI Tools',
@@ -98,14 +98,15 @@ class MenuHelper
                         'permission' => 'voice_assistant',
                         'restricted' => true,
                     ],
-                    [
-                        'name' => 'Diagnoses',
-                        'route' => 'diagnosis.index',
-                        'icon' => 'fas fa-stethoscope',
-                        'permission' => 'diagnosis',
-                        'restricted' => true,
-                    ],
                 ]
+            ],
+
+            // Diagnoses - Standalone Menu Item
+            [
+                'name' => 'Diagnoses',
+                'route' => 'diagnosis.index',
+                'icon' => 'fas fa-stethoscope',
+                'permission' => 'diagnosis',
             ],
 
             // Patient Management
@@ -234,7 +235,7 @@ class MenuHelper
                 $filteredItems = array_filter($item['items'], function ($subItem) use ($user) {
                     return self::userCanAccessMenuItem($user, $subItem);
                 });
-                
+
                 if (!empty($filteredItems)) {
                     $item['items'] = array_values($filteredItems);
                     return $item;
@@ -261,7 +262,7 @@ class MenuHelper
                 'route' => 'dashboard',
                 'icon' => 'fas fa-tachometer-alt',
             ],
-            
+
             // AI Tools Dropdown - Show ALL items
             [
                 'name' => 'AI Tools',
@@ -278,12 +279,14 @@ class MenuHelper
                         'route' => 'voice-assistant.index',
                         'icon' => 'fas fa-microphone',
                     ],
-                    [
-                        'name' => 'Diagnoses',
-                        'route' => 'diagnosis.index',
-                        'icon' => 'fas fa-stethoscope',
-                    ],
                 ]
+            ],
+
+            // Diagnoses - Standalone Menu Item
+            [
+                'name' => 'Diagnoses',
+                'route' => 'diagnosis.index',
+                'icon' => 'fas fa-stethoscope',
             ],
 
             // Patient Management
@@ -425,7 +428,7 @@ class MenuHelper
                 'icon' => 'fas fa-tachometer-alt',
                 'permission' => 'dashboard',
             ],
-            
+
             // Doctor Management
             [
                 'name' => 'Manage Doctors',
@@ -561,7 +564,7 @@ class MenuHelper
             if (isset($item['dropdown']) && isset($item['items'])) {
                 // Filter dropdown items
                 $filteredDropdownItems = self::filterMenuItemsByPermissions($item['items'], $userPermissions);
-                
+
                 if (!empty($filteredDropdownItems)) {
                     $item['items'] = $filteredDropdownItems;
                     $filteredItems[] = $item;
@@ -600,7 +603,7 @@ class MenuHelper
     public static function shouldShowRoute(string $routeName, User $user = null): bool
     {
         $user = $user ?? auth()->user();
-        
+
         if (!$user) {
             return false;
         }
