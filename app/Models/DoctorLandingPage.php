@@ -26,6 +26,17 @@ class DoctorLandingPage extends Model
         'seo_settings',
         'default_language',
         'translations',
+        // Page builder fields
+        'page_sections',
+        'navbar_config',
+        'animations_config',
+        'custom_css',
+        'fonts_config',
+        'background_config',
+        'button_styles',
+        'spacing_config',
+        'enable_animations',
+        'page_layout',
     ];
 
     protected $casts = [
@@ -35,6 +46,16 @@ class DoctorLandingPage extends Model
         'translations' => 'array',
         'is_published' => 'boolean',
         'subdomain_enabled' => 'boolean',
+        // Page builder casts
+        'page_sections' => 'array',
+        'navbar_config' => 'array',
+        'animations_config' => 'array',
+        'custom_css' => 'array',
+        'fonts_config' => 'array',
+        'background_config' => 'array',
+        'button_styles' => 'array',
+        'spacing_config' => 'array',
+        'enable_animations' => 'boolean',
     ];
 
     /**

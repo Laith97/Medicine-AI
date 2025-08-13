@@ -367,8 +367,46 @@
 
 <script>
 function playVoiceFile() {
-    // This would need to be implemented to play the actual voice file
-    alert('Voice playback feature would be implemented here');
+    // Create audio element
+    const audio = new Audio();
+    const voiceUrl = `/diagnosis/{{ $diagnosis->id }}/voice`;
+
+    // Set audio source
+    audio.src = voiceUrl;
+
+    // Add loading state
+    const playButton = document.querySelector('button[onclick="playVoiceFile()"]');
+    if (playButton) {
+        const originalContent = playButton.innerHTML;
+        playButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+        playButton.disabled = true;
+
+        // Reset button after audio ends or on error
+        const resetButton = () => {
+            playButton.innerHTML = originalContent;
+            playButton.disabled = false;
+        };
+
+        audio.addEventListener('ended', resetButton);
+        audio.addEventListener('error', () => {
+            resetButton();
+            alert('Error playing voice file. Please try again.');
+        });
+
+        audio.addEventListener('loadeddata', () => {
+            resetButton();
+        });
+    }
+
+    // Play the audio
+    audio.play().catch(error => {
+        console.error('Error playing audio:', error);
+        if (playButton) {
+            playButton.innerHTML = '<i class="fas fa-volume-up me-2"></i>Play Voice';
+            playButton.disabled = false;
+        }
+        alert('Could not play voice file. Please check if the file exists.');
+    });
 }
 
 function resendNotification() {

@@ -132,12 +132,19 @@ class AppointmentController extends Controller
                     'role' => 'patient',
                 ]);
 
-                Auth::login($user);
-                $patientId = $user->id;
-            } elseif (Auth::check()) {
-                $patientId = Auth::id();
-            }
 
+                                Auth::login($user);
+                                $patientId = $user->id;
+                            } elseif (Auth::check()) {
+                                $patientId = Auth::id();
+                                $patient = Auth::user();
+
+                                // If patient doesn't have a primary doctor or is booking with a different doctor,
+                                // automatically assign them to this doctor
+                                if (is_null($patient->primary_doctor_id) || $patient->primary_doctor_id != $doctor->user_id) {
+                                    $patient->update(['primary_doctor_id' => $doctor->user_id]);
+                                }
+                            }
             // Create appointment data
             $appointmentData = [
                 'doctor_id' => $doctor->id,
@@ -180,19 +187,46 @@ class AppointmentController extends Controller
             // TODO: Send email notification to doctor and patient/guest
             // TODO: Add to calendar
 
-            if ($appointment->isGuestAppointment()) {
-                return redirect()->route('appointments.guest.show', [
-                    'appointment' => $appointment->appointment_number,
-                    'email' => $appointment->guest_email
-                ])->with('success', 'Appointment booked successfully! Check your email for verification and appointment details.');
+            // Handle AJAX requests vs regular form submissions
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Appointment booked successfully! ' .
+                        ($appointment->isGuestAppointment() ? 'Check your email for verification and appointment details.' : ''),
+                    'appointment_id' => $appointment->id,
+                    'appointment_number' => $appointment->appointment_number,
+                    'redirect_url' => $appointment->isGuestAppointment() ?
+                        route('appointments.guest.show', [
+                            'appointment' => $appointment->appointment_number,
+                            'email' => $appointment->guest_email
+                        ]) :
+                        route('appointments.show', $appointment)
+                ]);
             } else {
-                return redirect()->route('appointments.show', $appointment)
-                    ->with('success', 'Appointment booked successfully!');
+                if ($appointment->isGuestAppointment()) {
+                    return redirect()->route('appointments.guest.show', [
+                        'appointment' => $appointment->appointment_number,
+                        'email' => $appointment->guest_email
+                    ])->with('success', 'Appointment booked successfully! Check your email for verification and appointment details.');
+                } else {
+                    return redirect()->route('appointments.show', $appointment)
+                        ->with('success', 'Appointment booked successfully!');
+                }
             }
 
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Failed to book appointment. Please try again.']);
+
+            // Handle AJAX requests vs regular form submissions
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to book appointment. Please try again.',
+                    'error' => $e->getMessage()
+                ], 422);
+            } else {
+                return back()->withErrors(['error' => 'Failed to book appointment. Please try again.']);
+            }
         }
     }
 
@@ -205,6 +239,15 @@ class AppointmentController extends Controller
         if ($appointment->patient_id !== Auth::id() &&
             (!Auth::user()->isDoctor() || $appointment->doctor->user_id !== Auth::id())) {
             abort(403);
+        }
+
+        // Log doctor access to patient appointment
+        if (Auth::user()->isDoctor() && $appointment->patient_id) {
+            \App\Services\AuditLoggingService::logDoctorAccessPatient(
+                Auth::id(),
+                $appointment->patient_id,
+                ['appointment_id' => $appointment->id]
+            );
         }
 
         $appointment->load(['doctor.user', 'doctor.specialty', 'patient', 'review']);
