@@ -202,6 +202,12 @@ class MenuHelper
                         'icon' => 'fas fa-credit-card',
                         'permission' => 'subscription',
                     ] : null,
+                    !$user->hospital_id ? [
+                        'name' => 'Pricing',
+                        'route' => 'subscription.pricing',
+                        'icon' => 'fas fa-tags',
+                        'permission' => 'subscription',
+                    ] : null,
                     [
                         'name' => 'Sub-Users',
                         'route' => 'sub-users.index',
@@ -364,6 +370,11 @@ class MenuHelper
                         'route' => 'subscription.manage',
                         'icon' => 'fas fa-credit-card',
                     ] : null,
+                    !$user->hospital_id ? [
+                        'name' => 'Pricing',
+                        'route' => 'subscription.pricing',
+                        'icon' => 'fas fa-tags',
+                    ] : null,
                     [
                         'name' => 'Sub-Users',
                         'route' => 'sub-users.index',
@@ -500,6 +511,12 @@ class MenuHelper
                         'name' => 'Subscription',
                         'route' => 'hospital-admin.subscription.manage',
                         'icon' => 'fas fa-credit-card',
+                        'permission' => 'billing',
+                    ],
+                    [
+                        'name' => 'Pricing',
+                        'route' => 'subscription.pricing',
+                        'icon' => 'fas fa-tags',
                         'permission' => 'billing',
                     ],
                     [

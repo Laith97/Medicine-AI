@@ -30,8 +30,74 @@ use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
+    // Always show pricing section for SaaS model
     $showPricingSection = SystemSetting::get('show_pricing_section', true);
-    return view('main', compact('showPricingSection'));
+    
+    // Get dynamic pricing from system settings
+    $professionalMonthly = SystemSetting::get('saas_professional_monthly', 30);
+    $professionalYearly = SystemSetting::get('saas_professional_yearly', 300);
+    $enterpriseMonthly = SystemSetting::get('saas_enterprise_monthly', 50);
+    $enterpriseYearly = SystemSetting::get('saas_enterprise_yearly', 500);
+    
+    // Define 3 SaaS pricing plans with dynamic pricing
+    $pricingPlans = [
+        'free' => [
+            'name' => 'Free',
+            'price_monthly' => 0,
+            'price_yearly' => 0,
+            'description' => 'Perfect for getting started',
+            'features' => [
+                '5 AI consultations per month',
+                'Basic patient management',
+                'Email support',
+                'Standard security'
+            ],
+            'is_featured' => false,
+            'button_text' => 'Get Started Free',
+            'button_url' => '/register?plan=free',
+            'plan_id' => 'free'
+        ],
+        'professional' => [
+            'name' => 'Professional',
+            'price_monthly' => $professionalMonthly,
+            'price_yearly' => $professionalYearly,
+            'description' => 'Most popular for growing practices',
+            'features' => [
+                'Unlimited AI consultations',
+                'Advanced patient management',
+                'Voice assistant & transcription',
+                'Professional landing page',
+                'Priority email support',
+                'Export capabilities',
+                'Basic analytics'
+            ],
+            'is_featured' => true,
+            'button_text' => 'Start Professional',
+            'button_url' => '/register?plan=professional',
+            'plan_id' => 'professional'
+        ],
+        'enterprise' => [
+            'name' => 'Enterprise',
+            'price_monthly' => $enterpriseMonthly,
+            'price_yearly' => $enterpriseYearly,
+            'description' => 'For established medical practices',
+            'features' => [
+                'Everything in Professional',
+                'Multi-user access',
+                'Advanced analytics & reporting',
+                'API access',
+                'Custom integrations',
+                '24/7 phone support',
+                'Dedicated account manager'
+            ],
+            'is_featured' => false,
+            'button_text' => 'Go Enterprise',
+            'button_url' => '/register?plan=enterprise',
+            'plan_id' => 'enterprise'
+        ]
+    ];
+    
+    return view('main', compact('showPricingSection', 'pricingPlans'));
 });
 
 // Patient registration routes
