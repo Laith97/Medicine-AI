@@ -76,10 +76,7 @@
         background: linear-gradient(135deg, #DE6262 0%, #c44d4d 100%); 
         color: white; 
     }
-    .plan-enterprise { 
-        background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%); 
-        color: white; 
-    }
+
 
     .usage-progress {
         background-color: #e9ecef;
@@ -543,6 +540,29 @@
                 <div class="col-md-8">
                     <div class="subscription-card">
                         
+                        @if(isset($trialInfo) && $trialInfo['is_in_trial'])
+                            <!-- Trial Active Banner -->
+                            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(13, 202, 240, 0.2);">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-gift fa-2x text-info"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h5 class="alert-heading mb-2">
+                                            <i class="fas fa-clock me-2"></i>Free Trial Active - {{ $trialInfo['trial_days_remaining'] }} Days Remaining
+                                        </h5>
+                                        <p class="mb-2">
+                                            You're currently enjoying full access to all features! Choose a plan below to continue after your trial ends.
+                                        </p>
+                                        <a href="{{ route('subscription.pricing') }}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-credit-card me-1"></i>View Pricing Plans
+                                        </a>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+                        
                         @if($status === 'setup_pending')
                             <!-- Account Setup Pending -->
                             <div class="text-center py-5">
@@ -556,14 +576,37 @@
                                 </a>
                             </div>
 
-                        @elseif($status === 'ready_to_subscribe')
-                            <!-- First Time User - Choose Plan -->
+                        @elseif($status === 'ready_to_subscribe' || (isset($trialInfo) && $trialInfo['is_in_trial']))
+                            <!-- First Time User or Trial User with Future Subscription - Choose Plan -->
                             <div class="py-4">
-                                @if(count($userPlans) > 0)
+                                @if(isset($trialInfo) && $trialInfo['is_in_trial'] && isset($trialInfo['has_future_subscription']) && $trialInfo['has_future_subscription'])
+                                    <div class="text-center mb-4">
+                                        <i class="fas fa-calendar-check fa-3x text-info mb-3"></i>
+                                        <h4>Your Subscription is Scheduled</h4>
+                                        <p class="text-muted">Your paid plan will automatically start when your trial ends. You can also change your plan below if needed.</p>
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>Current Plan:</strong> Will start {{ Auth::user()->monthlyInvoiceSetting->subscription_starts_at->format('M j, Y') }} and run until {{ Auth::user()->monthlyInvoiceSetting->subscription_ends_at->format('M j, Y') }}
+                                        </div>
+                                    </div>
+                                @elseif(isset($trialInfo) && $trialInfo['is_in_trial'])
                                     <div class="text-center mb-4">
                                         <i class="fas fa-rocket fa-3x text-success mb-3"></i>
                                         <h4>Choose Your Subscription Plan</h4>
-                                        <p class="text-muted">Select the plan that best fits your needs and start your subscription.</p>
+                                        <p class="text-muted">You're currently in your free trial. Select a plan to continue after your trial ends.</p>
+                                    </div>
+                                @endif
+                                
+                                @if(count($userPlans) > 0)
+                                    @if(!isset($trialInfo) || !$trialInfo['is_in_trial'])
+                                        <div class="text-center mb-4">
+                                            <i class="fas fa-rocket fa-3x text-success mb-3"></i>
+                                            <h4>Choose Your Subscription Plan</h4>
+                                            <p class="text-muted">Select the plan that best fits your needs and start your subscription.</p>
+                                        </div>
+                                    @endif
+                                    
+                                    <div class="text-center mb-4">
                                         
                                         <!-- Billing Toggle -->
                                         <div class="d-inline-flex align-items-center p-2 rounded-pill mt-3" style="background: #f8f9fa; border: 1px solid #e9ecef;">
@@ -638,6 +681,9 @@
                                 @else
                                     <div class="text-center py-4">
                                         <p class="text-muted">No subscription plans are currently available. Please contact support.</p>
+                                        
+
+                                        
                                         <a href="{{ route('contact') }}" class="btn-custom-primary">
                                             <i class="fas fa-phone me-2"></i>Contact Support
                                         </a>
@@ -1178,7 +1224,7 @@
                                 <h5 class="mt-3 text-muted">No Invoices Yet</h5>
                                 <p class="text-muted">Your invoices will appear here once you have an active subscription.</p>
                                 @if(!$user->hasActiveSubscription())
-                                    <a href="/#pricing" class="btn-custom-primary mt-3">
+                                    <a href="{{ route('subscription.pricing') }}" class="btn-custom-primary mt-3">
                                         <i class="fas fa-rocket"></i>Choose a Plan
                                     </a>
                                 @endif
@@ -1408,10 +1454,24 @@ document.addEventListener('DOMContentLoaded', function() {
     function showPlansForPeriod(period) {
         planCards.forEach(card => {
             const planType = card.getAttribute('data-plan');
+            // Always show both plans at full opacity
+            card.style.display = 'block';
+            card.style.opacity = '1';
+            card.style.transform = 'scale(1)';
+            
+            // Remove any previous selection styling
+            card.classList.remove('selected-plan');
+            
+            // Add subtle border highlight to the selected period
             if (planType === period) {
-                card.style.display = 'block';
+                card.style.borderColor = '#DE6262';
+                card.style.borderWidth = '3px';
+                card.classList.add('selected-plan');
             } else {
-                card.style.display = 'none';
+                // Reset to default border
+                const isYearly = planType === 'yearly';
+                card.style.borderColor = isYearly ? '#28a745' : '#dee2e6';
+                card.style.borderWidth = '2px';
             }
         });
     }

@@ -55,23 +55,7 @@ return [
             ],
             'token_limit' => 250000, // Monthly token limit
         ],
-        'enterprise' => [
-            'name' => 'Enterprise Plan',
-            'price_monthly' => 100, // $1.00 in cents (TEST MODE)
-            'price_yearly' => 100, // $1.00 in cents (TEST MODE)
-            'stripe_price_id_monthly' => env('STRIPE_ENTERPRISE_MONTHLY_PRICE_ID'),
-            'stripe_price_id_yearly' => env('STRIPE_ENTERPRISE_YEARLY_PRICE_ID'),
-            'features' => [
-                'Unlimited AI diagnoses',
-                'Complete patient management suite',
-                '24/7 phone & email support',
-                'Advanced analytics & reporting',
-                'API access',
-                'Custom integrations',
-                'Dedicated account manager'
-            ],
-            'token_limit' => -1, // Unlimited
-        ],
+
     ],
 
     /*

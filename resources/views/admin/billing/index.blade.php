@@ -32,7 +32,7 @@
     .plan-free { background-color: #6c757d; color: white; }
     .plan-basic { background-color: #17a2b8; color: white; }
     .plan-pro { background-color: #DE6262; color: white; }
-    .plan-enterprise { background-color: #6f42c1; color: white; }
+
 </style>
 @endpush
 

@@ -2011,17 +2011,25 @@ class OpenAIController extends Controller
             ];
         }
 
-        // Add trial information - only show trial if user doesn't have active subscription
+        // Add trial information
         $hasActiveSubscription = $user->monthlyInvoiceSetting &&
                                 $user->monthlyInvoiceSetting->subscription_starts_at &&
-                                !$user->monthlyInvoiceSetting->isSubscriptionExpired();
+                                !$user->monthlyInvoiceSetting->isSubscriptionExpired() &&
+                                $user->monthlyInvoiceSetting->subscription_starts_at->isPast();
+
+        // Show trial if user is in trial period, even if they have a future subscription
+        $showTrialBanner = $user->isInTrialPeriod();
+        $showSubscriptionBanner = $hasActiveSubscription && !$showTrialBanner;
 
         $trialInfo = [
-            'is_in_trial' => $user->isInTrialPeriod() && !$hasActiveSubscription,
+            'is_in_trial' => $showTrialBanner,
             'trial_days_remaining' => $user->getTrialDaysRemaining(),
             'trial_status' => $user->getTrialStatus(),
             'has_used_trial' => $user->hasUsedTrial(),
-            'has_active_subscription' => $hasActiveSubscription,
+            'has_active_subscription' => $showSubscriptionBanner,
+            'has_future_subscription' => $user->monthlyInvoiceSetting && 
+                                        $user->monthlyInvoiceSetting->subscription_starts_at &&
+                                        $user->monthlyInvoiceSetting->subscription_starts_at->isFuture(),
         ];
 
         return view('dashboard', compact('records', 'weeklyCount', 'chartLabels', 'chartData', 'doctorData', 'patientGroups', 'trialInfo'));

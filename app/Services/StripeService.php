@@ -28,21 +28,32 @@ class StripeService
     {
         if ($user->stripe_customer_id) {
             try {
-                return Customer::retrieve($user->stripe_customer_id);
+                // Use cache to avoid repeated API calls for same customer
+                return \Cache::remember("stripe_customer_{$user->stripe_customer_id}", 3600, function() use ($user) {
+                    return Customer::retrieve($user->stripe_customer_id);
+                });
             } catch (\Exception $e) {
                 Log::warning("Failed to retrieve Stripe customer {$user->stripe_customer_id}: " . $e->getMessage());
+                // Clear invalid customer ID
+                $user->update(['stripe_customer_id' => null]);
             }
         }
 
+        // Create new customer with optimized payload
         $customer = Customer::create([
             'email' => $user->email,
             'name' => $user->name,
             'metadata' => [
-                'user_id' => $user->id,
+                'user_id' => (string)$user->id,
+                'role' => $user->role,
             ],
         ]);
 
+        // Update user with new customer ID
         $user->update(['stripe_customer_id' => $customer->id]);
+        
+        // Cache the new customer
+        \Cache::put("stripe_customer_{$customer->id}", $customer, 3600);
 
         return $customer;
     }
@@ -93,9 +104,10 @@ class StripeService
      */
     public function createPersonalizedCheckoutSession(User $user, float $amount, string $billingCycle = 'monthly'): Session
     {
-        // Validate Stripe configuration
+        // Validate Stripe configuration once at start
         $this->validateStripeConfiguration();
         
+        // Get or create customer (with caching to reduce API calls)
         $customer = $this->createOrGetCustomer($user);
         
         // Convert amount to cents for Stripe
@@ -204,9 +216,26 @@ class StripeService
         // Update user subscription status via MonthlyInvoiceSetting
         if ($user->monthlyInvoiceSetting) {
             $subscriptionPeriodMonths = $billingCycle === 'yearly' ? 12 : 1;
+            
+            // If user is in trial, subscription should start AFTER trial ends
+            if ($user->isInTrialPeriod() && $user->trial_ends_at) {
+                $subscriptionStartDate = $user->trial_ends_at;
+                $subscriptionEndDate = $user->trial_ends_at->copy()->addMonths($subscriptionPeriodMonths);
+                
+                Log::info("User {$user->id} subscribed during trial. Subscription will start after trial ends.", [
+                    'trial_ends_at' => $user->trial_ends_at,
+                    'subscription_starts_at' => $subscriptionStartDate,
+                    'subscription_ends_at' => $subscriptionEndDate
+                ]);
+            } else {
+                // User not in trial, use Stripe's dates
+                $subscriptionStartDate = $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_start');
+                $subscriptionEndDate = $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_end');
+            }
+            
             $user->monthlyInvoiceSetting->update([
-                'subscription_starts_at' => $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_start'),
-                'subscription_ends_at' => $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_end'),
+                'subscription_starts_at' => $subscriptionStartDate,
+                'subscription_ends_at' => $subscriptionEndDate,
                 'subscription_period_months' => $subscriptionPeriodMonths,
                 'billing_amount' => $stripeSubscription->items->data[0]->price->unit_amount / 100,
                 'is_active' => true,

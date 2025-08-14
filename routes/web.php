@@ -36,10 +36,8 @@ Route::get('/', function () {
     // Get dynamic pricing from system settings
     $professionalMonthly = SystemSetting::get('saas_professional_monthly', 30);
     $professionalYearly = SystemSetting::get('saas_professional_yearly', 300);
-    $enterpriseMonthly = SystemSetting::get('saas_enterprise_monthly', 50);
-    $enterpriseYearly = SystemSetting::get('saas_enterprise_yearly', 500);
     
-    // Define 3 SaaS pricing plans with dynamic pricing
+    // Define 2 SaaS pricing plans with dynamic pricing
     $pricingPlans = [
         'free' => [
             'name' => 'Free',
@@ -75,25 +73,6 @@ Route::get('/', function () {
             'button_text' => 'Start Professional',
             'button_url' => '/register?plan=professional',
             'plan_id' => 'professional'
-        ],
-        'enterprise' => [
-            'name' => 'Enterprise',
-            'price_monthly' => $enterpriseMonthly,
-            'price_yearly' => $enterpriseYearly,
-            'description' => 'For established medical practices',
-            'features' => [
-                'Everything in Professional',
-                'Multi-user access',
-                'Advanced analytics & reporting',
-                'API access',
-                'Custom integrations',
-                '24/7 phone support',
-                'Dedicated account manager'
-            ],
-            'is_featured' => false,
-            'button_text' => 'Go Enterprise',
-            'button_url' => '/register?plan=enterprise',
-            'plan_id' => 'enterprise'
         ]
     ];
     

@@ -294,47 +294,7 @@
                     </div>
                 </div>
 
-                <div class="setting-item">
-                    <div class="setting-label">
-                        <i class="fas fa-crown me-2" style="color: #DE6262;"></i>
-                        SaaS Enterprise Plan Pricing
-                    </div>
-                    <div class="setting-description">
-                        Set the pricing for the Enterprise subscription plan. These values will be used for new user registrations.
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Monthly Price</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" 
-                                       name="saas_enterprise_monthly" 
-                                       class="form-control"
-                                       value="{{ $settings['saas_enterprise_monthly']->value ?? '50' }}"
-                                       step="0.01" 
-                                       min="0" 
-                                       max="9999.99"
-                                       placeholder="50.00">
-                                <span class="input-group-text">/month</span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Yearly Price</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" 
-                                       name="saas_enterprise_yearly" 
-                                       class="form-control"
-                                       value="{{ $settings['saas_enterprise_yearly']->value ?? '500' }}"
-                                       step="0.01" 
-                                       min="0" 
-                                       max="99999.99"
-                                       placeholder="500.00">
-                                <span class="input-group-text">/year</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
 
                 <div class="text-end mt-4">
                     <button type="submit" class="btn-custom-primary">

@@ -26,8 +26,7 @@ class RegisteredUserController extends Controller
         // Get dynamic pricing from system settings
         $professionalMonthly = \App\Models\SystemSetting::get('saas_professional_monthly', 30);
         $professionalYearly = \App\Models\SystemSetting::get('saas_professional_yearly', 300);
-        $enterpriseMonthly = \App\Models\SystemSetting::get('saas_enterprise_monthly', 50);
-        $enterpriseYearly = \App\Models\SystemSetting::get('saas_enterprise_yearly', 500);
+
         
         // Define the same pricing plans as in the home page
         $pricingPlans = [
@@ -45,13 +44,7 @@ class RegisteredUserController extends Controller
                 'description' => 'Most popular for growing practices',
                 'features' => ['Unlimited AI consultations', 'Advanced patient management', 'Voice assistant & transcription', 'Professional landing page', 'Priority email support', 'Export capabilities', 'Basic analytics'],
             ],
-            'enterprise' => [
-                'name' => 'Enterprise',
-                'price_monthly' => $enterpriseMonthly, 
-                'price_yearly' => $enterpriseYearly,
-                'description' => 'For established medical practices',
-                'features' => ['Everything in Professional', 'Multi-user access', 'Advanced analytics & reporting', 'API access', 'Custom integrations', '24/7 phone support', 'Dedicated account manager'],
-            ]
+
         ];
         
         // Get selected plan from URL parameter
@@ -75,7 +68,7 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'specialty' => ['required', 'string', 'max:255'],
             'custom_specialty' => ['nullable', 'string', 'max:255'],
-            'selected_plan' => ['required', 'string', 'in:free,professional,enterprise'],
+            'selected_plan' => ['required', 'string', 'in:free,professional'],
             'selected_billing' => ['required', 'string', 'in:monthly,yearly'],
         ]);
 
@@ -95,14 +88,13 @@ class RegisteredUserController extends Controller
         // Get dynamic pricing from system settings
         $professionalMonthly = \App\Models\SystemSetting::get('saas_professional_monthly', 30);
         $professionalYearly = \App\Models\SystemSetting::get('saas_professional_yearly', 300);
-        $enterpriseMonthly = \App\Models\SystemSetting::get('saas_enterprise_monthly', 50);
-        $enterpriseYearly = \App\Models\SystemSetting::get('saas_enterprise_yearly', 500);
+
         
         // Define pricing plans (same as in create method)
         $pricingPlans = [
             'free' => ['price_monthly' => 0, 'price_yearly' => 0],
             'professional' => ['price_monthly' => $professionalMonthly, 'price_yearly' => $professionalYearly],
-            'enterprise' => ['price_monthly' => $enterpriseMonthly, 'price_yearly' => $enterpriseYearly],
+
         ];
 
         $user = User::create([
@@ -142,42 +134,39 @@ class RegisteredUserController extends Controller
             'cancellation_hours' => 24, // Default 24 hours notice
         ]);
 
-        // Set up subscription based on selected plan
+        // ALL USERS GET FREE TRIAL FIRST (mandatory)
+        $user->startTrial();
+        
+        // Set up subscription preferences based on selected plan
         $selectedPlan = $request->selected_plan;
         $selectedBilling = $request->selected_billing;
         $planPricing = $pricingPlans[$selectedPlan];
         
-        if ($selectedPlan === 'free') {
-            // Start free trial for free plan
-            $user->startTrial();
-        } else {
-            // Set up subscription for paid plans
+        if ($selectedPlan === 'professional') {
+            // Store their plan preference for after trial ends
             $price = $selectedBilling === 'monthly' ? $planPricing['price_monthly'] : $planPricing['price_yearly'];
             $billingPeriodMonths = $selectedBilling === 'monthly' ? 1 : 12;
             
-            // Create monthly invoice setting with selected plan (store BOTH pricing options)
+            // Create monthly invoice setting with selected plan preferences
             $user->monthlyInvoiceSetting()->create([
-                'monthly_price' => $planPricing['price_monthly'], // Always store monthly price
-                'yearly_price' => $planPricing['price_yearly'],   // Always store yearly price
-                'billing_amount' => $price, // The amount they'll be charged based on their selection
+                'monthly_price' => $planPricing['price_monthly'], // Store monthly price option
+                'yearly_price' => $planPricing['price_yearly'],   // Store yearly price option  
+                'billing_amount' => $price, // The amount they'll be charged after trial
                 'subscription_period_months' => $billingPeriodMonths,
-                'subscription_starts_at' => null, // Will be set when payment is completed
+                'subscription_starts_at' => null, // Will be set when trial ends and payment is completed
                 'subscription_ends_at' => null, // Will be set when payment is completed
-                'is_active' => true, // Set to true so user can see plans (status = 'ready_to_subscribe')
+                'is_active' => true, // Set to true so user can see plans
+                'is_restricted' => false, // Not restricted during trial
             ]);
         }
+        // Note: Free plan users don't need billing setup - they'll set it up after trial if desired
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        // Redirect to appropriate page based on plan selection
-        if ($selectedPlan === 'free') {
-            return redirect(route('doctor.dashboard', absolute: false))->with('success', 'Welcome! Your free account is ready to use.');
-        } else {
-            // For paid plans, redirect to individual doctor pricing page (not hospital admin)
-            // Use the general subscription.pricing route which should handle individual doctors
-            return redirect()->route('subscription.pricing')->with('plan_selected', $selectedPlan)->with('success', 'Account created! Please complete your subscription to activate all features.');
-        }
+        // ALL users go to dashboard with trial notification
+        return redirect(route('doctor.dashboard', absolute: false))
+            ->with('success', 'Welcome! Your free trial has started - enjoy full access to all features!');
     }
 }
