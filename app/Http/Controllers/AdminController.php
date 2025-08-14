@@ -114,10 +114,6 @@ class AdminController extends Controller
             }
         }
 
-        // Calculate trial end date using global setting
-        $trialDays = (int) SystemSetting::get('trial_days', 7);
-        $trialEndsAt = $trialDays > 0 ? now()->addDays($trialDays) : null;
-
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
@@ -126,12 +122,13 @@ class AdminController extends Controller
             'monthly_cost_limit' => $request->monthly_cost_limit ?? 0,
             'role' => $request->role,
             'hospital_id' => $hospitalId,
-            'trial_ends_at' => $trialEndsAt,
-            'trial_used' => $trialDays > 0, // Mark trial as used if trial period is set
         ];
 
         // Create the user first
         $user = User::create($userData);
+        
+        // Start trial for ALL users (consistent with self-registration)
+        $user->startTrial();
 
         // Create role-specific profiles and settings
         if ($user->role === 'doctor') {
@@ -288,46 +285,31 @@ class AdminController extends Controller
             ]);
         }
 
-<<<<<<< HEAD
-        // Update monthly invoice setting with global SaaS pricing
+        // Update monthly invoice setting with user-specific or global pricing
         $setting = $user->monthlyInvoiceSetting ?? $user->getOrCreateMonthlyInvoiceSetting();
         
-        // Get global SaaS pricing from system settings
-        $monthlyPrice = SystemSetting::get('saas_professional_monthly', 99.00);
-        $yearlyPrice = SystemSetting::get('saas_professional_yearly', 950.00);
-        
+        // Always update grace period and reminder frequency settings
         $updateData = [
             'grace_period_days' => (int) ($request->grace_period_days ?? 7),
             'reminder_frequency_days' => (int) ($request->reminder_frequency_days ?? 3),
-            // Update to use global SaaS pricing
-            'monthly_price' => $monthlyPrice,
-            'yearly_price' => $yearlyPrice,
         ];
-        
-        $setting->update($updateData);
-=======
-        // Update user-specific pricing (NOT system-wide)
-        if ($request->monthly_price || $request->yearly_price) {
-            // Get or create user-specific monthly invoice setting
-            $setting = $user->monthlyInvoiceSetting ?? $user->getOrCreateMonthlyInvoiceSetting();
 
-            $updateData = [
-                'grace_period_days' => (int) ($request->grace_period_days ?? 7),
-                'reminder_frequency_days' => (int) ($request->reminder_frequency_days ?? 3),
-            ];
-
-            // Update user-specific pricing
-            if ($request->monthly_price) {
+        // Update pricing: use user-specific pricing if provided, otherwise use global SaaS pricing
+        if ($request->filled('monthly_price') || $request->filled('yearly_price')) {
+            // Use user-specific pricing when provided
+            if ($request->filled('monthly_price')) {
                 $updateData['monthly_price'] = $request->monthly_price;
             }
-
-            if ($request->yearly_price) {
+            if ($request->filled('yearly_price')) {
                 $updateData['yearly_price'] = $request->yearly_price;
             }
-
-            $setting->update($updateData);
+        } else {
+            // Fall back to global SaaS pricing from system settings
+            $updateData['monthly_price'] = SystemSetting::get('saas_professional_monthly', 99.00);
+            $updateData['yearly_price'] = SystemSetting::get('saas_professional_yearly', 950.00);
         }
->>>>>>> ef0fa988b2b516d4ad116220e573b4c94ad5ed34
+        
+        $setting->update($updateData);
 
         return redirect()->route('admin.users.index')
                         ->with('success', 'User updated successfully.');
@@ -681,8 +663,7 @@ class AdminController extends Controller
             // New SaaS pricing settings
             'saas_professional_monthly' => 'nullable|numeric|min:0|max:9999.99',
             'saas_professional_yearly' => 'nullable|numeric|min:0|max:99999.99',
-            'saas_enterprise_monthly' => 'nullable|numeric|min:0|max:9999.99',
-            'saas_enterprise_yearly' => 'nullable|numeric|min:0|max:99999.99',
+
         ]);
 
         // Update pricing section visibility
@@ -734,24 +715,7 @@ class AdminController extends Controller
             );
         }
 
-        // Update SaaS Enterprise Plan pricing
-        if ($request->filled('saas_enterprise_monthly')) {
-            SystemSetting::set(
-                'saas_enterprise_monthly',
-                $request->saas_enterprise_monthly,
-                'decimal',
-                'Enterprise plan monthly price'
-            );
-        }
 
-        if ($request->filled('saas_enterprise_yearly')) {
-            SystemSetting::set(
-                'saas_enterprise_yearly',
-                $request->saas_enterprise_yearly,
-                'decimal',
-                'Enterprise plan yearly price'
-            );
-        }
 
         return redirect()->back()->with('success', 'System settings updated successfully.');
     }

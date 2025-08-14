@@ -713,14 +713,22 @@ public function getRestrictionMessage(): string
  */
 public function getOrCreateMonthlyInvoiceSetting(): MonthlyInvoiceSetting
 {
-    return $this->monthlyInvoiceSetting ?: $this->monthlyInvoiceSetting()->create([
-        'billing_amount' => 0,
-        'monthly_price' => 0,
-        'yearly_price' => 0,
+    if ($this->monthlyInvoiceSetting) {
+        return $this->monthlyInvoiceSetting;
+    }
+    
+    // Get pricing from system settings
+    $defaultMonthly = SystemSetting::get('saas_professional_monthly', 30);
+    $defaultYearly = SystemSetting::get('saas_professional_yearly', 300);
+    
+    return $this->monthlyInvoiceSetting()->create([
+        'billing_amount' => $defaultMonthly, // Default to monthly billing
+        'monthly_price' => $defaultMonthly,
+        'yearly_price' => $defaultYearly,
         'grace_period_days' => 7,
         'reminder_frequency_days' => 3,
         'is_restricted' => false,
-        'is_active' => false,
+        'is_active' => true, // Set to active for subscription-ready state
     ]);
 }
 

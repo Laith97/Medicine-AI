@@ -43,7 +43,7 @@ class CreateTestPrices extends Command
         $plans = [
             'basic' => 'Basic Plan - Test',
             'pro' => 'Professional Plan - Test', 
-            'enterprise' => 'Enterprise Plan - Test'
+
         ];
 
         $envPath = base_path('.env');

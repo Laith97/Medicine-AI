@@ -77,11 +77,22 @@ class SubscriptionController extends Controller
         // Get user-specific plans
         $plans = $setting->getUserPlans();
         
+        // Add trial information for better UX
+        $trialInfo = [
+            'is_in_trial' => $user->isInTrialPeriod(),
+            'trial_days_remaining' => $user->getTrialDaysRemaining(),
+            'trial_status' => $user->getTrialStatus(),
+            'has_used_trial' => $user->hasUsedTrial(),
+            'has_future_subscription' => $setting && 
+                                        $setting->subscription_starts_at &&
+                                        $setting->subscription_starts_at->isFuture(),
+        ];
+        
         // Use different views for hospital admins vs doctors
         if ($user->isHospitalAdmin()) {
-            return view('hospital-admin.subscription.pricing', compact('plans', 'setting', 'doctorCount'));
+            return view('hospital-admin.subscription.pricing', compact('plans', 'setting', 'doctorCount', 'trialInfo'));
         } else {
-            return view('subscription.pricing', compact('plans', 'setting', 'doctorCount'));
+            return view('subscription.pricing', compact('plans', 'setting', 'doctorCount', 'trialInfo'));
         }
     }
 
@@ -317,7 +328,10 @@ class SubscriptionController extends Controller
         $isExpired = $setting && $setting->subscription_ends_at ? $setting->subscription_ends_at->isPast() : false;
         
         // Get user-specific subscription plans for selection
-        $userPlans = $setting ? $setting->getUserPlans() : [];
+        if (!$setting) {
+            $setting = $user->getOrCreateMonthlyInvoiceSetting();
+        }
+        $userPlans = $setting->getUserPlans();
         
         // Get cost warning message
         $billingService = new \App\Services\ExcessCostBillingService();
@@ -334,18 +348,31 @@ class SubscriptionController extends Controller
                                    !$setting->isSubscriptionExpired() && 
                                    !$user->isRestricted();
         
+        // Add trial information for better UX
+        $trialInfo = [
+            'is_in_trial' => $user->isInTrialPeriod(),
+            'trial_days_remaining' => $user->getTrialDaysRemaining(),
+            'trial_status' => $user->getTrialStatus(),
+            'has_used_trial' => $user->hasUsedTrial(),
+            'has_future_subscription' => $setting && 
+                                        $setting->subscription_starts_at &&
+                                        $setting->subscription_starts_at->isFuture(),
+        ];
+        
+        // Plans are now properly configured for all users
+        
         // Use different views for hospital admins vs doctors
         if ($currentUser->isHospitalAdmin()) {
             return view('hospital-admin.subscription.manage', compact(
                 'user', 'subscription', 'invoices', 'setting', 'status', 'monthlyCost', 'costLimit',
                 'costUsagePercentage', 'excessCost', 'remainingCost', 'costWarning', 'isExpired', 
-                'unpaidInvoices', 'totalUnpaid', 'lastInvoice', 'userPlans', 'hasActivePaidSubscription'
+                'unpaidInvoices', 'totalUnpaid', 'lastInvoice', 'userPlans', 'hasActivePaidSubscription', 'trialInfo'
             ));
         } else {
             return view('subscription.manage', compact(
                 'user', 'subscription', 'invoices', 'setting', 'status', 'monthlyCost', 'costLimit',
                 'costUsagePercentage', 'excessCost', 'remainingCost', 'costWarning', 'isExpired', 
-                'unpaidInvoices', 'totalUnpaid', 'lastInvoice', 'userPlans', 'hasActivePaidSubscription'
+                'unpaidInvoices', 'totalUnpaid', 'lastInvoice', 'userPlans', 'hasActivePaidSubscription', 'trialInfo'
             ));
         }
     }
