@@ -5,6 +5,58 @@
 @section('content')
 <div class="dashboard-container">
     <div class="container">
+        <!-- Chain Impersonation Notice -->
+        @if(session('impersonating_admin_id') && session('impersonating_hospital_admin_id') && session('hospital_admin_impersonation_started_at') && !empty(session('hospital_admin_impersonation_started_at')))
+            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-users fa-lg mr-3"></i>
+                        <div>
+                            <strong>Chain Impersonation Mode</strong>
+                            <p class="mb-0 small">
+                                <strong>{{ session('impersonating_admin_name', 'Admin') }}</strong> → 
+                                <strong>{{ session('impersonating_hospital_admin_name') }}</strong> → 
+                                <strong>Dr. {{ auth()->user()->name }}</strong>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <form method="POST" action="{{ route('return-to-hospital-admin') }}" style="display: inline;">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-arrow-left mr-1"></i>Return to Hospital Admin
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ route('return-to-admin') }}" style="display: inline;">
+                            @csrf
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-arrow-up mr-1"></i>Return to Admin
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @elseif(session('impersonating_hospital_admin_id') && empty(session('impersonating_admin_id')))
+            <!-- Direct Hospital Admin Impersonation -->
+            <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-user-shield fa-lg mr-3"></i>
+                        <div>
+                            <strong>Hospital Admin Mode</strong>
+                            <p class="mb-0 small">You are viewing this dashboard as <strong>{{ session('impersonating_hospital_admin_name') }}</strong> (Hospital Admin)</p>
+                        </div>
+                    </div>
+                    <form method="POST" action="{{ route('return-to-hospital-admin') }}" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-arrow-left mr-1"></i>Return to Hospital Admin
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @endif
+
         <!-- Dashboard Header -->
         <div class="dashboard-header">
             <div>

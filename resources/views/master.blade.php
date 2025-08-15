@@ -62,12 +62,15 @@
                 0 8px 16px rgba(0, 0, 0, 0.08),
                 inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
 
-            /* Modern Rounded Design - Same as sub-menu-container */
-            border-radius: 16px !important;
+    /* Spacing - Same as sub-menu-container */
+    padding: 12px 0 !important;
 
-            /* Spacing - Same as sub-menu-container */
-            padding: 12px 0 !important;
-            margin: 0 !important;
+    /* Dimensions */
+    min-width: 240px !important;
+
+    /* CRITICAL: Fix Z-Index for Bootstrap Dropdowns - Let Bootstrap handle positioning */
+    z-index: 999999 !important;
+}
 
             /* Dimensions */
             min-width: 240px !important;
@@ -150,28 +153,34 @@
             z-index: 10003 !important;
         }
 
-        /* Bootstrap Dropdown Toggle Button */
-        .dropdown-toggle {
-            position: relative !important;
-            z-index: 10004 !important;
-        }
+/* Aggressive override for dropdown positioning - highest specificity */
+body .dropdown.show .dropdown-menu.dropdown-menu,
+body .dropdown .dropdown-menu.dropdown-menu-end.show,
+.dropdown-menu.dropdown-menu-end.show {
+    position: absolute !important;
+    transform: none !important;
+    left: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    margin: 0 !important;
+    will-change: auto !important;
+    z-index: 999999 !important;
+    /* Disable any CSS animations during positioning */
+    transition: none !important;
+    animation: none !important;
+}
 
-        /* Ensure dropdown shows above all content */
-        .dropdown.show .dropdown-menu {
-            z-index: 999999 !important;
-            display: block !important;
-        }
+/* Ensure dropdown containers allow dropdowns to escape */
+.table-responsive {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+}
 
-        /* Top Bar Dropdown Fix */
-        #top-bar .dropdown {
-            position: relative !important;
-            z-index: 10005 !important;
-        }
-
-        #top-bar .dropdown-menu {
-            z-index: 999999 !important;
-            position: absolute !important;
-        }
+.admin-card,
+.admin-table-container {
+    overflow: visible !important;
+}
 
         /* Header Area Dropdown Fix */
         #header .dropdown {
@@ -426,30 +435,7 @@
             border-color: #c55555 !important;
         }
 
-        /* DEBUG: Temporary styling to identify dropdowns */
-        .primary-menu .menu-item:nth-child(1) .sub-menu-container {
-            border-left: 3px solid green !important;
-        }
-
-        .primary-menu .menu-item:nth-child(2) .sub-menu-container {
-            border-left: 3px solid blue !important;
-        }
-
-        .primary-menu .menu-item:nth-child(3) .sub-menu-container {
-            border-left: 3px solid orange !important;
-        }
-
-        .primary-menu .menu-item:nth-child(4) .sub-menu-container {
-            border-left: 3px solid purple !important;
-        }
-
-        .primary-menu .menu-item:nth-child(5) .sub-menu-container {
-            border-left: 3px solid red !important;
-        }
-
-        .primary-menu .menu-item:nth-child(6) .sub-menu-container {
-            border-left: 3px solid brown !important;
-        }
+        /* Remove debug styling - production ready */
 
         /* Modern Dropdown Arrow Animation */
         .primary-menu .fa-chevron-down {
@@ -519,16 +505,19 @@
             box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3) !important;
         }
 
-        /* Prevent Horizontal Scroll */
-        html,
-        body {
-            overflow-x: hidden !important;
+        /* Prevent Horizontal Scroll but allow dropdowns */
+        html, body {
+            /* Commented out to fix dropdown positioning */
+            /* overflow-x: hidden !important; */
             max-width: 100vw !important;
         }
 
-        .container,
         .container-fluid {
             max-width: 100% !important;
+        }
+
+        .container {
+            max-width: 1200px !important;
         }
 
         /* Ensure all elements stay within viewport */
@@ -540,13 +529,11 @@
         #header {
             overflow: visible !important;
             position: relative !important;
-            z-index: 10000 !important;
         }
 
         .header-row {
             overflow: visible !important;
             position: relative !important;
-            z-index: 10000 !important;
         }
 
         .primary-menu {
@@ -746,13 +733,106 @@
                                 style="width: 8px; height: 8px;"></div>
                             <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
                         </div>
-                        <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
-                        <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com"
-                                class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
+                        @if(Auth::guard('admin')->check() || session()->has('impersonating_admin_id'))
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.dashboard') }}">
+                                    <i class="bi bi-shield-check"></i> Admin Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.users.index') }}">
+                                    <i class="bi bi-people"></i> Manage Users
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                        @endif
+                        @if(Auth::user()->isDoctor())
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('settings') }}">
+                                    <i class="bi bi-gear"></i> Settings
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('doctor.profile.edit') }}">
+                                    <i class="fas fa-user-edit"></i>Edit Profile
+                                </a>
+                            </li>
+                            @if(Auth::user()->isMainUser())
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('sub-users.index') }}">
+                                        <i class="fas fa-users"></i> Manage Sub-Users
+                                    </a>
+                                </li>
+                            @endif
+                        @endif
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2">
+                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            @endauth
+
+            @guest
+            <a href="{{ route('login') }}"
+               class="btn btn-sm px-4 me-2"
+               style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+            </a>
+            <a href="{{ route('register') }}"
+               class="btn btn-sm px-4"
+               style="background: white; color: #DE6262; border: none; font-weight: 500; border-radius: 25px;">
+                <i class="bi bi-person-plus me-1"></i> Register
+            </a>
+            @endguest
+
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Top Bar End -->
+
+		<!-- Header
+		============================================= -->
+<header id="header">
+    <div id="header-wrap">
+        <div class="container">
+<div class="header-row d-flex align-items-center justify-content-center">
+
+                <!-- Logo and Desktop Nav Container -->
+                <div class="d-flex align-items-center">
+                    <!-- Logo -->
+                    <div id="logo" class="me-4">
+                        <a href="@auth{{ route('dashboard') }}@else{{ url('/') }}@endauth">
+                            <img style="width: 140px" class="logo-default"
+                                 srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x"
+                                 src="{{ asset('demos/medical/images/logo-medical.jpeg') }}"
+                                 alt="Canvas Logo">
+                        </a>
                     </div>
 
-                    <!-- Right Side: Auth + Quick Actions -->
-                    <div class="col-md-auto d-flex justify-content-end align-items-center gap-3">
+                    <!-- Desktop Navigation -->
+                    <nav class="primary-menu style-3 menu-spacing-margin d-none d-lg-block">
+                        <ul class="menu-container">
+                            @auth
+                                @if (Auth::guard('admin')->check() && !session()->has('impersonating_admin_id') && !session()->has('impersonating_hospital_admin_id'))
+                                    <!-- Pure Admin View - Only show when admin is not impersonating -->
+                                    <li class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('admin.dashboard') }}"><div>Dashboard</div></a>
+                                    </li>
+                                @else
+                                    <!-- User View (Including Admin Impersonation and Hospital Admin Impersonation) -->
+                                    @php
+                                        $menuItems = \App\Helpers\MenuHelper::getMenuItems(auth()->user());
+                                    @endphp
 
                         @auth
                             <!-- Quick Action Button for Emergency -->
@@ -1083,12 +1163,238 @@
             </div>
         @endif
 
+        @php
+            // DEBUG: Check session variables for banner display
+            $debugInfo = [
+                'admin_id' => session('impersonating_admin_id'),
+                'hospital_admin_id' => session('impersonating_hospital_admin_id'),
+                'admin_started' => session('admin_impersonation_started_at'),
+                'hospital_started' => session('hospital_admin_impersonation_started_at'),
+                'user_id' => session('impersonating_user_id'),
+                'user_role' => auth()->user()?->role,
+            ];
+        @endphp
+
+        <!-- Chain Impersonation: ONLY if hospital admin started time exists AND we have admin session -->
+        @if(session('impersonating_admin_id') && session('impersonating_hospital_admin_id') && session('hospital_admin_impersonation_started_at') && !empty(session('hospital_admin_impersonation_started_at')) && auth()->check() && auth()->user()->isDoctor())
+            <!-- Chain Impersonation Banner (Sky Blue) -->
+            <div class="bg-info py-2">
+                <div class="container">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-users me-2 text-white"></i>
+                            <small class="mb-0 text-white">
+                                <strong>Chain Impersonation:</strong>
+                                {{ session('impersonating_admin_name', 'Admin') }} → {{ session('impersonating_hospital_admin_name') }} → Dr. {{ auth()->user()->name }}
+                            </small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <form method="POST" action="{{ route('return-to-hospital-admin') }}" style="display: inline;">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-light btn-sm py-1 px-2">
+                                    <i class="fas fa-arrow-left me-1"></i>Return to Hospital Admin
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ route('return-to-admin') }}" style="display: inline;">
+                                @csrf
+                                <button type="submit" class="btn btn-light btn-sm py-1 px-2">
+                                    <i class="fas fa-arrow-up me-1"></i>Return to Admin
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @elseif(session('impersonating_hospital_admin_id') && empty(session('impersonating_admin_id')) && auth()->check() && auth()->user()->isDoctor())
+            <!-- Direct Hospital Admin Banner (Yellow) - Only when NO admin session -->
+            <div class="bg-warning py-2">
+                <div class="container">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-shield me-2"></i>
+                            <small class="mb-0">
+                                <strong>Hospital Admin Impersonation:</strong>
+                                {{ session('impersonating_hospital_admin_name') }} is viewing as Dr. {{ auth()->user()->name }}
+                            </small>
+                        </div>
+                        <form method="POST" action="{{ route('return-to-hospital-admin') }}" style="display: inline;">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-dark btn-sm py-1 px-2">
+                                <i class="fas fa-arrow-left me-1"></i>Return to Hospital Admin
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @elseif(session('impersonating_admin_id') && session('impersonating_user_id') && session('admin_impersonation_started_at') && empty(session('hospital_admin_impersonation_started_at')))
+            <!-- Direct Admin Banner (Red) - Only when NO hospital admin session active -->
+            @php
+                $impersonatedUser = auth()->user();
+                $impersonatedUserId = session('impersonating_user_id');
+
+                // Fallback: if auth()->user() is null, try to get user from session
+                if (!$impersonatedUser && $impersonatedUserId) {
+                    $impersonatedUser = \App\Models\User::find($impersonatedUserId);
+                }
+
+                $userName = $impersonatedUser?->name ?? 'User';
+                $userRole = $impersonatedUser?->role ?? 'unknown';
+            @endphp
+            <div class="bg-danger py-2">
+                <div class="container">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-shield me-2 text-white"></i>
+                            <small class="mb-0 text-white">
+                                <strong>Admin Impersonation:</strong>
+                                {{ session('impersonating_admin_name', 'Admin') }} is viewing as {{ $userName }} ({{ ucfirst(str_replace('_', ' ', $userRole)) }})
+                            </small>
+                        </div>
+                        <form method="POST" action="{{ route('return-to-admin') }}" style="display: inline;">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-light btn-sm py-1 px-2">
+                                <i class="fas fa-arrow-left me-1"></i>Return to Admin
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <!-- Main Content -->
         <main>
             @yield('content')
         </main>
 
     </div><!-- #wrapper end -->
+			</div>
+
+@if (!auth()->check())
+		<!-- Footer -->
+<footer id="footer" class="text-white py-5" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Company Info -->
+            <div class="col-lg-4 col-md-6">
+                <div class="footer-brand mb-4">
+                    <h4 class="text-white mb-3" style="color: #DE6262 !important;">
+                        <i class="bi bi-heart-pulse me-2" style="color: #DE6262;"></i>
+                        AI Medical Diagnosis
+                    </h4>
+                    <p class="text-white-50 mb-4">Revolutionizing healthcare with cutting-edge artificial intelligence. Empowering medical professionals with advanced diagnostic tools for superior patient care and outcomes.</p>
+
+                    <!-- Social Links -->
+                    <div class="social-links">
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                            <i class="bi bi-facebook"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                            <i class="bi bi-twitter"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                            <i class="bi bi-linkedin"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                            <i class="bi bi-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="col-lg-2 col-md-6">
+                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Platform</h6>
+                <ul class="list-unstyled footer-links">
+                    @auth
+                        <li class="mb-2"><a href="{{ route('dashboard') }}" class="text-white-50 text-decoration-none hover-link">Dashboard</a></li>
+                        <li class="mb-2"><a href="{{ route('ask-ai') }}" class="text-white-50 text-decoration-none hover-link">AI Assistant</a></li>
+                        <li class="mb-2"><a href="{{ route('cases') }}" class="text-white-50 text-decoration-none hover-link">Case Studies</a></li>
+                        <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Settings</a></li>
+                    @else
+                        <li class="mb-2"><a href="{{ url('/') }}" class="text-white-50 text-decoration-none hover-link">Home</a></li>
+                        <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Us</a></li>
+                        <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact</a></li>
+                        <li class="mb-2"><a href="{{ route('login') }}" class="text-white-50 text-decoration-none hover-link">Login</a></li>
+                        <li class="mb-2"><a href="{{ route('register') }}" class="text-white-50 text-decoration-none hover-link">Register</a></li>
+                    @endauth
+                </ul>
+            </div>
+
+            <!-- Resources -->
+            <div class="col-lg-2 col-md-6">
+                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Support</h6>
+                <ul class="list-unstyled footer-links">
+                    <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Platform</a></li>
+                    <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact Support</a></li>
+                    @auth
+                        <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Profile Settings</a></li>
+                    @endauth
+                </ul>
+            </div>
+
+            <!-- Contact & Support -->
+            <div class="col-lg-4 col-md-6">
+                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Contact & Support</h6>
+
+                <div class="contact-info mb-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-envelope" style="color: #DE6262;"></i>
+                        </div>
+                        <div>
+                            <small class="text-white-50 d-block">Email Support</small>
+                            <a href="info@medcuraai.com" class="text-white text-decoration-none">info@medcuraai.com</a>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-headset" style="color: #DE6262;"></i>
+                        </div>
+                        <div>
+                            <small class="text-white-50 d-block">24/7 Support</small>
+                            <span class="text-white">AI-Powered Help Available</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center">
+                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-shield-check" style="color: #DE6262;"></i>
+                        </div>
+                        <div>
+                            <small class="text-white-50 d-block">Security & Privacy</small>
+                            <span class="text-white">HIPAA Compliant Platform</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Contact -->
+                <div class="quick-contact">
+                    <h6 class="text-white mb-2">Need Help?</h6>
+                    <p class="text-white-50 small mb-3">Our AI-powered support is here to assist you</p>
+                    <a href="{{ route('contact') }}" class="btn btn-sm" style="background: #DE6262; color: white; border: none; border-radius: 25px;">
+                        <i class="bi bi-chat-dots me-2"></i>Contact Support
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Bottom -->
+        <hr class="my-4" style="border-color: rgba(222,98,98,0.2);">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <p class="text-white-50 mb-0">
+                    &copy; {{ date('Y') }} AI Medical Diagnosis Platform. All rights reserved.
+                </p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="footer-legal-links">
+                    <span class="text-white-50 me-3">Secure & HIPAA Compliant</span>
+                    <a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link me-3">Contact Us</a>
+                    <a href="{{ route('admin.login') }}" class="text-white-50 text-decoration-none hover-link" style="font-size: 0.8rem;">Admin</a>
+                </div>
+            </div>
+        </div>
     </div>
 
     @if (!auth()->check())
@@ -1313,6 +1619,117 @@
                     const subItems = Array.from(dropdown.querySelectorAll('.menu-link'))
                         .map(link => link.textContent.trim());
                     console.log(`  Dropdown items:`, subItems);
+    <!-- Improved Dropdown Hover Behavior -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Improve dropdown hover behavior
+            let hoverTimeout;
+
+            document.querySelectorAll('.primary-menu .menu-item').forEach(menuItem => {
+                const dropdown = menuItem.querySelector('.sub-menu-container');
+
+                if (dropdown) {
+                    // Show dropdown immediately on hover
+                    menuItem.addEventListener('mouseenter', function() {
+                        clearTimeout(hoverTimeout);
+                        dropdown.style.opacity = '1';
+                        dropdown.style.visibility = 'visible';
+                    });
+
+                    // Delay hiding dropdown when mouse leaves
+                    menuItem.addEventListener('mouseleave', function() {
+                        hoverTimeout = setTimeout(() => {
+                            dropdown.style.opacity = '0';
+                            dropdown.style.visibility = 'hidden';
+                        }, 300); // 300ms delay
+                    });
+
+                    // Keep dropdown open when hovering over it
+                    dropdown.addEventListener('mouseenter', function() {
+                        clearTimeout(hoverTimeout);
+                    });
+
+                    dropdown.addEventListener('mouseleave', function() {
+                        hoverTimeout = setTimeout(() => {
+                            dropdown.style.opacity = '0';
+                            dropdown.style.visibility = 'hidden';
+                        }, 300);
+                    });
+                }
+            });
+        });
+
+        // Simple form submission tracking for debugging (optional)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Track form submissions for debugging
+            document.querySelectorAll('form[action*="return-to"]').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const button = form.querySelector('button[type="submit"]');
+                    if (button) {
+                        // Add simple loading state
+                        const originalText = button.innerHTML;
+                        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Returning...';
+                        button.disabled = true;
+
+                        console.log('Form submitted:', form.action);
+                    }
+                });
+            });
+        });
+
+        // Comprehensive Bootstrap dropdown positioning fix
+        document.addEventListener('DOMContentLoaded', function() {
+            // Override all dropdown positioning issues
+            function fixDropdownPositioning() {
+                document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
+                    if (dropdown.classList.contains('show')) {
+                        // Remove any problematic styles
+                        dropdown.style.transform = '';
+                        dropdown.style.left = '';
+                        dropdown.style.top = '';
+                        dropdown.style.right = '';
+                        dropdown.style.bottom = '';
+                        dropdown.style.position = 'absolute';
+                        dropdown.style.zIndex = '999999';
+
+                        // Force Popper.js to recalculate position
+                        const dropdownInstance = bootstrap.Dropdown.getInstance(dropdown.previousElementSibling);
+                        if (dropdownInstance && dropdownInstance._popper) {
+                            dropdownInstance._popper.update();
+                        }
+                    }
+                });
+            }
+
+            // Fix on dropdown show
+            document.addEventListener('shown.bs.dropdown', fixDropdownPositioning);
+
+            // Fix on scroll (in case it moves)
+            document.addEventListener('scroll', function() {
+                fixDropdownPositioning();
+            }, { passive: true });
+
+            // Initial fix for any already open dropdowns
+            fixDropdownPositioning();
+
+            // Alternative approach - disable Popper.js positioning entirely for problematic dropdowns
+            document.addEventListener('show.bs.dropdown', function(event) {
+                const dropdown = event.target.querySelector('.dropdown-menu');
+                if (dropdown && dropdown.classList.contains('dropdown-menu-end')) {
+                    // Disable Popper.js and handle positioning manually
+                    const button = event.target.querySelector('[data-bs-toggle="dropdown"]');
+                    const rect = button.getBoundingClientRect();
+
+                    // Position dropdown manually relative to button (fixed positioning)
+                    dropdown.style.position = 'fixed';
+                    dropdown.style.top = rect.bottom + 'px';
+                    dropdown.style.left = (rect.right - dropdown.offsetWidth) + 'px';
+                    dropdown.style.transform = 'none';
+                    dropdown.style.zIndex = '999999';
+                }
+            });
+        });
+    </script>
 
                     // Add temporary label for visual debugging
                     const debugLabel = document.createElement('div');

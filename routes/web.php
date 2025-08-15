@@ -78,8 +78,53 @@ if (config('app.debug')) {
 }
 
 Route::get('/', function () {
+    // Always show pricing section for SaaS model
     $showPricingSection = SystemSetting::get('show_pricing_section', true);
-    return view('main', compact('showPricingSection'));
+
+    // Get dynamic pricing from system settings
+    $professionalMonthly = SystemSetting::get('saas_professional_monthly', 30);
+    $professionalYearly = SystemSetting::get('saas_professional_yearly', 300);
+
+    // Define 2 SaaS pricing plans with dynamic pricing
+    $pricingPlans = [
+        'free' => [
+            'name' => 'Free',
+            'price_monthly' => 0,
+            'price_yearly' => 0,
+            'description' => 'Perfect for getting started',
+            'features' => [
+                '5 AI consultations per month',
+                'Basic patient management',
+                'Email support',
+                'Standard security'
+            ],
+            'is_featured' => false,
+            'button_text' => 'Get Started Free',
+            'button_url' => '/register?plan=free',
+            'plan_id' => 'free'
+        ],
+        'professional' => [
+            'name' => 'Professional',
+            'price_monthly' => $professionalMonthly,
+            'price_yearly' => $professionalYearly,
+            'description' => 'Most popular for growing practices',
+            'features' => [
+                'Unlimited AI consultations',
+                'Advanced patient management',
+                'Voice assistant & transcription',
+                'Professional landing page',
+                'Priority email support',
+                'Export capabilities',
+                'Basic analytics'
+            ],
+            'is_featured' => true,
+            'button_text' => 'Start Professional',
+            'button_url' => '/register?plan=professional',
+            'plan_id' => 'professional'
+        ]
+    ];
+
+    return view('main', compact('showPricingSection', 'pricingPlans'));
 });
 
 // Patient registration routes
@@ -208,6 +253,9 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
         // Routes accessible to both doctors and patients
         Route::post('/{diagnosis}/follow-up', [DiagnosisController::class, 'storeFollowUp'])->name('follow-up.store');
+
+        // Voice file serving route (secure)
+        Route::get('/{diagnosis}/voice', [DiagnosisController::class, 'serveVoiceFile'])->name('voice');
     });
 
     // Notification routes
@@ -264,25 +312,29 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         })->name('debug.assets');
     });
 
-    // Subscription routes
-    Route::get('/pricing', [SubscriptionController::class, 'pricing'])->name('subscription.pricing');
-    Route::post('/subscription/checkout', [SubscriptionController::class, 'checkout'])
-        ->middleware('stripe.configured')
-        ->name('subscription.checkout');
-    Route::get('/subscription/success', [SubscriptionController::class, 'success'])->name('subscription.success');
-    Route::get('/subscription/manage', [SubscriptionController::class, 'manage'])->name('subscription.manage');
-    Route::get('/subscription/portal', [SubscriptionController::class, 'customerPortal'])->name('subscription.portal');
-    Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])
-        ->middleware('stripe.configured')
-        ->name('subscription.cancel');
+    // Subscription routes (only for payment responsible users)
+    Route::middleware('payment.responsible')->group(function () {
+        Route::get('/pricing', [SubscriptionController::class, 'pricing'])->name('subscription.pricing');
+        Route::post('/subscription/checkout', [SubscriptionController::class, 'checkout'])
+            ->middleware('stripe.configured')
+            ->name('subscription.checkout');
+        Route::get('/subscription/success', [SubscriptionController::class, 'success'])->name('subscription.success');
+        Route::get('/subscription/manage', [SubscriptionController::class, 'manage'])->name('subscription.manage');
+        Route::get('/subscription/portal', [SubscriptionController::class, 'customerPortal'])->name('subscription.portal');
+        Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])
+            ->middleware('stripe.configured')
+            ->name('subscription.cancel');
+    });
 
-    // Invoice routes for doctors
-    Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
-    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
-    Route::get('/invoices/{invoice}/pay', [InvoiceController::class, 'pay'])->name('invoices.pay');
-    Route::get('/invoices/{invoice}/manual-payment', [InvoiceController::class, 'manualPayment'])->name('invoices.manual-payment');
-    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
-    Route::post('/invoices/{invoice}/sync', [InvoiceController::class, 'sync'])->name('invoices.sync');
+    // Invoice routes (only for payment responsible users)
+    Route::middleware('payment.responsible')->group(function () {
+        Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+        Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+        Route::get('/invoices/{invoice}/pay', [InvoiceController::class, 'pay'])->name('invoices.pay');
+        Route::get('/invoices/{invoice}/manual-payment', [InvoiceController::class, 'manualPayment'])->name('invoices.manual-payment');
+        Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
+        Route::post('/invoices/{invoice}/sync', [InvoiceController::class, 'sync'])->name('invoices.sync');
+    });
 
     // Debug route for testing payment redirects
     Route::get('/debug/payment/{invoice}', function($invoiceId) {
@@ -312,6 +364,8 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     Route::get('/test-notes', function() {
         return view('test-notes');
     })->name('test.notes');
+
+
 
     // Test diagnosis system access
     Route::get('/test-diagnosis-access', function() {
@@ -585,7 +639,7 @@ Route::get('/about', [UserSettingsController::class, 'about'])->name('about');
 
 
 // Doctor routes (accessible by doctors and their sub-users with permissions)
-Route::middleware(['auth', 'doctor', 'sub.user.permissions'])->prefix('doctor')->name('doctor.')->group(function () {
+Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permissions'])->prefix('doctor')->name('doctor.')->group(function () {
     // Redirect doctor dashboard to main dashboard
     Route::get('/dashboard', function () {
         return redirect()->route('dashboard');
@@ -671,13 +725,82 @@ Route::middleware(['auth', 'doctor', 'sub.user.permissions'])->prefix('doctor')-
     });
 });
 
+// Hospital Admin routes
+Route::middleware(['auth', 'admin.impersonation', 'hospital.admin'])->prefix('hospital-admin')->name('hospital-admin.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [App\Http\Controllers\HospitalAdmin\DashboardController::class, 'index'])->name('dashboard');
+
+    // Doctor Management
+    Route::prefix('doctors')->name('doctors.')->group(function () {
+        Route::get('/', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'store'])->name('store');
+        Route::get('/statistics', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'statistics'])->name('statistics');
+        Route::get('/{doctor}', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'show'])->name('show');
+        Route::get('/{doctor}/edit', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'edit'])->name('edit');
+        Route::put('/{doctor}', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'update'])->name('update');
+        Route::patch('/{doctor}/toggle-status', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'toggleStatus'])->name('toggle-status');
+        Route::post('/{doctor}/login-as', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'loginAs'])->name('login-as');
+        Route::delete('/{doctor}', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'destroy'])->name('destroy');
+    });
+
+    // Hospital Settings
+    Route::prefix('hospital')->name('hospital.')->group(function () {
+        Route::get('/profile', [App\Http\Controllers\HospitalAdmin\HospitalController::class, 'profile'])->name('profile');
+        Route::put('/profile', [App\Http\Controllers\HospitalAdmin\HospitalController::class, 'updateProfile'])->name('update-profile');
+    });
+
+    // Departments Management
+    Route::prefix('departments')->name('departments.')->group(function () {
+        Route::get('/', [App\Http\Controllers\HospitalAdmin\DepartmentController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\HospitalAdmin\DepartmentController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\HospitalAdmin\DepartmentController::class, 'store'])->name('store');
+        Route::get('/{department}', [App\Http\Controllers\HospitalAdmin\DepartmentController::class, 'show'])->name('show');
+        Route::get('/{department}/edit', [App\Http\Controllers\HospitalAdmin\DepartmentController::class, 'edit'])->name('edit');
+        Route::put('/{department}', [App\Http\Controllers\HospitalAdmin\DepartmentController::class, 'update'])->name('update');
+        Route::delete('/{department}', [App\Http\Controllers\HospitalAdmin\DepartmentController::class, 'destroy'])->name('destroy');
+    });
+
+    // Subscription Management (using HospitalAdmin subscription controller)
+    Route::prefix('subscription')->name('subscription.')->group(function () {
+        Route::get('/manage', [App\Http\Controllers\HospitalAdmin\SubscriptionController::class, 'manage'])->name('manage');
+        Route::get('/pricing', [App\Http\Controllers\HospitalAdmin\SubscriptionController::class, 'pricing'])->name('pricing');
+        Route::post('/update-plan', [App\Http\Controllers\HospitalAdmin\SubscriptionController::class, 'updatePlan'])->name('update-plan');
+        Route::post('/checkout', [App\Http\Controllers\SubscriptionController::class, 'checkout'])->name('checkout');
+        Route::post('/cancel', [App\Http\Controllers\SubscriptionController::class, 'cancel'])->name('cancel');
+        Route::get('/customer-portal', [App\Http\Controllers\SubscriptionController::class, 'customerPortal'])->name('customer-portal');
+        Route::get('/success', [App\Http\Controllers\SubscriptionController::class, 'success'])->name('success');
+    });
+
+    // Invoice Management (using HospitalAdmin invoice controller)
+    Route::prefix('invoices')->name('invoices.')->group(function () {
+        Route::get('/', [App\Http\Controllers\HospitalAdmin\InvoiceController::class, 'index'])->name('index');
+        Route::get('/{invoice}', [App\Http\Controllers\HospitalAdmin\InvoiceController::class, 'show'])->name('show');
+        Route::get('/{invoice}/pdf', [App\Http\Controllers\HospitalAdmin\InvoiceController::class, 'downloadPdf'])->name('pdf');
+        Route::post('/sync', [App\Http\Controllers\HospitalAdmin\InvoiceController::class, 'sync'])->name('sync');
+    });
+
+    // Analytics
+    Route::prefix('analytics')->name('analytics.')->group(function () {
+        Route::get('/overview', [App\Http\Controllers\HospitalAdmin\AnalyticsController::class, 'overview'])->name('overview');
+        Route::get('/doctors', [App\Http\Controllers\HospitalAdmin\AnalyticsController::class, 'doctors'])->name('doctors');
+        Route::get('/financial', [App\Http\Controllers\HospitalAdmin\AnalyticsController::class, 'financial'])->name('financial');
+    });
+
+    // Usage Reports
+    Route::prefix('usage')->name('usage.')->group(function () {
+        Route::get('/', [App\Http\Controllers\HospitalAdmin\UsageController::class, 'index'])->name('index');
+        Route::get('/export', [App\Http\Controllers\HospitalAdmin\UsageController::class, 'export'])->name('export');
+    });
+});
+
 // Public Doctor Landing Pages (must be after doctor middleware group to avoid conflicts)
 Route::get('/doctor/{username}', [PublicLandingPageController::class, 'show'])->name('doctor.landing');
 Route::get('/doctor/{username}/blogs', [PublicLandingPageController::class, 'showBlogs'])->name('doctor.blogs');
 Route::get('/doctor/{username}/blog/{slug}', [PublicLandingPageController::class, 'showBlogPost'])->name('doctor.blog.post');
 
-// Doctor Landing Page Management Routes
-Route::prefix('doctor/landing-page')->name('doctor.landing-page.')->group(function () {
+// Doctor Landing Page Management Routes - Protected by auth middleware
+Route::prefix('doctor/landing-page')->name('doctor.landing-page.')->middleware(['auth', 'role:doctor'])->group(function () {
     Route::get('/index', [LandingPageController::class, 'index'])->name('index');
     Route::get('/page-builder', [LandingPageController::class, 'pageBuilder'])->name('page-builder');
     Route::get('/edit', [LandingPageController::class, 'edit'])->name('edit');
@@ -688,6 +811,8 @@ Route::prefix('doctor/landing-page')->name('doctor.landing-page.')->group(functi
     Route::post('/toggle-publish', [LandingPageController::class, 'togglePublish'])->name('toggle-publish');
     Route::get('/preview/{username}', [LandingPageController::class, 'preview'])->name('preview');
     Route::get('/animation-presets', [LandingPageController::class, 'getAnimationPresets'])->name('animation-presets');
+    Route::get('/analytics', [AnalyticsController::class, 'landingPageAnalytics'])->name('analytics');
+    Route::get('/analytics/data', [AnalyticsController::class, 'getLandingPageAnalyticsData'])->name('analytics.data');
 });
 
 // Public Chat Routes
@@ -727,6 +852,14 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::resource('users', AdminController::class);
     Route::get('/users/{user}/patient-analyses', [AdminController::class, 'userPatientAnalyses'])->name('users.patient-analyses');
     Route::post('/users/{user}/toggle-doctor-status', [AdminController::class, 'toggleDoctorStatus'])->name('users.toggle-doctor-status');
+    Route::post('/users/{user}/login-as', [AdminController::class, 'loginAs'])->name('login-as');
+
+    // Hospital Admin Management
+    Route::get('/hospital-admins/{user}/manage', [AdminController::class, 'manageHospitalAdmin'])->name('hospital-admins.manage');
+    Route::post('/hospital-admins/{user}/create-hospital', [AdminController::class, 'createHospitalForAdmin'])->name('hospital-admins.create-hospital');
+    Route::put('/hospital-admins/{user}/update-hospital', [AdminController::class, 'updateHospitalForAdmin'])->name('hospital-admins.update-hospital');
+    Route::get('/hospital-admins/{user}/doctors', [AdminController::class, 'manageHospitalDoctors'])->name('hospital-admins.doctors');
+    Route::post('/hospital-admins/{user}/doctors/{doctor}/toggle-status', [AdminController::class, 'toggleHospitalDoctorStatus'])->name('hospital-admins.doctors.toggle-status');
 
     // Billing and subscription management
     Route::get('/billing', [AdminController::class, 'billing'])->name('billing');
@@ -789,6 +922,35 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Return to hospital admin from doctor impersonation
+    Route::post('/return-to-hospital-admin', [App\Http\Controllers\HospitalAdmin\DoctorController::class, 'returnToHospitalAdmin'])->name('return-to-hospital-admin');
+
+    // Return to admin from user impersonation - requires web auth (impersonated user)
+    Route::post('/return-to-admin', [AdminController::class, 'returnToAdmin'])->name('return-to-admin');
+});
+
+// Debug route to test if routes are working
+Route::get('/test-return-admin', function() {
+    return response()->json([
+        'message' => 'Route is accessible',
+        'session_data' => [
+            'impersonating_admin_id' => session('impersonating_admin_id'),
+            'impersonating_user_id' => session('impersonating_user_id'),
+        ],
+        'auth_status' => [
+            'web_check' => auth('web')->check(),
+            'web_user_id' => auth('web')->id(),
+            'admin_check' => auth('admin')->check(),
+            'admin_user_id' => auth('admin')->id(),
+        ]
+    ]);
+});
+
+// Security dashboard routes
+Route::middleware('auth:admin')->prefix('security')->name('security.')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Security\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/audit-logs/{auditLog}', [App\Http\Controllers\Security\DashboardController::class, 'show'])->name('audit-logs.show');
+    Route::get('/export', [App\Http\Controllers\Security\DashboardController::class, 'export'])->name('export');
 });
 
 require __DIR__.'/auth.php';

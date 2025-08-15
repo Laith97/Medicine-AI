@@ -12,7 +12,7 @@ class SubscriptionFactory extends Factory
 
     public function definition(): array
     {
-        $planName = $this->faker->randomElement(['basic', 'premium', 'enterprise']);
+        $planName = $this->faker->randomElement(['basic', 'premium', 'professional']);
         $status = $this->faker->randomElement(['active', 'canceled', 'past_due', 'trialing']);
 
         return [
@@ -104,12 +104,12 @@ class SubscriptionFactory extends Factory
     }
 
     /**
-     * Set the subscription to enterprise plan.
+     * Set the subscription to professional plan.
      */
-    public function enterprise(): static
+    public function professional(): static
     {
         return $this->state(fn (array $attributes) => [
-            'plan_name' => 'enterprise',
+            'plan_name' => 'professional',
             'amount' => 99.99,
         ]);
     }
@@ -122,7 +122,7 @@ class SubscriptionFactory extends Factory
         return match($planName) {
             'basic' => 29.99,
             'premium' => 59.99,
-            'enterprise' => 99.99,
+            'professional' => 99.99,
             default => 29.99,
         };
     }

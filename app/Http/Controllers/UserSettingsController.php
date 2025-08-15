@@ -46,41 +46,79 @@ class UserSettingsController extends Controller
 
 
     public function about(){
-        $aboutTitle = 'About MedCura AI for Doctors';
-        $aboutTagline = 'Empowering doctors to make evidence-based decisions.';
+        $aboutTitle = 'About MedCura AI - Complete Healthcare Platform';
+        $aboutTagline = 'Revolutionizing healthcare with AI-powered diagnosis, patient management, and professional growth tools.';
         $features = [
             [
-                'icon' => 'fas fa-heartbeat',
-                'title' => 'Evidence-Based Guidance',
-                'description' => 'Access up-to-date, peer-reviewed recommendations for clinical decisions.'
+                'icon' => 'fas fa-brain',
+                'title' => 'AI-Powered Diagnosis',
+                'description' => 'Advanced GPT-4 powered diagnostic assistance with voice transcription, manual diagnosis creation, and intelligent follow-up questions for comprehensive patient care.'
             ],
             [
-                'icon' => 'fas fa-user-md',
-                'title' => 'Patient-Centered',
-                'description' => 'Focus on what matters most for patient outcomes and safety.',
+                'icon' => 'fas fa-microphone',
+                'title' => 'Voice Assistant',
+                'description' => 'Hands-free consultation documentation with real-time speech-to-text, automatic chart filling, and AI-powered clinical analysis.',
                 'delay' => '200'
             ],
             [
-                'icon' => 'fas fa-brain',
-                'title' => 'Reduce Unnecessary Care',
-                'description' => 'Identify and avoid low-value or unnecessary interventions.',
+                'icon' => 'fas fa-users',
+                'title' => 'Patient Management',
+                'description' => 'Complete patient lifecycle management with appointment booking, case tracking, automated notifications, and review systems.',
                 'delay' => '400'
             ],
-        ];
-        $whatWeDoTitle = 'What We Do';
-        $whatWeDoDescription = 'MedCura AI for Doctors provides a platform for clinicians to access, share, and discuss best practices, reducing unnecessary procedures and improving patient care.';
-        $whatWeDoFeatures = [
             [
-                'icon' => 'fas fa-list-ul',
-                'description' => 'Curated lists of recommendations for various specialties.'
+                'icon' => 'fas fa-globe',
+                'title' => 'Online Presence',
+                'description' => 'Professional landing pages, blog management, live chat widgets, and patient testimonials to grow your practice online.',
+                'delay' => '600'
             ],
             [
-                'icon' => 'fas fa-stethoscope',
-                'description' => 'Tools to help you make wise choices at the point of care.'
+                'icon' => 'fas fa-shield-alt',
+                'title' => 'HIPAA Compliant',
+                'description' => 'Enterprise-grade encryption, secure data handling, role-based access control, and comprehensive audit trails.',
+                'delay' => '800'
+            ],
+            [
+                'icon' => 'fas fa-mobile-alt',
+                'title' => 'Multi-Channel Communication',
+                'description' => 'Automated email and SMS notifications, real-time chat, appointment reminders, and subscription management.',
+                'delay' => '1000'
+            ],
+        ];
+        $whatWeDoTitle = 'Complete Healthcare Solution';
+        $whatWeDoDescription = 'MedCura AI provides a comprehensive platform that combines artificial intelligence, patient management, and professional growth tools to transform modern medical practices. From AI-powered diagnosis to automated patient communication, we help healthcare professionals deliver better care while growing their practice.';
+        $whatWeDoFeatures = [
+            [
+                'icon' => 'fas fa-robot',
+                'description' => 'AI Assistant with GPT-4 powered analysis for instant diagnostic insights and clinical recommendations.'
+            ],
+            [
+                'icon' => 'fas fa-microphone',
+                'description' => 'Voice Assistant for hands-free consultation documentation with automatic transcription and chart filling.'
+            ],
+            [
+                'icon' => 'fas fa-calendar-alt',
+                'description' => 'Complete appointment management system with online booking, availability settings, and automated reminders.'
+            ],
+            [
+                'icon' => 'fas fa-file-medical',
+                'description' => 'Manual diagnosis system with voice input, patient notifications, and AI-powered follow-up questions.'
             ],
             [
                 'icon' => 'fas fa-comments',
-                'description' => 'Community-driven updates and discussion.'
+                'description' => 'Real-time chat system with patients, automated responses, and comprehensive message management.'
+            ],
+            [
+                'icon' => 'fas fa-blog',
+                'description' => 'Professional blog management with SEO optimization, featured images, and reading time calculation.'
+            ],
+            [
+                'icon' => 'fas fa-star',
+                'description' => 'Patient review and testimonial system with verification badges and case study management.'
+            ],
+            [
+                'icon' => 'fas fa-chart-bar',
+                'description' => 'Advanced analytics with visit tracking, performance metrics, and comprehensive reporting tools.'
             ],
         ];
         $team = [

@@ -75,15 +75,60 @@
     <div class="container-fluid">
         <div class="row justify-content-center">
             <div class="col-md-10">
-                <div class="text-center mb-5">
+                <div class="text-center mb-4">
                     <h2 class="fw-bold text-dark">Choose Your Subscription Plan</h2>
                     <p class="text-muted">Select the plan that best fits your medical practice needs</p>
                 </div>
+                
+                @if(isset($trialInfo) && $trialInfo['is_in_trial'])
+                    <div class="alert alert-info alert-dismissible fade show mb-4" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(13, 202, 240, 0.2);">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-gift fa-2x text-info"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5 class="alert-heading mb-2">
+                                    <i class="fas fa-clock me-2"></i>Free Trial Active - {{ $trialInfo['trial_days_remaining'] }} Days Remaining
+                                </h5>
+                                <p class="mb-2">
+                                    You're currently enjoying full access to all features! Choose a plan below to continue after your trial ends.
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                @elseif(isset($trialInfo) && $trialInfo['has_used_trial'] && $trialInfo['trial_status'] === 'expired')
+                    <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(255, 193, 7, 0.2);">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5 class="alert-heading mb-2">
+                                    <i class="fas fa-hourglass-end me-2"></i>Trial Period Ended
+                                </h5>
+                                <p class="mb-2">
+                                    Your free trial has expired. Choose a plan below to continue using all features.
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                @endif
+                
+                <div class="text-center">
+                    
+                    <!-- Billing Toggle -->
+                    <div class="d-inline-flex align-items-center p-2 rounded-pill mt-3" style="background: #f8f9fa; border: 1px solid #e9ecef;">
+                        <span class="px-3 py-2 billing-period-label" id="monthly-label" style="border-radius: 20px; cursor: pointer; transition: all 0.3s ease; background: #DE6262; color: white;">Monthly</span>
+                        <span class="px-3 py-2 billing-period-label" id="yearly-label" style="border-radius: 20px; cursor: pointer; transition: all 0.3s ease; margin-left: 5px;">Yearly <small class="text-success">(Save up to 17%)</small></span>
+                    </div>
+                </div>
 
                 @if($plans && count($plans) > 0)
-                    <div class="row g-4">
+                    <div class="row g-4" id="pricing-plans">
                         @foreach($plans as $planKey => $plan)
-                            <div class="col-md-6">
+                            <div class="col-md-6 plan-card" data-plan="{{ $planKey }}">
                                 <div class="pricing-card h-100 {{ $planKey === 'yearly' ? 'featured' : '' }} position-relative">
                                     @if($planKey === 'yearly')
                                         <div class="position-absolute top-0 start-50 translate-middle">
@@ -103,7 +148,7 @@
                                         </span>
                                         @if($planKey === 'yearly' && isset($plan['monthly_equivalent']))
                                             <div class="text-muted mt-1">
-                                                <small>{{ $plan['monthly_equivalent'] }} per month</small>
+                                                <small>{{ $plan['monthly_equivalent'] }}</small>
                                             </div>
                                         @endif
                                     </div>
@@ -215,6 +260,58 @@
 </div>
 
 <script>
+// Billing Toggle Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const monthlyLabel = document.getElementById('monthly-label');
+    const yearlyLabel = document.getElementById('yearly-label');
+    const planCards = document.querySelectorAll('.plan-card');
+    
+    // Set default to show monthly plans
+    showPlansForPeriod('monthly');
+    
+    if (monthlyLabel) {
+        monthlyLabel.addEventListener('click', function() {
+            setActiveLabel('monthly');
+            showPlansForPeriod('monthly');
+        });
+    }
+    
+    if (yearlyLabel) {
+        yearlyLabel.addEventListener('click', function() {
+            setActiveLabel('yearly');
+            showPlansForPeriod('yearly');
+        });
+    }
+    
+    function setActiveLabel(period) {
+        // Reset both labels
+        monthlyLabel.style.background = 'transparent';
+        monthlyLabel.style.color = '#6c757d';
+        yearlyLabel.style.background = 'transparent';
+        yearlyLabel.style.color = '#6c757d';
+        
+        // Set active label
+        if (period === 'monthly') {
+            monthlyLabel.style.background = '#DE6262';
+            monthlyLabel.style.color = 'white';
+        } else {
+            yearlyLabel.style.background = '#DE6262';
+            yearlyLabel.style.color = 'white';
+        }
+    }
+    
+    function showPlansForPeriod(period) {
+        planCards.forEach(card => {
+            const planType = card.getAttribute('data-plan');
+            if (planType === period) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+});
+
 function selectPlan(planType) {
     const button = event.target;
     const originalText = button.innerHTML;
@@ -266,6 +363,7 @@ function selectPlan(planType) {
     })
     .catch(error => {
         console.error('Checkout error:', error);
+        clearTimeout(timeoutWarning);
         
         // More specific error messages
         let errorMessage = 'An error occurred while processing your request. Please try again.';

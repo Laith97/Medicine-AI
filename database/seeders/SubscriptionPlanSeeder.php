@@ -92,51 +92,7 @@ class SubscriptionPlanSeeder extends Seeder
                 'is_active' => true,
                 'is_featured' => true,
                 'sort_order' => 4,
-            ],
-            [
-                'name' => 'Enterprise Monthly',
-                'slug' => 'enterprise-monthly',
-                'description' => 'Comprehensive solution for large practices and healthcare institutions.',
-                'price' => 399.00,
-                'billing_cycle' => 'monthly',
-                'billing_period_months' => 1,
-                'features' => [
-                    'Everything in Professional',
-                    'White-label options',
-                    'Custom AI training',
-                    'Dedicated account manager',
-                    'SLA guarantees',
-                    'Custom integrations',
-                    'Advanced security features',
-                    'Unlimited team members'
-                ],
-                'is_active' => true,
-                'is_featured' => false,
-                'sort_order' => 5,
-            ],
-            [
-                'name' => 'Enterprise Yearly',
-                'slug' => 'enterprise-yearly',
-                'description' => 'Maximum value for large organizations - Enterprise features with 30% savings.',
-                'price' => 3350.00, // 30% discount from monthly (399 * 12 = 4788, 30% off = 3351)
-                'billing_cycle' => 'yearly',
-                'billing_period_months' => 12,
-                'features' => [
-                    'Everything in Professional',
-                    'White-label options',
-                    'Custom AI training',
-                    'Dedicated account manager',
-                    'SLA guarantees',
-                    'Custom integrations',
-                    'Advanced security features',
-                    'Unlimited team members',
-                    'Quarterly training sessions',
-                    '30% savings vs monthly'
-                ],
-                'is_active' => true,
-                'is_featured' => false,
-                'sort_order' => 6,
-            ],
+            ]
         ];
 
         foreach ($plans as $plan) {
