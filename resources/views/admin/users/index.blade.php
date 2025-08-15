@@ -62,15 +62,16 @@
                 <small class="text-muted">{{ $users->total() }} total users</small>
             </div>
             <div class="admin-card-body">
-                <div class="admin-table-container">
-                    <table class="admin-table users-table">
-                    <thead>
+                <div class="table-responsive">
+                    <table class="admin-table users-table" style="min-width: 1200px;">
+                        <thead>
                         <tr>
                             <th>User</th>
                             <th>Email</th>
-                            <th>Phone</th>
+                            <th>Role</th>
+                            <th>Hospital</th>
                             <th>Specialty</th>
-                            <th>Doctor Status</th>
+                            <th>Status</th>
                             <th>Pricing (M/Y)</th>
                             <th>Cost Limit</th>
                             <th>Joined</th>
@@ -95,10 +96,36 @@
                                     <span class="text-muted text-truncate-custom" title="{{ $user->email }}">{{ $user->email }}</span>
                                 </td>
                                 <td>
-                                    @if($user->phone)
-                                        <span class="text-muted text-truncate-custom" title="{{ $user->phone }}">{{ $user->phone }}</span>
+                                    @php
+                                        $roleColors = [
+                                            'admin' => 'danger',
+                                            'hospital_admin' => 'warning',
+                                            'doctor' => 'success',
+                                            'patient' => 'info'
+                                        ];
+                                        $roleColor = $roleColors[$user->role] ?? 'secondary';
+                                    @endphp
+                                    <span class="admin-badge {{ $roleColor }}">
+                                        @if($user->role === 'admin')
+                                            <i class="bi bi-shield-check"></i>Admin
+                                        @elseif($user->role === 'hospital_admin')
+                                            <i class="bi bi-building"></i>Hospital Admin
+                                        @elseif($user->role === 'doctor')
+                                            <i class="bi bi-person-badge"></i>Doctor
+                                        @elseif($user->role === 'patient')
+                                            <i class="bi bi-person"></i>Patient
+                                        @else
+                                            {{ ucfirst($user->role) }}
+                                        @endif
+                                    </span>
+                                </td>
+                                <td>
+                                    @if($user->hospital)
+                                        <span class="admin-badge info text-truncate-custom" title="{{ $user->hospital->name }}">
+                                            <i class="bi bi-building"></i>{{ Str::limit($user->hospital->name, 15) }}
+                                        </span>
                                     @else
-                                        <span class="admin-badge secondary">N/A</span>
+                                        <span class="admin-badge secondary">Independent</span>
                                     @endif
                                 </td>
                                 <td>
@@ -109,18 +136,34 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($user->doctor)
-                                        @if($user->doctor->is_active)
+                                    @if($user->role === 'doctor')
+                                        @if($user->doctor)
+                                            @if($user->doctor->is_active)
+                                                <span class="admin-badge success">
+                                                    <i class="bi bi-check-circle"></i>Active
+                                                </span>
+                                            @else
+                                                <span class="admin-badge danger">
+                                                    <i class="bi bi-x-circle"></i>Inactive
+                                                </span>
+                                            @endif
+                                        @else
+                                            <span class="admin-badge secondary">No Profile</span>
+                                        @endif
+                                    @elseif($user->role === 'hospital_admin')
+                                        @if($user->hospital && $user->hospital->is_active)
                                             <span class="admin-badge success">
                                                 <i class="bi bi-check-circle"></i>Active
                                             </span>
                                         @else
-                                            <span class="admin-badge danger">
-                                                <i class="bi bi-x-circle"></i>Inactive
+                                            <span class="admin-badge warning">
+                                                <i class="bi bi-exclamation-triangle"></i>Hospital Inactive
                                             </span>
                                         @endif
                                     @else
-                                        <span class="admin-badge secondary">No Profile</span>
+                                        <span class="admin-badge info">
+                                            <i class="bi bi-person-check"></i>User
+                                        </span>
                                     @endif
                                 </td>
                                 <td>
@@ -178,15 +221,37 @@
                                             <i class="bi bi-pencil"></i>
                                         </a>
 
-                                        @if($user->doctor)
-                                            <form action="{{ route('admin.users.toggle-doctor-status', $user) }}" method="POST" class="d-inline"
-                                                  onsubmit="return confirm('Are you sure you want to {{ $user->doctor->is_active ? 'deactivate' : 'activate' }} this doctor account?')">
-                                                @csrf
-                                                <button type="submit" class="admin-btn {{ $user->doctor->is_active ? 'secondary' : 'success' }}" 
-                                                        title="{{ $user->doctor->is_active ? 'Deactivate' : 'Activate' }} Doctor">
-                                                    <i class="bi {{ $user->doctor->is_active ? 'bi-pause-circle' : 'bi-play-circle' }}"></i>
-                                                </button>
-                                            </form>
+                                        @if($user->role === 'hospital_admin')
+                                            <a href="{{ route('admin.hospital-admins.manage', $user) }}" class="admin-btn info" title="Manage Hospital">
+                                                <i class="bi bi-building"></i>
+                                            </a>
+                                            @if($user->hospital)
+                                                <a href="{{ route('admin.hospital-admins.doctors', $user) }}" class="admin-btn success" title="Manage Doctors">
+                                                    <i class="bi bi-people"></i>
+                                                </a>
+                                            @endif
+                                            <!-- Login as Hospital Admin -->
+                                            <button type="button" class="admin-btn primary" title="Login as Hospital Admin" 
+                                                    onclick="loginAsUser({{ $user->id }}, '{{ $user->name }}', 'hospital_admin')">
+                                                <i class="bi bi-box-arrow-in-right"></i>
+                                            </button>
+                                        @elseif($user->role === 'doctor')
+                                            <!-- Doctor Status Toggle -->
+                                            @if($user->doctor)
+                                                <form action="{{ route('admin.users.toggle-doctor-status', $user) }}" method="POST" class="d-inline"
+                                                      onsubmit="return confirm('Are you sure you want to {{ $user->doctor->is_active ? 'deactivate' : 'activate' }} this doctor account?')">
+                                                    @csrf
+                                                    <button type="submit" class="admin-btn {{ $user->doctor->is_active ? 'secondary' : 'success' }}" 
+                                                            title="{{ $user->doctor->is_active ? 'Deactivate' : 'Activate' }} Doctor">
+                                                        <i class="bi {{ $user->doctor->is_active ? 'bi-pause-circle' : 'bi-play-circle' }}"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                            <!-- Login as Doctor -->
+                                            <button type="button" class="admin-btn primary" title="Login as Doctor" 
+                                                    onclick="loginAsUser({{ $user->id }}, '{{ $user->name }}', 'doctor')">
+                                                <i class="bi bi-box-arrow-in-right"></i>
+                                            </button>
                                         @endif
 
                                         @if($user->id !== auth()->id())
@@ -206,7 +271,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10">
+                                <td colspan="11">
                                     <div class="admin-empty-state">
                                         <i class="bi bi-people"></i>
                                         <p>No users found.</p>
@@ -231,4 +296,35 @@
         </div>
     </div>
 </div>
+
+<!-- Hidden forms for login-as functionality -->
+@foreach($users as $user)
+    @if(in_array($user->role, ['hospital_admin', 'doctor']))
+        <form id="login-as-form-{{ $user->id }}" method="POST" action="{{ route('admin.login-as', $user) }}" style="display: none;">
+            @csrf
+        </form>
+    @endif
+@endforeach
+
+<script>
+function loginAsUser(userId, userName, userRole) {
+    console.log('loginAsUser called with:', userId, userName, userRole);
+    
+    const roleText = userRole === 'hospital_admin' ? 'Hospital Admin' : 'Doctor';
+    
+    if (confirm(`Are you sure you want to login as ${roleText} ${userName}? You will be redirected to their dashboard.`)) {
+        console.log('User confirmed, submitting form...');
+        const form = document.getElementById('login-as-form-' + userId);
+        if (form) {
+            console.log('Form found, submitting...');
+            form.submit();
+        } else {
+            console.error('Form not found:', 'login-as-form-' + userId);
+            alert('Error: Form not found. Please refresh the page and try again.');
+        }
+    } else {
+        console.log('User cancelled');
+    }
+}
+</script>
 @endsection

@@ -16,6 +16,13 @@ class EnsureUserRole
     public function handle(Request $request, Closure $next, string $role): Response
     {
         if (!auth()->check()) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required.',
+                    'redirect' => route('login')
+                ], 401);
+            }
             return redirect()->route('login');
         }
 
@@ -28,6 +35,13 @@ class EnsureUserRole
         }
 
         if ($effectiveRole !== $role) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Access denied. {$role} role required.",
+                    'error' => 'Insufficient permissions'
+                ], 403);
+            }
             abort(403, "Access denied. {$role} role required.");
         }
 

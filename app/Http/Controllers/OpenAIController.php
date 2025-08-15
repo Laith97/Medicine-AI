@@ -34,7 +34,7 @@ class OpenAIController extends Controller
         $this->smsService = $smsService;
         $this->middleware(function ($request, $next) {
             $user = Auth::user();
-            
+
             // Handle sub-users - they inherit access from their parent doctor
             if ($user->isSubUser()) {
                 $parentUser = $user->parentUser;
@@ -46,12 +46,12 @@ class OpenAIController extends Controller
                 if (!$user->isDoctor() || !$user->doctor) {
                     abort(403, 'Access denied. Doctor profile required.');
                 }
-                
+
                 if (!$user->doctor->is_active) {
                     abort(403, 'Access denied. Your doctor account has been deactivated.');
                 }
             }
-            
+
             return $next($request);
         });
     }
@@ -79,7 +79,6 @@ class OpenAIController extends Controller
                 'patient_name' => 'required_without:existing_patient|string|max:255',
                 'patient_email' => 'required_without:existing_patient|email|max:255',
                 'patient_phone' => 'nullable|string|max:20',
-                'patient_age' => 'required_without:existing_patient|integer|min:1|max:150',
                 'patient_gender' => 'required_without:existing_patient|in:male,female,other',
             ]);
 
@@ -1856,6 +1855,11 @@ class OpenAIController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
+        // Redirect hospital admins to their specific dashboard
+        if (auth()->user()->isHospitalAdmin()) {
+            return redirect()->route('hospital-admin.dashboard');
+        }
+
         $user = auth()->user();
         $effectiveDoctorUser = $user->getEffectiveDoctorUser();
         $effectiveDoctorId = $effectiveDoctorUser ? $effectiveDoctorUser->id : $user->id;
@@ -2007,17 +2011,25 @@ class OpenAIController extends Controller
             ];
         }
 
-        // Add trial information - only show trial if user doesn't have active subscription
+        // Add trial information
         $hasActiveSubscription = $user->monthlyInvoiceSetting &&
                                 $user->monthlyInvoiceSetting->subscription_starts_at &&
-                                !$user->monthlyInvoiceSetting->isSubscriptionExpired();
+                                !$user->monthlyInvoiceSetting->isSubscriptionExpired() &&
+                                $user->monthlyInvoiceSetting->subscription_starts_at->isPast();
+
+        // Show trial if user is in trial period, even if they have a future subscription
+        $showTrialBanner = $user->isInTrialPeriod();
+        $showSubscriptionBanner = $hasActiveSubscription && !$showTrialBanner;
 
         $trialInfo = [
-            'is_in_trial' => $user->isInTrialPeriod() && !$hasActiveSubscription,
+            'is_in_trial' => $showTrialBanner,
             'trial_days_remaining' => $user->getTrialDaysRemaining(),
             'trial_status' => $user->getTrialStatus(),
             'has_used_trial' => $user->hasUsedTrial(),
-            'has_active_subscription' => $hasActiveSubscription,
+            'has_active_subscription' => $showSubscriptionBanner,
+            'has_future_subscription' => $user->monthlyInvoiceSetting && 
+                                        $user->monthlyInvoiceSetting->subscription_starts_at &&
+                                        $user->monthlyInvoiceSetting->subscription_starts_at->isFuture(),
         ];
 
         return view('dashboard', compact('records', 'weeklyCount', 'chartLabels', 'chartData', 'doctorData', 'patientGroups', 'trialInfo'));

@@ -14,7 +14,7 @@
                     <h2 class="fw-bold ls-0 text-white">Contact Us</h2>
                 </div>
                 <span class="fw-semibold ls-1 text-uppercase" style="color: #EEE;">
-                    We're here to help with your medical AI needs
+                    Get support for our complete AI healthcare platform
                 </span>
             </div>
         </div>
@@ -28,8 +28,8 @@
             <div class="row">
                 <!-- Contact Form -->
                 <div class="col-lg-8">
-                    <h3 class="mb-4">Get in Touch with Our Team</h3>
-                    <p class="text-muted mb-4">Have questions about our AI Assistant system? Need technical support? Our team of medical AI experts is here to help.</p>
+                    <h3 class="mb-4">Get in Touch with Our Healthcare AI Experts</h3>
+                    <p class="text-muted mb-4">Questions about our comprehensive AI healthcare platform? Need support with diagnosis tools, voice assistant, patient management, or practice growth features? Our team of medical AI specialists and healthcare technology experts is here to help you maximize your practice potential.</p>
 
                     @if(session('success'))
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -84,10 +84,15 @@
                                 <select id="service" name="service" class="form-select">
                                     <option value="">-- Select One --</option>
                                     <option value="General Inquiry" {{ old('service') == 'General Inquiry' ? 'selected' : '' }}>General Inquiry</option>
+                                    <option value="AI Diagnosis Support" {{ old('service') == 'AI Diagnosis Support' ? 'selected' : '' }}>AI Diagnosis Support</option>
+                                    <option value="Voice Assistant Help" {{ old('service') == 'Voice Assistant Help' ? 'selected' : '' }}>Voice Assistant Help</option>
+                                    <option value="Patient Management" {{ old('service') == 'Patient Management' ? 'selected' : '' }}>Patient Management</option>
+                                    <option value="Landing Page Setup" {{ old('service') == 'Landing Page Setup' ? 'selected' : '' }}>Landing Page Setup</option>
                                     <option value="Technical Support" {{ old('service') == 'Technical Support' ? 'selected' : '' }}>Technical Support</option>
+                                    <option value="Billing & Subscription" {{ old('service') == 'Billing & Subscription' ? 'selected' : '' }}>Billing & Subscription</option>
                                     <option value="Partnership" {{ old('service') == 'Partnership' ? 'selected' : '' }}>Partnership Opportunities</option>
-                                    <option value="Demo Request" {{ old('service') == 'Demo Request' ? 'selected' : '' }}>Demo Request</option>
-                                    <option value="Billing" {{ old('service') == 'Billing' ? 'selected' : '' }}>Billing & Pricing</option>
+                                    <option value="Demo Request" {{ old('service') == 'Demo Request' ? 'selected' : '' }}>Platform Demo Request</option>
+                                    <option value="Integration Support" {{ old('service') == 'Integration Support' ? 'selected' : '' }}>Integration Support</option>
                                 </select>
                                 @error('service')
                                     <div class="text-danger mt-1">{{ $message }}</div>
@@ -104,7 +109,7 @@
 
                             <div class="col-12 form-group">
                                 <label for="message">Message <small>*</small></label>
-                                <textarea class="form-control required" id="message" name="message" rows="6" cols="30" placeholder="Tell us about your needs or questions regarding our AI Assistant system..." required>{{ old('message') }}</textarea>
+                                <textarea class="form-control required" id="message" name="message" rows="6" cols="30" placeholder="Tell us about your needs or questions regarding our AI healthcare platform - diagnosis tools, voice assistant, patient management, landing pages, or any other features..." required>{{ old('message') }}</textarea>
                                 @error('message')
                                     <div class="text-danger mt-1">{{ $message }}</div>
                                 @enderror
@@ -124,36 +129,47 @@
 
                 <!-- Contact Information -->
                 <div class="col-lg-4">
-                    <div style="background-color: #f5f5f5; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
-                        <div style="text-align: center; margin-bottom: 20px;">
-                            <div style="width: 50px; height: 50px; background-color: #DE6262; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-bottom: 15px;">
+                    <div class="bg-light p-4 rounded mb-4">
+                        <div class="text-center">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #DE6262; color: white; font-size: 20px;">
                                 <i class="fas fa-headset"></i>
                             </div>
-                            <h5>24/7 Support</h5>
-                            <p class="text-muted">Our AI system is available around the clock, and our support team is here to help.</p>
-                            <p><strong>Response Time:</strong> Within 2 hours</p>
+                            <h5 class="fw-bold">24/7 Platform Support</h5>
+                            <p class="text-muted">Our AI healthcare platform is available around the clock with dedicated support for all features.</p>
+                            <p class="mb-0"><strong>Response Time:</strong> Within 2 hours</p>
                         </div>
                     </div>
 
-                    <div style="background-color: #f5f5f5; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
-                        <div style="text-align: center; margin-bottom: 20px;">
-                            <div style="width: 50px; height: 50px; background-color: #DE6262; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-bottom: 15px;">
+                    <div class="bg-light p-4 rounded mb-4">
+                        <div class="text-center">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #DE6262; color: white; font-size: 20px;">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <h5 class="fw-bold">AI Expertise</h5>
+                            <p class="text-muted">Specialized support for AI diagnosis, voice assistant, and automated patient management features.</p>
+                            <p class="mb-0"><strong>Specialization:</strong> Healthcare AI Technology</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-light p-4 rounded mb-4">
+                        <div class="text-center">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #DE6262; color: white; font-size: 20px;">
                                 <i class="fas fa-shield-alt"></i>
                             </div>
-                            <h5>HIPAA Compliance</h5>
-                            <p class="text-muted">All communications and data are encrypted and HIPAA compliant.</p>
-                            <p><strong>Security Level:</strong> Enterprise Grade</p>
+                            <h5 class="fw-bold">HIPAA Compliance</h5>
+                            <p class="text-muted">All communications and data are encrypted and HIPAA compliant with enterprise-grade security.</p>
+                            <p class="mb-0"><strong>Security Level:</strong> Enterprise Grade</p>
                         </div>
                     </div>
 
-                    <div style="background-color: #f5f5f5; padding: 30px; border-radius: 10px;">
-                        <div style="text-align: center; margin-bottom: 20px;">
-                            <div style="width: 50px; height: 50px; background-color: #DE6262; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-bottom: 15px;">
+                    <div class="bg-light p-4 rounded">
+                        <div class="text-center">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #DE6262; color: white; font-size: 20px;">
                                 <i class="fas fa-users"></i>
                             </div>
-                            <h5>Expert Team</h5>
-                            <p class="text-muted">Our team includes medical professionals and AI specialists.</p>
-                            <p><strong>Expertise:</strong> Medical AI & Healthcare</p>
+                            <h5 class="fw-bold">Healthcare Technology Experts</h5>
+                            <p class="text-muted">Our team includes medical professionals, AI specialists, and healthcare technology experts.</p>
+                            <p class="mb-0"><strong>Expertise:</strong> Complete Healthcare Solutions</p>
                         </div>
                     </div>
                 </div>

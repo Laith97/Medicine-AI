@@ -256,6 +256,61 @@
                             @endif
                         </div>
 
+                        <!-- Plan Selection Section -->
+                        <div class="form-group mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-credit-card me-2"></i>Choose Your Plan <span class="text-danger">*</span>
+                            </label>
+                            
+                            <!-- Billing Toggle -->
+                            <div class="text-center mb-3">
+                                <div class="d-inline-flex align-items-center p-1 rounded-pill" style="background: #f8f9fa; border: 1px solid #e9ecef;">
+                                    <span class="px-2 py-1 billing-toggle" id="monthly-toggle" onclick="switchBilling('monthly')" style="border-radius: 15px; cursor: pointer; transition: all 0.3s ease; background: #DE6262; color: white; font-size: 0.8rem;">Monthly</span>
+                                    <span class="px-2 py-1 billing-toggle" id="yearly-toggle" onclick="switchBilling('yearly')" style="border-radius: 15px; cursor: pointer; transition: all 0.3s ease; margin-left: 3px; font-size: 0.8rem;">Yearly <small>(Save!)</small></span>
+                                </div>
+                            </div>
+
+                            <div class="row g-3">
+                                @isset($pricingPlans)
+                                    @foreach($pricingPlans as $planKey => $plan)
+                                    <div class="col-md-4">
+                                        <div class="plan-card {{ $selectedPlan === $planKey ? 'selected' : '' }}" onclick="selectPlan('{{ $planKey }}')" data-plan="{{ $planKey }}">
+                                            <div class="plan-header">
+                                                <h6 class="plan-name">{{ $plan['name'] }}</h6>
+                                                <div class="plan-price">
+                                                    @if($plan['price_monthly'] == 0)
+                                                        <span class="price">Free</span>
+                                                    @else
+                                                        <span class="price monthly-price-display">${{ $plan['price_monthly'] }}</span>
+                                                        <span class="period monthly-price-display">/mo</span>
+                                                        <span class="price yearly-price-display" style="display: none;">${{ $plan['price_yearly'] }}</span>
+                                                        <span class="period yearly-price-display" style="display: none;">/yr</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            <ul class="plan-features">
+                                                @foreach(array_slice($plan['features'], 0, 3) as $feature)
+                                                <li><i class="bi bi-check-circle text-success me-1"></i>{{ $feature }}</li>
+                                                @endforeach
+                                                @if(count($plan['features']) > 3)
+                                                <li class="text-muted">+{{ count($plan['features']) - 3 }} more features</li>
+                                                @endif
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                @endisset
+                            </div>
+                            
+                            <!-- Hidden inputs for selected plan and billing -->
+                            <input type="hidden" name="selected_plan" id="selected_plan" value="{{ $selectedPlan }}">
+                            <input type="hidden" name="selected_billing" id="selected_billing" value="{{ $selectedBilling }}">
+                            
+                            @error('selected_plan')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         <!-- Terms Agreement -->
                         <div class="form-check mb-4">
                             <input class="form-check-input" type="checkbox" id="terms" required>
@@ -582,6 +637,126 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         document.getElementById('specialty').value = oldSpecialty;
     }
+    
+    // Plan Selection Functions
+    const selectedBilling = '{{ $selectedBilling }}';
+    
+    // Initialize billing toggle based on URL parameter
+    if (selectedBilling === 'yearly') {
+        switchBilling('yearly');
+    } else {
+        switchBilling('monthly');
+    }
 });
+
+// Plan Selection Functions
+function selectPlan(planKey) {
+    // Remove selected class from all plans
+    document.querySelectorAll('.plan-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked plan
+    document.querySelector(`.plan-card[data-plan="${planKey}"]`).classList.add('selected');
+    
+    // Update hidden field
+    document.getElementById('selected_plan').value = planKey;
+}
+
+function switchBilling(period) {
+    const monthlyToggle = document.getElementById('monthly-toggle');
+    const yearlyToggle = document.getElementById('yearly-toggle');
+    const monthlyPrices = document.querySelectorAll('.monthly-price-display');
+    const yearlyPrices = document.querySelectorAll('.yearly-price-display');
+    
+    document.getElementById('selected_billing').value = period;
+    
+    if (period === 'monthly') {
+        monthlyToggle.style.background = '#DE6262';
+        monthlyToggle.style.color = 'white';
+        yearlyToggle.style.background = 'transparent';
+        yearlyToggle.style.color = '#6C757D';
+        
+        monthlyPrices.forEach(price => price.style.display = 'inline');
+        yearlyPrices.forEach(price => price.style.display = 'none');
+    } else {
+        yearlyToggle.style.background = '#DE6262';
+        yearlyToggle.style.color = 'white';
+        monthlyToggle.style.background = 'transparent';
+        monthlyToggle.style.color = '#6C757D';
+        
+        monthlyPrices.forEach(price => price.style.display = 'none');
+        yearlyPrices.forEach(price => price.style.display = 'inline');
+    }
+}
 </script>
+
+<!-- Plan Selection Styles -->
+<style>
+.plan-card {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+    height: 100%;
+}
+
+.plan-card:hover {
+    border-color: #DE6262;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15);
+}
+
+.plan-card.selected {
+    border-color: #DE6262;
+    background: linear-gradient(135deg, rgba(222, 98, 98, 0.05), rgba(222, 98, 98, 0.02));
+    box-shadow: 0 4px 12px rgba(222, 98, 98, 0.2);
+}
+
+.plan-header {
+    text-align: center;
+    margin-bottom: 0.75rem;
+}
+
+.plan-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+}
+
+.plan-price .price {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #DE6262;
+}
+
+.plan-price .period {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.plan-features li {
+    padding: 0.2rem 0;
+    color: #6c757d;
+}
+
+.billing-toggle {
+    font-weight: 500;
+}
+
+.billing-toggle:hover {
+    background: #f8f9fa !important;
+}
+</style>
+
 @endsection

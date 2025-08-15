@@ -12,6 +12,11 @@ class MenuHelper
      */
     public static function getMenuItems(User $user): array
     {
+        // If admin OR hospital admin is impersonating, show all menu items without restrictions
+        if (session()->has('impersonating_admin_id') || session()->has('impersonating_hospital_admin_id')) {
+            return self::getMainUserMenuItemsWithoutRestrictions($user);
+        }
+
         if ($user->isSubUser()) {
             return self::getSubUserMenuItems($user);
         }
@@ -20,7 +25,7 @@ class MenuHelper
     }
 
     /**
-     * Get menu items for main users (doctors/patients)
+     * Get menu items for main users (doctors/patients/hospital_admins)
      */
     private static function getMainUserMenuItems(User $user): array
     {
@@ -30,6 +35,30 @@ class MenuHelper
 
         if ($user->isPatient()) {
             return self::getPatientMenuItems($user);
+        }
+
+        if ($user->isHospitalAdmin()) {
+            return self::getHospitalAdminMenuItems($user);
+        }
+
+        return [];
+    }
+
+    /**
+     * Get menu items for main users without restrictions (for admin impersonation)
+     */
+    private static function getMainUserMenuItemsWithoutRestrictions(User $user): array
+    {
+        if ($user->isDoctor()) {
+            return self::getDoctorMenuItemsWithoutRestrictions($user);
+        }
+
+        if ($user->isPatient()) {
+            return self::getPatientMenuItems($user);
+        }
+
+        if ($user->isHospitalAdmin()) {
+            return self::getHospitalAdminMenuItems($user); // Hospital admins already have all permissions
         }
 
         return [];
@@ -48,7 +77,7 @@ class MenuHelper
                 'icon' => 'fas fa-tachometer-alt',
                 'permission' => 'dashboard',
             ],
-            
+
             // AI Tools Dropdown
             [
                 'name' => 'AI Tools',
@@ -69,14 +98,15 @@ class MenuHelper
                         'permission' => 'voice_assistant',
                         'restricted' => true,
                     ],
-                    [
-                        'name' => 'Diagnoses',
-                        'route' => 'diagnosis.index',
-                        'icon' => 'fas fa-stethoscope',
-                        'permission' => 'diagnosis',
-                        'restricted' => true,
-                    ],
                 ]
+            ],
+
+            // Diagnoses - Standalone Menu Item
+            [
+                'name' => 'Diagnoses',
+                'route' => 'diagnosis.index',
+                'icon' => 'fas fa-stethoscope',
+                'permission' => 'diagnosis',
             ],
 
             // Patient Management
@@ -159,19 +189,26 @@ class MenuHelper
                 'name' => 'Business',
                 'icon' => 'fas fa-briefcase',
                 'dropdown' => true,
-                'items' => [
-                    [
+                'items' => array_filter([
+                    // Only show billing for standalone doctors (not hospital doctors)
+                    !$user->hospital_id ? [
                         'name' => 'Billing & Invoices',
                         'route' => 'invoices.index',
                         'icon' => 'fas fa-file-invoice',
                         'permission' => 'invoices',
-                    ],
-                    [
+                    ] : null,
+                    !$user->hospital_id ? [
                         'name' => 'Subscription',
                         'route' => 'subscription.manage',
                         'icon' => 'fas fa-credit-card',
                         'permission' => 'subscription',
-                    ],
+                    ] : null,
+                    !$user->hospital_id ? [
+                        'name' => 'Pricing',
+                        'route' => 'subscription.pricing',
+                        'icon' => 'fas fa-tags',
+                        'permission' => 'subscription',
+                    ] : null,
                     [
                         'name' => 'Sub-Users',
                         'route' => 'sub-users.index',
@@ -179,7 +216,7 @@ class MenuHelper
                         'permission' => 'sub_users',
                         'restricted' => true,
                     ],
-                ]
+                ])
             ],
 
             // Settings
@@ -198,7 +235,7 @@ class MenuHelper
                 $filteredItems = array_filter($item['items'], function ($subItem) use ($user) {
                     return self::userCanAccessMenuItem($user, $subItem);
                 });
-                
+
                 if (!empty($filteredItems)) {
                     $item['items'] = array_values($filteredItems);
                     return $item;
@@ -211,6 +248,147 @@ class MenuHelper
         }, $menuItems), function ($item) {
             return $item !== null;
         });
+    }
+
+    /**
+     * Get menu items for doctors without restrictions (for admin impersonation)
+     */
+    private static function getDoctorMenuItemsWithoutRestrictions(User $user): array
+    {
+        $menuItems = [
+            // Main Dashboard
+            [
+                'name' => 'Dashboard',
+                'route' => 'dashboard',
+                'icon' => 'fas fa-tachometer-alt',
+            ],
+
+            // AI Tools Dropdown - Show ALL items
+            [
+                'name' => 'AI Tools',
+                'icon' => 'fas fa-robot',
+                'dropdown' => true,
+                'items' => [
+                    [
+                        'name' => 'AI Assistant',
+                        'route' => 'ask-ai',
+                        'icon' => 'fas fa-robot',
+                    ],
+                    [
+                        'name' => 'Voice Assistant',
+                        'route' => 'voice-assistant.index',
+                        'icon' => 'fas fa-microphone',
+                    ],
+                ]
+            ],
+
+            // Diagnoses - Standalone Menu Item
+            [
+                'name' => 'Diagnoses',
+                'route' => 'diagnosis.index',
+                'icon' => 'fas fa-stethoscope',
+            ],
+
+            // Patient Management
+            [
+                'name' => 'Patients',
+                'icon' => 'fas fa-users',
+                'dropdown' => true,
+                'items' => [
+                    [
+                        'name' => 'Patient Cases',
+                        'route' => 'cases',
+                        'icon' => 'fas fa-folder-open',
+                    ],
+                    [
+                        'name' => 'My Notes',
+                        'route' => 'doctor.notes.index',
+                        'icon' => 'fas fa-sticky-note',
+                    ],
+                    [
+                        'name' => 'Chat Messages',
+                        'route' => 'doctor.chat.index',
+                        'icon' => 'fas fa-comments',
+                    ],
+                ]
+            ],
+
+            // Appointments & Schedule
+            [
+                'name' => 'Schedule',
+                'icon' => 'fas fa-calendar-alt',
+                'dropdown' => true,
+                'items' => [
+                    [
+                        'name' => 'Appointments',
+                        'route' => 'doctor.appointments.index',
+                        'icon' => 'fas fa-calendar',
+                    ],
+                    [
+                        'name' => 'Availability',
+                        'route' => 'doctor.availability.index',
+                        'icon' => 'fas fa-clock',
+                    ],
+                    [
+                        'name' => 'Reviews',
+                        'route' => 'doctor.reviews.index',
+                        'icon' => 'fas fa-star',
+                    ],
+                ]
+            ],
+
+            // Online Presence
+            [
+                'name' => 'Online Presence',
+                'icon' => 'fas fa-globe',
+                'dropdown' => true,
+                'items' => [
+                    [
+                        'name' => 'Landing Page',
+                        'route' => 'doctor.landing-page.index',
+                        'icon' => 'fas fa-globe',
+                    ],
+                    [
+                        'name' => 'Blog Posts',
+                        'route' => 'doctor.blog.index',
+                        'icon' => 'fas fa-blog',
+                    ],
+                ]
+            ],
+
+            // Business Management - Show restricted items but still respect hospital_id for billing
+            [
+                'name' => 'Business',
+                'icon' => 'fas fa-briefcase',
+                'dropdown' => true,
+                'items' => array_filter([
+                    // Only show billing for standalone doctors (not hospital doctors) - even during impersonation
+                    !$user->hospital_id ? [
+                        'name' => 'Billing & Invoices',
+                        'route' => 'invoices.index',
+                        'icon' => 'fas fa-file-invoice',
+                    ] : null,
+                    !$user->hospital_id ? [
+                        'name' => 'Subscription',
+                        'route' => 'subscription.manage',
+                        'icon' => 'fas fa-credit-card',
+                    ] : null,
+                    !$user->hospital_id ? [
+                        'name' => 'Pricing',
+                        'route' => 'subscription.pricing',
+                        'icon' => 'fas fa-tags',
+                    ] : null,
+                    [
+                        'name' => 'Sub-Users',
+                        'route' => 'sub-users.index',
+                        'icon' => 'fas fa-users',
+                    ],
+                ])
+            ],
+        ];
+
+        // Return all menu items without any filtering
+        return $menuItems;
     }
 
     /**
@@ -238,6 +416,133 @@ class MenuHelper
     }
 
     /**
+     * Get menu items for hospital admins
+     */
+    private static function getHospitalAdminMenuItems(User $user): array
+    {
+        $menuItems = [
+            // Main Dashboard
+            [
+                'name' => 'Dashboard',
+                'route' => 'hospital-admin.dashboard',
+                'icon' => 'fas fa-tachometer-alt',
+                'permission' => 'dashboard',
+            ],
+
+            // Doctor Management
+            [
+                'name' => 'Manage Doctors',
+                'icon' => 'fas fa-user-md',
+                'dropdown' => true,
+                'items' => [
+                    [
+                        'name' => 'All Doctors',
+                        'route' => 'hospital-admin.doctors.index',
+                        'icon' => 'fas fa-list',
+                        'permission' => 'manage_doctors',
+                    ],
+                    [
+                        'name' => 'Add Doctor',
+                        'route' => 'hospital-admin.doctors.create',
+                        'icon' => 'fas fa-plus',
+                        'permission' => 'manage_doctors',
+                    ],
+                    [
+                        'name' => 'Doctor Statistics',
+                        'route' => 'hospital-admin.doctors.statistics',
+                        'icon' => 'fas fa-chart-bar',
+                        'permission' => 'manage_doctors',
+                    ],
+                ]
+            ],
+
+            // Hospital Management
+            [
+                'name' => 'Hospital Settings',
+                'icon' => 'fas fa-hospital',
+                'dropdown' => true,
+                'items' => [
+                    [
+                        'name' => 'Hospital Profile',
+                        'route' => 'hospital-admin.hospital.profile',
+                        'icon' => 'fas fa-building',
+                        'permission' => 'hospital_settings',
+                    ],
+                    [
+                        'name' => 'Departments',
+                        'route' => 'hospital-admin.departments.index',
+                        'icon' => 'fas fa-sitemap',
+                        'permission' => 'hospital_settings',
+                    ],
+                ]
+            ],
+
+            // Analytics & Reports
+            [
+                'name' => 'Analytics',
+                'icon' => 'fas fa-chart-line',
+                'dropdown' => true,
+                'items' => [
+                    [
+                        'name' => 'Hospital Overview',
+                        'route' => 'hospital-admin.analytics.overview',
+                        'icon' => 'fas fa-chart-pie',
+                        'permission' => 'analytics',
+                    ],
+                    [
+                        'name' => 'Doctor Performance',
+                        'route' => 'hospital-admin.analytics.doctors',
+                        'icon' => 'fas fa-user-chart',
+                        'permission' => 'analytics',
+                    ],
+                    [
+                        'name' => 'Financial Reports',
+                        'route' => 'hospital-admin.analytics.financial',
+                        'icon' => 'fas fa-dollar-sign',
+                        'permission' => 'analytics',
+                    ],
+                ]
+            ],
+
+            // Billing & Subscription (Only for hospital admins)
+            [
+                'name' => 'Billing',
+                'icon' => 'fas fa-credit-card',
+                'dropdown' => true,
+                'items' => [
+                    [
+                        'name' => 'Subscription',
+                        'route' => 'hospital-admin.subscription.manage',
+                        'icon' => 'fas fa-credit-card',
+                        'permission' => 'billing',
+                    ],
+                    [
+                        'name' => 'Pricing',
+                        'route' => 'subscription.pricing',
+                        'icon' => 'fas fa-tags',
+                        'permission' => 'billing',
+                    ],
+                    [
+                        'name' => 'Invoices',
+                        'route' => 'hospital-admin.invoices.index',
+                        'icon' => 'fas fa-file-invoice',
+                        'permission' => 'billing',
+                    ],
+                    [
+                        'name' => 'Usage Reports',
+                        'route' => 'hospital-admin.usage.index',
+                        'icon' => 'fas fa-chart-area',
+                        'permission' => 'billing',
+                    ],
+                ]
+            ],
+        ];
+
+        // Filter menu items based on permissions (hospital admins have all permissions by default)
+        return $menuItems;
+    }
+
+    /**
      * Get menu items for sub-users based on their permissions
      */
     private static function getSubUserMenuItems(User $user): array
@@ -259,7 +564,7 @@ class MenuHelper
             if (isset($item['dropdown']) && isset($item['items'])) {
                 // Filter dropdown items
                 $filteredDropdownItems = self::filterMenuItemsByPermissions($item['items'], $userPermissions);
-                
+
                 if (!empty($filteredDropdownItems)) {
                     $item['items'] = $filteredDropdownItems;
                     $filteredItems[] = $item;
@@ -298,7 +603,7 @@ class MenuHelper
     public static function shouldShowRoute(string $routeName, User $user = null): bool
     {
         $user = $user ?? auth()->user();
-        
+
         if (!$user) {
             return false;
         }
@@ -313,6 +618,10 @@ class MenuHelper
     {
         if ($user->isSubUser()) {
             return ucfirst($user->sub_user_role ?? 'Sub User');
+        }
+
+        if ($user->isHospitalAdmin()) {
+            return 'Hospital Admin';
         }
 
         return ucfirst($user->role);

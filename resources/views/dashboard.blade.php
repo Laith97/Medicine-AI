@@ -934,8 +934,20 @@
                             </h5>
                             <p class="mb-2">
                                 You have <strong>{{ $trialInfo['trial_days_remaining'] }} days</strong> remaining in your free trial. 
-                                Enjoy full access to all features!
+                                @if(isset($trialInfo['has_future_subscription']) && $trialInfo['has_future_subscription'])
+                                    <strong class="text-success">Your subscription will automatically start when the trial ends!</strong>
+                                @else
+                                    Enjoy full access to all features!
+                                @endif
                             </p>
+                            
+                            @if(isset($trialInfo['has_future_subscription']) && $trialInfo['has_future_subscription'])
+                                <div class="alert alert-success mt-2 p-2 small">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    <strong>Subscription Ready:</strong> Your paid plan starts {{ Auth::user()->monthlyInvoiceSetting->subscription_starts_at->format('M j') }} and runs until {{ Auth::user()->monthlyInvoiceSetting->subscription_ends_at->format('M j, Y') }}
+                                </div>
+                            @endif
+                            
                             <div class="d-flex gap-2">
                                 <a href="{{ route('subscription.pricing') }}" class="btn btn-info btn-sm">
                                     <i class="fas fa-credit-card me-1"></i>View Pricing
@@ -948,7 +960,7 @@
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-            @elseif($trialInfo['has_active_subscription'])
+            @elseif($trialInfo['has_active_subscription'] && !$trialInfo['is_in_trial'])
                 <!-- Active Subscription Banner -->
                 <div class="alert alert-success alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(25, 135, 84, 0.2);">
                     <div class="d-flex align-items-center">
@@ -965,6 +977,13 @@
                                     <strong>Expires: {{ Auth::user()->monthlyInvoiceSetting->subscription_ends_at->format('M d, Y') }}</strong>
                                 @endif
                             </p>
+                            
+                            @if(config('app.debug'))
+                                <div class="alert alert-warning mt-2 p-2 small">
+                                    <strong>DEBUG:</strong> has_active_subscription=true, is_in_trial=false, sub_ends={{ Auth::user()->monthlyInvoiceSetting ? Auth::user()->monthlyInvoiceSetting->subscription_ends_at : 'null' }}
+                                </div>
+                            @endif
+                            
                             <div class="d-flex gap-2">
                                 <a href="{{ route('subscription.manage') }}" class="btn btn-success btn-sm">
                                     <i class="fas fa-cog me-1"></i>Manage Subscription

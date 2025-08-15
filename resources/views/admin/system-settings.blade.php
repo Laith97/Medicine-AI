@@ -228,8 +228,8 @@
 
                 <!-- Trial Days Setting -->
                 <div class="setting-item">
-                    <div class="setting-title">
-                        <i class="fas fa-calendar-check me-2"></i>
+                    <div class="setting-label">
+                        <i class="fas fa-calendar-check me-2" style="color: #DE6262;"></i>
                         Free Trial Days
                     </div>
                     <div class="setting-description">
@@ -250,6 +250,51 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- SaaS Pricing Settings -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <i class="fas fa-tags me-2" style="color: #DE6262;"></i>
+                        SaaS Professional Plan Pricing
+                    </div>
+                    <div class="setting-description">
+                        Set the pricing for the Professional subscription plan. These values will be used for new user registrations.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Monthly Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" 
+                                       name="saas_professional_monthly" 
+                                       class="form-control"
+                                       value="{{ $settings['saas_professional_monthly']->value ?? '30' }}"
+                                       step="0.01" 
+                                       min="0" 
+                                       max="9999.99"
+                                       placeholder="30.00">
+                                <span class="input-group-text">/month</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Yearly Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" 
+                                       name="saas_professional_yearly" 
+                                       class="form-control"
+                                       value="{{ $settings['saas_professional_yearly']->value ?? '300' }}"
+                                       step="0.01" 
+                                       min="0" 
+                                       max="99999.99"
+                                       placeholder="300.00">
+                                <span class="input-group-text">/year</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
 
                 <div class="text-end mt-4">
                     <button type="submit" class="btn-custom-primary">

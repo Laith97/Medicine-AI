@@ -21,9 +21,37 @@ class RegisteredUserController extends Controller
     /**
      * Display the registration view.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('auth.register');
+        // Get dynamic pricing from system settings
+        $professionalMonthly = \App\Models\SystemSetting::get('saas_professional_monthly', 30);
+        $professionalYearly = \App\Models\SystemSetting::get('saas_professional_yearly', 300);
+
+        
+        // Define the same pricing plans as in the home page
+        $pricingPlans = [
+            'free' => [
+                'name' => 'Free',
+                'price_monthly' => 0,
+                'price_yearly' => 0,
+                'description' => 'Perfect for getting started',
+                'features' => ['5 AI consultations per month', 'Basic patient management', 'Email support', 'Standard security'],
+            ],
+            'professional' => [
+                'name' => 'Professional', 
+                'price_monthly' => $professionalMonthly,
+                'price_yearly' => $professionalYearly,
+                'description' => 'Most popular for growing practices',
+                'features' => ['Unlimited AI consultations', 'Advanced patient management', 'Voice assistant & transcription', 'Professional landing page', 'Priority email support', 'Export capabilities', 'Basic analytics'],
+            ],
+
+        ];
+        
+        // Get selected plan from URL parameter
+        $selectedPlan = $request->get('plan', 'professional'); // Default to professional
+        $selectedBilling = $request->get('billing', 'monthly'); // Default to monthly
+        
+        return view('auth.register', compact('pricingPlans', 'selectedPlan', 'selectedBilling'));
     }
 
     /**
@@ -40,6 +68,8 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'specialty' => ['required', 'string', 'max:255'],
             'custom_specialty' => ['nullable', 'string', 'max:255'],
+            'selected_plan' => ['required', 'string', 'in:free,professional'],
+            'selected_billing' => ['required', 'string', 'in:monthly,yearly'],
         ]);
 
         // Determine the final specialty value
@@ -54,6 +84,18 @@ class RegisteredUserController extends Controller
         if (empty($specialty)) {
             return back()->withErrors(['specialty' => 'Please select or enter your medical specialty.'])->withInput();
         }
+
+        // Get dynamic pricing from system settings
+        $professionalMonthly = \App\Models\SystemSetting::get('saas_professional_monthly', 30);
+        $professionalYearly = \App\Models\SystemSetting::get('saas_professional_yearly', 300);
+
+        
+        // Define pricing plans (same as in create method)
+        $pricingPlans = [
+            'free' => ['price_monthly' => 0, 'price_yearly' => 0],
+            'professional' => ['price_monthly' => $professionalMonthly, 'price_yearly' => $professionalYearly],
+
+        ];
 
         $user = User::create([
             'name' => $request->name,
@@ -75,14 +117,14 @@ class RegisteredUserController extends Controller
         ]);
 
         // Find or create specialty
-        $specialty = Specialty::firstOrCreate(
+        $specialtyModel = Specialty::firstOrCreate(
             ['name' => $request->specialty],
             ['slug' => \Str::slug($request->specialty), 'is_active' => true]
         );
 
         // Create doctor profile
         $user->doctor()->create([
-            'specialty_id' => $specialty->id,
+            'specialty_id' => $specialtyModel->id,
             'license_number' => 'TEMP-' . strtoupper(Str::random(8)) . '-' . $user->id, // Temporary license number
             'consultation_fee' => 5000, // Default $50.00 in cents
             'appointment_duration' => 30, // Default 30 minutes
@@ -92,13 +134,39 @@ class RegisteredUserController extends Controller
             'cancellation_hours' => 24, // Default 24 hours notice
         ]);
 
-        // Start free trial for new user
+        // ALL USERS GET FREE TRIAL FIRST (mandatory)
         $user->startTrial();
+        
+        // Set up subscription preferences based on selected plan
+        $selectedPlan = $request->selected_plan;
+        $selectedBilling = $request->selected_billing;
+        $planPricing = $pricingPlans[$selectedPlan];
+        
+        if ($selectedPlan === 'professional') {
+            // Store their plan preference for after trial ends
+            $price = $selectedBilling === 'monthly' ? $planPricing['price_monthly'] : $planPricing['price_yearly'];
+            $billingPeriodMonths = $selectedBilling === 'monthly' ? 1 : 12;
+            
+            // Create monthly invoice setting with selected plan preferences
+            $user->monthlyInvoiceSetting()->create([
+                'monthly_price' => $planPricing['price_monthly'], // Store monthly price option
+                'yearly_price' => $planPricing['price_yearly'],   // Store yearly price option  
+                'billing_amount' => $price, // The amount they'll be charged after trial
+                'subscription_period_months' => $billingPeriodMonths,
+                'subscription_starts_at' => null, // Will be set when trial ends and payment is completed
+                'subscription_ends_at' => null, // Will be set when payment is completed
+                'is_active' => true, // Set to true so user can see plans
+                'is_restricted' => false, // Not restricted during trial
+            ]);
+        }
+        // Note: Free plan users don't need billing setup - they'll set it up after trial if desired
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect(route('doctor.dashboard', absolute: false));
+        // ALL users go to dashboard with trial notification
+        return redirect(route('doctor.dashboard', absolute: false))
+            ->with('success', 'Welcome! Your free trial has started - enjoy full access to all features!');
     }
 }

@@ -16,7 +16,7 @@ return new class extends Migration
             Schema::create('landing_page_visits', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedBigInteger('doctor_id');
-                $table->ipAddress('visitor_ip');
+                $table->ipAddress('ip_address');
                 $table->text('user_agent')->nullable();
                 $table->string('referrer_url')->nullable();
                 $table->string('page_url');
@@ -30,7 +30,7 @@ return new class extends Migration
                 $table->timestamps();
 
                 $table->index(['doctor_id', 'visited_at']);
-                $table->index(['visitor_ip']);
+                $table->index(['ip_address']);
                 $table->index(['visited_at']);
             });
 

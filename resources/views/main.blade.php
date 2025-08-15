@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('title', 'AI Medical Diagnosis - Smart Healthcare Solutions')
+@section('title', 'MedCura AI - Complete Healthcare Platform | AI Diagnosis, Patient Management & Practice Growth')
 
 @push('styles')
 <style>
@@ -309,10 +309,10 @@
             <div class="col-lg-6">
                 <div class="text-white mb-5">
                     <h1 class="display-3 fw-bold mb-4" data-animate="fadeInUp">
-                        <span style="color: #DE6262;">AI-Powered</span><br><span style="color: #FFE4E1;">Medical Diagnosis</span>
+                        <span style="color: #DE6262;">Complete AI-Powered</span><br><span style="color: #FFE4E1;">Healthcare Platform</span>
                     </h1>
                     <p class="lead mb-4 opacity-90" data-animate="fadeInUp" data-delay="200">
-                        Revolutionary artificial intelligence that empowers doctors with instant, accurate diagnostic insights. Transform patient care with cutting-edge technology.
+                        Revolutionary AI platform combining intelligent diagnosis, voice assistance, patient management, and professional online presence. Transform your medical practice with cutting-edge technology.
                     </p>
                     <div class="d-flex flex-wrap gap-3" data-animate="fadeInUp" data-delay="400">
                         <a href="/login" class="btn btn-theme-primary btn-lg">
@@ -347,8 +347,8 @@
 <section id="features" class="py-5" style="background: #F8F9FA;">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="section-title">Why Choose Our AI System?</h2>
-            <p class="section-subtitle">Advanced technology designed for modern healthcare</p>
+            <h2 class="section-title">Complete Healthcare Solution</h2>
+            <p class="section-subtitle">Everything you need to run a modern medical practice</p>
         </div>
         <div class="row g-4">
             <div class="col-lg-4 col-md-6">
@@ -356,17 +356,35 @@
                     <div class="feature-icon">
                         <i class="fas fa-brain"></i>
                     </div>
-                    <h4 class="mb-3">Advanced AI Analysis</h4>
-                    <p class="text-muted">Machine learning algorithms trained on millions of medical cases provide unprecedented diagnostic accuracy.</p>
+                    <h4 class="mb-3">AI-Powered Diagnosis</h4>
+                    <p class="text-muted">Advanced GPT-4 powered analysis with voice transcription, manual diagnosis creation, and intelligent follow-up questions for comprehensive patient care.</p>
                 </div>
             </div>
             <div class="col-lg-4 col-md-6">
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-bolt"></i>
+                        <i class="fas fa-microphone"></i>
                     </div>
-                    <h4 class="mb-3">Instant Results</h4>
-                    <p class="text-muted">Get comprehensive diagnostic insights within seconds, enabling faster patient care and treatment decisions.</p>
+                    <h4 class="mb-3">Voice Assistant</h4>
+                    <p class="text-muted">Hands-free consultation documentation with real-time speech-to-text, automatic chart filling, and AI-powered clinical analysis.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h4 class="mb-3">Patient Management</h4>
+                    <p class="text-muted">Complete patient lifecycle management with appointment booking, case tracking, automated notifications, and review systems.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <h4 class="mb-3">Professional Online Presence</h4>
+                    <p class="text-muted">Customizable landing pages, blog management, live chat widgets, and patient testimonials to grow your practice online.</p>
                 </div>
             </div>
             <div class="col-lg-4 col-md-6">
@@ -374,8 +392,17 @@
                     <div class="feature-icon">
                         <i class="fas fa-shield-alt"></i>
                     </div>
-                    <h4 class="mb-3">HIPAA Compliant</h4>
-                    <p class="text-muted">Enterprise-grade security ensures all patient data is encrypted and protected according to medical standards.</p>
+                    <h4 class="mb-3">HIPAA Compliant Security</h4>
+                    <p class="text-muted">Enterprise-grade encryption, secure data handling, role-based access control, and comprehensive audit trails for complete compliance.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h4 class="mb-3">Multi-Channel Communication</h4>
+                    <p class="text-muted">Automated email and SMS notifications, real-time chat, appointment reminders, and subscription management across all devices.</p>
                 </div>
             </div>
         </div>
@@ -387,7 +414,7 @@
     <div class="container">
         <div class="text-center mb-5">
             <h2 class="section-title">How It Works</h2>
-            <p class="section-subtitle">Simple 3-step process for AI-powered diagnosis</p>
+            <p class="section-subtitle">Simple process for comprehensive healthcare management</p>
         </div>
         <div class="row g-4">
             <div class="col-lg-4">
@@ -395,8 +422,8 @@
                     <div class="step-number">1</div>
                     <div class="mt-4">
                         <i class="fas fa-user-doctor text-theme-primary mb-3" style="font-size: 3rem;"></i>
-                        <h4 class="mb-3">Input Patient Data</h4>
-                        <p class="text-muted">Securely enter patient symptoms, medical history, and relevant clinical information through our intuitive interface.</p>
+                        <h4 class="mb-3">Register & Setup</h4>
+                        <p class="text-muted">Create your account, customize your profile, set up your professional landing page, and configure your practice preferences.</p>
                     </div>
                 </div>
             </div>
@@ -404,9 +431,9 @@
                 <div class="step-card">
                     <div class="step-number">2</div>
                     <div class="mt-4">
-                        <i class="fas fa-cogs text-theme-primary mb-3" style="font-size: 3rem;"></i>
-                        <h4 class="mb-3">AI Processing</h4>
-                        <p class="text-muted">Our advanced AI analyzes the data against vast medical databases and clinical guidelines for accurate insights.</p>
+                        <i class="fas fa-stethoscope text-theme-primary mb-3" style="font-size: 3rem;"></i>
+                        <h4 class="mb-3">Manage Patients</h4>
+                        <p class="text-muted">Use AI diagnosis tools, voice assistant, appointment booking, and automated patient communication to streamline your practice.</p>
                     </div>
                 </div>
             </div>
@@ -415,8 +442,8 @@
                     <div class="step-number">3</div>
                     <div class="mt-4">
                         <i class="fas fa-chart-line text-theme-primary mb-3" style="font-size: 3rem;"></i>
-                        <h4 class="mb-3">Get Results</h4>
-                        <p class="text-muted">Receive detailed diagnostic suggestions, treatment recommendations, and confidence scores instantly.</p>
+                        <h4 class="mb-3">Grow Your Practice</h4>
+                        <p class="text-muted">Leverage professional landing pages, patient reviews, blog content, and analytics to expand your reach and improve patient outcomes.</p>
                     </div>
                 </div>
             </div>
@@ -430,26 +457,57 @@
         <div class="row">
             <div class="col-lg-3 col-md-6">
                 <div class="stat-item">
-                    <div class="stat-number">15K+</div>
-                    <h5>Diagnoses Generated</h5>
+                    <div class="stat-number">25K+</div>
+                    <h5>AI Diagnoses Created</h5>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
                 <div class="stat-item">
-                    <div class="stat-number">98%</div>
-                    <h5>Accuracy Rate</h5>
+                    <div class="stat-number">1,200+</div>
+                    <h5>Healthcare Professionals</h5>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
                 <div class="stat-item">
-                    <div class="stat-number">500+</div>
-                    <h5>Doctors Using</h5>
+                    <div class="stat-number">50K+</div>
+                    <h5>Patient Appointments</h5>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
                 <div class="stat-item">
-                    <div class="stat-number">24/7</div>
-                    <h5>Available</h5>
+                    <div class="stat-number">99.9%</div>
+                    <h5>System Uptime</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Platform Highlights Section -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Platform Highlights</h2>
+            <p class="section-subtitle">Advanced features that set us apart</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h4 class="mb-3">Enterprise Security</h4>
+                    <p class="text-muted">HIPAA-compliant platform with end-to-end encryption, role-based access control, and comprehensive audit trails for complete data protection.</p>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h4 class="mb-3">Multi-Channel Communication</h4>
+                    <p class="text-muted">Reach patients through SMS (Twilio, Plivo), automated email campaigns, live chat widgets, and appointment reminders across all devices.</p>
                 </div>
             </div>
         </div>
@@ -460,7 +518,7 @@
 <section class="py-5" style="background: #F8F9FA;">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="section-title">What Doctors Say</h2>
+            <h2 class="section-title">What Healthcare Professionals Say</h2>
             <p class="section-subtitle">Trusted by medical professionals worldwide</p>
         </div>
         <div class="row justify-content-center">
@@ -471,7 +529,7 @@
                         <h5 class="mb-1">Dr. Saif Al-Zawahrah</h5>
                         <small class="text-muted">Internal Medicine</small>
                     </div>
-                    <p class="text-muted">This AI system has revolutionized my practice. The accuracy and speed of diagnosis have improved patient outcomes significantly.</p>
+                    <p class="text-muted">This comprehensive AI platform has transformed my practice completely. From AI diagnosis to voice assistant and patient management - everything I need in one place. Patient satisfaction has increased dramatically.</p>
                 </div>
             </div>
             <div class="col-lg-5 col-md-6">
@@ -481,7 +539,7 @@
                         <h5 class="mb-1">Dr. Khaled Mansour</h5>
                         <small class="text-muted">Family Physician</small>
                     </div>
-                    <p class="text-muted">An essential tool for modern healthcare. The AI provides insights I might have missed, making me a better doctor.</p>
+                    <p class="text-muted">The voice assistant and automated patient communication features have saved me hours daily. The professional landing page has brought in 40% more patients. Incredible value!</p>
                 </div>
             </div>
         </div>
@@ -489,109 +547,333 @@
 </section>
 
 @if($showPricingSection)
-<!-- Pricing Information Section -->
+<!-- Pricing Plans Section -->
 <section id="pricing" class="py-5 bg-white">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="section-title">Custom Medical Solutions</h2>
-            <p class="section-subtitle">Personalized pricing based on your practice needs</p>
+            <h2 class="section-title">Simple, Transparent Pricing</h2>
+            <p class="section-subtitle">Choose the plan that fits your practice</p>
         </div>
 
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="pricing-info-card text-center p-5" style="background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #f0f0f0;">
-                    <div class="feature-icon mb-4">
-                        <i class="fas fa-user-md"></i>
-                    </div>
-                    <h3 class="mb-3">Tailored for Healthcare Professionals</h3>
-                    <p class="mb-4 text-muted">
-                        Our AI-powered medical diagnosis system is customized for each healthcare provider. 
-                        Each account receives personalized pricing based on practice size, specialty, and usage requirements.
-                    </p>
-                    
-                    <div class="features-grid row g-3 mb-4">
-                        <div class="col-md-6">
-                            <div class="feature-item d-flex align-items-center">
-                                <i class="fas fa-check text-success me-3"></i>
-                                <span>AI-powered diagnosis assistance</span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="feature-item d-flex align-items-center">
-                                <i class="fas fa-check text-success me-3"></i>
-                                <span>Advanced patient management</span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="feature-item d-flex align-items-center">
-                                <i class="fas fa-check text-success me-3"></i>
-                                <span>Secure data handling</span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="feature-item d-flex align-items-center">
-                                <i class="fas fa-check text-success me-3"></i>
-                                <span>24/7 professional support</span>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Billing Toggle for All Users -->
+        <div class="text-center mb-5">
+            <div class="d-inline-flex align-items-center p-2 rounded-pill" style="background: #f8f9fa; border: 1px solid #e9ecef;">
+                <span class="px-3 py-2 billing-period-label" id="monthly-label" style="border-radius: 20px; cursor: pointer; transition: all 0.3s ease; background: #DE6262; color: white;">Monthly</span>
+                <span class="px-3 py-2 billing-period-label" id="yearly-label" style="border-radius: 20px; cursor: pointer; transition: all 0.3s ease; margin-left: 5px;">Yearly <small class="text-success">(Save up to 17%)</small></span>
+            </div>
+        </div>
 
-                    @guest
-                        <a href="{{ route('contact') }}" class="btn btn-theme-primary btn-lg">
-                            <i class="fas fa-envelope me-2"></i>
-                            Contact Us for Custom Pricing
-                        </a>
-                        <p class="mt-3 text-muted small">
-                            Get in touch to discuss your specific needs and receive a personalized quote
-                        </p>
-                    @endguest
 
-                    @auth
-                        <div class="user-pricing-info p-4 rounded" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #DE6262;">
-                            <h4 class="text-theme-primary mb-3">Your Personalized Plan</h4>
-                            @if(Auth::user()->monthlyInvoiceSetting && Auth::user()->monthlyInvoiceSetting->is_active)
-                                @php
-                                    $setting = Auth::user()->monthlyInvoiceSetting;
-                                    $monthlyPrice = $setting->monthly_price ?? 0;
-                                    $yearlyPrice = $setting->yearly_price ?? 0;
-                                @endphp
-                                <div class="pricing-options mb-3">
-                                    <div class="row text-center">
-                                        <div class="col-md-6">
-                                            <div class="price-option p-3 rounded" style="background: rgba(222, 98, 98, 0.1);">
-                                                <small class="text-muted d-block">Monthly</small>
-                                                <span class="h4 text-theme-primary">${{ number_format($monthlyPrice, 0) }}</span>
-                                                <small class="text-muted">/month</small>
+        
+        <!-- 3 Pricing Plans -->
+        <div class="row justify-content-center g-4">
+            @if(isset($pricingPlans) && !empty($pricingPlans))
+                @foreach($pricingPlans as $planKey => $plan)
+                <div class="col-lg-4 col-md-6">
+                    <div class="pricing-card h-100 d-flex flex-column {{ $plan['is_featured'] ? 'featured' : '' }}">
+                        @if($plan['is_featured'])
+                            <div class="popular-badge">Most Popular</div>
+                        @endif
+                        
+                        <div class="pricing-header">
+                            <h3 class="plan-name">{{ $plan['name'] }}</h3>
+                            <p class="text-muted mb-3">{{ $plan['description'] }}</p>
+                            <div class="price-container">
+                                @if($plan['price_monthly'] == 0)
+                                    <div class="price-display">
+                                        <span class="price">Free</span>
+                                    </div>
+                                @else
+                                    @guest
+                                        <div class="price-display monthly-price">
+                                            <span class="price">${{ $plan['price_monthly'] }}</span>
+                                            <span class="period">/month</span>
+                                        </div>
+                                        <div class="price-display yearly-price" style="display: none;">
+                                            <span class="price">${{ $plan['price_yearly'] }}</span>
+                                            <span class="period">/year</span>
+                                            <div class="mt-2">
+                                                <small class="text-success">Save ${{ ($plan['price_monthly'] * 12) - $plan['price_yearly'] }}</small>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="price-option p-3 rounded" style="background: rgba(222, 98, 98, 0.1);">
-                                                <small class="text-muted d-block">Yearly</small>
-                                                <span class="h4 text-theme-primary">${{ number_format($yearlyPrice, 0) }}</span>
-                                                <small class="text-muted">/year</small>
-                                            </div>
+                                    @endguest
+                                    @auth
+                                        <div class="price-display">
+                                            <span class="price">${{ $plan['price_monthly'] }}</span>
+                                            <span class="period">/month</span>
                                         </div>
+                                    @endauth
+                                @endif
+                            </div>
+                        </div>
+                        
+                        <div class="pricing-body flex-grow-1">
+                            <ul class="feature-list">
+                                @foreach($plan['features'] as $feature)
+                                <li><i class="fas fa-check text-success me-2"></i>{{ $feature }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        
+                        <div class="pricing-footer">
+                            <a href="{{ $plan['button_url'] }}" class="btn {{ $plan['is_featured'] ? 'btn-theme-primary' : 'btn-theme-outline' }} btn-lg w-100">
+                                {{ $plan['button_text'] }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            @else
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <h5>Pricing Plans</h5>
+                        <p>Our pricing plans are being loaded. Please refresh the page.</p>
+                    </div>
+                </div>
+            @endif
+        </div>
+
+        @auth
+            <!-- For authenticated users, show their current plan info -->
+            @if(Auth::user()->monthlyInvoiceSetting && Auth::user()->monthlyInvoiceSetting->is_active)
+            <div class="row justify-content-center mt-5">
+                <div class="col-lg-8">
+                    <div class="user-pricing-info p-4 rounded text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #DE6262;">
+                        <h4 class="text-theme-primary mb-3">Your Current Plan</h4>
+                        @php
+                            $setting = Auth::user()->monthlyInvoiceSetting;
+                            $monthlyPrice = $setting->monthly_price ?? 0;
+                            $yearlyPrice = $setting->yearly_price ?? 0;
+                        @endphp
+                        <div class="pricing-options mb-3">
+                            <div class="row text-center">
+                                <div class="col-md-6">
+                                    <div class="price-option p-3 rounded" style="background: rgba(222, 98, 98, 0.1);">
+                                        <small class="text-muted d-block">Monthly</small>
+                                        <span class="h4 text-theme-primary">${{ number_format($monthlyPrice, 0) }}</span>
+                                        <small class="text-muted">/month</small>
                                     </div>
                                 </div>
-                                <p class="text-muted mb-3">Your personalized pricing - Choose monthly or yearly billing</p>
-                                <a href="{{ route('subscription.manage') }}" class="btn btn-theme-primary">
-                                    <i class="fas fa-cog me-2"></i>
-                                    Manage Subscription
-                                </a>
-                            @else
-                                <p class="text-muted mb-3">Your account is currently being set up. Please contact support for activation.</p>
-                                <a href="{{ route('contact') }}" class="btn btn-theme-outline">
-                                    <i class="fas fa-phone me-2"></i>
-                                    Contact Support
-                                </a>
-                            @endif
+                                <div class="col-md-6">
+                                    <div class="price-option p-3 rounded" style="background: rgba(222, 98, 98, 0.1);">
+                                        <small class="text-muted d-block">Yearly</small>
+                                        <span class="h4 text-theme-primary">${{ number_format($yearlyPrice, 0) }}</span>
+                                        <small class="text-muted">/year</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    @endauth
+                        <p class="text-muted mb-3">Your current subscription plan</p>
+                        <a href="{{ route('subscription.manage') }}" class="btn btn-theme-primary">
+                            <i class="fas fa-cog me-2"></i>
+                            Manage Subscription
+                        </a>
+                    </div>
                 </div>
             </div>
+            @endif
+        @endauth
+
+        <div class="text-center mt-5">
+            <p class="text-muted">
+                <i class="fas fa-shield-alt text-success me-2"></i>
+                All plans include HIPAA compliance and secure data handling
+            </p>
+            <p class="text-muted">
+                <i class="fas fa-headset text-theme-primary me-2"></i>
+                Need help choosing? <a href="{{ route('contact') }}" class="text-theme-primary">Contact our team</a>
+            </p>
         </div>
     </div>
 </section>
+
+<script>
+// Pricing billing toggle for guests
+document.addEventListener('DOMContentLoaded', function() {
+    const monthlyLabel = document.getElementById('monthly-label');
+    const yearlyLabel = document.getElementById('yearly-label');
+    const monthlyPrices = document.querySelectorAll('.monthly-price');
+    const yearlyPrices = document.querySelectorAll('.yearly-price');
+    const pricingCards = document.querySelectorAll('.pricing-card');
+    
+    if (monthlyLabel && yearlyLabel) {
+        monthlyLabel.addEventListener('click', function() {
+            // Switch to monthly
+            monthlyLabel.style.background = '#DE6262';
+            monthlyLabel.style.color = 'white';
+            yearlyLabel.style.background = 'transparent';
+            yearlyLabel.style.color = '#6C757D';
+            
+            monthlyPrices.forEach(price => price.style.display = 'block');
+            yearlyPrices.forEach(price => price.style.display = 'none');
+            
+            // Update button links to monthly
+            pricingCards.forEach(card => {
+                const button = card.querySelector('.pricing-footer a');
+                if (button) {
+                    const currentUrl = button.getAttribute('href');
+                    const urlWithoutBilling = currentUrl.split('&billing=')[0];
+                    button.setAttribute('href', urlWithoutBilling + '&billing=monthly');
+                }
+            });
+        });
+        
+        yearlyLabel.addEventListener('click', function() {
+            // Switch to yearly
+            yearlyLabel.style.background = '#DE6262';
+            yearlyLabel.style.color = 'white';
+            monthlyLabel.style.background = 'transparent';
+            monthlyLabel.style.color = '#6C757D';
+            
+            monthlyPrices.forEach(price => price.style.display = 'none');
+            yearlyPrices.forEach(price => price.style.display = 'block');
+            
+            // Update button links to yearly
+            pricingCards.forEach(card => {
+                const button = card.querySelector('.pricing-footer a');
+                if (button) {
+                    const currentUrl = button.getAttribute('href');
+                    const urlWithoutBilling = currentUrl.split('&billing=')[0];
+                    button.setAttribute('href', urlWithoutBilling + '&billing=yearly');
+                }
+            });
+        });
+    }
+});
+</script>
+
+<!-- Pricing Cards CSS -->
+<style>
+.pricing-card {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 16px;
+    padding: 2rem;
+    transition: all 0.3s ease;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.pricing-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.pricing-card.featured {
+    border-color: #DE6262;
+    background: linear-gradient(135deg, rgba(222, 98, 98, 0.05), rgba(222, 98, 98, 0.02));
+    transform: scale(1.05);
+    z-index: 1;
+}
+
+.popular-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #DE6262;
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(222, 98, 98, 0.3);
+}
+
+.pricing-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.plan-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.price-display .price {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #DE6262;
+    line-height: 1;
+}
+
+.price-display .period {
+    font-size: 1rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem 0;
+}
+
+.feature-list li {
+    padding: 0.5rem 0;
+    color: #4a5568;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.feature-list li i {
+    font-size: 1rem;
+    margin-right: 0.75rem;
+}
+
+.pricing-footer {
+    margin-top: auto;
+}
+
+.btn-theme-primary {
+    background: #DE6262;
+    border-color: #DE6262;
+    color: white;
+    font-weight: 600;
+    padding: 0.875rem 2rem;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.btn-theme-primary:hover {
+    background: #c55555;
+    border-color: #c55555;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(222, 98, 98, 0.3);
+}
+
+.btn-theme-outline {
+    background: transparent;
+    border: 2px solid #DE6262;
+    color: #DE6262;
+    font-weight: 600;
+    padding: 0.875rem 2rem;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.btn-theme-outline:hover {
+    background: #DE6262;
+    border-color: #DE6262;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(222, 98, 98, 0.3);
+}
+
+@media (max-width: 768px) {
+    .pricing-card.featured {
+        transform: none;
+        margin-bottom: 2rem;
+    }
+    
+    .price-display .price {
+        font-size: 2rem;
+    }
+}
+</style>
 @endif
 
 <!-- For Patients Section -->
