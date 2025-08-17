@@ -528,8 +528,7 @@
     }
 
     /* Prevent floating issues */
-    .dashboard-container::after,
-    .row::after {
+    .dashboard-container::after {
         content: "";
         display: table;
         clear: both;
