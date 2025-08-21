@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
+use App\Events\AppointmentBookedEvent;
 use App\Models\Doctor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -494,7 +495,12 @@ class AppointmentController extends Controller
 
                 // Check if doctor wants appointment notifications
                 if ($doctor->wantsNotification('appointment_booked')) {
-                    $doctor->notifyIfWants(new \App\Notifications\AppointmentBookedNotification($appointment), 'appointment_booked');
+                    // 直接发送通知，不使用队列
+                    $notification = new \App\Notifications\AppointmentBookedNotification($appointment);
+                    $doctor->notify($notification);
+                    
+                    // 立即广播事件，不使用队列
+                    event(new \App\Events\AppointmentBookedEvent($appointment));
                 }
             }
 

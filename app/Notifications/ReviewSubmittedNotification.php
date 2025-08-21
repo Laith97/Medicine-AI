@@ -4,11 +4,13 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\Review;
 
-class ReviewSubmittedNotification extends Notification
+class ReviewSubmittedNotification extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
@@ -20,6 +22,9 @@ class ReviewSubmittedNotification extends Notification
     public function __construct(Review $review)
     {
         $this->review = $review;
+
+        // Use realtime queue for instant processing
+        $this->onQueue('realtime');
     }
 
     /**
@@ -29,7 +34,7 @@ class ReviewSubmittedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database', 'broadcast', 'mail'];
     }
 
     /**
@@ -82,5 +87,33 @@ class ReviewSubmittedNotification extends Notification
     public function toSms(object $notifiable): string
     {
         return "New review submitted for {$this->review->doctor->name}. Rating: {$this->review->rating} stars. View details: " . route('reviews.show', $this->review);
+    }
+
+    /**
+     * Get the broadcastable representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        $patientName = $this->review->is_anonymous ? 'Anonymous Patient' : ($this->review->patient ? $this->review->patient->name : $this->review->guest_name);
+
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'review_submitted',
+            'title' => 'New Review Submitted',
+            'message' => "A new review has been submitted by {$patientName} with a rating of {$this->review->rating} stars.",
+            'body' => "A new review has been submitted by {$patientName} with a rating of {$this->review->rating} stars.",
+            'icon' => 'star',
+            'link' => route('doctor.reviews.index'),
+            'link_text' => 'View Reviews',
+            'data' => [
+                'review_id' => $this->review->id,
+                'patient_name' => $patientName,
+                'rating' => $this->review->rating,
+                'comment' => $this->review->comment,
+                'is_anonymous' => $this->review->is_anonymous,
+                'submitted_at' => $this->review->created_at->format('Y-m-d H:i:s'),
+            ],
+            'created_at' => now()->toISOString()
+        ]);
     }
 }

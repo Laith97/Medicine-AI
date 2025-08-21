@@ -11,6 +11,7 @@ use App\Services\SmsService;
 use App\Mail\PatientAccountCreated;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -30,12 +31,14 @@ class DiagnosisController extends Controller
      */
     public function create()
     {
-        if (!Auth::user()->isDoctor()) {
+        /** @var User $user */
+        $user = Auth::user();
+        if (!$user->isDoctor()) {
             abort(403, 'Access denied. Doctor access required.');
         }
 
         // Get doctor's assigned patients
-        $patients = Auth::user()->assignedPatients()
+        $patients = $user->assignedPatients()
             ->select('id', 'name', 'email', 'phone', 'age', 'gender')
             ->orderBy('name')
             ->get();
@@ -48,7 +51,9 @@ class DiagnosisController extends Controller
      */
     public function store(Request $request)
     {
-        if (!Auth::user()->isDoctor()) {
+        /** @var User $user */
+        $user = Auth::user();
+        if (!$user->isDoctor()) {
             abort(403, 'Access denied. Doctor access required.');
         }
 
@@ -66,7 +71,7 @@ class DiagnosisController extends Controller
         // Optional: Log voice file details for debugging (can be removed in production)
         if ($request->hasFile('voice_file')) {
             $voiceFileDebug = $request->file('voice_file');
-            \Log::debug('Voice file received', [
+            Log::debug('Voice file received', [
                 'original_name' => $voiceFileDebug->getClientOriginalName(),
                 'mime_type' => $voiceFileDebug->getMimeType(),
                 'extension' => $voiceFileDebug->getClientOriginalExtension(),
@@ -104,7 +109,7 @@ class DiagnosisController extends Controller
                     strpos($voiceTranscript, 'audio file format') !== false ||
                     strpos($voiceTranscript, 'temporarily unavailable') !== false) {
                     $transcriptionFailed = true;
-                    \Log::warning('Voice transcription failed during diagnosis creation', [
+                    Log::warning('Voice transcription failed during diagnosis creation', [
                         'file_name' => $voiceFile->getClientOriginalName(),
                         'transcript_result' => $voiceTranscript
                     ]);
@@ -122,7 +127,7 @@ class DiagnosisController extends Controller
             // Get or create patient
             if ($request->existing_patient) {
                 // Use existing patient
-                $patient = Auth::user()->assignedPatients()->findOrFail($request->existing_patient);
+                $patient = $user->assignedPatients()->findOrFail($request->existing_patient);
                 $isNewPatient = false;
             } else {
                 // Create new patient
@@ -169,7 +174,7 @@ class DiagnosisController extends Controller
                     $result = $this->smsService->send($patient->phone, $smsMessage);
 
                     if (!$result['success']) {
-                        \Log::warning('Failed to send SMS notification to patient', [
+                        Log::warning('Failed to send SMS notification to patient', [
                             'patient_id' => $patient->id,
                             'phone' => $patient->phone,
                             'error' => $result['message']
@@ -196,7 +201,7 @@ class DiagnosisController extends Controller
                 ->with('success', $successMessage);
 
         } catch (\Exception $e) {
-            \Log::error('Diagnosis creation failed: ' . $e->getMessage(), [
+            Log::error('Diagnosis creation failed: ' . $e->getMessage(), [
                 'user_id' => Auth::id(),
                 'request_data' => $request->except(['voice_file']),
                 'has_voice_file' => $request->hasFile('voice_file'),
@@ -214,16 +219,18 @@ class DiagnosisController extends Controller
     public function show(Diagnosis $diagnosis)
     {
         // Check if user can view this diagnosis
-        if (Auth::user()->isDoctor() && $diagnosis->doctor_id !== Auth::id()) {
+        /** @var User $user */
+        $user = Auth::user();
+        if ($user->isDoctor() && $diagnosis->doctor_id !== $user->id) {
             abort(403, 'Access denied.');
         }
 
-        if (Auth::user()->isPatient() && $diagnosis->patient_id !== Auth::id()) {
+        if ($user->isPatient() && $diagnosis->patient_id !== $user->id) {
             abort(403, 'Access denied.');
         }
 
         // Log doctor access to patient diagnosis
-        if (Auth::user()->isDoctor() && $diagnosis->patient_id) {
+        if ($user->isDoctor() && $diagnosis->patient_id) {
             \App\Services\AuditLoggingService::logDoctorAccessPatient(
                 Auth::id(),
                 $diagnosis->patient_id,
@@ -232,7 +239,7 @@ class DiagnosisController extends Controller
         }
 
         // Mark as viewed if patient is viewing
-        if (Auth::user()->isPatient()) {
+        if ($user->isPatient()) {
             $diagnosis->markAsViewed();
         }
 
@@ -246,7 +253,9 @@ class DiagnosisController extends Controller
      */
     public function patientView(Diagnosis $diagnosis)
     {
-        if (!Auth::user()->isPatient() || $diagnosis->patient_id !== Auth::id()) {
+        /** @var User $user */
+        $user = Auth::user();
+        if (!$user->isPatient() || $diagnosis->patient_id !== $user->id) {
             abort(403, 'Access denied.');
         }
 
@@ -261,6 +270,7 @@ class DiagnosisController extends Controller
      */
     public function storeFollowUp(Request $request, Diagnosis $diagnosis)
     {
+        /** @var User $user */
         $user = Auth::user();
 
         // Check if user can submit follow-up for this diagnosis
@@ -316,7 +326,7 @@ class DiagnosisController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Follow-up question failed: ' . $e->getMessage());
+            Log::error('Follow-up question failed: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to process your question. Please try again.'], 500);
         }
     }
@@ -326,7 +336,9 @@ class DiagnosisController extends Controller
      */
     public function storeReview(Request $request, Diagnosis $diagnosis)
     {
-        if (!Auth::user()->isPatient() || $diagnosis->patient_id !== Auth::id()) {
+        /** @var User $user */
+        $user = Auth::user();
+        if (!$user->isPatient() || $diagnosis->patient_id !== $user->id) {
             abort(403, 'Access denied.');
         }
 
@@ -371,7 +383,7 @@ class DiagnosisController extends Controller
             return back()->with('success', 'Thank you for your review!');
 
         } catch (\Exception $e) {
-            \Log::error('Review creation failed: ' . $e->getMessage());
+            Log::error('Review creation failed: ' . $e->getMessage());
             return back()->with('error', 'Failed to submit review. Please try again.');
         }
     }
@@ -381,11 +393,13 @@ class DiagnosisController extends Controller
      */
     public function index()
     {
-        if (!Auth::user()->isDoctor()) {
+        /** @var User $user */
+        $user = Auth::user();
+        if (!$user->isDoctor()) {
             abort(403, 'Access denied. Doctor access required.');
         }
 
-        $diagnoses = Auth::user()->doctorDiagnoses()
+        $diagnoses = $user->doctorDiagnoses()
             ->with(['patient'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
@@ -398,11 +412,13 @@ class DiagnosisController extends Controller
      */
     public function patientIndex()
     {
-        if (!Auth::user()->isPatient()) {
+        /** @var User $user */
+        $user = Auth::user();
+        if (!$user->isPatient()) {
             abort(403, 'Access denied. Patient access required.');
         }
 
-        $diagnoses = Auth::user()->patientDiagnoses()
+        $diagnoses = $user->patientDiagnoses()
             ->with(['doctor', 'aiAssistantResults'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
@@ -416,7 +432,9 @@ class DiagnosisController extends Controller
     private function findOrCreatePatient(Request $request)
     {
         // First check if patient exists and is already assigned to this doctor
-        $patient = Auth::user()->assignedPatients()
+        /** @var User $user */
+        $user = Auth::user();
+        $patient = $user->assignedPatients()
             ->where('email', $request->patient_email)
             ->first();
 
@@ -456,7 +474,7 @@ class DiagnosisController extends Controller
     {
         try {
             // Log file details for debugging
-            \Log::info('Attempting voice transcription', [
+            Log::info('Attempting voice transcription', [
                 'original_name' => $voiceFile->getClientOriginalName(),
                 'mime_type' => $voiceFile->getMimeType(),
                 'size' => $voiceFile->getSize(),
@@ -501,7 +519,7 @@ class DiagnosisController extends Controller
                 copy($voiceFile->getPathname(), $tempFile);
                 $fileToTranscribe = $tempFile;
 
-                \Log::info('Created temporary file for video/mp4 transcription', [
+                Log::info('Created temporary file for video/mp4 transcription', [
                     'original_file' => $voiceFile->getPathname(),
                     'temp_file' => $tempFile,
                     'mime_type' => $mimeType
@@ -530,7 +548,7 @@ class DiagnosisController extends Controller
             // Extract the actual transcribed text from the response object
             $transcriptText = $response->text ?? (string)$response ?? '';
 
-            \Log::info('Voice transcription successful', [
+            Log::info('Voice transcription successful', [
                 'transcript_length' => strlen($transcriptText),
                 'file_name' => $voiceFile->getClientOriginalName(),
                 'response_type' => gettype($response),
@@ -544,7 +562,7 @@ class DiagnosisController extends Controller
                 unlink($tempFile);
             }
 
-            \Log::error('Voice transcription failed: ' . $e->getMessage(), [
+            Log::error('Voice transcription failed: ' . $e->getMessage(), [
                 'file_name' => $voiceFile->getClientOriginalName() ?? 'unknown',
                 'mime_type' => $voiceFile->getMimeType() ?? 'unknown',
                 'size' => $voiceFile->getSize() ?? 0,
@@ -619,7 +637,7 @@ class DiagnosisController extends Controller
             ];
 
         } catch (\Exception $e) {
-            \Log::error('AI follow-up response failed: ' . $e->getMessage());
+            Log::error('AI follow-up response failed: ' . $e->getMessage());
             return [
                 'response' => 'I apologize, but I cannot provide a response at this time due to a technical issue. Please consult with your doctor for any concerns.',
                 'usage_data' => null,
@@ -659,7 +677,7 @@ class DiagnosisController extends Controller
 
         } catch (\Exception $e) {
             // Log notification errors but don't break the diagnosis process
-            \Log::error('Failed to send diagnosis notifications: ' . $e->getMessage());
+            Log::error('Failed to send diagnosis notifications: ' . $e->getMessage());
         }
     }
 
@@ -705,7 +723,7 @@ class DiagnosisController extends Controller
 
         } catch (\Exception $e) {
             // Log notification errors but don't break the follow-up process
-            \Log::error('Failed to send follow-up notifications: ' . $e->getMessage());
+            Log::error('Failed to send follow-up notifications: ' . $e->getMessage());
         }
     }
 
@@ -725,7 +743,7 @@ class DiagnosisController extends Controller
             }
 
             // Send notification to admin about new review (for approval)
-            $admins = \App\Models\User::where('role', 'admin')->get();
+            $admins = User::where('role', 'admin')->get();
             foreach ($admins as $admin) {
                 if ($admin->wantsNotification('review_submitted')) {
                     $admin->notifyIfWants(new \App\Notifications\SystemAlertNotification(
@@ -744,7 +762,7 @@ class DiagnosisController extends Controller
 
         } catch (\Exception $e) {
             // Log notification errors but don't break the review process
-            \Log::error('Failed to send review notifications: ' . $e->getMessage());
+            Log::error('Failed to send review notifications: ' . $e->getMessage());
         }
     }
 
@@ -781,6 +799,7 @@ class DiagnosisController extends Controller
      */
     private function canAccessDiagnosis(Diagnosis $diagnosis)
     {
+        /** @var User $user */
         $user = Auth::user();
 
         // Doctors can access their own diagnoses

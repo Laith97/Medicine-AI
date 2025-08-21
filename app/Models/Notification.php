@@ -7,18 +7,34 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Notification extends Model
 {
+    protected $table = 'notifications';
+
     protected $fillable = [
+        'id',
+        'type',
         'notifiable_type',
         'notifiable_id',
-        'type',
         'data',
         'read_at',
     ];
+
+    /**
+     * @property string $id
+     * @property string $type
+     * @property string $notifiable_type
+     * @property int $notifiable_id
+     * @property array $data
+     * @property \Carbon\Carbon|null $read_at
+     */
 
     protected $casts = [
         'data' => 'array',
         'read_at' => 'datetime',
     ];
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
 
     /**
      * Get the entity that owns the notification.

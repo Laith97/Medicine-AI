@@ -75,6 +75,12 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * @property int $id
+     * @property string|null $sub_user_role
+     * @property int|null $parent_user_id
+     */
+
     public function setting()
     {
         return $this->hasOne(Setting::class);
@@ -151,7 +157,8 @@ public function getFreshMonthlyInvoiceSetting()
     /**
      * Check if user is a doctor
      */
-    public function isDoctor()
+    /** Check if user is a doctor */
+    public function isDoctor(): bool
     {
         return $this->role === 'doctor';
     }
@@ -159,7 +166,8 @@ public function getFreshMonthlyInvoiceSetting()
     /**
      * Check if user is a patient
      */
-    public function isPatient()
+    /** Check if user is a patient */
+    public function isPatient(): bool
     {
         return $this->role === 'patient';
     }
@@ -635,7 +643,7 @@ public function getOverdueInvoicesCount(): int
 /**
  * Get monthly invoices for a specific month/year
  */
-public function getMonthlyInvoices(int $month = null, int $year = null)
+    public function getMonthlyInvoices(int $month = null, int $year = null): \Illuminate\Database\Eloquent\Relations\HasMany
 {
     $month = $month ?: now()->month;
     $year = $year ?: now()->year;
@@ -857,7 +865,8 @@ public function patientNotes()
 /**
  * Diagnoses made by this doctor
  */
-public function doctorDiagnoses()
+/** Get diagnoses made by this doctor */
+public function doctorDiagnoses(): \Illuminate\Database\Eloquent\Relations\HasMany
 {
     return $this->hasMany(Diagnosis::class, 'doctor_id');
 }
@@ -865,7 +874,8 @@ public function doctorDiagnoses()
 /**
  * Diagnoses received by this patient
  */
-public function patientDiagnoses()
+/** Get diagnoses received by this patient */
+public function patientDiagnoses(): \Illuminate\Database\Eloquent\Relations\HasMany
 {
     return $this->hasMany(Diagnosis::class, 'patient_id');
 }
@@ -881,7 +891,8 @@ public function primaryDoctor()
 /**
  * Patients assigned to this doctor (for doctors)
  */
-public function assignedPatients()
+/** Get patients assigned to this doctor */
+public function assignedPatients(): \Illuminate\Database\Eloquent\Relations\HasMany
 {
     return $this->hasMany(User::class, 'primary_doctor_id')->where('role', 'patient');
 }

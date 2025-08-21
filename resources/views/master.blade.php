@@ -13,6 +13,10 @@
     <meta name="notification-sound-enabled" content="{{ env('NOTIFICATION_SOUND_ENABLED', 'true') }}">
     <meta name="notification-toast-enabled" content="{{ env('NOTIFICATION_TOAST_ENABLED', 'true') }}">
     <meta name="notification-badge-enabled" content="{{ env('NOTIFICATION_BADGE_ENABLED', 'true') }}">
+    <script>
+        window.userRole = '{{ Auth::user()->role ?? 'user' }}';
+        window.userId = {{ Auth::id() }};
+    </script>
     @endauth
     <style>
         .top-link {
@@ -203,6 +207,98 @@ body .dropdown .dropdown-menu.show,
             position: absolute !important;
         }
     </style>
+
+    <!-- Dropdown Styles - Simplified for Bootstrap Compatibility -->
+    <style>
+        /* Ensure dropdown toggles are clickable */
+        .dropdown-toggle,
+        .notification-bell,
+        .btn[data-bs-toggle="dropdown"],
+        a[data-bs-toggle="dropdown"],
+        button[data-bs-toggle="dropdown"] {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+        }
+
+        /* Dropdown container positioning */
+        .dropdown,
+        .notifications-dropdown,
+        .user-dropdown {
+            position: relative !important;
+        }
+
+        /* Custom dropdown styling */
+        .dropdown-menu {
+            /* Glass morphism design */
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.08) !important;
+            padding: 12px 0 !important;
+            min-width: 240px !important;
+            z-index: 999999 !important;
+        }
+
+        /* Dropdown items styling */
+        .dropdown-item {
+            display: flex !important;
+            align-items: center !important;
+            padding: 12px 20px !important;
+            margin: 0 8px !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            color: #374151 !important;
+            text-decoration: none !important;
+            border-radius: 10px !important;
+            background: transparent !important;
+            border: none !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        .dropdown-item:hover {
+            background: linear-gradient(135deg, rgba(222, 98, 98, 0.1), rgba(222, 98, 98, 0.05)) !important;
+            color: #DE6262 !important;
+            font-weight: 600 !important;
+            transform: translateX(4px) !important;
+            box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15) !important;
+        }
+
+        /* Dropdown divider */
+        .dropdown-divider {
+            height: 1px !important;
+            background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08) 20%, rgba(0, 0, 0, 0.08) 80%, transparent) !important;
+            margin: 8px 16px !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+
+        /* Specific dropdown fixes */
+        .notifications-dropdown .dropdown-menu {
+            width: 350px !important;
+            max-height: 400px !important;
+            overflow-y: auto !important;
+        }
+
+        .user-dropdown .dropdown-menu {
+            min-width: 200px !important;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .dropdown-menu {
+                position: fixed !important;
+                top: auto !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                max-height: 50vh !important;
+                border-radius: 10px 10px 0 0 !important;
+            }
+        }
+    </style>
+
     <!-- Clean Font Imports -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -729,6 +825,60 @@ body .dropdown .dropdown-menu.show,
 <body class="stretched page-transition"
     data-loader-html="<div id='css3-spinner-svg-pulse-wrapper'><svg id='css3-spinner-svg-pulse' version='1.2' height='210' width='550' xmlns='https://www.w3.org/2000/svg' viewport='0 0 60 60' xmlns:xlink='https://www.w3.org/1999/xlink'><path id='css3-spinner-pulse' stroke='#DE6262' fill='none' stroke-width='2' stroke-linejoin='round' d='M0,90L250,90Q257,60 262,87T267,95 270,88 273,92t6,35 7,-60T290,127 297,107s2,-11 10,-10 1,1 8,-10T319,95c6,4 8,-6 10,-17s2,10 9,11h210'></svg></div>">
 
+<!-- Prevent notification redirects after login -->
+<script>
+(function() {
+    // Check if we have a login parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const loginParam = urlParams.get('login');
+
+    // If we have a login parameter, intercept fetch requests to notification endpoints
+    if (loginParam === 'success') {
+        const originalFetch = window.fetch;
+
+        window.fetch = function(url, options) {
+            // If this is a request to a notification endpoint, cancel it
+            if (url.includes('/api/notifications')) {
+                console.log('Blocking notification request after login:', url);
+                return Promise.resolve(new Response(JSON.stringify({}), { status: 200 }));
+            }
+
+            // For all other requests, use the original fetch
+            return originalFetch.apply(this, arguments);
+        };
+
+        // Also intercept any direct navigation to notification endpoints
+        const originalPushState = history.pushState;
+        history.pushState = function() {
+            const url = arguments[2];
+            if (url && url.includes('/api/notifications')) {
+                console.log('Blocking navigation to notification endpoint after login:', url);
+                return;
+            }
+            return originalPushState.apply(this, arguments);
+        };
+
+        const originalReplaceState = history.replaceState;
+        history.replaceState = function() {
+            const url = arguments[2];
+            if (url && url.includes('/api/notifications')) {
+                console.log('Blocking navigation to notification endpoint after login:', url);
+                return;
+            }
+            return originalReplaceState.apply(this, arguments);
+        };
+
+        // Restore original functions after a delay
+        setTimeout(() => {
+            window.fetch = originalFetch;
+            history.pushState = originalPushState;
+            history.replaceState = originalReplaceState;
+            console.log('Restoring original fetch and history functions');
+        }, 5000); // Wait 5 seconds before restoring
+    }
+})();
+</script>
+
     <!-- Wrapper -->
     <div id="wrapper">
 
@@ -745,110 +895,16 @@ body .dropdown .dropdown-menu.show,
                                 style="width: 8px; height: 8px;"></div>
                             <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
                         </div>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow">
-                        @if(Auth::guard('admin')->check() || session()->has('impersonating_admin_id'))
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.dashboard') }}">
-                                    <i class="bi bi-shield-check"></i> Admin Dashboard
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.users.index') }}">
-                                    <i class="bi bi-people"></i> Manage Users
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                        @endif
-                        @if(Auth::user()->isDoctor())
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('settings') }}">
-                                    <i class="bi bi-gear"></i> Settings
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('doctor.profile.edit') }}">
-                                    <i class="fas fa-user-edit"></i>Edit Profile
-                                </a>
-                            </li>
-                            @if(Auth::user()->isMainUser())
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('sub-users.index') }}">
-                                        <i class="fas fa-users"></i> Manage Sub-Users
-                                    </a>
-                                </li>
-                            @endif
-                        @endif
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2">
-                                    <i class="bi bi-box-arrow-right"></i> Logout
-                                </button>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
-            @endauth
-
-            @guest
-            <a href="{{ route('login') }}"
-               class="btn btn-sm px-4 me-2"
-               style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
-                <i class="bi bi-box-arrow-in-right me-1"></i> Login
-            </a>
-            <a href="{{ route('register') }}"
-               class="btn btn-sm px-4"
-               style="background: white; color: #DE6262; border: none; font-weight: 500; border-radius: 25px;">
-                <i class="bi bi-person-plus me-1"></i> Register
-            </a>
-            @endguest
-
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Top Bar End -->
-
-		<!-- Header
-		============================================= -->
-<header id="header">
-    <div id="header-wrap">
-        <div class="container">
-<div class="header-row d-flex align-items-center justify-content-center">
-
-                <!-- Logo and Desktop Nav Container -->
-                <div class="d-flex align-items-center">
-                    <!-- Logo -->
-                    <div id="logo" class="me-4">
-                        <a href="@auth{{ route('dashboard') }}@else{{ url('/') }}@endauth">
-                            <img style="width: 140px" class="logo-default"
-                                 srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x"
-                                 src="{{ asset('demos/medical/images/logo-medical.jpeg') }}"
-                                 alt="Canvas Logo">
-                        </a>
+                        <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
+                        <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com"
+                                class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
                     </div>
 
-                    <!-- Desktop Navigation -->
-                    <nav class="primary-menu style-3 menu-spacing-margin d-none d-lg-block">
-                        <ul class="menu-container">
-                            @auth
-                                @if (Auth::guard('admin')->check() && !session()->has('impersonating_admin_id') && !session()->has('impersonating_hospital_admin_id'))
-                                    <!-- Pure Admin View - Only show when admin is not impersonating -->
-                                    <li class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('admin.dashboard') }}"><div>Dashboard</div></a>
-                                    </li>
-                                @else
-                                    <!-- User View (Including Admin Impersonation and Hospital Admin Impersonation) -->
-                                    @php
-                                        $menuItems = \App\Helpers\MenuHelper::getMenuItems(auth()->user());
-                                    @endphp
-
+                    <!-- Right Side: Notifications & User Menu -->
+                    <div class="col-md-auto d-flex align-items-center gap-3">
                         @auth
                             <!-- Quick Action Button for Emergency -->
-                            <a href="{{ route('ask-ai') }}" class="btn btn-sm px-3 py-1 me-2"
+                            <a href="{{ route('ask-ai') }}" class="btn btn-sm px-3 py-1"
                                 style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; font-size: 12px;">
                                 <i class="bi bi-lightning-charge me-1"></i> Quick Diagnosis
                             </a>
@@ -857,7 +913,7 @@ body .dropdown .dropdown-menu.show,
                             <div class="dropdown notifications-dropdown">
                                 <button class="btn btn-sm position-relative notification-bell" type="button" data-bs-toggle="dropdown"
                                     aria-expanded="false"
-                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
                                     <i class="bi bi-bell"></i>
                                     <span
                                         class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count"
@@ -866,7 +922,7 @@ body .dropdown .dropdown-menu.show,
                                     </span>
                                 </button>
                                 <div class="dropdown-menu dropdown-menu-end shadow notifications-dropdown-menu"
-                                    style="width: 350px; max-height: 400px; overflow-y: auto;">
+                                    style="width: 320px; max-height: 350px; overflow-y: auto;">
                                     <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
                                         <h6 class="mb-0">Notifications</h6>
                                         <div class="btn-group btn-group-sm">
@@ -883,26 +939,27 @@ body .dropdown .dropdown-menu.show,
                                     <div class="notification-list" id="notification-list">
                                         <div class="text-center py-4 text-muted">
                                             <i class="bi bi-bell-slash display-6 d-block mb-2"></i>
-                                            <small>No notifications</small>
+                                            <small>Loading notifications...</small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
+                            <!-- User Dropdown -->
                             <div class="dropdown">
-                                <a class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle" href="#"
+                                <a class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle user-dropdown-toggle" href="#"
                                     role="button" data-bs-toggle="dropdown" aria-expanded="false"
                                     style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
                                     <i class="bi bi-person-circle"></i>
                                     <div class="d-flex flex-column align-items-start">
-                                        <span>{{ Auth::user()->name }}</span>
+                                        <span class="small">{{ Auth::user()->name }}</span>
                                         @if (Auth::user()->isSubUser())
                                             <small
-                                                class="opacity-75">{{ \App\Helpers\MenuHelper::getUserRoleDisplay(Auth::user()) }}</small>
+                                                class="opacity-75 small">{{ \App\Helpers\MenuHelper::getUserRoleDisplay(Auth::user()) }}</small>
                                         @endif
                                     </div>
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end shadow">
+                                <ul class="dropdown-menu dropdown-menu-end shadow user-dropdown-menu">
                                     @if (Auth::guard('admin')->check())
                                         <li>
                                             <a class="dropdown-item d-flex align-items-center gap-2"
@@ -969,145 +1026,149 @@ body .dropdown .dropdown-menu.show,
                                 </ul>
                             </div>
                         @endauth
-
                         @guest
-                            <a href="{{ route('login') }}" class="btn btn-sm px-4"
+                            <a href="{{ route('login') }}"
+                                class="btn btn-sm px-4 me-2"
                                 style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
                                 <i class="bi bi-box-arrow-in-right me-1"></i> Login
                             </a>
-                            <!-- <a href="{{ route('register') }}"
-                   class="btn btn-sm px-4"
-                   style="background: white; color: #DE6262; border: none; font-weight: 500; border-radius: 25px;">
-                    <i class="bi bi-person-plus me-1"></i> Register
-                </a>-->
+                            <a href="{{ route('register') }}"
+                                class="btn btn-sm px-4"
+                                style="background: white; color: #DE6262; border: none; font-weight: 500; border-radius: 25px;">
+                                <i class="bi bi-person-plus me-1"></i> Register
+                            </a>
                         @endguest
-
                     </div>
                 </div>
+
+
+
             </div>
         </div>
-        <!-- Top Bar End -->
+    </div>
+</div>
+<!-- Top Bar End -->
 
-        <!-- Header
+  <!-- Header
   ============================================= -->
-        <header id="header">
-            <div id="header-wrap">
-                <div class="container">
-                    <div class="header-row d-flex align-items-center justify-content-center">
+<header id="header">
+    <div id="header-wrap">
+        <div class="container">
+            <div class="header-row d-flex align-items-center justify-content-center">
 
-                        <!-- Logo and Desktop Nav Container -->
-                        <div class="d-flex align-items-center">
-                            <!-- Logo -->
-                            <div id="logo" class="me-4">
-                                <a href="@auth {{ route('dashboard') }} @else {{ url('/') }} @endauth">
-                                    <img style="width: 140px" class="logo-default"
-                                        srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x"
-                                        src="{{ asset('demos/medical/images/logo-medical.jpeg') }}"
-                                        alt="Canvas Logo">
-                                </a>
-                            </div>
+                <!-- Logo and Desktop Nav Container -->
+                <div class="d-flex align-items-center">
+                    <!-- Logo -->
+                    <div id="logo" class="me-4">
+                        <a href="{{ auth()->check() ? route('dashboard') : url('/') }}">
+                            <img style="width: 140px" class="logo-default"
+                                 srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x"
+                                 src="{{ asset('demos/medical/images/logo-medical.jpeg') }}"
+                                 alt="Canvas Logo">
+                        </a>
+                    </div>
 
-                            <!-- Desktop Navigation -->
-                            <nav class="primary-menu style-3 menu-spacing-margin d-none d-lg-block">
-                                <ul class="menu-container">
-                                    @auth
-                                        @if (Auth::guard('admin')->check())
+                    <!-- Desktop Navigation -->
+                    <nav class="primary-menu style-3 menu-spacing-margin d-none d-lg-block">
+                        <ul class="menu-container">
+                            @auth
+                                @if (Auth::guard('admin')->check())
+                                    <li
+                                        class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('admin.dashboard') }}">
+                                            <div>Dashboard</div>
+                                        </a>
+                                    </li>
+                                @else
+                                    @php
+                                        $menuItems = \App\Helpers\MenuHelper::getMenuItems(auth()->user());
+                                    @endphp
+
+                                    @foreach ($menuItems as $item)
+                                        @if (isset($item['dropdown']) && $item['dropdown'])
+                                            <!-- Dropdown Menu Item -->
                                             <li
-                                                class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
-                                                <a class="menu-link" href="{{ route('admin.dashboard') }}">
-                                                    <div>Dashboard</div>
+                                                class="menu-item {{ collect($item['items'])->contains(fn($subItem) => request()->routeIs($subItem['route'] ?? '')) ? 'current' : '' }}">
+                                                <a class="menu-link" href="#">
+                                                    <div>{{ $item['name'] }} <i class="fas fa-chevron-down"></i>
+                                                    </div>
                                                 </a>
+                                                <ul class="sub-menu-container">
+                                                    @foreach ($item['items'] as $subItem)
+                                                        <li
+                                                            class="menu-item {{ request()->routeIs($subItem['route'] ?? '') ? 'current' : '' }}">
+                                                            <a class="menu-link"
+                                                                href="{{ isset($subItem['route']) ? route($subItem['route']) : '#' }}">
+                                                                <div>
+                                                                    @if (isset($subItem['icon']))
+                                                                        <i
+                                                                            class="{{ $subItem['icon'] }} me-2"></i>
+                                                                    @endif
+                                                                    {{ $subItem['name'] }}
+                                                                </div>
+                                                            </a>
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
                                             </li>
                                         @else
-                                            @php
-                                                $menuItems = \App\Helpers\MenuHelper::getMenuItems(auth()->user());
-                                            @endphp
-
-                                            @foreach ($menuItems as $item)
-                                                @if (isset($item['dropdown']) && $item['dropdown'])
-                                                    <!-- Dropdown Menu Item -->
-                                                    <li
-                                                        class="menu-item {{ collect($item['items'])->contains(fn($subItem) => request()->routeIs($subItem['route'] ?? '')) ? 'current' : '' }}">
-                                                        <a class="menu-link" href="#">
-                                                            <div>{{ $item['name'] }} <i class="fas fa-chevron-down"></i>
-                                                            </div>
-                                                        </a>
-                                                        <ul class="sub-menu-container">
-                                                            @foreach ($item['items'] as $subItem)
-                                                                <li
-                                                                    class="menu-item {{ request()->routeIs($subItem['route'] ?? '') ? 'current' : '' }}">
-                                                                    <a class="menu-link"
-                                                                        href="{{ isset($subItem['route']) ? route($subItem['route']) : '#' }}">
-                                                                        <div>
-                                                                            @if (isset($subItem['icon']))
-                                                                                <i
-                                                                                    class="{{ $subItem['icon'] }} me-2"></i>
-                                                                            @endif
-                                                                            {{ $subItem['name'] }}
-                                                                        </div>
-                                                                    </a>
-                                                                </li>
-                                                            @endforeach
-                                                        </ul>
-                                                    </li>
-                                                @else
-                                                    <!-- Regular Menu Item -->
-                                                    <li
-                                                        class="menu-item {{ request()->routeIs($item['route'] ?? '') ? 'current' : '' }}">
-                                                        <a class="menu-link"
-                                                            href="{{ isset($item['route']) ? route($item['route']) : '#' }}">
-                                                            <div>
-                                                                @if (isset($item['icon']))
-                                                                    <i class="{{ $item['icon'] }} me-2"></i>
-                                                                @endif
-                                                                {{ $item['name'] }}
-                                                            </div>
-                                                        </a>
-                                                    </li>
-                                                @endif
-                                            @endforeach
+                                            <!-- Regular Menu Item -->
+                                            <li
+                                                class="menu-item {{ request()->routeIs($item['route'] ?? '') ? 'current' : '' }}">
+                                                <a class="menu-link"
+                                                    href="{{ isset($item['route']) ? route($item['route']) : '#' }}">
+                                                    <div>
+                                                        @if (isset($item['icon']))
+                                                            <i class="{{ $item['icon'] }} me-2"></i>
+                                                        @endif
+                                                        {{ $item['name'] }}
+                                                    </div>
+                                                </a>
+                                            </li>
                                         @endif
-                                    @endauth
+                                    @endforeach
+                                @endif
+                            @endauth
 
-                                    @guest
-                                        <li class="menu-item {{ request()->is('/') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ url('/') }}">
-                                                <div>Home</div>
-                                            </a>
-                                        </li>
-                                        <li class="menu-item {{ request()->is('about') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('about') }}">
-                                                <div>About Us</div>
-                                            </a>
-                                        </li>
-                                        <li class="menu-item {{ request()->is('contact') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('contact') }}">
-                                                <div>Contact</div>
-                                            </a>
-                                        </li>
-                                        <li class="menu-item {{ request()->is('doctors') ? 'current' : '' }}">
-                                            <a class="menu-link" href="{{ route('doctors.index') }}">
-                                                <div>For Patients</div>
-                                            </a>
-                                        </li>
-                                    @endguest
-                                </ul>
-                            </nav>
-                        </div>
-
-                        <!-- Mobile Hamburger Button -->
-                        <div class="primary-menu-trigger d-block d-lg-none">
-                            <button class="cnvs-hamburger" type="button" title="Open Mobile Menu">
-                                <span class="cnvs-hamburger-box"><span class="cnvs-hamburger-inner"></span></span>
-                            </button>
-                        </div>
-
-                    </div>
+                            @guest
+                                <li class="menu-item {{ request()->is('/') ? 'current' : '' }}">
+                                    <a class="menu-link" href="{{ url('/') }}">
+                                        <div>Home</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item {{ request()->is('about') ? 'current' : '' }}">
+                                    <a class="menu-link" href="{{ route('about') }}">
+                                        <div>About Us</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item {{ request()->is('contact') ? 'current' : '' }}">
+                                    <a class="menu-link" href="{{ route('contact') }}">
+                                        <div>Contact</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item {{ request()->is('doctors') ? 'current' : '' }}">
+                                    <a class="menu-link" href="{{ route('doctors.index') }}">
+                                        <div>For Patients</div>
+                                    </a>
+                                </li>
+                            @endguest
+                        </ul>
+                    </nav>
                 </div>
-            </div>
 
-            <div class="header-wrap-clone"></div>
-        </header>
+                <!-- Mobile Hamburger Button -->
+                <div class="primary-menu-trigger d-block d-lg-none">
+                    <button class="cnvs-hamburger" type="button" title="Open Mobile Menu">
+                        <span class="cnvs-hamburger-box"><span class="cnvs-hamburger-inner"></span></span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="header-wrap-clone"></div>
+</header>
 
 
         <!-- Flash Messages -->
@@ -1279,11 +1340,13 @@ body .dropdown .dropdown-menu.show,
         </main>
 
     </div><!-- #wrapper end -->
-			</div>
-
-@if (!auth()->check())
 		<!-- Footer -->
-<footer id="footer" class="text-white py-5" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
+
+
+    @if (!auth()->check())
+        <!-- Footer -->
+        <footer id="footer" class="text-white py-5"
+    style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
     <div class="container">
         <div class="row g-4">
             <!-- Company Info -->
@@ -1293,20 +1356,28 @@ body .dropdown .dropdown-menu.show,
                         <i class="bi bi-heart-pulse me-2" style="color: #DE6262;"></i>
                         AI Medical Diagnosis
                     </h4>
-                    <p class="text-white-50 mb-4">Revolutionizing healthcare with cutting-edge artificial intelligence. Empowering medical professionals with advanced diagnostic tools for superior patient care and outcomes.</p>
+                    <p class="text-white-50 mb-4">
+                        Revolutionizing healthcare with cutting-edge artificial intelligence.
+                        Empowering medical professionals with advanced diagnostic tools for
+                        superior patient care and outcomes.
+                    </p>
 
                     <!-- Social Links -->
                     <div class="social-links">
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
                             <i class="bi bi-facebook"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
                             <i class="bi bi-twitter"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
                             <i class="bi bi-linkedin"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
                             <i class="bi bi-instagram"></i>
                         </a>
                     </div>
@@ -1327,7 +1398,6 @@ body .dropdown .dropdown-menu.show,
                         <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Us</a></li>
                         <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact</a></li>
                         <li class="mb-2"><a href="{{ route('login') }}" class="text-white-50 text-decoration-none hover-link">Login</a></li>
-                        <li class="mb-2"><a href="{{ route('register') }}" class="text-white-50 text-decoration-none hover-link">Register</a></li>
                     @endauth
                 </ul>
             </div>
@@ -1348,35 +1418,30 @@ body .dropdown .dropdown-menu.show,
             <div class="col-lg-4 col-md-6">
                 <h6 class="text-white mb-3" style="color: #DE6262 !important;">Contact & Support</h6>
 
-                <div class="contact-info mb-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-envelope" style="color: #DE6262;"></i>
-                        </div>
-                        <div>
-                            <small class="text-white-50 d-block">Email Support</small>
-                            <a href="info@medcuraai.com" class="text-white text-decoration-none">info@medcuraai.com</a>
-                        </div>
-                    </div>
+                <!-- Go To Top Button -->
+                <div id="gotoTop" class="fas fa-chevron-up rounded-circle"
+                    style="position: fixed; bottom: 20px; right: 20px; width: 40px; height: 40px; background-color: #DE6262; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; opacity: 0.8; transition: opacity 0.3s;">
+                </div>
 
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-headset" style="color: #DE6262;"></i>
-                        </div>
-                        <div>
-                            <small class="text-white-50 d-block">24/7 Support</small>
-                            <span class="text-white">AI-Powered Help Available</span>
-                        </div>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="contact-icon me-3"
+                        style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-headset" style="color: #DE6262;"></i>
                     </div>
+                    <div>
+                        <small class="text-white-50 d-block">24/7 Support</small>
+                        <span class="text-white">AI-Powered Help Available</span>
+                    </div>
+                </div>
 
-                    <div class="d-flex align-items-center">
-                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-shield-check" style="color: #DE6262;"></i>
-                        </div>
-                        <div>
-                            <small class="text-white-50 d-block">Security & Privacy</small>
-                            <span class="text-white">HIPAA Compliant Platform</span>
-                        </div>
+                <div class="d-flex align-items-center mb-4">
+                    <div class="contact-icon me-3"
+                        style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-shield-check" style="color: #DE6262;"></i>
+                    </div>
+                    <div>
+                        <small class="text-white-50 d-block">Security & Privacy</small>
+                        <span class="text-white">HIPAA Compliant Platform</span>
                     </div>
                 </div>
 
@@ -1384,7 +1449,8 @@ body .dropdown .dropdown-menu.show,
                 <div class="quick-contact">
                     <h6 class="text-white mb-2">Need Help?</h6>
                     <p class="text-white-50 small mb-3">Our AI-powered support is here to assist you</p>
-                    <a href="{{ route('contact') }}" class="btn btn-sm" style="background: #DE6262; color: white; border: none; border-radius: 25px;">
+                    <a href="{{ route('contact') }}" class="btn btn-sm"
+                        style="background: #DE6262; color: white; border: none; border-radius: 25px;">
                         <i class="bi bi-chat-dots me-2"></i>Contact Support
                     </a>
                 </div>
@@ -1403,156 +1469,14 @@ body .dropdown .dropdown-menu.show,
                 <div class="footer-legal-links">
                     <span class="text-white-50 me-3">Secure & HIPAA Compliant</span>
                     <a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link me-3">Contact Us</a>
-                    <a href="{{ route('admin.login') }}" class="text-white-50 text-decoration-none hover-link" style="font-size: 0.8rem;">Admin</a>
+                    <a href="{{ route('admin.login') }}" class="text-white-50 text-decoration-none hover-link"
+                        style="font-size: 0.8rem;">Admin</a>
                 </div>
             </div>
         </div>
     </div>
+</footer>
 
-    @if (!auth()->check())
-        <!-- Footer -->
-        <footer id="footer" class="text-white py-5"
-            style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
-            <div class="container">
-                <div class="row g-4">
-                    <!-- Company Info -->
-                    <div class="col-lg-4 col-md-6">
-                        <div class="footer-brand mb-4">
-                            <h4 class="text-white mb-3" style="color: #DE6262 !important;">
-                                <i class="bi bi-heart-pulse me-2" style="color: #DE6262;"></i>
-                                AI Medical Diagnosis
-                            </h4>
-                            <p class="text-white-50 mb-4">Revolutionizing healthcare with cutting-edge artificial
-                                intelligence. Empowering medical professionals with advanced diagnostic tools for
-                                superior patient care and outcomes.</p>
-
-                            <!-- Social Links -->
-                            <div class="social-links">
-                                <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
-                                    style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
-                                    <i class="bi bi-facebook"></i>
-                                </a>
-                                <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
-                                    style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
-                                    <i class="bi bi-twitter"></i>
-                                </a>
-                                <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
-                                    style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
-                                    <i class="bi bi-linkedin"></i>
-                                </a>
-                                <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
-                                    style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
-                                    <i class="bi bi-instagram"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Quick Links -->
-                    <div class="col-lg-2 col-md-6">
-                        <h6 class="text-white mb-3" style="color: #DE6262 !important;">Platform</h6>
-                        <ul class="list-unstyled footer-links">
-                            @auth
-                                <li class="mb-2"><a href="{{ route('dashboard') }}"
-                                        class="text-white-50 text-decoration-none hover-link">Dashboard</a></li>
-                                <li class="mb-2"><a href="{{ route('ask-ai') }}"
-                                        class="text-white-50 text-decoration-none hover-link">AI Assistant</a></li>
-                                <li class="mb-2"><a href="{{ route('cases') }}"
-                                        class="text-white-50 text-decoration-none hover-link">Case Studies</a></li>
-                                <li class="mb-2"><a href="{{ route('settings') }}"
-                                        class="text-white-50 text-decoration-none hover-link">Settings</a></li>
-                            @else
-                                <li class="mb-2"><a href="{{ url('/') }}"
-                                        class="text-white-50 text-decoration-none hover-link">Home</a></li>
-                                <li class="mb-2"><a href="{{ route('about') }}"
-                                        class="text-white-50 text-decoration-none hover-link">About Us</a></li>
-                                <li class="mb-2"><a href="{{ route('contact') }}"
-                                        class="text-white-50 text-decoration-none hover-link">Contact</a></li>
-                                <li class="mb-2"><a href="{{ route('login') }}"
-                                        class="text-white-50 text-decoration-none hover-link">Login</a></li>
-                            @endauth
-                        </ul>
-                    </div>
-
-                    <!-- Resources -->
-                    <div class="col-lg-2 col-md-6">
-                        <h6 class="text-white mb-3" style="color: #DE6262 !important;">Support</h6>
-                        <ul class="list-unstyled footer-links">
-                            <li class="mb-2"><a href="{{ route('about') }}"
-                                    class="text-white-50 text-decoration-none hover-link">About Platform</a></li>
-                            <li class="mb-2"><a href="{{ route('contact') }}"
-                                    class="text-white-50 text-decoration-none hover-link">Contact Support</a></li>
-                            @auth
-                                <li class="mb-2"><a href="{{ route('settings') }}"
-                                        class="text-white-50 text-decoration-none hover-link">Profile Settings</a></li>
-                            @endauth
-                        </ul>
-                    </div>
-
-                    <!-- Contact & Support -->
-                    <div class="col-lg-4 col-md-6">
-                        <h6 class="text-white mb-3" style="color: #DE6262 !important;">Contact & Support</h6>
-
-	<!-- Go To Top
-	============================================= -->
-	<div id="gotoTop" class="fas fa-chevron-up rounded-circle" style="position: fixed; bottom: 20px; right: 20px; width: 40px; height: 40px; background-color: #DE6262; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; opacity: 0.8; transition: opacity 0.3s;"></div>
-
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="contact-icon me-3"
-                                    style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                    <i class="bi bi-headset" style="color: #DE6262;"></i>
-                                </div>
-                                <div>
-                                    <small class="text-white-50 d-block">24/7 Support</small>
-                                    <span class="text-white">AI-Powered Help Available</span>
-                                </div>
-                            </div>
-
-                            <div class="d-flex align-items-center">
-                                <div class="contact-icon me-3"
-                                    style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                    <i class="bi bi-shield-check" style="color: #DE6262;"></i>
-                                </div>
-                                <div>
-                                    <small class="text-white-50 d-block">Security & Privacy</small>
-                                    <span class="text-white">HIPAA Compliant Platform</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Quick Contact -->
-                        <div class="quick-contact">
-                            <h6 class="text-white mb-2">Need Help?</h6>
-                            <p class="text-white-50 small mb-3">Our AI-powered support is here to assist you</p>
-                            <a href="{{ route('contact') }}" class="btn btn-sm"
-                                style="background: #DE6262; color: white; border: none; border-radius: 25px;">
-                                <i class="bi bi-chat-dots me-2"></i>Contact Support
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Footer Bottom -->
-                <hr class="my-4" style="border-color: rgba(222,98,98,0.2);">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
-                        <p class="text-white-50 mb-0">
-                            &copy; {{ date('Y') }} AI Medical Diagnosis Platform. All rights reserved.
-                        </p>
-                    </div>
-                    <div class="col-md-6 text-md-end">
-                        <div class="footer-legal-links">
-                            <span class="text-white-50 me-3">Secure & HIPAA Compliant</span>
-                            <a href="{{ route('contact') }}"
-                                class="text-white-50 text-decoration-none hover-link me-3">Contact Us</a>
-                            <a href="{{ route('admin.login') }}"
-                                class="text-white-50 text-decoration-none hover-link"
-                                style="font-size: 0.8rem;">Admin</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </footer>
     @endif
 
     <style>
@@ -1600,186 +1524,313 @@ body .dropdown .dropdown-menu.show,
     <!-- Notification System Styles -->
     @include('notifications._styles')
 
+    <!-- Notification Manager Script -->
+    <script src="{{ asset('js/notification-manager.js?v=' . time()) }}"></script>
+
+    <!-- Notification Sound System -->
+    <script src="{{ asset('sounds/notification-sound.js?v=' . time()) }}"></script>
+
     <!-- Remove conflicting notification scripts - now handled by Vite -->
 
 {{-- Extra scripts --}}
 @stack('scripts')
 
 <script>
+    // Simple dropdown initialization
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('=== MENU STRUCTURE DEBUG ===');
+        console.log('Initializing dropdowns...');
 
-        // Log all menu items and their dropdowns
-        document.querySelectorAll('.primary-menu .menu-item').forEach((item, index) => {
-            const menuLink = item.querySelector(':scope > .menu-link');
-            const dropdown = item.querySelector(':scope > .sub-menu-container');
+        // Initialize all dropdown toggles
+        document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+            try {
+                if (!bootstrap.Dropdown.getInstance(toggle)) {
+                    new bootstrap.Dropdown(toggle, {
+                        autoClose: true,
+                        offset: [0, 2]
+                    });
+                    console.log('Dropdown initialized:', toggle);
+                }
+            } catch (e) {
+                console.error('Dropdown initialization error:', e);
+            }
+        });
 
-            if (menuLink) {
-                const menuName = menuLink.textContent.trim().replace(' ▼', '');
-                console.log(`Menu ${index + 1}: "${menuName}"`);
-
+        // Handle dropdown clicks for top bar
+        document.querySelectorAll('#top-bar .dropdown-toggle').forEach(toggle => {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const dropdown = bootstrap.Dropdown.getInstance(this);
                 if (dropdown) {
-                    const subItems = Array.from(dropdown.querySelectorAll('.menu-link'))
-                        .map(link => link.textContent.trim());
-                    console.log(`  Dropdown items:`, subItems);
-    <!-- Improved Dropdown Hover Behavior -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Improve dropdown hover behavior
-            let hoverTimeout;
+                    dropdown.toggle();
+                    console.log('Dropdown toggled:', this);
 
-            document.querySelectorAll('.primary-menu .menu-item').forEach(menuItem => {
-                const dropdown = menuItem.querySelector('.sub-menu-container');
-
-                if (dropdown) {
-                    // Show dropdown immediately on hover
-                    menuItem.addEventListener('mouseenter', function() {
-                        clearTimeout(hoverTimeout);
-                        dropdown.style.opacity = '1';
-                        dropdown.style.visibility = 'visible';
-                    });
-
-                    // Delay hiding dropdown when mouse leaves
-                    menuItem.addEventListener('mouseleave', function() {
-                        hoverTimeout = setTimeout(() => {
-                            dropdown.style.opacity = '0';
-                            dropdown.style.visibility = 'hidden';
-                        }, 300); // 300ms delay
-                    });
-
-                    // Keep dropdown open when hovering over it
-                    dropdown.addEventListener('mouseenter', function() {
-                        clearTimeout(hoverTimeout);
-                    });
-
-                    dropdown.addEventListener('mouseleave', function() {
-                        hoverTimeout = setTimeout(() => {
-                            dropdown.style.opacity = '0';
-                            dropdown.style.visibility = 'hidden';
-                        }, 300);
-                    });
+                    // If this is the notifications dropdown, load notifications
+                    if (this.closest('.notifications-dropdown')) {
+                        loadNotifications();
+                    }
                 }
             });
         });
 
-        // Simple form submission tracking for debugging (optional)
-        document.addEventListener('DOMContentLoaded', function() {
-            // Track form submissions for debugging
-            document.querySelectorAll('form[action*="return-to"]').forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    const button = form.querySelector('button[type="submit"]');
-                    if (button) {
-                        // Add simple loading state
-                        const originalText = button.innerHTML;
-                        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Returning...';
-                        button.disabled = true;
-
-                        console.log('Form submitted:', form.action);
-                    }
-                });
+        // Special handling for user dropdown
+        const userDropdownToggle = document.querySelector('.user-dropdown-toggle');
+        if (userDropdownToggle) {
+            userDropdownToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const dropdown = bootstrap.Dropdown.getInstance(this);
+                if (dropdown) {
+                    dropdown.toggle();
+                    console.log('User dropdown toggled');
+                }
             });
-        });
+        }
 
-        // Comprehensive Bootstrap dropdown positioning fix
-        document.addEventListener('DOMContentLoaded', function() {
-            // Override all dropdown positioning issues
-            function fixDropdownPositioning() {
-                document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
-                    if (dropdown.classList.contains('show')) {
-                        // Remove any problematic styles
-                        dropdown.style.transform = '';
-                        dropdown.style.left = '';
-                        dropdown.style.top = '';
-                        dropdown.style.right = '';
-                        dropdown.style.bottom = '';
-                        dropdown.style.position = 'absolute';
-                        dropdown.style.zIndex = '999999';
-
-                        // Force Popper.js to recalculate position
-                        const dropdownInstance = bootstrap.Dropdown.getInstance(dropdown.previousElementSibling);
-                        if (dropdownInstance && dropdownInstance._popper) {
-                            dropdownInstance._popper.update();
-                        }
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown.show').forEach(dropdown => {
+                    const instance = bootstrap.Dropdown.getInstance(dropdown.querySelector('.dropdown-toggle'));
+                    if (instance) {
+                        instance.hide();
+                        console.log('Dropdown closed');
                     }
                 });
             }
+        });
 
-            // Fix on dropdown show
-            document.addEventListener('shown.bs.dropdown', fixDropdownPositioning);
+        console.log('Dropdowns initialized successfully');
+    });
 
-            // Fix on scroll (in case it moves)
-            document.addEventListener('scroll', function() {
-                fixDropdownPositioning();
-            }, { passive: true });
-
-            // Initial fix for any already open dropdowns
-            fixDropdownPositioning();
-
-            // Alternative approach - disable Popper.js positioning entirely for problematic dropdowns
-            document.addEventListener('show.bs.dropdown', function(event) {
-                const dropdown = event.target.querySelector('.dropdown-menu');
-                if (dropdown && dropdown.classList.contains('dropdown-menu-end')) {
-                    // Disable Popper.js and handle positioning manually
-                    const button = event.target.querySelector('[data-bs-toggle="dropdown"]');
-                    const rect = button.getBoundingClientRect();
-
-                    // Position dropdown manually relative to button (fixed positioning)
-                    dropdown.style.position = 'fixed';
-                    dropdown.style.top = rect.bottom + 'px';
-                    dropdown.style.left = (rect.right - dropdown.offsetWidth) + 'px';
-                    dropdown.style.transform = 'none';
-                    dropdown.style.zIndex = '999999';
+    // Fallback initialization
+    window.addEventListener('load', function() {
+        setTimeout(() => {
+            document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+                try {
+                    if (!bootstrap.Dropdown.getInstance(toggle)) {
+                        new bootstrap.Dropdown(toggle);
+                        console.log('Fallback initialized:', toggle);
+                    }
+                } catch (e) {
+                    console.error('Fallback error:', e);
                 }
             });
-        });
-    </script>
+        }, 500);
+    });
 
-                    // Add temporary label for visual debugging
-                    const debugLabel = document.createElement('div');
-                    debugLabel.style.cssText =
-                        'background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; font-size: 10px; font-weight: bold;';
-                    debugLabel.textContent = `${menuName} Dropdown`;
-                    dropdown.insertBefore(debugLabel, dropdown.firstChild);
+    // Function to load notifications into dropdown
+    function loadNotifications() {
+        const notificationList = document.getElementById('notification-list');
+        if (!notificationList) return;
+
+        console.log('Loading notifications...');
+
+        // Show loading state
+        notificationList.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-hourglass-split display-6 d-block mb-2"></i>
+                <small>Loading notifications...</small>
+            </div>
+        `;
+
+        // Fetch notifications from the server
+        fetch('/api/notifications')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Notifications received:', data);
+
+                if (data.notifications && data.notifications.length > 0) {
+                    // Render notifications
+                    let html = '';
+                    data.notifications.forEach(notification => {
+                        const date = new Date(notification.created_at).toLocaleDateString();
+                        const time = new Date(notification.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                        html += `
+                            <div class="notification-item ${notification.read_at ? 'read' : 'unread'}" data-id="${notification.id}">
+                                <div class="d-flex align-items-start gap-3 p-3 border-bottom">
+                                    <div class="notification-icon">
+                                        <i class="bi ${notification.data?.icon || 'bi-bell'} text-${notification.data?.color || 'primary'}"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start mb-1">
+                                            <h6 class="mb-0 small">${notification.data?.title || 'Notification'}</h6>
+                                            <small class="text-muted">${time}</small>
+                                        </div>
+                                        <p class="mb-0 small text-muted">${notification.data?.message || 'You have a new notification'}</p>
+                                        ${notification.data?.link ? `
+                                            <div class="mt-2">
+                                                <a href="${notification.data.link}" class="btn btn-sm btn-outline-primary">
+                                                    ${notification.data?.link_text || 'View Details'}
+                                                </a>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    notificationList.innerHTML = html;
+
+                    // Add click handlers to mark as read
+                    document.querySelectorAll('.notification-item.unread').forEach(item => {
+                        item.addEventListener('click', function() {
+                            const notificationId = this.dataset.id;
+                            markAsRead(notificationId);
+                        });
+                    });
+
                 } else {
-                    console.log(`  No dropdown`);
+                    // No notifications
+                    notificationList.innerHTML = `
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-bell-slash display-6 d-block mb-2"></i>
+                            <small>No notifications</small>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading notifications:', error);
+                notificationList.innerHTML = `
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-exclamation-triangle display-6 d-block mb-2"></i>
+                        <small>Error loading notifications</small>
+                    </div>
+                `;
+            });
+    }
+
+    // Function to mark notification as read
+    function markAsRead(notificationId) {
+        fetch(`/api/notifications/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update UI
+                const notificationItem = document.querySelector(`[data-id="${notificationId}"]`);
+                if (notificationItem) {
+                    notificationItem.classList.remove('unread');
+                    notificationItem.classList.add('read');
+                }
+
+                // Update badge count
+                updateNotificationBadge();
+            }
+        })
+        .catch(error => {
+            console.error('Error marking notification as read:', error);
+        });
+    }
+
+    // Function to update notification badge
+    function updateNotificationBadge() {
+        // Use a timeout to prevent hanging requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        fetch('/api/notifications/unread-count', {
+            signal: controller.signal,
+            credentials: 'same-origin'  // Include cookies for authentication
+        })
+        .then(response => {
+            clearTimeout(timeoutId);
+
+            // Check if the response is a redirect
+            if (response.redirected) {
+                throw new Error('Redirect detected. User may not be authenticated.');
+            }
+
+            // Check if response is JSON or HTML (error page)
+            const contentType = response.headers.get('content-type');
+            if (!response.ok) {
+                if (contentType && contentType.includes('text/html')) {
+                    // If we get HTML back, it's likely an authentication error
+                    return response.text().then(html => {
+                        throw new Error('Authentication required. Please log in again.');
+                    });
+                }
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            // Ensure we have JSON
+            if (!contentType || !contentType.includes('json')) {
+                throw new Error('Invalid response format. Expected JSON.');
+            }
+
+            return response.json();
+        })
+        .then(data => {
+            const badge = document.getElementById('notification-count');
+            if (badge) {
+                // Handle both old format (data.count) and new format (data.count)
+                const count = data.count || 0;
+
+                // Check if user is authenticated
+                if (data.authenticated === false) {
+                    // User is not authenticated, hide badge
+                    badge.style.display = 'none';
+                    return;
+                }
+
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.style.display = 'block';
+                } else {
+                    badge.style.display = 'none';
                 }
             }
-        });
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
+            console.error('Error updating notification badge:', error);
 
-        console.log('=== END DEBUG ===');
+            // Ensure badge is hidden on error
+            const badge = document.getElementById('notification-count');
+            if (badge) {
+                badge.style.display = 'none';
+            }
 
-        // Improve dropdown hover behavior
-        let hoverTimeout;
-
-        document.querySelectorAll('.primary-menu .menu-item').forEach(menuItem => {
-            const dropdown = menuItem.querySelector('.sub-menu-container');
-
-            if (dropdown) {
-                menuItem.addEventListener('mouseenter', function() {
-                    clearTimeout(hoverTimeout);
-                    dropdown.style.opacity = '1';
-                    dropdown.style.visibility = 'visible';
-                });
-
-                menuItem.addEventListener('mouseleave', function() {
-                    hoverTimeout = setTimeout(() => {
-                        dropdown.style.opacity = '0';
-                        dropdown.style.visibility = 'hidden';
-                    }, 300);
-                });
-
-                dropdown.addEventListener('mouseenter', function() {
-                    clearTimeout(hoverTimeout);
-                });
-
-                dropdown.addEventListener('mouseleave', function() {
-                    hoverTimeout = setTimeout(() => {
-                        dropdown.style.opacity = '0';
-                        dropdown.style.visibility = 'hidden';
-                    }, 300);
-                });
+            // If it's an authentication error, we might want to redirect to login
+            if (error.message.includes('Authentication required') || error.message.includes('Redirect detected')) {
+                console.log('Authentication error detected, user may need to log in again');
+                // Optionally: show a message or redirect to login
+                // window.location.href = '/login';
             }
         });
+    }
+
+    // Load notifications on page load, but skip if we're in the middle of login redirect
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if this is a login redirect by looking for the login parameter in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const loginParam = urlParams.get('login');
+
+        // If we have a login parameter in URL, skip notifications for 5 seconds
+        if (loginParam === 'success') {
+            console.log('Skipping notification update after login');
+            setTimeout(() => {
+                updateNotificationBadge();
+            }, 5000); // Wait 5 seconds before enabling notifications
+        } else {
+            // Otherwise, load notifications normally with a small delay
+            setTimeout(() => {
+                updateNotificationBadge();
+            }, 1000);
+        }
     });
 </script>
 
@@ -1797,8 +1848,6 @@ body .dropdown .dropdown-menu.show,
 @if(config('app.debug'))
 <meta name="app-debug" content="true">
 <script src="{{ asset('js/notification-debug.js') }}"></script>
-<script src="{{ asset('js/echo-debug.js') }}"></script>
-<script src="{{ asset('js/echo-debug-enhanced.js') }}"></script>
 <script src="{{ asset('js/notification-tester.js') }}"></script>
 <script src="{{ asset('js/test-public-notifications.js') }}"></script>
 <script src="{{ asset('js/notification-test-runner.js') }}"></script>
@@ -1809,65 +1858,33 @@ body .dropdown .dropdown-menu.show,
 <script src="{{ asset('js/backend-diagnosis.js') }}"></script>
 @endif
 
-<script>
-console.log('🚀 Unified Notification System will auto-initialize');
-
-@if(config('app.debug'))
-// Add debug commands to window for testing
-window.testNotifications = () => {
-    if (window.unifiedNotifications) {
-        window.unifiedNotifications.testNotification();
-        console.log('📤 Test notification sent');
-    } else {
-        console.error('❌ Unified notification system not available');
-    }
-};
-
-window.toggleNotificationSound = (enabled) => {
-    if (window.unifiedNotifications) {
-        window.unifiedNotifications.enableSound(enabled);
-        console.log('🔊 Notification sound ' + (enabled ? 'enabled' : 'disabled'));
-    }
-};
-
-window.toggleNotificationToast = (enabled) => {
-    if (window.unifiedNotifications) {
-        window.unifiedNotifications.enableToast(enabled);
-        console.log('📋 Notification toast ' + (enabled ? 'enabled' : 'disabled'));
-    }
-};
-
-// Additional debug info
-setTimeout(() => {
-    console.log('🧪 System Status:');
-    console.log('  • Echo available:', typeof window.Echo !== 'undefined');
-    console.log('  • NotificationSound available:', typeof window.notificationSound !== 'undefined');
-    console.log('  • UnifiedNotifications available:', typeof window.unifiedNotifications !== 'undefined');
-    console.log('  • User ID:', document.querySelector('meta[name="user-id"]')?.getAttribute('content'));
-
-    if (window.unifiedNotifications) {
-        console.log('  • Unified system initialized:', window.unifiedNotifications.isInitialized);
-        console.log('  • Sound enabled:', window.unifiedNotifications.soundEnabled);
-        console.log('  • Toast enabled:', window.unifiedNotifications.toastEnabled);
-    }
-}, 3000);
-
-console.log('🛠️ Debug commands available:');
-console.log('  • testNotifications() - Send a test notification');
-console.log('  • toggleNotificationSound(true/false) - Enable/disable sounds');
-console.log('  • toggleNotificationToast(true/false) - Enable/disable toasts');
-console.log('  • notificationDiagnostics.runQuickTest() - Full system diagnostics');
-console.log('  • notificationDiagnostics.testDropdownClick() - Test dropdown click');
-console.log('  • pusherRawDebug.start() - Start capturing ALL Pusher events');
-console.log('  • pusherRawDebug.getUserEvents() - See captured user events');
-console.log('  • laravelNotificationCatcher.getChannels() - List active channels');
-console.log('  • appointmentNotificationDebug.start() - Debug appointment notifications');
-console.log('  • appointmentNotificationDebug.showSummary() - Show debug results');
-console.log('  • diagnoseBackend() - Full backend diagnosis (Laravel/Pusher)');
-console.log('  • backendDiagnosis.suggestFixes() - Show fix suggestions');
-@endif
-</script>
 @endauth
+
+<script>
+// Prevent notification API calls immediately after login
+(function() {
+    // Check if we have a login parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const loginParam = urlParams.get('login');
+
+    // If we have a login parameter, override the updateNotificationBadge function
+    if (loginParam === 'success') {
+        // Temporarily replace updateNotificationBadge with a no-op
+        const originalUpdateNotificationBadge = window.updateNotificationBadge;
+        window.updateNotificationBadge = function() {
+            console.log('Skipping notification update after login');
+            // Restore the original function after a delay
+            setTimeout(() => {
+                window.updateNotificationBadge = originalUpdateNotificationBadge;
+                // Call it once more after the delay
+                if (originalUpdateNotificationBadge) {
+                    originalUpdateNotificationBadge();
+                }
+            }, 3000); // Wait 3 seconds before enabling notifications
+        };
+    }
+})();
+</script>
 
     </body>
 

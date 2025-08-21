@@ -35,14 +35,6 @@ class EchoDebugger {
         `;
 
         panel.innerHTML = `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #00ff00; padding-bottom: 5px;">
-                <strong style="color: #00ffff;">📡 ECHO DEBUGGER</strong>
-                <div>
-                    <button onclick="echoDebugger.testConnection()" style="background: #333; color: #00ff00; border: 1px solid #00ff00; padding: 2px 6px; margin: 0 2px; border-radius: 3px; cursor: pointer; font-size: 10px;">Test</button>
-                    <button onclick="echoDebugger.clear()" style="background: #333; color: #00ff00; border: 1px solid #00ff00; padding: 2px 6px; margin: 0 2px; border-radius: 3px; cursor: pointer; font-size: 10px;">Clear</button>
-                    <button onclick="echoDebugger.toggle()" style="background: #333; color: #ff0000; border: 1px solid #ff0000; padding: 2px 6px; margin: 0 2px; border-radius: 3px; cursor: pointer; font-size: 10px;">Hide</button>
-                </div>
-            </div>
             <div id="echo-debug-logs" style="max-height: 300px; overflow-y: auto;"></div>
         `;
 

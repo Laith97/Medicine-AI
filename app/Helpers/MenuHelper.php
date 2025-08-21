@@ -163,27 +163,6 @@ class MenuHelper
                 ]
             ],
 
-            // Online Presence
-            [
-                'name' => 'Online Presence',
-                'icon' => 'fas fa-globe',
-                'dropdown' => true,
-                'items' => [
-                    [
-                        'name' => 'Landing Page',
-                        'route' => 'doctor.landing-page.index',
-                        'icon' => 'fas fa-globe',
-                        'permission' => 'landing_page',
-                    ],
-                    [
-                        'name' => 'Blog Posts',
-                        'route' => 'doctor.blog.index',
-                        'icon' => 'fas fa-blog',
-                        'permission' => 'blog',
-                    ],
-                ]
-            ],
-
             // Business Management
             [
                 'name' => 'Business',
@@ -209,6 +188,18 @@ class MenuHelper
                         'icon' => 'fas fa-tags',
                         'permission' => 'subscription',
                     ] : null,
+                    [
+                        'name' => 'Landing Page',
+                        'route' => 'doctor.landing-page.index',
+                        'icon' => 'fas fa-globe',
+                        'permission' => 'landing_page',
+                    ],
+                    [
+                        'name' => 'Blog Posts',
+                        'route' => 'doctor.blog.index',
+                        'icon' => 'fas fa-blog',
+                        'permission' => 'blog',
+                    ],
                     [
                         'name' => 'Sub-Users',
                         'route' => 'sub-users.index',
@@ -337,25 +328,6 @@ class MenuHelper
                 ]
             ],
 
-            // Online Presence
-            [
-                'name' => 'Online Presence',
-                'icon' => 'fas fa-globe',
-                'dropdown' => true,
-                'items' => [
-                    [
-                        'name' => 'Landing Page',
-                        'route' => 'doctor.landing-page.index',
-                        'icon' => 'fas fa-globe',
-                    ],
-                    [
-                        'name' => 'Blog Posts',
-                        'route' => 'doctor.blog.index',
-                        'icon' => 'fas fa-blog',
-                    ],
-                ]
-            ],
-
             // Business Management - Show restricted items but still respect hospital_id for billing
             [
                 'name' => 'Business',
@@ -378,6 +350,16 @@ class MenuHelper
                         'route' => 'subscription.pricing',
                         'icon' => 'fas fa-tags',
                     ] : null,
+                    [
+                        'name' => 'Landing Page',
+                        'route' => 'doctor.landing-page.index',
+                        'icon' => 'fas fa-globe',
+                    ],
+                    [
+                        'name' => 'Blog Posts',
+                        'route' => 'doctor.blog.index',
+                        'icon' => 'fas fa-blog',
+                    ],
                     [
                         'name' => 'Sub-Users',
                         'route' => 'sub-users.index',

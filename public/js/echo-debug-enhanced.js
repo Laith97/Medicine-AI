@@ -93,51 +93,6 @@
             });
         }
 
-        // Manual test button
-        setTimeout(() => {
-            if (!document.getElementById('manual-echo-test')) {
-                const button = document.createElement('button');
-                button.id = 'manual-echo-test';
-                button.textContent = '🔧 Manual Echo Test';
-                button.style.cssText = `
-                    position: fixed;
-                    bottom: 20px;
-                    left: 20px;
-                    z-index: 10000;
-                    background: #007bff;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    font-weight: bold;
-                `;
-
-                button.onclick = () => {
-                    console.log('🔧 Running manual Echo test...');
-
-                    // Test notification system directly
-                    const testNotification = {
-                        id: 'manual-test-' + Date.now(),
-                        type: 'test',
-                        title: 'Manual Test Notification',
-                        message: 'This is a manual test',
-                        body: 'This is a manual test notification',
-                        data: { test: true }
-                    };
-
-                    if (window.notificationSystem) {
-                        window.notificationSystem.handleNewNotification(testNotification);
-                    }
-
-                    if (window.notificationSound) {
-                        window.notificationSound.play();
-                    }
-                };
-
-                document.body.appendChild(button);
-            }
-        }, 2000);
     }
 
     // Start when page loads

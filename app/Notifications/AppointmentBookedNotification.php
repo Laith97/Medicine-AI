@@ -25,6 +25,9 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
 
         // Use realtime queue for instant processing
         $this->onQueue('realtime');
+        
+        // Ensure notification is broadcast immediately
+        $this->delay(0);
     }
 
     /**
@@ -96,6 +99,7 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
         $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
+        $doctorId = $this->appointment->doctor->id ?? 0;
 
         return new BroadcastMessage([
             'id' => $this->id,
@@ -109,10 +113,36 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
             'data' => [
                 'appointment_id' => $this->appointment->id,
                 'doctor_name' => $doctorName,
+                'doctor_id' => $doctorId,
                 'appointment_date' => $this->appointment->appointment_date->format('Y-m-d H:i:s'),
                 'appointment_type' => $this->appointment->appointment_type,
             ],
             'created_at' => now()->toISOString()
         ]);
+    }
+    
+    /**
+     * Get the channels the event should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn()
+    {
+        $doctorId = $this->appointment->doctor->id;
+        // 确保使用正确的频道名称格式
+        return [
+            new PrivateChannel('doctor.' . $doctorId),
+            new PrivateChannel('App.User.' . $doctorId)
+        ];
+    }
+    
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs()
+    {
+        return 'appointment-booked';
     }
 }

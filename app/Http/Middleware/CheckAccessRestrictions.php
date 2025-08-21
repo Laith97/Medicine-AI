@@ -50,6 +50,51 @@ class CheckAccessRestrictions
             'register',
             'contact',
             'contact.store',
+            // Dashboard routes (intended redirect destinations after login)
+            'dashboard',
+            'admin.dashboard',
+            'hospital-admin.dashboard',
+            'doctor.dashboard',
+            // Patient routes
+            'doctors.index',
+            'doctors.search',
+            'doctors.show',
+            'doctors.slots',
+            'doctors.reviews',
+            'doctors.reviews.ajax',
+            // Core patient routes
+            'ask-ai',
+            'cases',
+            'settings',
+            'profile.edit',
+            'appointments',
+            'reviews',
+            // Voice assistant
+            'voice-assistant.index',
+            'voice-assistant.history',
+            'voice-assistant.show',
+            // Diagnosis routes
+            'diagnosis.index',
+            'diagnosis.create',
+            'diagnosis.show',
+            'diagnosis.patient.index',
+            'diagnosis.patient.view',
+            // Notification routes
+            'notifications.index',
+            'notifications.dropdown',
+            'notifications.unread-count',
+            'notifications.mark-read',
+            'notifications.mark-all-read',
+            'notifications.destroy',
+            'notifications.settings',
+            'notifications.settings.update',
+            'notifications.preferences',
+            'notifications.preferences.update',
+            // API routes for notifications
+            'api.notifications.index',
+            'api.notifications.unread-count',
+            'api.notifications.read',
+            'api.notifications.mark-all-read',
         ];
 
         if (!$currentRoute || in_array($currentRoute, $exemptRoutes)) {
