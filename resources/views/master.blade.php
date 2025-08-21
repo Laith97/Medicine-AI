@@ -44,66 +44,77 @@
             left: 0;
         }
 
-        .top-link:hover::after {
-            width: 100%;
-        }
+.top-link:hover::after {
+    width: 100%;
+}
+/* Header Dropdown Styling - Match EXACTLY the .sub-menu-container style */
+.dropdown-menu {
+    /* Visuals copied from .primary-menu .sub-menu-container */
+    background: #ffffff !important;
+    border: 1px solid #dee2e6 !important;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+    border-radius: 0.375rem !important;
 
-        /* Header Dropdown Styling - Match Menu Sub-Menu Style */
-        .dropdown-menu {
-            /* Modern Glass Design - Same as sub-menu-container */
-            background: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(20px) !important;
-            -webkit-backdrop-filter: blur(20px) !important;
+    /* Spacing copied from .sub-menu-container */
+    padding: 0.5rem 0 !important;
+    margin: 0.25rem 0 0 0 !important;
 
-            /* Advanced Shadow & Border - Same as sub-menu-container */
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            box-shadow:
-                0 20px 40px rgba(0, 0, 0, 0.1),
-                0 8px 16px rgba(0, 0, 0, 0.08),
-                inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+    /* Dimensions copied from .sub-menu-container */
+    min-width: 200px !important;
+    width: auto !important;
+    max-width: 280px !important;
 
-    /* Spacing - Same as sub-menu-container */
-    padding: 12px 0 !important;
-
-    /* Dimensions */
-    min-width: 240px !important;
-
-    /* CRITICAL: Fix Z-Index for Bootstrap Dropdowns - Let Bootstrap handle positioning */
+    /* Keep high z-index so it shows above content */
     z-index: 999999 !important;
 }
 
-            /* Dimensions */
-            min-width: 240px !important;
+/* Ensure any Bootstrap-added shadow class doesn't override the look */
+.dropdown-menu.shadow {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
 
-            /* CRITICAL: Fix Z-Index for Bootstrap Dropdowns */
-            z-index: 999999 !important;
-            position: absolute !important;
-        }
+.dropdown-item {
+    /* Match .primary-menu .sub-menu-container .menu-link */
+    display: flex !important;
+    width: 185px !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.5rem 1rem !important;
+    margin: 0.125rem 0.5rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 400 !important;
+    line-height: 1.5 !important;
+    color: #212529 !important;
+    text-decoration: none !important;
+    background-color: transparent !important;
+    border: 1px solid transparent !important;
+    border-radius: 0.375rem !important;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out !important;
+}
 
-        .dropdown-item {
-            /* Layout - Same as sub-menu menu-link */
-            display: flex !important;
-            align-items: center !important;
-            padding: 12px 20px !important;
-            margin: 0 8px !important;
+/* Hover: match .primary-menu .sub-menu-container .menu-link:hover */
+.dropdown-item:hover {
+    color: #DE6262 !important;
+    background-color: #f8f9fa !important;
+    border-color: #dee2e6 !important;
+}
 
-            /* Typography - Same as sub-menu menu-link */
-            font-size: 14px !important;
-            font-weight: 500 !important;
-            color: #374151 !important;
-            text-decoration: none !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+/* Icon sizing inside dropdown items to match sub-menu links */
+.dropdown-item i {
+    font-size: 0.875rem !important;
+    width: 1rem !important;
+    text-align: center !important;
+}
 
-            /* Modern Styling - Same as sub-menu menu-link */
-            border-radius: 10px !important;
-            background: transparent !important;
-            border: none !important;
-
-            /* Smooth Transitions - Same as sub-menu menu-link */
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            position: relative !important;
-            overflow: hidden !important;
-        }
+/* Focus/active: mirror .primary-menu .sub-menu-container .menu-item.current .menu-link */
+.dropdown-item:focus, .dropdown-item:active,
+.dropdown-item:focus-visible,
+.dropdown-item:focus-within {
+    outline: none !important;
+    color: #ffffff !important;
+    background-color: #DE6262 !important;
+    border-color: #DE6262 !important;
+}
 
         /* Hover Effect - Same as sub-menu menu-link hover */
         .dropdown-item:hover {
@@ -153,22 +164,13 @@
             z-index: 10003 !important;
         }
 
-/* Aggressive override for dropdown positioning - highest specificity */
-body .dropdown.show .dropdown-menu.dropdown-menu,
-body .dropdown .dropdown-menu.dropdown-menu-end.show,
-.dropdown-menu.dropdown-menu-end.show {
-    position: absolute !important;
-    transform: none !important;
-    left: auto !important;
-    top: auto !important;
-    right: auto !important;
-    bottom: auto !important;
-    margin: 0 !important;
-    will-change: auto !important;
+/* Dropdown: let Bootstrap/Popper position it; only ensure visibility */
+body .dropdown.show .dropdown-menu,
+body .dropdown .dropdown-menu.show,
+.dropdown-menu.show {
     z-index: 999999 !important;
-    /* Disable any CSS animations during positioning */
-    transition: none !important;
-    animation: none !important;
+    display: block !important;
+    /* Do not override position/transform so Popper can place it correctly */
 }
 
 /* Ensure dropdown containers allow dropdowns to escape */
@@ -178,7 +180,15 @@ body .dropdown .dropdown-menu.dropdown-menu-end.show,
 }
 
 .admin-card,
-.admin-table-container {
+.admin-table-container,
+.main-content,
+.content,
+.container,
+.container-fluid,
+.container-xxl,
+.row,
+.card,
+.card-body {
     overflow: visible !important;
 }
 
@@ -369,11 +379,11 @@ body .dropdown .dropdown-menu.dropdown-menu-end.show,
             background: transparent !important;
         }
 
-        /* Fix ONLY the last menu item dropdown positioning */
+        /* Remove special-casing last item; keep centered under its parent */
         .primary-menu .menu-item:last-child .sub-menu-container {
-            left: auto !important;
-            right: 0 !important;
-            transform: none !important;
+            left: 50% !important;
+            right: auto !important;
+            transform: translateX(-50%) !important;
         }
 
         /* Show dropdown on hover - keep it open when hovering dropdown itself */
@@ -507,9 +517,10 @@ body .dropdown .dropdown-menu.dropdown-menu-end.show,
 
         /* Prevent Horizontal Scroll but allow dropdowns */
         html, body {
-            /* Commented out to fix dropdown positioning */
-            /* overflow-x: hidden !important; */
-            max-width: 100vw !important;
+            /* Avoid 100vw to prevent scrollbar-induced overflow */
+            max-width: 100% !important;
+            /* Prevent horizontal scroll without affecting dropdown positioning */
+            overflow-x: clip !important;
         }
 
         .container-fluid {
@@ -568,10 +579,11 @@ body .dropdown .dropdown-menu.dropdown-menu-end.show,
             transform: translateX(0) translateY(-8px) !important;
         }
 
+        /* Keep last item centered like others unless it overflows; default center */
         .primary-menu .menu-item:last-child .sub-menu-container {
-            left: auto !important;
-            right: 0 !important;
-            transform: translateX(0) translateY(-8px) !important;
+            left: 50% !important;
+            right: auto !important;
+            transform: translateX(-50%) translateY(-8px) !important;
         }
 
         /* Keep mobile menu functionality intact */
@@ -1481,18 +1493,9 @@ body .dropdown .dropdown-menu.dropdown-menu-end.show,
                     <div class="col-lg-4 col-md-6">
                         <h6 class="text-white mb-3" style="color: #DE6262 !important;">Contact & Support</h6>
 
-                        <div class="contact-info mb-4">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="contact-icon me-3"
-                                    style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                    <i class="bi bi-envelope" style="color: #DE6262;"></i>
-                                </div>
-                                <div>
-                                    <small class="text-white-50 d-block">Email Support</small>
-                                    <a href="info@medcuraai.com"
-                                        class="text-white text-decoration-none">info@medcuraai.com</a>
-                                </div>
-                            </div>
+	<!-- Go To Top
+	============================================= -->
+	<div id="gotoTop" class="fas fa-chevron-up rounded-circle" style="position: fixed; bottom: 20px; right: 20px; width: 40px; height: 40px; background-color: #DE6262; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; opacity: 0.8; transition: opacity 0.3s;"></div>
 
                             <div class="d-flex align-items-center mb-3">
                                 <div class="contact-icon me-3"
