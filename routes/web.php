@@ -140,10 +140,14 @@ Route::get('/doctors/{doctor}/reviews', [ReviewController::class, 'doctorReviews
 Route::get('/doctors/{doctor}/reviews/ajax', [ReviewController::class, 'getDoctorReviews'])->name('doctors.reviews.ajax');
 
 // Notification API routes
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', \App\Http\Middleware\EnsureJsonResponse::class])->group(function () {
     Route::get('/api/notifications', [NotificationController::class, 'apiIndex'])->name('api.notifications.index');
+    Route::get('/api/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('api.notifications.unread-count');
     Route::post('/api/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('api.notifications.read');
     Route::post('/api/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('api.notifications.mark-all-read');
+    
+    // Login redirect check API
+    Route::get('/api/auth/check-redirect', [\App\Http\Controllers\Auth\LoginRedirectController::class, 'checkRedirect'])->name('api.auth.check-redirect');
 });
 
 // Enhanced notification testing page
@@ -827,10 +831,6 @@ Route::get('/doctor/{username}/testimonials', [TestimonialController::class, 'ge
 // Stripe webhook (outside auth middleware)
 Route::post('/stripe/webhook', [SubscriptionController::class, 'webhook'])->name('stripe.webhook');
 
-// Include test routes for sub-user functionality
-require __DIR__.'/test-routes.php';
-
-
 
 
 
@@ -953,4 +953,19 @@ Route::middleware('auth:admin')->prefix('security')->name('security.')->group(fu
     Route::get('/export', [App\Http\Controllers\Security\DashboardController::class, 'export'])->name('export');
 });
 
+// Dropdown test route
+Route::get('/test-dropdown', function () {
+    return view('test-dropdown');
+})->name('test.dropdown');
+
+// Dropdown fix test route
+Route::get('/test-dropdown-fix', function () {
+    return view('test-dropdown-fix');
+})->name('test.dropdown.fix');
+
 require __DIR__.'/auth.php';
+
+// Broadcasting test route
+Route::get('/test-broadcasting', function () {
+    return view('test-broadcasting');
+})->name('test.broadcasting');

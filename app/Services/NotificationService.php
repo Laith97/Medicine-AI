@@ -21,18 +21,25 @@ class NotificationService
     /**
      * Create a new notification for a user
      */
-    public function createNotification(User $user, array $data): Notification
+    public function createNotification(User $user, array $data): \App\Models\Notification
     {
-        $notification = new Notification([
-            'user_id' => $user->id,
-            'title' => $data['title'],
-            'message' => $data['message'],
-            'type' => $data['type'] ?? 'info',
-            'action_url' => $data['action_url'] ?? null,
-            'is_read' => false,
-        ]);
-
-        $notification->save();
+        $notification = new \App\Models\Notification();
+        $notification->fill([
+            'id' => \Illuminate\Support\Str::uuid(),
+            'type' => get_class($this) . '@' . $data['type'] ?? 'general',
+            'notifiable_type' => get_class($user),
+            'notifiable_id' => $user->id,
+            'data' => [
+                'title' => $data['title'],
+                'message' => $data['message'],
+                'type' => $data['type'] ?? 'info',
+                'icon' => $data['icon'] ?? 'info',
+                'link' => $data['action_url'] ?? $data['link'] ?? null,
+                'link_text' => $data['link_text'] ?? 'View',
+                'created_at' => now()->toDateTimeString(),
+            ],
+            'read_at' => null,
+        ])->save();
 
         return $notification;
     }
@@ -44,19 +51,19 @@ class NotificationService
     {
         try {
             // Send the actual email
-            \Illuminate\Support\Facades\Mail::to($user->email)->send(
+            Mail::to($user->email)->send(
                 new \App\Mail\NotificationMail($user, $notification)
             );
 
             Log::info('Email notification sent', [
-                'user_id' => $user->id,
-                'notification_id' => $notification->id,
-                'title' => $notification->title,
+                'user_id' => $user->id ?? null,
+                'notification_id' => $notification->id ?? null,
+                'title' => $notification->title ?? null,
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to send email notification', [
-                'user_id' => $user->id,
-                'notification_id' => $notification->id,
+                'user_id' => $user->id ?? null,
+                'notification_id' => $notification->id ?? null,
                 'error' => $e->getMessage(),
             ]);
         }
@@ -424,7 +431,7 @@ class NotificationService
     {
         return $this->sendNotification($user, [
             'title' => 'Usage Limit Warning',
-            'message' => "You have used {$usageData['current_usage']} of {$usageData['limit']} {$usageData['usage_type']}",
+            'message' => "You have used " . ($usageData['current_usage'] ?? 0) . " of " . ($usageData['limit'] ?? 0) . " " . ($usageData['usage_type'] ?? 'tokens'),
             'type' => 'usage_warning',
             'send_email' => true,
         ]);
@@ -474,5 +481,30 @@ class NotificationService
         ];
 
         return $templates[$template] ?? 'Notification message';
+    }
+    /**
+     * Send grace period reminder notification
+     */
+    public function sendGracePeriodReminder(User $user, $setting): bool
+    {
+        return $this->sendNotification($user, [
+            'title' => 'Grace Period Reminder',
+            'message' => 'Your subscription is approaching its renewal date. Please update your payment method to avoid service interruption.',
+            'type' => 'grace_period_reminder',
+            'send_email' => true,
+        ]);
+    }
+
+    /**
+     * Send warning period reminder notification
+     */
+    public function sendWarningPeriodReminder(User $user, $setting): bool
+    {
+        return $this->sendNotification($user, [
+            'title' => 'Subscription Renewal Warning',
+            'message' => 'Your subscription will expire soon. Please update your payment method to continue using our services.',
+            'type' => 'warning_period_reminder',
+            'send_email' => true,
+        ]);
     }
 }

@@ -4,10 +4,11 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class SystemAlertNotification extends Notification
+class SystemAlertNotification extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
@@ -34,7 +35,7 @@ class SystemAlertNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database', 'broadcast', 'mail'];
     }
 
     /**
@@ -93,5 +94,24 @@ class SystemAlertNotification extends Notification
     public function toSms(object $notifiable): string
     {
         return "System Alert: {$this->title}. {$this->message}. View details: " . ($this->data['link'] ?? route('notifications.index'));
+    }
+
+    public function toBroadcast(object $notifiable)
+    {
+        return [
+            'id' => $this->id,
+            'type' => 'system_alert',
+            'title' => $this->title,
+            'message' => $this->message,
+            'icon' => $this->getIcon(),
+            'link' => $this->data['link'] ?? null,
+            'link_text' => $this->data['link_text'] ?? 'View Details',
+            'related_type' => $this->data['related_type'] ?? null,
+            'related_id' => $this->data['related_id'] ?? null,
+            'data' => array_merge($this->data, [
+                'alert_type' => $this->type,
+                'created_at' => now()->toISOString(),
+            ])
+        ];
     }
 }

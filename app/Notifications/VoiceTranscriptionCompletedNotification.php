@@ -4,11 +4,12 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\VoiceTranscription;
 
-class VoiceTranscriptionCompletedNotification extends Notification
+class VoiceTranscriptionCompletedNotification extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
@@ -29,7 +30,7 @@ class VoiceTranscriptionCompletedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database', 'broadcast', 'mail'];
     }
 
     /**
@@ -80,5 +81,27 @@ class VoiceTranscriptionCompletedNotification extends Notification
     public function toSms(object $notifiable): string
     {
         return "Voice transcription session completed. Session ID: {$this->transcription->session_id}. View details: " . route('voice-assistant.show', $this->transcription->id);
+    }
+
+    public function toBroadcast(object $notifiable)
+    {
+        return [
+            'id' => $this->id,
+            'type' => 'voice_transcription_completed',
+            'title' => 'Voice Transcription Completed',
+            'message' => "Your voice transcription session has been completed and is ready for review.",
+            'icon' => 'microphone',
+            'link' => route('voice-assistant.show', $this->transcription->id),
+            'link_text' => 'View Transcription',
+            'related_type' => 'voice_transcription',
+            'related_id' => $this->transcription->id,
+            'data' => [
+                'transcription_id' => $this->transcription->id,
+                'session_id' => $this->transcription->session_id,
+                'duration' => $this->transcription->session_ended_at ? $this->transcription->session_ended_at->diffInMinutes($this->transcription->session_started_at) : 0,
+                'has_ai_analysis' => !empty($this->transcription->ai_analysis),
+                'completed_at' => $this->transcription->session_ended_at ? $this->transcription->session_ended_at->toISOString() : null,
+            ]
+        ];
     }
 }

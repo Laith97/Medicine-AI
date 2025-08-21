@@ -5,6 +5,7 @@
 @push('styles')
 <style>
     /* Page-specific styles if needed */
+    .admin-stats .admin-stat-card {
         margin: 0;
         font-size: 0.9rem;
     }

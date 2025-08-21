@@ -77,13 +77,37 @@ class NotificationController extends Controller
      */
     public function unreadCount(Request $request): JsonResponse
     {
-        $user = Auth::user();
-        $count = $user->unreadNotifications()->count();
+        try {
+            $user = Auth::user();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'count' => 0,
+                    'error' => 'Authentication required. Please log in again.',
+                    'authenticated' => false
+                ], 401);
+            }
+            
+            $count = $user->unreadNotifications()->count();
 
-        return response()->json([
-            'success' => true,
-            'count' => $count,
-        ]);
+            return response()->json([
+                'success' => true,
+                'count' => $count,
+                'authenticated' => true
+            ]);
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            \Log::error('Error in API unreadCount:' . $e->getMessage());
+            
+            // Always return valid JSON
+            return response()->json([
+                'success' => false,
+                'count' => 0,
+                'error' => $e->getMessage(),
+                'authenticated' => false
+            ]);
+        }
     }
 
     /**

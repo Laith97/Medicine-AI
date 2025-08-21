@@ -163,7 +163,7 @@ class NotificationController extends Controller
      */
     public function destroy($id)
     {
-        $notification = DatabaseNotification::where('id', $id)
+        $notification = \Illuminate\Notifications\DatabaseNotification::where('id', $id)
             ->where('notifiable_id', Auth::id())
             ->where('notifiable_type', get_class(Auth::user()))
             ->first();
@@ -181,14 +181,34 @@ class NotificationController extends Controller
      */
     public function unreadCount()
     {
-        $user = Auth::user();
+        try {
+            $user = Auth::user();
 
-        if (!$user) {
-            return response()->json(['error' => 'Unauthenticated'], 401);
+            if (!$user) {
+                // Return a JSON response with a 401 status code
+                return response()->json([
+                    'count' => 0,
+                    'error' => 'Authentication required. Please log in again.',
+                    'authenticated' => false
+                ], 401);
+            }
+
+            $count = $user->unreadNotifications()->count();
+            return response()->json([
+                'count' => $count,
+                'authenticated' => true
+            ]);
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            \Log::error('Error in unreadCount:' . $e->getMessage());
+            
+            // Always return valid JSON
+            return response()->json([
+                'count' => 0,
+                'error' => $e->getMessage(),
+                'authenticated' => false
+            ]);
         }
-
-        $count = $user->unreadNotifications()->count();
-        return response()->json(['count' => $count]);
     }
 
     /**

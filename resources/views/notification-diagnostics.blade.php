@@ -140,7 +140,7 @@
     </div>
 
     <!-- Load scripts -->
-    <script src="{{ asset('sounds/notification-sound.js') }}"></script>
+    <!-- Notification sound script will be loaded via Vite -->
     @vite(['resources/js/app.js', 'resources/css/app.css'])
 
     <script>

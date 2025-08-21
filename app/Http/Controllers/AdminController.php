@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\ManualReminderMail;
 use App\Services\EmailService;
+use App\Services\NotificationService;
 use App\Models\User;
 use App\Models\Setting;
 use App\Models\Doctor;
@@ -11,6 +12,8 @@ use App\Models\Specialty;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Models\OpenAIUsage;
 use App\Models\Subscription;
@@ -223,8 +226,8 @@ class AdminController extends Controller
     {
         $validationRules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'phone' => ['required', 'string', 'regex:/^\+?[1-9]\d{6,14}$/', 'unique:users,phone,'.$user->id],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id ?? ''],
+            'phone' => ['required', 'string', 'regex:/^\+?[1-9]\d{6,14}$/', 'unique:users,phone,'.$user->id ?? ''],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'specialty_select' => ['nullable', 'string', 'max:255'],
             'custom_specialty' => ['nullable', 'string', 'max:255'],
@@ -306,7 +309,7 @@ class AdminController extends Controller
             $updateData['yearly_price'] = SystemSetting::get('saas_professional_yearly', 950.00);
         }
 
-
+    }
 
 
     /**
@@ -394,11 +397,11 @@ class AdminController extends Controller
         }])
         ->get()
         ->map(function ($user) use ($startDate, $endDate) {
-            $usage = OpenAIUsage::getUserUsageStats($user->id, $startDate, $endDate);
+            $usage = OpenAIUsage::getUserUsageStats($user?->id, $startDate, $endDate);
             $setting = $user->monthlyInvoiceSetting;
 
             return [
-                'id' => $user->id,
+                'id' => $user?->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'phone' => $user->phone,
@@ -469,24 +472,24 @@ class AdminController extends Controller
         $users = User::with(['monthlyInvoiceSetting'])
             ->get()
             ->map(function ($user) use ($startDate, $endDate) {
-                $usage = OpenAIUsage::getUserUsageStats($user->id, $startDate, $endDate);
+                $usage = OpenAIUsage::getUserUsageStats($user?->id, $startDate, $endDate);
                 $setting = $user->monthlyInvoiceSetting;
                 return [
-                    'User ID' => $user->id,
+                    'User ID' => $user?->id,
                     'Name' => $user->name,
                     'Email' => $user->email,
-                    'Monthly Price' => $setting ? '$' . number_format($setting->monthly_price, 2) : 'N/A',
-                    'Yearly Price' => $setting ? '$' . number_format($setting->yearly_price, 2) : 'N/A',
-                    'Current Billing' => $setting && $setting->billing_amount > 0 ? '$' . number_format($setting->billing_amount, 2) : 'Not chosen',
+                    'Monthly Price' => $setting ? '$' . number_format((float)$setting->monthly_price, 2) : 'N/A',
+                    'Yearly Price' => $setting ? '$' . number_format((float)$setting->yearly_price, 2) : 'N/A',
+                    'Current Billing' => $setting && $setting->billing_amount > 0 ? '$' . number_format((float)$setting->billing_amount, 2) : 'Not chosen',
                     'Subscription Status' => $setting ? $setting->getSubscriptionStatus() : 'setup_pending',
                     'Subscription Ends' => $user->getSubscriptionEndDate() ? $user->getSubscriptionEndDate()->format('Y-m-d') : 'N/A',
                     'Stripe Customer ID' => $user->stripe_customer_id ?? 'N/A',
                     'Total Requests' => $usage['total_requests'],
-                    'Total Tokens' => number_format($usage['total_tokens']),
-                    'Estimated Cost' => '$' . number_format($usage['total_cost'], 4),
-                    'Monthly Token Usage' => number_format($user->getMonthlyTokenUsage()),
-                    'Cost Limit' => $user->monthly_cost_limit ? '$' . number_format($user->monthly_cost_limit, 2) : 'Unlimited',
-                    'Cost Usage Percentage' => number_format($user->getCostUsagePercentage(), 2) . '%',
+                    'Total Tokens' => number_format((int)$usage['total_tokens']),
+                    'Estimated Cost' => '$' . number_format((float)$usage['total_cost'], 4),
+                    'Monthly Token Usage' => number_format((int)$user->getMonthlyTokenUsage()),
+                    'Cost Limit' => $user->monthly_cost_limit ? '$' . number_format((float)$user->monthly_cost_limit, 2) : 'Unlimited',
+                    'Cost Usage Percentage' => number_format((float)$user->getCostUsagePercentage(), 2) . '%',
                 ];
             });
 
@@ -819,7 +822,7 @@ class AdminController extends Controller
             ));
 
         } catch (\Exception $e) {
-            \Log::error('Error in showSendRemindersForm: ' . $e->getMessage());
+            Log::error('Error in showSendRemindersForm: ' . $e->getMessage());
             return redirect()->route('admin.dashboard')
                 ->with('error', 'Unable to load reminders form. Please try again.');
         }
@@ -832,11 +835,11 @@ class AdminController extends Controller
     {
         try {
             // Log the request data for debugging
-            \Log::info('Manual reminders request data:', $request->all());
-            \Log::info('Manual reminders started by admin: ' . auth()->user()->email);
+            Log::info('Manual reminders request data:', $request->all());
+            Log::info('Manual reminders started by admin: ' . Auth::user()->email);
 
             // Log mail configuration for debugging
-            \Log::info('Mail configuration check:', [
+            Log::info('Mail configuration check:', [
                 'mail_mailer' => config('mail.default'),
                 'mail_host' => config('mail.mailers.smtp.host'),
                 'mail_from' => config('mail.from.address')
@@ -849,9 +852,9 @@ class AdminController extends Controller
                 'force_send' => 'boolean'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Manual reminders validation failed:', $e->errors());
+            Log::error('Manual reminders validation failed:', $e->errors());
             return redirect()->back()
-                ->withErrors($e->validator)
+                ->withErrors($e->validator ?? null)
                 ->withInput()
                 ->with('error', 'Please check your input and try again.');
         }
@@ -899,15 +902,6 @@ class AdminController extends Controller
                         'overdue_reminders_sent' => $overdueResults['overdue_reminders_sent'],
                         'errors' => $overdueResults['errors']
                     ];
-                    $graceResults = $this->sendGracePeriodReminders(null, $request->boolean('force_send'));
-                    $overdueResults = $this->sendOverdueReminders(null, $request->boolean('force_send'));
-
-                    $results = [
-                        'grace_reminders_sent' => $graceResults['grace_reminders_sent'],
-                        'warning_reminders_sent' => $warningResults['warning_reminders_sent'],
-                        'overdue_reminders_sent' => $overdueResults['overdue_reminders_sent'],
-                        'errors' => array_merge($graceResults['errors'], $warningResults['errors'], $overdueResults['errors'])
-                    ];
                     break;
             }
 
@@ -945,11 +939,7 @@ class AdminController extends Controller
     private function sendGracePeriodReminders($userIds = null, $forceSend = false)
     {
         $results = ['grace_reminders_sent' => 0, 'errors' => []];
-
-        \Log::info('Starting sendGracePeriodReminders', [
-            'userIds' => $userIds,
-            'forceSend' => $forceSend
-        ]);
+        $notificationService = app(NotificationService::class);
 
         $query = User::whereHas('monthlyInvoiceSetting', function($query) {
             $query->where('is_active', true);
@@ -968,11 +958,6 @@ class AdminController extends Controller
             });
         }
 
-        \Log::info('Found users in grace period', [
-            'total_users' => $users->count(),
-            'user_emails' => $users->pluck('email')->toArray()
-        ]);
-
         foreach ($users as $user) {
             try {
                 $setting = $user->monthlyInvoiceSetting;
@@ -981,87 +966,12 @@ class AdminController extends Controller
                 if (!$forceSend) {
                     if ($setting->last_reminder_sent_at &&
                         !$setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->isPast()) {
-                        \Log::info('Skipping reminder - too soon since last reminder', [
-                            'user_id' => $user->id,
-                            'user_email' => $user->email,
-                            'last_reminder_sent_at' => $setting->last_reminder_sent_at,
-                            'reminder_frequency_days' => $setting->reminder_frequency_days,
-                            'next_reminder_allowed_at' => $setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)
-                        ]);
                         continue; // Skip - too soon since last reminder
                     }
                 }
 
-                // Send email directly like contact form
-                \Log::info('Sending grace period reminder', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'user_name' => $user->name
-                ]);
-
-                try {
-                    \Log::info('About to send grace period reminder email and SMS', [
-                        'user_email' => $user->email,
-                        'user_phone' => $user->phone,
-                        'timestamp' => now()->format('Y-m-d H:i:s.u')
-                    ]);
-
-                    // Send Email
-                    $emailService = new EmailService();
-                    $emailService->sendEmail(
-                        $user->email,
-                        'MedCura AI - Payment Reminder',
-                        'emails.reminders.grace-period-simple',
-                        [
-                            'userName' => $user->name,
-                            'userEmail' => $user->email,
-                            'billingAmount' => $setting->billing_amount ?? 0,
-                            'gracePeriodDays' => $setting->grace_period_days ?? 7,
-                            'subscriptionEndsAt' => $setting->subscription_ends_at,
-                            'reminderType' => 'grace_period',
-                        ]
-                    );
-
-                    // Send SMS if user has phone number
-                    if ($user->phone) {
-                        try {
-                            $smsService = new \App\Services\SmsService();
-                            $daysRemaining = $setting->getDaysRemainingInCurrentPeriod();
-                            $renewalUrl = route('subscription.manage');
-
-                            $smsMessage = "🔔 MedCura AI: Your subscription expired but you're in grace period. {$daysRemaining} days remaining. Renew now: {$renewalUrl}";
-
-                            $smsResult = $smsService->send($user->phone, $smsMessage);
-
-                            if ($smsResult['success']) {
-                                \Log::info('Grace period reminder SMS sent successfully', [
-                                    'user_phone' => $user->phone,
-                                    'provider' => $smsResult['data']['provider'] ?? 'unknown'
-                                ]);
-                            } else {
-                                \Log::warning('Failed to send grace period reminder SMS', [
-                                    'user_phone' => $user->phone,
-                                    'error' => $smsResult['message']
-                                ]);
-                            }
-                        } catch (\Exception $smsException) {
-                            \Log::warning('SMS service error for grace period reminder', [
-                                'user_phone' => $user->phone,
-                                'error' => $smsException->getMessage()
-                            ]);
-                        }
-                    }
-
-                    \Log::info('Grace period reminder sent successfully', [
-                        'user_email' => $user->email,
-                        'user_phone' => $user->phone,
-                        'timestamp' => now()->format('Y-m-d H:i:s.u')
-                    ]);
-                } catch (\Exception $mailException) {
-                    \Log::error('Failed to send grace period reminder email to ' . $user->email . ': ' . $mailException->getMessage());
-                    $results['errors'][] = "User {$user->id} ({$user->name}): " . $mailException->getMessage();
-                    continue; // Continue to next user instead of throwing exception
-                }
+                // Send notifications via unified service
+                $notificationService->sendGracePeriodReminder($user, $setting);
 
                 // Update timestamp
                 $setting->update(['last_reminder_sent_at' => now()]);
@@ -1069,13 +979,7 @@ class AdminController extends Controller
                 $results['grace_reminders_sent']++;
 
             } catch (\Exception $e) {
-                \Log::error('Failed to send grace period reminder', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                $results['errors'][] = "User {$user->id} ({$user->name}): " . $e->getMessage();
+                $results['errors'][] = "User {$user?->id} ({$user->name}): " . $e->getMessage();
             }
         }
 
@@ -1088,11 +992,7 @@ class AdminController extends Controller
     private function sendWarningPeriodReminders($userIds = null, $forceSend = false)
     {
         $results = ['warning_reminders_sent' => 0, 'errors' => []];
-
-        \Log::info('sendWarningPeriodReminders called', [
-            'userIds' => $userIds,
-            'forceSend' => $forceSend
-        ]);
+        $notificationService = app(NotificationService::class);
 
         $query = User::whereHas('monthlyInvoiceSetting', function($query) {
             $query->where('is_active', true);
@@ -1100,38 +1000,18 @@ class AdminController extends Controller
 
         if ($userIds && is_array($userIds) && count($userIds) > 0) {
             $query->whereIn('id', $userIds);
-            \Log::info('Filtering by user IDs', ['userIds' => $userIds]);
         }
 
         $allUsers = $query->get();
-        \Log::info('Users with monthly invoice settings found', [
-            'count' => $allUsers->count(),
-            'user_ids' => $allUsers->pluck('id')->toArray()
-        ]);
 
         // Only filter by warning period status if not forcing send
         if (!$forceSend) {
             $users = $allUsers->filter(function($user) {
-                $isInWarning = $user->isInWarningPeriod();
-                \Log::info('Checking user warning period status', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'isInWarningPeriod' => $isInWarning
-                ]);
-                return $isInWarning;
+                return $user->isInWarningPeriod();
             });
         } else {
             $users = $allUsers;
-            \Log::info('Force send enabled - including all selected users', [
-                'user_count' => $users->count(),
-                'user_ids' => $users->pluck('id')->toArray()
-            ]);
         }
-
-        \Log::info('Users in warning period after filtering', [
-            'count' => $users->count(),
-            'user_ids' => $users->pluck('id')->toArray()
-        ]);
 
         foreach ($users as $user) {
             try {
@@ -1139,87 +1019,14 @@ class AdminController extends Controller
 
                 // Check if we should send reminder (unless forced)
                 if (!$forceSend) {
-                    \Log::info('Checking reminder frequency', [
-                        'user_id' => $user->id,
-                        'last_reminder_sent_at' => $setting->last_reminder_sent_at ? $setting->last_reminder_sent_at->format('Y-m-d H:i:s') : null,
-                        'reminder_frequency_days' => $setting->reminder_frequency_days,
-                        'next_reminder_allowed_at' => $setting->last_reminder_sent_at ? $setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->format('Y-m-d H:i:s') : null,
-                        'is_past' => $setting->last_reminder_sent_at ? $setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->isPast() : true
-                    ]);
-
                     if ($setting->last_reminder_sent_at &&
                         !$setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->isPast()) {
-                        \Log::info('Skipping reminder - too soon since last reminder', [
-                            'user_id' => $user->id,
-                            'user_email' => $user->email
-                        ]);
                         continue; // Skip - too soon since last reminder
                     }
                 }
 
-                // Send email directly like contact form
-                \Log::info('Sending warning period reminder', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'user_name' => $user->name
-                ]);
-
-                try {
-                    // Send Email
-                    $emailService = new EmailService();
-                    $emailService->sendEmail(
-                        $user->email,
-                        'MedCura AI - Payment Due',
-                        'emails.reminders.warning-period',
-                        [
-                            'userName' => $user->name,
-                            'userEmail' => $user->email,
-                            'billingAmount' => $setting->billing_amount ?? 0,
-                            'gracePeriodDays' => $setting->grace_period_days ?? 7,
-                            'subscriptionEndsAt' => $setting->subscription_ends_at,
-                            'reminderType' => 'warning_period',
-                        ]
-                    );
-
-                    // Send SMS if user has phone number
-                    if ($user->phone) {
-                        try {
-                            $smsService = new \App\Services\SmsService();
-                            $daysRemaining = $setting->getDaysRemainingInCurrentPeriod();
-                            $renewalUrl = route('subscription.manage');
-
-                            $smsMessage = "🚨 URGENT - MedCura AI: FINAL WARNING! Your account will be RESTRICTED in {$daysRemaining} days. Renew immediately: {$renewalUrl}";
-
-                            $smsResult = $smsService->send($user->phone, $smsMessage);
-
-                            if ($smsResult['success']) {
-                                \Log::info('Warning period reminder SMS sent successfully', [
-                                    'user_phone' => $user->phone,
-                                    'provider' => $smsResult['data']['provider'] ?? 'unknown'
-                                ]);
-                            } else {
-                                \Log::warning('Failed to send warning period reminder SMS', [
-                                    'user_phone' => $user->phone,
-                                    'error' => $smsResult['message']
-                                ]);
-                            }
-                        } catch (\Exception $smsException) {
-                            \Log::warning('SMS service error for warning period reminder', [
-                                'user_phone' => $user->phone,
-                                'error' => $smsException->getMessage()
-                            ]);
-                        }
-                    }
-
-                    \Log::info('Warning period reminder sent successfully', [
-                        'user_email' => $user->email,
-                        'user_phone' => $user->phone
-                    ]);
-                } catch (\Exception $mailException) {
-                    \Log::error('Failed to send warning period reminder email to ' . $user->email . ': ' . $mailException->getMessage());
-                    $results['errors'][] = "User {$user->id} ({$user->name}): " . $mailException->getMessage();
-                    continue; // Continue to next user instead of throwing exception
-                }
+                // Send notifications via unified service
+                $notificationService->sendWarningPeriodReminder($user, $setting);
 
                 // Update timestamp
                 $setting->update(['last_reminder_sent_at' => now()]);
@@ -1227,7 +1034,7 @@ class AdminController extends Controller
                 $results['warning_reminders_sent']++;
 
             } catch (\Exception $e) {
-                $results['errors'][] = "User {$user->id} ({$user->name}): " . $e->getMessage();
+                $results['errors'][] = "User {$user?->id} ({$user->name}): " . $e->getMessage();
             }
         }
 
@@ -1237,7 +1044,7 @@ class AdminController extends Controller
     /**
      * Send overdue reminders
      */
-    private function sendOverdueReminders($userIds = null, $forceSend = false)
+    private function sendOverdueReminders($userIds = [], $forceSend = false)
     {
         $results = ['overdue_reminders_sent' => 0, 'errors' => []];
 
@@ -1249,7 +1056,7 @@ class AdminController extends Controller
                   ->where('due_date', '<', now());
         }]);
 
-        if ($userIds && is_array($userIds) && count($userIds) > 0) {
+        if (!empty($userIds)) {
             $query->whereIn('id', $userIds);
         }
 
@@ -1258,33 +1065,11 @@ class AdminController extends Controller
         foreach ($users as $user) {
             foreach ($user->stripeInvoices as $invoice) {
                 try {
-                    // Check if we should send reminder (unless forced)
                     if (!$forceSend && !$invoice->needsReminder()) {
-                        continue; // Skip - doesn't need reminder yet
+                        continue;
                     }
 
-                    // Send email directly like contact form
-                    \Log::info('Sending overdue reminder', [
-                        'user_id' => $user->id,
-                        'user_email' => $user->email,
-                        'user_name' => $user->name,
-                        'invoice_id' => $invoice->id
-                    ]);
-
                     try {
-                        // For overdue, we need to pass the invoice data differently
-                        // Create a fake setting for the email template
-                        $fakeSetting = new \App\Models\MonthlyInvoiceSetting([
-                            'billing_amount' => $invoice->amount_due / 100, // Convert from cents
-                            'subscription_period_months' => 1,
-                            'subscription_starts_at' => $invoice->created_at,
-                            'subscription_ends_at' => $invoice->due_date,
-                            'grace_period_days' => 7,
-                            'warning_period_days' => 3,
-                            'is_active' => true,
-                        ]);
-
-                        // Send Email
                         $emailService = new EmailService();
                         $emailService->sendEmail(
                             $user->email,
@@ -1299,58 +1084,16 @@ class AdminController extends Controller
                                 'reminderType' => 'overdue',
                             ]
                         );
-
-                        // Send SMS if user has phone number
-                        if ($user->phone) {
-                            try {
-                                $smsService = new \App\Services\SmsService();
-                                $amount = number_format($invoice->amount_due / 100, 2);
-                                $renewalUrl = route('subscription.manage');
-
-                                $smsMessage = "⚠️ MedCura AI: Your invoice of \${$amount} is overdue. Update your payment method to avoid service interruption: {$renewalUrl}";
-
-                                $smsResult = $smsService->send($user->phone, $smsMessage);
-
-                                if ($smsResult['success']) {
-                                    \Log::info('Overdue reminder SMS sent successfully', [
-                                        'user_phone' => $user->phone,
-                                        'invoice_id' => $invoice->id,
-                                        'provider' => $smsResult['data']['provider'] ?? 'unknown'
-                                    ]);
-                                } else {
-                                    \Log::warning('Failed to send overdue reminder SMS', [
-                                        'user_phone' => $user->phone,
-                                        'invoice_id' => $invoice->id,
-                                        'error' => $smsResult['message']
-                                    ]);
-                                }
-                            } catch (\Exception $smsException) {
-                                \Log::warning('SMS service error for overdue reminder', [
-                                    'user_phone' => $user->phone,
-                                    'invoice_id' => $invoice->id,
-                                    'error' => $smsException->getMessage()
-                                ]);
-                            }
-                        }
-
-                        \Log::info('Overdue reminder sent successfully', [
-                            'user_email' => $user->email,
-                            'user_phone' => $user->phone,
-                            'invoice_id' => $invoice->id
-                        ]);
                     } catch (\Exception $mailException) {
-                        \Log::error('Failed to send overdue reminder email to ' . $user->email . ': ' . $mailException->getMessage());
-                        $results['errors'][] = "Invoice {$invoice->id} for user {$user->id} ({$user->name}): " . $mailException->getMessage();
-                        continue; // Continue to next invoice instead of throwing exception
+                        Log::error('Failed to send overdue email for invoice ' . $invoice->id . ': ' . $mailException->getMessage());
+                        $results['errors'][] = "Email error for invoice {$invoice->id}: " . $mailException->getMessage();
                     }
 
-                    // Update invoice reminder tracking
                     $invoice->markReminderSent();
-
                     $results['overdue_reminders_sent']++;
 
                 } catch (\Exception $e) {
-                    $results['errors'][] = "Invoice {$invoice->id} for user {$user->id} ({$user->name}): " . $e->getMessage();
+                    $results['errors'][] = "Invoice {$invoice->id}: " . $e->getMessage();
                 }
             }
         }
@@ -1379,7 +1122,7 @@ class AdminController extends Controller
             return redirect()->back()->with('success', $message);
 
         } catch (\Exception $e) {
-            \Log::error('Error toggling doctor status: ' . $e->getMessage());
+            Log::error('Error toggling doctor status: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Failed to update doctor status. Please try again.');
         }
     }
@@ -1423,7 +1166,7 @@ class AdminController extends Controller
         try {
             $hospital = \App\Models\Hospital::create([
                 'name' => $request->name,
-                'slug' => \Illuminate\Support\Str::slug($request->name),
+                'slug' => Str::slug($request->name),
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'website' => $request->website,
@@ -1438,7 +1181,7 @@ class AdminController extends Controller
 
             return redirect()->back()->with('success', 'Hospital created successfully and assigned to hospital admin.');
         } catch (\Exception $e) {
-            \Log::error('Error creating hospital for admin: ' . $e->getMessage());
+            Log::error('Error creating hospital for admin: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Failed to create hospital. Please try again.');
         }
     }
@@ -1467,7 +1210,7 @@ class AdminController extends Controller
         try {
             $user->hospital->update([
                 'name' => $request->name,
-                'slug' => \Illuminate\Support\Str::slug($request->name),
+                'slug' => Str::slug($request->name),
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'website' => $request->website,
@@ -1480,7 +1223,7 @@ class AdminController extends Controller
 
             return redirect()->back()->with('success', 'Hospital information updated successfully.');
         } catch (\Exception $e) {
-            \Log::error('Error updating hospital for admin: ' . $e->getMessage());
+            Log::error('Error updating hospital for admin: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Failed to update hospital. Please try again.');
         }
     }
@@ -1508,7 +1251,7 @@ class AdminController extends Controller
             return redirect()->back()->with('error', 'Invalid hospital admin or no hospital found.');
         }
 
-        if ($doctor->hospital_id !== $user->hospital_id) {
+        if ($doctor->hospital_id !== $user?->hospital_id) {
             return redirect()->back()->with('error', 'This doctor does not belong to this hospital.');
         }
 
@@ -1525,7 +1268,7 @@ class AdminController extends Controller
 
             return redirect()->back()->with('success', $message);
         } catch (\Exception $e) {
-            \Log::error('Error toggling hospital doctor status: ' . $e->getMessage());
+            Log::error('Error toggling hospital doctor status: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Failed to update doctor status. Please try again.');
         }
     }
@@ -1574,7 +1317,7 @@ class AdminController extends Controller
         session([
             'impersonating_admin_id' => $admin->id,
             'impersonating_admin_name' => $admin->name,
-            'impersonating_user_id' => $user->id,
+            'impersonating_user_id' => $user?->id,
             'admin_impersonation_started_at' => now()->timestamp,
             'admin_impersonation_ip' => request()->ip(),
         ]);
@@ -1586,7 +1329,7 @@ class AdminController extends Controller
         // Log admin impersonation
         \App\Services\AuditLoggingService::logAdminImpersonation(
             $admin->id,
-            $user->id,
+            $user?->id,
             [
                 'target_user_name' => $user->name,
                 'target_user_email' => $user->email,
@@ -1595,10 +1338,10 @@ class AdminController extends Controller
         );
 
         // Log the impersonation for security audit
-        \Log::info('Admin impersonation started', [
+        Log::info('Admin impersonation started', [
             'admin_id' => $admin->id,
             'admin_name' => $admin->name,
-            'target_user_id' => $user->id,
+            'target_user_id' => $user?->id,
             'target_user_name' => $user->name,
             'target_user_role' => $user->role,
             'ip_address' => request()->ip(),
@@ -1625,14 +1368,14 @@ class AdminController extends Controller
     public function returnToAdmin()
     {
         // CRITICAL DEBUG: Log that method is being called
-        \Log::emergency('🚨 returnToAdmin method called!', [
+        Log::emergency('🚨 returnToAdmin method called!', [
             'timestamp' => now()->toDateTimeString(),
             'request_method' => request()->method(),
             'request_url' => request()->fullUrl(),
         ]);
 
         // Log the attempt for debugging
-        \Log::info('Return to admin attempt', [
+        Log::info('Return to admin attempt', [
             'session_data' => [
                 'impersonating_admin_id' => session('impersonating_admin_id'),
                 'impersonating_admin_name' => session('impersonating_admin_name'),
@@ -1656,7 +1399,7 @@ class AdminController extends Controller
         $sessionIp = session('admin_impersonation_ip');
 
         if (!$adminId || !$adminName || !$userId || !$startedAt) {
-            \Log::warning('Invalid admin impersonation session - missing data', [
+            Log::warning('Invalid admin impersonation session - missing data', [
                 'adminId' => $adminId,
                 'adminName' => $adminName,
                 'userId' => $userId,
@@ -1668,7 +1411,7 @@ class AdminController extends Controller
 
         // Security checks - Allow IP changes for now (can be restrictive in some environments)
         if ($sessionIp && $sessionIp !== request()->ip()) {
-            \Log::warning('Admin impersonation IP mismatch', [
+            Log::warning('Admin impersonation IP mismatch', [
                 'session_ip' => $sessionIp,
                 'current_ip' => request()->ip(),
                 'admin_id' => $adminId,
@@ -1680,7 +1423,7 @@ class AdminController extends Controller
 
         // Check session expiry (24 hours)
         if ((now()->timestamp - $startedAt) > 86400) {
-            \Log::warning('Admin impersonation session expired', [
+            Log::warning('Admin impersonation session expired', [
                 'started_at' => $startedAt,
                 'current_time' => now()->timestamp,
                 'duration' => now()->timestamp - $startedAt,
@@ -1692,7 +1435,7 @@ class AdminController extends Controller
         // Find the admin user
         $admin = \App\Models\Admin::find($adminId);
         if (!$admin) {
-            \Log::error('Admin not found during return from impersonation', [
+            Log::error('Admin not found during return from impersonation', [
                 'admin_id' => $adminId,
             ]);
             $this->clearImpersonationSession();
@@ -1700,11 +1443,11 @@ class AdminController extends Controller
         }
 
         // Get impersonated user for logging
-        $user = \App\Models\User::find($userId);
+        $user = User::find($userId);
         $userName = $user ? $user->name : 'Unknown';
 
         // Log the end of impersonation
-        \Log::info('Admin impersonation ended successfully', [
+        Log::info('Admin impersonation ended successfully', [
             'admin_id' => $adminId,
             'admin_name' => $adminName,
             'impersonated_user_id' => $userId,
@@ -1717,7 +1460,7 @@ class AdminController extends Controller
         $this->clearImpersonationSession();
 
         // Login back as admin (like Hospital Admin does)
-        auth()->login($admin);
+        Auth::login($admin);
 
         // Log admin impersonation ended
         \App\Services\AuditLoggingService::logAdminImpersonationEnded(
@@ -1729,11 +1472,11 @@ class AdminController extends Controller
         );
 
         // Log the successful return
-        \Log::info('Admin successfully returned from impersonation', [
+        Log::info('Admin successfully returned from impersonation', [
             'admin_id' => $admin->id,
             'admin_name' => $admin->name,
-            'auth_check' => auth()->check(),
-            'auth_user_id' => auth()->id(),
+            'auth_check' => Auth::check(),
+            'auth_user_id' => Auth::id(),
         ]);
 
         return redirect()->route('admin.dashboard')
@@ -1754,3 +1497,4 @@ class AdminController extends Controller
         ]);
     }
 }
+

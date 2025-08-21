@@ -110,8 +110,7 @@
     </div>
 </div>
 
-<!-- Include notification sound script -->
-<script src="{{ asset('sounds/notification-sound.js') }}"></script>
+<!-- Notification sound script is already included in master.blade.php -->
 
 <script>
 function notificationDropdown() {
@@ -160,12 +159,54 @@ function notificationDropdown() {
 
         async loadNotifications() {
             try {
-                const response = await fetch('/api/notifications');
+                console.log('📱 Loading notifications...');
+                console.log('🔍 User ID:', document.querySelector('meta[name="user-id"]')?.getAttribute('content'));
+                console.log('🔍 Auth token available:', !!document.querySelector('meta[name="csrf-token"]'));
+
+                const response = await fetch('/api/notifications', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                console.log('🔍 Response status:', response.status);
+                console.log('🔍 Response content-type:', response.headers.get('content-type'));
+
+                // Check if response is HTML (error page)
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('text/html')) {
+                    const errorText = await response.text();
+                    console.error('❌ Received HTML response instead of JSON:', errorText.substring(0, 200));
+
+                    if (errorText.includes('login') || errorText.includes('authentication')) {
+                        throw new Error('Authentication required. Please log in.');
+                    } else {
+                        throw new Error('Server returned an error page. Please try again.');
+                    }
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
+                console.log('📋 Notifications loaded:', data);
                 this.notifications = data.notifications || [];
                 this.unreadCount = data.unread_count || 0;
             } catch (error) {
-                console.error('Failed to load notifications:', error);
+                console.error('❌ Failed to load notifications:', error);
+
+                // Provide more specific error messages
+                if (error.message.includes('Authentication required')) {
+                    console.warn('⚠️ Authentication required for notifications');
+                    this.notifications = [];
+                    this.unreadCount = 0;
+                } else if (error.message.includes('Network Error')) {
+                    console.error('❌ Network error. Please check your connection');
+                } else {
+                    console.error('❌ Failed to load notifications');
+                }
             }
         },
 

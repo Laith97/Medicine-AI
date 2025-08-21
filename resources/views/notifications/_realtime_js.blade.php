@@ -25,7 +25,9 @@
                     }
 
                     // Update browser badge
-                    updateBrowserBadge();
+                    if (window.notificationManager) {
+                        window.notificationManager.updateNotificationBadge();
+                    }
                 });
 
             // Listen for notification read events
@@ -54,15 +56,10 @@
         audio.play().catch(e => console.log('Audio play failed:', e));
     }
 
-    // Update browser badge
+    // Update browser badge using notification manager
     function updateBrowserBadge() {
-        if ('setAppBadge' in navigator) {
-            fetch('/notifications/unread-count')
-                .then(response => response.json())
-                .then(data => {
-                    navigator.setAppBadge(data.count);
-                })
-                .catch(error => console.error('Error updating badge:', error));
+        if (window.notificationManager) {
+            window.notificationManager.updateNotificationBadge();
         }
     }
 

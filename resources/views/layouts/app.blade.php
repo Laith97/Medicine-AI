@@ -6,6 +6,10 @@
     <meta name="author" content="SemiColonWeb">
     <meta name="description" content="Hospital Admin Panel - MedCura AI">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
+	<!-- Notification meta tags -->
+	<meta name="user-id" content="{{ Auth::id() }}">
+	<meta name="notification-sound-enabled" content="{{ config('app.env') === 'local' ? 'true' : 'true' }}">
+	<meta name="notification-toast-enabled" content="{{ config('app.env') === 'local' ? 'true' : 'true' }}">
 
     <!-- Font Imports -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
