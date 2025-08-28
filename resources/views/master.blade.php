@@ -131,6 +131,57 @@
     z-index: 10003 !important;
 }
 
+/* Ensure hamburger button is visible and clickable on mobile */
+@media (max-width: 991px) {
+    .primary-menu-trigger {
+        display: block !important;
+    }
+    
+    .cnvs-hamburger {
+        display: block !important;
+        background: none !important;
+        border: none !important;
+        cursor: pointer !important;
+        padding: 10px !important;
+        z-index: 10005 !important;
+        position: relative !important;
+        /* Add visual debugging */
+        min-width: 44px !important;
+        min-height: 44px !important;
+    }
+    
+    .cnvs-hamburger:hover {
+        opacity: 0.8 !important;
+    }
+    
+    /* Make sure hamburger lines are visible */
+    .cnvs-hamburger-inner,
+    .cnvs-hamburger-inner::before,
+    .cnvs-hamburger-inner::after {
+        background-color: #333 !important;
+    }
+    
+    /* Fix logo positioning on mobile - keep it on the left */
+    .d-flex.align-items-center.flex-grow-1 {
+        display: flex !important;
+        align-items: center !important;
+        flex-grow: 1 !important;
+        justify-content: flex-start !important; /* Keep logo on the left */
+    }
+    
+    /* Ensure logo container doesn't center itself */
+    .header .container,
+    .header .container-fluid {
+        justify-content: space-between !important;
+    }
+    
+    /* Logo specific positioning */
+    #logo {
+        margin-right: auto !important;
+        margin-left: 0 !important;
+    }
+}
+
 /* Bootstrap Dropdown Toggle Button */
 .dropdown-toggle {
     position: relative !important;
@@ -425,13 +476,27 @@ body .dropdown .dropdown-menu.show,
 
         /* Responsive Navigation Improvements */
         @media (max-width: 1200px) {
+            /* Large tablets and small desktops */
+            .header-row {
+                padding: 0.5rem 0 !important;
+            }
+            
+            #logo img {
+                width: 130px !important;
+            }
+            
             .primary-menu .menu-container {
-                flex-wrap: wrap !important;
-                justify-content: center !important;
+                flex-wrap: nowrap !important;
+                justify-content: flex-start !important;
             }
             
             .primary-menu .menu-item {
                 margin-right: 0.5rem !important;
+            }
+            
+            .primary-menu .menu-link {
+                padding: 0.4rem 0.7rem !important;
+                font-size: 14px !important;
             }
             
             .primary-menu .sub-menu-container {
@@ -441,9 +506,22 @@ body .dropdown .dropdown-menu.show,
         }
 
         @media (max-width: 992px) {
+            /* Tablets - still show desktop navigation but smaller */
+            .header-row {
+                padding: 0.4rem 0 !important;
+            }
+            
+            #logo img {
+                width: 125px !important;
+            }
+            
             .primary-menu .menu-link {
-                padding: 0.4rem 0.8rem !important;
-                font-size: 14px !important;
+                padding: 0.3rem 0.6rem !important;
+                font-size: 13px !important;
+            }
+            
+            .primary-menu .menu-item {
+                margin-right: 0.3rem !important;
             }
             
             .primary-menu .sub-menu-container {
@@ -453,6 +531,7 @@ body .dropdown .dropdown-menu.show,
                 transform: translateX(-50%) !important;
                 width: 90vw !important;
                 max-width: 300px !important;
+                backdrop-filter: blur(10px) !important;
             }
         }
 
@@ -502,11 +581,45 @@ body .dropdown .dropdown-menu.show,
         #header {
             overflow: visible !important;
             position: relative !important;
+            width: 100% !important;
         }
 
         .header-row {
             overflow: visible !important;
             position: relative !important;
+            width: 100% !important;
+            min-height: 70px !important;
+            align-items: center !important;
+        }
+        
+        /* Header container responsive fixes */
+        #header-wrap {
+            width: 100% !important;
+        }
+        
+        #header .container {
+            width: 100% !important;
+            max-width: 1400px !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            margin: 0 auto !important;
+        }
+        
+        /* Logo responsive styling */
+        #logo {
+            flex-shrink: 0 !important;
+        }
+        
+        #logo img {
+            max-width: 100% !important;
+            height: auto !important;
+            display: block !important;
+        }
+        
+        /* Mobile menu trigger styling - hidden by default, shown on mobile */
+        .primary-menu-trigger {
+            display: none !important;
+            flex-shrink: 0 !important;
         }
 
         .primary-menu {
@@ -526,36 +639,189 @@ body .dropdown .dropdown-menu.show,
             z-index: 999999 !important;
         }
 
-        /* Fix dropdown positioning to prevent overflow */
+        /* Fix dropdown positioning and sizing */
         .primary-menu .sub-menu-container {
-            /* Ensure dropdowns don't cause horizontal scroll */
-            left: 50% !important;
-            transform: translateX(-50%) translateY(-8px) !important;
             max-width: min(320px, 90vw) !important;
             width: max-content !important;
         }
 
-        /* Adjust dropdown positioning for edge cases */
-        .primary-menu .menu-item:first-child .sub-menu-container {
+        /* Top-level dropdowns: center under parent */
+        .primary-menu > .menu-container > .menu-item > .sub-menu-container {
+            left: 50% !important;
+            transform: translateX(-50%) translateY(-8px) !important;
+        }
+
+        /* Inverted sub-menus: generic fallback */
+        .primary-menu .sub-menu-container.menu-pos-invert {
+            left: auto !important;
+            right: 0 !important;
+            transform: translateX(0) translateY(-8px) !important;
+        }
+
+        /* Inverted top-level: align right of parent (more specific) */
+        .primary-menu > .menu-container > .menu-item > .sub-menu-container.menu-pos-invert {
+            left: auto !important;
+            right: 0 !important;
+            transform: translateX(0) translateY(-8px) !important;
+        }
+
+        /* First item edge-case: align left */
+        .primary-menu > .menu-container > .menu-item:first-child > .sub-menu-container {
             left: 0 !important;
             transform: translateX(0) translateY(-8px) !important;
         }
 
-        /* Keep last item centered like others unless it overflows; default center */
-        .primary-menu .menu-item:last-child .sub-menu-container {
+        /* Last item non-invert: keep centered */
+        .primary-menu > .menu-container > .menu-item:last-child > .sub-menu-container:not(.menu-pos-invert) {
             left: 50% !important;
             right: auto !important;
             transform: translateX(-50%) translateY(-8px) !important;
         }
 
-        /* Keep mobile menu functionality intact */
+        /* Nested dropdowns: open to the right of their parent menu */
+        .primary-menu .sub-menu-container .sub-menu-container {
+            top: 0 !important;
+            left: 100% !important;
+            right: auto !important;
+            transform: translateX(0) translateY(0) !important;
+        }
+
+        /* Nested inverted: open to the left */
+        .primary-menu .sub-menu-container .sub-menu-container.menu-pos-invert {
+            left: auto !important;
+            right: 100% !important;
+            transform: translateX(0) translateY(0) !important;
+        }
+
+        /* Mobile Header Responsive Fixes */
         @media (max-width: 991px) {
-            .primary-menu {
-                display: none;
+            /* Header container adjustments */
+            #header {
+                display: block !important;
+                position: relative !important;
+                width: 100% !important;
+                background: #fff !important;
+                border-bottom: 1px solid #eee !important;
+                min-height: 60px !important;
             }
             
-            .primary-menu-trigger {
-                display: block;
+            #header-wrap {
+                display: block !important;
+                width: 100% !important;
+            }
+            
+            #header .container {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+                margin: 0 !important;
+            }
+            
+            .header-row {
+                display: flex !important;
+                padding: 0.5rem 0 !important;
+                flex-wrap: nowrap !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                width: 100% !important;
+            }
+            
+            /* Logo and nav container adjustments for mobile */
+            .d-flex.align-items-center.flex-grow-1 {
+                display: flex !important;
+                align-items: center !important;
+                flex-grow: 1 !important;
+            }
+            
+            /* Logo adjustments for mobile */
+            #logo {
+                margin-right: 1rem !important;
+                flex-shrink: 0 !important;
+            }
+            
+            #logo img {
+                width: 120px !important;
+                max-width: 120px !important;
+                height: auto !important;
+                display: block !important;
+            }
+            
+            /* Hide desktop navigation */
+            .primary-menu {
+                display: none !important;
+            }
+            
+            /* Show mobile menu trigger - override Bootstrap classes */
+            .primary-menu-trigger,
+            .primary-menu-trigger.d-block.d-lg-none {
+                display: block !important;
+                margin-left: auto !important;
+                padding: 0.5rem !important;
+            }
+            
+            /* Mobile hamburger styling */
+            .cnvs-hamburger {
+                background: none !important;
+                border: none !important;
+                padding: 0.5rem !important;
+                cursor: pointer !important;
+                display: block !important;
+                outline: none !important;
+            }
+            
+            .cnvs-hamburger-box {
+                width: 24px !important;
+                height: 24px !important;
+                position: relative !important;
+                display: inline-block !important;
+            }
+            
+            .cnvs-hamburger-inner {
+                display: block !important;
+                top: 50% !important;
+                margin-top: -2px !important;
+                width: 24px !important;
+                height: 3px !important;
+                background-color: #333 !important;
+                border-radius: 4px !important;
+                position: absolute !important;
+                transition: all 0.3s ease !important;
+            }
+            
+            .cnvs-hamburger-inner::before,
+            .cnvs-hamburger-inner::after {
+                content: '' !important;
+                display: block !important;
+                width: 24px !important;
+                height: 3px !important;
+                background-color: #333 !important;
+                border-radius: 4px !important;
+                position: absolute !important;
+                transition: all 0.3s ease !important;
+            }
+            
+            .cnvs-hamburger-inner::before {
+                top: -8px !important;
+            }
+            
+            .cnvs-hamburger-inner::after {
+                bottom: -8px !important;
+            }
+            
+            /* Hamburger animation when active */
+            .cnvs-hamburger.active .cnvs-hamburger-inner {
+                transform: rotate(45deg) !important;
+            }
+            
+            .cnvs-hamburger.active .cnvs-hamburger-inner::before {
+                top: 0 !important;
+                transform: rotate(90deg) !important;
+            }
+            
+            .cnvs-hamburger.active .cnvs-hamburger-inner::after {
+                bottom: 0 !important;
+                transform: rotate(90deg) !important;
             }
         }
 
@@ -646,29 +912,80 @@ body .dropdown .dropdown-menu.show,
         }
 
         @media (max-width: 768px) {
-            .primary-menu .menu-link {
-                font-size: 14px;
-                padding: 0.75rem 1rem;
+            /* Extra small screens - phones */
+            .header-row {
+                padding: 0.25rem 0 !important;
             }
-
-            /* Mobile: Convert to accordion style */
-            .primary-menu .sub-menu-container {
-                position: static !important;
-                opacity: 1 !important;
-                visibility: visible !important;
-                transform: none !important;
-                background: rgba(248, 249, 250, 0.95) !important;
-                backdrop-filter: none !important;
-                box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-                border: 1px solid #e9ecef !important;
-                border-radius: 12px !important;
-                margin: 8px 0 !important;
-                padding: 8px 0 !important;
+            
+            #logo {
+                margin-right: 0.5rem !important;
             }
-
-            .primary-menu .sub-menu-container::before {
-                display: none !important;
+            
+            #logo img {
+                width: 100px !important;
+                max-width: 100px !important;
             }
+            
+            .cnvs-hamburger {
+                padding: 0.25rem !important;
+            }
+            
+            .cnvs-hamburger-box {
+                width: 20px !important;
+                height: 20px !important;
+            }
+            
+            .cnvs-hamburger-inner {
+                width: 20px !important;
+                height: 2px !important;
+            }
+            
+            .cnvs-hamburger-inner::before,
+            .cnvs-hamburger-inner::after {
+                width: 20px !important;
+                height: 2px !important;
+            }
+            
+            .cnvs-hamburger-inner::before {
+                top: -6px !important;
+            }
+            
+            .cnvs-hamburger-inner::after {
+                bottom: -6px !important;
+            }
+            
+            /* Hamburger animation when active - smaller screens */
+            .cnvs-hamburger.active .cnvs-hamburger-inner {
+                transform: rotate(45deg) !important;
+            }
+            
+            .cnvs-hamburger.active .cnvs-hamburger-inner::before {
+                top: 0 !important;
+                transform: rotate(90deg) !important;
+            }
+            
+            .cnvs-hamburger.active .cnvs-hamburger-inner::after {
+                bottom: 0 !important;
+                transform: rotate(90deg) !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            /* Very small screens */
+            .container {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+            
+            .header-row {
+                padding: 0.25rem !important;
+            }
+            
+            #logo img {
+                width: 90px !important;
+                max-width: 90px !important;
+            }
+        }
 
             .primary-menu .sub-menu-container .menu-link {
                 margin: 0 4px !important;
@@ -679,7 +996,6 @@ body .dropdown .dropdown-menu.show,
 
             .primary-menu .sub-menu-container .menu-item.current .menu-link {
                 border-left-color: #DE6262 !important;
-                background: linear-gradient(135deg, rgba(222, 98, 98, 0.15), rgba(222, 98, 98, 0.08)) !important;
             }
         }
     </style>
@@ -803,11 +1119,11 @@ body .dropdown .dropdown-menu.show,
 <div class="header-row d-flex align-items-center justify-content-center">
 
                 <!-- Logo and Desktop Nav Container -->
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center flex-grow-1">
                     <!-- Logo -->
-                    <div id="logo" class="me-4">
+                    <div id="logo" class="me-4 flex-shrink-0">
                         <a href="@auth{{ route('dashboard') }}@else{{ url('/') }}@endauth">
-                            <img style="width: 140px" class="logo-default"
+                            <img style="width: 140px; height: auto;" class="logo-default img-fluid"
                                  srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x"
                                  src="{{ asset('demos/medical/images/logo-medical.jpeg') }}"
                                  alt="Canvas Logo">
@@ -885,7 +1201,7 @@ body .dropdown .dropdown-menu.show,
                 </div>
 
                 <!-- Mobile Hamburger Button -->
-                <div class="primary-menu-trigger d-block d-lg-none">
+                <div class="primary-menu-trigger d-block d-lg-none flex-shrink-0 ms-auto">
                     <button class="cnvs-hamburger" type="button" title="Open Mobile Menu">
                         <span class="cnvs-hamburger-box"><span class="cnvs-hamburger-inner"></span></span>
                     </button>
@@ -1341,6 +1657,445 @@ body .dropdown .dropdown-menu.show,
                 }
             });
         });
+
+        // NEW SIMPLE MOBILE MENU - Bottom Sheet Style
+        function createBottomSheetMenu() {
+            const body = document.body;
+            
+            // Try multiple selectors to find the hamburger button
+            let mobileMenuTrigger = document.querySelector('.primary-menu-trigger .cnvs-hamburger');
+            if (!mobileMenuTrigger) {
+                mobileMenuTrigger = document.querySelector('.cnvs-hamburger');
+            }
+            if (!mobileMenuTrigger) {
+                mobileMenuTrigger = document.querySelector('button[title="Open Mobile Menu"]');
+            }
+            
+            console.log('Looking for mobile trigger...', mobileMenuTrigger);
+            
+            if (!mobileMenuTrigger) {
+                console.log('Mobile trigger not found - available buttons:', document.querySelectorAll('button'));
+                return;
+            }
+            
+            console.log('Mobile trigger found:', mobileMenuTrigger);
+            
+            // Remove existing mobile menu if it exists
+            const existingMobileMenu = document.querySelector('.bottom-sheet-menu');
+            const existingOverlay = document.querySelector('.bottom-sheet-overlay');
+            if (existingMobileMenu) existingMobileMenu.remove();
+            if (existingOverlay) existingOverlay.remove();
+            
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'bottom-sheet-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999998;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+            `;
+            
+            // Create bottom sheet menu
+            const bottomSheet = document.createElement('div');
+            bottomSheet.className = 'bottom-sheet-menu';
+            bottomSheet.style.cssText = `
+                position: fixed;
+                bottom: -100%;
+                left: 0;
+                width: 100%;
+                max-height: 80vh;
+                background: white;
+                z-index: 999999;
+                border-radius: 20px 20px 0 0;
+                box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+                transition: bottom 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                overflow-y: auto;
+            `;
+            
+            // Create menu content
+            const menuContent = `
+                <div style="
+                    padding: 20px;
+                    border-bottom: 1px solid #eee;
+                    background: linear-gradient(135deg, #DE6262 0%, #c54545 100%);
+                    color: white;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 600;">
+                        <i class="fas fa-bars me-2"></i>Navigation Menu
+                    </h3>
+                    <button class="close-bottom-sheet" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        font-size: 24px;
+                        cursor: pointer;
+                        padding: 5px;
+                    ">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="menu-items-container" style="padding: 20px;">
+                    <!-- Menu items will be added here -->
+                </div>
+            `;
+            
+            bottomSheet.innerHTML = menuContent;
+            
+            // Add menu items
+            const menuItemsContainer = bottomSheet.querySelector('.menu-items-container');
+            
+            // Define menu items manually (since cloning was problematic)
+            const menuItems = [
+                {
+                    title: 'Dashboard',
+                    icon: 'fas fa-tachometer-alt',
+                    url: '{{ route("dashboard") }}',
+                    submenu: null
+                },
+                {
+                    title: 'Ask AI',
+                    icon: 'fas fa-robot',
+                    url: '{{ route("ask-ai") }}',
+                    submenu: null
+                },
+                {
+                    title: 'Voice Assistant',
+                    icon: 'fas fa-microphone',
+                    url: '{{ route("voice-assistant.index") }}',
+                    submenu: null
+                },
+                {
+                    title: 'Medical Tools',
+                    icon: 'fas fa-stethoscope',
+                    url: '#',
+                    submenu: [
+                        { title: 'Cases', icon: 'fas fa-folder-medical', url: '/cases' },
+                        { title: 'Diagnosis', icon: 'fas fa-diagnoses', url: '/diagnosis' },
+                        { title: 'Medical Notes', icon: 'fas fa-notes-medical', url: '/medical-notes' }
+                    ]
+                },
+                {
+                    title: 'Appointments',
+                    icon: 'fas fa-calendar-check',
+                    url: '#',
+                    submenu: [
+                        { title: 'View Appointments', icon: 'fas fa-calendar', url: '{{ route("appointments.index") }}' },
+                        { title: 'Reviews', icon: 'fas fa-star', url: '{{ route("reviews.index") }}' }
+                    ]
+                },
+                {
+                    title: 'Sub Users',
+                    icon: 'fas fa-users',
+                    url: '{{ route("sub-users.index") }}',
+                    submenu: null
+                },
+
+                {
+                    title: 'Profile',
+                    icon: 'fas fa-user',
+                    url: '{{ route("doctor.profile.edit") }}',
+                    submenu: null
+                },
+                {
+                    title: 'Settings',
+                    icon: 'fas fa-cog',
+                    url: '{{ route("settings") }}',
+                    submenu: null
+                }
+            ];
+
+            // Add admin menu item if user is admin
+            const isAdmin = {{ Auth::check() && Auth::user() && Auth::user()->isAdmin() ? 'true' : 'false' }};
+            if (isAdmin) {
+                menuItems.splice(-2, 0, {
+                    title: 'Admin Panel',
+                    icon: 'fas fa-cog',
+                    url: '#',
+                    submenu: [
+                        { title: 'Dashboard', icon: 'fas fa-tachometer-alt', url: '{{ route("admin.dashboard") }}' },
+                        { title: 'User Management', icon: 'fas fa-users-cog', url: '{{ route("admin.users.index") }}' },
+                        { title: 'System Settings', icon: 'fas fa-sliders-h', url: '{{ route("admin.system-settings") }}' },
+                        { title: 'Billing', icon: 'fas fa-dollar-sign', url: '{{ route("admin.billing") }}' }
+                    ]
+                });
+            }
+            
+            // Create menu items HTML
+            menuItems.forEach(item => {
+                const menuItem = document.createElement('div');
+                menuItem.className = 'bottom-sheet-menu-item';
+                menuItem.style.cssText = `
+                    margin-bottom: 8px;
+                    border-radius: 12px;
+                    background: #f8f9fa;
+                    border: 1px solid #e9ecef;
+                    overflow: hidden;
+                `;
+                
+                if (item.submenu) {
+                    // Menu item with submenu
+                    menuItem.innerHTML = `
+                        <div class="menu-item-header" style="
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            padding: 16px 20px;
+                            cursor: pointer;
+                            background: white;
+                            transition: all 0.2s ease;
+                        ">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i class="${item.icon}" style="color: #DE6262; width: 20px; text-align: center;"></i>
+                                <span style="font-weight: 500; color: #333;">${item.title}</span>
+                            </div>
+                            <i class="fas fa-chevron-down" style="color: #666; transition: transform 0.3s ease;"></i>
+                        </div>
+                        <div class="submenu-items" style="
+                            display: none;
+                            background: #f8f9fa;
+                            border-top: 1px solid #e9ecef;
+                        ">
+                            ${item.submenu.map(subItem => `
+                                <a href="${subItem.url}" style="
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 12px;
+                                    padding: 12px 20px 12px 52px;
+                                    color: #555;
+                                    text-decoration: none;
+                                    transition: all 0.2s ease;
+                                    border-bottom: 1px solid rgba(0,0,0,0.05);
+                                " class="submenu-link">
+                                    <i class="${subItem.icon}" style="color: #DE6262; width: 16px; text-align: center; font-size: 14px;"></i>
+                                    <span style="font-size: 14px;">${subItem.title}</span>
+                                </a>
+                            `).join('')}
+                        </div>
+                    `;
+                    
+                    // Add click handler for dropdown
+                    const header = menuItem.querySelector('.menu-item-header');
+                    const submenu = menuItem.querySelector('.submenu-items');
+                    const arrow = menuItem.querySelector('.fa-chevron-down');
+                    
+                    header.addEventListener('click', function() {
+                        const isOpen = submenu.style.display === 'block';
+                        
+                        // Close all other submenus
+                        bottomSheet.querySelectorAll('.submenu-items').forEach(sub => {
+                            if (sub !== submenu) {
+                                sub.style.display = 'none';
+                            }
+                        });
+                        bottomSheet.querySelectorAll('.fa-chevron-down').forEach(arr => {
+                            if (arr !== arrow) {
+                                arr.style.transform = 'rotate(0deg)';
+                            }
+                        });
+                        
+                        // Toggle current submenu
+                        if (isOpen) {
+                            submenu.style.display = 'none';
+                            arrow.style.transform = 'rotate(0deg)';
+                        } else {
+                            submenu.style.display = 'block';
+                            arrow.style.transform = 'rotate(180deg)';
+                        }
+                    });
+                    
+                    // Add hover effects for submenu links
+                    menuItem.querySelectorAll('.submenu-link').forEach(link => {
+                        link.addEventListener('mouseenter', function() {
+                            this.style.background = 'rgba(222, 98, 98, 0.1)';
+                            this.style.color = '#DE6262';
+                        });
+                        link.addEventListener('mouseleave', function() {
+                            this.style.background = 'transparent';
+                            this.style.color = '#555';
+                        });
+                        link.addEventListener('click', function() {
+                            closeBottomSheet();
+                        });
+                    });
+                    
+                } else {
+                    // Simple menu item
+                    menuItem.innerHTML = `
+                        <a href="${item.url}" style="
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                            padding: 16px 20px;
+                            color: #333;
+                            text-decoration: none;
+                            background: white;
+                            transition: all 0.2s ease;
+                        " class="simple-menu-link">
+                            <i class="${item.icon}" style="color: #DE6262; width: 20px; text-align: center;"></i>
+                            <span style="font-weight: 500;">${item.title}</span>
+                        </a>
+                    `;
+                    
+                    // Add hover effect and close on click
+                    const link = menuItem.querySelector('.simple-menu-link');
+                    link.addEventListener('mouseenter', function() {
+                        this.style.background = 'rgba(222, 98, 98, 0.05)';
+                        this.style.color = '#DE6262';
+                    });
+                    link.addEventListener('mouseleave', function() {
+                        this.style.background = 'white';
+                        this.style.color = '#333';
+                    });
+                    link.addEventListener('click', function() {
+                        closeBottomSheet();
+                    });
+                }
+                
+                menuItemsContainer.appendChild(menuItem);
+            });
+            
+            // Add to body
+            body.appendChild(overlay);
+            body.appendChild(bottomSheet);
+            
+            // Functions to open/close
+            function openBottomSheet() {
+                overlay.style.opacity = '1';
+                overlay.style.visibility = 'visible';
+                bottomSheet.style.bottom = '0';
+                body.style.overflow = 'hidden';
+            }
+            
+            function closeBottomSheet() {
+                overlay.style.opacity = '0';
+                overlay.style.visibility = 'hidden';
+                bottomSheet.style.bottom = '-100%';
+                body.style.overflow = '';
+                
+                // Close all submenus
+                bottomSheet.querySelectorAll('.submenu-items').forEach(sub => {
+                    sub.style.display = 'none';
+                });
+                bottomSheet.querySelectorAll('.fa-chevron-down').forEach(arrow => {
+                    arrow.style.transform = 'rotate(0deg)';
+                });
+            }
+            
+            // Event listeners
+            mobileMenuTrigger.addEventListener('click', openBottomSheet);
+            overlay.addEventListener('click', closeBottomSheet);
+            bottomSheet.querySelector('.close-bottom-sheet').addEventListener('click', closeBottomSheet);
+            
+            // Close on window resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 991) {
+                    closeBottomSheet();
+                }
+            });
+            
+            console.log('Bottom sheet mobile menu created successfully');
+        }
+        
+        // Initialize mobile menu on DOM ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded - calling createBottomSheetMenu');
+            console.log('Available hamburger buttons:', document.querySelectorAll('.cnvs-hamburger'));
+            console.log('Available primary-menu-trigger:', document.querySelectorAll('.primary-menu-trigger'));
+            createBottomSheetMenu();
+            
+            // Fallback: Add click listener directly to hamburger button
+            const hamburger = document.querySelector('.cnvs-hamburger');
+            if (hamburger) {
+                console.log('Adding fallback click listener to hamburger');
+                hamburger.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Hamburger clicked!', e);
+                    
+                    // Try to trigger bottom sheet
+                    const bottomSheet = document.querySelector('.bottom-sheet-menu');
+                    const overlay = document.querySelector('.bottom-sheet-overlay');
+                    if (bottomSheet && overlay) {
+                        console.log('Bottom sheet found, opening...');
+                        bottomSheet.style.bottom = '0';
+                        overlay.style.opacity = '1';
+                        overlay.style.visibility = 'visible';
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        console.log('Bottom sheet not found, recreating...');
+                        createBottomSheetMenu();
+                        // Try again after recreation
+                        setTimeout(() => {
+                            const newBottomSheet = document.querySelector('.bottom-sheet-menu');
+                            const newOverlay = document.querySelector('.bottom-sheet-overlay');
+                            if (newBottomSheet && newOverlay) {
+                                newBottomSheet.style.bottom = '0';
+                                newOverlay.style.opacity = '1';
+                                newOverlay.style.visibility = 'visible';
+                                document.body.style.overflow = 'hidden';
+                            }
+                        }, 100);
+                    }
+                });
+            } else {
+                console.log('Hamburger button not found!');
+            }
+        });
+        
+        // Add manual test trigger (temporary for debugging)
+        window.testMobileMenu = function() {
+            console.log('Manual test triggered');
+            const bottomSheet = document.querySelector('.bottom-sheet-menu');
+            const overlay = document.querySelector('.bottom-sheet-overlay');
+            if (bottomSheet && overlay) {
+                console.log('Opening existing bottom sheet');
+                bottomSheet.style.bottom = '0';
+                overlay.style.opacity = '1';
+                overlay.style.visibility = 'visible';
+                document.body.style.overflow = 'hidden';
+            } else {
+                console.log('Creating new bottom sheet');
+                createBottomSheetMenu();
+                setTimeout(() => {
+                    const newBottomSheet = document.querySelector('.bottom-sheet-menu');
+                    const newOverlay = document.querySelector('.bottom-sheet-overlay');
+                    if (newBottomSheet && newOverlay) {
+                        newBottomSheet.style.bottom = '0';
+                        newOverlay.style.opacity = '1';
+                        newOverlay.style.visibility = 'visible';
+                        document.body.style.overflow = 'hidden';
+                    }
+                }, 100);
+            }
+        };
+
+        // Also initialize on page show (for back/forward navigation)
+        window.addEventListener('pageshow', function() {
+            console.log('Page Show - calling createBottomSheetMenu');
+            createBottomSheetMenu();
+        });
+        
+        // For SPA-like navigation, also try to reinitialize periodically
+        setInterval(function() {
+            const existingMobileMenu = document.querySelector('.bottom-sheet-menu');
+            const mobileMenuTrigger = document.querySelector('.primary-menu-trigger .cnvs-hamburger');
+            
+            // Only reinitialize if elements exist but mobile menu doesn't
+            if (mobileMenuTrigger && !existingMobileMenu) {
+                console.log('Reinitializing mobile menu due to missing elements');
+                createBottomSheetMenu();
+            }
+        }, 2000); // Check every 2 seconds
     </script>
 
 </body>
