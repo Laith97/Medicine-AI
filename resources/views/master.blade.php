@@ -392,12 +392,8 @@ body .dropdown .dropdown-menu.show,
             background: transparent !important;
         }
 
-        /* Remove special-casing last item; keep centered under its parent */
-        .primary-menu .menu-item:last-child .sub-menu-container {
-            left: 50% !important;
-            right: auto !important;
-            transform: translateX(-50%) !important;
-        }
+        /* Last item: do not force centering here. Allow general/invert rules to apply */
+        /* (Intentionally no overrides for .primary-menu .menu-item:last-child .sub-menu-container) */
 
         /* Show dropdown on hover - keep it open when hovering dropdown itself */
         .primary-menu .menu-item:hover .sub-menu-container,
@@ -1120,7 +1116,8 @@ body .dropdown .dropdown-menu.show,
 
                 <!-- Logo and Desktop Nav Container -->
                 <div class="d-flex align-items-center flex-grow-1">
-                    <!-- Logo -->
+                    <!-- Logo (hidden when logged in) -->
+                    @guest
                     <div id="logo" class="me-4 flex-shrink-0">
                         <a href="@auth{{ route('dashboard') }}@else{{ url('/') }}@endauth">
                             <img style="width: 140px; height: auto;" class="logo-default img-fluid"
@@ -1129,9 +1126,10 @@ body .dropdown .dropdown-menu.show,
                                  alt="Canvas Logo">
                         </a>
                     </div>
+                    @endguest
 
                     <!-- Desktop Navigation -->
-                    <nav class="primary-menu style-3 menu-spacing-margin d-none d-lg-block">
+                    <nav class="primary-menu style-3 menu-spacing-margin d-none d-lg-block mx-auto">
                         <ul class="menu-container">
                             @auth
                                 @if (Auth::guard('admin')->check() && !session()->has('impersonating_admin_id') && !session()->has('impersonating_hospital_admin_id'))
@@ -1150,7 +1148,7 @@ body .dropdown .dropdown-menu.show,
                                             <!-- Dropdown Menu Item -->
                                             <li class="menu-item {{ collect($item['items'])->contains(fn($subItem) => request()->routeIs($subItem['route'] ?? '')) ? 'current' : '' }}">
                                                 <a class="menu-link" href="#"><div>{{ $item['name'] }} <i class="fas fa-chevron-down"></i></div></a>
-                                                <ul class="sub-menu-container">
+                                                <ul class="sub-menu-container {{ $loop->last ? 'menu-pos-invert' : '' }}">
                                                     @foreach($item['items'] as $subItem)
                                                         <li class="menu-item {{ request()->routeIs($subItem['route'] ?? '') ? 'current' : '' }}">
                                                             <a class="menu-link" href="{{ isset($subItem['route']) ? route($subItem['route']) : '#' }}">
