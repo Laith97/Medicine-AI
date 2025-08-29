@@ -110,7 +110,7 @@
     position: absolute;
     top: -4px;
     right: -4px;
-    background: #ef4444;
+    background: #dc2626; /* Higher contrast red */
     color: white;
     font-size: 10px;
     font-weight: bold;
@@ -121,7 +121,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid white;
+    border: 2px solid white; /* Thicker border for better visibility */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .notification-dropdown .dropdown-menu {
@@ -341,6 +342,137 @@
 
     .notification-bell.active {
         animation: none;
+    }
+}
+
+/* Enhanced accessibility styles */
+.notification-item {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+    background-color: #e3f2fd;
+}
+
+.notification-item:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.notification-item:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+    background-color: #e3f2fd;
+}
+
+/* High contrast mode improvements */
+@media (prefers-contrast: high) {
+    .notification-toast {
+        border: 3px solid #000;
+        background: #fff;
+    }
+
+    .notification-dropdown .dropdown-menu {
+        border: 3px solid #000;
+        background: #fff;
+    }
+
+    .notification-item {
+        border: 1px solid #000;
+    }
+
+    .notification-item.unread {
+        border-left: 4px solid #000;
+        background-color: #e0e0e0;
+    }
+
+    .notification-title {
+        color: #000;
+        font-weight: bold;
+    }
+
+    .notification-message {
+        color: #000;
+    }
+
+    .notification-time {
+        color: #000;
+        font-weight: bold;
+    }
+
+    .notification-count {
+        background: #000;
+        color: #fff;
+        border: 2px solid #fff;
+    }
+}
+
+/* Focus indicators for interactive elements */
+.notification-bell:focus,
+.mark-all-read-btn:focus,
+.view-all-btn:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+.notification-bell:focus:not(:focus-visible),
+.mark-all-read-btn:focus:not(:focus-visible),
+.view-all-btn:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.notification-bell:focus-visible,
+.mark-all-read-btn:focus-visible,
+.view-all-btn:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* Ensure sufficient color contrast for text */
+.notification-title {
+    color: #1f2937; /* Dark gray for better contrast */
+}
+
+.notification-message {
+    color: #4b5563; /* Medium gray for readability */
+}
+
+.notification-time {
+    color: #6b7280; /* Lighter gray but still readable */
+}
+
+/* Improve contrast for notification icons */
+.notification-icon {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .notification-title {
+        color: #f9fafb;
+    }
+
+    .notification-message {
+        color: #d1d5db;
+    }
+
+    .notification-time {
+        color: #9ca3af;
+    }
+
+    .notification-item:hover {
+        background-color: #374151;
+    }
+
+    .notification-item:focus {
+        background-color: #1e3a8a;
     }
 }
 </style>

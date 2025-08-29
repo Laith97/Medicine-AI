@@ -21,26 +21,30 @@ console.log('🌍 VITE_PUSHER_APP_CLUSTER:', import.meta.env.VITE_PUSHER_APP_CLU
 // Get CSRF token for authentication
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
+// Get user ID for authentication
+const userId = document.querySelector('meta[name="user-id"]')?.getAttribute('content') || window.userId;
+
 // Proper Echo configuration with authentication
 try {
     // 确保CSRF令牌存在
     if (!csrfToken) {
         console.error('❌ CSRF token is missing');
-        // 尝试从meta标签获取
-        csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        if (!csrfToken) {
-            console.error('❌ Could not find CSRF token');
-        }
+        // Don't return here, just log the error and continue
+        console.log('⚠️ Continuing without Echo initialization due to missing CSRF token');
+    } else {
+        console.log('🔒 CSRF token found:', csrfToken.substring(0, 10) + '...');
     }
-    
+
+    console.log('🔒 CSRF token found:', csrfToken.substring(0, 10) + '...');
+    console.log('👤 User ID found:', userId);
+
     window.Echo = new Echo({
         broadcaster: 'pusher',
         key: import.meta.env.VITE_PUSHER_APP_KEY || 'your-pusher-key',
         cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap2',
-        forceTLS: false, // 在本地开发环境中禁用TLS
-        wsHost: window.location.hostname,
-        wsPort: 6001, // Laravel WebSocket默认端口
-        wssPort: 6001,
+        forceTLS: true, // Use TLS for Pusher cloud service
+        enabledTransports: ['ws', 'wss'], // Enable both WebSocket and Secure WebSocket
+        disabledTransports: [], // Allow all transport methods
         authEndpoint: '/broadcasting/auth',
         auth: {
             headers: {
@@ -48,27 +52,25 @@ try {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json',
             },
-            // 改进授权函数
             always: function (channelName, socketId) {
                 console.log('🔒 Authorizing channel:', channelName);
+                console.log('🔍 [DEBUG] Auth callback called with socketId:', socketId);
+
                 return {
-                    'auth': csrfToken,
                     'socket_id': socketId,
-                    'info': JSON.stringify({userId: window.userId || document.querySelector('meta[name="user-id"]')?.getAttribute('content')})
+                    'channel_name': channelName,
+                    'user_id': userId,
+                    'info': JSON.stringify({userId: userId})
                 };
             }
         },
-        enabledTransports: ['ws', 'wss'], // 优先使用WebSocket
-        disabledTransports: [], // 允许所有传输方式
-        // 添加调试选项
+        // Add debugging options
         logToConsole: true,
         disableStats: true,
-        // 禁用自动重连
-        reconnect: false,
-        // 添加错误处理
+        // Add error handling
         error: function(error) {
             console.error('❌ Echo error:', error);
-            // 如果是认证错误，尝试重新连接
+            // If it's an authentication error, try to reconnect
             if (error.type === 'AuthError') {
                 console.log('🔄 Attempting to reconnect after auth error...');
                 setTimeout(() => {
@@ -81,7 +83,17 @@ try {
     console.log('✅ Echo initialized successfully');
     console.log('📡 Echo object:', window.Echo);
     console.log('🔒 CSRF token:', csrfToken ? 'Found' : 'Missing');
+    console.log('👤 User ID:', userId ? 'Found' : 'Missing');
     console.log('🌐 Environment - Key:', import.meta.env.VITE_PUSHER_APP_KEY, 'Cluster:', import.meta.env.VITE_PUSHER_APP_CLUSTER);
+
+    // Log connector details
+    if (window.Echo.connector) {
+        console.log('🔌 Echo connector:', window.Echo.connector);
+        console.log('📡 Pusher object:', window.Echo.connector.pusher);
+        console.log('🔗 Connection state:', window.Echo.connector.pusher?.connection?.state);
+    } else {
+        console.error('❌ Echo connector is missing');
+    }
 } catch (error) {
     console.error('❌ Echo initialization failed:', error);
 }

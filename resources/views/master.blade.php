@@ -913,32 +913,41 @@ body .dropdown .dropdown-menu.show,
                             <div class="dropdown notifications-dropdown">
                                 <button class="btn btn-sm position-relative notification-bell" type="button" data-bs-toggle="dropdown"
                                     aria-expanded="false"
+                                    aria-haspopup="menu"
+                                    aria-label="Notifications"
+                                    role="button"
                                     style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
-                                    <i class="bi bi-bell"></i>
+                                    <i class="bi bi-bell" aria-hidden="true"></i>
                                     <span
                                         class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count"
-                                        id="notification-count" style="font-size: 10px; padding: 2px 6px; display: none;">
+                                        id="notification-count"
+                                        aria-label="unread notifications"
+                                        style="font-size: 10px; padding: 2px 6px; display: none;">
                                         0
                                     </span>
                                 </button>
                                 <div class="dropdown-menu dropdown-menu-end shadow notifications-dropdown-menu"
+                                    role="menu"
+                                    aria-labelledby="notification-bell"
                                     style="width: 320px; max-height: 350px; overflow-y: auto;">
-                                    <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-                                        <h6 class="mb-0">Notifications</h6>
-                                        <div class="btn-group btn-group-sm">
+                                    <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom" role="presentation">
+                                        <h6 class="mb-0" id="notification-header">Notifications</h6>
+                                        <div class="btn-group btn-group-sm" role="group" aria-label="Notification actions">
                                             <button type="button" class="btn btn-outline-secondary mark-all-read-btn"
-                                                title="Mark all as read">
-                                                <i class="bi bi-check-all"></i>
+                                                title="Mark all as read"
+                                                aria-label="Mark all notifications as read">
+                                                <i class="bi bi-check-all" aria-hidden="true"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-secondary view-all-btn"
-                                                title="View all notifications">
-                                                <i class="bi bi-list-ul"></i>
+                                                title="View all notifications"
+                                                aria-label="View all notifications">
+                                                <i class="bi bi-list-ul" aria-hidden="true"></i>
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="notification-list" id="notification-list">
-                                        <div class="text-center py-4 text-muted">
-                                            <i class="bi bi-bell-slash display-6 d-block mb-2"></i>
+                                    <div class="notification-list" id="notification-list" role="list" aria-label="Notification list">
+                                        <div class="text-center py-4 text-muted" role="status" aria-live="polite">
+                                            <i class="bi bi-bell-slash display-6 d-block mb-2" aria-hidden="true"></i>
                                             <small>Loading notifications...</small>
                                         </div>
                                     </div>
@@ -1530,6 +1539,9 @@ body .dropdown .dropdown-menu.show,
     <!-- Notification Sound System -->
     <script src="{{ asset('sounds/notification-sound.js?v=' . time()) }}"></script>
 
+    <!-- Notification Accessibility Test Script -->
+    <script src="{{ asset('js/notification-accessibility-test.js?v=' . time()) }}"></script>
+
     <!-- Remove conflicting notification scripts - now handled by Vite -->
 
 {{-- Extra scripts --}}
@@ -1848,9 +1860,6 @@ body .dropdown .dropdown-menu.show,
 @if(config('app.debug'))
 <meta name="app-debug" content="true">
 <script src="{{ asset('js/notification-debug.js') }}"></script>
-<script src="{{ asset('js/notification-tester.js') }}"></script>
-<script src="{{ asset('js/test-public-notifications.js') }}"></script>
-<script src="{{ asset('js/notification-test-runner.js') }}"></script>
 <script src="{{ asset('js/notification-diagnostics.js') }}"></script>
 <script src="{{ asset('js/pusher-raw-debug.js') }}"></script>
 <script src="{{ asset('js/laravel-notification-catcher.js') }}"></script>
@@ -1859,6 +1868,10 @@ body .dropdown .dropdown-menu.show,
 @endif
 
 @endauth
+
+<!-- WebSocket Test Scripts -->
+<script src="{{ asset('js/websocket-test.js') }}"></script>
+<script src="{{ asset('js/pusher-connection-test.js') }}"></script>
 
 <script>
 // Prevent notification API calls immediately after login
