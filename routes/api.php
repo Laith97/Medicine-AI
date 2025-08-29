@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\NotificationTestController;
+use App\Http\Controllers\UserSettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,6 +28,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 */
 
 Route::middleware(['auth:web'])->group(function () {
+    // User settings
+    Route::get('/user/settings', [UserSettingsController::class, 'getSettings']);
+
     // Get notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread', [NotificationController::class, 'unread']);
@@ -46,7 +50,7 @@ Route::middleware(['auth:web'])->group(function () {
     Route::get('/notification-preferences', [NotificationTestController::class, 'getNotificationPreferences']);
     Route::get('/queue-status', [NotificationTestController::class, 'getQueueStatus']);
     Route::get('/pusher-config', [NotificationTestController::class, 'testPusherConfig']);
-    
+
     // Direct notification testing (bypasses queue) - import controller
     Route::post('/test/direct-notification', [\App\Http\Controllers\Api\DirectNotificationTestController::class, 'sendDirectTest']);
     Route::post('/test/pusher-connection', [\App\Http\Controllers\Api\DirectNotificationTestController::class, 'testPusherConnection']);

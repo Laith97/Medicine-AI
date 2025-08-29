@@ -8,7 +8,9 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 use App\Models\Appointment;
+use App\Services\NotificationCompressionService;
 
 class AppointmentBookedNotification extends Notification implements ShouldBroadcast
 {
@@ -25,7 +27,7 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
 
         // Use realtime queue for instant processing
         $this->onQueue('realtime');
-        
+
         // Ensure notification is broadcast immediately
         $this->delay(0);
     }
@@ -101,7 +103,7 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
         $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
         $doctorId = $this->appointment->doctor->id ?? 0;
 
-        return new BroadcastMessage([
+        $payload = [
             'id' => $this->id,
             'type' => 'appointment_booked',
             'title' => 'New Appointment Booked',
@@ -118,9 +120,15 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
                 'appointment_type' => $this->appointment->appointment_type,
             ],
             'created_at' => now()->toISOString()
-        ]);
+        ];
+
+        // Compress payload if beneficial
+        $compressionService = app(NotificationCompressionService::class);
+        $compressedPayload = $compressionService->compressPayload($payload);
+
+        return new BroadcastMessage($compressedPayload);
     }
-    
+
     /**
      * Get the channels the event should broadcast on.
      *
@@ -135,7 +143,7 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
             new PrivateChannel('App.User.' . $doctorId)
         ];
     }
-    
+
     /**
      * Get the broadcast event name.
      *

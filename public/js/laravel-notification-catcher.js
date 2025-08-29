@@ -9,7 +9,6 @@ window.laravelNotificationCatcher = {
 
     init() {
         if (this.isInitialized) {
-            console.log('⚠️ Laravel notification catcher already initialized');
             return;
         }
 
@@ -18,8 +17,6 @@ window.laravelNotificationCatcher = {
             console.error('❌ User ID not found, cannot initialize notification catcher');
             return;
         }
-
-        console.log('📡 Initializing Laravel Notification Catcher for user:', userId);
 
         this.waitForEcho(() => {
             this.setupAllListeners(userId);
@@ -68,7 +65,6 @@ window.laravelNotificationCatcher = {
 
         channelNames.forEach(channelName => {
             try {
-                console.log(`📡 Subscribing to channel: ${channelName}`);
                 const channel = window.Echo.private(channelName);
                 this.channels.push({ name: channelName, channel, type: 'private' });
 
@@ -132,7 +128,6 @@ window.laravelNotificationCatcher = {
 
         publicChannelNames.forEach(channelName => {
             try {
-                console.log(`📡 Subscribing to public channel: ${channelName}`);
                 const channel = window.Echo.channel(channelName);
                 this.channels.push({ name: channelName, channel, type: 'public' });
 
@@ -146,7 +141,6 @@ window.laravelNotificationCatcher = {
 
                 eventTypes.forEach(eventType => {
                     channel.listen(eventType, (data) => {
-                        console.log(`🔔 [PUBLIC:${channelName}] Event "${eventType}":`, data);
                         // Check if this notification is for our user
                         if (this.isNotificationForUser(data, userId)) {
                             this.processNotification(data, channelName, eventType);
@@ -161,7 +155,6 @@ window.laravelNotificationCatcher = {
     },
 
     setupPresenceChannels(userId) {
-        console.log('👥 Setting up presence channel listeners...');
 
         // Presence channels might be used for doctor-specific notifications
         const presenceChannelNames = [
@@ -172,12 +165,10 @@ window.laravelNotificationCatcher = {
 
         presenceChannelNames.forEach(channelName => {
             try {
-                console.log(`📡 Subscribing to presence channel: ${channelName}`);
                 const channel = window.Echo.join(channelName);
                 this.channels.push({ name: channelName, channel, type: 'presence' });
 
                 channel.listen('notification', (data) => {
-                    console.log(`🔔 [PRESENCE:${channelName}] Notification:`, data);
                     if (this.isNotificationForUser(data, userId)) {
                         this.processNotification(data, channelName, 'presence-notification');
                     }
@@ -190,7 +181,6 @@ window.laravelNotificationCatcher = {
     },
 
     setupRawPusherMonitoring(userId) {
-        console.log('🔍 Setting up raw Pusher monitoring...');
 
         if (!window.Echo.connector || !window.Echo.connector.pusher) {
             console.warn('⚠️ Pusher not available for raw monitoring');
@@ -203,7 +193,6 @@ window.laravelNotificationCatcher = {
         pusher.bind_global((eventName, data) => {
             // Check if this event is related to our user
             if (this.isEventForUser(eventName, data, userId)) {
-                console.log(`🎯 [RAW PUSHER] Potential user event: ${eventName}`, data);
 
                 // Try to extract notification data from various formats
                 let notificationData = data;
@@ -254,7 +243,6 @@ window.laravelNotificationCatcher = {
     },
 
     processNotification(data, channelName, method) {
-        console.log(`🔄 Processing notification from ${channelName} via ${method}:`, data);
 
         // Send to unified notifications system if available
         if (window.unifiedNotifications && typeof window.unifiedNotifications.handleNewNotification === 'function') {

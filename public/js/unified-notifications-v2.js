@@ -14,12 +14,462 @@ class UnifiedNotificationSystemV2 {
         this.sound = null;
         this.echoChannel = null;
 
+        // Advanced Network Error Handling Properties
+        this.networkConfig = {
+            maxRetries: 5,
+            baseDelay: 1000, // 1 second
+            maxDelay: 30000, // 30 seconds
+            backoffMultiplier: 2,
+            timeout: 10000, // 10 seconds
+            circuitBreakerThreshold: 5,
+            circuitBreakerTimeout: 60000, // 1 minute
+            healthCheckInterval: 30000 // 30 seconds
+        };
+
+        // Circuit Breaker State
+        this.circuitBreaker = {
+            failures: 0,
+            state: 'CLOSED', // CLOSED, OPEN, HALF_OPEN
+            lastFailureTime: null,
+            nextAttemptTime: null
+        };
+
+        // Connection Health Monitoring
+        this.connectionHealth = {
+            isHealthy: true,
+            lastHealthCheck: null,
+            consecutiveFailures: 0,
+            totalRequests: 0,
+            successfulRequests: 0,
+            averageResponseTime: 0,
+            responseTimes: []
+        };
+
+        // Retry Queues
+        this.retryQueue = new Map();
+        this.activeRequests = new Set();
+
         // Initialize when DOM is ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.init());
         } else {
             this.init();
         }
+    }
+
+    // ===== ADVANCED NETWORK ERROR HANDLING METHODS =====
+
+    /**
+     * Calculate exponential backoff delay with jitter
+     * @param {number} attempt - Current attempt number (0-based)
+     * @param {number} baseDelay - Base delay in milliseconds
+     * @param {number} maxDelay - Maximum delay in milliseconds
+     * @param {number} multiplier - Backoff multiplier
+     * @returns {number} Delay in milliseconds
+     */
+    calculateBackoffDelay(attempt, baseDelay = this.networkConfig.baseDelay, maxDelay = this.networkConfig.maxDelay, multiplier = this.networkConfig.backoffMultiplier) {
+        const exponentialDelay = baseDelay * Math.pow(multiplier, attempt);
+        const delayWithJitter = exponentialDelay * (0.5 + Math.random() * 0.5); // Add 50% jitter
+        return Math.min(delayWithJitter, maxDelay);
+    }
+
+    /**
+     * Circuit Breaker implementation for Pusher connections
+     * @returns {boolean} Whether the circuit breaker allows the request
+     */
+    canProceedWithCircuitBreaker() {
+        const now = Date.now();
+
+        switch (this.circuitBreaker.state) {
+            case 'CLOSED':
+                return true;
+
+            case 'OPEN':
+                if (now >= this.circuitBreaker.nextAttemptTime) {
+                    this.circuitBreaker.state = 'HALF_OPEN';
+                    console.log('🔄 Circuit breaker moving to HALF_OPEN state');
+                    return true;
+                }
+                console.log('🚫 Circuit breaker is OPEN, blocking request');
+                return false;
+
+            case 'HALF_OPEN':
+                return true;
+
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * Record a successful request in the circuit breaker
+     */
+    recordSuccess() {
+        if (this.circuitBreaker.state === 'HALF_OPEN') {
+            this.circuitBreaker.state = 'CLOSED';
+            this.circuitBreaker.failures = 0;
+            console.log('✅ Circuit breaker reset to CLOSED state');
+        }
+    }
+
+    /**
+     * Record a failed request in the circuit breaker
+     */
+    recordFailure() {
+        this.circuitBreaker.failures++;
+        this.circuitBreaker.lastFailureTime = Date.now();
+
+        if (this.circuitBreaker.failures >= this.networkConfig.circuitBreakerThreshold) {
+            this.circuitBreaker.state = 'OPEN';
+            this.circuitBreaker.nextAttemptTime = Date.now() + this.networkConfig.circuitBreakerTimeout;
+            console.log(`🚫 Circuit breaker opened after ${this.circuitBreaker.failures} failures`);
+        }
+    }
+
+    /**
+     * Enhanced fetch with timeout, retry, and circuit breaker
+     * @param {string} url - Request URL
+     * @param {object} options - Fetch options
+     * @param {string} requestId - Unique identifier for the request
+     * @returns {Promise<Response>} Fetch response
+     */
+    async enhancedFetch(url, options = {}, requestId = null) {
+        const startTime = Date.now();
+        const reqId = requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        // Check circuit breaker
+        if (!this.canProceedWithCircuitBreaker()) {
+            throw new Error('Circuit breaker is OPEN - request blocked');
+        }
+
+        // Prevent duplicate requests
+        if (this.activeRequests.has(reqId)) {
+            console.log(`⚠️ Duplicate request blocked: ${reqId}`);
+            throw new Error('Duplicate request in progress');
+        }
+
+        this.activeRequests.add(reqId);
+        this.connectionHealth.totalRequests++;
+
+        try {
+            const response = await this.fetchWithTimeoutAndRetry(url, options, reqId, startTime);
+            this.recordSuccess();
+            this.updateConnectionHealth(startTime, true);
+            return response;
+        } catch (error) {
+            this.recordFailure();
+            this.updateConnectionHealth(startTime, false);
+            throw error;
+        } finally {
+            this.activeRequests.delete(reqId);
+        }
+    }
+
+    /**
+     * Fetch with timeout and retry logic
+     * @param {string} url - Request URL
+     * @param {object} options - Fetch options
+     * @param {string} requestId - Request identifier
+     * @param {number} startTime - Request start time
+     * @returns {Promise<Response>} Fetch response
+     */
+    async fetchWithTimeoutAndRetry(url, options, requestId, startTime) {
+        let lastError;
+
+        for (let attempt = 0; attempt <= this.networkConfig.maxRetries; attempt++) {
+            try {
+                console.log(`🌐 Attempt ${attempt + 1}/${this.networkConfig.maxRetries + 1} for ${requestId}: ${url}`);
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), this.networkConfig.timeout);
+
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                // Check if response is successful
+                if (response.ok) {
+                    return response;
+                }
+
+                // Handle server errors that should be retried
+                if (response.status >= 500 && attempt < this.networkConfig.maxRetries) {
+                    console.warn(`⚠️ Server error ${response.status} for ${requestId}, will retry`);
+                    lastError = new Error(`HTTP ${response.status}: ${response.statusText}`);
+                } else {
+                    // Client errors or final attempt - don't retry
+                    return response;
+                }
+
+            } catch (error) {
+                lastError = error;
+
+                // Don't retry on client errors or if this is the last attempt
+                if (error.name === 'AbortError' || attempt >= this.networkConfig.maxRetries) {
+                    throw error;
+                }
+
+                console.warn(`⚠️ Network error for ${requestId}, will retry:`, error.message);
+            }
+
+            // Wait before retry (except on last attempt)
+            if (attempt < this.networkConfig.maxRetries) {
+                const delay = this.calculateBackoffDelay(attempt);
+                console.log(`⏳ Waiting ${Math.round(delay)}ms before retry ${attempt + 1} for ${requestId}`);
+                await this.delay(delay);
+            }
+        }
+
+        throw lastError;
+    }
+
+    /**
+     * Update connection health metrics
+     * @param {number} startTime - Request start time
+     * @param {boolean} success - Whether the request was successful
+     */
+    updateConnectionHealth(startTime, success) {
+        const responseTime = Date.now() - startTime;
+
+        // Update response times (keep last 10)
+        this.connectionHealth.responseTimes.push(responseTime);
+        if (this.connectionHealth.responseTimes.length > 10) {
+            this.connectionHealth.responseTimes.shift();
+        }
+
+        // Calculate average response time
+        this.connectionHealth.averageResponseTime =
+            this.connectionHealth.responseTimes.reduce((a, b) => a + b, 0) /
+            this.connectionHealth.responseTimes.length;
+
+        if (success) {
+            this.connectionHealth.successfulRequests++;
+            this.connectionHealth.consecutiveFailures = 0;
+        } else {
+            this.connectionHealth.consecutiveFailures++;
+        }
+
+        // Update health status
+        const successRate = this.connectionHealth.successfulRequests / this.connectionHealth.totalRequests;
+        const isHealthy = successRate > 0.8 && this.connectionHealth.consecutiveFailures < 3;
+
+        if (this.connectionHealth.isHealthy !== isHealthy) {
+            this.connectionHealth.isHealthy = isHealthy;
+            console.log(`🏥 Connection health changed: ${isHealthy ? 'HEALTHY' : 'UNHEALTHY'}`);
+        }
+
+        this.connectionHealth.lastHealthCheck = Date.now();
+    }
+
+    /**
+     * Start connection health monitoring
+     */
+    startHealthMonitoring() {
+        if (this.healthMonitorInterval) {
+            clearInterval(this.healthMonitorInterval);
+        }
+
+        this.healthMonitorInterval = setInterval(() => {
+            this.performHealthCheck();
+        }, this.networkConfig.healthCheckInterval);
+
+        console.log('🏥 Connection health monitoring started');
+    }
+
+    /**
+     * Perform a health check
+     */
+    async performHealthCheck() {
+        try {
+            const startTime = Date.now();
+            const response = await fetch('/api/health', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                signal: AbortSignal.timeout(5000) // 5 second timeout for health checks
+            });
+
+            const responseTime = Date.now() - startTime;
+            const isHealthy = response.ok;
+
+            console.log(`🏥 Health check: ${isHealthy ? 'PASS' : 'FAIL'} (${responseTime}ms)`);
+
+            this.updateConnectionHealth(startTime, isHealthy);
+
+        } catch (error) {
+            console.warn('🏥 Health check failed:', error.message);
+            this.updateConnectionHealth(Date.now(), false);
+        }
+    }
+
+    /**
+     * Utility method for delays
+     * @param {number} ms - Milliseconds to delay
+     * @returns {Promise} Promise that resolves after the delay
+     */
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    /**
+     * Enhanced Pusher connection with circuit breaker and retry
+     */
+    async setupEnhancedEchoConnection() {
+        if (!this.canProceedWithCircuitBreaker()) {
+            console.log('🚫 Skipping Echo setup - circuit breaker is OPEN');
+            return false;
+        }
+
+        let attempt = 0;
+        while (attempt <= this.networkConfig.maxRetries) {
+            try {
+                console.log(`📡 Echo connection attempt ${attempt + 1}/${this.networkConfig.maxRetries + 1}`);
+
+                if (typeof window.Echo === 'undefined' || !window.Echo.connector) {
+                    throw new Error('Echo or connector not available');
+                }
+
+                const pusher = window.Echo.connector.pusher;
+
+                // Wait for connection
+                await this.waitForPusherConnection(pusher);
+
+                // Setup enhanced error handling
+                this.setupPusherErrorHandling(pusher);
+
+                this.recordSuccess();
+                console.log('✅ Enhanced Echo connection established');
+                return true;
+
+            } catch (error) {
+                console.error(`❌ Echo connection attempt ${attempt + 1} failed:`, error.message);
+                this.recordFailure();
+
+                if (attempt >= this.networkConfig.maxRetries) {
+                    throw error;
+                }
+
+                const delay = this.calculateBackoffDelay(attempt);
+                console.log(`⏳ Waiting ${Math.round(delay)}ms before Echo retry`);
+                await this.delay(delay);
+                attempt++;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Wait for Pusher connection with timeout
+     * @param {object} pusher - Pusher instance
+     * @returns {Promise} Promise that resolves when connected
+     */
+    waitForPusherConnection(pusher) {
+        return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('Pusher connection timeout'));
+            }, this.networkConfig.timeout);
+
+            const checkConnection = () => {
+                if (pusher.connection.state === 'connected') {
+                    clearTimeout(timeout);
+                    resolve();
+                } else if (pusher.connection.state === 'failed' || pusher.connection.state === 'disconnected') {
+                    clearTimeout(timeout);
+                    reject(new Error(`Pusher connection failed: ${pusher.connection.state}`));
+                } else {
+                    setTimeout(checkConnection, 100);
+                }
+            };
+
+            checkConnection();
+        });
+    }
+
+    /**
+     * Setup enhanced Pusher error handling
+     * @param {object} pusher - Pusher instance
+     */
+    setupPusherErrorHandling(pusher) {
+        // Remove existing listeners to prevent duplicates
+        pusher.connection.unbind('error');
+        pusher.connection.unbind('disconnected');
+        pusher.connection.unbind('failed');
+
+        pusher.connection.bind('error', (error) => {
+            console.error('❌ Pusher connection error:', error);
+            this.recordFailure();
+            this.handleConnectionError('pusher_error', error);
+        });
+
+        pusher.connection.bind('disconnected', () => {
+            console.warn('🔌 Pusher disconnected');
+            this.handleConnectionError('pusher_disconnected');
+        });
+
+        pusher.connection.bind('failed', () => {
+            console.error('💥 Pusher connection failed');
+            this.recordFailure();
+            this.handleConnectionError('pusher_failed');
+        });
+
+        // Auto-reconnect with backoff
+        pusher.connection.bind('connected', () => {
+            console.log('🟢 Pusher reconnected successfully');
+            this.recordSuccess();
+        });
+    }
+
+    /**
+     * Handle connection errors with retry logic
+     * @param {string} errorType - Type of connection error
+     * @param {object} error - Error object
+     */
+    async handleConnectionError(errorType, error = null) {
+        console.log(`🚨 Handling connection error: ${errorType}`);
+
+        // Don't retry if circuit breaker is open
+        if (!this.canProceedWithCircuitBreaker()) {
+            console.log('🚫 Not retrying - circuit breaker is OPEN');
+            return;
+        }
+
+        // Schedule reconnection with exponential backoff
+        const retryId = `reconnect_${Date.now()}`;
+        const retryFunction = async () => {
+            try {
+                console.log(`🔄 Retrying connection after ${errorType}`);
+                await this.setupEnhancedEchoConnection();
+                this.retryQueue.delete(retryId);
+            } catch (retryError) {
+                console.error(`❌ Connection retry failed:`, retryError.message);
+
+                // Schedule another retry if we haven't exceeded max attempts
+                const currentAttempt = this.retryQueue.get(retryId)?.attempt || 0;
+                if (currentAttempt < this.networkConfig.maxRetries) {
+                    const delay = this.calculateBackoffDelay(currentAttempt);
+                    this.retryQueue.set(retryId, {
+                        attempt: currentAttempt + 1,
+                        timeoutId: setTimeout(retryFunction, delay)
+                    });
+                } else {
+                    this.retryQueue.delete(retryId);
+                    console.error(`💥 Max retries exceeded for ${errorType}`);
+                }
+            }
+        };
+
+        const delay = this.calculateBackoffDelay(0);
+        this.retryQueue.set(retryId, {
+            attempt: 1,
+            timeoutId: setTimeout(retryFunction, delay)
+        });
+
+        console.log(`⏳ Scheduled reconnection retry in ${Math.round(delay)}ms`);
     }
 
     init() {
@@ -44,6 +494,7 @@ class UnifiedNotificationSystemV2 {
         // Get settings from meta tags and localStorage
         this.soundEnabled = localStorage.getItem('notification-sound-enabled') !== 'false';
         this.toastEnabled = localStorage.getItem('notification-toast-enabled') !== 'false';
+        this.volume = 0.3; // Default volume
 
         console.log('⚙️ Settings:', { soundEnabled: this.soundEnabled, toastEnabled: this.toastEnabled });
 
@@ -56,8 +507,16 @@ class UnifiedNotificationSystemV2 {
         // Load initial data
         this.loadInitialData();
 
-        // Setup Echo when available
-        this.waitForEcho();
+        // Load user volume setting
+        this.loadUserVolumeSetting();
+
+        // Setup enhanced Echo connection with error handling
+        this.setupEnhancedEchoConnection().catch(error => {
+            console.error('❌ Failed to setup enhanced Echo connection:', error);
+        });
+
+        // Start connection health monitoring
+        this.startHealthMonitoring();
 
         this.isInitialized = true;
         console.log('✅ Enhanced Unified Notification System v2 initialized for user:', this.userId);
@@ -87,28 +546,80 @@ class UnifiedNotificationSystemV2 {
                     return Promise.resolve();
                 }
 
+                // Ensure volume is within valid range
+                const safeVolume = Math.max(0, Math.min(1, this.volume || 0.3));
+
                 try {
                     const audio = new Audio('/sounds/notification.mp3');
-                    audio.volume = 0.3;
+
+                    // Set volume with cross-browser compatibility
+                    if (typeof audio.volume !== 'undefined') {
+                        audio.volume = safeVolume;
+                    }
+
+                    // Add error handling for various browser issues
+                    audio.addEventListener('error', (e) => {
+                        console.warn('⚠️ Audio error:', e);
+                        this.tryAlternativeSound(safeVolume);
+                    });
+
                     return audio.play().catch((error) => {
                         console.warn('⚠️ Could not play notification sound:', error);
-                        // Try alternative sound
-                        try {
-                            const beep = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBzWY1/LNfS');
-                            beep.play();
-                        } catch (e) {
-                            console.log('📢 Could not play any sound');
-                        }
+                        // Try alternative sound as fallback
+                        return this.tryAlternativeSound(safeVolume);
                     });
                 } catch (error) {
-                    console.warn('⚠️ Could not create audio element');
-                    return Promise.resolve();
+                    console.warn('⚠️ Could not create audio element:', error);
+                    return this.tryAlternativeSound(safeVolume);
                 }
             },
             setEnabled: (enabled) => {
                 this.soundEnabled = enabled;
             }
         };
+    }
+
+    tryAlternativeSound(volume) {
+        try {
+            console.log('🔄 Trying alternative notification sound...');
+            // Create a simple beep sound using Web Audio API if available
+            if (window.AudioContext || window.webkitAudioContext) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const audioContext = new AudioContext();
+
+                // Create oscillator for beep sound
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                // Configure beep
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+
+                gainNode.gain.setValueAtTime(volume * 0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+
+                return Promise.resolve();
+            } else {
+                // Fallback: try the base64 encoded beep
+                const beep = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBzWY1/LNfS');
+                if (typeof beep.volume !== 'undefined') {
+                    beep.volume = volume;
+                }
+                return beep.play().catch(() => {
+                    console.log('📢 Could not play any sound');
+                    return Promise.resolve();
+                });
+            }
+        } catch (e) {
+            console.log('📢 Could not play any sound');
+            return Promise.resolve();
+        }
     }
 
     waitForEcho() {
@@ -328,26 +839,53 @@ class UnifiedNotificationSystemV2 {
         console.log('✅ Notification processed successfully');
     }
 
-    async loadInitialData() {
+    async loadUserVolumeSetting() {
         try {
-            console.log('📥 Loading initial notification data...');
+            console.log('🔊 Loading user volume setting...');
 
-            // Try the existing web route first
-            let response = await fetch('/notifications/dropdown', {
+            // Try to get volume from a dedicated endpoint or from user settings
+            const response = await this.enhancedFetch('/api/user/settings', {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
                 }
-            });
+            }, 'load_volume_settings');
+
+            if (response.ok) {
+                const settings = await response.json();
+                if (settings && settings.notification_volume !== undefined) {
+                    this.volume = parseFloat(settings.notification_volume);
+                    console.log('✅ User volume loaded:', this.volume);
+                }
+            } else {
+                console.log('⚠️ Could not load user volume setting, using default');
+            }
+        } catch (error) {
+            console.error('❌ Failed to load user volume setting:', error);
+        }
+    }
+
+    async loadInitialData() {
+        try {
+            console.log('📥 Loading initial notification data...');
+
+            // Try the existing web route first with enhanced error handling
+            let response = await this.enhancedFetch('/notifications/dropdown', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            }, 'load_initial_data_web');
 
             // If that fails, try the API route
             if (!response.ok) {
-                response = await fetch('/api/notifications', {
+                console.log('🔄 Web route failed, trying API route...');
+                response = await this.enhancedFetch('/api/notifications', {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
                     }
-                });
+                }, 'load_initial_data_api');
             }
 
             if (response.ok) {
@@ -542,26 +1080,27 @@ class UnifiedNotificationSystemV2 {
 
     async markAsRead(notificationId) {
         try {
-            // Try the existing web route first
-            let response = await fetch(`/notifications/${notificationId}/mark-read`, {
+            // Try the existing web route first with enhanced error handling
+            let response = await this.enhancedFetch(`/notifications/${notificationId}/mark-read`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                     'X-Requested-With': 'XMLHttpRequest'
                 }
-            });
+            }, `mark_read_web_${notificationId}`);
 
             // If that fails, try the API route
             if (!response.ok) {
-                response = await fetch(`/api/notifications/${notificationId}/read`, {
+                console.log(`🔄 Web route failed for ${notificationId}, trying API route...`);
+                response = await this.enhancedFetch(`/api/notifications/${notificationId}/read`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                         'X-Requested-With': 'XMLHttpRequest'
                     }
-                });
+                }, `mark_read_api_${notificationId}`);
             }
 
             if (response.ok) {
@@ -584,14 +1123,14 @@ class UnifiedNotificationSystemV2 {
 
     async markAllAsRead() {
         try {
-            const response = await fetch('/notifications/mark-all-read', {
+            const response = await this.enhancedFetch('/notifications/mark-all-read', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                     'X-Requested-With': 'XMLHttpRequest'
                 }
-            });
+            }, 'mark_all_read');
 
             if (response.ok) {
                 // Update local state
@@ -678,6 +1217,24 @@ class UnifiedNotificationSystemV2 {
 
     // Debug method
     getSystemStatus() {
+        const circuitBreakerStatus = {
+            state: this.circuitBreaker.state,
+            failures: this.circuitBreaker.failures,
+            lastFailureTime: this.circuitBreaker.lastFailureTime,
+            nextAttemptTime: this.circuitBreaker.nextAttemptTime
+        };
+
+        const connectionHealthStatus = {
+            isHealthy: this.connectionHealth.isHealthy,
+            lastHealthCheck: this.connectionHealth.lastHealthCheck,
+            consecutiveFailures: this.connectionHealth.consecutiveFailures,
+            totalRequests: this.connectionHealth.totalRequests,
+            successfulRequests: this.connectionHealth.successfulRequests,
+            averageResponseTime: Math.round(this.connectionHealth.averageResponseTime),
+            successRate: this.connectionHealth.totalRequests > 0 ?
+                Math.round((this.connectionHealth.successfulRequests / this.connectionHealth.totalRequests) * 100) / 100 : 0
+        };
+
         return {
             initialized: this.isInitialized,
             userId: this.userId,
@@ -686,7 +1243,15 @@ class UnifiedNotificationSystemV2 {
             unreadCount: this.unreadCount,
             totalNotifications: this.notifications.length,
             echoConnected: !!this.echoChannel,
-            soundAvailable: !!this.sound
+            soundAvailable: !!this.sound,
+
+            // Advanced Network Error Handling Status
+            networkConfig: this.networkConfig,
+            circuitBreaker: circuitBreakerStatus,
+            connectionHealth: connectionHealthStatus,
+            activeRequests: this.activeRequests.size,
+            pendingRetries: this.retryQueue.size,
+            healthMonitoringActive: !!this.healthMonitorInterval
         };
     }
 }

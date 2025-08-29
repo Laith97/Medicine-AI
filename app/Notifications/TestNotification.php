@@ -6,7 +6,9 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 class TestNotification extends Notification implements ShouldBroadcast
 {
@@ -47,9 +49,20 @@ class TestNotification extends Notification implements ShouldBroadcast
         ];
     }
 
-    public function toBroadcast(object $notifiable)
+    /**
+     * Get the broadcastable representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
     {
-        return [
+        Log::info('Broadcasting notification', [
+            'notification_id' => $this->id,
+            'notifiable_id' => $notifiable->id,
+            'notifiable_type' => get_class($notifiable),
+            'channel' => 'App.User.' . $notifiable->id,
+            'data' => $this->data
+        ]);
+
+        return new BroadcastMessage([
             'id' => $this->id,
             'type' => $this->data['type'] ?? 'test',
             'title' => $this->data['title'] ?? 'Test Notification',
@@ -57,7 +70,7 @@ class TestNotification extends Notification implements ShouldBroadcast
             'icon' => $this->data['icon'] ?? 'info',
             'link' => $this->data['link'] ?? null,
             'created_at' => now()->toISOString()
-        ];
+        ]);
     }
 
     /**

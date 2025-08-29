@@ -6,7 +6,9 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use App\Services\NotificationCompressionService;
 
 class SystemAlertNotification extends Notification implements ShouldBroadcast
 {
@@ -96,9 +98,12 @@ class SystemAlertNotification extends Notification implements ShouldBroadcast
         return "System Alert: {$this->title}. {$this->message}. View details: " . ($this->data['link'] ?? route('notifications.index'));
     }
 
-    public function toBroadcast(object $notifiable)
+    /**
+     * Get the broadcastable representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
     {
-        return [
+        $payload = [
             'id' => $this->id,
             'type' => 'system_alert',
             'title' => $this->title,
@@ -113,5 +118,11 @@ class SystemAlertNotification extends Notification implements ShouldBroadcast
                 'created_at' => now()->toISOString(),
             ])
         ];
+
+        // Compress payload if beneficial
+        $compressionService = app(NotificationCompressionService::class);
+        $compressedPayload = $compressionService->compressPayload($payload);
+
+        return new BroadcastMessage($compressedPayload);
     }
 }

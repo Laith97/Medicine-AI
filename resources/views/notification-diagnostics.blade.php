@@ -1,464 +1,473 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>🔧 Notification System Diagnostics</title>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    @auth
-    <meta name="user-id" content="{{ Auth::id() }}">
-    <meta name="notification-sound-enabled" content="true">
-    <meta name="notification-toast-enabled" content="true">
-    @endauth
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Diagnostics</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .test-section {
-            background: white;
-            padding: 20px;
-            margin: 10px 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .success { border-left: 4px solid #28a745; }
-        .warning { border-left: 4px solid #ffc107; }
-        .error { border-left: 4px solid #dc3545; }
-        .log {
+        .diagnostic-panel {
             background: #f8f9fa;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 5px;
-            font-family: monospace;
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #e9ecef;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
         }
-        button {
+        .diagnostic-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .diagnostic-item.success {
+            border-left-color: #28a745;
+        }
+        .diagnostic-item.error {
+            border-left-color: #dc3545;
+        }
+        .diagnostic-item.warning {
+            border-left-color: #ffc107;
+        }
+        .test-button {
             background: #007bff;
             color: white;
             border: none;
             padding: 10px 20px;
-            margin: 5px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        button:hover { background: #0056b3; }
-        button:disabled { background: #6c757d; cursor: not-allowed; }
-        .status {
-            display: inline-block;
-            padding: 4px 8px;
             border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
         }
-        .status.good { background: #d4edda; color: #155724; }
-        .status.bad { background: #f8d7da; color: #721c24; }
-        .status.pending { background: #fff3cd; color: #856404; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .log-output {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔧 Real-time Notification System Diagnostics</h1>
-        <p><strong>Current Time:</strong> <span id="currentTime"></span></p>
+    <div class="container mt-4">
+        <h1>🔔 Notification System Diagnostics</h1>
 
-        @auth
-        <div class="grid">
-            <!-- System Status -->
-            <div class="test-section">
-                <h3>📊 System Status</h3>
-                <div id="systemStatus">
-                    <div><strong>User ID:</strong> <span id="userId">{{ Auth::id() }}</span></div>
-                    <div><strong>CSRF Token:</strong> <span class="status" id="csrfStatus">Checking...</span></div>
-                    <div><strong>Echo Library:</strong> <span class="status" id="echoStatus">Checking...</span></div>
-                    <div><strong>Pusher Connection:</strong> <span class="status" id="pusherStatus">Checking...</span></div>
-                    <div><strong>Enhanced System:</strong> <span class="status" id="enhancedStatus">Checking...</span></div>
-                    <div><strong>Sound System:</strong> <span class="status" id="soundStatus">Checking...</span></div>
-                    <div><strong>Dropdown Component:</strong> <span class="status" id="dropdownStatus">Checking...</span></div>
-                </div>
-            </div>
-
-            <!-- Configuration -->
-            <div class="test-section">
-                <h3>⚙️ Configuration</h3>
-                <div>
-                    <div><strong>Broadcasting Driver:</strong> {{ config('broadcasting.default') }}</div>
-                    <div><strong>Queue Driver:</strong> {{ config('queue.default') }}</div>
-                    <div><strong>App Environment:</strong> {{ app()->environment() }}</div>
-                    <div><strong>Pusher App ID:</strong> {{ config('broadcasting.connections.pusher.app_id') }}</div>
-                    <div><strong>Pusher Cluster:</strong> {{ config('broadcasting.connections.pusher.options.cluster') }}</div>
-                    <div><strong>Expected Channel:</strong> App.User.{{ Auth::id() }}</div>
-                </div>
+        <div class="diagnostic-panel">
+            <h3>System Status</h3>
+            <div id="system-status">
+                <div class="diagnostic-item">Checking system...</div>
             </div>
         </div>
 
-        <!-- Test Controls -->
-        <div class="test-section">
-            <h3>🧪 Test Controls</h3>
-            <button id="diagBtn">🔍 Run Full Diagnostics</button>
-            <button id="testBtn">📤 Send Enhanced Test</button>
-            <button id="legacyBtn">📤 Send Legacy Test</button>
-            <button id="directBtn">⚡ Send Direct Test</button>
-            <button id="pusherBtn">📡 Test Pusher Direct</button>
-            <button id="soundBtn">🔊 Test Sound</button>
-            <button id="dropdownBtn">📋 Test Dropdown</button>
-            <button id="clearBtn">🗑️ Clear Logs</button>
+        <div class="diagnostic-panel">
+            <h3>Connection Tests</h3>
+            <button class="test-button" onclick="testPusherConnection()">Test Pusher Connection</button>
+            <button class="test-button" onclick="testEchoConnection()">Test Echo Connection</button>
+            <button class="test-button" onclick="testUserChannel()">Test User Channel</button>
+            <div id="connection-results"></div>
         </div>
 
-        <!-- Real-time Event Monitor -->
-        <div class="test-section">
-            <h3>📡 Real-time Event Monitor</h3>
-            <div>
-                <strong>Events Received:</strong> <span id="eventCount">0</span>
-                <button id="monitorBtn">Start Monitoring</button>
-            </div>
-            <div class="log" id="eventLog">
-                <div style="color: #666;">Event monitor inactive - click "Start Monitoring" to begin</div>
-            </div>
+        <div class="diagnostic-panel">
+            <h3>Notification Tests</h3>
+            <button class="test-button" onclick="sendTestNotification()">Send Test Notification</button>
+            <button class="test-button" onclick="testSoundPlayback()">Test Sound Playback</button>
+            <button class="test-button" onclick="testToastDisplay()">Test Toast Display</button>
+            <div id="notification-results"></div>
         </div>
 
-        <!-- System Logs -->
-        <div class="test-section">
-            <h3>📋 System Logs</h3>
-            <div class="log" id="systemLog">
-                <div style="color: #666;">System logs will appear here...</div>
-            </div>
+        <div class="diagnostic-panel">
+            <h3>Live Console Log</h3>
+            <button class="test-button" onclick="clearLog()">Clear Log</button>
+            <button class="test-button" onclick="toggleLog()">Toggle Log</button>
+            <div id="console-log" class="log-output" style="display: none;"></div>
         </div>
-        @else
-        <div class="test-section error">
-            <h3>🚫 Authentication Required</h3>
-            <p>Please <a href="/login">login</a> to access the notification diagnostics.</p>
+
+        <div class="diagnostic-panel">
+            <h3>Environment Info</h3>
+            <div id="environment-info"></div>
         </div>
-        @endauth
     </div>
 
-    <!-- Load scripts -->
-    <!-- Notification sound script will be loaded via Vite -->
-    @vite(['resources/js/app.js', 'resources/css/app.css'])
-
     <script>
-    // Global variables
-    let eventCount = 0;
-    let monitoring = false;
+        // Override console.log to capture output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
 
-    // Utility functions
-    function updateTime() {
-        document.getElementById('currentTime').textContent = new Date().toLocaleString();
-    }
+        const logOutput = document.getElementById('console-log');
+        let logVisible = false;
 
-    function log(message, color = '#333', target = 'systemLog') {
-        console.log(message);
-        const logContainer = document.getElementById(target);
-        if (!logContainer) return;
+        function addToLog(message, type = 'log') {
+            if (!logVisible) return;
 
-        const timestamp = new Date().toLocaleTimeString();
-        const logEntry = document.createElement('div');
-        logEntry.style.color = color;
-        logEntry.style.marginBottom = '4px';
-        logEntry.innerHTML = `<span style="color: #666;">[${timestamp}]</span> ${message}`;
-        logContainer.appendChild(logEntry);
-        logContainer.scrollTop = logContainer.scrollHeight;
-    }
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.style.marginBottom = '5px';
 
-    function eventLog(message, color = '#0066cc') {
-        log(message, color, 'eventLog');
-        eventCount++;
-        const eventCountEl = document.getElementById('eventCount');
-        if (eventCountEl) eventCountEl.textContent = eventCount;
-    }
-
-    function updateStatus(elementId, status, isGood) {
-        const element = document.getElementById(elementId);
-        if (element) {
-            element.textContent = status;
-            element.className = 'status ' + (isGood ? 'good' : 'bad');
-        }
-    }
-
-    // Diagnostic functions
-    function runFullDiagnostics() {
-        log('🔍 Starting full system diagnostics...', '#007bff');
-
-        // Check CSRF Token
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        updateStatus('csrfStatus', csrfToken ? 'Found' : 'Missing', !!csrfToken);
-
-        // Check Echo
-        const echoAvailable = typeof window.Echo !== 'undefined';
-        updateStatus('echoStatus', echoAvailable ? 'Available' : 'Missing', echoAvailable);
-
-        // Check Pusher Connection
-        if (echoAvailable && window.Echo.connector) {
-            const pusher = window.Echo.connector.pusher;
-            if (pusher) {
-                const connectionState = pusher.connection.state;
-                updateStatus('pusherStatus', connectionState, connectionState === 'connected');
-                log(`📡 Pusher connection state: ${connectionState}`, connectionState === 'connected' ? '#28a745' : '#dc3545');
-                log(`🆔 Socket ID: ${pusher.connection.socket_id || 'None'}`, '#6c757d');
+            if (type === 'error') {
+                logEntry.style.color = '#ff6b6b';
+            } else if (type === 'warn') {
+                logEntry.style.color = '#ffd93d';
             } else {
-                updateStatus('pusherStatus', 'No Pusher', false);
+                logEntry.style.color = '#6bcf7f';
             }
-        } else {
-            updateStatus('pusherStatus', 'Echo Missing', false);
+
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logOutput.appendChild(logEntry);
+            logOutput.scrollTop = logOutput.scrollHeight;
         }
 
-        // Check Enhanced System
-        const enhancedAvailable = typeof window.enhancedNotificationSystem !== 'undefined';
-        updateStatus('enhancedStatus', enhancedAvailable ? 'Active' : 'Missing', enhancedAvailable);
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog(args.join(' '), 'log');
+        };
 
-        if (enhancedAvailable) {
-            log('✅ Enhanced notification system found', '#28a745');
-            log(`🔊 Sound enabled: ${window.enhancedNotificationSystem.soundEnabled}`, '#17a2b8');
-            log(`📋 Toast enabled: ${window.enhancedNotificationSystem.toastEnabled}`, '#17a2b8');
-        } else {
-            log('❌ Enhanced notification system not found', '#dc3545');
-        }
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog(args.join(' '), 'error');
+        };
 
-        // Check Sound System
-        const soundAvailable = typeof window.notificationSound !== 'undefined';
-        updateStatus('soundStatus', soundAvailable ? 'Available' : 'Missing', soundAvailable);
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToLog(args.join(' '), 'warn');
+        };
 
-        // Check Dropdown Component
-        const dropdownAvailable = typeof window.notificationDropdownInstance !== 'undefined';
-        updateStatus('dropdownStatus', dropdownAvailable ? 'Active' : 'Missing', dropdownAvailable);
-
-        log('🏁 Diagnostics complete', '#28a745');
-    }
-
-    async function testEnhancedNotification() {
-        log('🧪 Testing enhanced notification...', '#007bff');
-
-        try {
-            const response = await fetch('/api/test/notification', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({
-                    title: 'Enhanced Diagnostic Test',
-                    message: `Test notification sent at ${new Date().toLocaleTimeString()}`
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                log('✅ Enhanced test notification sent successfully', '#28a745');
-                log(`📨 Response: ${JSON.stringify(data, null, 2)}`, '#6c757d');
-            } else {
-                log(`❌ Failed to send notification: ${response.status}`, '#dc3545');
+        function toggleLog() {
+            logVisible = !logVisible;
+            logOutput.style.display = logVisible ? 'block' : 'none';
+            if (logVisible) {
+                addToLog('Console log enabled', 'log');
             }
-        } catch (error) {
-            log(`❌ Error: ${error.message}`, '#dc3545');
         }
-    }
 
-    async function testLegacyNotification() {
-        log('🧪 Testing legacy notification...', '#007bff');
-
-        try {
-            const response = await fetch('/api/test-notification', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({
-                    message: `Legacy test at ${new Date().toLocaleTimeString()}`
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                log('✅ Legacy test notification sent successfully', '#28a745');
-                log(`📨 Response: ${JSON.stringify(data, null, 2)}`, '#6c757d');
-            } else {
-                log(`❌ Failed to send legacy notification: ${response.status}`, '#dc3545');
-            }
-        } catch (error) {
-            log(`❌ Error: ${error.message}`, '#dc3545');
+        function clearLog() {
+            logOutput.innerHTML = '';
+            addToLog('Log cleared', 'log');
         }
-    }
 
-    async function testDirectNotification() {
-        log('⚡ Testing direct notification (bypass queue)...', '#007bff');
-
-        try {
-            const response = await fetch('/api/test/direct-notification', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                log('✅ Direct test notification sent successfully', '#28a745');
-                log(`📨 Response: ${JSON.stringify(data, null, 2)}`, '#6c757d');
-            } else {
-                const error = await response.text();
-                log(`❌ Failed to send direct notification: ${response.status}`, '#dc3545');
-                log(`📨 Error: ${error}`, '#dc3545');
-            }
-        } catch (error) {
-            log(`❌ Error: ${error.message}`, '#dc3545');
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="diagnostic-item ${type}">${message}</div>`;
         }
-    }
 
-    async function testPusherConnection() {
-        log('📡 Testing direct Pusher connection...', '#007bff');
-
-        try {
-            const response = await fetch('/api/test/pusher-connection', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                log('✅ Direct Pusher test sent successfully', '#28a745');
-                log(`📨 Response: ${JSON.stringify(data, null, 2)}`, '#6c757d');
-
-                // Also log the system status
-                const statusResponse = await fetch('/api/test/system-status');
-                if (statusResponse.ok) {
-                    const status = await statusResponse.json();
-                    log('📊 System Status:', '#17a2b8');
-                    log(`• Broadcast Driver: ${status.broadcast_driver}`, '#6c757d');
-                    log(`• Queue Driver: ${status.queue_driver}`, '#6c757d');
-                    log(`• Pusher App ID: ${status.pusher_config.app_id}`, '#6c757d');
-                    log(`• Pusher Cluster: ${status.pusher_config.cluster}`, '#6c757d');
-                    log(`• Channel: ${status.channel}`, '#6c757d');
-                }
-            } else {
-                const error = await response.text();
-                log(`❌ Failed to test Pusher connection: ${response.status}`, '#dc3545');
-                log(`📨 Error: ${error}`, '#dc3545');
-            }
-        } catch (error) {
-            log(`❌ Error: ${error.message}`, '#dc3545');
+        function addResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `diagnostic-item ${type}`;
+            resultDiv.textContent = message;
+            element.appendChild(resultDiv);
         }
-    }
 
-    function testSoundSystem() {
-        log('🔊 Testing sound system...', '#007bff');
-        if (window.notificationSound) {
-            window.notificationSound.play();
-            log('✅ Sound test triggered', '#28a745');
-        } else {
-            log('❌ Sound system not available', '#dc3545');
-        }
-    }
-
-    function testDropdownUpdate() {
-        log('📋 Testing dropdown update...', '#007bff');
-        if (window.notificationDropdownInstance) {
-            const testNotification = {
-                id: 'test-' + Date.now(),
-                title: 'Test Dropdown Update',
-                message: 'This is a test dropdown update',
-                created_at: new Date().toISOString()
-            };
-            window.notificationDropdownInstance.handleNewNotification(testNotification);
-            log('✅ Dropdown test update sent', '#28a745');
-        } else {
-            log('❌ Dropdown component not available', '#dc3545');
-        }
-    }
-
-    function toggleEventMonitor() {
-        monitoring = !monitoring;
-        const btn = document.getElementById('monitorBtn');
-        if (!btn) return;
-
-        if (monitoring) {
-            btn.textContent = 'Stop Monitoring';
-            btn.style.background = '#dc3545';
-            eventLog('🟢 Event monitoring started', '#28a745');
-        } else {
-            btn.textContent = 'Start Monitoring';
-            btn.style.background = '#007bff';
-            eventLog('🔴 Event monitoring stopped', '#dc3545');
-        }
-    }
-
-    function clearAllLogs() {
-        const systemLog = document.getElementById('systemLog');
-        const eventLogEl = document.getElementById('eventLog');
-        const eventCountEl = document.getElementById('eventCount');
-
-        if (systemLog) systemLog.innerHTML = '<div style="color: #666;">System logs cleared...</div>';
-        if (eventLogEl) eventLogEl.innerHTML = '<div style="color: #666;">Event logs cleared...</div>';
-        if (eventCountEl) eventCountEl.textContent = '0';
-
-        eventCount = 0;
-        log('🗑️ Logs cleared', '#6c757d');
-    }
-
-    // Initialize when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
-        // Set up time updates
-        setInterval(updateTime, 1000);
-        updateTime();
-
-        // Attach event listeners
-        document.getElementById('diagBtn')?.addEventListener('click', runFullDiagnostics);
-        document.getElementById('testBtn')?.addEventListener('click', testEnhancedNotification);
-        document.getElementById('legacyBtn')?.addEventListener('click', testLegacyNotification);
-        document.getElementById('directBtn')?.addEventListener('click', testDirectNotification);
-        document.getElementById('pusherBtn')?.addEventListener('click', testPusherConnection);
-        document.getElementById('soundBtn')?.addEventListener('click', testSoundSystem);
-        document.getElementById('dropdownBtn')?.addEventListener('click', testDropdownUpdate);
-        document.getElementById('clearBtn')?.addEventListener('click', clearAllLogs);
-        document.getElementById('monitorBtn')?.addEventListener('click', toggleEventMonitor);
-
-        log('🚀 Diagnostic page initialized', '#28a745');
-        setTimeout(runFullDiagnostics, 1000);
-
-        @auth
-        // Listen for all notification events
-        document.addEventListener('enhancedNotificationReceived', function(event) {
-            if (monitoring) {
-                eventLog('🔔 [ENHANCED] Notification received!', '#28a745');
-                eventLog(`📝 Title: ${event.detail.title}`, '#17a2b8');
-                eventLog(`💬 Message: ${event.detail.message}`, '#17a2b8');
-            }
+        // Initialize diagnostics
+        document.addEventListener('DOMContentLoaded', function() {
+            runDiagnostics();
         });
 
-        document.addEventListener('notificationReceived', function(event) {
-            if (monitoring) {
-                eventLog('🔔 [LEGACY] Notification received!', '#ffc107');
-                eventLog(`📝 Data: ${JSON.stringify(event.detail).substring(0, 100)}...`, '#17a2b8');
-            }
-        });
+        function runDiagnostics() {
+            updateStatus('system-status', 'Running diagnostics...');
 
-        // Listen for Pusher events directly
-        setTimeout(() => {
-            if (window.Echo && window.Echo.connector && window.Echo.connector.pusher) {
-                const pusher = window.Echo.connector.pusher;
+            setTimeout(() => {
+                checkEnvironment();
+                checkEcho();
+                checkNotificationSystem();
+            }, 1000);
+        }
 
-                // Monitor all events
-                pusher.bind_global((eventName, data) => {
-                    if (monitoring && eventName.includes('App.User.{{ Auth::id() }}')) {
-                        eventLog(`📡 [PUSHER] Raw event: ${eventName}`, '#6f42c1');
-                        eventLog(`📊 Data: ${JSON.stringify(data).substring(0, 100)}...`, '#6c757d');
+        function checkEnvironment() {
+            const envInfo = document.getElementById('environment-info');
+            let html = '';
+
+            html += `<div class="diagnostic-item">APP_ENV: @config('app.env')</div>`;
+            html += `<div class="diagnostic-item">BROADCAST_CONNECTION: @config('broadcasting.default')</div>`;
+            html += `<div class="diagnostic-item">QUEUE_CONNECTION: @config('queue.default')</div>`;
+            html += `<div class="diagnostic-item">PUSHER_APP_KEY: @config('broadcasting.connections.pusher.key')</div>`;
+
+            if (typeof window.Echo !== 'undefined') {
+                html += `<div class="diagnostic-item success">Echo: Available</div>`;
+                if (window.Echo.connector) {
+                    html += `<div class="diagnostic-item success">Echo Connector: Available</div>`;
+                    if (window.Echo.connector.pusher) {
+                        html += `<div class="diagnostic-item success">Pusher: Available</div>`;
+                        html += `<div class="diagnostic-item">Pusher State: ${window.Echo.connector.pusher.connection.state}</div>`;
+                    } else {
+                        html += `<div class="diagnostic-item error">Pusher: Not Available</div>`;
                     }
-                });
+                } else {
+                    html += `<div class="diagnostic-item error">Echo Connector: Not Available</div>`;
+                }
+            } else {
+                html += `<div class="diagnostic-item error">Echo: Not Available</div>`;
             }
-        }, 2000);
-        @endauth
-    });
+
+            envInfo.innerHTML = html;
+        }
+
+        function checkEcho() {
+            if (typeof window.Echo === 'undefined') {
+                updateStatus('system-status', '❌ Echo not loaded', 'error');
+                return;
+            }
+
+            if (!window.Echo.connector) {
+                updateStatus('system-status', '❌ Echo connector not available', 'error');
+                return;
+            }
+
+            if (!window.Echo.connector.pusher) {
+                updateStatus('system-status', '❌ Pusher not available', 'error');
+                return;
+            }
+
+            const pusher = window.Echo.connector.pusher;
+            const state = pusher.connection.state;
+
+            if (state === 'connected') {
+                updateStatus('system-status', '✅ Pusher connected', 'success');
+            } else {
+                updateStatus('system-status', `⚠️ Pusher state: ${state}`, 'warning');
+            }
+        }
+
+        function checkNotificationSystem() {
+            if (typeof window.enhancedNotificationSystem !== 'undefined') {
+                updateStatus('system-status', '✅ Enhanced notification system loaded', 'success');
+
+                if (window.enhancedNotificationSystem.isInitialized) {
+                    updateStatus('system-status', '✅ Notification system initialized', 'success');
+                } else {
+                    updateStatus('system-status', '⚠️ Notification system not initialized', 'warning');
+                }
+            } else {
+                updateStatus('system-status', '❌ Enhanced notification system not loaded', 'error');
+            }
+        }
+
+        async function testPusherConnection() {
+            const results = document.getElementById('connection-results');
+            results.innerHTML = '';
+
+            addResult('connection-results', 'Testing Pusher connection...', 'info');
+
+            if (typeof window.Echo === 'undefined') {
+                addResult('connection-results', '❌ Echo not available', 'error');
+                return;
+            }
+
+            if (!window.Echo.connector || !window.Echo.connector.pusher) {
+                addResult('connection-results', '❌ Pusher not available', 'error');
+                return;
+            }
+
+            const pusher = window.Echo.connector.pusher;
+            const state = pusher.connection.state;
+
+            addResult('connection-results', `Current Pusher state: ${state}`, 'info');
+
+            if (state === 'connected') {
+                addResult('connection-results', '✅ Pusher is connected', 'success');
+            } else {
+                addResult('connection-results', '⚠️ Pusher is not connected', 'warning');
+
+                // Try to reconnect
+                try {
+                    addResult('connection-results', 'Attempting to reconnect...', 'info');
+                    pusher.connection.connect();
+                    setTimeout(() => {
+                        const newState = pusher.connection.state;
+                        addResult('connection-results', `Reconnection attempt result: ${newState}`, newState === 'connected' ? 'success' : 'error');
+                    }, 2000);
+                } catch (error) {
+                    addResult('connection-results', `❌ Reconnection failed: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testEchoConnection() {
+            const results = document.getElementById('connection-results');
+            addResult('connection-results', 'Testing Echo connection...', 'info');
+
+            if (typeof window.Echo === 'undefined') {
+                addResult('connection-results', '❌ Echo not available', 'error');
+                return;
+            }
+
+            addResult('connection-results', '✅ Echo is available', 'success');
+
+            // Test creating a channel
+            try {
+                const testChannel = window.Echo.channel('test-diagnostic');
+                testChannel.subscribed(() => {
+                    addResult('connection-results', '✅ Test channel subscription successful', 'success');
+                    testChannel.unsubscribe();
+                });
+
+                testChannel.error((error) => {
+                    addResult('connection-results', `❌ Test channel error: ${error.message}`, 'error');
+                });
+            } catch (error) {
+                addResult('connection-results', `❌ Echo connection test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testUserChannel() {
+            const results = document.getElementById('connection-results');
+            addResult('connection-results', 'Testing user channel subscription...', 'info');
+
+            const userId = document.querySelector('meta[name="user-id"]')?.getAttribute('content');
+            if (!userId) {
+                addResult('connection-results', '❌ User ID not found in meta tags', 'error');
+                return;
+            }
+
+            addResult('connection-results', `User ID: ${userId}`, 'info');
+
+            try {
+                const userChannel = window.Echo.private(`App.User.${userId}`);
+
+                userChannel.subscribed(() => {
+                    addResult('connection-results', '✅ User channel subscription successful', 'success');
+
+                    // Test listening for notifications
+                    userChannel.notification((notification) => {
+                        addResult('connection-results', '✅ Notification listener working', 'success');
+                        console.log('Test notification received:', notification);
+                    });
+
+                    userChannel.error((error) => {
+                        addResult('connection-results', `❌ User channel error: ${error.message}`, 'error');
+                    });
+                });
+
+                userChannel.error((error) => {
+                    addResult('connection-results', `❌ Failed to subscribe to user channel: ${error.message}`, 'error');
+                });
+
+            } catch (error) {
+                addResult('connection-results', `❌ User channel test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function sendTestNotification() {
+            const results = document.getElementById('notification-results');
+            results.innerHTML = '';
+
+            addResult('notification-results', 'Sending test notification...', 'info');
+
+            try {
+                const response = await fetch('/notifications/test');
+                const result = await response.json();
+
+                if (response.ok) {
+                    addResult('notification-results', '✅ Test notification sent successfully', 'success');
+                    addResult('notification-results', `Response: ${JSON.stringify(result)}`, 'info');
+                } else {
+                    addResult('notification-results', `❌ Failed to send test notification: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                addResult('notification-results', `❌ Error sending test notification: ${error.message}`, 'error');
+            }
+        }
+
+        function testSoundPlayback() {
+            const results = document.getElementById('notification-results');
+            addResult('notification-results', 'Testing sound playback...', 'info');
+
+            try {
+                // Test with preloaded sound
+                if (window.notificationSound && typeof window.notificationSound.play === 'function') {
+                    addResult('notification-results', '✅ Preloaded sound available', 'success');
+                    window.notificationSound.play();
+                    addResult('notification-results', '✅ Sound playback initiated', 'success');
+                } else {
+                    addResult('notification-results', '⚠️ Preloaded sound not available, testing fallback...', 'warning');
+
+                    // Test with fallback
+                    const audio = new Audio('/sounds/notification.mp3');
+                    audio.volume = 0.3;
+
+                    audio.oncanplaythrough = () => {
+                        addResult('notification-results', '✅ Fallback sound loaded', 'success');
+                        audio.play();
+                        addResult('notification-results', '✅ Fallback sound playback initiated', 'success');
+                    };
+
+                    audio.onerror = () => {
+                        addResult('notification-results', '❌ Failed to load fallback sound', 'error');
+                    };
+
+                    audio.load();
+                }
+            } catch (error) {
+                addResult('notification-results', `❌ Sound test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function testToastDisplay() {
+            const results = document.getElementById('notification-results');
+            addResult('notification-results', 'Testing toast display...', 'info');
+
+            try {
+                // Create a test toast
+                const toast = document.createElement('div');
+                toast.className = 'enhanced-notification-toast';
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: white;
+                    border: 1px solid #e2e8f0;
+                    border-left: 4px solid #28a745;
+                    border-radius: 8px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+                    padding: 16px;
+                    max-width: 350px;
+                    z-index: 10000;
+                    transform: translateX(400px);
+                    transition: transform 0.3s ease-in-out;
+                `;
+
+                toast.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 32px; height: 32px; background: #28a745; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <svg style="width: 16px; height: 16px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: #1a202c;">Test Toast</h4>
+                            <p style="margin: 0; font-size: 13px; color: #4a5568; line-height: 1.4;">This is a test toast notification</p>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(toast);
+
+                // Animate in
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(0)';
+                    addResult('notification-results', '✅ Toast displayed successfully', 'success');
+                }, 100);
+
+                // Auto remove after 3 seconds
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(400px)';
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 300);
+                }, 3000);
+
+            } catch (error) {
+                addResult('notification-results', `❌ Toast test failed: ${error.message}`, 'error');
+            }
+        }
     </script>
 </body>
 </html>

@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\VoiceTranscription;
 
@@ -83,9 +84,12 @@ class VoiceTranscriptionCompletedNotification extends Notification implements Sh
         return "Voice transcription session completed. Session ID: {$this->transcription->session_id}. View details: " . route('voice-assistant.show', $this->transcription->id);
     }
 
-    public function toBroadcast(object $notifiable)
+    /**
+     * Get the broadcastable representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
     {
-        return [
+        return new BroadcastMessage([
             'id' => $this->id,
             'type' => 'voice_transcription_completed',
             'title' => 'Voice Transcription Completed',
@@ -102,6 +106,6 @@ class VoiceTranscriptionCompletedNotification extends Notification implements Sh
                 'has_ai_analysis' => !empty($this->transcription->ai_analysis),
                 'completed_at' => $this->transcription->session_ended_at ? $this->transcription->session_ended_at->toISOString() : null,
             ]
-        ];
+        ]);
     }
 }

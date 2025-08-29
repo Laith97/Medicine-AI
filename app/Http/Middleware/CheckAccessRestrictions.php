@@ -95,6 +95,8 @@ class CheckAccessRestrictions
             'api.notifications.unread-count',
             'api.notifications.read',
             'api.notifications.mark-all-read',
+            // Broadcasting routes (essential for real-time features)
+            'broadcasting.auth',
         ];
 
         if (!$currentRoute || in_array($currentRoute, $exemptRoutes)) {

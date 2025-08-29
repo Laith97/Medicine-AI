@@ -21,6 +21,14 @@ class NotificationManager {
                 e.preventDefault();
                 this.loadNotifications();
             });
+
+            // Add keyboard support for notification bell
+            notificationBell.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    notificationBell.click();
+                }
+            });
         }
 
         // Handle mark all read button
@@ -28,6 +36,14 @@ class NotificationManager {
         if (markAllReadBtn) {
             markAllReadBtn.addEventListener('click', () => {
                 this.markAllAsRead();
+            });
+
+            // Add keyboard support
+            markAllReadBtn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.markAllAsRead();
+                }
             });
         }
 
@@ -37,7 +53,21 @@ class NotificationManager {
             viewAllBtn.addEventListener('click', () => {
                 window.location.href = '/notifications';
             });
+
+            // Add keyboard support
+            viewAllBtn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    window.location.href = '/notifications';
+                }
+            });
         }
+
+        // Add keyboard navigation for notification items
+        this.setupKeyboardNavigation();
+
+        // Add focus management
+        this.setupFocusManagement();
     }
 
     async loadNotifications() {
@@ -116,20 +146,26 @@ class NotificationManager {
             const color = this.getNotificationColor(notification.type);
 
             html += `
-                <div class="notification-item ${notification.read_at ? 'read' : 'unread'}" data-id="${notification.id}">
+                <div class="notification-item ${notification.read_at ? 'read' : 'unread'}"
+                     data-id="${notification.id}"
+                     data-href="${notification.data?.link || ''}"
+                     role="listitem"
+                     tabindex="0"
+                     aria-label="${notification.data?.title || 'Notification'}, ${notification.data?.message || 'You have a new notification'}, ${time}${!notification.read_at ? ', New notification' : ''}"
+                     aria-describedby="notification-${notification.id}-details">
                     <div class="d-flex align-items-start gap-3 p-3 border-bottom">
-                        <div class="notification-icon" style="background: ${this.getNotificationBgColor(notification.type)};">
-                            <i class="bi ${icon} text-${color}"></i>
+                        <div class="notification-icon" style="background: ${this.getNotificationBgColor(notification.type)};" aria-hidden="true">
+                            <i class="bi ${icon} text-${color}" aria-hidden="true"></i>
                         </div>
-                        <div class="flex-grow-1">
+                        <div class="flex-grow-1" id="notification-${notification.id}-details">
                             <div class="d-flex justify-content-between align-items-start mb-1">
                                 <h6 class="mb-0 small">${notification.data?.title || 'Notification'}</h6>
-                                <small class="text-muted">${time}</small>
+                                <small class="text-muted" aria-label="Received ${time}">${time}</small>
                             </div>
                             <p class="mb-0 small text-muted">${notification.data?.message || 'You have a new notification'}</p>
                             ${notification.data?.link ? `
                                 <div class="mt-2">
-                                    <a href="${notification.data.link}" class="btn btn-sm btn-outline-primary">
+                                    <a href="${notification.data.link}" class="btn btn-sm btn-outline-primary" aria-label="${notification.data?.link_text || 'View Details'}">
                                         ${notification.data?.link_text || 'View Details'}
                                     </a>
                                 </div>
@@ -230,6 +266,109 @@ class NotificationManager {
             } else {
                 badge.style.display = 'none';
             }
+        }
+    }
+
+    setupKeyboardNavigation() {
+        // Add keyboard navigation for notification dropdown
+        document.addEventListener('keydown', (e) => {
+            const dropdown = document.querySelector('.notifications-dropdown .dropdown-menu.show');
+            if (!dropdown) return;
+
+            const notificationItems = dropdown.querySelectorAll('.notification-item[tabindex="0"]');
+            if (notificationItems.length === 0) return;
+
+            const focusedItem = document.activeElement;
+            let currentIndex = Array.from(notificationItems).indexOf(focusedItem);
+
+            switch (e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    const nextIndex = currentIndex < notificationItems.length - 1 ? currentIndex + 1 : 0;
+                    notificationItems[nextIndex].focus();
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : notificationItems.length - 1;
+                    notificationItems[prevIndex].focus();
+                    break;
+                case 'Enter':
+                case ' ':
+                    e.preventDefault();
+                    if (focusedItem && focusedItem.classList.contains('notification-item')) {
+                        this.handleNotificationClick(focusedItem);
+                    }
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    // Close dropdown and return focus to bell
+                    const bell = document.querySelector('.notification-bell');
+                    if (bell) {
+                        bell.focus();
+                        // Close dropdown using Bootstrap
+                        const dropdownInstance = bootstrap.Dropdown.getInstance(bell);
+                        if (dropdownInstance) {
+                            dropdownInstance.hide();
+                        }
+                    }
+                    break;
+            }
+        });
+    }
+
+    setupFocusManagement() {
+        // Focus trap for dropdown when opened
+        const dropdown = document.querySelector('.notifications-dropdown');
+        if (dropdown) {
+            dropdown.addEventListener('shown.bs.dropdown', () => {
+                // Focus first notification item or mark all read button
+                setTimeout(() => {
+                    const firstItem = dropdown.querySelector('.notification-item[tabindex="0"]');
+                    const markAllBtn = dropdown.querySelector('.mark-all-read-btn');
+
+                    if (firstItem) {
+                        firstItem.focus();
+                    } else if (markAllBtn) {
+                        markAllBtn.focus();
+                    }
+                }, 100);
+            });
+
+            dropdown.addEventListener('hidden.bs.dropdown', () => {
+                // Return focus to notification bell
+                const bell = document.querySelector('.notification-bell');
+                if (bell) {
+                    bell.focus();
+                }
+            });
+        }
+
+        // Handle focus for notification items
+        document.addEventListener('focusin', (e) => {
+            if (e.target.classList.contains('notification-item')) {
+                e.target.style.outline = '2px solid #007bff';
+                e.target.style.outlineOffset = '2px';
+            }
+        });
+
+        document.addEventListener('focusout', (e) => {
+            if (e.target.classList.contains('notification-item')) {
+                e.target.style.outline = '';
+                e.target.style.outlineOffset = '';
+            }
+        });
+    }
+
+    handleNotificationClick(notificationItem) {
+        const notificationId = notificationItem.dataset.id;
+        const href = notificationItem.dataset.href;
+
+        if (notificationId && !notificationItem.classList.contains('read')) {
+            this.markAsRead(notificationId);
+        }
+
+        if (href) {
+            window.location.href = href;
         }
     }
 

@@ -4,13 +4,27 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Notifications\DatabaseNotification;
 use App\Models\User;
 use App\Models\NotificationType;
 use App\Models\NotificationPreference;
+use App\Services\NotificationCacheService;
+use App\Services\MemoryOptimizedNotificationProcessor;
 
 class NotificationController extends Controller
 {
+    protected NotificationCacheService $cacheService;
+    protected MemoryOptimizedNotificationProcessor $memoryProcessor;
+
+    public function __construct(
+        NotificationCacheService $cacheService,
+        MemoryOptimizedNotificationProcessor $memoryProcessor
+    ) {
+        $this->cacheService = $cacheService;
+        $this->memoryProcessor = $memoryProcessor;
+    }
+
     /**
      * Display a listing of the user's notifications.
      */
@@ -70,7 +84,14 @@ class NotificationController extends Controller
     {
         $user = Auth::user();
 
-        // Get recent notifications (both read and unread) for dropdown
+        // Try to get cached data first
+        $cachedData = $this->cacheService->getCachedNotifications($user->id, 'api', 15);
+
+        if ($cachedData) {
+            return response()->json($cachedData);
+        }
+
+        // Get fresh notifications data
         $notifications = $user->notifications()
             ->orderBy('created_at', 'desc')
             ->take(15)
@@ -89,10 +110,15 @@ class NotificationController extends Controller
 
         $unreadCount = $user->unreadNotifications()->count();
 
-        return response()->json([
+        $responseData = [
             'notifications' => $notifications,
             'unread_count' => $unreadCount
-        ]);
+        ];
+
+        // Cache the response
+        $this->cacheService->cacheNotifications($user->id, 'api', 15, $responseData);
+
+        return response()->json($responseData);
     }
 
     /**
@@ -141,6 +167,10 @@ class NotificationController extends Controller
         if ($notification) {
             $notification->markAsRead();
             event(new \App\Events\NotificationRead($userId, $notification->id));
+
+            // Invalidate cache since notification status changed
+            $this->cacheService->invalidateUserCache($userId);
+
             return response()->json(['success' => true]);
         }
 
@@ -154,6 +184,9 @@ class NotificationController extends Controller
     {
         $user = Auth::user();
         $user->unreadNotifications()->update(['read_at' => now()]);
+
+        // Invalidate cache since notification status changed
+        $this->cacheService->invalidateUserCache($user->id);
 
         return response()->json(['success' => true]);
     }
@@ -201,7 +234,7 @@ class NotificationController extends Controller
         } catch (\Exception $e) {
             // Log the error for debugging
             \Log::error('Error in unreadCount:' . $e->getMessage());
-            
+
             // Always return valid JSON
             return response()->json([
                 'count' => 0,
