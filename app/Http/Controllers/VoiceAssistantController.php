@@ -19,7 +19,7 @@ class VoiceAssistantController extends Controller
     {
         $this->middleware(function ($request, $next) {
             $user = Auth::user();
-            
+
             // Handle sub-users - they inherit access from their parent doctor
             if ($user->isSubUser()) {
                 $parentUser = $user->parentUser;
@@ -31,12 +31,12 @@ class VoiceAssistantController extends Controller
                 if (!$user->isDoctor() || !$user->doctor) {
                     abort(403, 'Access denied. Doctor profile required.');
                 }
-                
+
                 if (!$user->doctor->is_active) {
                     abort(403, 'Access denied. Your doctor account has been deactivated.');
                 }
             }
-            
+
             return $next($request);
         });
     }
@@ -442,6 +442,7 @@ class VoiceAssistantController extends Controller
             $diagnosis = Diagnosis::create([
                 'doctor_id' => Auth::id(),
                 'patient_id' => $patient->id,
+                'type' => 'voice_assistant',
                 'diagnosis_text' => $manualDiagnosisText,
                 'voice_transcript' => $transcription,
                 'patient_data' => $aiResult->patient_data,
@@ -456,6 +457,9 @@ class VoiceAssistantController extends Controller
                     'diagnosis_id' => $diagnosis->id,
                     'status' => 'diagnosis_created',
                 ]);
+
+            // Send voice transcription completion notifications
+            $this->sendVoiceTranscriptionNotifications($diagnosis, $transcription);
 
             return response()->json([
                 'success' => true,
@@ -650,4 +654,41 @@ class VoiceAssistantController extends Controller
 
         PATIENT DATA FOR ANALYSIS: " . json_encode($inputData);
     }
+
+    /**
+     * Send notifications for voice transcription completion
+     */
+    private function sendVoiceTranscriptionNotifications(Diagnosis $diagnosis, string $transcription)
+    {
+        try {
+            // Send notification to patient about new voice diagnosis
+            if ($diagnosis->patient && $diagnosis->patient->wantsNotification('voice_transcription_completed')) {
+                $diagnosis->patient->notifyIfWants(new \App\Notifications\VoiceTranscriptionCompletedNotification($diagnosis, $transcription));
+            }
+
+            // Send notification to doctor about voice transcription completion
+            if ($diagnosis->doctor && $diagnosis->doctor->user) {
+                $doctor = $diagnosis->doctor->user;
+
+                if ($doctor->wantsNotification('voice_transcription_completed')) {
+                    $doctor->notifyIfWants(new \App\Notifications\SystemAlertNotification(
+                        'Voice Diagnosis Completed',
+                        "Voice transcription diagnosis completed for patient {$diagnosis->patient->name}. Diagnosis ID: {$diagnosis->id}",
+                        'success',
+                        [
+                            'link' => route('diagnosis.show', $diagnosis),
+                            'link_text' => 'View Diagnosis',
+                            'related_type' => 'diagnosis',
+                            'related_id' => $diagnosis->id
+                        ]
+                    ));
+                }
+            }
+
+        } catch (\Exception $e) {
+            // Log notification errors but don't break the diagnosis process
+            \Log::error('Failed to send voice transcription notifications: ' . $e->getMessage());
+        }
+    }
+
 }

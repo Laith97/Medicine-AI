@@ -513,7 +513,7 @@
     .response-text p strong, .ai-content p strong {
         /* Remove old styling and use normal strong formatting */
         display: inline;
-        font-size: inherit;
+        /* font-size: inherit; */
         color: inherit;
         margin: 0;
         font-weight: 600;

@@ -1,0 +1,34 @@
+<script>
+console.log('🚀 Unified Notification System will auto-initialize');
+
+@if(config('app.debug'))
+// Add debug commands to window for testing
+window.testNotifications = () => {
+    if (window.unifiedNotifications) {
+        window.unifiedNotifications.testNotification();
+        console.log('📤 Test notification sent');
+    } else {
+        console.error('❌ Unified notification system not available');
+    }
+};
+
+window.toggleNotificationSound = (enabled) => {
+    if (window.unifiedNotifications) {
+        window.unifiedNotifications.enableSound(enabled);
+        console.log('🔊 Notification sound ' + (enabled ? 'enabled' : 'disabled'));
+    }
+};
+
+window.toggleNotificationToast = (enabled) => {
+    if (window.unifiedNotifications) {
+        window.unifiedNotifications.enableToast(enabled);
+        console.log('📋 Notification toast ' + (enabled ? 'enabled' : 'disabled'));
+    }
+};
+
+console.log('🛠️ Debug commands available:');
+console.log('  • testNotifications() - Send a test notification');
+console.log('  • toggleNotificationSound(true/false) - Enable/disable sounds');
+console.log('  • toggleNotificationToast(true/false) - Enable/disable toasts');
+@endif
+</script>

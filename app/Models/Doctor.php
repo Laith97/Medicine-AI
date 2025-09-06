@@ -10,6 +10,38 @@ class Doctor extends Model
 {
     use HasFactory;
 
+    /**
+     * @property int $id
+     * @property int $user_id
+     * @property int|null $specialty_id
+     * @property string|null $license_number
+     * @property string|null $phone
+     * @property string|null $bio
+     * @property string|null $profile_image
+     * @property array|null $languages
+     * @property string|null $address
+     * @property string|null $city
+     * @property string|null $state
+     * @property string|null $zip_code
+     * @property string|null $country
+     * @property string|null $latitude
+     * @property string|null $longitude
+     * @property int $consultation_fee
+     * @property int $appointment_duration
+     * @property bool $auto_approve_appointments
+     * @property bool $allow_cancellation
+     * @property bool $allow_rescheduling
+     * @property int $cancellation_hours
+     * @property float $average_rating
+     * @property int $total_reviews
+     * @property bool $is_active
+     * @property bool $is_verified
+     * @property \Carbon\Carbon|null $verified_at
+     * @property array|null $appointment_type_preferences
+     * @property bool $ai_chat_enabled
+     * @property array|null $ai_chat_settings
+     */
+
     protected $fillable = [
         'user_id',
         'specialty_id',

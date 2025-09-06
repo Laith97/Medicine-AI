@@ -1,37 +1,52 @@
 <!DOCTYPE html>
 <html dir="ltr" lang="en-US">
+
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta http-equiv="x-ua-compatible" content="IE=edge">
     <meta name="author" content="SemiColonWeb">
-    <meta name="description" content="Create Medical Clinic & Hospital Websites with Canvas Template. Get Canvas to build powerful websites easily with the Highly Customizable & Best Selling Bootstrap Template, today.">
-	<meta name="csrf-token" content="{{ csrf_token() }}">
-<style>.top-link {
-    font-size: 16px;
-    font-weight: 500;
-    text-decoration: none;
-    color: #333; /* dark gray */
-    position: relative;
-    padding: 5px 8px;
-    transition: color 0.3s ease;
-}
+    <meta name="description"
+        content="Create Medical Clinic & Hospital Websites with Canvas Template. Get Canvas to build powerful websites easily with the Highly Customizable & Best Selling Bootstrap Template, today.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+@auth
+    <meta name="user-id" content="{{ Auth::id() }}">
+    <meta name="notification-sound-enabled" content="{{ env('NOTIFICATION_SOUND_ENABLED', 'true') }}">
+    <meta name="notification-toast-enabled" content="{{ env('NOTIFICATION_TOAST_ENABLED', 'true') }}">
+    <meta name="notification-badge-enabled" content="{{ env('NOTIFICATION_BADGE_ENABLED', 'true') }}">
+    <script>
+        window.userRole = '{{ Auth::user()->role ?? 'user' }}';
+        window.userId = {{ Auth::id() }};
+    </script>
+    @endauth
+    <style>
+        .top-link {
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            color: #333;
+            /* dark gray */
+            position: relative;
+            padding: 5px 8px;
+            transition: color 0.3s ease;
+        }
 
-.top-link:hover {
-    color: #007bff; /* blue on hover */
-}
+        .top-link:hover {
+            color: #007bff;
+            /* blue on hover */
+        }
 
-/* Add nice underline on hover */
-.top-link::after {
-    content: '';
-    display: block;
-    width: 0;
-    height: 2px;
-    background: #007bff;
-    transition: width 0.3s;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-}
+        /* Add nice underline on hover */
+        .top-link::after {
+            content: '';
+            display: block;
+            width: 0;
+            height: 2px;
+            background: #007bff;
+            transition: width 0.3s;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
 
 .top-link:hover::after {
     width: 100%;
@@ -105,38 +120,53 @@
     border-color: #DE6262 !important;
 }
 
-/* Danger/Logout button styling */
-.dropdown-item.text-danger {
-    color: #dc3545 !important;
-}
+        /* Hover Effect - Same as sub-menu menu-link hover */
+        .dropdown-item:hover {
+            background: linear-gradient(135deg, rgba(222, 98, 98, 0.1), rgba(222, 98, 98, 0.05)) !important;
+            color: #DE6262 !important;
+            font-weight: 600 !important;
+            transform: translateX(4px) !important;
+            box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15) !important;
+        }
 
-.dropdown-item.text-danger:hover {
-    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.05)) !important;
-    color: #dc3545 !important;
-    font-weight: 600 !important;
-}
+        /* Focus states - Same as sub-menu styling */
+        .dropdown-item:focus,
+        .dropdown-item:active,
+        .dropdown-item:focus-visible,
+        .dropdown-item:focus-within {
+            outline: none !important;
+            background: linear-gradient(135deg, rgba(222, 98, 98, 0.1), rgba(222, 98, 98, 0.05)) !important;
+            color: #DE6262 !important;
+            font-weight: 600 !important;
+            transform: translateX(4px) !important;
+            box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15) !important;
+        }
 
-/* Dropdown divider - Same as menu divider */
-.dropdown-divider {
-    height: 1px !important;
-    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08) 20%, rgba(0, 0, 0, 0.08) 80%, transparent) !important;
-    margin: 8px 16px !important;
-    border: none !important;
-    padding: 0 !important;
-}
+        /* Danger/Logout button styling */
+        .dropdown-item.text-danger {
+            color: #dc3545 !important;
+        }
 
-/* Bootstrap Dropdown Container Fix */
-.dropdown {
-    position: relative !important;
-    z-index: 10003 !important;
-}
+        .dropdown-item.text-danger:hover {
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.05)) !important;
+            color: #dc3545 !important;
+            font-weight: 600 !important;
+        }
 
+        /* Dropdown divider - Same as menu divider */
+        .dropdown-divider {
+            height: 1px !important;
+            background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08) 20%, rgba(0, 0, 0, 0.08) 80%, transparent) !important;
+            margin: 8px 16px !important;
+            border: none !important;
+            padding: 0 !important;
+        }
 /* Ensure hamburger button is visible and clickable on mobile */
 @media (max-width: 991px) {
     .primary-menu-trigger {
         display: block !important;
     }
-    
+
     .cnvs-hamburger {
         display: block !important;
         background: none !important;
@@ -149,18 +179,18 @@
         min-width: 44px !important;
         min-height: 44px !important;
     }
-    
+
     .cnvs-hamburger:hover {
         opacity: 0.8 !important;
     }
-    
+
     /* Make sure hamburger lines are visible */
     .cnvs-hamburger-inner,
     .cnvs-hamburger-inner::before,
     .cnvs-hamburger-inner::after {
         background-color: #333 !important;
     }
-    
+
     /* Fix logo positioning on mobile - keep it on the left */
     .d-flex.align-items-center.flex-grow-1 {
         display: flex !important;
@@ -168,13 +198,13 @@
         flex-grow: 1 !important;
         justify-content: flex-start !important; /* Keep logo on the left */
     }
-    
+
     /* Ensure logo container doesn't center itself */
     .header .container,
     .header .container-fluid {
         justify-content: space-between !important;
     }
-    
+
     /* Logo specific positioning */
     #logo {
         margin-right: auto !important;
@@ -188,11 +218,11 @@
     z-index: 10004 !important;
 }
 
-/* Ensure dropdown shows above all content */
-.dropdown.show .dropdown-menu {
-    z-index: 999999 !important;
-    display: block !important;
-}
+        /* Bootstrap Dropdown Container Fix */
+        .dropdown {
+            position: relative !important;
+            z-index: 10003 !important;
+        }
 
 /* Dropdown: let Bootstrap/Popper position it; only ensure visibility */
 body .dropdown.show .dropdown-menu,
@@ -222,7 +252,109 @@ body .dropdown .dropdown-menu.show,
     overflow: visible !important;
 }
 
-</style>
+        /* Header Area Dropdown Fix */
+        #header .dropdown {
+            position: relative !important;
+            z-index: 10005 !important;
+        }
+
+        #header .dropdown-menu {
+            z-index: 999999 !important;
+            position: absolute !important;
+        }
+    </style>
+
+    <!-- Dropdown Styles - Simplified for Bootstrap Compatibility -->
+    <style>
+        /* Ensure dropdown toggles are clickable */
+        .dropdown-toggle,
+        .notification-bell,
+        .btn[data-bs-toggle="dropdown"],
+        a[data-bs-toggle="dropdown"],
+        button[data-bs-toggle="dropdown"] {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+        }
+
+        /* Dropdown container positioning */
+        .dropdown,
+        .notifications-dropdown,
+        .user-dropdown {
+            position: relative !important;
+        }
+
+        /* Custom dropdown styling */
+        .dropdown-menu {
+            /* Glass morphism design */
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.08) !important;
+            padding: 12px 0 !important;
+            min-width: 240px !important;
+            z-index: 999999 !important;
+        }
+
+        /* Dropdown items styling */
+        .dropdown-item {
+            display: flex !important;
+            align-items: center !important;
+            padding: 12px 20px !important;
+            margin: 0 8px !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            color: #374151 !important;
+            text-decoration: none !important;
+            border-radius: 10px !important;
+            background: transparent !important;
+            border: none !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        .dropdown-item:hover {
+            background: linear-gradient(135deg, rgba(222, 98, 98, 0.1), rgba(222, 98, 98, 0.05)) !important;
+            color: #DE6262 !important;
+            font-weight: 600 !important;
+            transform: translateX(4px) !important;
+            box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15) !important;
+        }
+
+        /* Dropdown divider */
+        .dropdown-divider {
+            height: 1px !important;
+            background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08) 20%, rgba(0, 0, 0, 0.08) 80%, transparent) !important;
+            margin: 8px 16px !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+
+        /* Specific dropdown fixes */
+        .notifications-dropdown .dropdown-menu {
+            width: 350px !important;
+            max-height: 400px !important;
+            overflow-y: auto !important;
+        }
+
+        .user-dropdown .dropdown-menu {
+            min-width: 200px !important;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .dropdown-menu {
+                position: fixed !important;
+                top: auto !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                max-height: 50vh !important;
+                border-radius: 10px 10px 0 0 !important;
+            }
+        }
+    </style>
+
     <!-- Clean Font Imports -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -232,16 +364,13 @@ body .dropdown .dropdown-menu.show,
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <!-- FontAwesome CDN - Priority over local -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
     <!-- Temporarily disabled local font-icons -->
     <!-- <link rel="stylesheet" href="{{ asset('css/font-icons.css') }}"> -->
     <link rel="stylesheet" href="{{ asset('demos/medical/css/medical-icons.css') }}">
     <link rel="stylesheet" href="{{ asset('css/swiper.css') }}">
-    <!-- Minimal Google Fonts for fallback -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
@@ -252,7 +381,8 @@ body .dropdown .dropdown-menu.show,
     <!-- Global Font Styling -->
     <style>
         /* Clean Medical System Font */
-        body, * {
+        body,
+        * {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
             font-weight: 400;
             line-height: 1.5;
@@ -269,21 +399,32 @@ body .dropdown .dropdown-menu.show,
         }
 
         /* Headers - Bold but not thick */
-        h1, h2, h3, h4, h5, h6, .heading {
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        .heading {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
             font-weight: 500;
             letter-spacing: -0.01em;
         }
 
         /* Medical/clinical text */
-        .medical-text, .diagnosis-text, .case-text {
+        .medical-text,
+        .diagnosis-text,
+        .case-text {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
             font-weight: 400;
             line-height: 1.6;
         }
 
         /* FontAwesome Debug - Force display if not loading */
-        .fa, .fas, .far, .fab {
+        .fa,
+        .fas,
+        .far,
+        .fab {
             font-family: "Font Awesome 6 Free" !important;
             font-weight: 900 !important;
             -webkit-font-smoothing: antialiased;
@@ -378,8 +519,6 @@ body .dropdown .dropdown-menu.show,
             /* List Reset */
             list-style: none !important;
         }
-
-
 
         /* Add hover bridge to prevent dropdown from closing */
         .primary-menu .sub-menu-container::before {
@@ -476,25 +615,25 @@ body .dropdown .dropdown-menu.show,
             .header-row {
                 padding: 0.5rem 0 !important;
             }
-            
+
             #logo img {
                 width: 130px !important;
             }
-            
+
             .primary-menu .menu-container {
                 flex-wrap: nowrap !important;
                 justify-content: flex-start !important;
             }
-            
+
             .primary-menu .menu-item {
                 margin-right: 0.5rem !important;
             }
-            
+
             .primary-menu .menu-link {
                 padding: 0.4rem 0.7rem !important;
                 font-size: 14px !important;
             }
-            
+
             .primary-menu .sub-menu-container {
                 min-width: 240px !important;
                 max-width: 280px !important;
@@ -506,20 +645,20 @@ body .dropdown .dropdown-menu.show,
             .header-row {
                 padding: 0.4rem 0 !important;
             }
-            
+
             #logo img {
                 width: 125px !important;
             }
-            
+
             .primary-menu .menu-link {
                 padding: 0.3rem 0.6rem !important;
                 font-size: 13px !important;
             }
-            
+
             .primary-menu .menu-item {
                 margin-right: 0.3rem !important;
             }
-            
+
             .primary-menu .sub-menu-container {
                 position: fixed !important;
                 top: 80px !important;
@@ -532,7 +671,7 @@ body .dropdown .dropdown-menu.show,
         }
 
         /* Enhanced Menu Item Spacing */
-        .primary-menu .menu-item + .menu-item {
+        .primary-menu .menu-item+.menu-item {
             margin-left: 0.5rem !important;
         }
 
@@ -563,7 +702,7 @@ body .dropdown .dropdown-menu.show,
         .container-fluid {
             max-width: 100% !important;
         }
-        
+
         .container {
             max-width: 1200px !important;
         }
@@ -587,12 +726,12 @@ body .dropdown .dropdown-menu.show,
             min-height: 70px !important;
             align-items: center !important;
         }
-        
+
         /* Header container responsive fixes */
         #header-wrap {
             width: 100% !important;
         }
-        
+
         #header .container {
             width: 100% !important;
             max-width: 1400px !important;
@@ -600,18 +739,18 @@ body .dropdown .dropdown-menu.show,
             padding-right: 1rem !important;
             margin: 0 auto !important;
         }
-        
+
         /* Logo responsive styling */
         #logo {
             flex-shrink: 0 !important;
         }
-        
+
         #logo img {
             max-width: 100% !important;
             height: auto !important;
             display: block !important;
         }
-        
+
         /* Mobile menu trigger styling - hidden by default, shown on mobile */
         .primary-menu-trigger {
             display: none !important;
@@ -700,12 +839,12 @@ body .dropdown .dropdown-menu.show,
                 border-bottom: 1px solid #eee !important;
                 min-height: 60px !important;
             }
-            
+
             #header-wrap {
                 display: block !important;
                 width: 100% !important;
             }
-            
+
             #header .container {
                 width: 100% !important;
                 max-width: 100% !important;
@@ -713,7 +852,7 @@ body .dropdown .dropdown-menu.show,
                 padding-right: 1rem !important;
                 margin: 0 !important;
             }
-            
+
             .header-row {
                 display: flex !important;
                 padding: 0.5rem 0 !important;
@@ -722,32 +861,32 @@ body .dropdown .dropdown-menu.show,
                 align-items: center !important;
                 width: 100% !important;
             }
-            
+
             /* Logo and nav container adjustments for mobile */
             .d-flex.align-items-center.flex-grow-1 {
                 display: flex !important;
                 align-items: center !important;
                 flex-grow: 1 !important;
             }
-            
+
             /* Logo adjustments for mobile */
             #logo {
                 margin-right: 1rem !important;
                 flex-shrink: 0 !important;
             }
-            
+
             #logo img {
                 width: 120px !important;
                 max-width: 120px !important;
                 height: auto !important;
                 display: block !important;
             }
-            
+
             /* Hide desktop navigation */
             .primary-menu {
                 display: none !important;
             }
-            
+
             /* Show mobile menu trigger - override Bootstrap classes */
             .primary-menu-trigger,
             .primary-menu-trigger.d-block.d-lg-none {
@@ -755,7 +894,7 @@ body .dropdown .dropdown-menu.show,
                 margin-left: auto !important;
                 padding: 0.5rem !important;
             }
-            
+
             /* Mobile hamburger styling */
             .cnvs-hamburger {
                 background: none !important;
@@ -765,14 +904,14 @@ body .dropdown .dropdown-menu.show,
                 display: block !important;
                 outline: none !important;
             }
-            
+
             .cnvs-hamburger-box {
                 width: 24px !important;
                 height: 24px !important;
                 position: relative !important;
                 display: inline-block !important;
             }
-            
+
             .cnvs-hamburger-inner {
                 display: block !important;
                 top: 50% !important;
@@ -784,7 +923,7 @@ body .dropdown .dropdown-menu.show,
                 position: absolute !important;
                 transition: all 0.3s ease !important;
             }
-            
+
             .cnvs-hamburger-inner::before,
             .cnvs-hamburger-inner::after {
                 content: '' !important;
@@ -796,25 +935,25 @@ body .dropdown .dropdown-menu.show,
                 position: absolute !important;
                 transition: all 0.3s ease !important;
             }
-            
+
             .cnvs-hamburger-inner::before {
                 top: -8px !important;
             }
-            
+
             .cnvs-hamburger-inner::after {
                 bottom: -8px !important;
             }
-            
+
             /* Hamburger animation when active */
             .cnvs-hamburger.active .cnvs-hamburger-inner {
                 transform: rotate(45deg) !important;
             }
-            
+
             .cnvs-hamburger.active .cnvs-hamburger-inner::before {
                 top: 0 !important;
                 transform: rotate(90deg) !important;
             }
-            
+
             .cnvs-hamburger.active .cnvs-hamburger-inner::after {
                 bottom: 0 !important;
                 transform: rotate(90deg) !important;
@@ -822,7 +961,7 @@ body .dropdown .dropdown-menu.show,
         }
 
         /* Modern Parent Hover State */
-        .primary-menu .menu-item:hover > .menu-link {
+        .primary-menu .menu-item:hover>.menu-link {
             background: linear-gradient(135deg, rgba(222, 98, 98, 0.08), rgba(222, 98, 98, 0.04)) !important;
             border-radius: 8px !important;
             color: #DE6262 !important;
@@ -912,71 +1051,71 @@ body .dropdown .dropdown-menu.show,
             .header-row {
                 padding: 0.25rem 0 !important;
             }
-            
+
             #logo {
                 margin-right: 0.5rem !important;
             }
-            
+
             #logo img {
                 width: 100px !important;
                 max-width: 100px !important;
             }
-            
+
             .cnvs-hamburger {
                 padding: 0.25rem !important;
             }
-            
+
             .cnvs-hamburger-box {
                 width: 20px !important;
                 height: 20px !important;
             }
-            
+
             .cnvs-hamburger-inner {
                 width: 20px !important;
                 height: 2px !important;
             }
-            
+
             .cnvs-hamburger-inner::before,
             .cnvs-hamburger-inner::after {
                 width: 20px !important;
                 height: 2px !important;
             }
-            
+
             .cnvs-hamburger-inner::before {
                 top: -6px !important;
             }
-            
+
             .cnvs-hamburger-inner::after {
                 bottom: -6px !important;
             }
-            
+
             /* Hamburger animation when active - smaller screens */
             .cnvs-hamburger.active .cnvs-hamburger-inner {
                 transform: rotate(45deg) !important;
             }
-            
+
             .cnvs-hamburger.active .cnvs-hamburger-inner::before {
                 top: 0 !important;
                 transform: rotate(90deg) !important;
             }
-            
+
             .cnvs-hamburger.active .cnvs-hamburger-inner::after {
                 bottom: 0 !important;
                 transform: rotate(90deg) !important;
             }
         }
-        
+
         @media (max-width: 480px) {
             /* Very small screens */
             .container {
                 padding-left: 1rem !important;
                 padding-right: 1rem !important;
             }
-            
+
             .header-row {
                 padding: 0.25rem !important;
             }
-            
+
             #logo img {
                 width: 90px !important;
                 max-width: 90px !important;
@@ -999,107 +1138,236 @@ body .dropdown .dropdown-menu.show,
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Medical Demo | Canvas')</title>
 </head>
-<body class="stretched page-transition" data-loader-html="<div id='css3-spinner-svg-pulse-wrapper'><svg id='css3-spinner-svg-pulse' version='1.2' height='210' width='550' xmlns='https://www.w3.org/2000/svg' viewport='0 0 60 60' xmlns:xlink='https://www.w3.org/1999/xlink'><path id='css3-spinner-pulse' stroke='#DE6262' fill='none' stroke-width='2' stroke-linejoin='round' d='M0,90L250,90Q257,60 262,87T267,95 270,88 273,92t6,35 7,-60T290,127 297,107s2,-11 10,-10 1,1 8,-10T319,95c6,4 8,-6 10,-17s2,10 9,11h210'></svg></div>">
+
+<body class="stretched page-transition"
+    data-loader-html="<div id='css3-spinner-svg-pulse-wrapper'><svg id='css3-spinner-svg-pulse' version='1.2' height='210' width='550' xmlns='https://www.w3.org/2000/svg' viewport='0 0 60 60' xmlns:xlink='https://www.w3.org/1999/xlink'><path id='css3-spinner-pulse' stroke='#DE6262' fill='none' stroke-width='2' stroke-linejoin='round' d='M0,90L250,90Q257,60 262,87T267,95 270,88 273,92t6,35 7,-60T290,127 297,107s2,-11 10,-10 1,1 8,-10T319,95c6,4 8,-6 10,-17s2,10 9,11h210'></svg></div>">
+
+<!-- Prevent notification redirects after login -->
+<script>
+(function() {
+    // Check if we have a login parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const loginParam = urlParams.get('login');
+
+    // If we have a login parameter, intercept fetch requests to notification endpoints
+    if (loginParam === 'success') {
+        const originalFetch = window.fetch;
+
+        window.fetch = function(url, options) {
+            // If this is a request to a notification endpoint, cancel it
+            if (url.includes('/api/notifications')) {
+                console.log('Blocking notification request after login:', url);
+                return Promise.resolve(new Response(JSON.stringify({}), { status: 200 }));
+            }
+
+            // For all other requests, use the original fetch
+            return originalFetch.apply(this, arguments);
+        };
+
+        // Also intercept any direct navigation to notification endpoints
+        const originalPushState = history.pushState;
+        history.pushState = function() {
+            const url = arguments[2];
+            if (url && url.includes('/api/notifications')) {
+                console.log('Blocking navigation to notification endpoint after login:', url);
+                return;
+            }
+            return originalPushState.apply(this, arguments);
+        };
+
+        const originalReplaceState = history.replaceState;
+        history.replaceState = function() {
+            const url = arguments[2];
+            if (url && url.includes('/api/notifications')) {
+                console.log('Blocking navigation to notification endpoint after login:', url);
+                return;
+            }
+            return originalReplaceState.apply(this, arguments);
+        };
+
+        // Restore original functions after a delay
+        setTimeout(() => {
+            window.fetch = originalFetch;
+            history.pushState = originalPushState;
+            history.replaceState = originalReplaceState;
+            console.log('Restoring original fetch and history functions');
+        }, 5000); // Wait 5 seconds before restoring
+    }
+})();
+</script>
 
     <!-- Wrapper -->
     <div id="wrapper">
 
-<!-- Top Bar Start -->
-<div id="top-bar" class="py-2 border-bottom" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white;">
-    <div class="container">
-        <div class="row justify-content-between align-items-center">
+        <!-- Top Bar Start -->
+        <div id="top-bar" class="py-2 border-bottom"
+            style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white;">
+            <div class="container">
+                <div class="row justify-content-between align-items-center">
 
-            <!-- Left Side: Quick Info & Status -->
-            <div class="col-md-auto d-none d-md-flex align-items-center gap-4 small">
-                <div class="d-flex align-items-center">
-                    <div class="status-indicator bg-success rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                    <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
-                </div>
-                <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
-                <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com" class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
-            </div>
-
-            <!-- Right Side: Auth + Quick Actions -->
-            <div class="col-md-auto d-flex justify-content-end align-items-center gap-3">
-
-                @auth
-                <!-- Quick Action Button for Emergency -->
-                <a href="{{ route('ask-ai') }}" class="btn btn-sm px-3 py-1 me-2"
-                   style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; font-size: 12px;">
-                    <i class="bi bi-lightning-charge me-1"></i> Quick Diagnosis
-                </a>
-
-                <div class="dropdown">
-                    <a class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle"
-                       href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
-                       style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
-                        <i class="bi bi-person-circle"></i>
-                        <div class="d-flex flex-column align-items-start">
-                            <span>{{ Auth::user()->name }}</span>
-                            @if(Auth::user()->isSubUser())
-                                <small class="opacity-75">{{ \App\Helpers\MenuHelper::getUserRoleDisplay(Auth::user()) }}</small>
-                            @endif
+                    <!-- Left Side: Quick Info & Status -->
+                    <div class="col-md-auto d-none d-md-flex align-items-center gap-4 small">
+                        <div class="d-flex align-items-center">
+                            <div class="status-indicator bg-success rounded-circle me-2"
+                                style="width: 8px; height: 8px;"></div>
+                            <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
                         </div>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow">
-                        @if(Auth::guard('admin')->check() || session()->has('impersonating_admin_id'))
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.dashboard') }}">
-                                    <i class="bi bi-shield-check"></i> Admin Dashboard
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.users.index') }}">
-                                    <i class="bi bi-people"></i> Manage Users
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                        @endif
-                        @if(Auth::user()->isDoctor())
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('settings') }}">
-                                    <i class="bi bi-gear"></i> Settings
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('doctor.profile.edit') }}">
-                                    <i class="fas fa-user-edit"></i>Edit Profile
-                                </a>
-                            </li>
-                            @if(Auth::user()->isMainUser())
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('sub-users.index') }}">
-                                        <i class="fas fa-users"></i> Manage Sub-Users
-                                    </a>
-                                </li>
-                            @endif
-                        @endif
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2">
-                                    <i class="bi bi-box-arrow-right"></i> Logout
-                                </button>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
-            @endauth
+                        <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
+                        <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com"
+                                class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
+                    </div>
 
-            @guest
-            <a href="{{ route('login') }}"
-               class="btn btn-sm px-4 me-2"
-               style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
-                <i class="bi bi-box-arrow-in-right me-1"></i> Login
-            </a>
-            <a href="{{ route('register') }}"
-               class="btn btn-sm px-4"
-               style="background: white; color: #DE6262; border: none; font-weight: 500; border-radius: 25px;">
-                <i class="bi bi-person-plus me-1"></i> Register
-            </a>
-            @endguest
+                    <!-- Right Side: Notifications & User Menu -->
+                    <div class="col-md-auto d-flex align-items-center gap-3">
+                        @auth
+                            <!-- Quick Action Button for Emergency -->
+                            <a href="{{ route('ask-ai') }}" class="btn btn-sm px-3 py-1"
+                                style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; font-size: 12px;">
+                                <i class="bi bi-lightning-charge me-1"></i> Quick Diagnosis
+                            </a>
+
+                            <!-- Notifications Bell -->
+                            <div class="dropdown notifications-dropdown">
+                                <button class="btn btn-sm position-relative notification-bell" type="button" data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    aria-haspopup="menu"
+                                    aria-label="Notifications"
+                                    role="button"
+                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                                    <i class="bi bi-bell" aria-hidden="true"></i>
+                                    <span
+                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count"
+                                        id="notification-count"
+                                        aria-label="unread notifications"
+                                        style="font-size: 10px; padding: 2px 6px; display: none;">
+                                        0
+                                    </span>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-end shadow notifications-dropdown-menu"
+                                    role="menu"
+                                    aria-labelledby="notification-bell"
+                                    style="width: 320px; max-height: 350px; overflow-y: auto;">
+                                    <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom" role="presentation">
+                                        <h6 class="mb-0" id="notification-header">Notifications</h6>
+                                        <div class="btn-group btn-group-sm" role="group" aria-label="Notification actions">
+                                            <button type="button" class="btn btn-outline-secondary mark-all-read-btn"
+                                                title="Mark all as read"
+                                                aria-label="Mark all notifications as read">
+                                                <i class="bi bi-check-all" aria-hidden="true"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary view-all-btn"
+                                                title="View all notifications"
+                                                aria-label="View all notifications">
+                                                <i class="bi bi-list-ul" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="notification-list" id="notification-list" role="list" aria-label="Notification list">
+                                        <div class="text-center py-4 text-muted" role="status" aria-live="polite">
+                                            <i class="bi bi-bell-slash display-6 d-block mb-2" aria-hidden="true"></i>
+                                            <small>Loading notifications...</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- User Dropdown -->
+                            <div class="dropdown">
+                                <a class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle user-dropdown-toggle" href="#"
+                                    role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
+                                    <i class="bi bi-person-circle"></i>
+                                    <div class="d-flex flex-column align-items-start">
+                                        <span class="small">{{ Auth::user()->name }}</span>
+                                        @if (Auth::user()->isSubUser())
+                                            <small
+                                                class="opacity-75 small">{{ \App\Helpers\MenuHelper::getUserRoleDisplay(Auth::user()) }}</small>
+                                        @endif
+                                    </div>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow user-dropdown-menu">
+                                    @if (Auth::guard('admin')->check())
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2"
+                                                href="{{ route('admin.dashboard') }}">
+                                                <i class="bi bi-shield-check"></i> Admin Dashboard
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2"
+                                                href="{{ route('admin.users.index') }}">
+                                                <i class="bi bi-people"></i> Manage Users
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                    @endif
+                                    @if (Auth::user()->isDoctor())
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2"
+                                                href="{{ route('settings') }}">
+                                                <i class="bi bi-gear"></i> Settings
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2"
+                                                href="{{ route('doctor.profile.edit') }}">
+                                                <i class="fas fa-user-edit"></i>Edit Profile
+                                            </a>
+                                        </li>
+                                        @if (Auth::user()->isMainUser())
+                                            <li>
+                                                <hr class="dropdown-divider">
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2"
+                                                    href="{{ route('sub-users.index') }}">
+                                                    <i class="fas fa-users"></i> Manage Sub-Users
+                                                </a>
+                                            </li>
+                                        @endif
+                                    @endif
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2"
+                                            href="{{ route('notifications.index') }}">
+                                            <i class="bi bi-gear"></i> Notification Settings
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <form method="POST" action="{{ route('logout') }}">
+                                            @csrf
+                                            <button type="submit"
+                                                class="dropdown-item text-danger d-flex align-items-center gap-2">
+                                                <i class="bi bi-box-arrow-right"></i> Logout
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        @endauth
+                        @guest
+                            <a href="{{ route('login') }}"
+                                class="btn btn-sm px-4 me-2"
+                                style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                            </a>
+                            <a href="{{ route('register') }}"
+                                class="btn btn-sm px-4"
+                                style="background: white; color: #DE6262; border: none; font-weight: 500; border-radius: 25px;">
+                                <i class="bi bi-person-plus me-1"></i> Register
+                            </a>
+                        @endguest
+                    </div>
+                </div>
+
+
 
             </div>
         </div>
@@ -1107,12 +1375,12 @@ body .dropdown .dropdown-menu.show,
 </div>
 <!-- Top Bar End -->
 
-		<!-- Header
-		============================================= -->
+  <!-- Header
+  ============================================= -->
 <header id="header">
     <div id="header-wrap">
         <div class="container">
-<div class="header-row d-flex align-items-center justify-content-center">
+            <div class="header-row d-flex align-items-center justify-content-center">
 
                 <!-- Logo and Desktop Nav Container -->
                 <div class="d-flex align-items-center flex-grow-1">
@@ -1132,19 +1400,20 @@ body .dropdown .dropdown-menu.show,
                     <nav class="primary-menu style-3 menu-spacing-margin d-none d-lg-block mx-auto">
                         <ul class="menu-container">
                             @auth
-                                @if (Auth::guard('admin')->check() && !session()->has('impersonating_admin_id') && !session()->has('impersonating_hospital_admin_id'))
-                                    <!-- Pure Admin View - Only show when admin is not impersonating -->
-                                    <li class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('admin.dashboard') }}"><div>Dashboard</div></a>
+                                @if (Auth::guard('admin')->check())
+                                    <li
+                                        class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
+                                        <a class="menu-link" href="{{ route('admin.dashboard') }}">
+                                            <div>Dashboard</div>
+                                        </a>
                                     </li>
                                 @else
-                                    <!-- User View (Including Admin Impersonation and Hospital Admin Impersonation) -->
                                     @php
                                         $menuItems = \App\Helpers\MenuHelper::getMenuItems(auth()->user());
                                     @endphp
 
-                                    @foreach($menuItems as $item)
-                                        @if(isset($item['dropdown']) && $item['dropdown'])
+                                    @foreach ($menuItems as $item)
+                                        @if (isset($item['dropdown']) && $item['dropdown'])
                                             <!-- Dropdown Menu Item -->
                                             <li class="menu-item {{ collect($item['items'])->contains(fn($subItem) => request()->routeIs($subItem['route'] ?? '')) ? 'current' : '' }}">
                                                 <a class="menu-link" href="#"><div>{{ $item['name'] }} <i class="fas fa-chevron-down"></i></div></a>
@@ -1153,8 +1422,9 @@ body .dropdown .dropdown-menu.show,
                                                         <li class="menu-item {{ request()->routeIs($subItem['route'] ?? '') ? 'current' : '' }}">
                                                             <a class="menu-link" href="{{ isset($subItem['route']) ? route($subItem['route']) : '#' }}">
                                                                 <div>
-                                                                    @if(isset($subItem['icon']))
-                                                                        <i class="{{ $subItem['icon'] }} me-2"></i>
+                                                                    @if (isset($subItem['icon']))
+                                                                        <i
+                                                                            class="{{ $subItem['icon'] }} me-2"></i>
                                                                     @endif
                                                                     {{ $subItem['name'] }}
                                                                 </div>
@@ -1165,10 +1435,12 @@ body .dropdown .dropdown-menu.show,
                                             </li>
                                         @else
                                             <!-- Regular Menu Item -->
-                                            <li class="menu-item {{ request()->routeIs($item['route'] ?? '') ? 'current' : '' }}">
-                                                <a class="menu-link" href="{{ isset($item['route']) ? route($item['route']) : '#' }}">
+                                            <li
+                                                class="menu-item {{ request()->routeIs($item['route'] ?? '') ? 'current' : '' }}">
+                                                <a class="menu-link"
+                                                    href="{{ isset($item['route']) ? route($item['route']) : '#' }}">
                                                     <div>
-                                                        @if(isset($item['icon']))
+                                                        @if (isset($item['icon']))
                                                             <i class="{{ $item['icon'] }} me-2"></i>
                                                         @endif
                                                         {{ $item['name'] }}
@@ -1182,16 +1454,24 @@ body .dropdown .dropdown-menu.show,
 
                             @guest
                                 <li class="menu-item {{ request()->is('/') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ url('/') }}"><div>Home</div></a>
+                                    <a class="menu-link" href="{{ url('/') }}">
+                                        <div>Home</div>
+                                    </a>
                                 </li>
                                 <li class="menu-item {{ request()->is('about') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('about') }}"><div>About Us</div></a>
+                                    <a class="menu-link" href="{{ route('about') }}">
+                                        <div>About Us</div>
+                                    </a>
                                 </li>
                                 <li class="menu-item {{ request()->is('contact') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('contact') }}"><div>Contact</div></a>
+                                    <a class="menu-link" href="{{ route('contact') }}">
+                                        <div>Contact</div>
+                                    </a>
                                 </li>
                                 <li class="menu-item {{ request()->is('doctors') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('doctors.index') }}"><div>For Patients</div></a>
+                                    <a class="menu-link" href="{{ route('doctors.index') }}">
+                                        <div>For Patients</div>
+                                    </a>
                                 </li>
                             @endguest
                         </ul>
@@ -1214,53 +1494,61 @@ body .dropdown .dropdown-menu.show,
 
 
         <!-- Flash Messages -->
-        @if(session('success') || session('error') || session('warning') || session('info'))
+        @if (session('success') || session('error') || session('warning') || session('info'))
             <div class="container-fluid px-0">
                 <div class="row">
                     <div class="col-12">
-                        @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
+                        @if (session('success'))
+                            <div class="alert alert-success alert-dismissible fade show m-0 rounded-0 border-0"
+                                role="alert">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-check-circle me-2"></i>
                                         <strong>Success!</strong> {{ session('success') }}
-                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
                                     </div>
                                 </div>
                             </div>
                         @endif
 
-                        @if(session('error'))
-                            <div class="alert alert-danger alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
+                        @if (session('error'))
+                            <div class="alert alert-danger alert-dismissible fade show m-0 rounded-0 border-0"
+                                role="alert">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-exclamation-circle me-2"></i>
                                         <strong>Error!</strong> {{ session('error') }}
-                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
                                     </div>
                                 </div>
                             </div>
                         @endif
 
-                        @if(session('warning'))
-                            <div class="alert alert-warning alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
+                        @if (session('warning'))
+                            <div class="alert alert-warning alert-dismissible fade show m-0 rounded-0 border-0"
+                                role="alert">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-exclamation-triangle me-2"></i>
                                         <strong>Warning!</strong> {{ session('warning') }}
-                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
                                     </div>
                                 </div>
                             </div>
                         @endif
 
-                        @if(session('info'))
-                            <div class="alert alert-info alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
+                        @if (session('info'))
+                            <div class="alert alert-info alert-dismissible fade show m-0 rounded-0 border-0"
+                                role="alert">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-info-circle me-2"></i>
                                         <strong>Info!</strong> {{ session('info') }}
-                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
                                     </div>
                                 </div>
                             </div>
@@ -1291,7 +1579,7 @@ body .dropdown .dropdown-menu.show,
                         <div class="d-flex align-items-center">
                             <i class="fas fa-users me-2 text-white"></i>
                             <small class="mb-0 text-white">
-                                <strong>Chain Impersonation:</strong> 
+                                <strong>Chain Impersonation:</strong>
                                 {{ session('impersonating_admin_name', 'Admin') }} → {{ session('impersonating_hospital_admin_name') }} → Dr. {{ auth()->user()->name }}
                             </small>
                         </div>
@@ -1320,7 +1608,7 @@ body .dropdown .dropdown-menu.show,
                         <div class="d-flex align-items-center">
                             <i class="fas fa-user-shield me-2"></i>
                             <small class="mb-0">
-                                <strong>Hospital Admin Impersonation:</strong> 
+                                <strong>Hospital Admin Impersonation:</strong>
                                 {{ session('impersonating_hospital_admin_name') }} is viewing as Dr. {{ auth()->user()->name }}
                             </small>
                         </div>
@@ -1338,12 +1626,12 @@ body .dropdown .dropdown-menu.show,
             @php
                 $impersonatedUser = auth()->user();
                 $impersonatedUserId = session('impersonating_user_id');
-                
+
                 // Fallback: if auth()->user() is null, try to get user from session
                 if (!$impersonatedUser && $impersonatedUserId) {
                     $impersonatedUser = \App\Models\User::find($impersonatedUserId);
                 }
-                
+
                 $userName = $impersonatedUser?->name ?? 'User';
                 $userRole = $impersonatedUser?->role ?? 'unknown';
             @endphp
@@ -1353,7 +1641,7 @@ body .dropdown .dropdown-menu.show,
                         <div class="d-flex align-items-center">
                             <i class="fas fa-user-shield me-2 text-white"></i>
                             <small class="mb-0 text-white">
-                                <strong>Admin Impersonation:</strong> 
+                                <strong>Admin Impersonation:</strong>
                                 {{ session('impersonating_admin_name', 'Admin') }} is viewing as {{ $userName }} ({{ ucfirst(str_replace('_', ' ', $userRole)) }})
                             </small>
                         </div>
@@ -1374,11 +1662,13 @@ body .dropdown .dropdown-menu.show,
         </main>
 
     </div><!-- #wrapper end -->
-			</div>
-
-@if (!auth()->check())
 		<!-- Footer -->
-<footer id="footer" class="text-white py-5" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
+
+
+    @if (!auth()->check())
+        <!-- Footer -->
+        <footer id="footer" class="text-white py-5"
+    style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
     <div class="container">
         <div class="row g-4">
             <!-- Company Info -->
@@ -1388,20 +1678,28 @@ body .dropdown .dropdown-menu.show,
                         <i class="bi bi-heart-pulse me-2" style="color: #DE6262;"></i>
                         AI Medical Diagnosis
                     </h4>
-                    <p class="text-white-50 mb-4">Revolutionizing healthcare with cutting-edge artificial intelligence. Empowering medical professionals with advanced diagnostic tools for superior patient care and outcomes.</p>
+                    <p class="text-white-50 mb-4">
+                        Revolutionizing healthcare with cutting-edge artificial intelligence.
+                        Empowering medical professionals with advanced diagnostic tools for
+                        superior patient care and outcomes.
+                    </p>
 
                     <!-- Social Links -->
                     <div class="social-links">
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
                             <i class="bi bi-facebook"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
                             <i class="bi bi-twitter"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
                             <i class="bi bi-linkedin"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2" style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
                             <i class="bi bi-instagram"></i>
                         </a>
                     </div>
@@ -1422,7 +1720,6 @@ body .dropdown .dropdown-menu.show,
                         <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Us</a></li>
                         <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact</a></li>
                         <li class="mb-2"><a href="{{ route('login') }}" class="text-white-50 text-decoration-none hover-link">Login</a></li>
-                        <li class="mb-2"><a href="{{ route('register') }}" class="text-white-50 text-decoration-none hover-link">Register</a></li>
                     @endauth
                 </ul>
             </div>
@@ -1443,35 +1740,30 @@ body .dropdown .dropdown-menu.show,
             <div class="col-lg-4 col-md-6">
                 <h6 class="text-white mb-3" style="color: #DE6262 !important;">Contact & Support</h6>
 
-                <div class="contact-info mb-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-envelope" style="color: #DE6262;"></i>
-                        </div>
-                        <div>
-                            <small class="text-white-50 d-block">Email Support</small>
-                            <a href="info@medcuraai.com" class="text-white text-decoration-none">info@medcuraai.com</a>
-                        </div>
-                    </div>
+                <!-- Go To Top Button -->
+                <div id="gotoTop" class="fas fa-chevron-up rounded-circle"
+                    style="position: fixed; bottom: 20px; right: 20px; width: 40px; height: 40px; background-color: #DE6262; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; opacity: 0.8; transition: opacity 0.3s;">
+                </div>
 
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-headset" style="color: #DE6262;"></i>
-                        </div>
-                        <div>
-                            <small class="text-white-50 d-block">24/7 Support</small>
-                            <span class="text-white">AI-Powered Help Available</span>
-                        </div>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="contact-icon me-3"
+                        style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-headset" style="color: #DE6262;"></i>
                     </div>
+                    <div>
+                        <small class="text-white-50 d-block">24/7 Support</small>
+                        <span class="text-white">AI-Powered Help Available</span>
+                    </div>
+                </div>
 
-                    <div class="d-flex align-items-center">
-                        <div class="contact-icon me-3" style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-shield-check" style="color: #DE6262;"></i>
-                        </div>
-                        <div>
-                            <small class="text-white-50 d-block">Security & Privacy</small>
-                            <span class="text-white">HIPAA Compliant Platform</span>
-                        </div>
+                <div class="d-flex align-items-center mb-4">
+                    <div class="contact-icon me-3"
+                        style="width: 40px; height: 40px; background: rgba(222,98,98,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-shield-check" style="color: #DE6262;"></i>
+                    </div>
+                    <div>
+                        <small class="text-white-50 d-block">Security & Privacy</small>
+                        <span class="text-white">HIPAA Compliant Platform</span>
                     </div>
                 </div>
 
@@ -1479,7 +1771,8 @@ body .dropdown .dropdown-menu.show,
                 <div class="quick-contact">
                     <h6 class="text-white mb-2">Need Help?</h6>
                     <p class="text-white-50 small mb-3">Our AI-powered support is here to assist you</p>
-                    <a href="{{ route('contact') }}" class="btn btn-sm" style="background: #DE6262; color: white; border: none; border-radius: 25px;">
+                    <a href="{{ route('contact') }}" class="btn btn-sm"
+                        style="background: #DE6262; color: white; border: none; border-radius: 25px;">
                         <i class="bi bi-chat-dots me-2"></i>Contact Support
                     </a>
                 </div>
@@ -1498,168 +1791,163 @@ body .dropdown .dropdown-menu.show,
                 <div class="footer-legal-links">
                     <span class="text-white-50 me-3">Secure & HIPAA Compliant</span>
                     <a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link me-3">Contact Us</a>
-                    <a href="{{ route('admin.login') }}" class="text-white-50 text-decoration-none hover-link" style="font-size: 0.8rem;">Admin</a>
+                    <a href="{{ route('admin.login') }}" class="text-white-50 text-decoration-none hover-link"
+                        style="font-size: 0.8rem;">Admin</a>
                 </div>
             </div>
         </div>
     </div>
 </footer>
-@endif
 
-<style>
-.hover-link:hover {
-    color: #DE6262 !important;
-    transition: color 0.3s ease;
-}
+    @endif
 
-.social-links a:hover {
-    background-color: #DE6262 !important;
-    border-color: #DE6262 !important;
-    transform: translateY(-2px);
-    transition: all 0.3s ease;
-}
+    <style>
+        .hover-link:hover {
+            color: #DE6262 !important;
+            transition: color 0.3s ease;
+        }
 
-.newsletter-signup input::placeholder {
-    color: rgba(255,255,255,0.6);
-}
+        .social-links a:hover {
+            background-color: #DE6262 !important;
+            border-color: #DE6262 !important;
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
 
-.newsletter-signup input:focus {
-    background: rgba(255,255,255,0.15);
-    border-color: #DE6262;
-    box-shadow: 0 0 0 0.2rem rgba(222,98,98,0.25);
-    color: white;
-}
-</style>
+        .newsletter-signup input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
 
-	</div><!-- #wrapper end -->
+        .newsletter-signup input:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #DE6262;
+            box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.25);
+            color: white;
+        }
+    </style>
 
-	<!-- Go To Top
-	============================================= -->
-	<div id="gotoTop" class="fas fa-chevron-up rounded-circle" style="position: fixed; bottom: 20px; right: 20px; width: 40px; height: 40px; background-color: #DE6262; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; opacity: 0.8; transition: opacity 0.3s;"></div>
+    </div><!-- #wrapper end -->
 
-	<!-- JavaScripts
-	============================================= -->
+    <!-- Go To Top
+ ============================================= -->
+    <div id="gotoTop" class="fas fa-chevron-up rounded-circle"
+        style="position: fixed; bottom: 20px; right: 20px; width: 40px; height: 40px; background-color: #007bff; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; opacity: 0.8; transition: opacity 0.3s;">
+    </div>
+
+    <!-- JavaScripts
+ ============================================= -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{ asset('js/plugins.min.js') }}"></script>
     <script src="{{ asset('js/functions.bundle.js') }}"></script>
 
-    @stack('scripts')
+    <!-- Vite Assets (Laravel Echo & Pusher) -->
+    @vite(['resources/js/app.js', 'resources/css/app.css'])
 
-    <!-- Improved Dropdown Hover Behavior -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Improve dropdown hover behavior
-            let hoverTimeout;
-            
-            document.querySelectorAll('.primary-menu .menu-item').forEach(menuItem => {
-                const dropdown = menuItem.querySelector('.sub-menu-container');
-                
+    <!-- Notification System Styles -->
+    @include('notifications._styles')
+
+    <!-- Notification Manager Script -->
+    <script src="{{ asset('js/notification-manager.js?v=' . time()) }}"></script>
+
+    <!-- Notification Sound System -->
+    <script src="{{ asset('sounds/notification-sound.js?v=' . time()) }}"></script>
+
+    <!-- Notification Accessibility Test Script -->
+    <script src="{{ asset('js/notification-accessibility-test.js?v=' . time()) }}"></script>
+
+    <!-- Remove conflicting notification scripts - now handled by Vite -->
+
+{{-- Extra scripts --}}
+@stack('scripts')
+
+<script>
+    // Simple dropdown initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Initializing dropdowns...');
+
+        // Initialize all dropdown toggles
+        document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+            try {
+                if (!bootstrap.Dropdown.getInstance(toggle)) {
+                    new bootstrap.Dropdown(toggle, {
+                        autoClose: true,
+                        offset: [0, 2]
+                    });
+                    console.log('Dropdown initialized:', toggle);
+                }
+            } catch (e) {
+                console.error('Dropdown initialization error:', e);
+            }
+        });
+
+        // Handle dropdown clicks for top bar
+        document.querySelectorAll('#top-bar .dropdown-toggle').forEach(toggle => {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const dropdown = bootstrap.Dropdown.getInstance(this);
                 if (dropdown) {
-                    // Show dropdown immediately on hover
-                    menuItem.addEventListener('mouseenter', function() {
-                        clearTimeout(hoverTimeout);
-                        dropdown.style.opacity = '1';
-                        dropdown.style.visibility = 'visible';
-                    });
-                    
-                    // Delay hiding dropdown when mouse leaves
-                    menuItem.addEventListener('mouseleave', function() {
-                        hoverTimeout = setTimeout(() => {
-                            dropdown.style.opacity = '0';
-                            dropdown.style.visibility = 'hidden';
-                        }, 300); // 300ms delay
-                    });
-                    
-                    // Keep dropdown open when hovering over it
-                    dropdown.addEventListener('mouseenter', function() {
-                        clearTimeout(hoverTimeout);
-                    });
-                    
-                    dropdown.addEventListener('mouseleave', function() {
-                        hoverTimeout = setTimeout(() => {
-                            dropdown.style.opacity = '0';
-                            dropdown.style.visibility = 'hidden';
-                        }, 300);
-                    });
+                    dropdown.toggle();
+                    console.log('Dropdown toggled:', this);
+
+                    // If this is the notifications dropdown, load notifications
+                    if (this.closest('.notifications-dropdown')) {
+                        loadNotifications();
+                    }
                 }
             });
         });
 
-        // Simple form submission tracking for debugging (optional)
-        document.addEventListener('DOMContentLoaded', function() {
-            // Track form submissions for debugging
-            document.querySelectorAll('form[action*="return-to"]').forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    const button = form.querySelector('button[type="submit"]');
-                    if (button) {
-                        // Add simple loading state
-                        const originalText = button.innerHTML;
-                        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Returning...';
-                        button.disabled = true;
-                        
-                        console.log('Form submitted:', form.action);
-                    }
-                });
+        // Special handling for user dropdown
+        const userDropdownToggle = document.querySelector('.user-dropdown-toggle');
+        if (userDropdownToggle) {
+            userDropdownToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const dropdown = bootstrap.Dropdown.getInstance(this);
+                if (dropdown) {
+                    dropdown.toggle();
+                    console.log('User dropdown toggled');
+                }
             });
-        });
+        }
 
-        // Comprehensive Bootstrap dropdown positioning fix
-        document.addEventListener('DOMContentLoaded', function() {
-            // Override all dropdown positioning issues
-            function fixDropdownPositioning() {
-                document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
-                    if (dropdown.classList.contains('show')) {
-                        // Remove any problematic styles
-                        dropdown.style.transform = '';
-                        dropdown.style.left = '';
-                        dropdown.style.top = '';
-                        dropdown.style.right = '';
-                        dropdown.style.bottom = '';
-                        dropdown.style.position = 'absolute';
-                        dropdown.style.zIndex = '999999';
-                        
-                        // Force Popper.js to recalculate position
-                        const dropdownInstance = bootstrap.Dropdown.getInstance(dropdown.previousElementSibling);
-                        if (dropdownInstance && dropdownInstance._popper) {
-                            dropdownInstance._popper.update();
-                        }
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown.show').forEach(dropdown => {
+                    const instance = bootstrap.Dropdown.getInstance(dropdown.querySelector('.dropdown-toggle'));
+                    if (instance) {
+                        instance.hide();
+                        console.log('Dropdown closed');
                     }
                 });
             }
+        });
 
-            // Fix on dropdown show
-            document.addEventListener('shown.bs.dropdown', fixDropdownPositioning);
-            
-            // Fix on scroll (in case it moves)
-            document.addEventListener('scroll', function() {
-                fixDropdownPositioning();
-            }, { passive: true });
-            
-            // Initial fix for any already open dropdowns
-            fixDropdownPositioning();
+        console.log('Dropdowns initialized successfully');
+    });
 
-            // Alternative approach - disable Popper.js positioning entirely for problematic dropdowns
-            document.addEventListener('show.bs.dropdown', function(event) {
-                const dropdown = event.target.querySelector('.dropdown-menu');
-                if (dropdown && dropdown.classList.contains('dropdown-menu-end')) {
-                    // Disable Popper.js and handle positioning manually
-                    const button = event.target.querySelector('[data-bs-toggle="dropdown"]');
-                    const rect = button.getBoundingClientRect();
-                    
-                    // Position dropdown manually relative to button (fixed positioning)
-                    dropdown.style.position = 'fixed';
-                    dropdown.style.top = rect.bottom + 'px';
-                    dropdown.style.left = (rect.right - dropdown.offsetWidth) + 'px';
-                    dropdown.style.transform = 'none';
-                    dropdown.style.zIndex = '999999';
+    // Fallback initialization
+    window.addEventListener('load', function() {
+        setTimeout(() => {
+            document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+                try {
+                    if (!bootstrap.Dropdown.getInstance(toggle)) {
+                        new bootstrap.Dropdown(toggle);
+                        console.log('Fallback initialized:', toggle);
+                    }
+                } catch (e) {
+                    console.error('Fallback error:', e);
                 }
             });
-        });
+        }, 500);
+    });
 
         // NEW SIMPLE MOBILE MENU - Bottom Sheet Style
         function createBottomSheetMenu() {
             const body = document.body;
-            
+
             // Try multiple selectors to find the hamburger button
             let mobileMenuTrigger = document.querySelector('.primary-menu-trigger .cnvs-hamburger');
             if (!mobileMenuTrigger) {
@@ -1668,22 +1956,22 @@ body .dropdown .dropdown-menu.show,
             if (!mobileMenuTrigger) {
                 mobileMenuTrigger = document.querySelector('button[title="Open Mobile Menu"]');
             }
-            
+
             console.log('Looking for mobile trigger...', mobileMenuTrigger);
-            
+
             if (!mobileMenuTrigger) {
                 console.log('Mobile trigger not found - available buttons:', document.querySelectorAll('button'));
                 return;
             }
-            
+
             console.log('Mobile trigger found:', mobileMenuTrigger);
-            
+
             // Remove existing mobile menu if it exists
             const existingMobileMenu = document.querySelector('.bottom-sheet-menu');
             const existingOverlay = document.querySelector('.bottom-sheet-overlay');
             if (existingMobileMenu) existingMobileMenu.remove();
             if (existingOverlay) existingOverlay.remove();
-            
+
             // Create overlay
             const overlay = document.createElement('div');
             overlay.className = 'bottom-sheet-overlay';
@@ -1699,7 +1987,7 @@ body .dropdown .dropdown-menu.show,
                 visibility: hidden;
                 transition: all 0.3s ease;
             `;
-            
+
             // Create bottom sheet menu
             const bottomSheet = document.createElement('div');
             bottomSheet.className = 'bottom-sheet-menu';
@@ -1716,7 +2004,7 @@ body .dropdown .dropdown-menu.show,
                 transition: bottom 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
                 overflow-y: auto;
             `;
-            
+
             // Create menu content
             const menuContent = `
                 <div style="
@@ -1746,12 +2034,12 @@ body .dropdown .dropdown-menu.show,
                     <!-- Menu items will be added here -->
                 </div>
             `;
-            
+
             bottomSheet.innerHTML = menuContent;
-            
+
             // Add menu items
             const menuItemsContainer = bottomSheet.querySelector('.menu-items-container');
-            
+
             // Define menu items manually (since cloning was problematic)
             const menuItems = [
                 {
@@ -1827,7 +2115,7 @@ body .dropdown .dropdown-menu.show,
                     ]
                 });
             }
-            
+
             // Create menu items HTML
             menuItems.forEach(item => {
                 const menuItem = document.createElement('div');
@@ -1839,7 +2127,7 @@ body .dropdown .dropdown-menu.show,
                     border: 1px solid #e9ecef;
                     overflow: hidden;
                 `;
-                
+
                 if (item.submenu) {
                     // Menu item with submenu
                     menuItem.innerHTML = `
@@ -1880,15 +2168,15 @@ body .dropdown .dropdown-menu.show,
                             `).join('')}
                         </div>
                     `;
-                    
+
                     // Add click handler for dropdown
                     const header = menuItem.querySelector('.menu-item-header');
                     const submenu = menuItem.querySelector('.submenu-items');
                     const arrow = menuItem.querySelector('.fa-chevron-down');
-                    
+
                     header.addEventListener('click', function() {
                         const isOpen = submenu.style.display === 'block';
-                        
+
                         // Close all other submenus
                         bottomSheet.querySelectorAll('.submenu-items').forEach(sub => {
                             if (sub !== submenu) {
@@ -1900,7 +2188,7 @@ body .dropdown .dropdown-menu.show,
                                 arr.style.transform = 'rotate(0deg)';
                             }
                         });
-                        
+
                         // Toggle current submenu
                         if (isOpen) {
                             submenu.style.display = 'none';
@@ -1910,7 +2198,7 @@ body .dropdown .dropdown-menu.show,
                             arrow.style.transform = 'rotate(180deg)';
                         }
                     });
-                    
+
                     // Add hover effects for submenu links
                     menuItem.querySelectorAll('.submenu-link').forEach(link => {
                         link.addEventListener('mouseenter', function() {
@@ -1925,7 +2213,7 @@ body .dropdown .dropdown-menu.show,
                             closeBottomSheet();
                         });
                     });
-                    
+
                 } else {
                     // Simple menu item
                     menuItem.innerHTML = `
@@ -1943,7 +2231,7 @@ body .dropdown .dropdown-menu.show,
                             <span style="font-weight: 500;">${item.title}</span>
                         </a>
                     `;
-                    
+
                     // Add hover effect and close on click
                     const link = menuItem.querySelector('.simple-menu-link');
                     link.addEventListener('mouseenter', function() {
@@ -1958,14 +2246,14 @@ body .dropdown .dropdown-menu.show,
                         closeBottomSheet();
                     });
                 }
-                
+
                 menuItemsContainer.appendChild(menuItem);
             });
-            
+
             // Add to body
             body.appendChild(overlay);
             body.appendChild(bottomSheet);
-            
+
             // Functions to open/close
             function openBottomSheet() {
                 overlay.style.opacity = '1';
@@ -1973,13 +2261,13 @@ body .dropdown .dropdown-menu.show,
                 bottomSheet.style.bottom = '0';
                 body.style.overflow = 'hidden';
             }
-            
+
             function closeBottomSheet() {
                 overlay.style.opacity = '0';
                 overlay.style.visibility = 'hidden';
                 bottomSheet.style.bottom = '-100%';
                 body.style.overflow = '';
-                
+
                 // Close all submenus
                 bottomSheet.querySelectorAll('.submenu-items').forEach(sub => {
                     sub.style.display = 'none';
@@ -1988,29 +2276,29 @@ body .dropdown .dropdown-menu.show,
                     arrow.style.transform = 'rotate(0deg)';
                 });
             }
-            
+
             // Event listeners
             mobileMenuTrigger.addEventListener('click', openBottomSheet);
             overlay.addEventListener('click', closeBottomSheet);
             bottomSheet.querySelector('.close-bottom-sheet').addEventListener('click', closeBottomSheet);
-            
+
             // Close on window resize
             window.addEventListener('resize', function() {
                 if (window.innerWidth > 991) {
                     closeBottomSheet();
                 }
             });
-            
+
             console.log('Bottom sheet mobile menu created successfully');
         }
-        
+
         // Initialize mobile menu on DOM ready
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM Content Loaded - calling createBottomSheetMenu');
             console.log('Available hamburger buttons:', document.querySelectorAll('.cnvs-hamburger'));
             console.log('Available primary-menu-trigger:', document.querySelectorAll('.primary-menu-trigger'));
             createBottomSheetMenu();
-            
+
             // Fallback: Add click listener directly to hamburger button
             const hamburger = document.querySelector('.cnvs-hamburger');
             if (hamburger) {
@@ -2019,7 +2307,7 @@ body .dropdown .dropdown-menu.show,
                     e.preventDefault();
                     e.stopPropagation();
                     console.log('Hamburger clicked!', e);
-                    
+
                     // Try to trigger bottom sheet
                     const bottomSheet = document.querySelector('.bottom-sheet-menu');
                     const overlay = document.querySelector('.bottom-sheet-overlay');
@@ -2049,7 +2337,7 @@ body .dropdown .dropdown-menu.show,
                 console.log('Hamburger button not found!');
             }
         });
-        
+
         // Add manual test trigger (temporary for debugging)
         window.testMobileMenu = function() {
             console.log('Manual test triggered');
@@ -2082,12 +2370,12 @@ body .dropdown .dropdown-menu.show,
             console.log('Page Show - calling createBottomSheetMenu');
             createBottomSheetMenu();
         });
-        
+
         // For SPA-like navigation, also try to reinitialize periodically
         setInterval(function() {
             const existingMobileMenu = document.querySelector('.bottom-sheet-menu');
             const mobileMenuTrigger = document.querySelector('.primary-menu-trigger .cnvs-hamburger');
-            
+
             // Only reinitialize if elements exist but mobile menu doesn't
             if (mobileMenuTrigger && !existingMobileMenu) {
                 console.log('Reinitializing mobile menu due to missing elements');
@@ -2096,5 +2384,274 @@ body .dropdown .dropdown-menu.show,
         }, 2000); // Check every 2 seconds
     </script>
 
-</body>
-</html>
+    // Function to load notifications into dropdown
+    function loadNotifications() {
+        const notificationList = document.getElementById('notification-list');
+        if (!notificationList) return;
+
+        console.log('Loading notifications...');
+
+        // Show loading state
+        notificationList.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-hourglass-split display-6 d-block mb-2"></i>
+                <small>Loading notifications...</small>
+            </div>
+        `;
+
+        // Fetch notifications from the server
+        fetch('/api/notifications')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Notifications received:', data);
+
+                if (data.notifications && data.notifications.length > 0) {
+                    // Render notifications
+                    let html = '';
+                    data.notifications.forEach(notification => {
+                        const date = new Date(notification.created_at).toLocaleDateString();
+                        const time = new Date(notification.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                        html += `
+                            <div class="notification-item ${notification.read_at ? 'read' : 'unread'}" data-id="${notification.id}">
+                                <div class="d-flex align-items-start gap-3 p-3 border-bottom">
+                                    <div class="notification-icon">
+                                        <i class="bi ${notification.data?.icon || 'bi-bell'} text-${notification.data?.color || 'primary'}"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start mb-1">
+                                            <h6 class="mb-0 small">${notification.data?.title || 'Notification'}</h6>
+                                            <small class="text-muted">${time}</small>
+                                        </div>
+                                        <p class="mb-0 small text-muted">${notification.data?.message || 'You have a new notification'}</p>
+                                        ${notification.data?.link ? `
+                                            <div class="mt-2">
+                                                <a href="${notification.data.link}" class="btn btn-sm btn-outline-primary">
+                                                    ${notification.data?.link_text || 'View Details'}
+                                                </a>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    notificationList.innerHTML = html;
+
+                    // Add click handlers to mark as read
+                    document.querySelectorAll('.notification-item.unread').forEach(item => {
+                        item.addEventListener('click', function() {
+                            const notificationId = this.dataset.id;
+                            markAsRead(notificationId);
+                        });
+                    });
+
+                } else {
+                    // No notifications
+                    notificationList.innerHTML = `
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-bell-slash display-6 d-block mb-2"></i>
+                            <small>No notifications</small>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading notifications:', error);
+                notificationList.innerHTML = `
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-exclamation-triangle display-6 d-block mb-2"></i>
+                        <small>Error loading notifications</small>
+                    </div>
+                `;
+            });
+    }
+
+    // Function to mark notification as read
+    function markAsRead(notificationId) {
+        fetch(`/api/notifications/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update UI
+                const notificationItem = document.querySelector(`[data-id="${notificationId}"]`);
+                if (notificationItem) {
+                    notificationItem.classList.remove('unread');
+                    notificationItem.classList.add('read');
+                }
+
+                // Update badge count
+                updateNotificationBadge();
+            }
+        })
+        .catch(error => {
+            console.error('Error marking notification as read:', error);
+        });
+    }
+
+    // Function to update notification badge
+    function updateNotificationBadge() {
+        // Use a timeout to prevent hanging requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        fetch('/api/notifications/unread-count', {
+            signal: controller.signal,
+            credentials: 'same-origin'  // Include cookies for authentication
+        })
+        .then(response => {
+            clearTimeout(timeoutId);
+
+            // Check if the response is a redirect
+            if (response.redirected) {
+                throw new Error('Redirect detected. User may not be authenticated.');
+            }
+
+            // Check if response is JSON or HTML (error page)
+            const contentType = response.headers.get('content-type');
+            if (!response.ok) {
+                if (contentType && contentType.includes('text/html')) {
+                    // If we get HTML back, it's likely an authentication error
+                    return response.text().then(html => {
+                        throw new Error('Authentication required. Please log in again.');
+                    });
+                }
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            // Ensure we have JSON
+            if (!contentType || !contentType.includes('json')) {
+                throw new Error('Invalid response format. Expected JSON.');
+            }
+
+            return response.json();
+        })
+        .then(data => {
+            const badge = document.getElementById('notification-count');
+            if (badge) {
+                // Handle both old format (data.count) and new format (data.count)
+                const count = data.count || 0;
+
+                // Check if user is authenticated
+                if (data.authenticated === false) {
+                    // User is not authenticated, hide badge
+                    badge.style.display = 'none';
+                    return;
+                }
+
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.style.display = 'block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
+            console.error('Error updating notification badge:', error);
+
+            // Ensure badge is hidden on error
+            const badge = document.getElementById('notification-count');
+            if (badge) {
+                badge.style.display = 'none';
+            }
+
+            // If it's an authentication error, we might want to redirect to login
+            if (error.message.includes('Authentication required') || error.message.includes('Redirect detected')) {
+                console.log('Authentication error detected, user may need to log in again');
+                // Optionally: show a message or redirect to login
+                // window.location.href = '/login';
+            }
+        });
+    }
+
+    // Load notifications on page load, but skip if we're in the middle of login redirect
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if this is a login redirect by looking for the login parameter in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const loginParam = urlParams.get('login');
+
+        // If we have a login parameter in URL, skip notifications for 5 seconds
+        if (loginParam === 'success') {
+            console.log('Skipping notification update after login');
+            setTimeout(() => {
+                updateNotificationBadge();
+            }, 5000); // Wait 5 seconds before enabling notifications
+        } else {
+            // Otherwise, load notifications normally with a small delay
+            setTimeout(() => {
+                updateNotificationBadge();
+            }, 1000);
+        }
+    });
+</script>
+
+@auth
+<!-- Meta tags for notification system -->
+<meta name="user-id" content="{{ auth()->id() }}">
+<meta name="notification-sound-enabled" content="true">
+<meta name="notification-toast-enabled" content="true">
+
+<!-- Notification Scripts -->
+<script src="{{ asset('sounds/notification-sound.js') }}"></script>
+<!-- Unified notifications now handled by Vite/Enhanced system -->
+
+<!-- Debug Tools (only in development) -->
+@if(config('app.debug'))
+<meta name="app-debug" content="true">
+<script src="{{ asset('js/notification-debug.js') }}"></script>
+<script src="{{ asset('js/notification-diagnostics.js') }}"></script>
+<script src="{{ asset('js/pusher-raw-debug.js') }}"></script>
+<script src="{{ asset('js/laravel-notification-catcher.js') }}"></script>
+<script src="{{ asset('js/appointment-notification-debug.js') }}"></script>
+<script src="{{ asset('js/backend-diagnosis.js') }}"></script>
+@endif
+
+@endauth
+
+<!-- WebSocket Test Scripts -->
+<script src="{{ asset('js/websocket-test.js') }}"></script>
+<script src="{{ asset('js/pusher-connection-test.js') }}"></script>
+
+<script>
+// Prevent notification API calls immediately after login
+(function() {
+    // Check if we have a login parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const loginParam = urlParams.get('login');
+
+    // If we have a login parameter, override the updateNotificationBadge function
+    if (loginParam === 'success') {
+        // Temporarily replace updateNotificationBadge with a no-op
+        const originalUpdateNotificationBadge = window.updateNotificationBadge;
+        window.updateNotificationBadge = function() {
+            console.log('Skipping notification update after login');
+            // Restore the original function after a delay
+            setTimeout(() => {
+                window.updateNotificationBadge = originalUpdateNotificationBadge;
+                // Call it once more after the delay
+                if (originalUpdateNotificationBadge) {
+                    originalUpdateNotificationBadge();
+                }
+            }, 3000); // Wait 3 seconds before enabling notifications
+        };
+    }
+})();
+</script>
+
+    </body>
+
+    </html>
