@@ -11,6 +11,7 @@ use App\Models\StripeInvoice;
 use App\Models\DoctorBlogPost;
 use App\Policies\BlogPostPolicy;
 use App\Channels\SmsChannel;
+use App\Http\Middleware\RoleRedirectMiddleware;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -46,6 +47,9 @@ class AppServiceProvider extends ServiceProvider
         Route::bind('post', function ($value) {
             return DoctorBlogPost::where('slug', $value)->orWhere('id', $value)->firstOrFail();
         });
+        
+        // Register role.redirect middleware
+        Route::aliasMiddleware('role.redirect', RoleRedirectMiddleware::class);
 
         // Register BlogPost policy
         Gate::policy(DoctorBlogPost::class, BlogPostPolicy::class);

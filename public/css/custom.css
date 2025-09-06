@@ -1,0 +1,198 @@
+/* ========================================
+   MOBILE RESPONSIVE TOAST NOTIFICATIONS
+   ======================================== */
+
+/* Base toast notification styles */
+.enhanced-notification-toast {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+/* Desktop styles (768px and above) */
+@media (min-width: 769px) {
+    /* Desktop positioning handled by JavaScript */
+}
+
+/* Tablet and mobile styles (768px and below) */
+@media (max-width: 768px) {
+    .enhanced-notification-toast {
+        /* Mobile positioning handled by JavaScript */
+        margin: 0 auto;
+        left: 50% !important;
+        transform: translateX(-50%) translateY(200px);
+    }
+
+    .enhanced-notification-toast.show {
+        transform: translateX(-50%) translateY(0) !important;
+    }
+}
+
+/* Small mobile styles (576px and below) */
+@media (max-width: 576px) {
+    .enhanced-notification-toast {
+        /* Extra small mobile positioning */
+        margin: 0 10px;
+        left: 10px !important;
+        right: 10px !important;
+        width: calc(100vw - 20px) !important;
+        max-width: calc(100vw - 20px) !important;
+        transform: translateY(200px);
+    }
+
+    .enhanced-notification-toast.show {
+        transform: translateY(0) !important;
+    }
+}
+
+/* Prevent toast interference with mobile UI elements */
+@media (max-width: 768px) {
+    /* Ensure toasts don't interfere with mobile navigation */
+    .enhanced-notification-toast {
+        z-index: 1050; /* Above Bootstrap modals but below fixed nav */
+    }
+
+    /* Add safe area padding for devices with notches */
+    @supports (padding: max(0px)) {
+        .enhanced-notification-toast {
+            padding-left: max(16px, env(safe-area-inset-left)) !important;
+            padding-right: max(16px, env(safe-area-inset-right)) !important;
+        }
+    }
+
+    /* Adjust for landscape orientation */
+    @media (orientation: landscape) and (max-height: 500px) {
+        .enhanced-notification-toast {
+            bottom: 10px !important;
+            padding: 8px 12px !important;
+        }
+
+        .enhanced-notification-toast h4 {
+            font-size: 12px !important;
+            margin-bottom: 2px !important;
+        }
+
+        .enhanced-notification-toast p {
+            font-size: 11px !important;
+        }
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .enhanced-notification-toast {
+        border-width: 2px !important;
+        border-color: #000 !important;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .enhanced-notification-toast {
+        transition: none !important;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .enhanced-notification-toast {
+        background: #1a1a1a !important;
+        border-color: #333 !important;
+        color: #fff !important;
+    }
+
+    .enhanced-notification-toast h4 {
+        color: #fff !important;
+    }
+
+    .enhanced-notification-toast p {
+        color: #ccc !important;
+    }
+
+    .enhanced-notification-toast button {
+        color: #888 !important;
+    }
+}
+
+/* Print styles - hide toasts when printing */
+@media print {
+    .enhanced-notification-toast {
+        display: none !important;
+    }
+}
+
+/* Focus management for accessibility */
+.enhanced-notification-toast button:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .enhanced-notification-toast {
+        /* Larger touch targets for mobile */
+        padding: 20px !important;
+    }
+
+    .enhanced-notification-toast button {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* Multiple toast stacking */
+.enhanced-notification-toast:nth-child(2) {
+    margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+    .enhanced-notification-toast:nth-child(2) {
+        margin-bottom: 10px;
+    }
+}
+
+/* Loading state for toasts */
+.enhanced-notification-toast.loading {
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+/* Error state styling */
+.enhanced-notification-toast.error {
+    border-left-color: #dc3545 !important;
+}
+
+.enhanced-notification-toast.error .icon-container {
+    background: #dc3545 !important;
+}
+
+/* Success state styling */
+.enhanced-notification-toast.success {
+    border-left-color: #28a745 !important;
+}
+
+.enhanced-notification-toast.success .icon-container {
+    background: #28a745 !important;
+}
+
+/* Warning state styling */
+.enhanced-notification-toast.warning {
+    border-left-color: #ffc107 !important;
+}
+
+.enhanced-notification-toast.warning .icon-container {
+    background: #ffc107 !important;
+}
+
+/* Info state styling */
+.enhanced-notification-toast.info {
+    border-left-color: #17a2b8 !important;
+}
+
+.enhanced-notification-toast.info .icon-container {
+    background: #17a2b8 !important;
+}

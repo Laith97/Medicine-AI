@@ -1,4 +1,6 @@
 import './bootstrap';
+import './notifications-fixed';
+import './offline-notifications';
 
 import Alpine from 'alpinejs';
 
