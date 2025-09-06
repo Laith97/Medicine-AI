@@ -189,7 +189,17 @@
                             Start Recording
                         </button>
 
-                        <button id="stopRecordingBtn" class="btn btn-danger" disabled>
+                        <button id="pauseRecordingBtn" class="btn btn-warning" type="button">
+                            <i class="fas fa-pause me-2"></i>
+                            Pause
+                        </button>
+
+                        <button id="resumeRecordingBtn" class="btn btn-outline-warning" type="button">
+                            <i class="fas fa-play me-2"></i>
+                            Resume
+                        </button>
+
+                        <button id="stopRecordingBtn" class="btn btn-danger">
                             <i class="fas fa-stop me-2"></i>
                             Stop Recording
                         </button>
@@ -463,6 +473,30 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Real-time Panel -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0"><i class="bi bi-broadcast me-2"></i>Real-time Updates</h5>
+        <small id="rtStatus" class="opacity-75">Listening...</small>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Streaming Transcription</label>
+            <div id="rtTranscription" class="border rounded p-3" style="min-height: 140px; white-space: pre-wrap; background:#f8f9fa;"></div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Real-time Insights</label>
+            <div id="rtInsights" class="border rounded p-3" style="min-height: 140px; background:#f8f9fa;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Include jQuery -->
@@ -774,3 +808,195 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
+
+@push('scripts')
+<script>
+// Minimal ambient recorder: captures audio and uploads in chunks to backend endpoints.
+(function() {
+  let mediaRecorder;
+  let currentSessionUuid = null;
+  let chunkSizeMs = 5000; // 5s chunks
+  let uploadInProgress = false;
+
+  async function startAmbient() {
+    const patientId = document.getElementById('patientSelect')?.value;
+    if (!patientId) {
+      console.warn('Select a patient before starting ambient recording');
+      return;
+    }
+    const langSel = document.getElementById('languageSelector');
+    const language = langSel ? langSel.value : null;
+    const diarization = !!document.getElementById('handsFreeToggle')?.checked; // repurpose as diarization toggle
+    // Start session
+    const startRes = await fetch('/ambient/sessions', {
+      method: 'POST',
+      headers: {
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ patient_id: patientId, language, diarization })
+    }).then(r => r.json());
+
+    if (!startRes.success) {
+      console.error('Failed to start ambient session', startRes);
+      return;
+    }
+
+    currentSessionUuid = startRes.session_uuid;
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // Browser codec fallback: prefer webm/opus; fallback to wav for Safari
+    let mimeType = 'audio/webm;codecs=opus';
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = 'audio/webm';
+    }
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      // likely Safari/iOS
+      mimeType = 'audio/mp4'; // may still fail; last resort: let browser decide
+    }
+    mediaRecorder = new MediaRecorder(stream, { mimeType });
+
+    mediaRecorder.ondataavailable = async (e) => {
+      if (!e.data || e.data.size === 0 || !currentSessionUuid) return;
+      const blob = e.data;
+      const duration = Math.round(chunkSizeMs / 1000);
+      try {
+        await fetch(`/ambient/sessions/${currentSessionUuid}/chunks?duration=${duration}&recorded_at=${encodeURIComponent(new Date().toISOString())}` , {
+          method: 'POST',
+          headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
+          body: blob
+        });
+      } catch (err) {
+        console.error('Chunk upload failed', err);
+      }
+    };
+
+    mediaRecorder.start(chunkSizeMs);
+    console.log('Ambient recording started', currentSessionUuid);
+  }
+
+  async function stopAmbient() {
+    if (!mediaRecorder) return;
+    mediaRecorder.stop();
+    try {
+      if (currentSessionUuid) {
+        const resp = await fetch(`/ambient/sessions/${currentSessionUuid}/stop`, {
+          method: 'POST',
+          headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
+        }).then(r => r.json());
+        // Show spinner/notice for final transcription
+        const status = document.getElementById('processingStatus');
+        if (status) status.style.display = 'block';
+        const jsProg = document.getElementById('jsProgressIndicator');
+        if (jsProg) jsProg.style.display = 'block';
+      }
+    } finally {
+      currentSessionUuid = null;
+      mediaRecorder = null;
+    }
+  }
+
+  // Pause/Resume controls
+  async function pauseAmbient() {
+    if (!currentSessionUuid) return;
+    await fetch(`/ambient/sessions/${currentSessionUuid}/pause`, {
+      method: 'POST',
+      headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
+    });
+  }
+  async function resumeAmbient() {
+    if (!currentSessionUuid) return;
+    await fetch(`/ambient/sessions/${currentSessionUuid}/resume`, {
+      method: 'POST',
+      headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
+    });
+  }
+
+  // Wire minimal buttons if present
+  const startBtn = document.getElementById('startRecordingBtn');
+  const stopBtn = document.getElementById('stopRecordingBtn');
+  const pauseBtn = document.getElementById('pauseRecordingBtn');
+  const resumeBtn = document.getElementById('resumeRecordingBtn');
+  if (startBtn) startBtn.addEventListener('click', startAmbient);
+  if (stopBtn) stopBtn.addEventListener('click', stopAmbient);
+  if (pauseBtn) pauseBtn.addEventListener('click', pauseAmbient);
+  if (resumeBtn) resumeBtn.addEventListener('click', resumeAmbient);
+
+  // Expose for quick manual testing
+  window.ambient = { startAmbient, stopAmbient, pauseAmbient, resumeAmbient };
+})();
+</script>
+
+<script>
+// Echo listeners to update real-time panel
+(function(){
+  const transEl = document.getElementById('rtTranscription');
+  const insightsEl = document.getElementById('rtInsights');
+  const statusEl = document.getElementById('rtStatus');
+  if (!window.Echo || !window.appConfig || !window.appConfig.doctorId) {
+    if (statusEl) statusEl.textContent = 'Real-time disabled';
+    return;
+  }
+  try {
+    if (statusEl) statusEl.textContent = 'Connected';
+    window.Echo.private(`doctor.${window.appConfig.doctorId}`)
+      .listen('.ambient.session.updated', (e) => {
+        if (!e || !transEl) return;
+        if (e?.payload?.type === 'transcription' && e?.payload?.text) {
+          const p = document.createElement('div');
+          p.textContent = e.payload.text;
+          transEl.appendChild(p);
+          transEl.scrollTop = transEl.scrollHeight;
+        }
+        if (e?.payload?.type === 'final_transcription' && e?.payload?.text) {
+          // Hide spinner
+          const status = document.getElementById('processingStatus');
+          if (status) status.style.display = 'none';
+          const jsProg = document.getElementById('jsProgressIndicator');
+          if (jsProg) jsProg.style.display = 'none';
+          // Draw a separator and show the final result clearly
+          const hr = document.createElement('hr');
+          hr.className = 'my-2';
+          const title = document.createElement('div');
+          title.className = 'fw-bold text-success mb-1';
+          title.textContent = 'Final Transcript';
+          const block = document.createElement('div');
+          block.style.whiteSpace = 'pre-wrap';
+          block.textContent = e.payload.text;
+          transEl.appendChild(hr);
+          transEl.appendChild(title);
+          transEl.appendChild(block);
+          transEl.scrollTop = transEl.scrollHeight;
+        }
+        if (e?.payload?.type === 'final_transcription_error') {
+          const status = document.getElementById('processingStatus');
+          if (status) status.style.display = 'none';
+          const jsProg = document.getElementById('jsProgressIndicator');
+          if (jsProg) jsProg.style.display = 'none';
+          const alert = document.getElementById('alertContainer');
+          if (alert) {
+            alert.innerHTML = '<div class="alert alert-danger">'+(e?.payload?.message || 'Final transcription failed.')+'</div>';
+          }
+        }
+      })
+      .listen('.ambient.insight.created', (e) => {
+        if (!insightsEl) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'mb-2';
+        const badge = document.createElement('span');
+        badge.className = 'badge bg-secondary me-2';
+        badge.textContent = e?.insight?.type || 'insight';
+        const text = document.createElement('span');
+        text.textContent = JSON.stringify(e?.insight?.data ?? {});
+        wrap.appendChild(badge);
+        wrap.appendChild(text);
+        insightsEl.appendChild(wrap);
+        insightsEl.scrollTop = insightsEl.scrollHeight;
+      });
+  } catch (err) {
+    console.warn('Echo wiring failed', err);
+    if (statusEl) statusEl.textContent = 'Real-time error';
+  }
+})();
+</script>
+@endpush

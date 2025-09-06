@@ -6,11 +6,15 @@ use App\Models\VoiceTranscription;
 use App\Models\User;
 use App\Models\Diagnosis;
 use App\Models\AiAssistantResult;
+use App\Models\AmbientRecordingSession;
+use App\Services\AmbientRecordingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+use App\Services\RealTimeAIService;
 use OpenAI\Laravel\Facades\OpenAI;
 
 class VoiceAssistantController extends Controller
@@ -19,24 +23,28 @@ class VoiceAssistantController extends Controller
     {
         $this->middleware(function ($request, $next) {
             $user = Auth::user();
-            
+
+            if (!$user) {
+                abort(401);
+            }
+
             // Handle sub-users - they inherit access from their parent doctor
-            if ($user->isSubUser()) {
+            if (method_exists($user, 'isSubUser') && $user->isSubUser()) {
                 $parentUser = $user->parentUser;
-                if (!$parentUser || !$parentUser->isDoctor() || !$parentUser->doctor || !$parentUser->doctor->is_active) {
+                if (!$parentUser || !method_exists($parentUser, 'isDoctor') || !$parentUser->isDoctor() || !$parentUser->doctor || !$parentUser->doctor->is_active) {
                     abort(403, 'Access denied. Parent doctor profile required.');
                 }
             } else {
                 // Handle main users (doctors)
-                if (!$user->isDoctor() || !$user->doctor) {
+                if (!method_exists($user, 'isDoctor') || !$user->isDoctor() || !$user->doctor) {
                     abort(403, 'Access denied. Doctor profile required.');
                 }
-                
+
                 if (!$user->doctor->is_active) {
                     abort(403, 'Access denied. Your doctor account has been deactivated.');
                 }
             }
-            
+
             return $next($request);
         });
     }
@@ -123,6 +131,88 @@ class VoiceAssistantController extends Controller
             'sessionId' => $sessionId,
             'message' => 'Session started successfully.'
         ]);
+    }
+
+    // Ambient Scribing Endpoints (Phase 1)
+    public function ambientStart(Request $request, AmbientRecordingService $service)
+    {
+        $request->validate([
+            'patient_id' => 'required|integer|exists:users,id',
+            'appointment_id' => 'nullable|integer|exists:appointments,id',
+            'language' => 'nullable|string|max:8',
+            'diarization' => 'nullable|boolean',
+        ]);
+
+        $session = $service->start(
+            Auth::id(),
+            (int) $request->patient_id,
+            $request->appointment_id ? (int) $request->appointment_id : null,
+            $request->input('language'),
+            (bool) $request->boolean('diarization')
+        );
+
+        return response()->json([
+            'success' => true,
+            'session_uuid' => $session->session_uuid,
+            'status' => $session->status,
+        ]);
+    }
+
+    public function ambientPause(string $uuid, AmbientRecordingService $service)
+    {
+        $session = AmbientRecordingSession::where('session_uuid', $uuid)->where('doctor_id', Auth::id())->firstOrFail();
+        $service->pause($session);
+        return response()->json(['success' => true, 'status' => $session->status]);
+    }
+
+    public function ambientResume(string $uuid, AmbientRecordingService $service)
+    {
+        $session = AmbientRecordingSession::where('session_uuid', $uuid)->where('doctor_id', Auth::id())->firstOrFail();
+        $service->resume($session);
+        return response()->json(['success' => true, 'status' => $session->status]);
+    }
+
+    public function ambientStop(string $uuid, AmbientRecordingService $service, RealTimeAIService $ai)
+    {
+        $session = AmbientRecordingSession::where('session_uuid', $uuid)->where('doctor_id', Auth::id())->firstOrFail();
+        // Merge chunks into final file
+        $service->complete($session);
+
+        // Queue final transcription to avoid request timeouts
+        \App\Jobs\TranscribeFinalAmbientRecording::dispatch($session->id)->onQueue('processing');
+
+        return response()->json([
+            'success' => true,
+            'status' => $session->status,
+            'audio_file_path' => $session->audio_file_path,
+            'message' => 'Final transcription is processing. You will see results shortly.',
+        ]);
+    }
+
+    public function ambientUploadChunk(string $uuid, Request $request, AmbientRecordingService $service)
+    {
+        $session = AmbientRecordingSession::where('session_uuid', $uuid)->where('doctor_id', Auth::id())->firstOrFail();
+
+        $request->validate([
+            // raw binary accepted via body; alternatively a base64 'chunk' can be sent
+            'duration' => 'required|integer|min:1',
+            'recorded_at' => 'nullable|date',
+        ]);
+
+        // Accept raw binary chunk
+        $binary = $request->getContent();
+        if (!$binary) {
+            // Fallback to base64 if sent
+            $binary = base64_decode((string) $request->input('chunk'));
+        }
+
+        if (!$binary) {
+            return response()->json(['success' => false, 'message' => 'Empty chunk'], 422);
+        }
+
+        $chunk = $service->storeChunk($session, $binary, (int) $request->duration, $request->recorded_at);
+
+        return response()->json(['success' => true, 'chunk_id' => $chunk->id]);
     }
 
     public function stopSession(Request $request)

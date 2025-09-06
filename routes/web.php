@@ -28,15 +28,16 @@ use App\Http\Controllers\Admin\MonthlyInvoiceController;
 use App\Http\Controllers\Admin\SubscriptionPlanController;
 use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
 
 Route::get('/', function () {
     // Always show pricing section for SaaS model
     $showPricingSection = SystemSetting::get('show_pricing_section', true);
-    
+
     // Get dynamic pricing from system settings
     $professionalMonthly = SystemSetting::get('saas_professional_monthly', 30);
     $professionalYearly = SystemSetting::get('saas_professional_yearly', 300);
-    
+
     // Define 2 SaaS pricing plans with dynamic pricing
     $pricingPlans = [
         'free' => [
@@ -75,7 +76,7 @@ Route::get('/', function () {
             'plan_id' => 'professional'
         ]
     ];
-    
+
     return view('main', compact('showPricingSection', 'pricingPlans'));
 });
 
@@ -113,6 +114,9 @@ Route::prefix('reviews/guest')->name('reviews.guest.')->group(function () {
     Route::get('/{appointment}/show', [ReviewController::class, 'guestShow'])->name('show');
 });
 
+// Broadcasting auth route
+Broadcast::routes(['middleware' => ['auth']]);
+
 Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     Route::get('/ask-ai', [OpenAIController::class, 'showForm'])->name('ask-ai');
     Route::post('/openai/respond', [OpenAIController::class, 'getResponse'])->name('openai.respond');
@@ -148,6 +152,17 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         Route::post('/create-manual-diagnosis', [App\Http\Controllers\VoiceAssistantController::class, 'createManualDiagnosis'])->name('create-manual-diagnosis');
         Route::post('/create-new-patient', [App\Http\Controllers\VoiceAssistantController::class, 'createNewPatient'])->name('create-new-patient');
         Route::post('/reset-session', [App\Http\Controllers\VoiceAssistantController::class, 'resetSession'])->name('reset-session');
+    });
+
+    // Ambient Scribing (Phase 1 - backend endpoints)
+    Route::prefix('ambient')->name('ambient.')->group(function () {
+        Route::post('/sessions', [App\Http\Controllers\VoiceAssistantController::class, 'ambientStart'])->name('sessions.start');
+        Route::post('/sessions/{uuid}/pause', [App\Http\Controllers\VoiceAssistantController::class, 'ambientPause'])->name('sessions.pause');
+        Route::post('/sessions/{uuid}/resume', [App\Http\Controllers\VoiceAssistantController::class, 'ambientResume'])->name('sessions.resume');
+        Route::post('/sessions/{uuid}/stop', [App\Http\Controllers\VoiceAssistantController::class, 'ambientStop'])->name('sessions.stop');
+        Route::post('/sessions/{uuid}/chunks', [App\Http\Controllers\VoiceAssistantController::class, 'ambientUploadChunk'])
+            ->middleware('throttle:ambient-chunks')
+            ->name('sessions.chunks');
     });
 
     Route::get('/settings', [UserSettingsController::class, 'index'])->name('settings');

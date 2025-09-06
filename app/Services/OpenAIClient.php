@@ -23,6 +23,68 @@ class OpenAIClient
     }
 
     /**
+     * Transcribe audio binary via OpenAI's audio transcription API.
+     * Default model uses gpt-4o-mini-transcribe (preferred) with fallback to whisper-1.
+     * Returns transcribed text or null on error.
+     */
+    public function transcribeAudioBinary(string $binary, string $filename = 'audio.webm', string $model = 'gpt-4o-mini-transcribe', array $params = []): ?string
+    {
+        try {
+            $req = Http::timeout(config('openai.request_timeout', 60))
+                ->withToken(config('services.openai.key'));
+
+            $payload = array_merge([
+                'model' => $model,
+                // 'response_format' => 'json', // default
+            ], $params);
+
+            $response = $req
+                ->attach('file', $binary, $filename)
+                ->post('https://api.openai.com/v1/audio/transcriptions', $payload);
+
+            if ($response->successful()) {
+                $text = $response->json('text');
+                if (is_string($text)) return $text;
+                return $response->json('results.0.alternatives.0.transcript');
+            }
+
+            // If the chosen model isn't available, try whisper-1 once
+            if ($model !== 'whisper-1' && $response->status() >= 400) {
+                $fallback = $req
+                    ->attach('file', $binary, $filename)
+                    ->post('https://api.openai.com/v1/audio/transcriptions', array_merge($payload, ['model' => 'whisper-1']));
+                if ($fallback->successful()) {
+                    return $fallback->json('text');
+                }
+            }
+
+            \Log::warning('OpenAI transcription failed', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            return null;
+        } catch (\Throwable $e) {
+            \Log::error('OpenAI transcription exception', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
+     * Transcribe audio with optional hints such as language/diarization.
+     */
+    public function transcribeAudioWithHints(string $binary, string $filename, ?string $language = null, bool $diarization = false, array $extra = []): ?string
+    {
+        $params = $extra;
+        if ($language) {
+            // Whisper/gpt-4o-mini-transcribe accept 'language' hint
+            $params['language'] = $language;
+        }
+        // diarization hint placeholder (for future API support or vendor switch)
+        // $params['diarization'] = $diarization;
+        return $this->transcribeAudioBinary($binary, $filename, 'gpt-4o-mini-transcribe', $params);
+    }
+
+    /**
      * Ask a simple prompt (Chat Completions).
      */
 
@@ -53,41 +115,41 @@ class OpenAIClient
             // Step 1: Get the file path
             $filePath = $file->getRealPath();
             $fileName = $file->getClientOriginalName();
-            
+
             // Step 2: Read the file and prepare the data in prompt-completion format
             $names = file($filePath, FILE_IGNORE_NEW_LINES);  // Read file lines into an array
-            
+
             // Step 3: Convert names into prompt-completion format
             $jsonlData = [];
             foreach ($names as $name) {
                 $jsonlData[] = json_encode([
-                    'prompt' => "Who is $name?", 
+                    'prompt' => "Who is $name?",
                     'completion' => $name
                 ]);
             }
-            
+
             // Step 4: Create a temporary .jsonl file to upload
             $jsonlFilePath = storage_path('app/temp_file.jsonl');
             file_put_contents($jsonlFilePath, implode("\n", $jsonlData)); // Write data to the .jsonl file
-    
+
             // Step 5: Upload the .jsonl file to OpenAI for fine-tuning
             $response = Http::withToken(config('services.openai.key'))
                 ->attach('file', fopen($jsonlFilePath, 'r'), 'fine_tuning_data.jsonl')
                 ->post('https://api.openai.com/v1/files', [
                     'purpose' => 'fine-tune',
                 ]);
-            
+
             // Log the response for debugging
             \Log::error('Upload Response', [
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
-    
+
             // Step 6: Handle the API response
             if ($response->successful()) {
                 // Clean up the temporary file
                 unlink($jsonlFilePath); // Delete the temporary .jsonl file
-                
+
                 // Return the file ID for further processing
                 return $response->json('id');
             } else {
@@ -98,17 +160,17 @@ class OpenAIClient
                     'response' => $response->json(),
                 ], $response->status());
             }
-    
+
         } catch (\Exception $e) {
             \Log::error('Upload Exception', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'File upload failed.'], 500);
         }
     }
-    
-    
-    
-    
-    
+
+
+
+
+
 
     /**
      * Create a new assistant thread with the prompt message.
@@ -125,7 +187,7 @@ class OpenAIClient
                     ],
                 ],
             ]);
-    
+
             if ($response->successful()) {
                 return $response->json('id');
             } else {
@@ -134,20 +196,20 @@ class OpenAIClient
                     'status' => $response->status(),
                     'body' => $response->body(), // This will show the actual error message
                 ]);
-                
+
                 return response()->json([
                     'error' => 'Upload failed',
                     'status' => $response->status(),
                     'body' => $response->body(), // 👈 Return raw body directly
                 ], $response->status());
             }
-            
+
         } catch (\Exception $e) {
             Log::error('Create thread exception', ['error' => $e->getMessage()]);
             return null;
         }
     }
-    
+
 
     /**
      * Start a run with assistant, thread, and file(s).
@@ -159,16 +221,16 @@ class OpenAIClient
             if (empty($fileIds)) {
                 return response()->json(['error' => 'No file IDs provided.'], 422);
             }
-    
+
             // Prepare the request data
             $data = [
                 'instructions' => 'Analyze the uploaded file and the prompt.',
                 'file_ids' => $fileIds,
             ];
-    
+
             // Make the API request
             $response = $this->client->post("/threads/{$threadId}/runs", $data);
-    
+
             if ($response->successful()) {
                 return $response->json();
             } else {
@@ -183,6 +245,6 @@ class OpenAIClient
             return null;
         }
     }
-    
-    
+
+
 }

@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Stylesheets -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
@@ -194,6 +194,12 @@
     <title>@yield('title', 'Hospital Admin | MedCura AI')</title>
 </head>
 <body>
+    <script>
+        window.appConfig = {
+            userId: {{ Auth::check() ? (int) Auth::id() : 'null' }},
+            doctorId: {{ Auth::check() ? (int) (Auth::user()->isSubUser() ? (Auth::user()->parentUser->id ?? Auth::id()) : Auth::id()) : 'null' }},
+        };
+    </script>
     <div class="admin-wrapper">
         <!-- Sidebar -->
         <nav class="admin-sidebar" id="adminSidebar">
@@ -360,6 +366,44 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Pusher + Echo minimal include -->
+    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/laravel-echo/1.15.3/echo.iife.js" integrity="sha512-ejvV7yR5mC2Qk2j9yIOpqgI2XqYk/20u9l6q9V2Zq2R2xqR3S1yY1n+z9bdG7sY8XdVxDgY1Bqf5J7YxKtuo7Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+      (function(){
+        if (!window.appConfig || !window.appConfig.doctorId) return;
+        const key = '{{ env('PUSHER_APP_KEY') }}';
+        const cluster = '{{ env('PUSHER_APP_CLUSTER', 'mt1') }}';
+        const host = '{{ env('PUSHER_HOST') }}';
+        const port = '{{ env('PUSHER_PORT', 443) }}';
+        const scheme = '{{ env('PUSHER_SCHEME', 'https') }}';
+        const useTLS = '{{ env('PUSHER_USE_TLS', true) }}' == 'true';
+
+        const pusherConfig = host
+          ? { wsHost: host, wsPort: Number(port), wssPort: Number(port), forceTLS: useTLS, enabledTransports: ['ws','wss'] }
+          : { cluster: cluster, forceTLS: useTLS };
+
+        window.Pusher = Pusher;
+        window.Echo = new Echo.Echo({
+          broadcaster: 'pusher',
+          key: key,
+          ...pusherConfig,
+          authEndpoint: '/broadcasting/auth',
+          csrfToken: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        });
+
+        // Example listeners (can be moved to per-page scripts)
+        Echo.private(`doctor.${window.appConfig.doctorId}`)
+          .listen('.ambient.session.updated', (e) => {
+            console.log('Ambient session updated:', e);
+          })
+          .listen('.ambient.insight.created', (e) => {
+            console.log('Ambient insight:', e);
+          });
+      })();
+    </script>
+
     <script>
         function toggleSidebar() {
             document.getElementById('adminSidebar').classList.toggle('show');
@@ -369,10 +413,10 @@
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('adminSidebar');
             const toggle = document.querySelector('.mobile-toggle');
-            
-            if (window.innerWidth <= 768 && 
-                !sidebar.contains(event.target) && 
-                !toggle.contains(event.target) && 
+
+            if (window.innerWidth <= 768 &&
+                !sidebar.contains(event.target) &&
+                !toggle.contains(event.target) &&
                 sidebar.classList.contains('show')) {
                 sidebar.classList.remove('show');
             }
