@@ -1861,6 +1861,7 @@ body .dropdown .dropdown-menu.show,
 @stack('scripts')
 
 <script>
+    console.log('Master script loaded successfully');
     // Simple dropdown initialization
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Initializing dropdowns...');
@@ -2382,7 +2383,6 @@ body .dropdown .dropdown-menu.show,
                 createBottomSheetMenu();
             }
         }, 2000); // Check every 2 seconds
-    </script>
 
     // Function to load notifications into dropdown
     function loadNotifications() {
