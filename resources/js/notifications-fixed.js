@@ -80,32 +80,23 @@ class EnhancedNotificationSystem {
             const echoConnected = echoExists && window.Echo.connector && window.Echo.connector.connection;
             const echoReady = echoConnected && window.Echo.connector.connection.state === 'connected';
 
-            console.log('🔍 [DEBUG] Ready check - DOM:', domReady, 'Echo Exists:', echoExists, 'Echo Connected:', echoConnected, 'Echo Ready:', echoReady);
-            console.log('🔍 [DEBUG] Pusher State:', echoConnected ? window.Echo.connector.pusher.connection.state : 'N/A');
-
             if (domReady && echoReady) {
-                console.log('✅ DOM and Echo ready, initializing enhanced notifications');
-
                 // Add a small delay to ensure the connection is fully established
                 setTimeout(() => {
-                    console.log('🔍 [DEBUG] Calling init() after delay...');
                     this.init();
                 }, 500);
             } else {
 
                 // If Echo is not ready but DOM is, check again in a bit
                 if (domReady && !echoReady) {
-                    console.log('🔍 [DEBUG] DOM ready but Echo not ready, waiting...');
                     setTimeout(checkReady, 300);
                 }
                 // If Echo is ready but DOM is not, wait a bit more
                 else if (!domReady && echoReady) {
-                    console.log('🔍 [DEBUG] Echo ready but DOM not ready, waiting...');
                     setTimeout(checkReady, 300);
                 }
                 // If neither is ready, wait longer
                 else {
-                    console.log('🔍 [DEBUG] Neither DOM nor Echo ready, waiting longer...');
                     setTimeout(checkReady, 500);
                 }
             }
