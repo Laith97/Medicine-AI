@@ -115,6 +115,7 @@ Route::prefix('reviews/guest')->name('reviews.guest.')->group(function () {
 
 Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     Route::get('/ask-ai', [OpenAIController::class, 'showForm'])->name('ask-ai');
+    Route::get('/openai/progress', function () { return view('openai-progress'); })->name('openai.progress');
     Route::post('/openai/respond', [OpenAIController::class, 'getResponse'])->name('openai.respond');
     Route::post('/openai/follow-up', [OpenAIController::class, 'followUp'])->name('openai.follow-up');
     Route::post('/openai/create-manual-diagnosis', [OpenAIController::class, 'createManualDiagnosis'])->name('openai.create-manual-diagnosis');
