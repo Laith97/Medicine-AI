@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class UserSettingsController extends Controller
 {
@@ -11,9 +12,9 @@ class UserSettingsController extends Controller
     public function index()
     {
         $setting = auth()->user()->setting;
-        return view('settings', compact('setting'));    
+        return view('settings', compact('setting'));
     }
-    
+
 
 
     public function update(Request $request)
@@ -22,11 +23,12 @@ class UserSettingsController extends Controller
             'criterion' => ['required', Rule::in(['NICE', 'CDC', 'Mayo Clinic'])],
             'specialty' => ['nullable', 'string', 'max:255'],
             'custom_specialty' => ['nullable', 'string', 'max:255'],
+            'notification_volume' => ['nullable', 'numeric', 'min:0', 'max:1'],
         ]);
 
         // Determine the final specialty value
         $specialty = $request->specialty;
-        
+
         // If specialty is empty but custom_specialty is provided, use custom_specialty
         if (empty($specialty) && !empty($request->custom_specialty)) {
             $specialty = trim($request->custom_specialty);
@@ -36,11 +38,23 @@ class UserSettingsController extends Controller
             ['user_id' => auth()->id()],
             [
                 'criterion' => $request->criterion,
-                'specialty' => $specialty
+                'specialty' => $specialty,
+                'notification_volume' => $request->notification_volume ?? 0.3
             ]
         );
 
         return back()->with('status', 'Settings updated!');
+    }
+
+    public function getSettings()
+    {
+        $setting = auth()->user()->setting;
+
+        return response()->json([
+            'criterion' => $setting->criterion ?? 'CDC',
+            'specialty' => $setting->specialty ?? null,
+            'notification_volume' => $setting->notification_volume ?? 0.3
+        ]);
     }
 
 

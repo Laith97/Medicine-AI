@@ -6,6 +6,11 @@
     <meta name="author" content="SemiColonWeb">
     <meta name="description" content="Create Medical Clinic & Hospital Websites with Canvas Template. Get Canvas to build powerful websites easily with the Highly Customizable & Best Selling Bootstrap Template, today.">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
+	<!-- Notification meta tags -->
+	<meta name="user-id" content="{{ Auth::id() }}">
+	<meta name="user-role" content="{{ Auth::user()->role ?? 'user' }}">
+	<meta name="notification-sound-enabled" content="{{ config('app.env') === 'local' ? 'true' : 'true' }}">
+	<meta name="notification-toast-enabled" content="{{ config('app.env') === 'local' ? 'true' : 'true' }}">
 
     <!-- Font Imports -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

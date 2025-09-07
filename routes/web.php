@@ -9,6 +9,7 @@ use App\Http\Controllers\OpenAIController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserSettingsController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Doctor\DashboardController as DoctorDashboardController;
 use App\Http\Controllers\Doctor\AvailabilityController;
 use App\Http\Controllers\Auth\PatientRegistrationController;
@@ -27,16 +28,66 @@ use App\Http\Controllers\PublicChatController;
 use App\Http\Controllers\Admin\MonthlyInvoiceController;
 use App\Http\Controllers\Admin\SubscriptionPlanController;
 use App\Models\SystemSetting;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+
+// Broadcasting authentication route - simplified
+Broadcast::routes(['middleware' => ['web']]);
+
+// Debug authentication routes (temporary)
+if (config('app.debug')) {
+    Route::middleware(['web'])->group(function () {
+        Route::get('/debug-broadcasting-auth', function (\Illuminate\Http\Request $request) {
+            $user = Auth::user();
+
+            return response()->json([
+                'authenticated' => Auth::check(),
+                'user_id' => $user ? $user->id : null,
+                'user_name' => $user ? $user->name : null,
+                'user_role' => $user ? $user->role : null,
+                'session_id' => session()->getId(),
+                'csrf_token' => csrf_token(),
+                'pusher_auth_key' => env('VITE_PUSHER_APP_KEY'),
+                'expected_channel' => 'private-App.User.' . ($user ? $user->id : 'null'),
+            ]);
+        });
+
+        // Debug the actual broadcasting auth requests
+        Route::post('/debug-broadcasting-auth-post', function (\Illuminate\Http\Request $request) {
+            \Illuminate\Support\Facades\Log::info('Broadcasting Auth Debug', [
+                'authenticated' => Auth::check(),
+                'user_id' => Auth::id(),
+                'channel_name' => $request->input('channel_name'),
+                'socket_id' => $request->input('socket_id'),
+                'headers' => $request->headers->all(),
+                'request_data' => $request->all(),
+                'session_id' => session()->getId(),
+            ]);
+
+            $user = Auth::user();
+
+            return response()->json([
+                'debug' => true,
+                'authenticated' => Auth::check(),
+                'user_id' => $user ? $user->id : null,
+                'channel_name' => $request->input('channel_name'),
+                'socket_id' => $request->input('socket_id'),
+            ]);
+        });
+    });
+}
 
 Route::get('/', function () {
     // Always show pricing section for SaaS model
     $showPricingSection = SystemSetting::get('show_pricing_section', true);
-    
+
     // Get dynamic pricing from system settings
     $professionalMonthly = SystemSetting::get('saas_professional_monthly', 30);
     $professionalYearly = SystemSetting::get('saas_professional_yearly', 300);
-    
+
     // Define 2 SaaS pricing plans with dynamic pricing
     $pricingPlans = [
         'free' => [
@@ -75,7 +126,7 @@ Route::get('/', function () {
             'plan_id' => 'professional'
         ]
     ];
-    
+
     return view('main', compact('showPricingSection', 'pricingPlans'));
 });
 
@@ -90,6 +141,117 @@ Route::get('/doctors/{doctor}/slots', [DoctorController::class, 'getAvailableSlo
 Route::get('/doctors/{doctor}', [DoctorController::class, 'show'])->name('doctors.show');
 Route::get('/doctors/{doctor}/reviews', [ReviewController::class, 'doctorReviews'])->name('doctors.reviews');
 Route::get('/doctors/{doctor}/reviews/ajax', [ReviewController::class, 'getDoctorReviews'])->name('doctors.reviews.ajax');
+
+// Notification API routes
+Route::middleware(['auth', \App\Http\Middleware\EnsureJsonResponse::class])->group(function () {
+    Route::get('/api/notifications', [NotificationController::class, 'apiIndex'])->name('api.notifications.index');
+    Route::get('/api/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('api.notifications.unread-count');
+    Route::post('/api/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('api.notifications.read');
+    Route::post('/api/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('api.notifications.mark-all-read');
+
+    // Offline notification sync routes
+    Route::post('/api/notifications/sync', [NotificationController::class, 'sync'])->name('api.notifications.sync');
+    Route::get('/api/notifications/check', [NotificationController::class, 'check'])->name('api.notifications.check');
+
+    // Login redirect check API
+    Route::get('/api/auth/check-redirect', [\App\Http\Controllers\Auth\LoginRedirectController::class, 'checkRedirect'])->name('api.auth.check-redirect');
+});
+
+// Enhanced notification testing page
+Route::get('/test-enhanced-notifications', function () {
+    return view('test-enhanced-notifications');
+})->name('test.enhanced.notifications');
+
+// Comprehensive notification diagnostics
+Route::get('/notification-diagnostics', function () {
+    return view('notification-diagnostics');
+})->name('notification.diagnostics');
+
+// Offline notifications test page
+Route::get('/test-offline-notifications', function () {
+    return view('test-offline-notifications');
+})->name('test.offline.notifications')->middleware(['auth']);
+
+// Quick diagnostic route for API checks
+Route::get('/api/notification-diagnostics', function () {
+    return response()->json([
+        'echo_available' => false,
+        'echo_connector' => false,
+        'pusher_available' => false,
+        'pusher_state' => 'unknown',
+        'notification_system' => false,
+        'notification_initialized' => false,
+        'user_id' => Auth::id(),
+        'user_role' => Auth::user()?->role,
+        'sound_enabled' => true,
+        'toast_enabled' => true,
+        'broadcast_driver' => config('broadcasting.default'),
+        'queue_driver' => config('queue.default'),
+        'pusher_app_key' => config('broadcasting.connections.pusher.key'),
+    ]);
+})->middleware(['auth']);
+
+// Notification debug test page
+Route::get('/notification-debug', function () {
+    return view('test-notification-debug');
+})->middleware(['auth'])->name('notification.debug');
+
+// Test notification endpoint
+Route::get('/notifications/test', function () {
+    return response()->json([
+        'success' => true,
+        'message' => 'Test notification sent successfully',
+        'timestamp' => now()->toISOString(),
+        'user_id' => Auth::id(),
+        'user_role' => Auth::user()?->role
+    ]);
+})->middleware(['auth']);
+
+// Temporary test endpoint without auth for debugging
+Route::get('/notifications/test-debug', function () {
+    try {
+        // Use the first user from the database for testing
+        $testUser = User::first();
+
+        if (!$testUser) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No users found in database for testing',
+                'timestamp' => now()->toISOString()
+            ], 404);
+        }
+
+        // Send a test notification
+        $testUser->notify(new \App\Notifications\TestNotification([
+            'type' => 'debug-test',
+            'title' => 'Debug Test Notification',
+            'message' => 'This is a debug test notification sent without authentication',
+            'icon' => 'bug',
+            'link' => '/notification-debug',
+            'link_text' => 'View Debug Page'
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Debug test notification sent successfully',
+            'timestamp' => now()->toISOString(),
+            'user_id' => $testUser->id,
+            'user_name' => $testUser->name,
+            'notification_data' => [
+                'type' => 'debug-test',
+                'title' => 'Debug Test Notification',
+                'message' => 'This is a debug test notification sent without authentication'
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to send debug test notification',
+            'error' => $e->getMessage(),
+            'timestamp' => now()->toISOString()
+        ], 500);
+    }
+});
 
 // Public appointment booking (for guests)
 Route::get('/appointments/{doctor}/create', [AppointmentController::class, 'create'])->name('appointments.create');
@@ -194,6 +356,61 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         Route::get('/{diagnosis}/voice', [DiagnosisController::class, 'serveVoiceFile'])->name('voice');
     });
 
+    // Notification routes
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::get('/dropdown', [NotificationController::class, 'dropdown'])->name('dropdown');
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');
+        Route::post('/{id}/mark-read', [NotificationController::class, 'markAsRead'])->name('mark-read');
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+        Route::delete('/{id}', [NotificationController::class, 'destroy'])->name('destroy');
+        Route::get('/settings', [NotificationController::class, 'settings'])->name('settings');
+        Route::put('/settings', [NotificationController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/preferences', [NotificationController::class, 'preferences'])->name('preferences');
+        Route::post('/preferences', [NotificationController::class, 'updatePreferences'])->name('preferences.update');
+
+        // Test route for notifications
+        Route::get('/test', function () {
+            /** @var User $user */
+            $user = Auth::user();
+
+            // Send a real-time test notification
+            $user->notify(new App\Notifications\TestNotification([
+                'type' => 'test',
+                'title' => 'Real-time Test Notification',
+                'message' => 'This is a test to verify real-time notifications are working correctly!',
+                'icon' => 'bell',
+                'link' => '/dashboard',
+                'link_text' => 'View Dashboard'
+            ]));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Test notification sent!'
+            ]);
+        })->name('test');
+
+        // Notification testing page
+        Route::get('/test-page', function () {
+            return view('test-notifications');
+        })->name('notifications.test-page');
+
+        // Appointment notification testing page
+        Route::get('/test-appointment', function () {
+            return view('test-appointment-notifications');
+        })->name('notifications.test-appointment');
+
+        // Broadcasting auth testing page
+        Route::get('/test-auth', function () {
+            return view('test-auth');
+        })->name('broadcasting.test-auth');
+
+        // Asset debug page
+        Route::get('/debug-assets', function () {
+            return view('debug-assets');
+        })->name('debug.assets');
+    });
+
     // Subscription routes (only for payment responsible users)
     Route::middleware('payment.responsible')->group(function () {
         Route::get('/pricing', [SubscriptionController::class, 'pricing'])->name('subscription.pricing');
@@ -256,7 +473,8 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
     // Test sub-user permissions
     Route::get('/test-sub-user-permissions', function() {
-        $user = auth()->user();
+        /** @var User $user */
+        $user = Auth::user();
         $menuItems = \App\Helpers\MenuHelper::getMenuItems($user);
 
         return response()->json([
@@ -289,7 +507,8 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
     // Debug sub-user middleware
     Route::get('/debug-sub-user', function() {
-        $user = auth()->user();
+        /** @var User $user */
+        $user = Auth::user();
 
         return response()->json([
             'user_id' => $user->id,
@@ -317,17 +536,24 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
     // Simple test route without middleware
     Route::get('/simple-test', function() {
-        if (!auth()->check()) {
+        if (!Auth::check()) {
             return 'Not logged in';
         }
 
-        $user = auth()->user();
+        /** @var User $user */
+        $user = Auth::user();
         return "Hello {$user->name}! You are logged in as a " . ($user->isSubUser() ? 'sub-user' : 'main user');
     })->name('simple.test');
 
     // Sub-user success page
     Route::get('/sub-user-success', function() {
-        if (!auth()->check() || !auth()->user()->isSubUser()) {
+        if (!Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+        if (!$user->isSubUser()) {
             return redirect()->route('dashboard');
         }
         return view('sub-user-success');
@@ -335,11 +561,12 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
     // Test dashboard access for sub-users
     Route::get('/test-dashboard-access', function() {
-        if (!auth()->check()) {
+        if (!Auth::check()) {
             return 'Please login first';
         }
 
-        $user = auth()->user();
+        /** @var User $user */
+        $user = Auth::user();
 
         if (!$user->isSubUser()) {
             return 'This test is only for sub-users';
@@ -383,13 +610,19 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
     // Test blog controller access
     Route::get('/test-blog-access', function() {
-        if (!auth()->check() || !auth()->user()->isSubUser()) {
+        if (!Auth::check()) {
+            return 'Please login first';
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+        if (!$user->isSubUser()) {
             return 'Please login as sub-user first';
         }
 
         try {
-            $controller = new \App\Http\Controllers\Doctor\BlogController();
-            $doctor = auth()->user()->getEffectiveDoctor();
+            $controller = new BlogController();
+            $doctor = $user->getEffectiveDoctor();
 
             if (!$doctor) {
                 return 'No effective doctor found';
@@ -414,7 +647,8 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
     // Test diagnosis system
     Route::get('/test-diagnosis', function() {
-        $user = auth()->user();
+        /** @var User $user */
+        $user = Auth::user();
         return response()->json([
             'user_role' => $user->role,
             'is_doctor' => $user->isDoctor(),
@@ -433,7 +667,8 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
     // Test grace period notification
     Route::get('/test-grace-period', function() {
-        $user = auth()->user();
+        /** @var User $user */
+        $user = Auth::user();
         $setting = $user->monthlyInvoiceSetting;
 
         if (!$setting) {
@@ -482,7 +717,8 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
     // Test route to verify restriction system
     Route::get('/test/restriction-status', function() {
-        $user = auth()->user();
+        /** @var User $user */
+        $user = Auth::user();
         if (!$user) {
             return response()->json(['error' => 'Not authenticated']);
         }
@@ -508,6 +744,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
             'configured_restricted_pages' => $setting ? $setting->restricted_pages : null,
             'route_tests' => $results,
         ]);
+
     })->name('test.restriction-status');
 });
 
@@ -709,10 +946,6 @@ Route::get('/doctor/{username}/testimonials', [TestimonialController::class, 'ge
 // Stripe webhook (outside auth middleware)
 Route::post('/stripe/webhook', [SubscriptionController::class, 'webhook'])->name('stripe.webhook');
 
-// Include test routes for sub-user functionality
-require __DIR__.'/test-routes.php';
-
-
 
 
 
@@ -835,4 +1068,117 @@ Route::middleware('auth:admin')->prefix('security')->name('security.')->group(fu
     Route::get('/export', [App\Http\Controllers\Security\DashboardController::class, 'export'])->name('export');
 });
 
+// Dropdown test route
+Route::get('/test-dropdown', function () {
+    return view('test-dropdown');
+})->name('test.dropdown');
+
+// Dropdown fix test route
+Route::get('/test-dropdown-fix', function () {
+    return view('test-dropdown-fix');
+})->name('test.dropdown.fix');
+
 require __DIR__.'/auth.php';
+
+// Broadcasting test route
+Route::get('/test-broadcasting', function () {
+    return view('test-broadcasting');
+})->name('test.broadcasting');
+
+// Authenticated broadcasting test page
+Route::get('/test-authenticated-broadcasting-page', function () {
+    return view('test-authenticated-broadcasting');
+})->name('test.authenticated.broadcasting.page');
+
+// Comprehensive authenticated broadcasting test
+Route::get('/test-authenticated-broadcasting', function (\Illuminate\Http\Request $request) {
+    try {
+        // Get the first user from database for testing
+        $testUser = User::first();
+
+        if (!$testUser) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No users found in database for testing',
+                'timestamp' => now()->toISOString()
+            ], 404);
+        }
+
+        // Authenticate the user for this request
+        Auth::login($testUser);
+
+        // Send authenticated test notification
+        $testUser->notify(new \App\Notifications\TestNotification([
+            'type' => 'authenticated-broadcast-test',
+            'title' => 'Authenticated Broadcasting Test',
+            'message' => 'This notification was sent through an authenticated user session to test private channel broadcasting',
+            'icon' => 'shield-check',
+            'link' => '/notification-debug',
+            'link_text' => 'View Test Results'
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Authenticated broadcasting test completed successfully',
+            'timestamp' => now()->toISOString(),
+            'user' => [
+                'id' => $testUser->id,
+                'name' => $testUser->name,
+                'email' => $testUser->email,
+                'role' => $testUser->role,
+                'authenticated' => Auth::check(),
+                'current_user_id' => Auth::id()
+            ],
+            'notification' => [
+                'type' => 'authenticated-broadcast-test',
+                'title' => 'Authenticated Broadcasting Test',
+                'message' => 'This notification was sent through an authenticated user session to test private channel broadcasting',
+                'channel' => 'App.User.' . $testUser->id,
+                'broadcast_driver' => config('broadcasting.default'),
+                'pusher_config' => [
+                    'key' => config('broadcasting.connections.pusher.key'),
+                    'cluster' => config('broadcasting.connections.pusher.options.cluster'),
+                    'app_id' => config('broadcasting.connections.pusher.app_id')
+                ]
+            ],
+            'instructions' => [
+                'frontend_test' => 'Open browser console to see if notification is received',
+                'channel_verification' => 'Check if notification appears in private channel App.User.' . $testUser->id,
+                'authentication_check' => 'Verify user authentication is maintained throughout the process'
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Authenticated broadcasting test failed',
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'timestamp' => now()->toISOString()
+        ], 500);
+    }
+})->name('test.authenticated.broadcasting');
+
+// Session encryption test route
+Route::get('/test-session-encryption', function () {
+    // Set some test data in session
+    session(['test_key' => 'test_value_' . now()->timestamp]);
+    session(['encrypted_data' => 'This data should be encrypted: ' . Str::random(32)]);
+
+    // Retrieve and verify session data
+    $testValue = session('test_key');
+    $encryptedData = session('encrypted_data');
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Session encryption test completed',
+        'session_data' => [
+            'test_key' => $testValue,
+            'encrypted_data' => $encryptedData,
+            'session_id' => session()->getId(),
+            'session_encrypt_enabled' => config('session.encrypt'),
+        ],
+        'encryption_status' => config('session.encrypt') ? 'ENABLED' : 'DISABLED',
+        'timestamp' => now()->toISOString()
+    ]);
+})->name('test.session.encryption');

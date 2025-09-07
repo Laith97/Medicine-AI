@@ -384,7 +384,7 @@ class OpenAIController extends Controller
                 $runId = $run['id'];
 
 
-                return $this->checkRunStatus($request, $threadId, $runId);
+                return $this->checkRunStatus($request, $threadId, $runId, $patient, $isNewPatient);
             }
 
             // No files provided: still try to respond based on inputData alone
@@ -454,7 +454,7 @@ class OpenAIController extends Controller
 
 
 
-    public function checkRunStatus($request, $threadId, $runId)
+    public function checkRunStatus($request, $threadId, $runId, $patient = null, $isNewPatient = false)
     {
         $maxAttempts = 30; // Increase max attempts
         $delayMicroseconds = 1000000; // 1 second
@@ -1850,17 +1850,23 @@ class OpenAIController extends Controller
     }
     public function dashboard()
     {
-        // Redirect admins to their specific dashboard
-        if (auth()->user()->role === 'admin') {
+        // Immediately redirect users to their specific dashboard based on role
+        $user = auth()->user();
+
+        if ($user->role === 'admin') {
             return redirect()->route('admin.dashboard');
         }
 
-        // Redirect hospital admins to their specific dashboard
-        if (auth()->user()->isHospitalAdmin()) {
+        if ($user->role === 'hospital_admin') {
             return redirect()->route('hospital-admin.dashboard');
         }
 
-        $user = auth()->user();
+        // For doctors and patients, continue with the dashboard logic
+        if (!$user->isDoctor() && !$user->isPatient()) {
+            // If not a doctor or patient, redirect to home
+            return redirect()->route('doctors.index');
+        }
+
         $effectiveDoctorUser = $user->getEffectiveDoctorUser();
         $effectiveDoctorId = $effectiveDoctorUser ? $effectiveDoctorUser->id : $user->id;
 
@@ -2027,7 +2033,7 @@ class OpenAIController extends Controller
             'trial_status' => $user->getTrialStatus(),
             'has_used_trial' => $user->hasUsedTrial(),
             'has_active_subscription' => $showSubscriptionBanner,
-            'has_future_subscription' => $user->monthlyInvoiceSetting && 
+            'has_future_subscription' => $user->monthlyInvoiceSetting &&
                                         $user->monthlyInvoiceSetting->subscription_starts_at &&
                                         $user->monthlyInvoiceSetting->subscription_starts_at->isFuture(),
         ];
