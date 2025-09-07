@@ -75,6 +75,12 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * @property int $id
+     * @property string|null $sub_user_role
+     * @property int|null $parent_user_id
+     */
+
     public function setting()
     {
         return $this->hasOne(Setting::class);
@@ -151,7 +157,8 @@ public function getFreshMonthlyInvoiceSetting()
     /**
      * Check if user is a doctor
      */
-    public function isDoctor()
+    /** Check if user is a doctor */
+    public function isDoctor(): bool
     {
         return $this->role === 'doctor';
     }
@@ -159,7 +166,8 @@ public function getFreshMonthlyInvoiceSetting()
     /**
      * Check if user is a patient
      */
-    public function isPatient()
+    /** Check if user is a patient */
+    public function isPatient(): bool
     {
         return $this->role === 'patient';
     }
@@ -635,7 +643,7 @@ public function getOverdueInvoicesCount(): int
 /**
  * Get monthly invoices for a specific month/year
  */
-public function getMonthlyInvoices(int $month = null, int $year = null)
+    public function getMonthlyInvoices(int $month = null, int $year = null): \Illuminate\Database\Eloquent\Relations\HasMany
 {
     $month = $month ?: now()->month;
     $year = $year ?: now()->year;
@@ -716,11 +724,11 @@ public function getOrCreateMonthlyInvoiceSetting(): MonthlyInvoiceSetting
     if ($this->monthlyInvoiceSetting) {
         return $this->monthlyInvoiceSetting;
     }
-    
+
     // Get pricing from system settings
     $defaultMonthly = SystemSetting::get('saas_professional_monthly', 30);
     $defaultYearly = SystemSetting::get('saas_professional_yearly', 300);
-    
+
     return $this->monthlyInvoiceSetting()->create([
         'billing_amount' => $defaultMonthly, // Default to monthly billing
         'monthly_price' => $defaultMonthly,
@@ -857,7 +865,8 @@ public function patientNotes()
 /**
  * Diagnoses made by this doctor
  */
-public function doctorDiagnoses()
+/** Get diagnoses made by this doctor */
+public function doctorDiagnoses(): \Illuminate\Database\Eloquent\Relations\HasMany
 {
     return $this->hasMany(Diagnosis::class, 'doctor_id');
 }
@@ -865,7 +874,8 @@ public function doctorDiagnoses()
 /**
  * Diagnoses received by this patient
  */
-public function patientDiagnoses()
+/** Get diagnoses received by this patient */
+public function patientDiagnoses(): \Illuminate\Database\Eloquent\Relations\HasMany
 {
     return $this->hasMany(Diagnosis::class, 'patient_id');
 }
@@ -881,7 +891,8 @@ public function primaryDoctor()
 /**
  * Patients assigned to this doctor (for doctors)
  */
-public function assignedPatients()
+/** Get patients assigned to this doctor */
+public function assignedPatients(): \Illuminate\Database\Eloquent\Relations\HasMany
 {
     return $this->hasMany(User::class, 'primary_doctor_id')->where('role', 'patient');
 }
@@ -911,8 +922,186 @@ public function patientAiAssistantResults()
 }
 
 /**
- * Get doctors managed by this hospital admin
+ * Get all notifications for this user
  */
+public function notifications()
+{
+    return $this->morphMany(\Illuminate\Notifications\DatabaseNotification::class, 'notifiable')
+        ->orderBy('created_at', 'desc');
+}
+
+/**
+ * Get unread notifications for this user
+ */
+public function unreadNotifications()
+{
+    return $this->notifications()->whereNull('read_at');
+}
+
+/**
+ * Get read notifications for this user
+ */
+public function readNotifications()
+{
+    return $this->notifications()->whereNotNull('read_at');
+}
+
+/**
+ * Get unread notification count
+ */
+public function unreadNotificationsCount()
+{
+    return $this->unreadNotifications()->count();
+}
+
+/**
+ * Mark all notifications as read
+ */
+public function markAllNotificationsAsRead()
+{
+    $this->unreadNotifications()->update(['read_at' => now()]);
+}
+
+/**
+ * Get notification preferences
+ */
+public function notificationPreferences()
+{
+    return $this->hasOne(\App\Models\NotificationPreference::class);
+}
+
+/**
+ * Get or create notification preferences
+ */
+public function getOrCreateNotificationPreferences()
+{
+    if ($this->notificationPreferences) {
+        return $this->notificationPreferences;
+    }
+
+    return $this->notificationPreferences()->create([
+        'email_enabled' => true,
+        'email_appointment_reminders' => true,
+        'email_diagnosis_updates' => true,
+        'email_review_requests' => true,
+        'email_system_alerts' => true,
+        'email_marketing' => false,
+        'sms_enabled' => false,
+        'sms_appointment_reminders' => false,
+        'sms_urgent_alerts' => true,
+        'in_app_enabled' => true,
+        'in_app_sound' => true,
+        'in_app_desktop' => true,
+        'in_app_vibrate' => false,
+        'frequency' => 'immediate',
+        'quiet_hours_start' => '22:00',
+        'quiet_hours_end' => '08:00',
+        'respect_quiet_hours' => true,
+        'appointment_booked' => true,
+        'appointment_reminder' => true,
+        'diagnosis_submitted' => true,
+        'review_submitted' => true,
+        'voice_transcription_completed' => true,
+        'system_alert' => true,
+    ]);
+}
+
+/**
+ * Check if user wants to receive notifications of a specific type
+ */
+public function wantsNotification(string $type): bool
+{
+    $preferences = $this->getOrCreateNotificationPreferences();
+
+    switch ($type) {
+        case 'appointment_booked':
+            return $preferences->appointment_booked;
+        case 'appointment_reminder':
+            return $preferences->appointment_reminder;
+        case 'diagnosis_submitted':
+            return $preferences->diagnosis_submitted;
+        case 'review_submitted':
+            return $preferences->review_submitted;
+        case 'voice_transcription_completed':
+            return $preferences->voice_transcription_completed;
+        case 'system_alert':
+            return $preferences->system_alert;
+        default:
+            return true;
+    }
+}
+
+/**
+ * Check if user wants to receive notifications via a specific channel
+ */
+public function wantsNotificationChannel(string $channel): bool
+{
+    $preferences = $this->getOrCreateNotificationPreferences();
+
+    switch ($channel) {
+        case 'email':
+            return $preferences->email_enabled;
+        case 'sms':
+            return $preferences->sms_enabled;
+        case 'in_app':
+            return $preferences->in_app_enabled;
+        default:
+            return false;
+    }
+}
+
+/**
+ * Check if it's currently quiet hours for this user
+ */
+public function isQuietHours(): bool
+{
+    $preferences = $this->getOrCreateNotificationPreferences();
+
+    if (!$preferences->respect_quiet_hours) {
+        return false;
+    }
+
+    $now = now();
+    $currentTime = $now->format('H:i');
+    $startTime = $preferences->quiet_hours_start;
+    $endTime = $preferences->quiet_hours_end;
+
+    // Handle overnight quiet hours (e.g., 22:00 to 08:00)
+    if ($startTime > $endTime) {
+        return $currentTime >= $startTime || $currentTime <= $endTime;
+    }
+
+    return $currentTime >= $startTime && $currentTime <= $endTime;
+}
+
+/**
+ * Get notification frequency setting
+ */
+public function getNotificationFrequency(): string
+{
+    return $this->getOrCreateNotificationPreferences()->frequency;
+}
+
+/**
+ * Send notification if user wants to receive it
+ */
+public function notifyIfWants($instance, $type = null)
+{
+    // Try to get type from the notification's toArray method if available
+    if (!$type && method_exists($instance, 'toArray')) {
+        $data = $instance->toArray($this);
+        $type = $data['type'] ?? 'general';
+    }
+
+    // Fallback to general if no type is provided
+    $type = $type ?? 'general';
+
+    if ($this->wantsNotification($type)) {
+        $this->notify($instance);
+    }
+}
+
+
 public function managedDoctors()
 {
     if (!$this->isHospitalAdmin() || !$this->hospital_id) {

@@ -9,7 +9,7 @@ class Setting extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'criterion', 'specialty'];
+    protected $fillable = ['user_id', 'criterion', 'specialty', 'notification_volume'];
 
     public function user()
     {
