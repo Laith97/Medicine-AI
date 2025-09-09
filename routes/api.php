@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\NotificationTestController;
+use App\Http\Controllers\Api\BillingController;
 use App\Http\Controllers\UserSettingsController;
 
 /*
@@ -55,6 +56,15 @@ Route::middleware(['auth:web'])->group(function () {
     Route::post('/test/direct-notification', [\App\Http\Controllers\Api\DirectNotificationTestController::class, 'sendDirectTest']);
     Route::post('/test/pusher-connection', [\App\Http\Controllers\Api\DirectNotificationTestController::class, 'testPusherConnection']);
     Route::get('/test/system-status', [\App\Http\Controllers\Api\DirectNotificationTestController::class, 'getSystemStatus']);
+
+    // Billing API
+    Route::post('/billing/suggest_codes', [BillingController::class, 'suggestCodes']);
+    Route::post('/billing/predict_denial', [BillingController::class, 'predictDenial']);
+    Route::get('/billing/underpayments/{claimId}', [BillingController::class, 'getUnderpayments']);
+
+    // AI-powered claims features
+    Route::post('/ai/code-suggestions', [BillingController::class, 'getCodeSuggestions']);
+    Route::post('/ai/denial-prediction', [BillingController::class, 'getDenialPrediction']);
 });
 
 // Public routes (for guest access with token verification)

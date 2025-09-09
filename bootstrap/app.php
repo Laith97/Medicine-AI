@@ -54,6 +54,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Process expired trials daily at 1 AM
         $schedule->command('trials:process-expired')->dailyAt('01:00');
+
+        // Process pending claims for denial risk scoring and underpayment detection daily at 2 AM
+        $schedule->command('billing:process-pending-claims')
+            ->dailyAt('02:00')
+            ->withoutOverlapping()
+            ->runInBackground();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
