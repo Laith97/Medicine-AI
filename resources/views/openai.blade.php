@@ -1003,19 +1003,24 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
     </div>
 </div>
 
-<!-- Enhanced Loading Indicator -->
-<div id="page-loader" style="display:none;">
-    <div class="loader-content">
-        <div class="text-center">
-            <div class="spinner-border mb-3" role="status" style="width: 3rem; height: 3rem;">
+<!-- Enhanced Loading Indicator (Progress Bar) -->
+<div id="page-loader" style="display:none; position: fixed; inset: 0; background: rgba(248, 249, 250, 0.9); z-index: 1050; display: none; align-items: center; justify-content: center;">
+    <div class="card p-4 p-md-5 bg-white" style="width: min(520px, 92vw); border: 1px solid #e9ecef; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border-radius: 14px;">
+        <div class="text-center mb-3">
+            <div class="spinner-border text-danger mb-3" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <h5 class="mb-2" style="color: #2c3e50;">Processing Your Request</h5>
-            <p class="text-muted mb-0">Our AI is analyzing the patient data...</p>
-            <div class="progress mt-3" style="height: 6px;">
-                <div class="progress-bar progress-bar-striped progress-bar-animated"
-                     style="width: 100%; background-color: #DE6262;"></div>
+            <div class="mb-2" style="font-size: 1.15rem; font-weight: 600; color:#2c3e50;">
+                Processing your request
             </div>
+            <div class="text-muted" style="font-size: 0.92rem;">This may take a moment. Keep this page open.</div>
+        </div>
+
+        <div class="progress mb-2" style="height: 16px; background-color: #eef1f4; border-radius: 10px;">
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%; background: linear-gradient(90deg, #DE6262, #ff8a65);"></div>
+        </div>
+        <div class="text-center" style="font-size: 0.85rem; color:#6c757d;">
+            Please wait while the AI analyzes the data...
         </div>
     </div>
 </div>
@@ -1183,14 +1188,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
             const modal = new bootstrap.Modal(document.getElementById('responseModal'));
             modal.show();
 
-            // Hide the page loader once the modal is shown
-            // Hide the Canvas theme loader
-            const canvasLoader = document.getElementById('canvas-loader-overlay');
-            if (canvasLoader) {
-                canvasLoader.remove();
-            }
-
-            // Also hide the fallback loader
+            // Hide the inline progress overlay once the modal is shown
             const pageLoader = document.getElementById('page-loader');
             if (pageLoader) {
                 pageLoader.style.display = 'none';

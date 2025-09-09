@@ -88,24 +88,8 @@ Route::get('/', function () {
     $professionalMonthly = SystemSetting::get('saas_professional_monthly', 30);
     $professionalYearly = SystemSetting::get('saas_professional_yearly', 300);
 
-    // Define 2 SaaS pricing plans with dynamic pricing
+    // Define SaaS pricing plans (no free plan)
     $pricingPlans = [
-        'free' => [
-            'name' => 'Free',
-            'price_monthly' => 0,
-            'price_yearly' => 0,
-            'description' => 'Perfect for getting started',
-            'features' => [
-                '5 AI consultations per month',
-                'Basic patient management',
-                'Email support',
-                'Standard security'
-            ],
-            'is_featured' => false,
-            'button_text' => 'Get Started Free',
-            'button_url' => '/register?plan=free',
-            'plan_id' => 'free'
-        ],
         'professional' => [
             'name' => 'Professional',
             'price_monthly' => $professionalMonthly,
@@ -121,7 +105,7 @@ Route::get('/', function () {
                 'Basic analytics'
             ],
             'is_featured' => true,
-            'button_text' => 'Start Professional',
+            'button_text' => 'Choose Monthly or Yearly',
             'button_url' => '/register?plan=professional',
             'plan_id' => 'professional'
         ]

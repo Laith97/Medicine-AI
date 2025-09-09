@@ -636,7 +636,7 @@ class AdminController extends Controller
             'show_pricing_section' => 'boolean',
             'default_monthly_amount' => 'nullable|numeric|min:0|max:9999.99',
             'default_grace_period' => 'nullable|integer|min:1|max:30',
-            'trial_days' => 'nullable|integer|min:1|max:365',
+            'trial_days' => 'nullable|integer|min:0|max:365', // allow 0 to disable trials
             // New SaaS pricing settings
             'saas_professional_monthly' => 'nullable|numeric|min:0|max:9999.99',
             'saas_professional_yearly' => 'nullable|numeric|min:0|max:99999.99',

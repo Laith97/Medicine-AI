@@ -134,8 +134,8 @@ class RegisteredUserController extends Controller
             'cancellation_hours' => 24, // Default 24 hours notice
         ]);
 
-        // ALL USERS GET FREE TRIAL FIRST (mandatory)
-        $user->startTrial();
+        // Trials disabled for homepage flow (only monthly/yearly). If trials are enabled (>0), you may call startTrial(); otherwise skip.
+        // $user->startTrial();
         
         // Set up subscription preferences based on selected plan
         $selectedPlan = $request->selected_plan;
