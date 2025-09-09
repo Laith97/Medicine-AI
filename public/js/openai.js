@@ -19,46 +19,27 @@ function initializeFormSubmission() {
     const form = document.getElementById('openaiForm');
     if (!form) return;
 
-    form.addEventListener('submit', function(e) {
-        // Show the Canvas theme's built-in loader using the data-loader-html
-        const body = document.body;
+    form.addEventListener('submit', function() {
+        // Always show the inline progress bar overlay
+        const pageLoader = document.getElementById('page-loader');
+        if (pageLoader) {
+            pageLoader.style.display = 'flex';
+        }
 
-        // Create loader overlay with the custom SVG from data-loader-html
-        const loaderHTML = body.getAttribute('data-loader-html');
-        if (loaderHTML) {
-            const loaderOverlay = document.createElement('div');
-            loaderOverlay.id = 'canvas-loader-overlay';
-            loaderOverlay.innerHTML = loaderHTML;
-            loaderOverlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(44, 62, 80, 0.9);
-                z-index: 9999;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                backdrop-filter: blur(5px);
-            `;
-
-            // Style the SVG container
-            const svgContainer = loaderOverlay.querySelector('#css3-spinner-svg-pulse-wrapper');
-            if (svgContainer) {
-                svgContainer.style.cssText = `
-                    text-align: center;
-                    padding: 20px;
-                `;
-            }
-
-            document.body.appendChild(loaderOverlay);
-        } else {
-            // Fallback to our custom loader
-            const pageLoader = document.getElementById('page-loader');
-            if (pageLoader) {
-                pageLoader.style.display = 'block';
-            }
+        // Start fake progress animation
+        const bar = document.getElementById('progressBar');
+        if (bar) {
+            let width = 0;
+            const step = () => {
+                // Ease to 90% while waiting for server; final completion handled after response
+                if (width < 90) {
+                    width += Math.random() * 4 + 1; // 1-5%
+                    if (width > 90) width = 90;
+                    bar.style.width = width + '%';
+                    requestAnimationFrame(step);
+                }
+            };
+            requestAnimationFrame(step);
         }
     });
 }

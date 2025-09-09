@@ -230,10 +230,10 @@
                 <div class="setting-item">
                     <div class="setting-label">
                         <i class="fas fa-calendar-check me-2" style="color: #DE6262;"></i>
-                        Free Trial Days
+                        Trial Period (set 0 to disable)
                     </div>
                     <div class="setting-description">
-                        Set the number of free trial days for new users. Users can access all features during this period without payment.
+                        Control the trial duration for new users. Set to 0 to disable trials entirely and require immediate subscription.
                     </div>
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="flex-grow-1 me-3">
@@ -241,10 +241,10 @@
                                 <input type="number" 
                                        name="trial_days" 
                                        class="form-control"
-                                       value="{{ $settings['trial_days']->value ?? '7' }}"
-                                       min="1" 
+                                       value="{{ $settings['trial_days']->value ?? '0' }}"
+                                       min="0" 
                                        max="365"
-                                       placeholder="7">
+                                       placeholder="0">
                                 <span class="input-group-text">days</span>
                             </div>
                         </div>

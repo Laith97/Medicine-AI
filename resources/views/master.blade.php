@@ -281,6 +281,8 @@ body .dropdown .dropdown-menu.show,
         .notifications-dropdown,
         .user-dropdown {
             position: relative !important;
+            display: inline-block !important; /* prevent reflow shifting */
+            vertical-align: middle !important;
         }
 
         /* Custom dropdown styling */
@@ -449,6 +451,8 @@ body .dropdown .dropdown-menu.show,
             align-items: center;
             max-width: 100%;
             overflow: visible;
+            margin: 0 !important; /* prevent shifting during load */
+            padding: 0 !important; /* prevent shifting during load */
         }
 
         .primary-menu .menu-item {
@@ -512,7 +516,8 @@ body .dropdown .dropdown-menu.show,
             margin: 0.25rem 0 0 0 !important;
 
             /* Simple Animation */
-            opacity: 0 !important;
+            /* keep element measurable to avoid reflow jumps */
+            opacity: 0.001 !important;
             visibility: hidden !important;
             transition: all 0.15s ease-in-out !important;
 
@@ -1233,7 +1238,7 @@ body .dropdown .dropdown-menu.show,
                                     aria-haspopup="menu"
                                     aria-label="Notifications"
                                     role="button"
-                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; line-height: 1; backdrop-filter: blur(10px);">
                                     <i class="bi bi-bell" aria-hidden="true"></i>
                                     <span
                                         class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count"
@@ -1333,7 +1338,7 @@ body .dropdown .dropdown-menu.show,
                                     </li>
                                     <li>
                                         <a class="dropdown-item d-flex align-items-center gap-2"
-                                            href="{{ route('notifications.index') }}">
+                                            href="{{ route('notifications.settings') }}">
                                             <i class="bi bi-gear"></i> Notification Settings
                                         </a>
                                     </li>
@@ -1380,21 +1385,19 @@ body .dropdown .dropdown-menu.show,
 <header id="header">
     <div id="header-wrap">
         <div class="container">
-            <div class="header-row d-flex align-items-center justify-content-center">
+            <div class="header-row d-flex align-items-center justify-content-between">
 
                 <!-- Logo and Desktop Nav Container -->
                 <div class="d-flex align-items-center flex-grow-1">
-                    <!-- Logo (hidden when logged in) -->
-                    @guest
+                    <!-- Logo -->
                     <div id="logo" class="me-4 flex-shrink-0">
                         <a href="@auth{{ route('dashboard') }}@else{{ url('/') }}@endauth">
                             <img style="width: 140px; height: auto;" class="logo-default img-fluid"
                                  srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x"
                                  src="{{ asset('demos/medical/images/logo-medical.jpeg') }}"
-                                 alt="Canvas Logo">
+                                 alt="Medcura Logo">
                         </a>
                     </div>
-                    @endguest
 
                     <!-- Desktop Navigation -->
                     <nav class="primary-menu style-3 menu-spacing-margin d-none d-lg-block mx-auto">
@@ -1839,6 +1842,8 @@ body .dropdown .dropdown-menu.show,
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{ asset('js/plugins.min.js') }}"></script>
     <script src="{{ asset('js/functions.bundle.js') }}"></script>
+    <!-- Ensure Bootstrap JS (with Popper) is available for dropdowns/modals -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-9NDL1F0r6r4h0+4zqX6Uo5Qb0lQpFfVgD2pC3zP8v9K4t2q8q3h0nYc8VnO7A9Yf" crossorigin="anonymous"></script>
 
     <!-- Vite Assets (Laravel Echo & Pusher) -->
     @vite(['resources/js/app.js', 'resources/css/app.css'])
@@ -1861,10 +1866,13 @@ body .dropdown .dropdown-menu.show,
 @stack('scripts')
 
 <script>
-    console.log('Master script loaded successfully');
     // Simple dropdown initialization
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Initializing dropdowns...');
+        // Only log in debug mode
+        if (window.location.search.includes('debug=true')) {
+            console.log('Master script loaded successfully');
+            console.log('Initializing dropdowns...');
+        }
 
         // Initialize all dropdown toggles
         document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
@@ -1926,7 +1934,10 @@ body .dropdown .dropdown-menu.show,
             }
         });
 
-        console.log('Dropdowns initialized successfully');
+        // Only log in debug mode
+        if (window.location.search.includes('debug=true')) {
+            console.log('Dropdowns initialized successfully');
+        }
     });
 
     // Fallback initialization
@@ -1958,14 +1969,13 @@ body .dropdown .dropdown-menu.show,
                 mobileMenuTrigger = document.querySelector('button[title="Open Mobile Menu"]');
             }
 
-            console.log('Looking for mobile trigger...', mobileMenuTrigger);
-
             if (!mobileMenuTrigger) {
-                console.log('Mobile trigger not found - available buttons:', document.querySelectorAll('button'));
+                // Only log if we're in debug mode
+                if (window.location.search.includes('debug=true')) {
+                    console.log('Mobile trigger not found - available buttons:', document.querySelectorAll('button'));
+                }
                 return;
             }
-
-            console.log('Mobile trigger found:', mobileMenuTrigger);
 
             // Remove existing mobile menu if it exists
             const existingMobileMenu = document.querySelector('.bottom-sheet-menu');
@@ -2290,36 +2300,38 @@ body .dropdown .dropdown-menu.show,
                 }
             });
 
-            console.log('Bottom sheet mobile menu created successfully');
+            // Only log in debug mode
+            if (window.location.search.includes('debug=true')) {
+                console.log('Bottom sheet mobile menu created successfully');
+            }
         }
 
         // Initialize mobile menu on DOM ready
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM Content Loaded - calling createBottomSheetMenu');
-            console.log('Available hamburger buttons:', document.querySelectorAll('.cnvs-hamburger'));
-            console.log('Available primary-menu-trigger:', document.querySelectorAll('.primary-menu-trigger'));
+            // Only log in debug mode
+            if (window.location.search.includes('debug=true')) {
+                console.log('DOM Content Loaded - calling createBottomSheetMenu');
+                console.log('Available hamburger buttons:', document.querySelectorAll('.cnvs-hamburger'));
+                console.log('Available primary-menu-trigger:', document.querySelectorAll('.primary-menu-trigger'));
+            }
             createBottomSheetMenu();
 
             // Fallback: Add click listener directly to hamburger button
             const hamburger = document.querySelector('.cnvs-hamburger');
             if (hamburger) {
-                console.log('Adding fallback click listener to hamburger');
                 hamburger.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Hamburger clicked!', e);
 
                     // Try to trigger bottom sheet
                     const bottomSheet = document.querySelector('.bottom-sheet-menu');
                     const overlay = document.querySelector('.bottom-sheet-overlay');
                     if (bottomSheet && overlay) {
-                        console.log('Bottom sheet found, opening...');
                         bottomSheet.style.bottom = '0';
                         overlay.style.opacity = '1';
                         overlay.style.visibility = 'visible';
                         document.body.style.overflow = 'hidden';
                     } else {
-                        console.log('Bottom sheet not found, recreating...');
                         createBottomSheetMenu();
                         // Try again after recreation
                         setTimeout(() => {
@@ -2368,28 +2380,46 @@ body .dropdown .dropdown-menu.show,
 
         // Also initialize on page show (for back/forward navigation)
         window.addEventListener('pageshow', function() {
-            console.log('Page Show - calling createBottomSheetMenu');
-            createBottomSheetMenu();
+            // Only create if it doesn't exist
+            const existingMobileMenu = document.querySelector('.bottom-sheet-menu');
+            if (!existingMobileMenu) {
+                createBottomSheetMenu();
+            }
         });
 
-        // For SPA-like navigation, also try to reinitialize periodically
-        setInterval(function() {
+        // For SPA-like navigation, reinitialize only when needed
+        let mobileMenuInitialized = false;
+        
+        function initializeMobileMenuIfNeeded() {
             const existingMobileMenu = document.querySelector('.bottom-sheet-menu');
             const mobileMenuTrigger = document.querySelector('.primary-menu-trigger .cnvs-hamburger');
 
-            // Only reinitialize if elements exist but mobile menu doesn't
-            if (mobileMenuTrigger && !existingMobileMenu) {
-                console.log('Reinitializing mobile menu due to missing elements');
+            // Only reinitialize if elements exist but mobile menu doesn't and we haven't initialized recently
+            if (mobileMenuTrigger && !existingMobileMenu && !mobileMenuInitialized) {
+                console.log('Initializing mobile menu');
                 createBottomSheetMenu();
+                mobileMenuInitialized = true;
+                
+                // Reset flag after a delay to allow re-initialization if needed
+                setTimeout(() => {
+                    mobileMenuInitialized = false;
+                }, 5000);
             }
-        }, 2000); // Check every 2 seconds
+        }
+        
+        // Check on navigation events instead of continuous polling
+        window.addEventListener('popstate', initializeMobileMenuIfNeeded);
+        window.addEventListener('hashchange', initializeMobileMenuIfNeeded);
 
     // Function to load notifications into dropdown
     function loadNotifications() {
         const notificationList = document.getElementById('notification-list');
         if (!notificationList) return;
 
-        console.log('Loading notifications...');
+        // Only log in debug mode
+        if (window.location.search.includes('debug=true')) {
+            console.log('Loading notifications...');
+        }
 
         // Show loading state
         notificationList.innerHTML = `
@@ -2622,9 +2652,11 @@ body .dropdown .dropdown-menu.show,
 
 @endauth
 
-<!-- WebSocket Test Scripts -->
+<!-- WebSocket Test Scripts (only in development) -->
+@if(config('app.debug'))
 <script src="{{ asset('js/websocket-test.js') }}"></script>
 <script src="{{ asset('js/pusher-connection-test.js') }}"></script>
+@endif
 
 <script>
 // Prevent notification API calls immediately after login

@@ -168,8 +168,8 @@ class DoctorController extends Controller
             'is_verified' => true, // Hospital admin can verify doctors directly
         ]);
 
-        // Start free trial for new doctor (same as normal registration)
-        $doctor->startTrial();
+        // Trials disabled for homepage flow (only monthly/yearly). If trials are enabled (>0), you may call startTrial(); otherwise skip.
+        // $doctor->startTrial();
 
         return redirect()->route('hospital-admin.doctors.index')
             ->with('success', 'Doctor created successfully with all standard features.');

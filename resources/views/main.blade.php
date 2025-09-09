@@ -948,9 +948,15 @@ document.addEventListener('DOMContentLoaded', function() {
         <h2 class="section-title">Ready to Transform Your Practice?</h2>
         <p class="section-subtitle">Join thousands of doctors already using AI-powered diagnosis</p>
         <div class="d-flex justify-content-center gap-3 flex-wrap">
-            <a href="/login" class="btn btn-theme-primary btn-lg">
-                <i class="fas fa-rocket me-2"></i>Start Free Trial
-            </a>
+            @auth
+                <a href="{{ route('subscription.pricing') }}" class="btn btn-theme-primary btn-lg">
+                    <i class="fas fa-credit-card me-2"></i>Choose Monthly or Yearly
+                </a>
+            @else
+                <a href="/login" class="btn btn-theme-primary btn-lg">
+                    <i class="fas fa-credit-card me-2"></i>Choose Monthly or Yearly
+                </a>
+            @endauth
             <a href="{{ route('contact') }}" class="btn btn-theme-outline btn-lg">
                 <i class="fas fa-phone me-2"></i>Contact Sales
             </a>
