@@ -155,6 +155,42 @@
                         <p class="mb-0">{{ $appointment->reason }}</p>
                     </div>
                 </div>
+
+                @if($appointment->appointment_type == 'video_call')
+                <!-- Video Call Section -->
+                <div class="table-card mb-4">
+                    <div class="p-4">
+                        <h5 class="mb-3">Video Call</h5>
+                        <video id="videoElement" autoplay muted style="width: 100%; max-width: 640px;"></video>
+                    </div>
+                </div>
+
+                <!-- Live Emotion & Engagement Dashboard -->
+                <div class="table-card mb-4">
+                    <div class="p-4">
+                        <h5 class="mb-3">Live Emotion & Engagement Dashboard</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6>Emotion</h6>
+                                        <p id="emotionLabel">Neutral</p>
+                                        <p id="emotionConfidence">Confidence: 0%</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6>Engagement</h6>
+                                        <p id="engagementMetrics">Metrics: Loading...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
 
             <!-- Sidebar -->
@@ -210,6 +246,17 @@
                         </div>
                     </div>
                 </div>
+
+                @if($appointment->status == 'completed' && $appointment->appointment_type == 'video_call')
+                <!-- Post-Call Summary -->
+                <div class="table-card">
+                    <div class="p-4">
+                        <h5 class="mb-3">Post-Call Summary</h5>
+                        <canvas id="emotionChart" width="400" height="200"></canvas>
+                        <div id="engagementSummary">Engagement Summary: Loading...</div>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -243,7 +290,11 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+let captureInterval;
+let emotionChart;
+
 function cancelAppointment(appointmentId) {
     const form = document.getElementById('cancelForm');
     form.action = `/appointments/${appointmentId}/cancel`;
@@ -253,5 +304,120 @@ function cancelAppointment(appointmentId) {
 function submitCancellation() {
     document.getElementById('cancelForm').submit();
 }
+
+function startEmotionCapture() {
+    const video = document.getElementById('videoElement');
+    if (!video) return;
+
+    captureInterval = setInterval(() => {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
+        const frameBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
+
+        // Send to emotion API
+        fetch('/api/telehealth/emotion', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                appointment_id: {{ $appointment->id }},
+                patient_id: {{ $appointment->patient_id ?: 'null' }},
+                frame_base64: frameBase64
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('emotionLabel').textContent = data.emotion || 'Unknown';
+            document.getElementById('emotionConfidence').textContent = `Confidence: ${Math.round((data.confidence || 0) * 100)}%`;
+        })
+        .catch(error => {
+            console.error('Emotion API error:', error);
+            document.getElementById('emotionLabel').textContent = 'Error detecting emotion';
+        });
+
+        // Send to engagement API
+        fetch('/api/telehealth/engagement', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                appointment_id: {{ $appointment->id }},
+                patient_id: {{ $appointment->patient_id ?: 'null' }},
+                frame_base64: frameBase64
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('engagementMetrics').textContent = `Attention: ${Math.round((data.attention_score || 0) * 100)}%, Eye Contact: ${Math.round(data.eye_contact || 0)}%, Participation: ${data.participation || 'Unknown'}`;
+        })
+        .catch(error => {
+            console.error('Engagement API error:', error);
+            document.getElementById('engagementMetrics').textContent = 'Error loading metrics';
+        });
+    }, 1000);
+}
+
+function loadPostCallSummary() {
+    // Fetch emotion data from DB
+    fetch(`/api/telehealth/emotion-summary/{{ $appointment->id }}`)
+    .then(response => response.json())
+    .then(data => {
+        const ctx = document.getElementById('emotionChart').getContext('2d');
+        const emotions = Object.keys(data.emotion_distribution || {});
+        const counts = Object.values(data.emotion_distribution || {});
+        emotionChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: emotions,
+                datasets: [{
+                    label: 'Emotion Distribution',
+                    data: counts,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgb(75, 192, 192)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    })
+    .catch(error => {
+        console.error('Emotion summary error:', error);
+        document.getElementById('emotionChart').style.display = 'none';
+    });
+
+    // Fetch engagement summary
+    fetch(`/api/telehealth/engagement-summary/{{ $appointment->id }}`)
+    .then(response => response.json())
+    .then(data => {
+        const summary = data.summary_metrics || {};
+        document.getElementById('engagementSummary').textContent = `Average Attention: ${Math.round((summary.avg_attention_score || 0) * 100)}%, Average Eye Contact: ${Math.round(summary.avg_eye_contact || 0)}%`;
+    })
+    .catch(error => {
+        console.error('Engagement summary error:', error);
+        document.getElementById('engagementSummary').textContent = 'Error loading summary';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('videoElement')) {
+        startEmotionCapture();
+    }
+    if (document.getElementById('emotionChart')) {
+        loadPostCallSummary();
+    }
+});
 </script>
 @endpush

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\NotificationTestController;
 use App\Http\Controllers\UserSettingsController;
+use App\Http\Controllers\Api\TelehealthAIController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,6 +56,12 @@ Route::middleware(['auth:web'])->group(function () {
     Route::post('/test/direct-notification', [\App\Http\Controllers\Api\DirectNotificationTestController::class, 'sendDirectTest']);
     Route::post('/test/pusher-connection', [\App\Http\Controllers\Api\DirectNotificationTestController::class, 'testPusherConnection']);
     Route::get('/test/system-status', [\App\Http\Controllers\Api\DirectNotificationTestController::class, 'getSystemStatus']);
+
+    // Telehealth AI routes
+    Route::post('/telehealth/emotion', [TelehealthAIController::class, 'detectEmotion']);
+    Route::post('/telehealth/engagement', [TelehealthAIController::class, 'trackEngagement']);
+    Route::get('/telehealth/emotion-summary/{appointment_id}', [TelehealthAIController::class, 'getEmotionSummary']);
+    Route::get('/telehealth/engagement-summary/{appointment_id}', [TelehealthAIController::class, 'getEngagementSummary']);
 });
 
 // Public routes (for guest access with token verification)
