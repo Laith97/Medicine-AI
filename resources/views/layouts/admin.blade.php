@@ -191,6 +191,18 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Admin Panel | MedCura AI')</title>
+    <style>
+        /* Ensure Admin user dropdown is visible and positioned correctly */
+        .user-info .dropdown-menu {
+            position: absolute !important; /* override global fixed */
+            right: 0 !important;
+            left: auto !important;
+            z-index: 2000 !important;
+        }
+        .user-info .dropdown-menu.show {
+            display: block !important;
+        }
+    </style>
 </head>
 <body>
     <div class="admin-wrapper">
@@ -314,11 +326,11 @@
                         <div class="fw-semibold">{{ Auth::guard('admin')->user()->name }}</div>
                         <small class="text-white-50">Administrator</small>
                     </div>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <div class="dropdown position-static">
+                        <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
                             <i class="fas fa-ellipsis-v"></i>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
+                        <ul class="dropdown-menu dropdown-menu-end" data-bs-popper>
                             <li>
                                 <form method="POST" action="{{ route('admin.logout') }}">
                                     @csrf

@@ -256,60 +256,9 @@
                             @endif
                         </div>
 
-                        <!-- Plan Selection Section -->
-                        <div class="form-group mb-4">
-                            <label class="form-label">
-                                <i class="bi bi-credit-card me-2"></i>Choose Your Plan <span class="text-danger">*</span>
-                            </label>
-                            
-                            <!-- Billing Toggle -->
-                            <div class="text-center mb-3">
-                                <div class="d-inline-flex align-items-center p-1 rounded-pill" style="background: #f8f9fa; border: 1px solid #e9ecef;">
-                                    <span class="px-2 py-1 billing-toggle" id="monthly-toggle" onclick="switchBilling('monthly')" style="border-radius: 15px; cursor: pointer; transition: all 0.3s ease; background: #DE6262; color: white; font-size: 0.8rem;">Monthly</span>
-                                    <span class="px-2 py-1 billing-toggle" id="yearly-toggle" onclick="switchBilling('yearly')" style="border-radius: 15px; cursor: pointer; transition: all 0.3s ease; margin-left: 3px; font-size: 0.8rem;">Yearly <small>(Save!)</small></span>
-                                </div>
-                            </div>
-
-                            <div class="row g-3">
-                                @isset($pricingPlans)
-                                    @foreach($pricingPlans as $planKey => $plan)
-                                    <div class="col-md-4">
-                                        <div class="plan-card {{ $selectedPlan === $planKey ? 'selected' : '' }}" onclick="selectPlan('{{ $planKey }}')" data-plan="{{ $planKey }}">
-                                            <div class="plan-header">
-                                                <h6 class="plan-name">{{ $plan['name'] }}</h6>
-                                                <div class="plan-price">
-                                                    @if($plan['price_monthly'] == 0)
-                                                        <span class="price">Free</span>
-                                                    @else
-                                                        <span class="price monthly-price-display">${{ $plan['price_monthly'] }}</span>
-                                                        <span class="period monthly-price-display">/mo</span>
-                                                        <span class="price yearly-price-display" style="display: none;">${{ $plan['price_yearly'] }}</span>
-                                                        <span class="period yearly-price-display" style="display: none;">/yr</span>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                            <ul class="plan-features">
-                                                @foreach(array_slice($plan['features'], 0, 3) as $feature)
-                                                <li><i class="bi bi-check-circle text-success me-1"></i>{{ $feature }}</li>
-                                                @endforeach
-                                                @if(count($plan['features']) > 3)
-                                                <li class="text-muted">+{{ count($plan['features']) - 3 }} more features</li>
-                                                @endif
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    @endforeach
-                                @endisset
-                            </div>
-                            
-                            <!-- Hidden inputs for selected plan and billing -->
-                            <input type="hidden" name="selected_plan" id="selected_plan" value="{{ $selectedPlan }}">
-                            <input type="hidden" name="selected_billing" id="selected_billing" value="{{ $selectedBilling }}">
-                            
-                            @error('selected_plan')
-                                <div class="text-danger small mt-1">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        <!-- Plan Selection Section (Removed - users start on free trial by default) -->
+                        <input type="hidden" name="selected_plan" id="selected_plan" value="free">
+                        <input type="hidden" name="selected_billing" id="selected_billing" value="monthly">>
 
                         <!-- Terms Agreement -->
                         <div class="form-check mb-4">

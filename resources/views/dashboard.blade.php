@@ -994,7 +994,7 @@
                             </h5>
                             <p class="mb-2">Your free trial has ended. {{ Auth::user()->getRestrictionMessage() }}</p>
                             <div class="d-flex gap-2">
-                                <a href="{{ route('invoices.index') }}" class="btn btn-danger btn-sm">
+                                <a href="{{ route('subscription.pricing') }}" class="btn btn-danger btn-sm">
                                     <i class="fas fa-credit-card me-1"></i> Pay Outstanding Invoices
                                 </a>
                                 <a href="{{ route('access.restricted') }}" class="btn btn-outline-danger btn-sm">

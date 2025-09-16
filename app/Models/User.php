@@ -810,7 +810,7 @@ public function startTrial(): void
         return; // User already used their trial
     }
 
-    $trialDays = SystemSetting::get('trial_days', 7);
+    $trialDays = SystemSetting::get('trial_days', 14);
 
     $this->update([
         'trial_ends_at' => now()->addDays($trialDays),
