@@ -216,8 +216,8 @@
     border: 1px solid rgba(0,0,0,.125) !important;
 }
 
-/* Global dropdown fixes */
-body .dropdown-menu {
+/* Global dropdown fixes - restricted to admin tables only (avoid breaking headers) */
+.admin-table .dropdown-menu {
     position: fixed !important;
     z-index: 999999 !important;
 }

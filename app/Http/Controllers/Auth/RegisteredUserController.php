@@ -134,32 +134,12 @@ class RegisteredUserController extends Controller
             'cancellation_hours' => 24, // Default 24 hours notice
         ]);
 
-        // Trials disabled for homepage flow (only monthly/yearly). If trials are enabled (>0), you may call startTrial(); otherwise skip.
-        // $user->startTrial();
-        
-        // Set up subscription preferences based on selected plan
-        $selectedPlan = $request->selected_plan;
-        $selectedBilling = $request->selected_billing;
-        $planPricing = $pricingPlans[$selectedPlan];
-        
-        if ($selectedPlan === 'professional') {
-            // Store their plan preference for after trial ends
-            $price = $selectedBilling === 'monthly' ? $planPricing['price_monthly'] : $planPricing['price_yearly'];
-            $billingPeriodMonths = $selectedBilling === 'monthly' ? 1 : 12;
-            
-            // Create monthly invoice setting with selected plan preferences
-            $user->monthlyInvoiceSetting()->create([
-                'monthly_price' => $planPricing['price_monthly'], // Store monthly price option
-                'yearly_price' => $planPricing['price_yearly'],   // Store yearly price option  
-                'billing_amount' => $price, // The amount they'll be charged after trial
-                'subscription_period_months' => $billingPeriodMonths,
-                'subscription_starts_at' => null, // Will be set when trial ends and payment is completed
-                'subscription_ends_at' => null, // Will be set when payment is completed
-                'is_active' => true, // Set to true so user can see plans
-                'is_restricted' => false, // Not restricted during trial
-            ]);
-        }
-        // Note: Free plan users don't need billing setup - they'll set it up after trial if desired
+        // Start free trial by default using admin-configured trial days
+        $user->startTrial();
+
+        // Do not collect plan choice here; user can subscribe any time during/after trial
+        // Ensure monthly invoice setting exists for later subscription flow (uses defaults)
+        $user->getOrCreateMonthlyInvoiceSetting();
 
         event(new Registered($user));
 

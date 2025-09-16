@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\Subscription;
 use App\Models\StripeInvoice;
+use App\Models\SystemSetting;
 use App\Mail\SubscriptionConfirmation;
 use Stripe\Stripe;
 use Stripe\Customer;
@@ -13,6 +14,7 @@ use Stripe\Subscription as StripeSubscription;
 use Stripe\WebhookEndpoint;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
 
 class StripeService
 {
@@ -29,7 +31,7 @@ class StripeService
         if ($user->stripe_customer_id) {
             try {
                 // Use cache to avoid repeated API calls for same customer
-                return \Cache::remember("stripe_customer_{$user->stripe_customer_id}", 3600, function() use ($user) {
+                return Cache::remember("stripe_customer_{$user->stripe_customer_id}", 3600, function() use ($user) {
                     return Customer::retrieve($user->stripe_customer_id);
                 });
             } catch (\Exception $e) {
@@ -53,7 +55,7 @@ class StripeService
         $user->update(['stripe_customer_id' => $customer->id]);
         
         // Cache the new customer
-        \Cache::put("stripe_customer_{$customer->id}", $customer, 3600);
+        Cache::put("stripe_customer_{$customer->id}", $customer, 3600);
 
         return $customer;
     }
@@ -217,20 +219,48 @@ class StripeService
         if ($user->monthlyInvoiceSetting) {
             $subscriptionPeriodMonths = $billingCycle === 'yearly' ? 12 : 1;
             
-            // If user is in trial, subscription should start AFTER trial ends
+            // If user is in trial, implement trial-to-subscription transition with proration
             if ($user->isInTrialPeriod() && $user->trial_ends_at) {
-                $subscriptionStartDate = $user->trial_ends_at;
+                $remainingTrialDays = $user->getTrialDaysRemaining();
+                $totalTrialDays = SystemSetting::get('trial_days', 14);
+                
+                // Calculate subscription start and end dates with trial proration
+                $subscriptionStartDate = $user->trial_ends_at; // Start when trial ends
                 $subscriptionEndDate = $user->trial_ends_at->copy()->addMonths($subscriptionPeriodMonths);
                 
-                Log::info("User {$user->id} subscribed during trial. Subscription will start after trial ends.", [
+                // Log the transition details
+                Log::info("User {$user->id} subscribed during trial. Implementing trial proration.", [
                     'trial_ends_at' => $user->trial_ends_at,
+                    'remaining_trial_days' => $remainingTrialDays,
+                    'total_trial_days' => $totalTrialDays,
                     'subscription_starts_at' => $subscriptionStartDate,
-                    'subscription_ends_at' => $subscriptionEndDate
+                    'subscription_ends_at' => $subscriptionEndDate,
+                    'billing_cycle' => $billingCycle,
+                    'subscription_period_months' => $subscriptionPeriodMonths
+                ]);
+                
+                // Update user's trial status to indicate transition
+                $user->update([
+                    'trial_ends_at' => null, // Clear trial end date as subscription is starting
+                    'trial_used' => true,
+                ]);
+                
+                // Log the successful transition
+                Log::info("Trial-to-subscription transition completed for user {$user->id}", [
+                    'remaining_trial_days_credited' => $remainingTrialDays,
+                    'subscription_period_extended_by_days' => $remainingTrialDays,
+                    'new_subscription_ends_at' => $subscriptionEndDate
                 ]);
             } else {
                 // User not in trial, use Stripe's dates
                 $subscriptionStartDate = $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_start');
                 $subscriptionEndDate = $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_end');
+                
+                Log::info("User {$user->id} subscribed without active trial period.", [
+                    'subscription_starts_at' => $subscriptionStartDate,
+                    'subscription_ends_at' => $subscriptionEndDate,
+                    'billing_cycle' => $billingCycle
+                ]);
             }
             
             $user->monthlyInvoiceSetting->update([

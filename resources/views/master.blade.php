@@ -393,6 +393,27 @@ body .dropdown .dropdown-menu.show,
             text-rendering: optimizeLegibility;
         }
 
+        /* Fix: Do not override Font Awesome icon fonts */
+        .fa, .fas, .far, .fal, .fat, .fad,
+        .fa-solid, .fa-regular, .fa-light, .fa-thin, .fa-duotone, .fa-brands,
+        i.fa, i.fas, i.far, i.fal, i.fat, i.fad,
+        i.fa-solid, i.fa-regular, i.fa-light, i.fa-thin, i.fa-duotone, i.fa-brands {
+            font-family: inherit; /* reset first */
+        }
+        /* Re-assert correct FA font families with !important to beat global * rule */
+        .fa, .fas, .fa-solid, i.fa, i.fas, i.fa-solid {
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 900 !important; /* solid */
+        }
+        .far, .fa-regular, i.far, i.fa-regular {
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 400 !important; /* regular */
+        }
+        .fab, .fa-brands, i.fab, i.fa-brands {
+            font-family: "Font Awesome 6 Brands" !important;
+            font-weight: 400 !important; /* brands */
+        }
+
         /* Navigation specific fonts - Clean and readable */
         .primary-menu .menu-link {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
@@ -1147,6 +1168,11 @@ body .dropdown .dropdown-menu.show,
 <body class="stretched page-transition"
     data-loader-html="<div id='css3-spinner-svg-pulse-wrapper'><svg id='css3-spinner-svg-pulse' version='1.2' height='210' width='550' xmlns='https://www.w3.org/2000/svg' viewport='0 0 60 60' xmlns:xlink='https://www.w3.org/1999/xlink'><path id='css3-spinner-pulse' stroke='#DE6262' fill='none' stroke-width='2' stroke-linejoin='round' d='M0,90L250,90Q257,60 262,87T267,95 270,88 273,92t6,35 7,-60T290,127 297,107s2,-11 10,-10 1,1 8,-10T319,95c6,4 8,-6 10,-17s2,10 9,11h210'></svg></div>">
 
+    {{-- Sidebar CSS/JS --}}
+    <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
+    @include('layouts.sidebar')
+    <style>#header{display:none !important;}</style>
+
 <!-- Prevent notification redirects after login -->
 <script>
 (function() {
@@ -1660,7 +1686,7 @@ body .dropdown .dropdown-menu.show,
         @endif
 
         <!-- Main Content -->
-        <main>
+        <main class="app-main">
             @yield('content')
         </main>
 
@@ -1844,6 +1870,8 @@ body .dropdown .dropdown-menu.show,
     <script src="{{ asset('js/functions.bundle.js') }}"></script>
     <!-- Ensure Bootstrap JS (with Popper) is available for dropdowns/modals -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-9NDL1F0r6r4h0+4zqX6Uo5Qb0lQpFfVgD2pC3zP8v9K4t2q8q3h0nYc8VnO7A9Yf" crossorigin="anonymous"></script>
+    <!-- Sidebar JS -->
+    <script src="{{ asset('js/sidebar.js') }}" defer></script>
 
     <!-- Vite Assets (Laravel Echo & Pusher) -->
     @vite(['resources/js/app.js', 'resources/css/app.css'])
