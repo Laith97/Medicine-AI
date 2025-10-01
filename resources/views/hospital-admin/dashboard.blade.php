@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
+<div class="dashboard-header py-2 border-bottom">
+    <h2 class="h1 mb-1" style="font-weight: 700;">Hospital Admin Dashboard</h2>
+    <p>Hospital administration overview</p>
+</div>
 <div class="container-fluid">
     <!-- Page Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">

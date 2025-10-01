@@ -85,10 +85,10 @@ document.addEventListener('DOMContentLoaded', function() {
         setupKeyboardShortcuts();
 
         // Log initialization status
-        console.log('Voice Assistant initialized');
-        console.log('Initial patient selection:', selectedPatient);
-        console.log('Session ID:', sessionId);
-        console.log('Hands-free mode:', isHandsFreeMode);
+        
+        
+        
+        
     }
 
     // Session persistence functions
@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             localStorage.setItem('voiceAssistantState', JSON.stringify(state));
         } catch (error) {
-            console.warn('Failed to save session state:', error);
+            ;
         }
     }
 
@@ -136,9 +136,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (state.extractedData) extractedData = state.extractedData;
             if (state.aiAnalysis) aiAnalysis = state.aiAnalysis;
 
-            console.log('Session state restored from localStorage');
+            
         } catch (error) {
-            console.warn('Failed to restore session state:', error);
+            ;
             localStorage.removeItem('voiceAssistantState');
         }
     }
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             localStorage.removeItem('voiceAssistantState');
         } catch (error) {
-            console.warn('Failed to clear session state:', error);
+            ;
         }
     }
 
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const detectedLang = detectLanguage(transcript);
                         if (detectedLang !== currentLanguage) {
                             currentLanguage = detectedLang;
-                            console.log('Language switched to:', currentLanguage);
+                            
                             if (isListening) {
                                 recognition.lang = currentLanguage;
                             }
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             recognition.onerror = function(event) {
-                console.error('Speech recognition error:', event.error);
+                ;
 
                 switch(event.error) {
                     case 'not-allowed':
@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         updateRecordingUI();
                         break;
                     case 'no-speech':
-                        console.log('No speech detected, continuing...');
+                        
                         break;
                     case 'audio-capture':
                         showAlert('No microphone found. Please check your microphone connection.', 'error');
@@ -322,22 +322,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         updateRecordingUI();
                         break;
                     case 'network':
-                        console.log('Network error, retrying...');
+                        
                         break;
                     case 'aborted':
-                        console.log('Speech recognition aborted');
+                        
                         break;
                     default:
-                        console.log('Speech recognition error:', event.error);
+                        
                 }
             };
 
             recognition.onstart = function() {
-                console.log('Speech recognition started with language:', currentLanguage);
+                
             };
 
             recognition.onend = function() {
-                console.log('Speech recognition ended');
+                
 
                 if (isListening) {
                     // Auto-restart in hands-free mode with enhanced error handling
@@ -350,9 +350,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                         recognition.lang = currentLanguage;
                                         recognition.start();
                                         restartAttempts = 0; // Reset on successful restart
-                                        console.log('Voice recognition restarted successfully');
+                                        
                                     } catch (error) {
-                                        console.error('Error restarting recognition:', error);
+                                        ;
                                         restartAttempts++;
 
                                         if (restartAttempts >= maxRestartAttempts) {
@@ -415,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }, 100);
             }
-            console.log('Recognition language set to:', currentLanguage);
+            
         }
     }
 
@@ -452,15 +452,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (patientSelect) {
             patientSelect.addEventListener('change', function() {
                 selectedPatient = this.value || null;
-                console.log('Patient selected:', selectedPatient);
-                console.log('Patient select element value:', this.value);
+                
+                
                 updateRecordingUI();
             });
 
             // Also listen for input events in case of programmatic changes
             patientSelect.addEventListener('input', function() {
                 selectedPatient = this.value || null;
-                console.log('Patient input changed:', selectedPatient);
+                
                 updateRecordingUI();
             });
         }
@@ -470,7 +470,7 @@ document.addEventListener('DOMContentLoaded', function() {
             languageSelector.addEventListener('change', function(e) {
                 const selectedLang = e.target.value;
                 setRecognitionLanguage(selectedLang);
-                console.log('Language changed to:', selectedLang);
+                
             });
         }
 
@@ -522,26 +522,26 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadPatients() {
         // This would typically be an AJAX call to load patients
         // For now, we'll just check if patients are already loaded
-        console.log('Patients should be loaded from server');
+        
     }
 
     // Sync patient selection
     function syncPatientSelection() {
         if (patientSelect && patientSelect.value) {
             selectedPatient = patientSelect.value;
-            console.log('Synced patient selection:', selectedPatient);
+            
             return true;
         }
         selectedPatient = null;
-        console.log('No patient selected');
+        
         return false;
     }
 
     // Start session
     function startSession() {
         // Debug logging
-        console.log('Starting session with selectedPatient:', selectedPatient);
-        console.log('Patient select value:', patientSelect ? patientSelect.value : 'patientSelect not found');
+        
+        
 
         // Sync patient selection to ensure we have the latest value
         syncPatientSelection();
@@ -574,7 +574,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     try {
                         recognition.lang = currentLanguage;
                         recognition.start();
-                        console.log('Voice recording started');
+                        
 
                         // Start enhanced features
                         startRecordingTimer();
@@ -586,7 +586,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         updateHandsFreeStatus();
                         showAlert('Session started successfully.', 'success');
                     } catch (error) {
-                        console.error('Error starting recognition:', error);
+                        ;
                         isListening = false;
                         updateRecordingUI();
                         updateHandsFreeStatus();
@@ -596,7 +596,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             },
             error: function(xhr, status, error) {
-                console.error('Start session error:', error);
+                ;
                 showAlert('Failed to start session. Please try again.', 'error');
             }
         });
@@ -615,14 +615,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             try {
                 recognition.stop();
-                console.log('Voice recording stopped');
+                
 
                 // Send any remaining buffered transcript
                 if (transcriptBuffer.trim()) {
                     handleTranscription(transcriptBuffer.trim());
                 }
             } catch (error) {
-                console.error('Error stopping recognition:', error);
+                ;
             }
         }
 
@@ -644,7 +644,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             },
             error: function(xhr, status, error) {
-                console.error('Stop session error:', error);
+                ;
                 showAlert('Failed to stop session. Please try again.', 'error');
             }
         });
@@ -679,13 +679,13 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             success: function(response) {
                 if (response.success) {
-                    console.log('Transcription updated:', response.transcription);
+                    
                 } else {
-                    console.warn('Transcription update failed:', response.message);
+                    ;
                 }
             },
             error: function(xhr, status, error) {
-                console.error('Handle transcription error:', error);
+                ;
             }
         });
     }
@@ -716,7 +716,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     extractedData = response.extractedData;
                     updateChartFields(extractedData);
                     updateProcessingStage('Medical data extraction completed!');
-                    console.log('Medical data extracted successfully');
+                    
 
                     // Call the callback function if provided
                     if (callback && typeof callback === 'function') {
@@ -724,13 +724,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 } else {
                     updateProcessingStage('Failed to parse AI response.');
-                    console.warn('Failed to parse AI response');
+                    ;
                     isProcessing = false;
                     hideProgressIndicator();
                 }
             },
             error: function(xhr, status, error) {
-                console.error('Voice AI processing error:', error);
+                ;
                 updateProcessingStage('AI processing failed.');
                 isProcessing = false;
                 hideProgressIndicator();
@@ -852,7 +852,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             },
             error: function(xhr, status, error) {
-                console.error('Generate analysis error:', error);
+                ;
                 updateProcessingStage('Analysis failed. Please try again.');
                 showAlert('Failed to generate analysis. Please try again.', 'error');
                 isProcessing = false;
@@ -879,7 +879,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (response.success) {
                     // Store the AI result ID for later use
                     aiResultId = response.aiResultId;
-                    console.log('AI result created successfully, ID:', aiResultId);
+                    
 
                     updateProcessingStage('Analysis completed successfully!');
                     showAlert('AI analysis generated successfully!', 'success');
@@ -898,7 +898,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 hideProgressIndicator();
             },
             error: function(xhr, status, error) {
-                console.error('Create AI result error:', error);
+                ;
                 updateProcessingStage('Failed to create AI result record.');
                 showAlert('Failed to create AI result record. Please try again.', 'error');
                 isProcessing = false;
@@ -965,7 +965,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 recognition.stop();
             } catch (error) {
-                console.error('Error pausing recognition:', error);
+                ;
             }
         }
 
@@ -985,7 +985,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 recognition.lang = currentLanguage;
                 recognition.start();
             } catch (error) {
-                console.error('Error resuming recognition:', error);
+                ;
             }
         }
 
@@ -999,7 +999,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         silenceTimeout = setTimeout(() => {
             if (isHandsFreeMode && !isHandsFreePaused && isListening) {
-                console.log('Long silence detected, checking if session should continue...');
+                
                 showAlert('Long silence detected. Recording continues in hands-free mode.', 'info');
 
                 // Reset the silence timer
@@ -1017,7 +1017,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function initAudioLevelMonitoring() {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            console.warn('Audio level monitoring not supported');
+            ;
             return;
         }
 
@@ -1033,7 +1033,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 monitorAudioLevel();
             })
             .catch(error => {
-                console.error('Error accessing microphone for level monitoring:', error);
+                ;
             });
     }
 
@@ -1355,7 +1355,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setSelectedPatient: function(patientId) {
             selectedPatient = patientId;
             updateRecordingUI();
-            console.log('Patient set externally:', selectedPatient);
+            
         },
         getAiResultId: function() { return aiResultId; },
         getExtractedData: function() { return extractedData; }

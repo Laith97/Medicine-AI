@@ -104,7 +104,7 @@
                                                         <strong>{{ $name }}</strong>
                                                         @php
                                                             $routeMapping = [
-                                                                'ask-ai' => ['ask-ai', 'openai.respond', 'openai.follow-up', 'patient.summary'],
+                                                                'ai.ask-ai' => ['ai.ask-ai', 'openai.respond', 'openai.follow-up', 'patient.summary'],
                                                                 'cases' => ['cases'],
                                                                 'dashboard' => ['dashboard'],
                                                                 'appointments' => ['appointments.index', 'appointments.show', 'appointments.cancel', 'appointments.reschedule', 'appointments.calendar.events'],

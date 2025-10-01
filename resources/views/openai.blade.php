@@ -1121,7 +1121,7 @@ X-ray: No abnormalities detected">{{ $patientToEdit->test_results ?? '' }}</text
                             <small>Based on the AI analysis above, write your professional diagnosis</small>
                         </div>
                         <div class="card-body">
-                            <form id="manual-diagnosis-form" action="{{ route('openai.create-manual-diagnosis') }}" method="POST">
+                            <form id="manual-diagnosis-form" action="{{ route('ai.create-manual-diagnosis') }}" method="POST">
                                 @csrf
                                 <input type="hidden" name="ai_result_id" value="{{ session('ai_result_id') }}">
                                 <input type="hidden" name="patient_id" value="{{ session('patient_id') }}">

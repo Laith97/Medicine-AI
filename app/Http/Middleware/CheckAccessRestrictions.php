@@ -63,16 +63,16 @@ class CheckAccessRestrictions
             'doctors.reviews',
             'doctors.reviews.ajax',
             // Core patient routes
-            'ask-ai',
+            'ai.ask-ai',
             'cases',
             'settings',
             'profile.edit',
             'appointments',
             'reviews',
             // Voice assistant
-            'voice-assistant.index',
-            'voice-assistant.history',
-            'voice-assistant.show',
+            'ai.voice-assistant.index',
+            'ai.voice-assistant.history',
+            'ai.voice-assistant.show',
             // Diagnosis routes
             'diagnosis.index',
             'diagnosis.create',

@@ -21,7 +21,7 @@ beforeEach(function () {
         'is_active' => true,
         'grace_period_days' => 7,
         'reminder_frequency_days' => 3,
-        'restricted_pages' => ['ask-ai', 'dashboard'],
+        'restricted_pages' => ['ai.ask-ai', 'dashboard'],
         'is_restricted' => false,
     ]);
 });
@@ -47,7 +47,7 @@ test('user restriction works', function () {
     expect($this->user->fresh()->isRestricted())->toBeTrue();
     
     // Test that restricted pages redirect
-    $response = $this->actingAs($this->user)->get('/ask-ai');
+    $response = $this->actingAs($this->user)->get('/ai/ask');
     $response->assertRedirect(route('access.restricted'));
 });
 

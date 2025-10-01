@@ -11,14 +11,9 @@
 <div class="dashboard-container">
     <div class="container">
         <!-- Header -->
-        <div class="dashboard-header d-flex justify-content-between align-items-center">
-            <div>
-                <h2 class="h1 mb-1">My Appointments</h2>
-                <p>Manage your upcoming and past appointments</p>
-            </div>
-            <a href="{{ route('doctors.index') }}" class="btn btn-primary-custom">
-                <i class="fas fa-plus me-2"></i>Book New Appointment
-            </a>
+        <div class="dashboard-header py-2 border-bottom">
+            <h2 class="h1 mb-1" style="font-weight: 700;">Appointments</h2>
+            <p>View all appointments</p>
         </div>
 
         <!-- Filters -->

@@ -78,42 +78,42 @@ class MenuHelper
                 'permission' => 'dashboard',
             ],
 
-            // AI Tools Dropdown
+            // Clinical Tools Section
             [
-                'name' => 'AI Tools',
-                'icon' => 'fas fa-robot',
+                'name' => 'Clinical Tools',
+                'icon' => 'fas fa-stethoscope',
                 'dropdown' => true,
+                'href' => 'diagnosis.index', // Clickable parent header
                 'items' => [
                     [
                         'name' => 'AI Assistant',
-                        'route' => 'ask-ai',
+                        'route' => 'ai.ask-ai',
                         'icon' => 'fas fa-robot',
                         'permission' => 'ai_assistant',
                         'restricted' => true,
                     ],
                     [
                         'name' => 'Voice Assistant',
-                        'route' => 'voice-assistant.index',
+                        'route' => 'ai.voice-assistant.index',
                         'icon' => 'fas fa-microphone',
                         'permission' => 'voice_assistant',
                         'restricted' => true,
                     ],
+                    [
+                        'name' => 'Diagnoses',
+                        'route' => 'diagnosis.index',
+                        'icon' => 'fas fa-stethoscope',
+                        'permission' => 'diagnosis',
+                    ],
                 ]
             ],
 
-            // Diagnoses - Standalone Menu Item
+            // Patient Management Section
             [
-                'name' => 'Diagnoses',
-                'route' => 'diagnosis.index',
-                'icon' => 'fas fa-stethoscope',
-                'permission' => 'diagnosis',
-            ],
-
-            // Patient Management
-            [
-                'name' => 'Patients',
+                'name' => 'Patient Management',
                 'icon' => 'fas fa-users',
                 'dropdown' => true,
+                'href' => 'cases', // Clickable parent header
                 'items' => [
                     [
                         'name' => 'Patient Cases',
@@ -133,14 +133,21 @@ class MenuHelper
                         'icon' => 'fas fa-comments',
                         'permission' => 'chat',
                     ],
+                    [
+                        'name' => 'Reviews',
+                        'route' => 'doctor.reviews.index',
+                        'icon' => 'fas fa-star',
+                        'permission' => 'reviews',
+                    ],
                 ]
             ],
 
-            // Appointments & Schedule
+            // Practice Management Section
             [
-                'name' => 'Schedule',
+                'name' => 'Practice Management',
                 'icon' => 'fas fa-calendar-alt',
                 'dropdown' => true,
+                'href' => 'doctor.appointments.index', // Clickable parent header
                 'items' => [
                     [
                         'name' => 'Appointments',
@@ -154,20 +161,15 @@ class MenuHelper
                         'icon' => 'fas fa-clock',
                         'permission' => 'availability',
                     ],
-                    [
-                        'name' => 'Reviews',
-                        'route' => 'doctor.reviews.index',
-                        'icon' => 'fas fa-star',
-                        'permission' => 'reviews',
-                    ],
                 ]
             ],
 
-            // Business Management
+            // Business & Marketing Section
             [
-                'name' => 'Business',
+                'name' => 'Business & Marketing',
                 'icon' => 'fas fa-briefcase',
                 'dropdown' => true,
+                'href' => 'doctor.landing-page.index', // Clickable parent header
                 'items' => array_filter([
                     // Only show billing for standalone doctors (not hospital doctors)
                     !$user->hospital_id ? [
@@ -209,14 +211,6 @@ class MenuHelper
                     ],
                 ])
             ],
-
-            // Settings
-           /* [
-                'name' => 'Settings',
-                'route' => 'settings',
-                'icon' => 'fas fa-cog',
-                'permission' => 'settings',
-            ],*/
         ];
 
         // Filter menu items and their dropdown items based on permissions
@@ -254,37 +248,37 @@ class MenuHelper
                 'icon' => 'fas fa-tachometer-alt',
             ],
 
-            // AI Tools Dropdown - Show ALL items
+            // Clinical Tools Section - Show ALL items
             [
-                'name' => 'AI Tools',
-                'icon' => 'fas fa-robot',
+                'name' => 'Clinical Tools',
+                'icon' => 'fas fa-stethoscope',
                 'dropdown' => true,
+                'href' => 'diagnosis.index', // Clickable parent header
                 'items' => [
                     [
                         'name' => 'AI Assistant',
-                        'route' => 'ask-ai',
+                        'route' => 'ai.ask-ai',
                         'icon' => 'fas fa-robot',
                     ],
                     [
                         'name' => 'Voice Assistant',
-                        'route' => 'voice-assistant.index',
+                        'route' => 'ai.voice-assistant.index',
                         'icon' => 'fas fa-microphone',
+                    ],
+                    [
+                        'name' => 'Diagnoses',
+                        'route' => 'diagnosis.index',
+                        'icon' => 'fas fa-stethoscope',
                     ],
                 ]
             ],
 
-            // Diagnoses - Standalone Menu Item
+            // Patient Management Section
             [
-                'name' => 'Diagnoses',
-                'route' => 'diagnosis.index',
-                'icon' => 'fas fa-stethoscope',
-            ],
-
-            // Patient Management
-            [
-                'name' => 'Patients',
+                'name' => 'Patient Management',
                 'icon' => 'fas fa-users',
                 'dropdown' => true,
+                'href' => 'cases', // Clickable parent header
                 'items' => [
                     [
                         'name' => 'Patient Cases',
@@ -301,14 +295,20 @@ class MenuHelper
                         'route' => 'doctor.chat.index',
                         'icon' => 'fas fa-comments',
                     ],
+                    [
+                        'name' => 'Reviews',
+                        'route' => 'doctor.reviews.index',
+                        'icon' => 'fas fa-star',
+                    ],
                 ]
             ],
 
-            // Appointments & Schedule
+            // Practice Management Section
             [
-                'name' => 'Schedule',
+                'name' => 'Practice Management',
                 'icon' => 'fas fa-calendar-alt',
                 'dropdown' => true,
+                'href' => 'doctor.appointments.index', // Clickable parent header
                 'items' => [
                     [
                         'name' => 'Appointments',
@@ -320,19 +320,15 @@ class MenuHelper
                         'route' => 'doctor.availability.index',
                         'icon' => 'fas fa-clock',
                     ],
-                    [
-                        'name' => 'Reviews',
-                        'route' => 'doctor.reviews.index',
-                        'icon' => 'fas fa-star',
-                    ],
                 ]
             ],
 
-            // Business Management - Show restricted items but still respect hospital_id for billing
+            // Business & Marketing Section - Show restricted items but still respect hospital_id for billing
             [
-                'name' => 'Business',
+                'name' => 'Business & Marketing',
                 'icon' => 'fas fa-briefcase',
                 'dropdown' => true,
+                'href' => 'doctor.landing-page.index', // Clickable parent header
                 'items' => array_filter([
                     // Only show billing for standalone doctors (not hospital doctors) - even during impersonation
                     !$user->hospital_id ? [
@@ -380,19 +376,27 @@ class MenuHelper
     {
         return [
             [
-                'name' => 'Find Doctors',
+                'name' => 'Find Care',
                 'route' => 'doctors.index',
                 'icon' => 'fas fa-user-md',
             ],
             [
-                'name' => 'My Appointments',
-                'route' => 'appointments.index',
-                'icon' => 'fas fa-calendar',
-            ],
-            [
-                'name' => 'My Diagnoses',
-                'route' => 'diagnosis.patient.index',
-                'icon' => 'fas fa-file-medical',
+                'name' => 'My Health',
+                'icon' => 'fas fa-heartbeat',
+                'dropdown' => true,
+                'href' => 'appointments.index', // Clickable parent header
+                'items' => [
+                    [
+                        'name' => 'My Appointments',
+                        'route' => 'appointments.index',
+                        'icon' => 'fas fa-calendar',
+                    ],
+                    [
+                        'name' => 'My Diagnoses',
+                        'route' => 'diagnosis.patient.index',
+                        'icon' => 'fas fa-file-medical',
+                    ],
+                ]
             ],
         ];
     }
@@ -411,16 +415,17 @@ class MenuHelper
                 'permission' => 'dashboard',
             ],
 
-            // Doctor Management
+            // Hospital Management Section
             [
-                'name' => 'Manage Doctors',
-                'icon' => 'fas fa-user-md',
+                'name' => 'Hospital Management',
+                'icon' => 'fas fa-hospital',
                 'dropdown' => true,
+                'href' => 'hospital-admin.doctors.index', // Clickable parent header
                 'items' => [
                     [
-                        'name' => 'All Doctors',
+                        'name' => 'Manage Doctors',
                         'route' => 'hospital-admin.doctors.index',
-                        'icon' => 'fas fa-list',
+                        'icon' => 'fas fa-user-md',
                         'permission' => 'manage_doctors',
                     ],
                     [
@@ -435,15 +440,6 @@ class MenuHelper
                         'icon' => 'fas fa-chart-bar',
                         'permission' => 'manage_doctors',
                     ],
-                ]
-            ],
-
-            // Hospital Management
-            [
-                'name' => 'Hospital Settings',
-                'icon' => 'fas fa-hospital',
-                'dropdown' => true,
-                'items' => [
                     [
                         'name' => 'Hospital Profile',
                         'route' => 'hospital-admin.hospital.profile',
@@ -459,11 +455,12 @@ class MenuHelper
                 ]
             ],
 
-            // Analytics & Reports
+            // Analytics & Reports Section
             [
-                'name' => 'Analytics',
+                'name' => 'Analytics & Reports',
                 'icon' => 'fas fa-chart-line',
                 'dropdown' => true,
+                'href' => 'hospital-admin.analytics.overview', // Clickable parent header
                 'items' => [
                     [
                         'name' => 'Hospital Overview',
@@ -483,14 +480,21 @@ class MenuHelper
                         'icon' => 'fas fa-dollar-sign',
                         'permission' => 'analytics',
                     ],
+                    [
+                        'name' => 'Usage Reports',
+                        'route' => 'hospital-admin.usage.index',
+                        'icon' => 'fas fa-chart-area',
+                        'permission' => 'billing',
+                    ],
                 ]
             ],
 
-            // Billing & Subscription (Only for hospital admins)
+            // Administration Section
             [
-                'name' => 'Billing',
-                'icon' => 'fas fa-credit-card',
+                'name' => 'Administration',
+                'icon' => 'fas fa-cogs',
                 'dropdown' => true,
+                'href' => 'hospital-admin.subscription.manage', // Clickable parent header
                 'items' => [
                     [
                         'name' => 'Subscription',
@@ -508,12 +512,6 @@ class MenuHelper
                         'name' => 'Invoices',
                         'route' => 'hospital-admin.invoices.index',
                         'icon' => 'fas fa-file-invoice',
-                        'permission' => 'billing',
-                    ],
-                    [
-                        'name' => 'Usage Reports',
-                        'route' => 'hospital-admin.usage.index',
-                        'icon' => 'fas fa-chart-area',
                         'permission' => 'billing',
                     ],
                 ]
@@ -629,8 +627,8 @@ class MenuHelper
                 ['name' => 'Sub-Users', 'route' => 'sub-users.index'],
                 ['name' => 'Edit Sub-User', 'route' => null]
             ],
-            'ask-ai' => [['name' => 'AI Assistant', 'route' => null]],
-            'voice-assistant.index' => [['name' => 'Voice Assistant', 'route' => null]],
+            'ai.ask-ai' => [['name' => 'AI Assistant', 'route' => null]],
+            'ai.voice-assistant.index' => [['name' => 'Voice Assistant', 'route' => null]],
             'diagnosis.index' => [['name' => 'Diagnoses', 'route' => null]],
             'cases' => [['name' => 'Patient Cases', 'route' => null]],
         ];

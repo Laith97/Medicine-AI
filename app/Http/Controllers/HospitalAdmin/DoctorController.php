@@ -155,9 +155,9 @@ class DoctorController extends Controller
         ]);
 
         // Create doctor profile
-        $doctor->doctor()->create([
+        $doctorProfile = $doctor->doctor()->create([
             'specialty' => $specialty,
-            'license_number' => 'TEMP-' . strtoupper(\Str::random(8)) . '-' . $doctor->id,
+            'license_number' => 'TEMP-' . strtoupper(Str::random(8)) . '-' . $doctor->id,
             'consultation_fee' => 5000, // Default $50.00 in cents
             'appointment_duration' => 30, // Default 30 minutes
             'auto_approve_appointments' => false,
@@ -166,6 +166,17 @@ class DoctorController extends Controller
             'cancellation_hours' => 24, // Default 24 hours notice
             'is_active' => true,
             'is_verified' => true, // Hospital admin can verify doctors directly
+        ]);
+
+        // Log doctor creation for debugging visibility issues
+        Log::info('Doctor created by hospital admin', [
+            'doctor_id' => $doctorProfile->id,
+            'user_id' => $doctor->id,
+            'user_name' => $doctor->name,
+            'is_active' => $doctorProfile->is_active,
+            'is_verified' => $doctorProfile->is_verified,
+            'created_by' => 'hospital_admin',
+            'will_be_visible_to_patients' => $doctorProfile->is_active && $doctorProfile->is_verified,
         ]);
 
         // Trials disabled for homepage flow (only monthly/yearly). If trials are enabled (>0), you may call startTrial(); otherwise skip.

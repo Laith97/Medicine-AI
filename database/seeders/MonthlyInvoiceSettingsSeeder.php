@@ -26,7 +26,7 @@ class MonthlyInvoiceSettingsSeeder extends Seeder
                     'grace_period_days' => 7, // 7 days grace period
                     'reminder_frequency_days' => 3, // Remind every 3 days
                     'restricted_pages' => [
-                        'ask-ai',
+                        'ai.ask-ai',
                         'cases',
                         'dashboard'
                     ],

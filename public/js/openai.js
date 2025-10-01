@@ -1,6 +1,6 @@
 // Main DOMContentLoaded event - consolidate all initialization here
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM Content Loaded - Initializing OpenAI form functionality');
+    
     
     // Initialize all components
     initializeFormSubmission();
@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeFollowUpChat();
     initializeHeadToToeAssessment();
     
-    console.log('All OpenAI form components initialized');
+    
 });
 
 // Form submission and loading functionality
@@ -202,20 +202,20 @@ function initializePatientSelection() {
     const patientGenderSelect = document.getElementById('patient_gender');
 
     if (!existingPatientSelect || !newPatientForm) {
-        console.log('Patient selection elements not found');
+        
         return;
     }
 
-    console.log('Initializing patient selection functionality');
+    
 
     // Function to toggle patient form visibility
     function togglePatientForm() {
-        console.log('Toggling patient form, selected value:', existingPatientSelect.value);
+        
         
         if (existingPatientSelect.value === '') {
             // Show new patient form
             newPatientForm.style.display = 'block';
-            console.log('Showing new patient form');
+            
 
             // Make new patient fields required
             if (patientNameInput) patientNameInput.required = true;
@@ -231,7 +231,7 @@ function initializePatientSelection() {
         } else {
             // Hide new patient form and populate with selected patient data
             newPatientForm.style.display = 'none';
-            console.log('Hiding new patient form');
+            
 
             // Remove required attributes
             if (patientNameInput) patientNameInput.required = false;
@@ -288,23 +288,23 @@ function initializePatientSelection() {
 
 // Symptoms dropdown initialization
 function initializeSymptomsDropdown() {
-    console.log('Initializing symptoms dropdown');
+    
     const element = document.getElementById('current_symptoms');
 
     if (!element) {
-        console.log('Current symptoms element not found');
+        
         return;
     }
 
-    console.log('Found current_symptoms element:', element);
+    
 
     try {
         if (typeof Choices === 'undefined') {
-            console.error('Choices.js is not loaded');
+            ;
             return;
         }
 
-        console.log('Choices.js is loaded, initializing...');
+        
 
         const choices = new Choices(element, {
             removeItemButton: true,
@@ -314,7 +314,7 @@ function initializeSymptomsDropdown() {
             itemSelectText: 'Press to select'
         });
 
-        console.log('Choices.js initialized successfully');
+        
 
         // Custom Symptoms Handling
         const customSymptomInput = document.getElementById('custom_symptom_input');
@@ -371,13 +371,13 @@ function initializeSymptomsDropdown() {
         }
 
     } catch (error) {
-        console.error('Error initializing Choices.js:', error);
+        ;
     }
 }
 
 // File upload functionality
 function initializeFileUpload() {
-    console.log('Initializing file upload functionality');
+    
     
     const fileInput = document.getElementById('reports');
     const addMoreFilesBtn = document.getElementById('add-more-files-btn');
@@ -385,7 +385,7 @@ function initializeFileUpload() {
     const fileStorageContainer = document.getElementById('file-storage-container');
 
     if (!fileInput || !selectedFilesContainer) {
-        console.log('File upload elements not found');
+        
         return;
     }
 
@@ -450,7 +450,7 @@ function initializeFileUpload() {
 
 // Follow-up chat functionality
 function initializeFollowUpChat() {
-    console.log('Initializing follow-up chat functionality');
+    
     setupFollowUpChat();
 }
 
@@ -540,7 +540,7 @@ function setupFollowUpChat() {
                     // Show regular error
                     addErrorMessage('Failed to connect to the server. Please try again later.');
                 }
-                console.error('Error:', error);
+                ;
             });
         });
     }
@@ -1062,7 +1062,7 @@ function formatSources(sourcesText) {
 
 // Head-to-Toe Assessment functionality
 function initializeHeadToToeAssessment() {
-    console.log('Initializing Head-to-Toe Assessment functionality');
+    
     
     // Get all normal checkboxes
     const normalCheckboxes = document.querySelectorAll('.section-normal-checkbox');

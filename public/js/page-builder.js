@@ -170,7 +170,7 @@ class MedicalPageBuilder {
         const template = this.getSectionTemplate(type);
 
         if (!template) {
-            console.error('Section template not found:', type);
+            ;
             return null;
         }
 
@@ -871,7 +871,7 @@ class MedicalPageBuilder {
             }
         })
         .catch(error => {
-            console.error('Save error:', error);
+            ;
             if (!silent) {
                 this.showNotification('Error saving page: ' + error.message, 'error');
             }
@@ -951,17 +951,17 @@ class MedicalPageBuilder {
 
     handleSectionAdded(e) {
         // Custom event handler for section added
-        console.log('Section added:', e.detail.section);
+        
     }
 
     handleSectionRemoved(e) {
         // Custom event handler for section removed
-        console.log('Section removed:', e.detail.section);
+        
     }
 
     handleSectionUpdated(e) {
         // Custom event handler for section updated
-        console.log('Section updated:', e.detail.section);
+        
     }
 
     updateCanvasSize() {

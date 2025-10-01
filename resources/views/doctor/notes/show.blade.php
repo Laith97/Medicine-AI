@@ -6,7 +6,7 @@
 <div class="dashboard-container">
     <div class="container">
         <!-- Header -->
-        <div class="dashboard-header">
+        <div class="dashboard-header py-2 border-bottom">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h2><i class="fas fa-eye me-2"></i>View Note</h2>

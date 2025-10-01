@@ -91,6 +91,14 @@ class User extends Authenticatable
         return $this->hasMany(PatientAnalysis::class);
     }
 
+    /**
+     * Get the patient's data (latest record)
+     */
+    public function patientData()
+    {
+        return $this->hasOne(PatientData::class, 'assigned_patient_id')->latest();
+    }
+
     // Doctor relationship
     public function doctor()
     {

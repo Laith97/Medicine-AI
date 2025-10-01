@@ -17,17 +17,16 @@ class NotificationAccessibilityTester {
     }
 
     async runAllTests() {
-        console.log('🧪 Starting Notification Accessibility Tests...');
+        
 
         for (const testName of this.testSuite) {
             try {
-                console.log(`\n📋 Running ${testName}...`);
+                
                 const result = await this[testName]();
                 this.results.push({ test: testName, passed: result.passed, details: result.details });
-                console.log(`✅ ${testName}: ${result.passed ? 'PASSED' : 'FAILED'} - ${result.details}`);
+                
             } catch (error) {
                 this.results.push({ test: testName, passed: false, details: `Error: ${error.message}` });
-                console.error(`❌ ${testName}: ERROR - ${error.message}`);
             }
         }
 
@@ -268,38 +267,32 @@ class NotificationAccessibilityTester {
     }
 
     displayResults() {
-        console.log('\n📊 === ACCESSIBILITY TEST RESULTS ===');
-        console.log('=====================================');
+        
+        
 
         const passed = this.results.filter(r => r.passed).length;
         const total = this.results.length;
         const score = Math.round((passed / total) * 100);
 
-        console.log(`Overall Score: ${score}% (${passed}/${total} tests passed)`);
-        console.log('');
 
         this.results.forEach(result => {
             const icon = result.passed ? '✅' : '❌';
-            console.log(`${icon} ${result.test}: ${result.details}`);
+            
         });
 
-        console.log('\n🎯 === RECOMMENDATIONS ===');
+        
         if (score === 100) {
-            console.log('🎉 All accessibility tests passed! The notification system is fully accessible.');
+            
         } else {
-            console.log('📋 Some accessibility improvements may be needed. Review failed tests above.');
-            console.log('🔧 Consider testing with actual screen readers and assistive technologies.');
+            
+            
         }
 
-        console.log('\n🧪 === MANUAL TESTING CHECKLIST ===');
-        console.log('□ Test with NVDA screen reader (Windows)');
-        console.log('□ Test with JAWS screen reader (Windows)');
-        console.log('□ Test with VoiceOver (macOS/iOS)');
-        console.log('□ Test with TalkBack (Android)');
-        console.log('□ Test keyboard-only navigation');
-        console.log('□ Test with high contrast mode enabled');
-        console.log('□ Test with reduced motion enabled');
-        console.log('□ Test with color blindness simulation');
+
+
+
+
+
     }
 }
 

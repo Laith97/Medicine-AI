@@ -115,7 +115,6 @@ class NotificationDebugger {
                 }
 
             } else {
-                this.log('⏳ Waiting for Echo...');
                 setTimeout(checkEcho, 1000);
             }
         };
@@ -139,7 +138,7 @@ class NotificationDebugger {
         }
 
         this.updateLogDisplay();
-        console.log(`[${timestamp}] ${message}`, data || '');
+        
     }
 
     updateLogDisplay() {

@@ -3,6 +3,10 @@
 @section('title', 'Register - AI Medical Diagnosis')
 
 @section('content')
+<div class="dashboard-header py-2 border-bottom">
+    <h2 class="h1 mb-1" style="font-weight: 700;">Register</h2>
+    <p>Create a new account</p>
+</div>
 <div class="auth-wrapper hero-section d-flex align-items-center" style="background: linear-gradient(135deg, #fbfdff00 0%, #34495e 100%); min-height: 100vh; padding: 2rem 0;">
     <div class="container">
         <div class="row justify-content-center">

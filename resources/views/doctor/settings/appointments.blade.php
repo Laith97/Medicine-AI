@@ -11,7 +11,7 @@
 <div class="dashboard-container">
     <div class="container">
         <!-- Header -->
-        <div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
+        <div class="dashboard-header py-2 border-bottom d-flex justify-content-between align-items-center mb-4">
             <div class="d-flex align-items-center">
                 <a href="{{ route('doctor.dashboard') }}" class="btn btn-secondary-custom me-3">
                     <i class="fas fa-arrow-left me-2"></i>Back to Dashboard

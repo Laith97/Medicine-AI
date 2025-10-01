@@ -35,6 +35,7 @@ class PatientAnalysis extends Model
         'past_medical_history',
         'medication_history',
         'allergies',
+        'past_medications',
         'family_history',
         'social_history',
         'pain_scale',

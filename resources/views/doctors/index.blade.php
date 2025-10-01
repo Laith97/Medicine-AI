@@ -6,11 +6,9 @@
 <div class="dashboard-container">
     <div class="container">
         <!-- Header -->
-        <div class="dashboard-header">
-            <div class="text-center">
-                <h2>Find the Right Doctor for You</h2>
-                <p>Search and book appointments with qualified healthcare professionals</p>
-            </div>
+        <div class="dashboard-header py-2 border-bottom">
+            <h2 class="h1 mb-1" style="font-weight: 700;">Doctors</h2>
+            <p>Find and manage doctors</p>
         </div>
 
         <!-- Search and Filters -->

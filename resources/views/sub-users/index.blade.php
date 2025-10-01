@@ -3,6 +3,10 @@
 @section('title', 'Sub-Users Management')
 
 @section('content')
+<div class="dashboard-header py-2 border-bottom">
+    <h2 class="h1 mb-1" style="font-weight: 700;">Sub Users</h2>
+    <p>Manage sub users</p>
+</div>
 <div class="container py-5">
     <div class="row">
         <div class="col-12">

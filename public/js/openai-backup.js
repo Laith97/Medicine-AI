@@ -1,6 +1,6 @@
 // Main DOMContentLoaded event - consolidate all initialization here
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM Content Loaded - Initializing OpenAI form functionality');
+    
     
     // Initialize all components
     initializeFormSubmission();
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeFileUpload();
     initializeFollowUpChat();
     
-    console.log('All OpenAI form components initialized');
+    
 });
 
 // Form submission and loading functionality
@@ -220,20 +220,20 @@ function initializePatientSelection() {
     const patientGenderSelect = document.getElementById('patient_gender');
 
     if (!existingPatientSelect || !newPatientForm) {
-        console.log('Patient selection elements not found');
+        
         return;
     }
 
-    console.log('Initializing patient selection functionality');
+    
 
     // Function to toggle patient form visibility
     function togglePatientForm() {
-        console.log('Toggling patient form, selected value:', existingPatientSelect.value);
+        
         
         if (existingPatientSelect.value === '') {
             // Show new patient form
             newPatientForm.style.display = 'block';
-            console.log('Showing new patient form');
+            
 
             // Make new patient fields required
             if (patientNameInput) patientNameInput.required = true;
@@ -249,7 +249,7 @@ function initializePatientSelection() {
         } else {
             // Hide new patient form and populate with selected patient data
             newPatientForm.style.display = 'none';
-            console.log('Hiding new patient form');
+            
 
             // Remove required attributes
             if (patientNameInput) patientNameInput.required = false;
@@ -393,7 +393,7 @@ function initializePatientSelection() {
                         // Show regular error
                         addErrorMessage('Failed to connect to the server. Please try again later.');
                     }
-                    console.error('Error:', error);
+                    ;
                 });
             });
         }
@@ -1654,17 +1654,17 @@ function initializePatientSelection() {
 
             // Function to update patient history display
             function updatePatientHistory(patientId) {
-                console.log('Updating patient history for ID:', patientId);
+                
                 const selectedPatient = patientData.find(p => p.id == patientId);
 
                 if (selectedPatient) {
-                    console.log('Selected patient:', selectedPatient);
+                    
 
                     // Try multiple key formats to find a match
                     const nameAgeGenderKey = selectedPatient.name + '-' + selectedPatient.age + '-' + selectedPatient.gender;
                     const patientKey = selectedPatient.patient_key;
 
-                    console.log('Trying keys:', { nameAgeGenderKey, patientKey });
+                    
 
                     // Try patient_key first, then name-age-gender
                     let key = null;
@@ -1673,15 +1673,15 @@ function initializePatientSelection() {
                     if (patientKey && patientVisits[patientKey]) {
                         key = patientKey;
                         visitData = patientVisits[patientKey];
-                        console.log('Found visit data using patient_key');
+                        
                     } else if (patientVisits[nameAgeGenderKey]) {
                         key = nameAgeGenderKey;
                         visitData = patientVisits[nameAgeGenderKey];
-                        console.log('Found visit data using name-age-gender key');
+                        
                     } else {
                         key = nameAgeGenderKey;
                         visitData = { count: 1 };
-                        console.log('No visit data found, using default');
+                        
                     }
 
                     const visitCount = visitData.count || 1;
@@ -1691,7 +1691,7 @@ function initializePatientSelection() {
 
                     // Update visit count badge
                     visitCountBadge.textContent = 'Visit #' + visitCount;
-                    console.log('Setting visit count to:', visitCount);
+                    
 
                     // Update history text
                     if (visitCount > 1) {
@@ -1700,7 +1700,7 @@ function initializePatientSelection() {
                         patientHistoryText.innerHTML = `This is the second visit for <strong>${selectedPatient.name}</strong>.`;
                     }
 
-                    console.log('Patient history updated successfully');
+                    
                 } else {
                     patientHistoryInfo.style.display = 'none';
                 }
@@ -1747,23 +1747,23 @@ function initializePatientSelection() {
 
 
         document.addEventListener('DOMContentLoaded', function () {
-            console.log('DOM Content Loaded - Initializing Choices.js');
+            
             const element = document.getElementById('current_symptoms');
 
             if (!element) {
-                console.error('Could not find element with ID "current_symptoms"');
+                ;
                 return;
             }
 
-            console.log('Found current_symptoms element:', element);
+            
 
             try {
                 if (typeof Choices === 'undefined') {
-                    console.error('Choices.js is not loaded');
+                    ;
                     return;
                 }
 
-                console.log('Choices.js is loaded, initializing...');
+                
 
                 const choices = new Choices(element, {
                     removeItemButton: true,
@@ -1774,7 +1774,7 @@ function initializePatientSelection() {
                     }
                 });
 
-                console.log('Choices.js initialized successfully');
+                
 
                 // Custom Symptoms Handling
                 const customSymptomInput = document.getElementById('custom_symptom_input');
@@ -1835,8 +1835,8 @@ function initializePatientSelection() {
                     customSymptomInput.value = '';
                     customSymptomInput.focus();
 
-                    console.log('Added custom symptom:', symptomText);
-                    console.log('Current custom symptoms:', customSymptoms);
+                    
+                    
                 }
 
                 // Add event listeners
@@ -1850,7 +1850,7 @@ function initializePatientSelection() {
                 });
 
             } catch (error) {
-                console.error('Error initializing Choices.js:', error);
+                ;
             }
         });
 
@@ -1879,9 +1879,9 @@ function initializePatientSelection() {
 
         if (isDataTransferSupported) {
             selectedFiles = new DataTransfer();
-            console.log('Using DataTransfer API for file handling');
+            
         } else {
-            console.log('DataTransfer API not supported, using fallback');
+            
         }
 
         // Add drag and drop functionality to upload zone

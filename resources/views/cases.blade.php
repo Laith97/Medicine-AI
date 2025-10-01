@@ -3,6 +3,10 @@
 @section('title', 'Patient Cases')
 
 @section('content')
+<div class="dashboard-header py-2 border-bottom">
+    <h2 class="h1 mb-1" style="font-weight: 700;">Cases</h2>
+    <p>Manage patient cases</p>
+</div>
 @push('styles')
 <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
@@ -1693,7 +1697,7 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                             <p class="text-muted mb-0">Manage and view all patient medical records</p>
                         </div>
                         <div class="d-flex gap-2">
-                            <a href="{{ route('ask-ai') }}" class="btn-custom-primary">
+                            <a href="{{ route('ai.ask-ai') }}" class="btn-custom-primary">
                                 <i class="fas fa-plus me-2"></i>Add New Patient
                             </a>
                             <button class="btn-custom-secondary" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
@@ -1711,7 +1715,20 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                 <div class="row mb-4">
                     <div class="col-md-3 mb-3">
                         <div class="stats-card">
-                            <div class="stat-number">{{ $records->count() }}</div>
+                            <div class="stat-number">
+                                @php
+                                    // Count distinct patients from combined records
+                                    $patientKeys = [];
+                                    foreach ($records as $record) {
+                                        if (isset($record->patient_key) && $record->patient_key) {
+                                            $patientKeys[$record->patient_key] = true;
+                                        } elseif (isset($record->patient_id)) {
+                                            $patientKeys['diagnosis_' . $record->patient_id] = true;
+                                        }
+                                    }
+                                    echo count($patientKeys);
+                                @endphp
+                            </div>
                             <div class="stat-label">Total Patients</div>
                         </div>
                     </div>
@@ -2061,7 +2078,7 @@ background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <a href="{{ route('ask-ai') }}" id="new-visit-btn" class="btn btn-custom-primary">
+                <a href="{{ route('ai.ask-ai') }}" id="new-visit-btn" class="btn btn-custom-primary">
                     <i class="fas fa-plus me-1"></i> New Visit
                 </a>
             </div>

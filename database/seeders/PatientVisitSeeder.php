@@ -12,15 +12,13 @@ class PatientVisitSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create a test user if none exists
-        $user = \App\Models\User::firstOrCreate(
-            ['email' => 'test@example.com'],
-            [
-                'name' => 'Test User',
-                'password' => bcrypt('password'),
-                'email_verified_at' => now(),
-            ]
-        );
+        // Find an existing doctor user
+        $user = \App\Models\User::where('role', 'doctor')->first();
+
+        if (!$user) {
+            $this->command->error('No doctor user found. Please run the DoctorSeeder first.');
+            return;
+        }
         
         // Create settings for the user
         \App\Models\Setting::firstOrCreate(
@@ -71,9 +69,21 @@ class PatientVisitSeeder extends Seeder
                         'ai_response' => "Visit 2: Patient showing improvement with medication. Continue treatment."
                     ]
                 ]
+            ],
+            [
+                'name' => 'Alice Johnson',
+                'age' => 28,
+                'gender' => 'female',
+                'visits' => [
+                    [
+                        'created_at' => now()->subDays(10),
+                        'symptoms' => json_encode(['Nausea', 'Headache']),
+                        'ai_response' => "Visit 1: Patient reports nausea and headache. Possible migraine or gastrointestinal issue."
+                    ]
+                ]
             ]
         ];
-        
+
         foreach ($patients as $patient) {
             $patientKey = \App\Models\PatientAnalysis::generatePatientKey(
                 $patient['name'],
@@ -85,7 +95,7 @@ class PatientVisitSeeder extends Seeder
             $previousRecordId = null;
             
             foreach ($patient['visits'] as $index => $visit) {
-                $record = \App\Models\PatientAnalysis::create([
+                $data = [
                     'name' => $patient['name'],
                     'age' => $patient['age'],
                     'gender' => $patient['gender'],
@@ -97,7 +107,16 @@ class PatientVisitSeeder extends Seeder
                     'patient_key' => $patientKey,
                     'created_at' => $visit['created_at'],
                     'updated_at' => $visit['created_at']
-                ]);
+                ];
+
+                // Add sample data for appointment 6 (the 6th record)
+                if ($index + 1 == 1 && $patient['name'] == 'Alice Johnson') { // Since it's the 6th overall, but for this patient it's visit 1
+                    // $data['assigned_patient_id'] = 142; // Removed hardcoded id
+                    $data['allergies'] = json_encode(["penicillin", "aspirin"]);
+                    $data['past_medications'] = json_encode(["ibuprofen", "paracetamol"]);
+                }
+
+                $record = \App\Models\PatientAnalysis::create($data);
                 
                 $previousRecordId = $record->id;
             }

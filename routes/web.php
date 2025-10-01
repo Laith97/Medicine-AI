@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DiagnosisController;
 use App\Http\Controllers\DoctorController;
@@ -260,12 +261,6 @@ Route::prefix('reviews/guest')->name('reviews.guest.')->group(function () {
 });
 
 Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
-    Route::get('/ask-ai', [OpenAIController::class, 'showForm'])->name('ask-ai');
-    Route::get('/openai/progress', function () { return view('openai-progress'); })->name('openai.progress');
-    Route::post('/openai/respond', [OpenAIController::class, 'getResponse'])->name('openai.respond');
-    Route::post('/openai/follow-up', [OpenAIController::class, 'followUp'])->name('openai.follow-up');
-    Route::post('/openai/create-manual-diagnosis', [OpenAIController::class, 'createManualDiagnosis'])->name('openai.create-manual-diagnosis');
-    Route::post('/patient/summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient.summary');
 
     // Sub-user management routes (only for main doctor users)
     Route::prefix('sub-users')->name('sub-users.')->middleware('role:doctor')->group(function () {
@@ -279,27 +274,11 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         Route::patch('/{subUser}/toggle-status', [App\Http\Controllers\SubUserController::class, 'toggleStatus'])->name('toggle-status');
     });
 
-    // Voice Assistant routes
-    Route::prefix('voice-assistant')->name('voice-assistant.')->group(function () {
-        Route::get('/', [App\Http\Controllers\VoiceAssistantController::class, 'index'])->name('index');
-        Route::get('/history', [App\Http\Controllers\VoiceAssistantController::class, 'history'])->name('history');
-        Route::get('/{transcription}', [App\Http\Controllers\VoiceAssistantController::class, 'show'])->name('show');
-
-        // AJAX routes for jQuery implementation
-        Route::post('/start-session', [App\Http\Controllers\VoiceAssistantController::class, 'startSession'])->name('start-session');
-        Route::post('/stop-session', [App\Http\Controllers\VoiceAssistantController::class, 'stopSession'])->name('stop-session');
-        Route::post('/handle-transcription', [App\Http\Controllers\VoiceAssistantController::class, 'handleTranscription'])->name('handle-transcription');
-        Route::post('/process-with-ai', [App\Http\Controllers\VoiceAssistantController::class, 'processWithAI'])->name('process-with-ai');
-        Route::post('/generate-ai-analysis', [App\Http\Controllers\VoiceAssistantController::class, 'generateAIAnalysis'])->name('generate-ai-analysis');
-        Route::post('/create-ai-result', [App\Http\Controllers\VoiceAssistantController::class, 'createAiAssistantResult'])->name('create-ai-result');
-        Route::post('/create-manual-diagnosis', [App\Http\Controllers\VoiceAssistantController::class, 'createManualDiagnosis'])->name('create-manual-diagnosis');
-        Route::post('/create-new-patient', [App\Http\Controllers\VoiceAssistantController::class, 'createNewPatient'])->name('create-new-patient');
-        Route::post('/reset-session', [App\Http\Controllers\VoiceAssistantController::class, 'resetSession'])->name('reset-session');
-    });
 
     Route::get('/settings', [UserSettingsController::class, 'index'])->name('settings');
     Route::put('/user/settings/update', [UserSettingsController::class, 'update'])->name('settings.update');
     Route::get('/cases', [OpenAIController::class, 'getCases'])->name('cases');
+    Route::post('/patient/summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient.summary');
     Route::get('/dashboard', [OpenAIController::class, 'dashboard'])->name('dashboard');
 
     // Appointment routes for patients
@@ -339,6 +318,10 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         // Voice file serving route (secure)
         Route::get('/{diagnosis}/voice', [DiagnosisController::class, 'serveVoiceFile'])->name('voice');
     });
+
+    // Prescription routes
+    Route::get('/prescriptions/{prescription}', [PrescriptionController::class, 'show'])->name('prescriptions.show');
+    Route::delete('/prescriptions/{prescription}', [PrescriptionController::class, 'destroy'])->name('prescriptions.destroy');
 
     // Notification routes
     Route::prefix('notifications')->name('notifications.')->group(function () {
@@ -475,8 +458,8 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
             'menu_items' => $menuItems,
             'can_access' => [
                 'dashboard' => $user->canAccessRoute('dashboard'),
-                'ask-ai' => $user->canAccessRoute('ask-ai'),
-                'voice-assistant.index' => $user->canAccessRoute('voice-assistant.index'),
+                'ai.ask-ai' => $user->canAccessRoute('ai.ask-ai'),
+                'ai.voice-assistant.index' => $user->canAccessRoute('ai.voice-assistant.index'),
                 'diagnosis.index' => $user->canAccessRoute('diagnosis.index'),
                 'cases' => $user->canAccessRoute('cases'),
                 'sub-users.index' => $user->canAccessRoute('sub-users.index'),
@@ -708,7 +691,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         }
 
         $setting = $user->monthlyInvoiceSetting;
-        $testRoutes = ['ask-ai', 'cases', 'dashboard', 'appointments', 'reviews', 'settings', 'profile.edit'];
+        $testRoutes = ['ai.ask-ai', 'cases', 'dashboard', 'appointments', 'reviews', 'settings', 'profile.edit'];
 
         $results = [];
         foreach ($testRoutes as $route) {
@@ -756,6 +739,9 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
     Route::post('/appointments/{appointment}/complete', [DoctorDashboardController::class, 'completeAppointment'])->name('appointments.complete');
     Route::post('/appointments/{appointment}/no-show', [DoctorDashboardController::class, 'markNoShow'])->name('appointments.no-show');
     Route::get('/appointments/calendar/events', [DoctorDashboardController::class, 'getCalendarEvents'])->name('appointments.calendar.events');
+
+    // Prescription routes for appointments
+    Route::post('/prescriptions/{appointment}', [PrescriptionController::class, 'store'])->name('prescriptions.store');
 
     // Availability management
     Route::resource('availability', AvailabilityController::class);
@@ -952,6 +938,10 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::get('/users/{user}/patient-analyses', [AdminController::class, 'userPatientAnalyses'])->name('users.patient-analyses');
     Route::post('/users/{user}/toggle-doctor-status', [AdminController::class, 'toggleDoctorStatus'])->name('users.toggle-doctor-status');
     Route::post('/users/{user}/login-as', [AdminController::class, 'loginAs'])->name('login-as');
+
+    // Doctor verification routes
+    Route::post('/doctors/{doctor}/verify', [AdminController::class, 'verifyDoctor'])->name('doctors.verify');
+    Route::post('/doctors/{doctor}/unverify', [AdminController::class, 'unverifyDoctor'])->name('doctors.unverify');
 
     // Hospital Admin Management
     Route::get('/hospital-admins/{user}/manage', [AdminController::class, 'manageHospitalAdmin'])->name('hospital-admins.manage');
@@ -1166,3 +1156,5 @@ Route::get('/test-session-encryption', function () {
         'timestamp' => now()->toISOString()
     ]);
 })->name('test.session.encryption');
+// Include AI routes
+require __DIR__.'/ai.php';

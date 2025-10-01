@@ -258,6 +258,19 @@ class OpenAIController extends Controller
 
                 $rawMessage = $response['choices'][0]['message']['content'] ?? '';
 
+                // Log the complete AI response structure for debugging
+                \Log::info('AI Response Structure (Vision)', [
+                    'user_id' => auth()->id(),
+                    'patient_id' => $patient->id ?? null,
+                    'response_length' => strlen($rawMessage),
+                    'response_content' => $rawMessage, // Log full response for debugging
+                    'timestamp' => now()->toISOString(),
+                    'model_used' => 'gpt-4o',
+                    'request_type' => 'vision_diagnosis',
+                    'has_images' => !empty($imageMessages),
+                    'image_count' => count($imageMessages)
+                ]);
+
                 $filteredMessage = $this->filterReponse($rawMessage);
 
                 // Create AI assistant result record
@@ -399,6 +412,17 @@ class OpenAIController extends Controller
             ]);
             $rawMessage = $response['choices'][0]['message']['content'] ?? '';
 
+            // Log the complete AI response structure for debugging
+            \Log::info('AI Response Structure (Text Only)', [
+                'user_id' => auth()->id(),
+                'patient_id' => $patient->id ?? null,
+                'response_length' => strlen($rawMessage),
+                'response_content' => $rawMessage, // Log full response for debugging
+                'timestamp' => now()->toISOString(),
+                'model_used' => 'gpt-4o',
+                'request_type' => 'text_diagnosis'
+            ]);
+
             // Track token usage
             $this->trackTokenUsage($response, 'diagnosis');
 
@@ -500,7 +524,20 @@ class OpenAIController extends Controller
                 }
 
                 $lastMessage = trim($fullContent);
-                \Log::info("Response length: " . strlen($lastMessage) . " characters");
+
+                // Log the complete AI response structure for debugging
+                \Log::info('AI Response Structure (File Search)', [
+                    'user_id' => auth()->id(),
+                    'patient_id' => $patient->id ?? null,
+                    'response_length' => strlen($lastMessage),
+                    'response_content' => $lastMessage, // Log full response for debugging
+                    'timestamp' => now()->toISOString(),
+                    'model_used' => 'gpt-4o',
+                    'request_type' => 'file_search_diagnosis',
+                    'thread_id' => $threadId,
+                    'run_id' => $runId,
+                    'file_count' => count($uploadedFileIds)
+                ]);
 
                 if (empty($lastMessage)) {
                     \Log::error("Empty response from assistant in thread: $threadId");
@@ -1600,6 +1637,18 @@ class OpenAIController extends Controller
             - Consider sepsis protocol
             - Recommend: Broad-spectrum antibiotics, lactate level, blood cultures
 
+            📋 MINIMAL DATA PROTOCOL:
+            When patient history is limited or absent, be proactive and provide comprehensive general recommendations:
+            - Include age-appropriate preventive care and screening recommendations
+            - Provide general health maintenance advice based on patient's demographics
+            - Suggest baseline assessments for common conditions in the patient's age/gender group
+            - Recommend wellness visits and routine health check-ups
+            - Include general risk factor assessment and lifestyle counseling
+            - Provide vaccination recommendations based on standard guidelines
+            - Suggest cancer screening appropriate for age and risk factors
+            - Offer general health education and preventive measures
+            - Always populate all required sections with meaningful, actionable recommendations
+
             🔶 MANDATORY OUTPUT FORMAT:
             You MUST return your analysis in exactly TWO levels as specified below:
 
@@ -1870,11 +1919,24 @@ class OpenAIController extends Controller
         $effectiveDoctorUser = $user->getEffectiveDoctorUser();
         $effectiveDoctorId = $effectiveDoctorUser ? $effectiveDoctorUser->id : $user->id;
 
+        \Log::info('Dashboard data retrieval debug', [
+            'user_id' => $user->id,
+            'user_role' => $user->role,
+            'effective_doctor_id' => $effectiveDoctorId,
+            'is_doctor' => $user->isDoctor(),
+            'is_patient' => $user->isPatient(),
+        ]);
+
         // Get records from both old PatientAnalysis and new Diagnosis systems
         $patientAnalysisRecords = PatientAnalysis::with('user')
             ->where('user_id', $effectiveDoctorId)
             ->orderBy('created_at', 'desc')
             ->get();
+
+        \Log::info('PatientAnalysis records found', [
+            'count' => $patientAnalysisRecords->count(),
+            'effective_doctor_id' => $effectiveDoctorId,
+        ]);
 
         // Get diagnosis records where user is either doctor or patient
         $diagnosisRecords = Diagnosis::with(['doctor', 'patient', 'aiAssistantResults'])
@@ -1884,6 +1946,12 @@ class OpenAIController extends Controller
             })
             ->orderBy('created_at', 'desc')
             ->get();
+
+        \Log::info('Diagnosis records found', [
+            'count' => $diagnosisRecords->count(),
+            'doctor_id_filter' => $effectiveDoctorId,
+            'patient_id_filter' => auth()->id(),
+        ]);
 
         // Transform diagnosis records to match PatientAnalysis structure for compatibility
         $transformedDiagnosisRecords = $diagnosisRecords->map(function($diagnosis) {
@@ -1906,37 +1974,109 @@ class OpenAIController extends Controller
             return $record;
         });
 
+        \Log::info('Transformed diagnosis records', [
+            'original_count' => $diagnosisRecords->count(),
+            'transformed_count' => $transformedDiagnosisRecords->count(),
+        ]);
+
         // Combine both record types
         $records = $patientAnalysisRecords->concat($transformedDiagnosisRecords)->sortByDesc('created_at');
 
-        // Count records for the past week from both sources
-        $weeklyCountPA = PatientAnalysis::where('user_id', $effectiveDoctorId)
-            ->where('created_at', '>=', now()->subDays(7))
-            ->count();
+        \Log::info('Combined records', [
+            'total_records' => $records->count(),
+            'patient_analysis_count' => $patientAnalysisRecords->count(),
+            'diagnosis_count' => $transformedDiagnosisRecords->count(),
+        ]);
 
-        $weeklyCountDiag = Diagnosis::where(function($query) use ($effectiveDoctorId) {
-                $query->where('doctor_id', $effectiveDoctorId)
-                      ->orWhere('patient_id', auth()->id()); // Keep original user ID for patient records
-            })
-            ->where('created_at', '>=', now()->subDays(7))
-            ->count();
+        // Count appointments for the past week (more relevant metric)
+        $weeklyCount = Appointment::whereHas('doctor', function($query) use ($effectiveDoctorId) {
+            $query->where('user_id', $effectiveDoctorId);
+        })
+        ->where('appointment_date', '>=', now()->startOfWeek())
+        ->where('appointment_date', '<=', now()->endOfWeek())
+        ->count();
 
-        $weeklyCount = $weeklyCountPA + $weeklyCountDiag;
+        \Log::info('Weekly appointment count calculation', [
+            'effective_doctor_id' => $effectiveDoctorId,
+            'weekly_appointments' => $weeklyCount,
+            'week_range' => now()->startOfWeek()->format('Y-m-d') . ' to ' . now()->endOfWeek()->format('Y-m-d'),
+        ]);
 
-        // Prepare chart data safely in the controller
+        // Prepare chart data using appointments instead of analysis records (more relevant metric)
         $chartData = [];
         $chartLabels = [];
 
-        if ($records->count() > 0) {
-            $casesOverTime = $records->groupBy(function($record) {
-                return $record->created_at->format('Y-m-d');
+        \Log::info('Dashboard Chart Debug - Preparing appointment-based chart data', [
+            'user_id' => auth()->id(),
+            'effective_doctor_id' => $effectiveDoctorId,
+            'weekly_count' => $weeklyCount,
+        ]);
+
+        // Get appointments for chart data
+        $appointmentsForChart = Appointment::whereHas('doctor', function($query) use ($effectiveDoctorId) {
+            $query->where('user_id', $effectiveDoctorId);
+        })
+        ->where('appointment_date', '>=', now()->subDays(30)) // Last 30 days for chart
+        ->orderBy('appointment_date')
+        ->get();
+
+        \Log::info('Dashboard Chart Debug - Appointments for chart', [
+            'appointments_count' => $appointmentsForChart->count(),
+            'date_range' => now()->subDays(30)->format('Y-m-d') . ' to ' . now()->format('Y-m-d'),
+        ]);
+
+        if ($appointmentsForChart->count() > 0) {
+            $appointmentsOverTime = $appointmentsForChart->groupBy(function($appointment) {
+                $date = $appointment->appointment_date->format('M d'); // Format for chart labels
+                \Log::info('Dashboard Chart Debug - Processing appointment for chart', [
+                    'appointment_id' => $appointment->id,
+                    'appointment_date' => $appointment->appointment_date->format('Y-m-d H:i:s'),
+                    'formatted_date' => $date,
+                    'status' => $appointment->status,
+                ]);
+                return $date;
             })->map(function($group) {
-                return $group->count();
+                $count = $group->count();
+                \Log::info('Dashboard Chart Debug - Appointment count for date', [
+                    'date' => $group->first()->appointment_date->format('M d'),
+                    'count' => $count,
+                    'statuses' => $group->pluck('status')->toArray(),
+                ]);
+                return $count;
             })->sortKeys();
 
-            $chartLabels = $casesOverTime->keys()->toArray();
-            $chartData = $casesOverTime->values()->toArray();
+            $chartLabels = $appointmentsOverTime->keys()->toArray();
+            $chartData = $appointmentsOverTime->values()->toArray();
+
+            \Log::info('Dashboard Chart Debug - Appointment chart data prepared successfully', [
+                'labels_count' => count($chartLabels),
+                'data_count' => count($chartData),
+                'labels' => $chartLabels,
+                'data' => $chartData,
+                'first_few_labels' => array_slice($chartLabels, 0, 5),
+                'first_few_data' => array_slice($chartData, 0, 5),
+            ]);
+        } else {
+            \Log::info('Dashboard Chart Debug - No appointments found for chart data', [
+                'user_id' => auth()->id(),
+                'effective_doctor_id' => $effectiveDoctorId,
+                'date_range' => now()->subDays(30)->format('Y-m-d') . ' to ' . now()->format('Y-m-d'),
+            ]);
         }
+
+        // Add additional debug logging for JavaScript validation
+        \Log::info('Dashboard Chart Debug - Final data being passed to view', [
+            'chartLabels_type' => gettype($chartLabels),
+            'chartData_type' => gettype($chartData),
+            'chartLabels_json' => json_encode($chartLabels),
+            'chartData_json' => json_encode($chartData),
+            'weeklyCount_type' => gettype($weeklyCount),
+            'weeklyCount_value' => $weeklyCount,
+            'chartLabels_count' => count($chartLabels),
+            'chartData_count' => count($chartData),
+            'is_chartLabels_empty' => empty($chartLabels),
+            'is_chartData_empty' => empty($chartData),
+        ]);
 
         // Group patients by patient_key for the patient list
         $patientGroups = [];
@@ -2038,6 +2178,15 @@ class OpenAIController extends Controller
                                         $user->monthlyInvoiceSetting->subscription_starts_at->isFuture(),
         ];
 
+        \Log::info('Dashboard view data', [
+            'records_count' => $records->count(),
+            'weekly_count' => $weeklyCount,
+            'chart_labels_count' => count($chartLabels),
+            'chart_data_count' => count($chartData),
+            'patient_groups_count' => count($patientGroups),
+            'has_doctor_data' => !is_null($doctorData),
+        ]);
+
         return view('dashboard', compact('records', 'weeklyCount', 'chartLabels', 'chartData', 'doctorData', 'patientGroups', 'trialInfo'));
     }
 
@@ -2136,6 +2285,17 @@ class OpenAIController extends Controller
             ]);
 
             $aiResponse = $response['choices'][0]['message']['content'] ?? 'Sorry, I could not generate a response.';
+
+            // Log the complete AI response structure for debugging
+            \Log::info('AI Response Structure (Follow-up)', [
+                'user_id' => auth()->id(),
+                'response_length' => strlen($aiResponse),
+                'response_content' => $aiResponse, // Log full response for debugging
+                'timestamp' => now()->toISOString(),
+                'model_used' => 'gpt-4o',
+                'request_type' => 'follow_up',
+                'conversation_id' => $conversationId
+            ]);
 
             // Track token usage
             $this->trackTokenUsage($response, 'follow_up');

@@ -22,11 +22,11 @@ class UnifiedNotificationSystem {
 
     init() {
         if (this.isInitialized) {
-            console.log('⚠️ Notification system already initialized');
+            
             return;
         }
 
-        console.log('🚀 Initializing Unified Notification System...');
+        
 
         // Get user ID from meta tag
         const userIdMeta = document.querySelector('meta[name="user-id"]');
@@ -35,7 +35,7 @@ class UnifiedNotificationSystem {
         }
 
         if (!this.userId) {
-            console.warn('⚠️ User ID not found, notification system disabled');
+            ;
             return;
         }
 
@@ -56,7 +56,7 @@ class UnifiedNotificationSystem {
         this.waitForEcho();
 
         this.isInitialized = true;
-        console.log('✅ Unified Notification System initialized for user:', this.userId);
+        
     }
 
     initializeSound() {
@@ -64,13 +64,13 @@ class UnifiedNotificationSystem {
             // Use the existing NotificationSound if available
             if (window.notificationSound) {
                 this.sound = window.notificationSound;
-                console.log('🔊 Using existing NotificationSound instance');
+                
             } else {
-                console.warn('⚠️ NotificationSound not found, creating fallback');
+                ;
                 this.createFallbackSound();
             }
         } catch (error) {
-            console.error('❌ Failed to initialize sound:', error);
+            ;
             this.createFallbackSound();
         }
     }
@@ -84,10 +84,10 @@ class UnifiedNotificationSystem {
                     audio.volume = 0.3;
                     audio.play().catch(() => {
                         // Fallback to system beep
-                        console.log('📢 Playing system beep');
+                        
                     });
                 } catch (error) {
-                    console.warn('⚠️ Could not play notification sound');
+                    ;
                 }
             },
             setEnabled: (enabled) => {
@@ -99,10 +99,9 @@ class UnifiedNotificationSystem {
     waitForEcho() {
         const checkEcho = () => {
             if (typeof window.Echo !== 'undefined' && window.Echo.connector) {
-                console.log('📡 Echo ready, setting up real-time listeners');
+                
                 this.setupEchoListener();
             } else {
-                console.log('⏳ Waiting for Echo...');
                 setTimeout(checkEcho, 500);
             }
         };
@@ -115,19 +114,18 @@ class UnifiedNotificationSystem {
 
             // Listen for Laravel's standard notification broadcasts (most common)
             channel.notification((notification) => {
-                console.log('🔔 Real-time notification received via .notification():', notification);
                 this.handleNewNotification(notification);
             });
 
             // Listen for the specific Laravel broadcast notification event
             channel.listen('Illuminate\\Notifications\\Events\\BroadcastNotificationCreated', (data) => {
-                console.log('🔔 BroadcastNotificationCreated event received:', data);
+                
                 this.handleNewNotification(data);
             });
 
             // Listen for custom appointment events
             channel.listen('App\\Events\\AppointmentBooked', (data) => {
-                console.log('🔔 AppointmentBooked event received:', data);
+                
                 this.handleNewNotification({
                     id: 'appointment-' + Date.now(),
                     type: 'appointment_booked',
@@ -140,31 +138,31 @@ class UnifiedNotificationSystem {
 
             // Generic event listener for any notification-type events
             channel.listen('.notification', (data) => {
-                console.log('🔔 Generic notification event received:', data);
+                
                 this.handleNewNotification(data);
             });
 
             channel.subscribed(() => {
-                console.log(`✅ Successfully subscribed to private channel: App.User.${this.userId}`);
+                
 
                 // Test the connection by sending a ping
                 setTimeout(() => {
-                    console.log('🏓 Testing Echo connection...');
+                    
                     // You can remove this in production
                 }, 2000);
             });
 
             channel.error((error) => {
-                console.error('❌ Echo channel error:', error);
+                ;
             });
 
         } catch (error) {
-            console.error('❌ Failed to setup Echo listener:', error);
+            ;
         }
     }
 
     handleNewNotification(notification) {
-        console.log('🔔 Processing new notification:', notification);
+        
 
         // Handle different notification structures from Laravel
         let normalizedNotification;
@@ -204,7 +202,7 @@ class UnifiedNotificationSystem {
             };
         }
 
-        console.log('📝 Normalized notification:', normalizedNotification);
+        
 
         // Add to notifications array (avoid duplicates)
         const existingIndex = this.notifications.findIndex(n => n.id === normalizedNotification.id);
@@ -212,7 +210,7 @@ class UnifiedNotificationSystem {
             this.notifications.unshift(normalizedNotification);
             this.unreadCount += 1;
         } else {
-            console.log('⚠️ Duplicate notification ignored:', normalizedNotification.id);
+            
             return;
         }
 
@@ -222,28 +220,28 @@ class UnifiedNotificationSystem {
 
         // Play sound if enabled
         if (this.soundEnabled && this.sound) {
-            console.log('🔊 Playing notification sound');
+            
             try {
                 this.sound.play();
-                console.log('✅ Sound played successfully');
+                
             } catch (error) {
-                console.error('❌ Failed to play sound:', error);
+                ;
             }
         } else {
-            console.log('🔇 Sound disabled or not available');
+            
         }
 
         // Show toast if enabled
         if (this.toastEnabled) {
-            console.log('📋 Showing toast notification');
+            
             try {
                 this.showToastNotification(normalizedNotification);
-                console.log('✅ Toast shown successfully');
+                
             } catch (error) {
-                console.error('❌ Failed to show toast:', error);
+                ;
             }
         } else {
-            console.log('📋 Toast disabled');
+            
         }
 
         // Dispatch custom event for other components
@@ -251,12 +249,12 @@ class UnifiedNotificationSystem {
             detail: normalizedNotification
         }));
 
-        console.log('✅ Notification processed successfully');
+        
     }
 
     async loadInitialData() {
         try {
-            console.log('📥 Loading initial notification data...');
+            
 
             // Try the existing web route first
             let response = await fetch('/notifications/dropdown', {
@@ -282,12 +280,12 @@ class UnifiedNotificationSystem {
                 this.notifications = data.notifications || [];
                 this.updateUnreadCountDisplay();
                 this.updateNotificationDropdown();
-                console.log('✅ Initial data loaded:', { unread: this.unreadCount, total: this.notifications.length });
+                
             } else {
-                console.warn('⚠️ Failed to load initial data, response status:', response.status);
+                ;
             }
         } catch (error) {
-            console.error('❌ Failed to load initial data:', error);
+            ;
             // Initialize with empty data
             this.unreadCount = 0;
             this.notifications = [];
@@ -308,7 +306,7 @@ class UnifiedNotificationSystem {
                 badge.style.display = 'none';
             }
         });
-        console.log('🔢 Updated unread count display:', this.unreadCount);
+        
     }
 
     updateNotificationDropdown() {
@@ -347,7 +345,7 @@ class UnifiedNotificationSystem {
             `).join('');
         }
 
-        console.log('📋 Updated notification dropdown');
+        
     }
 
     showToastNotification(notification) {
@@ -451,7 +449,7 @@ class UnifiedNotificationSystem {
             }
         });
 
-        console.log('✅ Event listeners setup complete');
+        
     }
 
     async markAllAsRead() {
@@ -475,10 +473,10 @@ class UnifiedNotificationSystem {
                 this.unreadCount = 0;
                 this.updateUnreadCountDisplay();
                 this.updateNotificationDropdown();
-                console.log('✅ All notifications marked as read');
+                
             }
         } catch (error) {
-            console.error('❌ Failed to mark all notifications as read:', error);
+            ;
         }
     }
 
@@ -514,13 +512,13 @@ class UnifiedNotificationSystem {
                     this.unreadCount = Math.max(0, this.unreadCount - 1);
                     this.updateUnreadCountDisplay();
                     this.updateNotificationDropdown();
-                    console.log('✅ Notification marked as read:', notificationId);
+                    
                 }
             } else {
-                console.warn('⚠️ Failed to mark notification as read, status:', response.status);
+                ;
             }
         } catch (error) {
-            console.error('❌ Failed to mark notification as read:', error);
+            ;
         }
     }
 
@@ -585,7 +583,7 @@ class UnifiedNotificationSystem {
         };
 
         this.handleNewNotification(testNotification);
-        console.log('🧪 Test notification sent');
+        
     }
 }
 

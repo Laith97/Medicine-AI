@@ -458,6 +458,10 @@
 @endpush
 
 @section('content')
+<div class="dashboard-header py-2 border-bottom">
+    <h2 class="h1 mb-1" style="font-weight: 700;">Subscription</h2>
+    <p>Manage your subscription</p>
+</div>
 <div class="dashboard-container">
     <div class="container-fluid">
         <div class="row justify-content-center">
@@ -981,7 +985,7 @@
                                 </h6>
                                 <div class="d-grid gap-2">
                                     @if($status === 'active')
-                                        <a href="{{ route('ask-ai') }}" class="btn btn-sm btn-success">
+                                        <a href="{{ route('ai.ask-ai') }}" class="btn btn-sm btn-success">
                                             <i class="fas fa-robot me-1"></i>Ask AI
                                         </a>
                                         <a href="{{ route('cases') }}" class="btn btn-sm btn-info">
@@ -995,7 +999,7 @@
                                         <button class="btn btn-sm btn-warning" onclick="startPersonalizedCheckout()">
                                             <i class="fas fa-refresh me-1"></i>Renew
                                         </button>
-                                        <a href="{{ route('ask-ai') }}" class="btn btn-sm btn-outline-success">
+                                        <a href="{{ route('ai.ask-ai') }}" class="btn btn-sm btn-outline-success">
                                             <i class="fas fa-robot me-1"></i>Ask AI (Limited Time)
                                         </a>
                                     @endif

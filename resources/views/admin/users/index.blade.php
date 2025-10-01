@@ -72,6 +72,7 @@
                             <th>Hospital</th>
                             <th>Specialty</th>
                             <th>Status</th>
+                            <th>Verification</th>
                             <th>Pricing (M/Y)</th>
                             <th>Cost Limit</th>
                             <th>Joined</th>
@@ -167,6 +168,25 @@
                                     @endif
                                 </td>
                                 <td>
+                                    @if($user->role === 'doctor')
+                                        @if($user->doctor)
+                                            @if($user->doctor->is_verified)
+                                                <span class="admin-badge success">
+                                                    <i class="bi bi-check-circle"></i>Verified
+                                                </span>
+                                            @else
+                                                <span class="admin-badge warning">
+                                                    <i class="bi bi-clock"></i>Pending
+                                                </span>
+                                            @endif
+                                        @else
+                                            <span class="admin-badge secondary">No Profile</span>
+                                        @endif
+                                    @else
+                                        <span class="admin-badge secondary">N/A</span>
+                                    @endif
+                                </td>
+                                <td>
                                     @if($user->monthlyInvoiceSetting)
                                         @php
                                             $setting = $user->monthlyInvoiceSetting;
@@ -236,19 +256,38 @@
                                                 <i class="bi bi-box-arrow-in-right"></i>
                                             </button>
                                         @elseif($user->role === 'doctor')
-                                            <!-- Doctor Status Toggle -->
+                                            <!-- Doctor Verification Toggle -->
                                             @if($user->doctor)
+                                                @if($user->doctor->is_verified)
+                                                    <form action="{{ route('admin.doctors.unverify', $user->doctor) }}" method="POST" class="d-inline"
+                                                          onsubmit="return confirm('Are you sure you want to unverify this doctor? They will no longer be visible to patients.')">
+                                                        @csrf
+                                                        <button type="submit" class="admin-btn warning" title="Unverify Doctor">
+                                                            <i class="bi bi-x-circle"></i>
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <form action="{{ route('admin.doctors.verify', $user->doctor) }}" method="POST" class="d-inline"
+                                                          onsubmit="return confirm('Are you sure you want to verify this doctor? They will become visible to patients.')">
+                                                        @csrf
+                                                        <button type="submit" class="admin-btn success" title="Verify Doctor">
+                                                            <i class="bi bi-check-circle"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
+
+                                                <!-- Doctor Status Toggle -->
                                                 <form action="{{ route('admin.users.toggle-doctor-status', $user) }}" method="POST" class="d-inline"
                                                       onsubmit="return confirm('Are you sure you want to {{ $user->doctor->is_active ? 'deactivate' : 'activate' }} this doctor account?')">
                                                     @csrf
-                                                    <button type="submit" class="admin-btn {{ $user->doctor->is_active ? 'secondary' : 'success' }}" 
+                                                    <button type="submit" class="admin-btn {{ $user->doctor->is_active ? 'secondary' : 'success' }}"
                                                             title="{{ $user->doctor->is_active ? 'Deactivate' : 'Activate' }} Doctor">
                                                         <i class="bi {{ $user->doctor->is_active ? 'bi-pause-circle' : 'bi-play-circle' }}"></i>
                                                     </button>
                                                 </form>
                                             @endif
                                             <!-- Login as Doctor -->
-                                            <button type="button" class="admin-btn primary" title="Login as Doctor" 
+                                            <button type="button" class="admin-btn primary" title="Login as Doctor"
                                                     onclick="loginAsUser({{ $user->id }}, '{{ $user->name }}', 'doctor')">
                                                 <i class="bi bi-box-arrow-in-right"></i>
                                             </button>
@@ -271,7 +310,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11">
+                                <td colspan="12">
                                     <div class="admin-empty-state">
                                         <i class="bi bi-people"></i>
                                         <p>No users found.</p>

@@ -1,0 +1,878 @@
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 20px;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(44, 62, 80, 0.3);
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+}
+
+.dashboard-header h2 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 2.5rem;
+    color: white;
+}
+
+.dashboard-header p {
+    margin: 0.5rem 0 0 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.btn-primary-custom {
+    background: linear-gradient(135deg, #2c3e50 0%, #c55252 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 0.8rem 2rem;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(222, 98, 98, 0.3);
+    transition: box-shadow 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    font-size: 1rem;
+}
+
+.btn-primary-custom:hover {
+    box-shadow: 0 6px 20px rgba(222, 98, 98, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-secondary-custom {
+    background: white;
+    border: 2px solid #DE6262;
+    color: #DE6262;
+    font-weight: 600;
+    padding: 0.8rem 2rem;
+    border-radius: 50px;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    font-size: 1rem;
+}
+
+.btn-secondary-custom:hover {
+    background: #DE6262;
+    color: white;
+    text-decoration: none;
+}
+.stats-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: none;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #DE6262, #c55252);
+}
+
+.stats-card:hover {
+    box-shadow: 0 12px 30px rgba(222, 98, 98, 0.15);
+    transform: translateY(-2px);
+}
+
+.stats-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    color: white;
+    font-size: 1.5rem;
+    box-shadow: 0 8px 20px rgba(222, 98, 98, 0.3);
+}
+
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.stats-label {
+    color: #6c757d;
+    font-weight: 500;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 3rem;
+    transition: box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    clear: both;
+}
+
+.chart-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #3498db, #2980b9);
+}
+
+.chart-card:hover {
+    box-shadow: 0 12px 30px rgba(222, 98, 98, 0.15);
+}
+
+.chart-title {
+    color: #2c3e50;
+    font-weight: 700;
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 3px solid #DE6262;
+    display: inline-block;
+}
+
+.table-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 3rem;
+    transition: box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    clear: both;
+}
+
+.table-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #27ae60, #229954);
+}
+
+.table-card:hover {
+    box-shadow: 0 12px 30px rgba(222, 98, 98, 0.15);
+}
+
+.table-title {
+    color: #2c3e50;
+    font-weight: 700;
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 3px solid #DE6262;
+    display: inline-block;
+}
+
+.custom-table {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.custom-table thead {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+}
+
+.custom-table thead th {
+    border: none;
+    padding: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.custom-table tbody tr {
+    transition: background-color 0.3s ease;
+}
+
+.custom-table tbody tr:hover {
+    background-color: rgba(222, 98, 98, 0.05);
+}
+
+.custom-table tbody td {
+    padding: 1rem;
+    border: none;
+    border-bottom: 1px solid #f1f3f4;
+    vertical-align: middle;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #DE6262;
+    margin-bottom: 1rem;
+}
+
+/* Custom button sizing for dashboard */
+.btn-primary-custom.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+}
+
+.btn-secondary-custom.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+}
+
+/* Filter card styles */
+.filter-card {
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: none;
+    background-color: #f8f9fa;
+    transition: box-shadow 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+
+.filter-card:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.filter-card .card-body {
+    padding: 1.5rem;
+}
+
+.filter-card h6 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* Table sorting styles */
+.sort-link {
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sort-link:hover {
+    color: #DE6262;
+}
+
+.sort-link i {
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* Pagination styles */
+.table-pagination {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.showing-entries {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Chart container styles */
+.stats-card h6 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.stats-card h6 i {
+    margin-right: 0.5rem;
+    color: #DE6262;
+}
+
+/* Animation for stats numbers */
+@keyframes countUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stats-number {
+    animation: countUp 1s ease-out forwards;
+}
+
+/* Tooltip styling */
+.tooltip-inner {
+    background-color: #2c3e50;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.bs-tooltip-auto[data-popper-placement^=top] .tooltip-arrow::before,
+.bs-tooltip-top .tooltip-arrow::before {
+    border-top-color: #2c3e50;
+}
+
+/* Fix modal z-index issues */
+.modal {
+    z-index: 10000 !important;
+}
+
+.modal-backdrop {
+    z-index: 9999 !important;
+}
+
+/* Ensure patient modal is above everything */
+#patientModal {
+    z-index: 10001 !important;
+}
+
+#patientModal .modal-backdrop {
+    z-index: 10000 !important;
+}
+
+/* Fix modal interaction issues */
+.modal.show {
+    display: block !important;
+    pointer-events: auto !important;
+}
+
+.modal-dialog {
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 10002 !important;
+}
+
+/* Ensure modal content is clickable */
+.modal-content {
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 10003 !important;
+}
+
+/* Fix modal backdrop positioning */
+.modal-backdrop.show {
+    opacity: 0.5 !important;
+    z-index: 9999 !important;
+}
+
+/* Ensure modal is properly centered and visible */
+.modal.fade.show {
+    display: block !important;
+    opacity: 1 !important;
+}
+
+/* Fix any potential body scroll issues */
+body.modal-open {
+    overflow: hidden !important;
+    padding-right: 0 !important;
+}
+
+/* AI Analysis Styling */
+.ai-response {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    white-space: pre-line; /* Preserve line breaks */
+}
+
+.analysis-section-header {
+    color: #2c3e50;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-top: 1.2rem;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #DE6262;
+    display: block; /* Ensure it's a block element */
+    width: 100%; /* Full width */
+}
+
+.analysis-section-header:first-child {
+    margin-top: 0;
+}
+
+.analysis-content {
+    padding: 0.5rem 0 1rem 1rem;
+    border-left: 3px solid #f0f0f0;
+    margin-bottom: 1rem;
+    display: block; /* Ensure it's a block element */
+    width: 100%; /* Full width */
+}
+
+.analysis-content p {
+    margin-bottom: 0.5rem;
+}
+
+.analysis-percentage {
+    font-weight: 700;
+    color: #DE6262;
+    display: inline-block; /* Keep it inline */
+}
+
+/* Symptom Tags Styling */
+.symptom-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.symptom-tag {
+    display: inline-block;
+    background-color: rgba(222, 98, 98, 0.1);
+    color: #DE6262;
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Remove any potential infinite loop causing styles */
+* {
+    box-sizing: border-box;
+}
+
+.chart-card canvas {
+    max-height: 300px;
+}
+
+/* Section spacing fixes */
+.row {
+    margin-bottom: 0;
+}
+
+.row.mb-5 {
+    margin-bottom: 3rem !important;
+    clear: both;
+}
+
+.row.mb-4 {
+    margin-bottom: 2rem !important;
+    clear: both;
+}
+
+/* Prevent floating issues */
+.dashboard-container::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/* Ensure proper stacking */
+.dashboard-header {
+    z-index: 10;
+    position: relative;
+}
+
+/* Fix any potential overlapping with sidebar */
+.col-lg-4,
+.col-lg-8 {
+    position: relative;
+    z-index: 1;
+}
+
+/* Ensure all dashboard sections have proper spacing */
+.dashboard-container .row + .row {
+    margin-top: 2rem;
+}
+
+/* Fix list group items spacing */
+.list-group-item {
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.list-group-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Ensure proper spacing between sidebar cards */
+.col-lg-4 .stats-card + .stats-card {
+    margin-top: 1.5rem;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .stats-number {
+        font-size: 2rem;
+    }
+
+    .filter-card .row {
+        row-gap: 1rem;
+    }
+
+    /* Form responsive fixes for dashboard */
+    .filter-card h1,
+    .filter-card h2,
+    .filter-card h3,
+    .filter-card h4,
+    .filter-card h5,
+    .filter-card h6 {
+        font-size: 1.1rem !important;
+        line-height: 1.3 !important;
+        margin-bottom: 0.75rem !important;
+        word-break: break-word !important;
+    }
+
+    .filter-card .form-label,
+    .filter-card .col-form-label {
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.5rem !important;
+        word-break: break-word !important;
+    }
+
+    .filter-card .form-control,
+    .filter-card .form-select {
+        font-size: 0.9rem !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    .filter-card .btn {
+        font-size: 0.85rem !important;
+        padding: 0.5rem 1rem !important;
+    }
+
+    .filter-card .card-title {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    .filter-card .card-text {
+        font-size: 0.9rem !important;
+        line-height: 1.4 !important;
+    }
+
+    /* Modal responsive fixes */
+    .modal-dialog.modal-lg {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+
+    .modal-header {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .modal-header .modal-title {
+        font-size: 1.1rem !important;
+        word-break: break-word;
+        hyphens: auto;
+        line-height: 1.3;
+    }
+
+    .modal-header > button {
+        align-self: flex-end;
+    }
+
+    .modal-body {
+        padding: 1rem;
+        font-size: 0.9rem !important;
+        line-height: 1.5 !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        hyphens: auto !important;
+    }
+
+    .modal-body p {
+        margin-bottom: 0.8rem !important;
+        text-align: left !important;
+    }
+
+    .modal-body h1,
+    .modal-body h2,
+    .modal-body h3,
+    .modal-body h4,
+    .modal-body h5,
+    .modal-body h6 {
+        font-size: 1rem !important;
+        line-height: 1.3 !important;
+        word-break: break-word !important;
+        margin-top: 1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .modal-body .col-form-label {
+        font-size: 0.9rem !important;
+        word-break: break-word !important;
+    }
+
+    .modal-body .form-control-plaintext {
+        font-size: 0.9rem !important;
+        word-break: break-word !important;
+    }
+
+    .modal-body table {
+        font-size: 0.65rem !important;
+        display: block !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+    }
+
+    .modal-body table th,
+    .modal-body table td {
+        padding: 0.25rem 0.3rem !important;
+        min-width: 50px !important;
+        line-height: 1.2 !important;
+        vertical-align: top !important;
+    }
+
+    .modal-body table th {
+        font-size: 0.6rem !important;
+        font-weight: 600 !important;
+        background-color: #f8f9fa !important;
+    }
+}
+
+/* Very small screens */
+@media (max-width: 576px) {
+    /* Form responsive fixes for very small screens */
+    .filter-card h1,
+    .filter-card h2,
+    .filter-card h3,
+    .filter-card h4,
+    .filter-card h5,
+    .filter-card h6 {
+        font-size: 1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .filter-card .form-label,
+    .filter-card .col-form-label {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+
+    .filter-card .form-control,
+    .filter-card .form-select {
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.6rem !important;
+    }
+
+    .filter-card .btn {
+        font-size: 0.75rem !important;
+        padding: 0.4rem 0.8rem !important;
+    }
+
+    .filter-card .card-title {
+        font-size: 1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .filter-card .card-text {
+        font-size: 0.8rem !important;
+    }
+
+    .modal-dialog.modal-lg {
+        margin: 0.25rem;
+        max-width: calc(100% - 0.5rem);
+    }
+
+    .modal-header {
+        padding: 0.75rem;
+    }
+
+    .modal-header .modal-title {
+        font-size: 1rem !important;
+    }
+
+    .modal-body {
+        padding: 0.75rem;
+        font-size: 0.8rem !important;
+        line-height: 1.4 !important;
+    }
+
+    .modal-body h1,
+    .modal-body h2,
+    .modal-body h3,
+    .modal-body h4,
+    .modal-body h5,
+    .modal-body h6 {
+        font-size: 0.9rem !important;
+    }
+
+    .modal-body .col-form-label {
+        font-size: 0.8rem !important;
+    }
+
+    .modal-body .form-control-plaintext {
+        font-size: 0.8rem !important;
+    }
+
+    .modal-body table {
+        font-size: 0.55rem !important;
+    }
+
+    .modal-body table th,
+    .modal-body table td {
+        padding: 0.15rem 0.2rem !important;
+        min-width: 40px !important;
+        line-height: 1.1 !important;
+    }
+
+    .modal-body table th {
+        font-size: 0.5rem !important;
+        font-weight: 600 !important;
+    }
+}
+
+/* Professional Medical Design for Response Text */
+.response-text, .ai-content {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    color: #2c3e50;
+    line-height: 1.7;
+    font-size: 15px;
+    letter-spacing: 0.3px;
+}
+
+.response-text .medical-section,
+.ai-content .medical-section {
+    margin-bottom: 25px;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.response-text .section-header,
+.ai-content .section-header {
+    background-color: #f8f9fa;
+    color: #2c3e50;
+    padding: 12px 18px;
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-bottom: 1px solid #e8e8e8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.response-text .section-content,
+.ai-content .section-content {
+    padding: 20px;
+    text-align: justify;
+}
+
+.response-text .section-content p,
+.ai-content .section-content p {
+    margin-bottom: 14px;
+    line-height: 1.7;
+    text-align: justify;
+    word-spacing: 0.1em;
+}
+
+.response-text table,
+.ai-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.response-text table th,
+.ai-content table th {
+    background-color: #f8f9fa;
+    color: #2c3e50;
+    font-weight: 600;
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 2px solid #dee2e6;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.response-text table td,
+.ai-content table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #dee2e6;
+    vertical-align: top;
+}
+
+.response-text table tr:nth-child(even),
+.ai-content table tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.response-text table tr:hover,
+.ai-content table tr:hover {
+    background-color: #e9ecef;
+}
+.dashboard-container {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+    padding: 2rem 0;
+}
+footer {
+    position: relative;
+    z-index: 1041;
+}

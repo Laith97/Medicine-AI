@@ -14,7 +14,7 @@ window.laravelNotificationCatcher = {
 
         const userId = document.querySelector('meta[name="user-id"]')?.getAttribute('content');
         if (!userId) {
-            console.error('❌ User ID not found, cannot initialize notification catcher');
+            ;
             return;
         }
 
@@ -27,10 +27,9 @@ window.laravelNotificationCatcher = {
     waitForEcho(callback) {
         const checkEcho = () => {
             if (typeof window.Echo !== 'undefined' && window.Echo.connector && window.Echo.connector.pusher) {
-                console.log('📡 Echo ready for notification catcher');
+                
                 callback();
             } else {
-                console.log('⏳ Waiting for Echo...');
                 setTimeout(checkEcho, 500);
             }
         };
@@ -38,7 +37,7 @@ window.laravelNotificationCatcher = {
     },
 
     setupAllListeners(userId) {
-        console.log('🎯 Setting up comprehensive notification listeners...');
+        
 
         // Method 1: Standard private user channel
         this.setupPrivateUserChannel(userId);
@@ -54,7 +53,7 @@ window.laravelNotificationCatcher = {
     },
 
     setupPrivateUserChannel(userId) {
-        console.log('🔒 Setting up private user channel listeners...');
+        
 
         const channelNames = [
             `App.User.${userId}`,
@@ -70,7 +69,6 @@ window.laravelNotificationCatcher = {
 
                 // Laravel's standard notification method
                 channel.notification((notification) => {
-                    console.log(`🔔 [${channelName}] notification() received:`, notification);
                     this.processNotification(notification, channelName, 'notification()');
                 });
 
@@ -89,7 +87,7 @@ window.laravelNotificationCatcher = {
 
                 eventTypes.forEach(eventType => {
                     channel.listen(eventType, (data) => {
-                        console.log(`🔔 [${channelName}] Event "${eventType}":`, data);
+                        
                         this.processNotification(data, channelName, eventType);
                     });
                 });
@@ -97,27 +95,27 @@ window.laravelNotificationCatcher = {
                 // Catch-all listener (if available)
                 if (typeof channel.listenForWhisper === 'function') {
                     channel.listenForWhisper('notification', (data) => {
-                        console.log(`🔔 [${channelName}] Whisper notification:`, data);
+                        
                         this.processNotification(data, channelName, 'whisper');
                     });
                 }
 
                 channel.subscribed(() => {
-                    console.log(`✅ Successfully subscribed to ${channelName}`);
+                    
                 });
 
                 channel.error((error) => {
-                    console.error(`❌ Error on channel ${channelName}:`, error);
+                    ;
                 });
 
             } catch (error) {
-                console.error(`❌ Failed to setup channel ${channelName}:`, error);
+                ;
             }
         });
     },
 
     setupPublicChannels(userId) {
-        console.log('📢 Setting up public channel listeners...');
+        
 
         const publicChannelNames = [
             'notifications',
@@ -149,7 +147,7 @@ window.laravelNotificationCatcher = {
                 });
 
             } catch (error) {
-                console.error(`❌ Failed to setup public channel ${channelName}:`, error);
+                ;
             }
         });
     },
@@ -175,7 +173,7 @@ window.laravelNotificationCatcher = {
                 });
 
             } catch (error) {
-                console.warn(`⚠️ Failed to setup presence channel ${channelName}:`, error);
+                ;
             }
         });
     },
@@ -183,7 +181,7 @@ window.laravelNotificationCatcher = {
     setupRawPusherMonitoring(userId) {
 
         if (!window.Echo.connector || !window.Echo.connector.pusher) {
-            console.warn('⚠️ Pusher not available for raw monitoring');
+            ;
             return;
         }
 
@@ -248,12 +246,12 @@ window.laravelNotificationCatcher = {
         if (window.unifiedNotifications && typeof window.unifiedNotifications.handleNewNotification === 'function') {
             try {
                 window.unifiedNotifications.handleNewNotification(data);
-                console.log(`✅ Notification processed successfully via unified system`);
+                
             } catch (error) {
-                console.error(`❌ Failed to process via unified system:`, error);
+                ;
             }
         } else {
-            console.warn('⚠️ Unified notification system not available');
+            ;
         }
 
         // Dispatch custom event for other listeners

@@ -204,7 +204,7 @@
                             Reset
                         </button>
 
-                        <a href="{{ route('voice-assistant.history') }}" class="btn btn-info">
+                        <a href="{{ route('ai.voice-assistant.history') }}" class="btn btn-info">
                             <i class="fas fa-history me-2"></i>
                             History
                         </a>

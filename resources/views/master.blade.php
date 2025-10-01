@@ -15,7 +15,7 @@
     <meta name="notification-badge-enabled" content="{{ env('NOTIFICATION_BADGE_ENABLED', 'true') }}">
     <script>
         window.userRole = '{{ Auth::user()->role ?? 'user' }}';
-        window.userId = {{ Auth::id() }};
+        window.userId = {{ Auth::id() ?? 'null' }};
     </script>
     @endauth
     <style>
@@ -69,7 +69,8 @@
     max-width: 280px !important;
 
     /* Keep high z-index so it shows above content */
-    z-index: 999999 !important;
+    z-index: 9999999 !important;
+    position: absolute !important;
 }
 
 /* Ensure any Bootstrap-added shadow class doesn't override the look */
@@ -228,7 +229,7 @@
 body .dropdown.show .dropdown-menu,
 body .dropdown .dropdown-menu.show,
 .dropdown-menu.show {
-    z-index: 999999 !important;
+    z-index: 9999999 !important;
     display: block !important;
     /* Do not override position/transform so Popper can place it correctly */
 }
@@ -259,7 +260,7 @@ body .dropdown .dropdown-menu.show,
         }
 
         #header .dropdown-menu {
-            z-index: 999999 !important;
+            z-index: 9999999 !important;
             position: absolute !important;
         }
     </style>
@@ -295,7 +296,7 @@ body .dropdown .dropdown-menu.show,
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.08) !important;
             padding: 12px 0 !important;
             min-width: 240px !important;
-            z-index: 999999 !important;
+            z-index: 9999999 !important;
         }
 
         /* Dropdown items styling */
@@ -336,6 +337,13 @@ body .dropdown .dropdown-menu.show,
             width: 350px !important;
             max-height: 400px !important;
             overflow-y: auto !important;
+            z-index: 9999999 !important;
+            position: absolute !important;
+        }
+
+        .notifications-dropdown {
+            position: relative !important;
+            z-index: 10004 !important;
         }
 
         .user-dropdown .dropdown-menu {
@@ -378,6 +386,7 @@ body .dropdown .dropdown-menu.show,
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
     <link rel="stylesheet" href="{{ asset('css/responsive-modals.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom-buttons.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     @stack('styles')
 
     <!-- Global Font Styling -->
@@ -517,7 +526,7 @@ body .dropdown .dropdown-menu.show,
             top: 100% !important;
             left: 50% !important;
             transform: translateX(-50%) !important;
-            z-index: 999999 !important;
+            z-index: 9999999 !important;
 
             /* Bootstrap Button Dimensions */
             min-width: 200px !important;
@@ -738,6 +747,11 @@ body .dropdown .dropdown-menu.show,
             box-sizing: border-box !important;
         }
 
+        /* Ensure top-bar appears above sidebar */
+        #top-bar {
+            z-index: 1050 !important;
+        }
+
         /* Header Layout - Fix Z-Index Issues */
         #header {
             overflow: visible !important;
@@ -797,7 +811,7 @@ body .dropdown .dropdown-menu.show,
         /* Force dropdown above everything */
         .primary-menu .sub-menu-container {
             position: absolute !important;
-            z-index: 999999 !important;
+            z-index: 9999999 !important;
         }
 
         /* Fix dropdown positioning and sizing */
@@ -1187,7 +1201,6 @@ body .dropdown .dropdown-menu.show,
         window.fetch = function(url, options) {
             // If this is a request to a notification endpoint, cancel it
             if (url.includes('/api/notifications')) {
-                console.log('Blocking notification request after login:', url);
                 return Promise.resolve(new Response(JSON.stringify({}), { status: 200 }));
             }
 
@@ -1200,7 +1213,6 @@ body .dropdown .dropdown-menu.show,
         history.pushState = function() {
             const url = arguments[2];
             if (url && url.includes('/api/notifications')) {
-                console.log('Blocking navigation to notification endpoint after login:', url);
                 return;
             }
             return originalPushState.apply(this, arguments);
@@ -1221,8 +1233,7 @@ body .dropdown .dropdown-menu.show,
             window.fetch = originalFetch;
             history.pushState = originalPushState;
             history.replaceState = originalReplaceState;
-            console.log('Restoring original fetch and history functions');
-        }, 5000); // Wait 5 seconds before restoring
+            }, 5000); // Wait 5 seconds before restoring
     }
 })();
 </script>
@@ -1252,14 +1263,14 @@ body .dropdown .dropdown-menu.show,
                     <div class="col-md-auto d-flex align-items-center gap-3">
                         @auth
                             <!-- Quick Action Button for Emergency -->
-                            <a href="{{ route('ask-ai') }}" class="btn btn-sm px-3 py-1"
+                            <a href="{{ route('ai.ask-ai') }}" class="btn btn-sm px-3 py-1"
                                 style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; font-size: 12px;">
                                 <i class="bi bi-lightning-charge me-1"></i> Quick Diagnosis
                             </a>
 
                             <!-- Notifications Bell -->
                             <div class="dropdown notifications-dropdown">
-                                <button class="btn btn-sm position-relative notification-bell" type="button" data-bs-toggle="dropdown"
+                                <button class="btn btn-sm position-relative notification-bell dropdown-toggle" type="button" data-bs-toggle="dropdown"
                                     aria-expanded="false"
                                     aria-haspopup="menu"
                                     aria-label="Notifications"
@@ -1686,9 +1697,11 @@ body .dropdown .dropdown-menu.show,
         @endif
 
         <!-- Main Content -->
-        <main class="app-main">
-            @yield('content')
-        </main>
+        <div class="dashboard-container">
+            <main class="app-main">
+                @yield('content')
+            </main>
+        </div>
 
     </div><!-- #wrapper end -->
 		<!-- Footer -->
@@ -1741,7 +1754,7 @@ body .dropdown .dropdown-menu.show,
                 <ul class="list-unstyled footer-links">
                     @auth
                         <li class="mb-2"><a href="{{ route('dashboard') }}" class="text-white-50 text-decoration-none hover-link">Dashboard</a></li>
-                        <li class="mb-2"><a href="{{ route('ask-ai') }}" class="text-white-50 text-decoration-none hover-link">AI Assistant</a></li>
+                        <li class="mb-2"><a href="{{ route('ai.ask-ai') }}" class="text-white-50 text-decoration-none hover-link">AI Assistant</a></li>
                         <li class="mb-2"><a href="{{ route('cases') }}" class="text-white-50 text-decoration-none hover-link">Case Studies</a></li>
                         <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Settings</a></li>
                     @else
@@ -1869,7 +1882,7 @@ body .dropdown .dropdown-menu.show,
     <script src="{{ asset('js/plugins.min.js') }}"></script>
     <script src="{{ asset('js/functions.bundle.js') }}"></script>
     <!-- Ensure Bootstrap JS (with Popper) is available for dropdowns/modals -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-9NDL1F0r6r4h0+4zqX6Uo5Qb0lQpFfVgD2pC3zP8v9K4t2q8q3h0nYc8VnO7A9Yf" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <!-- Sidebar JS -->
     <script src="{{ asset('js/sidebar.js') }}" defer></script>
 
@@ -1894,78 +1907,68 @@ body .dropdown .dropdown-menu.show,
 @stack('scripts')
 
 <script>
-    // Simple dropdown initialization
+    // Dropdown initialization
     document.addEventListener('DOMContentLoaded', function() {
-        // Only log in debug mode
-        if (window.location.search.includes('debug=true')) {
-            console.log('Master script loaded successfully');
-            console.log('Initializing dropdowns...');
+        if (typeof bootstrap === 'undefined') {
+            console.error('Bootstrap not loaded, dropdowns will not work');
+            return;
         }
 
-        // Initialize all dropdown toggles
-        document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
-            try {
-                if (!bootstrap.Dropdown.getInstance(toggle)) {
-                    new bootstrap.Dropdown(toggle, {
-                        autoClose: true,
-                        offset: [0, 2]
-                    });
-                    console.log('Dropdown initialized:', toggle);
+        setTimeout(function() {
+            // Initialize all dropdown toggles
+            document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+                try {
+                    if (!bootstrap.Dropdown.getInstance(toggle)) {
+                        new bootstrap.Dropdown(toggle, {
+                            autoClose: true,
+                            offset: [0, 2]
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error initializing dropdown:', e);
                 }
-            } catch (e) {
-                console.error('Dropdown initialization error:', e);
+            });
+
+            // Check notifications dropdown specifically
+            const notificationsDropdown = document.querySelector('.notifications-dropdown');
+            if (notificationsDropdown) {
+                const toggle = notificationsDropdown.querySelector('.dropdown-toggle');
+
+                if (toggle) {
+                    // Ensure Bootstrap dropdown is properly initialized for notifications
+                    try {
+                        if (!bootstrap.Dropdown.getInstance(toggle)) {
+                            const dropdownInstance = new bootstrap.Dropdown(toggle, {
+                                autoClose: true,
+                                offset: [0, 2]
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Error initializing notifications dropdown:', e);
+                    }
+                }
             }
-        });
 
-        // Handle dropdown clicks for top bar
-        document.querySelectorAll('#top-bar .dropdown-toggle').forEach(toggle => {
-            toggle.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const dropdown = bootstrap.Dropdown.getInstance(this);
-                if (dropdown) {
-                    dropdown.toggle();
-                    console.log('Dropdown toggled:', this);
-
-                    // If this is the notifications dropdown, load notifications
-                    if (this.closest('.notifications-dropdown')) {
-                        loadNotifications();
-                    }
-                }
-            });
-        });
-
-        // Special handling for user dropdown
-        const userDropdownToggle = document.querySelector('.user-dropdown-toggle');
-        if (userDropdownToggle) {
-            userDropdownToggle.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const dropdown = bootstrap.Dropdown.getInstance(this);
-                if (dropdown) {
-                    dropdown.toggle();
-                    console.log('User dropdown toggled');
-                }
-            });
-        }
-
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.dropdown')) {
-                document.querySelectorAll('.dropdown.show').forEach(dropdown => {
-                    const instance = bootstrap.Dropdown.getInstance(dropdown.querySelector('.dropdown-toggle'));
-                    if (instance) {
-                        instance.hide();
-                        console.log('Dropdown closed');
-                    }
+            // Add event listener for notifications dropdown to load notifications when opened
+            if (notificationsDropdown) {
+                notificationsDropdown.addEventListener('shown.bs.dropdown', function() {
+                    loadNotifications();
                 });
             }
-        });
 
-        // Only log in debug mode
-        if (window.location.search.includes('debug=true')) {
-            console.log('Dropdowns initialized successfully');
-        }
+            // Fix dropdown click handling - Bootstrap's data-bs-toggle auto-handling not working
+            document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+                toggle.addEventListener('click', function(e) {
+                    e.preventDefault(); // Prevent default Bootstrap behavior
+                    e.stopPropagation(); // Stop event bubbling
+
+                    const instance = bootstrap.Dropdown.getInstance(this);
+                    if (instance) {
+                        instance.toggle();
+                    }
+                });
+            });
+        }, 100);
     });
 
     // Fallback initialization
@@ -1975,10 +1978,9 @@ body .dropdown .dropdown-menu.show,
                 try {
                     if (!bootstrap.Dropdown.getInstance(toggle)) {
                         new bootstrap.Dropdown(toggle);
-                        console.log('Fallback initialized:', toggle);
                     }
                 } catch (e) {
-                    console.error('Fallback error:', e);
+                    console.error('Fallback dropdown initialization error:', e);
                 }
             });
         }, 500);
@@ -2000,7 +2002,6 @@ body .dropdown .dropdown-menu.show,
             if (!mobileMenuTrigger) {
                 // Only log if we're in debug mode
                 if (window.location.search.includes('debug=true')) {
-                    console.log('Mobile trigger not found - available buttons:', document.querySelectorAll('button'));
                 }
                 return;
             }
@@ -2037,7 +2038,7 @@ body .dropdown .dropdown-menu.show,
                 width: 100%;
                 max-height: 80vh;
                 background: white;
-                z-index: 999999;
+                z-index: 9999999;
                 border-radius: 20px 20px 0 0;
                 box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
                 transition: bottom 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -2090,13 +2091,13 @@ body .dropdown .dropdown-menu.show,
                 {
                     title: 'Ask AI',
                     icon: 'fas fa-robot',
-                    url: '{{ route("ask-ai") }}',
+                    url: '{{ route("ai.ask-ai") }}',
                     submenu: null
                 },
                 {
                     title: 'Voice Assistant',
                     icon: 'fas fa-microphone',
-                    url: '{{ route("voice-assistant.index") }}',
+                    url: '{{ route("ai.voice-assistant.index") }}',
                     submenu: null
                 },
                 {
@@ -2330,7 +2331,6 @@ body .dropdown .dropdown-menu.show,
 
             // Only log in debug mode
             if (window.location.search.includes('debug=true')) {
-                console.log('Bottom sheet mobile menu created successfully');
             }
         }
 
@@ -2338,9 +2338,6 @@ body .dropdown .dropdown-menu.show,
         document.addEventListener('DOMContentLoaded', function() {
             // Only log in debug mode
             if (window.location.search.includes('debug=true')) {
-                console.log('DOM Content Loaded - calling createBottomSheetMenu');
-                console.log('Available hamburger buttons:', document.querySelectorAll('.cnvs-hamburger'));
-                console.log('Available primary-menu-trigger:', document.querySelectorAll('.primary-menu-trigger'));
             }
             createBottomSheetMenu();
 
@@ -2375,23 +2372,19 @@ body .dropdown .dropdown-menu.show,
                     }
                 });
             } else {
-                console.log('Hamburger button not found!');
             }
         });
 
         // Add manual test trigger (temporary for debugging)
         window.testMobileMenu = function() {
-            console.log('Manual test triggered');
             const bottomSheet = document.querySelector('.bottom-sheet-menu');
             const overlay = document.querySelector('.bottom-sheet-overlay');
             if (bottomSheet && overlay) {
-                console.log('Opening existing bottom sheet');
                 bottomSheet.style.bottom = '0';
                 overlay.style.opacity = '1';
                 overlay.style.visibility = 'visible';
                 document.body.style.overflow = 'hidden';
             } else {
-                console.log('Creating new bottom sheet');
                 createBottomSheetMenu();
                 setTimeout(() => {
                     const newBottomSheet = document.querySelector('.bottom-sheet-menu');
@@ -2424,7 +2417,6 @@ body .dropdown .dropdown-menu.show,
 
             // Only reinitialize if elements exist but mobile menu doesn't and we haven't initialized recently
             if (mobileMenuTrigger && !existingMobileMenu && !mobileMenuInitialized) {
-                console.log('Initializing mobile menu');
                 createBottomSheetMenu();
                 mobileMenuInitialized = true;
                 
@@ -2446,7 +2438,6 @@ body .dropdown .dropdown-menu.show,
 
         // Only log in debug mode
         if (window.location.search.includes('debug=true')) {
-            console.log('Loading notifications...');
         }
 
         // Show loading state
@@ -2466,8 +2457,7 @@ body .dropdown .dropdown-menu.show,
                 return response.json();
             })
             .then(data => {
-                console.log('Notifications received:', data);
-
+ 
                 if (data.notifications && data.notifications.length > 0) {
                     // Render notifications
                     let html = '';
@@ -2629,7 +2619,6 @@ body .dropdown .dropdown-menu.show,
 
             // If it's an authentication error, we might want to redirect to login
             if (error.message.includes('Authentication required') || error.message.includes('Redirect detected')) {
-                console.log('Authentication error detected, user may need to log in again');
                 // Optionally: show a message or redirect to login
                 // window.location.href = '/login';
             }
@@ -2644,7 +2633,6 @@ body .dropdown .dropdown-menu.show,
 
         // If we have a login parameter in URL, skip notifications for 5 seconds
         if (loginParam === 'success') {
-            console.log('Skipping notification update after login');
             setTimeout(() => {
                 updateNotificationBadge();
             }, 5000); // Wait 5 seconds before enabling notifications
@@ -2698,7 +2686,6 @@ body .dropdown .dropdown-menu.show,
         // Temporarily replace updateNotificationBadge with a no-op
         const originalUpdateNotificationBadge = window.updateNotificationBadge;
         window.updateNotificationBadge = function() {
-            console.log('Skipping notification update after login');
             // Restore the original function after a delay
             setTimeout(() => {
                 window.updateNotificationBadge = originalUpdateNotificationBadge;

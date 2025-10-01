@@ -11,21 +11,9 @@
 <div class="dashboard-container">
     <div class="container">
         <!-- Dashboard Header -->
-        <div class="dashboard-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2>Manage Availability</h2>
-                    <p>Set your weekly schedule and appointment slots</p>
-                </div>
-                <div class="d-flex gap-3">
-                    <a href="{{ route('dashboard') }}" class="btn btn-secondary-custom">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
-                    </a>
-                    <a href="{{ route('doctor.availability.create') }}" class="btn btn-primary-custom">
-                        <i class="fas fa-plus me-2"></i>Add Time Slot
-                    </a>
-                </div>
-            </div>
+        <div class="dashboard-header py-2 border-bottom">
+            <h2 class="h1 mb-1" style="font-weight: 700;">Doctor Availability</h2>
+            <p>Set your availability</p>
         </div>
 
         <!-- Session Messages -->

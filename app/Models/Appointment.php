@@ -95,6 +95,14 @@ class Appointment extends Model
     }
 
     /**
+     * Get the prescriptions for this appointment
+     */
+    public function prescriptions()
+    {
+        return $this->hasMany(Prescription::class);
+    }
+
+    /**
      * Scope for upcoming appointments
      */
     public function scopeUpcoming($query)

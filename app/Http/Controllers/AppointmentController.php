@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Appointment;
 use App\Events\AppointmentBookedEvent;
 use App\Models\Doctor;
+use App\Services\AIAssistant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+use OpenAI\Laravel\Facades\OpenAI;
 
 class AppointmentController extends Controller
 {
@@ -251,7 +254,13 @@ class AppointmentController extends Controller
             );
         }
 
-        $appointment->load(['doctor.user', 'doctor.specialty', 'patient', 'review']);
+        $relations = ['doctor.user', 'doctor.specialty', 'review', 'prescriptions'];
+
+        if (config('ai.enabled', true)) {
+            $relations[] = 'patient.patientData';
+        }
+
+        $appointment->load($relations);
 
         return view('appointments.show', compact('appointment'));
     }
@@ -629,6 +638,160 @@ class AppointmentController extends Controller
             \Log::error('Failed to send appointment rescheduling notifications: ' . $e->getMessage());
         }
     }
+
+
+    /**
+     * Test OpenAI configuration and connectivity
+     */
+    public function testOpenAI(Request $request)
+    {
+        // Only allow doctors to test OpenAI
+        if (!Auth::user()->isDoctor()) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $results = [
+            'config_check' => false,
+            'api_key_configured' => false,
+            'api_key_length' => 0,
+            'organization_configured' => false,
+            'connectivity_test' => false,
+            'error_message' => null,
+        ];
+
+        try {
+            // Check configuration
+            $apiKey = config('openai.api_key');
+            $organization = config('openai.organization');
+            $timeout = config('openai.request_timeout', 60);
+
+            $results['api_key_configured'] = !empty($apiKey);
+            $results['api_key_length'] = strlen($apiKey ?? '');
+            $results['organization_configured'] = !empty($organization);
+            $results['config_check'] = $results['api_key_configured'];
+
+            Log::info('OpenAI Configuration Check', [
+                'api_key_configured' => $results['api_key_configured'],
+                'api_key_length' => $results['api_key_length'],
+                'organization_configured' => $results['organization_configured'],
+                'timeout' => $timeout,
+            ]);
+
+            if (!$results['api_key_configured']) {
+                $results['error_message'] = 'OpenAI API key not configured in environment variables';
+                return response()->json($results);
+            }
+
+            // Test connectivity with a simple request
+            $testResponse = OpenAI::chat()->create([
+                'model' => 'gpt-3.5-turbo',
+                'messages' => [
+                    [
+                        'role' => 'user',
+                        'content' => 'Hello, this is a test message. Please respond with "OpenAI connection successful".'
+                    ]
+                ],
+                'max_tokens' => 50,
+                'temperature' => 0.1,
+            ]);
+
+            $results['connectivity_test'] = true;
+            $results['response_content'] = $testResponse->choices[0]->message->content ?? null;
+
+            Log::info('OpenAI Connectivity Test Successful', [
+                'response_id' => $testResponse->id ?? null,
+                'model' => $testResponse->model ?? null,
+                'usage' => $testResponse->usage ?? null,
+            ]);
+
+        } catch (\OpenAI\Exceptions\AuthenticationException $e) {
+            $results['error_message'] = 'Authentication failed: ' . $e->getMessage();
+            Log::error('OpenAI Test Authentication Error', ['error' => $e->getMessage()]);
+        } catch (\OpenAI\Exceptions\RateLimitException $e) {
+            $results['error_message'] = 'Rate limit exceeded: ' . $e->getMessage();
+            Log::error('OpenAI Test Rate Limit Error', ['error' => $e->getMessage()]);
+        } catch (\Exception $e) {
+            $results['error_message'] = 'Connection test failed: ' . $e->getMessage();
+            Log::error('OpenAI Test General Error', [
+                'error' => $e->getMessage(),
+                'error_class' => get_class($e)
+            ]);
+        }
+
+        return response()->json($results);
+    }
+
+    /**
+     * Generate AI suggestions for prescription medications based on appointment data
+     */
+    public function aiSuggest(Request $request, Appointment $appointment)
+    {
+        // Validate doctor access to this appointment
+        if (!Auth::user()->isDoctor() || $appointment->doctor->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized access to appointment.');
+        }
+
+        // Debug: Log current AI configuration
+        \Log::info('AI Configuration Check', [
+            'ai_enabled' => config('ai.enabled', true),
+            'prescription_suggestions_enabled' => config('ai.prescription_suggestions.enabled', true),
+            'openai_api_key_configured' => !empty(config('openai.api_key')),
+            'openai_api_key_length' => strlen(config('openai.api_key') ?? ''),
+        ]);
+
+        // Check if AI prescription suggestions are enabled
+        if (!config('ai.prescription_suggestions.enabled', true)) {
+            return response()->json([
+                'suggestions' => [[
+                    'med' => 'AI Feature Disabled',
+                    'dosage' => 'N/A',
+                    'freq' => 'N/A',
+                    'dur' => 'N/A',
+                    'confidence' => 0,
+                    'reason' => 'AI prescription suggestions are currently disabled in system configuration.'
+                ]],
+                'risk_flags' => ['AI prescription suggestions are disabled by administrator'],
+                'message' => 'AI prescription suggestions are disabled',
+                'source' => 'disabled',
+                'disabled' => true
+            ], 200); // Changed to 200 so it shows the message instead of error
+        }
+
+        // Validate request data
+        $request->validate([
+            'symptoms' => 'nullable|string',
+            'allergies' => 'nullable|string',
+            'past_meds' => 'nullable|string',
+        ]);
+
+        // Decode JSON data
+        $allergies = json_decode($request->allergies, true) ?? [];
+        $past_meds = json_decode($request->past_meds, true) ?? [];
+
+        // Handle symptoms fallback
+        $symptoms = $request->symptoms ?: 'No symptoms provided';
+
+        // Ensure symptoms is an array for AI service
+        if (!is_array($symptoms)) {
+            $symptoms = [$symptoms];
+        }
+
+        // Debug logging
+        \Log::info('AI Suggestion Request Data', [
+            'appointment_id' => $appointment->id,
+            'raw_symptoms' => $request->symptoms,
+            'processed_symptoms' => $symptoms,
+            'allergies' => $allergies,
+            'past_meds' => $past_meds,
+        ]);
+
+        $aiAssistant = new AIAssistant();
+        $result = $aiAssistant->generatePrescriptionSuggestions($appointment, $symptoms, $allergies, $past_meds);
+
+        return response()->json($result);
+    }
+
+
 
 
 }
