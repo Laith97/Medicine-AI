@@ -19,11 +19,11 @@
                             </p>
                         </div>
                         <div class="btn-group">
-                            <a href="{{ route('voice-assistant.history') }}" class="btn btn-light">
+                            <a href="{{ route('ai.voice-assistant.history') }}" class="btn btn-light">
                                 <i class="fas fa-arrow-left me-2"></i>
                                 Back to History
                             </a>
-                            <a href="{{ route('voice-assistant.index') }}" class="btn btn-outline-light">
+                            <a href="{{ route('ai.voice-assistant.index') }}" class="btn btn-outline-light">
                                 <i class="fas fa-microphone me-2"></i>
                                 New Session
                             </a>
@@ -293,11 +293,11 @@
                 <div class="card-body">
                     <h5 class="card-title">Actions</h5>
                     <div class="btn-group" role="group">
-                        <a href="{{ route('voice-assistant.history') }}" class="btn btn-secondary">
+                        <a href="{{ route('ai.voice-assistant.history') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left me-2"></i>
                             Back to History
                         </a>
-                        <a href="{{ route('voice-assistant.index') }}" class="btn btn-primary">
+                        <a href="{{ route('ai.voice-assistant.index') }}" class="btn btn-primary">
                             <i class="fas fa-microphone me-2"></i>
                             New Voice Session
                         </a>

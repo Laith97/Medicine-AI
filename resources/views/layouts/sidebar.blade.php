@@ -16,10 +16,17 @@
         @foreach ($menuItems as $item)
           @if (!empty($item['dropdown']) && !empty($item['items']))
             <li class="nav-item">
-              <div class="nav-link disabled" tabindex="-1">
-                @if(isset($item['icon']))<i class="{{ $item['icon'] }}"></i>@endif
-                <span>{{ $item['name'] }}</span>
-              </div>
+              @if(isset($item['href']))
+                <a href="{{ route($item['href']) }}" class="nav-link {{ request()->routeIs($item['href']) ? 'active' : '' }}">
+                  @if(isset($item['icon']))<i class="{{ $item['icon'] }}"></i>@endif
+                  <span>{{ $item['name'] }}</span>
+                </a>
+              @else
+                <div class="nav-link disabled" tabindex="-1">
+                  @if(isset($item['icon']))<i class="{{ $item['icon'] }}"></i>@endif
+                  <span>{{ $item['name'] }}</span>
+                </div>
+              @endif
               @foreach ($item['items'] as $subItem)
                 <a href="{{ isset($subItem['route']) ? route($subItem['route']) : '#' }}"
                    class="nav-link {{ request()->routeIs($subItem['route'] ?? '') ? 'active' : '' }}">

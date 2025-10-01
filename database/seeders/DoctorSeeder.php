@@ -84,9 +84,10 @@ class DoctorSeeder extends Seeder
 
         foreach ($doctors as $doctorData) {
             // Create user
-            $user = User::create([
+            $user = User::firstOrCreate([
+                'email' => $doctorData['email']
+            ], [
                 'name' => $doctorData['name'],
-                'email' => $doctorData['email'],
                 'password' => Hash::make('password123'),
                 'role' => 'doctor',
                 'email_verified_at' => now(),
@@ -96,8 +97,9 @@ class DoctorSeeder extends Seeder
             $specialty = $specialties->where('name', $doctorData['specialty'])->first();
 
             // Create doctor profile
-            $doctor = Doctor::create([
-                'user_id' => $user->id,
+            $doctor = Doctor::firstOrCreate([
+                'user_id' => $user->id
+            ], [
                 'specialty_id' => $specialty->id,
                 'license_number' => 'LIC' . str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT),
                 'bio' => $doctorData['bio'],

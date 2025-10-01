@@ -14,7 +14,7 @@
 
         <!-- Doctor Header -->
         <div class="table-card mb-4 overflow-hidden">
-            <div class="dashboard-header">
+            <div class="dashboard-header py-2 border-bottom">
                 <div class="d-flex align-items-center">
                     <!-- Profile Image -->
                     <div class="me-3">

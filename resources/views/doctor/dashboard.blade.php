@@ -58,7 +58,7 @@
         @endif
 
         <!-- Dashboard Header -->
-        <div class="dashboard-header">
+        <div class="dashboard-header py-2 border-bottom">
             <div>
                 <h2>Welcome back, Dr. {{ explode(' ', $doctor->user->name)[1] ?? $doctor->user->name }}</h2>
                 <p>Here's what's happening with your practice today</p>
@@ -194,7 +194,7 @@
 
                                 <!-- Actions -->
                                 <div>
-                                    <a href="{{ route('doctor.appointments.show', $appointment) }}" class="btn btn-smbtn-primary-custom">
+                                    <a href="{{ route('doctor.appointments.show', $appointment) }}" class="btn btn-sm btn-primary-custom">
                                         View Details
                                     </a>
                                 </div>
@@ -235,6 +235,7 @@
                         </a>
                         <a href="{{ route('doctor.notes.create') }}" class="btn btn-success">
                             <i class="fas fa-plus me-2"></i>Add Note
+                        </a>
                         <a href="{{ route('doctor.blog.index') }}" class="btn btn-secondary">
                             <i class="fas fa-blog me-2"></i>Manage Blog
                         </a>
@@ -259,7 +260,7 @@
                                                 <i class="fas fa-check"></i>
                                             </button>
                                         </form>
-                                        <a href="{{ route('doctor.appointments.show', $appointment) }}" class="btn btn-smbtn-primary-custom" title="View">
+                                        <a href="{{ route('doctor.appointments.show', $appointment) }}" class="btn btn-sm btn-primary-custom" title="View">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     </div>
@@ -267,7 +268,7 @@
                             </div>
                         @endforeach
                         <div class="text-center">
-                            <a href="{{ route('doctor.appointments.index', ['status' => 'pending']) }}" class="btn btn-smbtn-primary-custom">
+                            <a href="{{ route('doctor.appointments.index', ['status' => 'pending']) }}" class="btn btn-sm btn-primary-custom">
                                 View all pending →
                             </a>
                         </div>
@@ -301,7 +302,7 @@
                             </div>
                         @endforeach
                         <div class="text-center">
-                            <a href="{{ route('doctor.reviews.index') }}" class="btn btn-smbtn-primary-custom">
+                            <a href="{{ route('doctor.reviews.index') }}" class="btn btn-sm btn-primary-custom">
                                 View all reviews →
                             </a>
                         </div>
@@ -370,6 +371,11 @@
         </div>
     </div>
 </div>
+<script>
+const chartLabels = @json($chartLabels ?? []);
+const chartData = @json($chartData ?? []);
+const records = @json($records ?? []);
+</script>
 @endsection
 
 @push('styles')

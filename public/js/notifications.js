@@ -22,14 +22,14 @@ class NotificationManager {
             const data = await response.json();
             this.updateUnreadCount(data.count);
         } catch (error) {
-            console.error('Error loading unread count:', error);
+            ;
         }
     }
 
     // Load notifications for dropdown
     async loadNotifications() {
         try {
-            console.log('Loading notifications...');
+            
             const response = await fetch('/notifications/dropdown', {
                 method: 'GET',
                 headers: {
@@ -45,11 +45,11 @@ class NotificationManager {
             }
 
             const data = await response.json();
-            console.log('Notifications loaded successfully:', data);
+            
             this.notifications = data.notifications;
             this.updateDropdown(data.notifications, data.unread_count);
         } catch (error) {
-            console.error('Error loading notifications:', error);
+            ;
             // Don't fail silently - show user-friendly message
             this.updateDropdown([], 0);
         }
@@ -60,7 +60,6 @@ class NotificationManager {
         // Notification bell click
         document.addEventListener('click', (e) => {
             if (e.target.closest('.notification-bell')) {
-                e.preventDefault();
                 this.toggleDropdown();
             } else if (!e.target.closest('.notifications-dropdown')) {
                 this.closeDropdown();
@@ -115,17 +114,16 @@ class NotificationManager {
             if (this.echoRetryCount < 10) {
                 this.echoRetryCount++;
                 setTimeout(() => this.setupRealtimeUpdates(), 500);
-                console.log(`Retrying Echo initialization... (${this.echoRetryCount}/10)`);
                 return;
             } else {
-                console.error('Echo failed to initialize after 10 attempts. Check if resources/js/app.js is properly compiled and loaded.');
+                ;
                 return;
             }
         }
 
         // Check if userId is available
         if (!this.userId) {
-            console.error('userId is missing. Ensure <meta name="user-id"> exists for authenticated users.');
+            ;
             return;
         }
 
@@ -148,11 +146,11 @@ class NotificationManager {
                 this.showNotificationToast(notification);
             })
             .listen('NotificationRead', (event) => {
-                console.log('Received NotificationRead event:', event);
+                
                 this.updateNotificationReadStatus(event.notificationId);
             });
 
-        console.log('Real-time notification channel established successfully');
+        
     }
 
     // Add new notification to the list with normalized structure
@@ -206,7 +204,7 @@ class NotificationManager {
                 }
             }
         } catch (error) {
-            console.error('Error marking notification as read:', error);
+            ;
         }
     }
 
@@ -230,7 +228,7 @@ class NotificationManager {
                 this.updateUnreadCount(0);
             }
         } catch (error) {
-            console.error('Error marking all notifications as read:', error);
+            ;
         }
     }
 
@@ -257,7 +255,7 @@ class NotificationManager {
                 }
             }
         } catch (error) {
-            console.error('Error deleting notification:', error);
+            ;
         }
     }
 
@@ -404,7 +402,7 @@ class NotificationManager {
         const soundEnabled = document.querySelector('meta[name="notification-sound-enabled"]')?.content === 'true';
         if (soundEnabled) {
             const sound = new Audio('/sounds/notification.mp3');
-            sound.play().catch(e => console.error('Error playing sound:', e));
+            sound.play().catch(e => );
         }
 
         toast.innerHTML = `
@@ -473,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Only initialize if we're on a page that needs notifications
             if (document.querySelector('.notification-bell') || document.querySelector('#notification-count')) {
-                console.log('Initializing NotificationManager...');
+                
 
                 // Check if userId is available (for real-time notifications)
                 const userId = document.querySelector('meta[name="user-id"]')?.content;
@@ -484,12 +482,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.notificationManager = new NotificationManager(null);
                 }
 
-                console.log('NotificationManager initialized successfully');
+                
             } else {
-                console.log('No notification elements found, skipping NotificationManager initialization');
+                
             }
         } catch (error) {
-            console.error('Error initializing NotificationManager:', error);
+            ;
         }
     }, 1000); // 1 second delay
 });

@@ -8,19 +8,28 @@ class NotificationManager {
     }
 
     init() {
-        console.log('📋 Initializing NotificationManager for user:', this.userId);
+        
         this.loadNotifications();
         this.setupEventListeners();
     }
 
     setupEventListeners() {
-        // Handle dropdown toggle
+        // Handle dropdown toggle - only prevent default if not using Bootstrap dropdown
         const notificationBell = document.querySelector('.notification-bell');
         if (notificationBell) {
-            notificationBell.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.loadNotifications();
-            });
+            // Check if this bell uses Bootstrap dropdown
+            const hasBootstrapToggle = notificationBell.hasAttribute('data-bs-toggle') &&
+                                     notificationBell.getAttribute('data-bs-toggle') === 'dropdown';
+
+            if (!hasBootstrapToggle) {
+                // Fallback for non-Bootstrap dropdowns
+                notificationBell.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.loadNotifications();
+                });
+            }
+            // For Bootstrap dropdowns, let Bootstrap handle the toggle
+            // Notifications will be loaded via the 'shown.bs.dropdown' event in master.blade.php
 
             // Add keyboard support for notification bell
             notificationBell.addEventListener('keydown', (e) => {
@@ -72,9 +81,8 @@ class NotificationManager {
 
     async loadNotifications() {
         try {
-            console.log('📱 Loading notifications...');
-            console.log('🔍 User ID:', this.userId);
-            console.log('🔍 Auth token available:', !!document.querySelector('meta[name="csrf-token"]'));
+            
+            
 
             const response = await fetch('/api/notifications', {
                 headers: {
@@ -83,14 +91,13 @@ class NotificationManager {
                 }
             });
 
-            console.log('🔍 Response status:', response.status);
-            console.log('🔍 Response content-type:', response.headers.get('content-type'));
+            
 
             // Check if response is HTML (error page)
             const contentType = response.headers.get('content-type');
             if (contentType && contentType.includes('text/html')) {
                 const errorText = await response.text();
-                console.error('❌ Received HTML response instead of JSON:', errorText.substring(0, 200));
+                
 
                 if (errorText.includes('login') || errorText.includes('authentication')) {
                     throw new Error('Authentication required. Please log in.');
@@ -104,7 +111,7 @@ class NotificationManager {
             }
 
             const data = await response.json();
-            console.log('📋 Notifications loaded:', data);
+            
 
             this.notifications = data.notifications || [];
             this.unreadCount = data.unread_count || 0;
@@ -112,7 +119,7 @@ class NotificationManager {
             this.renderNotifications();
             this.updateNotificationBadge();
         } catch (error) {
-            console.error('❌ Error loading notifications:', error);
+            ;
 
             // Provide more specific error messages
             if (error.message.includes('Authentication required')) {
@@ -189,7 +196,7 @@ class NotificationManager {
 
     async markAsRead(notificationId) {
         try {
-            console.log('✅ Marking notification as read:', notificationId);
+            
             const response = await fetch(`/api/notifications/${notificationId}/read`, {
                 method: 'POST',
                 headers: {
@@ -221,13 +228,13 @@ class NotificationManager {
                 this.updateNotificationBadge();
             }
         } catch (error) {
-            console.error('❌ Error marking notification as read:', error);
+            ;
         }
     }
 
     async markAllAsRead() {
         try {
-            console.log('✅ Marking all notifications as read');
+            
             const response = await fetch('/api/notifications/mark-all-read', {
                 method: 'POST',
                 headers: {
@@ -253,7 +260,7 @@ class NotificationManager {
                 this.updateNotificationBadge();
             }
         } catch (error) {
-            console.error('❌ Error marking all notifications as read:', error);
+            ;
         }
     }
 
@@ -470,7 +477,7 @@ class NotificationManager {
     }
 
     addNotification(notification) {
-        console.log('📬 Adding new notification:', notification);
+        
         this.notifications.unshift(notification);
         if (!notification.read_at) {
             this.unreadCount++;
@@ -480,7 +487,7 @@ class NotificationManager {
     }
 
     deleteNotification(notificationId) {
-        console.log('🗑️ Deleting notification:', notificationId);
+        
         const index = this.notifications.findIndex(n => n.id === notificationId);
         if (index !== -1) {
             if (!this.notifications[index].read_at) {
@@ -493,7 +500,7 @@ class NotificationManager {
     }
 
     updateNotificationReadStatus(notificationId) {
-        console.log('📖 Updating notification read status:', notificationId);
+        
         const notification = this.notifications.find(n => n.id === notificationId);
         if (notification && !notification.read_at) {
             notification.read_at = new Date().toISOString();
@@ -504,7 +511,7 @@ class NotificationManager {
     }
 
     showNotificationToast(notification) {
-        console.log('🍪 Showing notification toast:', notification);
+        
         // Implementation for toast notifications
         const toast = document.createElement('div');
         toast.className = 'notification-toast';
@@ -551,7 +558,7 @@ class NotificationManager {
 
 // Initialize notification manager when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔧 Setting up notification system...');
+    
 
     // Check if notification manager already exists
     if (!window.notificationManager) {
@@ -561,12 +568,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (userId) {
             window.notificationManager = new NotificationManager(userId);
-            console.log('✅ NotificationManager initialized successfully');
+            
         } else {
-            console.warn('⚠️ User ID not found, NotificationManager not initialized');
+            ;
         }
     } else {
-        console.log('✅ NotificationManager already exists');
+        
     }
 });
 

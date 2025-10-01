@@ -1,6 +1,10 @@
 @extends('master')
 
 @section('content')
+<div class="dashboard-header py-2 border-bottom">
+    <h2 class="h1 mb-1" style="font-weight: 700;">Landing Page</h2>
+    <p>Manage your landing page</p>
+</div>
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">

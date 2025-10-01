@@ -17,12 +17,12 @@ class NetworkErrorTestSuite {
      */
     async startTests() {
         if (this.isTesting) {
-            console.log('🧪 Tests already running');
+            
             return;
         }
 
         this.isTesting = true;
-        console.log('🚀 Starting Advanced Network Error Test Suite...');
+        
 
         try {
             // Setup mock fetch
@@ -35,7 +35,7 @@ class NetworkErrorTestSuite {
             this.displayResults();
 
         } catch (error) {
-            console.error('❌ Test suite failed:', error);
+            ;
         } finally {
             // Cleanup
             this.restoreFetch();
@@ -49,7 +49,7 @@ class NetworkErrorTestSuite {
     setupMockFetch() {
         this.originalFetch = window.fetch;
         window.fetch = this.mockFetch.bind(this);
-        console.log('🔧 Mock fetch installed');
+        
     }
 
     /**
@@ -59,7 +59,7 @@ class NetworkErrorTestSuite {
         if (this.originalFetch) {
             window.fetch = this.originalFetch;
             this.originalFetch = null;
-            console.log('🔧 Original fetch restored');
+            
         }
     }
 
@@ -72,7 +72,7 @@ class NetworkErrorTestSuite {
         // Check if we have a specific mock for this URL
         if (this.mockResponses.has(url)) {
             const mockConfig = this.mockResponses.get(url);
-            console.log(`🎭 Mock response for ${url}:`, mockConfig);
+            
 
             if (mockConfig.delay) {
                 await this.delay(mockConfig.delay);
@@ -98,7 +98,6 @@ class NetworkErrorTestSuite {
         }
 
         // Default behavior - pass through to original fetch
-        console.log(`🌐 Real request to ${url} (${requestId})`);
         return this.originalFetch(url, options);
     }
 
@@ -135,7 +134,7 @@ class NetworkErrorTestSuite {
             try {
                 await testScenario();
             } catch (error) {
-                console.error('❌ Test scenario failed:', error);
+                ;
                 this.recordTestResult(testScenario.name, false, error.message);
             }
         }
@@ -145,7 +144,7 @@ class NetworkErrorTestSuite {
      * Test exponential backoff
      */
     async testExponentialBackoff() {
-        console.log('⏳ Testing Exponential Backoff...');
+        
 
         // Mock a URL that fails multiple times then succeeds
         this.mockUrl('/api/test-backoff', {
@@ -163,7 +162,7 @@ class NetworkErrorTestSuite {
             attempts++;
             if (i < maxAttempts - 1) {
                 const delay = this.calculateExpectedBackoffDelay(i);
-                console.log(`⏱️ Expected delay for attempt ${i + 1}: ${delay}ms`);
+                
                 await this.delay(100); // Small delay for test
             }
         }
@@ -184,7 +183,7 @@ class NetworkErrorTestSuite {
      * Test circuit breaker pattern
      */
     async testCircuitBreaker() {
-        console.log('🔌 Testing Circuit Breaker...');
+        
 
         if (!window.unifiedNotifications) {
             throw new Error('Notification system not available');
@@ -197,14 +196,14 @@ class NetworkErrorTestSuite {
 
         // Test that requests are blocked
         const canProceed = window.unifiedNotifications.canProceedWithCircuitBreaker();
-        console.log('🚫 Circuit breaker blocking requests:', !canProceed);
+        
 
         // Wait for half-open state
         await this.delay(100);
         window.unifiedNotifications.circuitBreaker.nextAttemptTime = Date.now() - 1000;
 
         const canProceedAfterTimeout = window.unifiedNotifications.canProceedWithCircuitBreaker();
-        console.log('🔄 Circuit breaker allowing requests after timeout:', canProceedAfterTimeout);
+        
 
         // Reset circuit breaker
         window.unifiedNotifications.circuitBreaker.failures = originalFailures;
@@ -221,7 +220,7 @@ class NetworkErrorTestSuite {
      * Test timeout management
      */
     async testTimeoutManagement() {
-        console.log('⏰ Testing Timeout Management...');
+        
 
         // Mock a URL that takes too long
         this.mockUrl('/api/test-timeout', {
@@ -237,7 +236,7 @@ class NetworkErrorTestSuite {
         } catch (error) {
             const duration = Date.now() - startTime;
             const timedOutCorrectly = error.name === 'AbortError' || duration >= 10000;
-            console.log(`⏰ Request ${timedOutCorrectly ? 'correctly timed out' : 'failed to timeout'} after ${duration}ms`);
+            
 
             this.recordTestResult('testTimeoutManagement', timedOutCorrectly,
                 `Request timed out after ${duration}ms`);
@@ -250,7 +249,7 @@ class NetworkErrorTestSuite {
      * Test retry mechanisms
      */
     async testRetryMechanisms() {
-        console.log('🔄 Testing Retry Mechanisms...');
+        
 
         let attemptCount = 0;
 
@@ -269,7 +268,7 @@ class NetworkErrorTestSuite {
             const data = await response.json();
 
             const success = data.attempts === 3; // Should succeed on 3rd attempt
-            console.log(`🔄 Request succeeded after ${data.attempts} attempts`);
+            
 
             this.recordTestResult('testRetryMechanisms', success,
                 `Request succeeded after ${data.attempts} attempts`);
@@ -286,7 +285,7 @@ class NetworkErrorTestSuite {
      * Test connection health monitoring
      */
     async testConnectionHealthMonitoring() {
-        console.log('🏥 Testing Connection Health Monitoring...');
+        
 
         if (!window.unifiedNotifications) {
             throw new Error('Notification system not available');
@@ -303,7 +302,7 @@ class NetworkErrorTestSuite {
             try {
                 await window.unifiedNotifications.enhancedFetch(`/api/health-test-${i}`, {}, `health_test_${i}`);
             } catch (error) {
-                console.warn(`Health test ${i} failed:`, error.message);
+                ;
             }
         }
 
@@ -312,7 +311,6 @@ class NetworkErrorTestSuite {
         const healthImproved = finalHealth.successfulRequests >= initialHealth.successfulRequests;
         const hasAverageResponseTime = finalHealth.averageResponseTime > 0;
 
-        console.log(`🏥 Health metrics - Success rate: ${(finalHealth.successfulRequests / finalHealth.totalRequests * 100).toFixed(1)}%, Avg response: ${Math.round(finalHealth.averageResponseTime)}ms`);
 
         const success = healthImproved && hasAverageResponseTime;
         this.recordTestResult('testConnectionHealthMonitoring', success,
@@ -325,7 +323,7 @@ class NetworkErrorTestSuite {
      * Test simultaneous requests
      */
     async testSimultaneousRequests() {
-        console.log('🔀 Testing Simultaneous Requests...');
+        
 
         const requestCount = 5;
         const requests = [];
@@ -348,11 +346,11 @@ class NetworkErrorTestSuite {
             const successful = results.filter(r => r.status === 'fulfilled').length;
             const failed = results.filter(r => r.status === 'rejected').length;
 
-            console.log(`🔀 ${successful} successful, ${failed} failed out of ${requestCount} concurrent requests`);
+            
 
             // Check that duplicate requests were prevented
             const activeDuringTest = window.unifiedNotifications.activeRequests.size;
-            console.log(`🔀 Active requests during test: ${activeDuringTest}`);
+            
 
             const success = successful > 0; // At least some should succeed
             this.recordTestResult('testSimultaneousRequests', success,
@@ -370,7 +368,7 @@ class NetworkErrorTestSuite {
      * Test server error recovery
      */
     async testServerErrorRecovery() {
-        console.log('🛠️ Testing Server Error Recovery...');
+        
 
         let serverErrors = 0;
         let clientErrors = 0;
@@ -394,7 +392,7 @@ class NetworkErrorTestSuite {
             const serverResponse = await window.unifiedNotifications.enhancedFetch('/api/server-error', {}, 'server_error_test');
             serverErrors = serverResponse.status;
         } catch (error) {
-            console.log('Server error handling:', error.message);
+            
         }
 
         // Test client error (should not retry)
@@ -402,14 +400,12 @@ class NetworkErrorTestSuite {
             const clientResponse = await window.unifiedNotifications.enhancedFetch('/api/client-error', {}, 'client_error_test');
             clientErrors = clientResponse.status;
         } catch (error) {
-            console.log('Client error handling:', error.message);
+            
         }
 
         const serverErrorHandled = serverErrors === 500;
         const clientErrorHandled = clientErrors === 404;
 
-        console.log(`🛠️ Server error (${serverErrors}) handled: ${serverErrorHandled}`);
-        console.log(`🛠️ Client error (${clientErrors}) handled: ${clientErrorHandled}`);
 
         const success = serverErrorHandled && clientErrorHandled;
         this.recordTestResult('testServerErrorRecovery', success,
@@ -422,7 +418,7 @@ class NetworkErrorTestSuite {
      * Test network intermittency
      */
     async testNetworkIntermittency() {
-        console.log('📶 Testing Network Intermittency...');
+        
 
         let requestCount = 0;
         const totalRequests = 10;
@@ -462,8 +458,7 @@ class NetworkErrorTestSuite {
         const successfulRequests = results.filter(r => r.success).length;
         const successRate = successfulRequests / totalRequests;
 
-        console.log(`📶 ${successfulRequests}/${totalRequests} requests succeeded (${(successRate * 100).toFixed(1)}%)`);
-        console.log(`📶 Max consecutive failures: ${maxConsecutiveFailures}`);
+        
 
         // System should handle intermittency reasonably well
         const success = successRate >= 0.4 && maxConsecutiveFailures <= 3;
@@ -497,36 +492,34 @@ class NetworkErrorTestSuite {
         };
 
         this.testResults.push(result);
-        console.log(`${success ? '✅' : '❌'} ${testName}: ${details}`);
+        
     }
 
     /**
      * Display test results
      */
     displayResults() {
-        console.log('\n📊 === NETWORK ERROR TEST RESULTS ===');
+        
 
         const passed = this.testResults.filter(r => r.success).length;
         const total = this.testResults.length;
         const successRate = total > 0 ? (passed / total * 100).toFixed(1) : '0.0';
 
-        console.log(`📈 Overall: ${passed}/${total} tests passed (${successRate}%)`);
 
         this.testResults.forEach(result => {
             const icon = result.success ? '✅' : '❌';
-            console.log(`${icon} ${result.test}: ${result.details}`);
+            
         });
 
-        console.log('\n🏥 === FINAL SYSTEM STATUS ===');
+        
         if (window.unifiedNotifications) {
             const status = window.unifiedNotifications.getSystemStatus();
-            console.log('Circuit Breaker:', status.circuitBreaker.state);
-            console.log('Connection Health:', status.connectionHealth.isHealthy ? 'HEALTHY' : 'UNHEALTHY');
-            console.log('Success Rate:', (status.connectionHealth.successRate * 100).toFixed(1) + '%');
-            console.log('Average Response Time:', status.connectionHealth.averageResponseTime + 'ms');
+            
+            
+            
         }
 
-        console.log('\n🎉 Network Error Test Suite Complete!');
+        
     }
 
     /**
@@ -545,7 +538,6 @@ window.runNetworkErrorTests = async () => {
 
 // Auto-run tests if in development/debug mode
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    console.log('🧪 Network Error Test Suite loaded. Run window.runNetworkErrorTests() to start testing.');
 }
 
-console.log('🧪 Advanced Network Error Test Suite loaded');
+

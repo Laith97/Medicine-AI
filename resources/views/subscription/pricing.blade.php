@@ -71,6 +71,10 @@
 @endpush
 
 @section('content')
+<div class="dashboard-header py-2 border-bottom">
+    <h2 class="h1 mb-1" style="font-weight: 700;">Pricing</h2>
+    <p>View pricing plans</p>
+</div>
 <div class="dashboard-container">
     <div class="container-fluid">
         <div class="row justify-content-center">

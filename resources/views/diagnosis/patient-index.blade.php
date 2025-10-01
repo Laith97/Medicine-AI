@@ -3,6 +3,10 @@
 @section('title', 'My Diagnoses')
 
 @section('content')
+<div class="dashboard-header py-2 border-bottom">
+    <h2 class="h1 mb-1" style="font-weight: 700;">My Diagnoses</h2>
+    <p>View your diagnoses</p>
+</div>
 <div class="container-fluid px-2 px-md-4">
     <div class="row justify-content-center">
         <div class="col-12">

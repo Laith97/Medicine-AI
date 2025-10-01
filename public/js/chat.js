@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Show error message
                 addErrorMessage('An error occurred. Please try again.');
-                console.error('Error:', error);
+                ;
             });
         });
     }

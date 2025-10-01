@@ -301,6 +301,10 @@
 @endpush
 
 @section('content')
+<div class="dashboard-header py-2 border-bottom">
+    <h2 class="h1 mb-1" style="font-weight: 700;">Welcome</h2>
+    <p>Welcome to the medical platform</p>
+</div>
 <!-- Hero Section -->
 <section class="hero-section d-flex align-items-center">
     <div class="hero-pattern"></div>

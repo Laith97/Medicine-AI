@@ -3,6 +3,10 @@
 @section('title', 'Contact Us - AI Medical Diagnosis')
 
 @section('content')
+<div class="dashboard-header py-2 border-bottom">
+    <h2 class="h1 mb-1" style="font-weight: 700;">Contact</h2>
+    <p>Get in touch with us</p>
+</div>
 <!-- Page Title -->
 <section class="page-title page-title-parallax parallax scroll-detect dark page-title-center" style="padding: 140px 0;">
     <img src="demos/medical/images/contact/page-title.jpg" class="parallax-bg">

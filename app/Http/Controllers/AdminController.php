@@ -155,6 +155,36 @@ class AdminController extends Controller
                     'is_active' => true,
                 ]);
             }
+
+            // Create the Doctor model with default values
+            $doctor = Doctor::create([
+                'user_id' => $user->id,
+                'specialty_id' => $doctorSpecialty->id,
+                'license_number' => 'TEMP-' . strtoupper(Str::random(8)) . '-' . $user->id,
+                'phone' => $user->phone,
+                'consultation_fee' => 0, // Default fee
+                'appointment_duration' => 30, // Default 30 minutes
+                'auto_approve_appointments' => true,
+                'allow_cancellation' => true,
+                'allow_rescheduling' => true,
+                'cancellation_hours' => 24, // 24 hours notice required
+                'average_rating' => 0,
+                'total_reviews' => 0,
+                'is_active' => true,
+                'is_verified' => true,
+                'ai_chat_enabled' => true,
+            ]);
+
+            // Log doctor creation for debugging visibility issues
+            Log::info('Doctor created by admin', [
+                'doctor_id' => $doctor->id,
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'is_active' => $doctor->is_active,
+                'is_verified' => $doctor->is_verified,
+                'created_by' => 'admin',
+                'will_be_visible_to_patients' => $doctor->is_active && $doctor->is_verified,
+            ]);
         } elseif ($user->role === 'hospital_admin') {
             // Create basic settings for hospital admin (no specialty needed)
             $user->setting()->create([
@@ -184,7 +214,7 @@ class AdminController extends Controller
             'subscription_period_months' => 1, // Default to monthly
             'is_active' => true,
             'is_restricted' => false,
-            'restricted_pages' => ['ask-ai', 'dashboard', 'cases'],
+            'restricted_pages' => ['ai.ask-ai', 'dashboard', 'cases'],
             // Use global SaaS pricing
             'monthly_price' => $monthlyPrice,
             'yearly_price' => $yearlyPrice,
@@ -308,13 +338,100 @@ class AdminController extends Controller
             $updateData['monthly_price'] = SystemSetting::get('saas_professional_monthly', 99.00);
             $updateData['yearly_price'] = SystemSetting::get('saas_professional_yearly', 950.00);
         }
+}
 
+/**
+ * Remove the specified user from storage.
+ */
+public function destroy(User $user)
+{
+    // Check if admin is authenticated
+    if (!auth('admin')->check()) {
+        return redirect()->route('admin.login')->with('error', 'You must be logged in as admin.');
     }
 
+    $admin = auth('admin')->user();
 
-    /**
-     * Show admin dashboard with statistics.
-     */
+    // Clean up related data
+    // Delete patient analyses
+    $user->patientAnalyses()->delete();
+
+    // Delete doctor profile if exists
+    if ($user->doctor) {
+        $user->doctor()->delete();
+    }
+
+    // Delete appointments
+    $user->appointments()->delete();
+
+    // Delete reviews
+    $user->reviews()->delete();
+
+    // Delete subscriptions
+    $user->subscriptions()->delete();
+
+    // Delete OpenAI usages
+    $user->openaiUsages()->delete();
+
+    // Delete Stripe invoices
+    $user->stripeInvoices()->delete();
+
+    // Delete monthly invoice setting
+    if ($user->monthlyInvoiceSetting) {
+        $user->monthlyInvoiceSetting()->delete();
+    }
+
+    // Detach permissions (many-to-many)
+    $user->permissions()->detach();
+
+    // Delete user permissions
+    $user->userPermissions()->delete();
+
+    // Delete doctor notes
+    $user->doctorNotes()->delete();
+
+    // Delete patient notes
+    $user->patientNotes()->delete();
+
+    // Delete diagnoses
+    $user->doctorDiagnoses()->delete();
+    $user->patientDiagnoses()->delete();
+
+    // Delete diagnosis follow-ups
+    $user->diagnosisFollowUps()->delete();
+
+    // Delete AI assistant results
+    $user->doctorAiAssistantResults()->delete();
+    $user->patientAiAssistantResults()->delete();
+
+    // Delete notifications
+    $user->notifications()->delete();
+
+    // Delete notification preferences
+    if ($user->notificationPreferences) {
+        $user->notificationPreferences()->delete();
+    }
+
+    // Handle assigned patients - set their primary_doctor_id to null
+    if ($user->isDoctor()) {
+        $user->assignedPatients()->update(['primary_doctor_id' => null]);
+    }
+
+    // Handle sub-users - delete them as well
+    if ($user->subUsers()->exists()) {
+        $user->subUsers()->delete();
+    }
+
+    // Finally, delete the user
+    $user->delete();
+
+    return redirect()->route('admin.users.index')
+                    ->with('success', 'User deleted successfully.');
+}
+
+/**
+ * Show admin dashboard with statistics.
+ */
     public function dashboard()
     {
         $stats = [
@@ -1495,6 +1612,52 @@ class AdminController extends Controller
             'admin_impersonation_started_at',
             'admin_impersonation_ip'
         ]);
+    }
+
+    /**
+     * Verify a doctor (make them visible to patients)
+     */
+    public function verifyDoctor(Doctor $doctor)
+    {
+        try {
+            $doctor->update(['is_verified' => true]);
+
+            Log::info('Doctor verified by admin', [
+                'doctor_id' => $doctor->id,
+                'user_id' => $doctor->user_id,
+                'user_name' => $doctor->user->name,
+                'admin_id' => auth('admin')->id(),
+                'admin_name' => auth('admin')->user()->name,
+            ]);
+
+            return redirect()->back()->with('success', "Doctor {$doctor->user->name} has been verified and is now visible to patients.");
+        } catch (\Exception $e) {
+            Log::error('Error verifying doctor: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to verify doctor. Please try again.');
+        }
+    }
+
+    /**
+     * Unverify a doctor (hide them from patients)
+     */
+    public function unverifyDoctor(Doctor $doctor)
+    {
+        try {
+            $doctor->update(['is_verified' => false]);
+
+            Log::info('Doctor unverified by admin', [
+                'doctor_id' => $doctor->id,
+                'user_id' => $doctor->user_id,
+                'user_name' => $doctor->user->name,
+                'admin_id' => auth('admin')->id(),
+                'admin_name' => auth('admin')->user()->name,
+            ]);
+
+            return redirect()->back()->with('success', "Doctor {$doctor->user->name} has been unverified and is now hidden from patients.");
+        } catch (\Exception $e) {
+            Log::error('Error unverifying doctor: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to unverify doctor. Please try again.');
+        }
     }
 }
 

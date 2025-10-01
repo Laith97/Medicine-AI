@@ -6,6 +6,7 @@ use App\Models\Doctor;
 use App\Models\Specialty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DoctorController extends Controller
 {
@@ -14,6 +15,14 @@ class DoctorController extends Controller
      */
     public function index(Request $request)
     {
+        // Debug logging for doctor counts
+        Log::info('Doctor counts debug', [
+            'total_doctors' => Doctor::count(),
+            'active_doctors' => Doctor::active()->count(),
+            'verified_doctors' => Doctor::verified()->count(),
+            'active_verified_doctors' => Doctor::active()->verified()->count(),
+        ]);
+
         $query = Doctor::with(['user', 'specialty'])
             ->active()
             ->verified();
@@ -73,6 +82,23 @@ class DoctorController extends Controller
 
         $doctors = $query->paginate(12)->withQueryString();
 
+        // Log doctor listing for debugging visibility
+        Log::info('Doctors listed for patients', [
+            'total_doctors_found' => $doctors->total(),
+            'doctors_on_page' => $doctors->count(),
+            'current_page' => $doctors->currentPage(),
+            'filters_applied' => [
+                'search' => $request->search,
+                'specialty' => $request->specialty,
+                'city' => $request->city,
+                'language' => $request->language,
+                'min_rating' => $request->min_rating,
+                'sort_by' => $request->get('sort_by', 'average_rating'),
+                'sort_order' => $request->get('sort_order', 'desc'),
+            ],
+            'sample_doctor_ids' => $doctors->pluck('id')->take(5)->toArray(),
+        ]);
+
         $specialties = Specialty::active()->orderBy('name')->get();
         $languages = $this->getAvailableLanguages();
         $cities = $this->getAvailableCities();
@@ -110,8 +136,8 @@ class DoctorController extends Controller
                 $availableSlots[$date] = $slots;
             }
         }
-\Log::info('Doctor availability slots:', $doctor->availabilitySlots->toArray());
-\Log::info('Available slots for next 7 days:', $availableSlots);
+Log::info('Doctor availability slots:', $doctor->availabilitySlots->toArray());
+Log::info('Available slots for next 7 days:', $availableSlots);
 
         return view('doctors.show', compact('doctor', 'availableSlots'));
     }

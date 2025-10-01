@@ -66,7 +66,7 @@ class MonthlyInvoiceSetting extends Model
     public static function getDefaultRestrictedPages(): array
     {
         return [
-            'ask-ai',
+            'ai.ask-ai',
             'cases',
             'dashboard',
             'appointments',
@@ -81,7 +81,7 @@ class MonthlyInvoiceSetting extends Model
     public static function getAvailablePages(): array
     {
         return [
-            'ask-ai' => 'AI Assistant',
+            'ai.ask-ai' => 'AI Assistant',
             'cases' => 'Patient Cases',
             'dashboard' => 'Dashboard',
             'appointments' => 'Appointments',
@@ -104,7 +104,7 @@ class MonthlyInvoiceSetting extends Model
         // Map related routes to their main page restrictions
         $routeMapping = [
             // AI Assistant related routes
-            'ask-ai' => ['ask-ai', 'openai.respond', 'openai.follow-up', 'patient.summary'],
+            'ai.ask-ai' => ['ai.ask-ai', 'openai.respond', 'openai.follow-up', 'patient.summary'],
             // Cases related routes  
             'cases' => ['cases'],
             // Dashboard related routes

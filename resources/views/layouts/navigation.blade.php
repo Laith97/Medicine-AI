@@ -18,7 +18,7 @@
                             <x-nav-link :href="route('doctor.dashboard')" :active="request()->routeIs('doctor.dashboard')">
                                 <i class="fas fa-tachometer-alt mr-2"></i>{{ __('Dashboard') }}
                             </x-nav-link>
-                            <x-nav-link :href="route('ask-ai')" :active="request()->routeIs('ask-ai')">
+                            <x-nav-link :href="route('ai.ask-ai')" :active="request()->routeIs('ai.ask-ai')">
                                 <i class="fas fa-user-plus mr-2"></i>{{ __('Add-patients') }}
                             </x-nav-link>
                             <x-nav-link :href="route('cases')" :active="request()->routeIs('cases')">
@@ -42,7 +42,7 @@
                             <x-nav-link :href="route('diagnosis.index')" :active="request()->routeIs('diagnosis.*')">
                                 <i class="fas fa-clipboard-check mr-2"></i>{{ __('Diagnoses') }}
                             </x-nav-link>
-                            <x-nav-link :href="route('voice-assistant.index')" :active="request()->routeIs('voice-assistant.*')">
+                            <x-nav-link :href="route('ai.voice-assistant.index')" :active="request()->routeIs('ai.voice-assistant.*')">
                                 <i class="fas fa-microphone mr-2"></i>{{ __('Voice Assistant') }}
                             </x-nav-link>
                         @elseif(auth()->user()->role === 'admin')
@@ -160,7 +160,7 @@
                     <x-responsive-nav-link :href="route('doctor.dashboard')" :active="request()->routeIs('doctor.dashboard')">
                         <i class="fas fa-tachometer-alt mr-2"></i>{{ __('Dashboard') }}
                     </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('ask-ai')" :active="request()->routeIs('ask-ai')">
+                    <x-responsive-nav-link :href="route('ai.ask-ai')" :active="request()->routeIs('ai.ask-ai')">
                         <i class="fas fa-user-plus mr-2"></i>{{ __('Add-patients') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('cases')" :active="request()->routeIs('cases')">

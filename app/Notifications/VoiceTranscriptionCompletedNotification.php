@@ -46,7 +46,7 @@ class VoiceTranscriptionCompletedNotification extends Notification implements Sh
             'title' => 'Voice Transcription Completed',
             'message' => "Your voice transcription session has been completed and is ready for review.",
             'icon' => 'microphone',
-            'link' => route('voice-assistant.show', $this->transcription->id),
+            'link' => route('ai.voice-assistant.show', $this->transcription->id),
             'link_text' => 'View Transcription',
             'related_type' => 'voice_transcription',
             'related_id' => $this->transcription->id,
@@ -72,7 +72,7 @@ class VoiceTranscriptionCompletedNotification extends Notification implements Sh
             ->line('Session ID: ' . $this->transcription->session_id)
             ->line('Duration: ' . $this->transcription->session_ended_at ? $this->transcription->session_ended_at->diffInMinutes($this->transcription->session_started_at) . ' minutes' : 'Unknown')
             ->line('AI Analysis: ' . ($this->transcription->ai_analysis ? 'Available' : 'Not available'))
-            ->action('View Transcription', route('voice-assistant.show', $this->transcription->id))
+            ->action('View Transcription', route('ai.voice-assistant.show', $this->transcription->id))
             ->line('Thank you for using our platform!');
     }
 
@@ -81,7 +81,7 @@ class VoiceTranscriptionCompletedNotification extends Notification implements Sh
      */
     public function toSms(object $notifiable): string
     {
-        return "Voice transcription session completed. Session ID: {$this->transcription->session_id}. View details: " . route('voice-assistant.show', $this->transcription->id);
+        return "Voice transcription session completed. Session ID: {$this->transcription->session_id}. View details: " . route('ai.voice-assistant.show', $this->transcription->id);
     }
 
     /**
@@ -95,7 +95,7 @@ class VoiceTranscriptionCompletedNotification extends Notification implements Sh
             'title' => 'Voice Transcription Completed',
             'message' => "Your voice transcription session has been completed and is ready for review.",
             'icon' => 'microphone',
-            'link' => route('voice-assistant.show', $this->transcription->id),
+            'link' => route('ai.voice-assistant.show', $this->transcription->id),
             'link_text' => 'View Transcription',
             'related_type' => 'voice_transcription',
             'related_id' => $this->transcription->id,

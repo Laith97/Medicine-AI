@@ -258,7 +258,6 @@ class EchoDebugger {
 
         this.logs.unshift(logEntry);
         this.updateDisplay();
-        console.log(`[Echo Debug ${timestamp}] ${message}`, data || '');
     }
 
     error(message, data = null) {
@@ -272,7 +271,6 @@ class EchoDebugger {
 
         this.logs.unshift(logEntry);
         this.updateDisplay();
-        console.error(`[Echo Debug ${timestamp}] ${message}`, data || '');
     }
 
     updateDisplay() {

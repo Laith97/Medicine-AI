@@ -11,9 +11,9 @@
 <div class="dashboard-container">
     <div class="container">
         <!-- Dashboard Header -->
-        <div class="dashboard-header">
-            <h2>Manage Appointments</h2>
-            <p>View and manage your patient appointments</p>
+        <div class="dashboard-header py-2 border-bottom">
+            <h2 class="h1 mb-1" style="font-weight: 700;">Doctor Appointments</h2>
+            <p>Manage your appointments</p>
         </div>
 
         <!-- Filters -->

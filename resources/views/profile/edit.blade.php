@@ -6,6 +6,10 @@
     </x-slot>
 
     <div class="py-12">
+        <div class="dashboard-header py-2 border-bottom">
+            <h2 class="h1 mb-1" style="font-weight: 700;">Profile</h2>
+            <p>Edit your profile information</p>
+        </div>
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                 <div class="max-w-xl">

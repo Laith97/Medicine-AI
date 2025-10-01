@@ -3,6 +3,10 @@
 @section('title', 'About Us')
 
 @section('content')
+<div class="dashboard-header py-2 border-bottom">
+    <h2 class="h1 mb-1" style="font-weight: 700;">About</h2>
+    <p>Learn more about us</p>
+</div>
 
 <!-- Hero Section with Image Slider -->
 <section class="page-title dark page-title-center p-0 position-relative" style="min-height: 350px; overflow: hidden;">
