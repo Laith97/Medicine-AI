@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\Auth;
 
 abstract class Controller extends BaseController
 {
@@ -15,12 +16,15 @@ abstract class Controller extends BaseController
      */
     protected function getEffectiveDoctor()
     {
-        $doctor = auth()->user()->getEffectiveDoctor();
-        
+        /** @var \App\Models\User $user */
+        $user = Auth::user(); // @phan-ignore-current-line
+
+        $doctor = $user->getEffectiveDoctor();
+
         if (!$doctor) {
             abort(403, 'Doctor profile not found.');
         }
-        
+
         return $doctor;
     }
 
@@ -29,6 +33,9 @@ abstract class Controller extends BaseController
      */
     protected function getEffectiveDoctorUser()
     {
-        return auth()->user()->getEffectiveDoctorUser();
+        /** @var \App\Models\User $user */
+        $user = Auth::user(); // @phan-ignore-current-line
+
+        return $user->getEffectiveDoctorUser();
     }
 }
