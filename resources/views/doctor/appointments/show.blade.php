@@ -144,6 +144,32 @@
                                     <p class="mb-3">{{ \Carbon\Carbon::parse($appointment->guest_date_of_birth)->format('F j, Y') }}</p>
                                 </div>
                             @endif
+                            <div class="col-md-6">
+                                <p class="text-muted mb-1">Risk Assessment</p>
+                                @if($appointment->patient->patientRiskScore ?? false)
+                                    @php
+                                        $noShowRisk = $appointment->patient->patientRiskScore->no_show_risk;
+                                        $hospitalizationRisk = $appointment->patient->patientRiskScore->hospitalization_risk;
+                                        $maxRisk = max($noShowRisk, $hospitalizationRisk);
+                                    @endphp
+                                    @if($maxRisk < 0.3)
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mb-2">
+                                            <i class="fas fa-check-circle mr-1"></i>Low Risk
+                                        </span>
+                                    @elseif($maxRisk < 0.7)
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mb-2">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>Medium Risk
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mb-2">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>High Risk
+                                        </span>
+                                    @endif
+                                    <p class="small text-muted">No-show: {{ number_format($noShowRisk * 100, 1) }}% | Hospitalization: {{ number_format($hospitalizationRisk * 100, 1) }}%</p>
+                                @else
+                                    <p class="mb-3">Not available</p>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>

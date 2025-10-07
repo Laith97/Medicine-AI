@@ -9,6 +9,7 @@ use App\Models\DoctorNote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Traits\HandlesEffectiveDoctor;
 
@@ -29,14 +30,14 @@ class DashboardController extends Controller
 
         // Get today's appointments
         $todayAppointments = $doctor->appointments()
-            ->with(['patient'])
+            ->with(['patient.patientRiskScores'])
             ->whereDate('appointment_date', today())
             ->orderBy('appointment_date')
             ->get();
 
         // Get upcoming appointments (next 7 days)
         $upcomingAppointments = $doctor->appointments()
-            ->with(['patient'])
+            ->with(['patient.patientRiskScores'])
             ->whereBetween('appointment_date', [now(), now()->addDays(7)])
             ->whereIn('status', ['pending', 'confirmed'])
             ->orderBy('appointment_date')
@@ -45,7 +46,7 @@ class DashboardController extends Controller
 
         // Get pending appointments
         $pendingAppointments = $doctor->appointments()
-            ->with(['patient'])
+            ->with(['patient.patientRiskScores'])
             ->where('status', 'pending')
             ->orderBy('appointment_date')
             ->limit(5)
@@ -86,7 +87,7 @@ class DashboardController extends Controller
     {
         $doctor = $this->getEffectiveDoctor();
 
-        $query = $doctor->appointments()->with(['patient']);
+        $query = $doctor->appointments()->with(['patient.patientRiskScores']);
 
         // Filter by status
         if ($request->filled('status')) {
@@ -100,6 +101,26 @@ class DashboardController extends Controller
 
         if ($request->filled('date_to')) {
             $query->whereDate('appointment_date', '<=', $request->date_to);
+        }
+
+        // Filter by risk category
+        if ($request->filled('risk_category')) {
+            $query->whereHas('patient.patientRiskScores', function ($q) use ($request) {
+                $q->whereColumn('appointment_id', 'appointments.id');
+
+                switch ($request->risk_category) {
+                    case 'low':
+                        $q->whereRaw('GREATEST(no_show_risk, hospitalization_risk) < 0.3');
+                        break;
+                    case 'medium':
+                        $q->whereRaw('GREATEST(no_show_risk, hospitalization_risk) >= 0.3')
+                          ->whereRaw('GREATEST(no_show_risk, hospitalization_risk) < 0.7');
+                        break;
+                    case 'high':
+                        $q->whereRaw('GREATEST(no_show_risk, hospitalization_risk) >= 0.7');
+                        break;
+                }
+            });
         }
 
         $appointments = $query->orderBy('appointment_date', 'desc')->paginate(15);
@@ -342,7 +363,7 @@ class DashboardController extends Controller
         $end = $request->end;
 
         $appointments = $doctor->appointments()
-            ->with(['patient'])
+            ->with(['patient.patientRiskScores'])
             ->whereBetween('appointment_date', [$start, $end])
             ->get();
 

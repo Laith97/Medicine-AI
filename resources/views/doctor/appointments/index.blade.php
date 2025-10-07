@@ -21,7 +21,7 @@
             <h6 class="mb-3"><i class="fas fa-filter me-2"></i>Filter Appointments</h6>
             <form method="GET" action="{{ route('doctor.appointments.index') }}" class="row g-3">
                 <!-- Status Filter -->
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Status</label>
                     <select name="status" class="form-select">
                         <option value="">All Statuses</option>
@@ -33,19 +33,30 @@
                     </select>
                 </div>
 
+                <!-- Risk Category Filter -->
+                <div class="col-md-2">
+                    <label class="form-label">Risk Category</label>
+                    <select name="risk_category" class="form-select">
+                        <option value="">All</option>
+                        <option value="low" {{ request('risk_category') == 'low' ? 'selected' : '' }}>Low Risk</option>
+                        <option value="medium" {{ request('risk_category') == 'medium' ? 'selected' : '' }}>Medium Risk</option>
+                        <option value="high" {{ request('risk_category') == 'high' ? 'selected' : '' }}>High Risk</option>
+                    </select>
+                </div>
+
                 <!-- Date Range -->
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">From Date</label>
                     <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control">
                 </div>
 
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">To Date</label>
                     <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control">
                 </div>
 
                 <!-- Buttons -->
-                <div class="col-md-3 d-flex align-items-end gap-2">
+                <div class="col-md-4 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary-custom btn-sm">
                         <i class="fas fa-filter me-1"></i>Filter
                     </button>
@@ -68,6 +79,7 @@
                                 <th>Date & Time</th>
                                 <th>Type</th>
                                 <th>Status</th>
+                                <th>Risk</th>
                                 <th>Reason</th>
                                 <th>Actions</th>
                             </tr>
@@ -130,6 +142,35 @@
                                         <span class="badge {{ $statusColors[$appointment->status] ?? 'bg-secondary' }}">
                                             {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
                                         </span>
+                                    </td>
+
+                                    <!-- Risk -->
+                                    <td>
+                                        @php
+                                            $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
+                                        @endphp
+                                        @if($riskScore)
+                                            @php
+                                                $noShowRisk = $riskScore->no_show_risk;
+                                                $hospitalizationRisk = $riskScore->hospitalization_risk;
+                                                $maxRisk = max($noShowRisk, $hospitalizationRisk);
+                                            @endphp
+                                            @if($maxRisk < 0.3)
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check-circle me-1"></i>Low
+                                                </span>
+                                            @elseif($maxRisk < 0.7)
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>Medium
+                                                </span>
+                                            @else
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>High
+                                                </span>
+                                            @endif
+                                        @else
+                                            <span class="text-muted">N/A</span>
+                                        @endif
                                     </td>
 
                                     <!-- Reason -->

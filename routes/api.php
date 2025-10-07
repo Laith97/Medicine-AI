@@ -21,6 +21,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::middleware('auth:sanctum')->post('/predictions', [App\Http\Controllers\Api\PredictionController::class, 'store']);
+
 /*
 |--------------------------------------------------------------------------
 | Notification API Routes
