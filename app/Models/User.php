@@ -117,6 +117,18 @@ class User extends Authenticatable
         return $this->hasMany(Review::class, 'patient_id');
     }
 
+    // Patient risk scores
+    public function patientRiskScores()
+    {
+        return $this->hasMany(PatientRiskScore::class, 'patient_id');
+    }
+
+    // Get risk score for a specific appointment
+    public function getRiskScoreForAppointment(Appointment $appointment)
+    {
+        return $this->patientRiskScores()->where('appointment_id', $appointment->id)->first();
+    }
+
 
 
     public function subscriptions()

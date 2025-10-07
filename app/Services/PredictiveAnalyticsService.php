@@ -60,12 +60,12 @@ class PredictiveAnalyticsService
             $features = $this->featureExtractor->extractFeatures($patient, $appointment);
 
             // No-show label
-            $noShowLabel = in_array($appointment->status, ['missed', 'no_show']) ? 1 : 0;
+            $noShowLabel = in_array($appointment->status, ['missed', 'no_show']) ? '1' : '0';
             $noShowSamples[] = $features;
             $noShowLabels[] = $noShowLabel;
 
             // Hospitalization label (MVP: simple rule based on diagnoses)
-            $hospitalizationLabel = $this->featureExtractor->hasHighRiskCondition($patient) ? 1 : 0;
+            $hospitalizationLabel = $this->featureExtractor->hasHighRiskCondition($patient) ? '1' : '0';
             $hospitalizationSamples[] = $features;
             $hospitalizationLabels[] = $hospitalizationLabel;
         }
@@ -77,11 +77,7 @@ class PredictiveAnalyticsService
             $noShowClassifier->train($noShowDataset);
 
             // Save model
-            /** @var mixed $persister */
-            $persister = new Filesystem(storage_path($this->getNoShowModelPath()));
-            /** @phan-suppress-next-line PhanTypeMismatchArgument */
-            /** @noinspection PhpParamsInspection */
-            $persister->save($noShowClassifier);
+            file_put_contents(storage_path($this->getNoShowModelPath()), serialize($noShowClassifier));
         }
 
         // Train hospitalization model
@@ -91,11 +87,7 @@ class PredictiveAnalyticsService
             $hospitalizationClassifier->train($hospitalizationDataset);
 
             // Save model
-            /** @var mixed $persister */
-            $persister = new Filesystem(storage_path($this->getHospitalizationModelPath()));
-            /** @phan-suppress-next-line PhanTypeMismatchArgument */
-            /** @noinspection PhpParamsInspection */
-            $persister->save($hospitalizationClassifier);
+            file_put_contents(storage_path($this->getHospitalizationModelPath()), serialize($hospitalizationClassifier));
         }
     }
 
@@ -128,9 +120,7 @@ class PredictiveAnalyticsService
 
         // Load and predict no-show risk
         try {
-            $persister = new Filesystem(storage_path($this->getNoShowModelPath()));
-            /** @var mixed $noShowClassifier */
-            $noShowClassifier = $persister->load();
+            $noShowClassifier = unserialize(file_get_contents(storage_path($this->getNoShowModelPath())));
 
             // Try different probability methods
             if (method_exists($noShowClassifier, 'predict_proba')) {
@@ -160,9 +150,7 @@ class PredictiveAnalyticsService
 
         // Load and predict hospitalization risk
         try {
-            $persister = new Filesystem(storage_path($this->getHospitalizationModelPath()));
-            /** @var mixed $hospitalizationClassifier */
-            $hospitalizationClassifier = $persister->load();
+            $hospitalizationClassifier = unserialize(file_get_contents(storage_path($this->getHospitalizationModelPath())));
 
             // Try different probability methods
             if (method_exists($hospitalizationClassifier, 'predict_proba')) {

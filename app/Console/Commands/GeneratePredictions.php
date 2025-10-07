@@ -46,10 +46,15 @@ class GeneratePredictions extends Command
         // Get appointments for next 7 days that don't have risk scores
         $endDate = Carbon::now()->addDays(7);
         $appointments = Appointment::with(['patient', 'patient.patientDiagnoses'])
+            ->leftJoin('patient_risk_scores', function ($join) {
+                $join->on('patient_risk_scores.patient_id', '=', 'appointments.patient_id')
+                     ->on('patient_risk_scores.appointment_id', '=', 'appointments.id');
+            })
             ->where('appointment_date', '>=', now())
             ->where('appointment_date', '<=', $endDate)
-            ->whereNotNull('patient_id')
-            ->whereDoesntHave('patientRiskScore')
+            ->whereNotNull('appointments.patient_id')
+            ->whereNull('patient_risk_scores.id')
+            ->select('appointments.*')
             ->get();
 
         $totalAppointments = $appointments->count();
