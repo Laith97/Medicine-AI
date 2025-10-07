@@ -89,7 +89,7 @@ class FeatureExtractor
             ->first();
 
         return $lastAppointment
-            ? Carbon::parse($appointment->appointment_date)->diffInDays($lastAppointment->appointment_date)
+            ? (int) abs(Carbon::parse($appointment->appointment_date)->diffInDays($lastAppointment->appointment_date))
             : $this->getDefaultLastVisitDays();
     }
 
@@ -128,7 +128,7 @@ class FeatureExtractor
         return $patient->patientDiagnoses()
             ->where(function($query) {
                 foreach ($this->getHighRiskConditions() as $condition) {
-                    $query->orWhere('diagnosis_text', 'ILIKE', '%' . $condition . '%');
+                    $query->orWhereRaw('LOWER(diagnosis_text) LIKE ?', ['%' . strtolower($condition) . '%']);
                 }
             })
             ->count();
@@ -145,7 +145,7 @@ class FeatureExtractor
         return $patient->patientDiagnoses()
             ->where(function($query) {
                 foreach ($this->getHighRiskConditions() as $condition) {
-                    $query->orWhere('diagnosis_text', 'ILIKE', '%' . $condition . '%');
+                    $query->orWhereRaw('LOWER(diagnosis_text) LIKE ?', ['%' . strtolower($condition) . '%']);
                 }
             })
             ->exists();

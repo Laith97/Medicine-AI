@@ -12,8 +12,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Generate predictions nightly at 2 AM
-        $schedule->command('predictions:generate')->dailyAt('02:00');
+        // Generate predictions daily at 6 AM for healthcare clinic operations
+        $schedule->command('predictions:generate')->dailyAt('06:00');
 
         // Retrain models weekly on Sunday at 3 AM
         $schedule->command('predictions:retrain')->weeklyOn(0, '03:00');

@@ -146,23 +146,26 @@
 
                                     <!-- Risk -->
                                     <td>
-                                        @if($appointment->patient->patientRiskScore ?? false)
+                                        @php
+                                            $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
+                                        @endphp
+                                        @if($riskScore)
                                             @php
-                                                $noShowRisk = $appointment->patient->patientRiskScore->no_show_risk;
-                                                $hospitalizationRisk = $appointment->patient->patientRiskScore->hospitalization_risk;
+                                                $noShowRisk = $riskScore->no_show_risk;
+                                                $hospitalizationRisk = $riskScore->hospitalization_risk;
                                                 $maxRisk = max($noShowRisk, $hospitalizationRisk);
                                             @endphp
                                             @if($maxRisk < 0.3)
-                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                    <i class="fas fa-check-circle mr-1"></i>Low
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check-circle me-1"></i>Low
                                                 </span>
                                             @elseif($maxRisk < 0.7)
-                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                    <i class="fas fa-exclamation-triangle mr-1"></i>Medium
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>Medium
                                                 </span>
                                             @else
-                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                    <i class="fas fa-exclamation-triangle mr-1"></i>High
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>High
                                                 </span>
                                             @endif
                                         @else
