@@ -467,6 +467,7 @@ class VoiceAssistantController extends Controller
                 'message' => 'Manual diagnosis created successfully and linked to AI analysis! Patient can now view it from their account.',
                 'redirectUrl' => route('diagnosis.show', $diagnosis)
             ]);
+
         } catch (\Exception $e) {
             \Log::error('Manual diagnosis creation failed: ' . $e->getMessage());
 
@@ -663,7 +664,12 @@ class VoiceAssistantController extends Controller
         try {
             // Send notification to patient about new voice diagnosis
             if ($diagnosis->patient && $diagnosis->patient->wantsNotification('voice_transcription_completed')) {
-                $diagnosis->patient->notifyIfWants(new \App\Notifications\VoiceTranscriptionCompletedNotification($diagnosis, $transcription));
+                // Get the voice transcription record to pass to the notification
+                $voiceTranscription = VoiceTranscription::where('session_id', $diagnosis->voice_transcript ? json_decode($diagnosis->voice_transcript, true)['session_id'] ?? null : null)->first();
+
+                if ($voiceTranscription) {
+                    $diagnosis->patient->notifyIfWants(new \App\Notifications\VoiceTranscriptionCompletedNotification($voiceTranscription));
+                }
             }
 
             // Send notification to doctor about voice transcription completion

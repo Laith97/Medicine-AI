@@ -183,7 +183,7 @@ class VoiceAssistantEnhancedTest extends TestCase
     public function it_can_reset_session()
     {
         $response = $this->actingAs($this->doctor)
-            ->post('/voice-assistant/reset-session');
+            ->post('/ai/voice-assistant/reset-session');
 
         $response->assertStatus(200);
         $response->assertJson([
