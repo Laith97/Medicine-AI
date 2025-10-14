@@ -553,7 +553,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // AJAX call to start session
         $.ajax({
-            url: '/voice-assistant/start-session',
+            url: '/ai/voice-assistant/start-session',
             method: 'POST',
             data: {
                 selectedPatient: selectedPatient,
@@ -628,7 +628,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // AJAX call to stop session
         $.ajax({
-            url: '/voice-assistant/stop-session',
+            url: '/ai/voice-assistant/stop-session',
             method: 'POST',
             data: {
                 sessionId: sessionId,
@@ -670,7 +670,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // AJAX call to handle transcription
         $.ajax({
-            url: '/voice-assistant/handle-transcription',
+            url: '/ai/voice-assistant/handle-transcription',
             method: 'POST',
             data: {
                 text: cleanText,
@@ -703,7 +703,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // AJAX call to process with AI
         $.ajax({
-            url: '/voice-assistant/process-with-ai',
+            url: '/ai/voice-assistant/process-with-ai',
             method: 'POST',
             data: {
                 transcription: text,
@@ -817,7 +817,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // AJAX call to generate AI analysis
         $.ajax({
-            url: '/voice-assistant/generate-ai-analysis',
+            url: '/ai/voice-assistant/generate-ai-analysis',
             method: 'POST',
             data: {
                 sessionId: sessionId,
@@ -865,7 +865,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function createAiAssistantResult(transcription) {
         // AJAX call to create AI assistant result
         $.ajax({
-            url: '/voice-assistant/create-ai-result',
+            url: '/ai/voice-assistant/create-ai-result',
             method: 'POST',
             data: {
                 sessionId: sessionId,

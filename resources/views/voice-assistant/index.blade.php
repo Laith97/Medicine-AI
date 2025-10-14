@@ -586,7 +586,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // AJAX call to create new patient
         $.ajax({
-            url: '/voice-assistant/create-new-patient',
+            url: '/ai/voice-assistant/create-new-patient',
             method: 'POST',
             data: {
                 newPatientName: name,
@@ -666,7 +666,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // AJAX call to save manual diagnosis
         $.ajax({
-            url: '/voice-assistant/create-manual-diagnosis',
+            url: '/ai/voice-assistant/create-manual-diagnosis',
             method: 'POST',
             data: {
                 manualDiagnosisText: diagnosisText,
