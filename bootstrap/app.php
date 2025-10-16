@@ -55,11 +55,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Process expired trials daily at 1 AM
         $schedule->command('trials:process-expired')->dailyAt('01:00');
 
-        // Generate predictions daily at 6 AM for healthcare clinic operations
-        $schedule->command('predictions:generate')->dailyAt('06:00');
-
-        // Retrain models weekly on Sunday at 3 AM
-        $schedule->command('predictions:retrain')->weeklyOn(0, '03:00');
+        // Process pending claims for denial risk scoring and underpayment detection daily at 2 AM
+        $schedule->command('billing:process-pending-claims')
+            ->dailyAt('02:00')
+            ->withoutOverlapping()
+            ->runInBackground();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

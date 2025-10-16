@@ -12,12 +12,22 @@ abstract class Controller extends BaseController
     use AuthorizesRequests, ValidatesRequests;
 
     /**
+     * Get the authenticated user
+     */
+    protected function user(): ?\App\Models\User
+    {
+        return Auth::user();
+    }
+
+    /**
      * Get the effective doctor for the current user (handles sub-users)
      */
     protected function getEffectiveDoctor()
     {
-        /** @var \App\Models\User $user */
-        $user = Auth::user(); // @phan-ignore-current-line
+        $user = $this->user();
+        if (!$user) {
+            abort(401, 'Unauthorized.');
+        }
 
         $doctor = $user->getEffectiveDoctor();
 
@@ -33,8 +43,10 @@ abstract class Controller extends BaseController
      */
     protected function getEffectiveDoctorUser()
     {
-        /** @var \App\Models\User $user */
-        $user = Auth::user(); // @phan-ignore-current-line
+        $user = $this->user();
+        if (!$user) {
+            abort(401, 'Unauthorized.');
+        }
 
         return $user->getEffectiveDoctorUser();
     }
