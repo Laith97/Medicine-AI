@@ -881,6 +881,17 @@ Route::middleware(['auth', 'admin.impersonation', 'hospital.admin'])->prefix('ho
         Route::get('/', [App\Http\Controllers\HospitalAdmin\UsageController::class, 'index'])->name('index');
         Route::get('/export', [App\Http\Controllers\HospitalAdmin\UsageController::class, 'export'])->name('export');
     });
+
+    // Claims Management
+    Route::prefix('claims')->name('claims.')->group(function () {
+        Route::get('/', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'store'])->name('store');
+        Route::get('/{claim}', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'show'])->name('show');
+        Route::get('/{claim}/edit', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'edit'])->name('edit');
+        Route::put('/{claim}', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'update'])->name('update');
+        Route::delete('/{claim}', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Public Doctor Landing Pages (must be after doctor middleware group to avoid conflicts)

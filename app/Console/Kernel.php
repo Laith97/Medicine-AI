@@ -12,11 +12,14 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Generate predictions daily at 6 AM for healthcare clinic operations
-        $schedule->command('predictions:generate')->dailyAt('06:00');
+        // Schedule nightly batch processing of pending claims
+        $schedule->command('billing:process-pending-claims')
+            ->dailyAt('02:00') // Run at 2:00 AM daily
+            ->withoutOverlapping() // Prevent overlapping executions
+            ->runInBackground(); // Run in background
 
-        // Retrain models weekly on Sunday at 3 AM
-        $schedule->command('predictions:retrain')->weeklyOn(0, '03:00');
+        // Optional: Add other billing-related scheduled tasks here
+        // For example, cleanup old alerts, generate reports, etc.
     }
 
     /**
