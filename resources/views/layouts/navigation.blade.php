@@ -18,33 +18,16 @@
                             <x-nav-link :href="route('doctor.dashboard')" :active="request()->routeIs('doctor.dashboard')">
                                 <i class="fas fa-tachometer-alt mr-2"></i>{{ __('Dashboard') }}
                             </x-nav-link>
-                            <x-nav-link :href="route('ai.ask-ai')" :active="request()->routeIs('ai.ask-ai')">
-                                <i class="fas fa-user-plus mr-2"></i>{{ __('Add-patients') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('cases')" :active="request()->routeIs('cases')">
-                                <i class="fas fa-folder-open mr-2"></i>{{ __('Cases') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('doctor.appointments.index')" :active="request()->routeIs('doctor.appointments.*')">
-                                <i class="fas fa-calendar mr-2"></i>{{ __('Appointments') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('doctor.availability.index')" :active="request()->routeIs('doctor.availability.*')">
-                                <i class="fas fa-clock mr-2"></i>{{ __('Availability') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('doctor.landing-page.index')" :active="request()->routeIs('doctor.landing-page.*')">
-                                <i class="fas fa-globe mr-2"></i>{{ __('Landing Page') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('doctor.reviews.index')" :active="request()->routeIs('doctor.reviews.*')">
-                                <i class="fas fa-star mr-2"></i>{{ __('Reviews') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('doctor.notes.index')" :active="request()->routeIs('doctor.notes.*')">
-                                <i class="fas fa-sticky-note mr-2"></i>{{ __('Notes') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('diagnosis.index')" :active="request()->routeIs('diagnosis.*')">
-                                <i class="fas fa-clipboard-check mr-2"></i>{{ __('Diagnoses') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('ai.voice-assistant.index')" :active="request()->routeIs('ai.voice-assistant.*')">
-                                <i class="fas fa-microphone mr-2"></i>{{ __('Voice Assistant') }}
-                            </x-nav-link>
+
+                            <!-- Render dropdown menus from MenuHelper -->
+                            @php
+                                $menuItems = App\Helpers\MenuHelper::getMenuItems(auth()->user());
+                                foreach ($menuItems as $menuItem) {
+                                    if ($menuItem['name'] !== 'Dashboard') { // Skip dashboard as it's already rendered above
+                                        echo '<x-nav-dropdown :item="$menuItem" />';
+                                    }
+                                }
+                            @endphp
                         @elseif(auth()->user()->role === 'admin')
                             <!-- Admin Navigation -->
                             <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
@@ -160,30 +143,16 @@
                     <x-responsive-nav-link :href="route('doctor.dashboard')" :active="request()->routeIs('doctor.dashboard')">
                         <i class="fas fa-tachometer-alt mr-2"></i>{{ __('Dashboard') }}
                     </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('ai.ask-ai')" :active="request()->routeIs('ai.ask-ai')">
-                        <i class="fas fa-user-plus mr-2"></i>{{ __('Add-patients') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('cases')" :active="request()->routeIs('cases')">
-                        <i class="fas fa-folder-open mr-2"></i>{{ __('Cases') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('doctor.appointments.index')" :active="request()->routeIs('doctor.appointments.*')">
-                        <i class="fas fa-calendar mr-2"></i>{{ __('Appointments') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('doctor.availability.index')" :active="request()->routeIs('doctor.availability.*')">
-                        <i class="fas fa-clock mr-2"></i>{{ __('Availability') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('doctor.landing-page.index')" :active="request()->routeIs('doctor.landing-page.*')">
-                        <i class="fas fa-globe mr-2"></i>{{ __('Landing Page') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('doctor.reviews.index')" :active="request()->routeIs('doctor.reviews.*')">
-                        <i class="fas fa-star mr-2"></i>{{ __('Reviews') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('doctor.notes.index')" :active="request()->routeIs('doctor.notes.*')">
-                        <i class="fas fa-sticky-note mr-2"></i>{{ __('Notes') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('diagnosis.index')" :active="request()->routeIs('diagnosis.*')">
-                        <i class="fas fa-clipboard-check mr-2"></i>{{ __('Diagnoses') }}
-                    </x-responsive-nav-link>
+
+                    <!-- Render mobile dropdown menus from MenuHelper -->
+                    @php
+                        $menuItems = App\Helpers\MenuHelper::getMenuItems(auth()->user());
+                        foreach ($menuItems as $menuItem) {
+                            if ($menuItem['name'] !== 'Dashboard') { // Skip dashboard as it's already rendered above
+                                echo '<x-responsive-nav-dropdown :item="$menuItem" />';
+                            }
+                        }
+                    @endphp
                 @elseif(auth()->user()->role === 'admin')
                     <!-- Admin Mobile Navigation -->
                     <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">

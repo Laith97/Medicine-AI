@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class NotificationTypeSeeder extends Seeder
 {
@@ -223,21 +224,28 @@ class NotificationTypeSeeder extends Seeder
         $notificationTypes = DB::table('notification_types')->pluck('type', 'id');
 
         foreach ($users as $user) {
+            $preferences = [
+                'user_id' => $user->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
             foreach ($notificationTypes as $id => $type) {
                 // Get the default settings for this notification type
                 $typeSettings = DB::table('notification_types')->where('type', $type)->first();
 
-                // Set default preferences
-                DB::table('user_notification_preferences')->updateOrInsert(
-                    ['user_id' => $user->id, 'notification_type_id' => $id],
-                    [
-                        'enabled' => $typeSettings->default_enabled,
-                        'channels' => $typeSettings->default_channels,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]
-                );
+                // Map notification type to column name if it exists in the table
+                $columnName = $type;
+                if (Schema::hasColumn('notification_preferences', $columnName)) {
+                    $preferences[$columnName] = $typeSettings->default_enabled;
+                }
             }
+
+            // Set default preferences in notification_preferences table
+            DB::table('notification_preferences')->updateOrInsert(
+                ['user_id' => $user->id],
+                $preferences
+            );
         }
 
         $this->command->info('Default notification preferences set for ' . $users->count() . ' users!');

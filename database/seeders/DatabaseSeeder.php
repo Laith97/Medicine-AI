@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             NotificationTypeSeeder::class,
             SpecialtySeeder::class,
+            PatientCasesTestSeeder::class,
         ]);
     }
 }

@@ -90,7 +90,7 @@
 .users-table .custom-table th:nth-child(6), .users-table .custom-table td:nth-child(6) { width: 10%; } /* Monthly Amount */
 .users-table .custom-table th:nth-child(7), .users-table .custom-table td:nth-child(7) { width: 8%; }  /* Cost Limit */
 .users-table .custom-table th:nth-child(8), .users-table .custom-table td:nth-child(8) { width: 8%; }  /* Joined */
-.users-table .custom-table th:nth-child(9), .users-table .custom-table td:nth-child(9) { width: 5%; }  /* Cases */
+.users-table .custom-table th:nth-child(9), .users-table .custom-table td:nth-child(9) { width: 5%; }  /* Patient Management */
 .users-table .custom-table th:nth-child(10), .users-table .custom-table td:nth-child(10) { width: 14%; } /* Actions */
 
 /* Invoices Table */

@@ -102,7 +102,7 @@ function initializeCasesChart() {
 
     const options = {
         series: [{
-            name: 'Cases',
+            name: 'Patient Management',
             data: data
         }],
         chart: {

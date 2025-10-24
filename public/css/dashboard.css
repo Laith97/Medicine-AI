@@ -418,6 +418,64 @@ body.modal-open {
     padding-right: 0 !important;
 }
 
+/* Enhanced Modal Backdrop Cleanup - Aggressive overrides */
+.modal-backdrop {
+    /* Force hide orphaned backdrops */
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    z-index: -1 !important;
+}
+
+/* Only show backdrop when modal is actually showing */
+.modal.show + .modal-backdrop,
+.modal.show ~ .modal-backdrop {
+    display: block !important;
+    opacity: 0.5 !important;
+    visibility: visible !important;
+    z-index: 9999 !important;
+}
+
+/* Hide backdrops when no modals are open */
+body:not(.modal-open) .modal-backdrop {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    z-index: -1 !important;
+}
+
+/* Force remove any lingering backdrop elements */
+.modal-backdrop:not(.show) {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    z-index: -1 !important;
+}
+
+/* Ensure proper modal stacking and z-index management */
+.modal {
+    z-index: 10000 !important;
+}
+
+.modal.show {
+    z-index: 10001 !important;
+}
+
+.modal-backdrop.show {
+    z-index: 9999 !important;
+}
+
+/* Prevent modal content interaction issues */
+.modal-content {
+    pointer-events: auto !important;
+    z-index: 10002 !important;
+}
+
+.modal-dialog {
+    pointer-events: auto !important;
+    z-index: 10001 !important;
+}
+
 /* AI Analysis Styling */
 .ai-response {
     background-color: #f8f9fa;
@@ -875,4 +933,15 @@ body.modal-open {
 footer {
     position: relative;
     z-index: 1041;
+}
+/* Sidebar header styling */
+.sidebar-header-clinical {
+    font-weight: 600;
+    color: #1f2937;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    border-left: 4px solid #3b82f6;
+    padding: 12px 16px;
+    margin: 8px 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }

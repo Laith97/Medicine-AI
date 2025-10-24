@@ -18,11 +18,11 @@ use App\Http\Controllers\UserSettingsController;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+Route::middleware('auth')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::middleware('auth:sanctum')->post('/predictions', [App\Http\Controllers\Api\PredictionController::class, 'store']);
+Route::middleware('auth')->post('/predictions', [App\Http\Controllers\Api\PredictionController::class, 'store']);
 
 /*
 |--------------------------------------------------------------------------
@@ -30,7 +30,7 @@ Route::middleware('auth:sanctum')->post('/predictions', [App\Http\Controllers\Ap
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:web'])->group(function () {
+Route::middleware(['auth', 'web'])->group(function () {
     // User settings
     Route::get('/user/settings', [UserSettingsController::class, 'getSettings']);
 
@@ -67,6 +67,10 @@ Route::middleware(['auth:web'])->group(function () {
     // AI-powered claims features
     Route::post('/ai/code-suggestions', [BillingController::class, 'getCodeSuggestions']);
     Route::post('/ai/denial-prediction', [BillingController::class, 'getDenialPrediction']);
+
+    // Patient cases and visit history API routes
+    Route::get('/cases/patient-visits/{patientKey}', [\App\Http\Controllers\OpenAIController::class, 'getPatientVisits']);
+    Route::get('/cases/visit-history/{id}', [\App\Http\Controllers\OpenAIController::class, 'getVisitDetails']);
 });
 
 // Public routes (for guest access with token verification)

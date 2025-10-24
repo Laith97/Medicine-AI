@@ -150,13 +150,13 @@
                         <div class="d-flex align-items-center gap-3">
                             <!-- Language Selector -->
                             <div class="d-flex align-items-center">
-                                <label class="form-label me-2 mb-0 small">Language:</label>
-                                <select id="languageSelector" class="form-select form-select-sm" style="width: auto;">
-                                    <option value="en">English</option>
-                                    <option value="ar">العربية</option>
-                                    <option value="fr">Français</option>
-                                    <option value="es">Español</option>
-                                    <option value="de">Deutsch</option>
+                                <label class="form-label me-2 mb-0 small fw-bold">Language:</label>
+                                <select id="languageSelector" class="form-select form-select-sm" style="width: auto; min-width: 120px;">
+                                    <option value="ar">🇸🇦 العربية</option>
+                                    <option value="en">🇺🇸 English</option>
+                                    <option value="fr">🇫🇷 Français</option>
+                                    <option value="es">🇪🇸 Español</option>
+                                    <option value="de">🇩🇪 Deutsch</option>
                                 </select>
                             </div>
 
@@ -330,6 +330,24 @@
             box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
         }
 
+        /* Language indicator animations */
+        .language-changed {
+            animation: languageChangePulse 2s ease-in-out;
+            transform: scale(1.05);
+        }
+
+        @keyframes languageChangePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); background-color: #17a2b8 !important; }
+        }
+
+        /* Auto language indicator styling */
+        #autoLanguageIndicator {
+            transition: all 0.3s ease-in-out;
+            font-weight: 500;
+            padding: 0.375rem 0.75rem;
+        }
+
         /* Keyboard shortcuts help */
         .keyboard-shortcuts-help {
             backdrop-filter: blur(5px);
@@ -467,6 +485,11 @@
 
 <!-- Include jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Make PHP variables available to JavaScript -->
+<script>
+    window.records = @json($records ?? []);
+</script>
 
 <!-- Include the voice assistant JavaScript -->
 <script src="{{ asset('js/voice-assistant.js') }}"></script>

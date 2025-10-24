@@ -985,11 +985,12 @@
                                 </h6>
                                 <div class="d-grid gap-2">
                                     @if($status === 'active')
-                                        <a href="{{ route('ai.ask-ai') }}" class="btn btn-sm btn-success">
+                                        {{-- AI Ask temporarily disabled --}}
+                                        {{-- <a href="{{ route('ai.ask-ai') }}" class="btn btn-sm btn-success">
                                             <i class="fas fa-robot me-1"></i>Ask AI
-                                        </a>
+                                        </a> --}}
                                         <a href="{{ route('cases') }}" class="btn btn-sm btn-info">
-                                            <i class="fas fa-folder me-1"></i>My Cases
+                                            <i class="fas fa-folder me-1"></i>My Patient Management
                                         </a>
                                     @elseif($status === 'ready_to_subscribe')
                                         <div class="text-muted">
@@ -999,9 +1000,10 @@
                                         <button class="btn btn-sm btn-warning" onclick="startPersonalizedCheckout()">
                                             <i class="fas fa-refresh me-1"></i>Renew
                                         </button>
-                                        <a href="{{ route('ai.ask-ai') }}" class="btn btn-sm btn-outline-success">
+                                        {{-- AI Ask temporarily disabled --}}
+                                        {{-- <a href="{{ route('ai.ask-ai') }}" class="btn btn-sm btn-outline-success">
                                             <i class="fas fa-robot me-1"></i>Ask AI (Limited Time)
-                                        </a>
+                                        </a> --}}
                                     @endif
                                     <a href="{{ route('invoices.index') }}" class="btn btn-sm btn-outline-secondary">
                                         <i class="fas fa-file-invoice me-1"></i>Invoices

@@ -82,7 +82,7 @@ class MonthlyInvoiceSetting extends Model
     {
         return [
             'ai.ask-ai' => 'AI Assistant',
-            'cases' => 'Patient Cases',
+            'cases' => 'Patient Management',
             'dashboard' => 'Dashboard',
             'appointments' => 'Appointments',
             'availability' => 'Doctor Availability',

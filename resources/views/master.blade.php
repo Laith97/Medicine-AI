@@ -1262,9 +1262,11 @@ body .dropdown .dropdown-menu.show,
                     <!-- Right Side: Notifications & User Menu -->
                     <div class="col-md-auto d-flex align-items-center gap-3">
                         @auth
-                            <!-- Quick Action Button for Emergency -->
+                            {{-- AI Ask temporarily disabled --}}
+                            {{-- AI Ask temporarily disabled --}}
+                            {{-- <!-- Quick Action Button for Emergency -->
                             <a href="{{ route('ai.ask-ai') }}" class="btn btn-sm px-3 py-1"
-                                style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; font-size: 12px;">
+                                style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; font-size: 12px;"> --}}
                                 <i class="bi bi-lightning-charge me-1"></i> Quick Diagnosis
                             </a>
 
@@ -1754,7 +1756,8 @@ body .dropdown .dropdown-menu.show,
                 <ul class="list-unstyled footer-links">
                     @auth
                         <li class="mb-2"><a href="{{ route('dashboard') }}" class="text-white-50 text-decoration-none hover-link">Dashboard</a></li>
-                        <li class="mb-2"><a href="{{ route('ai.ask-ai') }}" class="text-white-50 text-decoration-none hover-link">AI Assistant</a></li>
+                        {{-- AI Ask temporarily disabled --}}
+                        {{-- <li class="mb-2"><a href="{{ route('ai.ask-ai') }}" class="text-white-50 text-decoration-none hover-link">AI Assistant</a></li> --}}
                         <li class="mb-2"><a href="{{ route('cases') }}" class="text-white-50 text-decoration-none hover-link">Case Studies</a></li>
                         <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Settings</a></li>
                     @else
@@ -2088,12 +2091,13 @@ body .dropdown .dropdown-menu.show,
                     url: '{{ route("dashboard") }}',
                     submenu: null
                 },
-                {
+                {{-- AI Ask temporarily disabled --}}
+                {{-- {
                     title: 'Ask AI',
-                    icon: 'fas fa-robot',
-                    url: '{{ route("ai.ask-ai") }}',
-                    submenu: null
-                },
+                    // icon: 'fas fa-robot',
+                    // url: '{{ route("ai.ask-ai") }}',
+                    // submenu: null
+                }, --}}
                 {
                     title: 'Voice Assistant',
                     icon: 'fas fa-microphone',
@@ -2105,7 +2109,7 @@ body .dropdown .dropdown-menu.show,
                     icon: 'fas fa-stethoscope',
                     url: '#',
                     submenu: [
-                        { title: 'Cases', icon: 'fas fa-folder-medical', url: '/cases' },
+                        { title: 'Patient Management', icon: 'fas fa-folder-medical', url: '/cases' },
                         { title: 'Diagnosis', icon: 'fas fa-diagnoses', url: '/diagnosis' },
                         { title: 'Medical Notes', icon: 'fas fa-notes-medical', url: '/medical-notes' }
                     ]

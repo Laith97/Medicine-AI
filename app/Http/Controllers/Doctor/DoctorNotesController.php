@@ -569,7 +569,7 @@ class DoctorNotesController extends Controller
             // Use OpenAI to format and organize the medical transcript
             $response = Http::withToken(config('services.openai.key'))
                 ->post('https://api.openai.com/v1/chat/completions', [
-                    'model' => 'gpt-4',
+                    'model' => 'gpt-4o',
                     'messages' => [
                         [
                             'role' => 'system',

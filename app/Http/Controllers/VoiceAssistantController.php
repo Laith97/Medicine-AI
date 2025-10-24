@@ -41,38 +41,102 @@ class VoiceAssistantController extends Controller
         });
     }
 
+    /**
+     * Generate patient key for consistent patient identification
+     */
+    private function generatePatientKey($patient)
+    {
+        // Use the same logic as Diagnosis model
+        return Diagnosis::generatePatientKey(
+            $patient->name,
+            $patient->age,
+            $patient->gender,
+            Auth::id()
+        );
+    }
+
     public function index()
     {
-        // Load patients for the dropdown
+        // Load patients for the dropdown with visit history
         $patients = [];
+        $patientGroups = [];
+
         try {
-            $patients = Auth::user()->getEffectiveAssignedPatients()
+            $basePatients = Auth::user()->getEffectiveAssignedPatients()
                 ->select('id', 'name', 'email', 'age', 'gender')
                 ->orderBy('name')
-                ->get()
-                ->toArray();
+                ->get();
         } catch (\Exception $e) {
             \Log::warning('Could not load assigned patients, trying fallback: ' . $e->getMessage());
 
             // Fallback: load all patients with role 'patient' for this doctor
             try {
                 $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
-                $patients = User::where('role', 'patient')
+                $basePatients = User::where('role', 'patient')
                     ->where('primary_doctor_id', $effectiveDoctorId)
                     ->select('id', 'name', 'email', 'age', 'gender')
                     ->orderBy('name')
-                    ->get()
-                    ->toArray();
+                    ->get();
             } catch (\Exception $e2) {
-                $patients = [];
+                $basePatients = collect();
                 \Log::error('Could not load patients at all: ' . $e2->getMessage());
             }
+        }
+
+        // Process patients and build patient groups with visit history
+        foreach ($basePatients as $patient) {
+            // Generate patient key if not exists
+            $patientKey = $this->generatePatientKey($patient);
+
+            // Get visit history from Diagnosis records
+            $visits = Diagnosis::where('patient_id', $patient->id)
+                ->where('doctor_id', Auth::id())
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $visitCount = $visits->count();
+            $lastVisit = $visits->first() ? $visits->first()->created_at : null;
+
+            // Add to patient groups for modal compatibility
+            $patientGroups[$patientKey] = [
+                'patient' => $patient,
+                'visits' => $visits->map(function($visit) {
+                    return (object)[
+                        'id' => $visit->id,
+                        'visit_number' => 1, // Diagnosis records don't have visit numbers yet
+                        'date' => $visit->created_at->format('M d, Y'),
+                        'diagnosis' => substr($visit->diagnosis_text ?? 'No diagnosis available', 0, 100) .
+                                     (strlen($visit->diagnosis_text ?? '') > 100 ? '...' : ''),
+                        'source_model' => 'Diagnosis',
+                    ];
+                }),
+                'visit_count' => $visitCount,
+                'last_visit' => $lastVisit,
+                'category' => 'diagnosed',
+                'has_appointments' => false,
+                'appointment_details' => null,
+            ];
+
+            // Add to patients array for dropdown
+            $patients[] = [
+                'id' => $patient->id,
+                'name' => $patient->name,
+                'email' => $patient->email,
+                'age' => $patient->age,
+                'gender' => $patient->gender,
+                'patient_key' => $patientKey,
+                'visit_count' => $visitCount,
+                'last_visit' => $lastVisit ? $lastVisit->format('M d, Y') : null,
+            ];
         }
 
         // Generate initial session ID
         $sessionId = Str::uuid()->toString();
 
-        return view('voice-assistant.index', compact('patients', 'sessionId'));
+        // Pass patients as records for JavaScript compatibility
+        $records = $patients;
+
+        return view('voice-assistant.index', compact('patients', 'sessionId', 'records', 'patientGroups'));
     }
 
     public function history()

@@ -20,6 +20,7 @@ class Diagnosis extends Model
         'patient_notified',
         'patient_viewed_at',
         'patient_reviewed',
+        'patient_key',
     ];
 
     protected $casts = [
@@ -101,5 +102,13 @@ class Diagnosis extends Model
     public function hasAiAssistantResults()
     {
         return $this->aiAssistantResults()->exists();
+    }
+
+    /**
+     * Generate a unique patient key based on patient name, age, gender and doctor_id
+     */
+    public static function generatePatientKey($name, $age, $gender, $doctorId)
+    {
+        return md5($name . '-' . $age . '-' . $gender . '-' . $doctorId);
     }
 }

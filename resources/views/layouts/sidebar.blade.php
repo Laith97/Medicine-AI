@@ -16,7 +16,12 @@
         @foreach ($menuItems as $item)
           @if (!empty($item['dropdown']) && !empty($item['items']))
             <li class="nav-item">
-              @if(isset($item['href']))
+              @if(isset($item['dropdown']) && isset($item['header_class']))
+                <div class="{{ $item['header_class'] }}" @if(isset($item['header_style'])) style="{{ $item['header_style'] }}" @endif>
+                  @if(isset($item['icon']))<i class="{{ $item['icon'] }}"></i>@endif
+                  <span>{{ $item['name'] }}</span>
+                </div>
+              @elseif(isset($item['href']))
                 <a href="{{ route($item['href']) }}" class="nav-link {{ request()->routeIs($item['href']) ? 'active' : '' }}">
                   @if(isset($item['icon']))<i class="{{ $item['icon'] }}"></i>@endif
                   <span>{{ $item['name'] }}</span>
@@ -29,7 +34,8 @@
               @endif
               @foreach ($item['items'] as $subItem)
                 <a href="{{ isset($subItem['route']) ? route($subItem['route']) : '#' }}"
-                   class="nav-link {{ request()->routeIs($subItem['route'] ?? '') ? 'active' : '' }}">
+                   class="nav-link {{ request()->routeIs($subItem['route'] ?? '') ? 'active' : '' }}"
+                   style="font-weight: 400; color: #6b7280; padding-left: 24px;">
                   @if(isset($subItem['icon']))<i class="{{ $subItem['icon'] }}"></i>@else<i class="fa-solid fa-angle-right"></i>@endif
                   <span>{{ $subItem['name'] }}</span>
                 </a>

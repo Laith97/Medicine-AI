@@ -81,17 +81,12 @@ class MenuHelper
             // Clinical Tools Section
             [
                 'name' => 'Clinical Tools',
-                'icon' => 'fas fa-stethoscope',
+                'icon' => 'fas fa-tools',
                 'dropdown' => true,
-                'href' => 'diagnosis.index', // Clickable parent header
+                'header_class' => 'sidebar-header-clinical',
+                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-left: 4px solid #3b82f6; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => [
-                    [
-                        'name' => 'AI Assistant',
-                        'route' => 'ai.ask-ai',
-                        'icon' => 'fas fa-robot',
-                        'permission' => 'ai_assistant',
-                        'restricted' => true,
-                    ],
+                    // AI Ask temporarily disabled - removed completely
                     [
                         'name' => 'Voice Assistant',
                         'route' => 'ai.voice-assistant.index',
@@ -113,14 +108,10 @@ class MenuHelper
                 'name' => 'Patient Management',
                 'icon' => 'fas fa-users',
                 'dropdown' => true,
-                'href' => 'cases', // Clickable parent header
+                'header_class' => 'sidebar-header-patient',
+                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => [
-                    [
-                        'name' => 'Patient Cases',
-                        'route' => 'cases',
-                        'icon' => 'fas fa-folder-open',
-                        'permission' => 'cases',
-                    ],
+
                     [
                         'name' => 'My Notes',
                         'route' => 'doctor.notes.index',
@@ -147,7 +138,8 @@ class MenuHelper
                 'name' => 'Practice Management',
                 'icon' => 'fas fa-calendar-alt',
                 'dropdown' => true,
-                'href' => 'doctor.appointments.index', // Clickable parent header
+                'header_class' => 'sidebar-header-practice',
+                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left: 4px solid #2563eb; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => [
                     [
                         'name' => 'Appointments',
@@ -161,6 +153,42 @@ class MenuHelper
                         'icon' => 'fas fa-clock',
                         'permission' => 'availability',
                     ],
+                    [
+                        'name' => 'Appointment Settings',
+                        'route' => 'doctor.settings.appointments',
+                        'icon' => 'fas fa-cogs',
+                        'permission' => 'appointments',
+                    ],
+                ]
+            ],
+
+            // Doctor Profile & Settings Section
+            [
+                'name' => 'Profile & Settings',
+                'icon' => 'fas fa-user-cog',
+                'dropdown' => true,
+                'header_class' => 'sidebar-header-profile',
+                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 4px solid #16a34a; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'items' => [
+                    [
+                        'name' => 'Doctor Profile',
+                        'route' => 'doctor.profile.edit',
+                        'icon' => 'fas fa-user-md',
+                        'permission' => 'profile',
+                    ],
+  
+                    [
+                        'name' => 'Analytics',
+                        'route' => 'doctor.analytics.index',
+                        'icon' => 'fas fa-chart-bar',
+                        'permission' => 'analytics',
+                    ],
+                    [
+                        'name' => 'Testimonials',
+                        'route' => 'doctor.testimonials.index',
+                        'icon' => 'fas fa-comments',
+                        'permission' => 'testimonials',
+                    ],
                 ]
             ],
 
@@ -169,7 +197,8 @@ class MenuHelper
                 'name' => 'Business & Marketing',
                 'icon' => 'fas fa-briefcase',
                 'dropdown' => true,
-                'href' => 'doctor.landing-page.index', // Clickable parent header
+                'header_class' => 'sidebar-header-business',
+                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #d97706; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => array_filter([
                     // Only show billing for standalone doctors (not hospital doctors)
                     !$user->hospital_id ? [
@@ -251,15 +280,12 @@ class MenuHelper
             // Clinical Tools Section - Show ALL items
             [
                 'name' => 'Clinical Tools',
-                'icon' => 'fas fa-stethoscope',
+                'icon' => 'fas fa-tools',
                 'dropdown' => true,
-                'href' => 'diagnosis.index', // Clickable parent header
+                'header_class' => 'sidebar-header-clinical',
+                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-left: 4px solid #3b82f6; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => [
-                    [
-                        'name' => 'AI Assistant',
-                        'route' => 'ai.ask-ai',
-                        'icon' => 'fas fa-robot',
-                    ],
+                    // AI Ask temporarily disabled - removed completely
                     [
                         'name' => 'Voice Assistant',
                         'route' => 'ai.voice-assistant.index',
@@ -278,13 +304,10 @@ class MenuHelper
                 'name' => 'Patient Management',
                 'icon' => 'fas fa-users',
                 'dropdown' => true,
-                'href' => 'cases', // Clickable parent header
+                'header_class' => 'sidebar-header-patient',
+                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => [
-                    [
-                        'name' => 'Patient Cases',
-                        'route' => 'cases',
-                        'icon' => 'fas fa-folder-open',
-                    ],
+
                     [
                         'name' => 'My Notes',
                         'route' => 'doctor.notes.index',
@@ -308,7 +331,8 @@ class MenuHelper
                 'name' => 'Practice Management',
                 'icon' => 'fas fa-calendar-alt',
                 'dropdown' => true,
-                'href' => 'doctor.appointments.index', // Clickable parent header
+                'header_class' => 'sidebar-header-practice',
+                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left: 4px solid #2563eb; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => [
                     [
                         'name' => 'Appointments',
@@ -320,6 +344,38 @@ class MenuHelper
                         'route' => 'doctor.availability.index',
                         'icon' => 'fas fa-clock',
                     ],
+                    [
+                        'name' => 'Appointment Settings',
+                        'route' => 'doctor.settings.appointments',
+                        'icon' => 'fas fa-cogs',
+                    ],
+                ]
+            ],
+
+            // Doctor Profile & Settings Section
+            [
+                'name' => 'Profile & Settings',
+                'icon' => 'fas fa-user-cog',
+                'dropdown' => true,
+                'header_class' => 'sidebar-header-profile',
+                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 4px solid #16a34a; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'items' => [
+                    [
+                        'name' => 'Doctor Profile',
+                        'route' => 'doctor.profile.edit',
+                        'icon' => 'fas fa-user-md',
+                    ],
+
+                    [
+                        'name' => 'Analytics',
+                        'route' => 'doctor.analytics.index',
+                        'icon' => 'fas fa-chart-bar',
+                    ],
+                    [
+                        'name' => 'Testimonials',
+                        'route' => 'doctor.testimonials.index',
+                        'icon' => 'fas fa-comments',
+                    ],
                 ]
             ],
 
@@ -328,7 +384,8 @@ class MenuHelper
                 'name' => 'Business & Marketing',
                 'icon' => 'fas fa-briefcase',
                 'dropdown' => true,
-                'href' => 'doctor.landing-page.index', // Clickable parent header
+                'header_class' => 'sidebar-header-business',
+                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #d97706; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => array_filter([
                     // Only show billing for standalone doctors (not hospital doctors) - even during impersonation
                     !$user->hospital_id ? [
@@ -627,10 +684,9 @@ class MenuHelper
                 ['name' => 'Sub-Users', 'route' => 'sub-users.index'],
                 ['name' => 'Edit Sub-User', 'route' => null]
             ],
-            'ai.ask-ai' => [['name' => 'AI Assistant', 'route' => null]],
+            // 'ai.ask-ai' => [['name' => 'AI Assistant', 'route' => null]], // Temporarily disabled
             'ai.voice-assistant.index' => [['name' => 'Voice Assistant', 'route' => null]],
             'diagnosis.index' => [['name' => 'Diagnoses', 'route' => null]],
-            'cases' => [['name' => 'Patient Cases', 'route' => null]],
         ];
 
         if (isset($routeBreadcrumbs[$routeName])) {
