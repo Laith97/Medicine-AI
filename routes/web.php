@@ -458,7 +458,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
             'menu_items' => $menuItems,
             'can_access' => [
                 'dashboard' => $user->canAccessRoute('dashboard'),
-                'ai.ask-ai' => $user->canAccessRoute('ai.ask-ai'),
+                // 'ai.ask-ai' => $user->canAccessRoute('ai.ask-ai'), // Temporarily disabled
                 'ai.voice-assistant.index' => $user->canAccessRoute('ai.voice-assistant.index'),
                 'diagnosis.index' => $user->canAccessRoute('diagnosis.index'),
                 'cases' => $user->canAccessRoute('cases'),
@@ -691,7 +691,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         }
 
         $setting = $user->monthlyInvoiceSetting;
-        $testRoutes = ['ai.ask-ai', 'cases', 'dashboard', 'appointments', 'reviews', 'settings', 'profile.edit'];
+        $testRoutes = ['cases', 'dashboard', 'appointments', 'reviews', 'settings', 'profile.edit']; // Removed ai.ask-ai temporarily
 
         $results = [];
         foreach ($testRoutes as $route) {
@@ -777,6 +777,7 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
         Route::get('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'show'])->name('show');
         Route::get('/{note}/edit', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'edit'])->name('edit');
         Route::put('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'update'])->name('update');
+        Route::post('/transcribe-audio', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'transcribeAudio'])->name('transcribe-audio');
     });
 
     // Blog Management

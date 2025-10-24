@@ -108,7 +108,7 @@ class TestSubUserDashboard extends Command
         $this->info("\n=== Testing Permissions ===");
         $testRoutes = [
             'dashboard' => 'Dashboard',
-            'cases' => 'Patient Cases',
+            'cases' => 'Patient Management',
             'doctor.appointments.index' => 'Appointments',
             'doctor.availability.index' => 'Availability',
             'doctor.reviews.index' => 'Reviews',

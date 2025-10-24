@@ -205,11 +205,12 @@
         <div class="chart-card">
             <h4><i class="fas fa-bolt me-2"></i>Quick Actions</h4>
             <div class="d-flex flex-wrap gap-2 mt-3">
-                @if(auth()->user()->canAccessRoute('ai.ask-ai'))
+                {{-- AI Ask temporarily disabled --}}
+                {{-- @if(auth()->user()->canAccessRoute('ai.ask-ai'))
                     <a href="{{ route('ai.ask-ai') }}" class="btn-custom-primary">
                         <i class="fas fa-user-plus me-2"></i> Add New Patient
                     </a>
-                @endif
+                @endif --}}
                 
                 @if(auth()->user()->canAccessRoute('diagnosis'))
                     <a href="{{ route('diagnosis.create') }}" class="btn-custom-primary">
@@ -219,7 +220,7 @@
                 
                 @if(auth()->user()->canAccessRoute('cases'))
                     <a href="{{ route('cases') }}" class="btn-custom-secondary">
-                        <i class="fas fa-list me-2"></i> View All Cases
+                        <i class="fas fa-list me-2"></i> View All Patient Management
                     </a>
                 @endif
                 
@@ -327,7 +328,7 @@
                                 $key = isset($record->patient_key) && $record->patient_key ? $record->patient_key : ('diagnosis_' . ($record->patient_id ?? 'unknown'));
                                 if (!isset($uniquePatients[$key]) && isset($record->age) && $record->age) {
                                     $uniquePatients[$key] = true;
-                                    $ages[] = $record->age;
+                                    $ages[] = (float) $record->age;
                                 }
                             }
                             $avgAge = count($ages) > 0 ? round(array_sum($ages) / count($ages)) : 0;
@@ -757,7 +758,7 @@
         <div class="row mb-5">
             <div class="col-lg-8 mb-4">
                 <div class="chart-card">
-                    <h6 class="chart-title">Cases Over Time</h6>
+                    <h6 class="chart-title">Patient Management Over Time</h6>
                     <div id="casesChart" style="height: 300px;"></div>
                 </div>
             </div>
@@ -767,7 +768,7 @@
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <p class="stats-number">{{ $weeklyCount }}</p>
-                    <p class="stats-label">Cases This Week</p>
+                    <p class="stats-label">Patient Management This Week</p>
                 </div>
             </div>
         </div>
@@ -1142,9 +1143,10 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <a href="{{ route('ai.ask-ai') }}" id="new-visit-btn" class="btn btn-primary-custom">
+                                {{-- AI Ask temporarily disabled --}}
+                                {{-- <a href="{{ route('ai.ask-ai') }}" id="new-visit-btn" class="btn btn-primary-custom">
                                     <i class="fas fa-plus me-1"></i> New Visit
-                                </a>
+                                </a> --}}
                             </div>
                         </div>
                     </div>
@@ -1154,9 +1156,10 @@
                     <i class="fas fa-user-doctor"></i>
                     <h5>No patients yet</h5>
                     <p>Start by adding your first patient</p>
-                    <a href="{{ route('ai.ask-ai') }}" class="btn-primary-custom mt-3">
+                    {{-- AI Ask temporarily disabled --}}
+                    {{-- <a href="{{ route('ai.ask-ai') }}" class="btn-primary-custom mt-3">
                         <i class="fas fa-plus me-2"></i> Add First Patient
-                    </a>
+                    </a> --}}
                 </div>
             @endif
         </div>

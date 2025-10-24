@@ -34,7 +34,7 @@ class PermissionSeeder extends Seeder
             ],
             [
                 'name' => 'cases',
-                'display_name' => 'Patient Cases',
+                'display_name' => 'Patient Management',
                 'description' => 'View patient cases and records',
                 'route_pattern' => 'cases',
                 'category' => 'medical',

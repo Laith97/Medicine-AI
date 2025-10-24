@@ -506,13 +506,15 @@ public function destroy(User $user)
         }
 
         // Get users with their monthly invoice settings and usage data
-        $users = User::with(['monthlyInvoiceSetting', 'openaiUsages' => function($query) use ($startDate, $endDate) {
-            $query->whereBetween('created_at', [$startDate, $endDate]);
-        }])
-        ->withCount(['openaiUsages as total_requests' => function($query) use ($startDate, $endDate) {
-            $query->whereBetween('created_at', [$startDate, $endDate]);
-        }])
-        ->get()
+        // Filter to show only doctors and hospital admins (billable users)
+        $users = User::whereIn('role', ['doctor', 'hospital_admin'])
+            ->with(['monthlyInvoiceSetting', 'openaiUsages' => function($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            }])
+            ->withCount(['openaiUsages as total_requests' => function($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            }])
+            ->get()
         ->map(function ($user) use ($startDate, $endDate) {
             $usage = OpenAIUsage::getUserUsageStats($user?->id, $startDate, $endDate);
             $setting = $user->monthlyInvoiceSetting;
@@ -586,7 +588,8 @@ public function destroy(User $user)
                 $endDate = Carbon::now()->endOfMonth();
         }
 
-        $users = User::with(['monthlyInvoiceSetting'])
+        $users = User::whereIn('role', ['doctor', 'hospital_admin'])
+            ->with(['monthlyInvoiceSetting'])
             ->get()
             ->map(function ($user) use ($startDate, $endDate) {
                 $usage = OpenAIUsage::getUserUsageStats($user?->id, $startDate, $endDate);

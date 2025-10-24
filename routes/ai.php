@@ -31,7 +31,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->prefix('ai')->name('ai.')->
     Route::post('/appointments/test-openai', [AppointmentController::class, 'testOpenAI'])->name('appointments.test-openai');
 
     // General AI routes that may be used for prescription suggestions
-    Route::get('/ask', [OpenAIController::class, 'showForm'])->name('ask-ai');
+    // Route::get('/ask', [OpenAIController::class, 'showForm'])->name('ask-ai'); // Temporarily disabled
     Route::get('/progress', function () { return view('openai-progress'); })->name('progress');
     Route::post('/respond', [OpenAIController::class, 'getResponse'])->name('respond');
     Route::post('/follow-up', [OpenAIController::class, 'followUp'])->name('follow-up');

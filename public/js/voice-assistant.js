@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let lastTranscriptTime = 0;
     let transcriptBuffer = '';
     let bufferTimeout;
-    let currentLanguage = 'en-US';
+    let currentLanguage = 'ar-SA'; // Start with Arabic for Middle East users - this is the best we can do with Web Speech API
     let sessionId = '';
     let selectedPatient = null;
     let isProcessing = false;
@@ -68,22 +68,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set up event listeners
         setupEventListeners();
 
+        // Initialize language selector
+        initLanguageSelector();
+
         // Load patients
         loadPatients();
 
         // Initialize Bootstrap tooltips
         initTooltips();
-
+    
         // Update UI based on initial state
         updateRecordingUI();
         updateHandsFreeStatus();
-
+    
         // Set up periodic session state saving
         setInterval(saveSessionState, 5000); // Save every 5 seconds
-
+    
         // Set up keyboard shortcuts
         setupKeyboardShortcuts();
-
+    
         // Log initialization status
         
         
@@ -149,6 +152,38 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             ;
         }
+    }
+
+    // Initialize language selector
+    function initLanguageSelector() {
+        const languageSelector = document.getElementById('languageSelector');
+        if (!languageSelector) return;
+
+        // Set initial value based on current language
+        if (currentLanguage === 'ar-SA') {
+            languageSelector.value = 'ar';
+        } else if (currentLanguage === 'en-US') {
+            languageSelector.value = 'en';
+        } else {
+            languageSelector.value = 'ar'; // Default to Arabic
+        }
+
+        // Add change event listener
+        languageSelector.addEventListener('change', function() {
+            const selectedLang = this.value;
+            console.log('🔄 Language selector changed to:', selectedLang);
+
+            // Only allow language changes when not recording
+            if (isListening) {
+                showAlert('Please stop recording before changing language.', 'warning');
+                // Reset selector to current language
+                this.value = currentLanguage === 'ar-SA' ? 'ar' : 'en';
+                return;
+            }
+
+            // Set the recognition language
+            setRecognitionLanguage(selectedLang);
+        });
     }
 
     // Keyboard shortcuts
@@ -257,6 +292,12 @@ document.addEventListener('DOMContentLoaded', function() {
             recognition.lang = currentLanguage;
             recognition.maxAlternatives = 3;
 
+            // Debug logging for language changes
+            console.log('🎙️ Speech recognition initialized with language:', currentLanguage);
+            console.log('🌐 Supported languages will be auto-detected from speech patterns');
+            console.log('🕐 Current timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+            console.log('� Debug: Use window.voiceAssistant.forceArabicMode() or forceEnglishMode()');
+
             recognition.onresult = function(event) {
                 let interimTranscript = '';
                 let newFinalTranscript = '';
@@ -267,18 +308,71 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     if (result.isFinal) {
                         newFinalTranscript += transcript + ' ';
+                        console.log('🎤 Final transcript received:', transcript);
 
-                        // Detect language and switch if needed
+                        // Detect language and switch if needed - only on final results
+                        console.log('🎤 Processing final transcript:', transcript);
                         const detectedLang = detectLanguage(transcript);
+                        console.log('🔍 Detected language:', detectedLang, 'Current language:', currentLanguage);
+
                         if (detectedLang !== currentLanguage) {
+                            const previousLanguage = currentLanguage;
                             currentLanguage = detectedLang;
-                            
-                            if (isListening) {
-                                recognition.lang = currentLanguage;
+
+                            // Show notification when language changes
+                            const languageNames = {
+                                'ar-SA': 'العربية',
+                                'en-US': 'English',
+                                'fr-FR': 'Français',
+                                'es-ES': 'Español',
+                                'de-DE': 'Deutsch'
+                            };
+
+                            if (previousLanguage !== detectedLang) {
+                                showAlert(`Language automatically switched to ${languageNames[detectedLang] || detectedLang}`, 'info');
+                                console.log('🔄 Language switched from', previousLanguage, 'to', detectedLang);
+
+                                // Force restart recognition with new language
+                                if (isListening) {
+                                    console.log('🔄 Restarting recognition with new language:', detectedLang);
+                                    recognition.stop();
+                                    setTimeout(() => {
+                                        if (isListening) {
+                                            recognition.lang = currentLanguage;
+                                            recognition.start();
+                                            console.log('✅ Recognition restarted with language:', currentLanguage);
+                                        }
+                                    }, 500); // Increased delay for better stability
+                                }
+                            }
+                        } else {
+                            // If we're in Arabic mode and getting Arabic text, ensure recognition stays in Arabic
+                            if (currentLanguage === 'ar-SA' && transcript.trim().length > 0) {
+                                console.log('🇸🇦 Maintaining Arabic recognition for text:', transcript);
+                            } else if (currentLanguage === 'en-US' && transcript.trim().length > 0) {
+                                console.log('🇺🇸 Maintaining English recognition for text:', transcript);
                             }
                         }
                     } else {
                         interimTranscript += transcript;
+                        // Also try to detect language from interim results for faster switching
+                        if (interimTranscript.length > 1) { // Very sensitive - trigger after just 1 character
+                            console.log('⚡ Checking interim transcript:', interimTranscript);
+                            const interimDetectedLang = detectLanguage(interimTranscript);
+                            console.log('⚡ Interim detection result:', interimDetectedLang, 'Current:', currentLanguage);
+                            if (interimDetectedLang !== currentLanguage) {
+                                console.log('⚡ Early language detection from interim result:', interimTranscript, '->', interimDetectedLang);
+                                const oldLanguage = currentLanguage;
+                                currentLanguage = interimDetectedLang;
+                                updateLanguageIndicator(currentLanguage);
+
+                                // Immediately update recognition language without stopping
+                                if (isListening) {
+                                    recognition.lang = currentLanguage;
+                                    console.log('🔄 Immediately updated recognition language from', oldLanguage, 'to:', currentLanguage);
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -380,20 +474,114 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Language detection
+    // Enhanced automatic language detection with speech pattern analysis
     function detectLanguage(text) {
-        const arabicPattern = /[\u0600-\u06FF]/;
-        const englishPattern = /[a-zA-Z]/;
-
-        if (arabicPattern.test(text)) {
-            return 'ar-SA';
-        } else if (englishPattern.test(text)) {
-            return 'en-US';
+        if (!text || text.trim().length === 0) {
+            return currentLanguage;
         }
-        return currentLanguage;
+
+        const cleanText = text.trim();
+
+        // Debug logging
+        console.log('🔍 Detecting language for text:', cleanText);
+        console.log('📏 Text length:', cleanText.length);
+
+        // Arabic detection (more comprehensive - includes all Arabic Unicode blocks)
+        const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g;
+        const arabicChars = (cleanText.match(arabicPattern) || []).length;
+
+        // English detection
+        const englishPattern = /[a-zA-Z]/g;
+        const englishChars = (cleanText.match(englishPattern) || []).length;
+
+        // French detection (common French characters)
+        const frenchPattern = /[àâäéèêëïîôöùûüÿçÀÂÄÉÈÊËÏÎÔÖÙÛÜŸÇ]/g;
+        const frenchChars = (cleanText.match(frenchPattern) || []).length;
+
+        // Spanish detection (common Spanish characters)
+        const spanishPattern = /[áéíóúüñ¿¡ÁÉÍÓÚÜÑ]/g;
+        const spanishChars = (cleanText.match(spanishPattern) || []).length;
+
+        // German detection (common German characters)
+        const germanPattern = /[äöüßÄÖÜẞ]/g;
+        const germanChars = (cleanText.match(germanPattern) || []).length;
+
+        // Determine dominant language based on character count
+        const totalChars = cleanText.length;
+        const arabicRatio = arabicChars / totalChars;
+        const englishRatio = englishChars / totalChars;
+        const frenchRatio = frenchChars / totalChars;
+        const spanishRatio = spanishChars / totalChars;
+        const germanRatio = germanChars / totalChars;
+
+        console.log('📊 Language ratios:', {
+            arabic: arabicRatio.toFixed(3),
+            english: englishRatio.toFixed(3),
+            french: frenchRatio.toFixed(3),
+            spanish: spanishRatio.toFixed(3),
+            german: germanRatio.toFixed(3),
+            totalChars: totalChars,
+            arabicChars: arabicChars,
+            englishChars: englishChars
+        });
+
+        // Language mapping with confidence thresholds
+        const languages = [
+            { code: 'ar-SA', ratio: arabicRatio, threshold: 0.01, name: 'العربية' }, // Very low threshold for Arabic
+            { code: 'fr-FR', ratio: frenchRatio, threshold: 0.1, name: 'Français' },
+            { code: 'es-ES', ratio: spanishRatio, threshold: 0.1, name: 'Español' },
+            { code: 'de-DE', ratio: germanRatio, threshold: 0.1, name: 'Deutsch' },
+            { code: 'en-US', ratio: englishRatio, threshold: 0.01, name: 'English' } // Very low threshold for English
+        ];
+
+        // Find the language with highest ratio above threshold
+        let detectedLang = currentLanguage;
+        let maxRatio = 0;
+
+        for (const lang of languages) {
+            if (lang.ratio > lang.threshold && lang.ratio > maxRatio) {
+                detectedLang = lang.code;
+                maxRatio = lang.ratio;
+                console.log('🎯 Detected language:', lang.name, 'with ratio:', lang.ratio.toFixed(3));
+            }
+        }
+
+        // Special handling: if we have ANY Arabic characters, prioritize Arabic
+        if (arabicChars > 0) {
+            detectedLang = 'ar-SA';
+            console.log('🇸🇦 Arabic detected! Switching to Arabic (ar-SA)');
+        }
+
+        // Update UI indicator if language changed
+        if (detectedLang !== currentLanguage) {
+            console.log('🔄 Language changed from', currentLanguage, 'to', detectedLang);
+            updateLanguageIndicator(detectedLang);
+        }
+
+        return detectedLang;
     }
 
-    // Set recognition language
+    // Advanced language detection based on speech patterns (not just transcribed text)
+    function detectSpokenLanguage(audioData) {
+        // This is a placeholder for more advanced speech pattern analysis
+        // In a real implementation, this would analyze audio features like:
+        // - Phoneme patterns
+        // - Speech rhythm
+        // - Acoustic features
+        // - Language-specific sound patterns
+
+        // For now, we'll rely on text-based detection after transcription
+        // But this function could be extended with audio analysis libraries
+
+        return new Promise((resolve) => {
+            // Simulate analysis delay
+            setTimeout(() => {
+                resolve(currentLanguage);
+            }, 100);
+        });
+    }
+
+    // Set recognition language (now only used internally for auto-detection)
     function setRecognitionLanguage(lang) {
         const supportedLanguages = {
             'ar': 'ar-SA',
@@ -404,19 +592,71 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         if (supportedLanguages[lang]) {
-            currentLanguage = supportedLanguages[lang];
-            if (recognition && isListening) {
-                // Restart with new language
-                recognition.stop();
-                setTimeout(() => {
-                    if (isListening) {
-                        recognition.lang = currentLanguage;
-                        recognition.start();
-                    }
-                }, 100);
+            const newLanguage = supportedLanguages[lang];
+            console.log('🔄 Manually setting language to:', newLanguage);
+
+            if (newLanguage !== currentLanguage) {
+                const oldLanguage = currentLanguage;
+                currentLanguage = newLanguage;
+                updateLanguageIndicator(currentLanguage);
+
+                if (recognition && isListening) {
+                    console.log('🔄 Restarting recognition with new language:', currentLanguage);
+                    recognition.stop();
+                    setTimeout(() => {
+                        if (isListening) {
+                            recognition.lang = currentLanguage;
+                            recognition.start();
+                            console.log('✅ Recognition restarted with language:', currentLanguage);
+                        }
+                    }, 300);
+                }
+
+                showAlert(`Language switched to ${newLanguage === 'ar-SA' ? 'العربية' : 'English'}`, 'info');
             }
-            
         }
+    }
+
+    // Update language indicator in UI
+    function updateLanguageIndicator(languageCode) {
+        const indicator = document.getElementById('autoLanguageIndicator');
+        if (!indicator) return;
+
+        const languageNames = {
+            'ar-SA': 'العربية',
+            'en-US': 'English',
+            'fr-FR': 'Français',
+            'es-ES': 'Español',
+            'de-DE': 'Deutsch'
+        };
+
+        const languageName = languageNames[languageCode] || 'Auto-Detecting';
+        const flagIcon = getLanguageFlag(languageCode);
+
+        indicator.innerHTML = `
+            <i class="fas fa-brain me-1"></i>
+            ${flagIcon} ${languageName}
+        `;
+
+        // Add visual feedback for language change
+        indicator.classList.add('language-changed');
+        setTimeout(() => {
+            indicator.classList.remove('language-changed');
+        }, 2000);
+
+        console.log('🎯 Language indicator updated to:', languageName, '(', languageCode, ')');
+    }
+
+    // Get flag emoji for language
+    function getLanguageFlag(languageCode) {
+        const flags = {
+            'ar-SA': '🇸🇦',
+            'en-US': '🇺🇸',
+            'fr-FR': '🇫🇷',
+            'es-ES': '🇪🇸',
+            'de-DE': '🇩🇪'
+        };
+        return flags[languageCode] || '🌐';
     }
 
     // Initialize Bootstrap tooltips
@@ -465,14 +705,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Language selector
-        if (languageSelector) {
-            languageSelector.addEventListener('change', function(e) {
-                const selectedLang = e.target.value;
-                setRecognitionLanguage(selectedLang);
-                
-            });
-        }
+        // Initialize language indicator
+        updateLanguageIndicator(currentLanguage);
 
         // Hands-free toggle with enhanced functionality
         if (handsFreeToggle) {
@@ -584,7 +818,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         updateRecordingUI();
                         updateHandsFreeStatus();
-                        showAlert('Session started successfully.', 'success');
+                        showAlert('Session started successfully. Language detection is active.', 'success');
                     } catch (error) {
                         ;
                         isListening = false;
@@ -1355,9 +1589,62 @@ document.addEventListener('DOMContentLoaded', function() {
         setSelectedPatient: function(patientId) {
             selectedPatient = patientId;
             updateRecordingUI();
-            
+
         },
         getAiResultId: function() { return aiResultId; },
-        getExtractedData: function() { return extractedData; }
+        getExtractedData: function() { return extractedData; },
+        getCurrentLanguage: function() { return currentLanguage; },
+        detectLanguage: detectLanguage,
+        // Debug functions
+        testArabicDetection: function() {
+            console.log('🧪 Testing Arabic detection...');
+            const testTexts = [
+                'مرحبا كيف حالك',
+                'Hello world',
+                'مرحبا Hello مرحبا',
+                'أشعر بألم في الصدر',
+                'I have chest pain أشعر بألم في الصدر',
+                'صباح الخير',
+                'Good morning صباح الخير'
+            ];
+            testTexts.forEach(text => {
+                const detected = detectLanguage(text);
+                console.log(`Text: "${text}" -> Detected: ${detected}`);
+            });
+        },
+        forceArabicMode: function() {
+            console.log('🇸🇦 Forcing Arabic mode...');
+            setRecognitionLanguage('ar');
+        },
+        forceEnglishMode: function() {
+            console.log('🇺🇸 Forcing English mode...');
+            setRecognitionLanguage('en');
+        },
+        // Test current language switching
+        testLanguageSwitching: function() {
+            console.log('🧪 Testing language switching...');
+            console.log('Current language:', currentLanguage);
+            console.log('Recognition object:', recognition ? 'Available' : 'Not available');
+            console.log('Is listening:', isListening);
+
+            // Test Arabic detection
+            const arabicTest = detectLanguage('مرحبا كيف حالك');
+            console.log('Arabic test result:', arabicTest);
+
+            // Test English detection
+            const englishTest = detectLanguage('Hello how are you');
+            console.log('English test result:', englishTest);
+        },
+        // Web Speech API has fundamental limitations for real-time language switching
+        // This is the best we can achieve with current browser APIs
+        getLimitations: function() {
+            console.log('⚠️ Web Speech API Limitations:');
+            console.log('• Cannot detect spoken language before transcription');
+            console.log('• Language switching requires stopping/starting recognition');
+            console.log('• Only detects language from already-transcribed text');
+            console.log('• Arabic speech transcribed as English when recognition is in English mode');
+            console.log('• Best solution: Start with user\'s regional language (Arabic for Middle East)');
+            console.log('• Alternative: Use server-side speech recognition with language detection');
+        }
     };
 });

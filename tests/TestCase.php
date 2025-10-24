@@ -21,10 +21,10 @@ abstract class TestCase extends BaseTestCase
 
     protected function setupTestEnvironment(): void
     {
-        // Use SQLite for testing as configured in phpunit.xml
-        config(['database.default' => 'sqlite']);
-        config(['database.connections.sqlite.database' => ':memory:']);
-        config(['database.connections.sqlite.foreign_key_constraints' => false]);
+        // Use MySQL for testing as configured in phpunit.xml
+        config(['database.default' => 'mysql']);
+        config(['database.connections.mysql.database' => 'medicine_test']);
+        config(['database.connections.mysql.foreign_key_constraints' => false]);
 
         // Configure mail for testing
         config(['mail.default' => 'array']);

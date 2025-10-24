@@ -94,7 +94,7 @@ class FinalSubUserTest extends Command
         
         $testPermissions = [
             'dashboard' => 'Dashboard',
-            'cases' => 'Patient Cases',
+            'cases' => 'Patient Management',
             'diagnosis' => 'Diagnosis',
             'doctor.appointments.index' => 'Appointments',
             'doctor.blog.index' => 'Blog',

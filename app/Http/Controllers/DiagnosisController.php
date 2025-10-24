@@ -617,7 +617,7 @@ class DiagnosisController extends Controller
             Always remind the patient to consult with their doctor for serious concerns.";
 
             $response = OpenAI::chat()->create([
-                'model' => 'gpt-4',
+                'model' => 'gpt-4o',
                 'messages' => [
                     ['role' => 'system', 'content' => 'You are a helpful medical AI assistant.'],
                     ['role' => 'user', 'content' => $prompt],

@@ -319,9 +319,10 @@
                         Revolutionary AI platform combining intelligent diagnosis, voice assistance, patient management, and professional online presence. Transform your medical practice with cutting-edge technology.
                     </p>
                     <div class="d-flex flex-wrap gap-3" data-animate="fadeInUp" data-delay="400">
-                        <a href="/login" class="btn btn-theme-primary btn-lg">
+                        {{-- AI Ask temporarily disabled --}}
+                        {{-- <a href="/login" class="btn btn-theme-primary btn-lg">
                             <i class="fas fa-stethoscope me-2"></i>Start Diagnosis
-                        </a>
+                        </a> --}}
                         <a href="#features" class="btn btn-theme-outline btn-lg">
                             <i class="fas fa-play me-2"></i>Learn More
                         </a>
