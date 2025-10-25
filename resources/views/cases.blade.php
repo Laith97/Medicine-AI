@@ -767,7 +767,7 @@ function loadVisitDetails(visitId, buttonData) {
 
     // Make AJAX call to get visit details
     $.ajax({
-        url: `/api/cases/visit-history/${visitId}`,
+        url: `/api/doctor/patient-management/visit-history/${visitId}`,
         method: 'GET',
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),

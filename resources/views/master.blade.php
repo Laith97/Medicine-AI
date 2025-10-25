@@ -1758,7 +1758,7 @@ body .dropdown .dropdown-menu.show,
                         <li class="mb-2"><a href="{{ route('dashboard') }}" class="text-white-50 text-decoration-none hover-link">Dashboard</a></li>
                         {{-- AI Ask temporarily disabled --}}
                         {{-- <li class="mb-2"><a href="{{ route('ai.ask-ai') }}" class="text-white-50 text-decoration-none hover-link">AI Assistant</a></li> --}}
-                        <li class="mb-2"><a href="{{ route('cases') }}" class="text-white-50 text-decoration-none hover-link">Case Studies</a></li>
+                        <li class="mb-2"><a href="{{ route('doctor.patient-management.index') }}" class="text-white-50 text-decoration-none hover-link">Patient Management</a></li>
                         <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Settings</a></li>
                     @else
                         <li class="mb-2"><a href="{{ url('/') }}" class="text-white-50 text-decoration-none hover-link">Home</a></li>
@@ -2109,7 +2109,7 @@ body .dropdown .dropdown-menu.show,
                     icon: 'fas fa-stethoscope',
                     url: '#',
                     submenu: [
-                        { title: 'Patient Management', icon: 'fas fa-folder-medical', url: '/cases' },
+                        { title: 'Patient Management', icon: 'fas fa-folder-medical', url: '/doctor/patient-management' },
                         { title: 'Diagnosis', icon: 'fas fa-diagnoses', url: '/diagnosis' },
                         { title: 'Medical Notes', icon: 'fas fa-notes-medical', url: '/medical-notes' }
                     ]

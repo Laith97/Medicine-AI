@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 use App\Traits\HandlesEffectiveDoctor;
 
@@ -150,6 +151,14 @@ class DashboardController extends Controller
         }
 
         $appointment->load(['patient', 'review']);
+
+        // Generate risk predictions if they don't exist for this appointment
+        $this->ensureRiskPredictions($appointment);
+
+        // Reload appointment with risk scores
+        $appointment->load(['patient.patientRiskScores' => function($query) use ($appointment) {
+            $query->where('appointment_id', $appointment->id);
+        }]);
 
         return view('doctor.appointments.show', compact('appointment'));
     }
@@ -430,5 +439,62 @@ class DashboardController extends Controller
             'no_show' => '#6b7280',
             default => '#6b7280'
         };
+    }
+
+    /**
+     * Ensure risk predictions exist for an appointment
+     */
+    private function ensureRiskPredictions(Appointment $appointment)
+    {
+        // Skip if no patient associated
+        if (!$appointment->patient_id) {
+            return;
+        }
+
+        // Cache key for this appointment's risk predictions
+        $cacheKey = "risk_predictions_{$appointment->patient_id}_{$appointment->id}";
+
+        // Check cache first
+        if (Cache::has($cacheKey)) {
+            return; // Already processed recently
+        }
+
+        // Check if risk score already exists for this appointment
+        $existingRiskScore = \App\Models\PatientRiskScore::where('patient_id', $appointment->patient_id)
+            ->where('appointment_id', $appointment->id)
+            ->first();
+
+        if ($existingRiskScore) {
+            // Cache for 1 hour to prevent repeated checks
+            Cache::put($cacheKey, true, 3600);
+            return; // Already exists
+        }
+
+        try {
+            // Generate predictions using the service
+            $predictiveService = app(\App\Services\PredictiveAnalyticsService::class);
+            $predictions = $predictiveService->predictRisks($appointment->patient, $appointment);
+
+            // Create and save the risk score
+            $riskScore = new \App\Models\PatientRiskScore();
+            $riskScore->patient_id = $appointment->patient_id;
+            $riskScore->appointment_id = $appointment->id;
+            $riskScore->no_show_risk = $predictions['no_show_risk'];
+            $riskScore->hospitalization_risk = $predictions['hospitalization_risk'];
+            $riskScore->save();
+
+            // Cache success for 1 hour
+            Cache::put($cacheKey, true, 3600);
+
+        } catch (\Exception $e) {
+            // Log error but don't fail the page load
+            Log::error('Failed to generate risk predictions for appointment ' . $appointment->id, [
+                'error' => $e->getMessage(),
+                'patient_id' => $appointment->patient_id
+            ]);
+
+            // Cache failure for 5 minutes to avoid repeated attempts
+            Cache::put($cacheKey, false, 300);
+        }
     }
 }

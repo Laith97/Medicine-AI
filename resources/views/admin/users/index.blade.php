@@ -425,7 +425,7 @@
                                     <div class="d-flex flex-column">
                                         <small class="text-muted">{{ $user->created_at->format('M d, Y') }}</small>
                                         @if($user->patientAnalyses->count() > 0)
-                                            <small class="admin-badge info mt-1">{{ $user->patientAnalyses->count() }} cases</small>
+                                            <small class="admin-badge info mt-1">{{ $user->patientAnalyses->count() }} patient management</small>
                                         @endif
                                     </div>
                                 </td>

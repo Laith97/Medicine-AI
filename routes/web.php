@@ -115,6 +115,17 @@ Route::get('/', function () {
     return view('main', compact('showPricingSection', 'pricingPlans'));
 });
 
+// Registration choice page
+Route::get('/register', function () {
+    return view('auth.register-choice');
+})->name('register');
+
+// Doctor registration route - redirect to the actual doctor registration
+Route::get('/register-doctor', function (\Illuminate\Http\Request $request) {
+    // Since we removed the GET route from auth.php, we need to create it here
+    return app(\App\Http\Controllers\Auth\RegisteredUserController::class)->create($request);
+})->name('register.doctor');
+
 // Patient registration routes
 Route::get('/register/patient', [PatientRegistrationController::class, 'create'])->name('patient.register');
 Route::post('/register/patient', [PatientRegistrationController::class, 'store'])->name('patient.register.store');
@@ -277,7 +288,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
     Route::get('/settings', [UserSettingsController::class, 'index'])->name('settings');
     Route::put('/user/settings/update', [UserSettingsController::class, 'update'])->name('settings.update');
-    Route::get('/cases', [OpenAIController::class, 'getCases'])->name('cases');
+    Route::get('/doctor/patient-management', [OpenAIController::class, 'getCases'])->name('doctor.patient-management.index');
     Route::post('/patient/summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient.summary');
     Route::get('/dashboard', [OpenAIController::class, 'dashboard'])->name('dashboard');
 
@@ -461,7 +472,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
                 // 'ai.ask-ai' => $user->canAccessRoute('ai.ask-ai'), // Temporarily disabled
                 'ai.voice-assistant.index' => $user->canAccessRoute('ai.voice-assistant.index'),
                 'diagnosis.index' => $user->canAccessRoute('diagnosis.index'),
-                'cases' => $user->canAccessRoute('cases'),
+                'doctor.patient-management.index' => $user->canAccessRoute('doctor.patient-management.index'),
                 'sub-users.index' => $user->canAccessRoute('sub-users.index'),
             ],
         ]);
@@ -563,7 +574,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
                 'accessible_routes' => [
                     'dashboard' => $user->canAccessRoute('dashboard'),
                     'appointments' => $user->canAccessRoute('doctor.appointments.index'),
-                    'cases' => $user->canAccessRoute('cases'),
+                    'doctor.patient-management.index' => $user->canAccessRoute('doctor.patient-management.index'),
                     'settings' => $user->canAccessRoute('settings'),
                 ]
             ]);
@@ -691,7 +702,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         }
 
         $setting = $user->monthlyInvoiceSetting;
-        $testRoutes = ['cases', 'dashboard', 'appointments', 'reviews', 'settings', 'profile.edit']; // Removed ai.ask-ai temporarily
+        $testRoutes = ['doctor.patient-management.index', 'dashboard', 'appointments', 'reviews', 'settings', 'profile.edit']; // Removed ai.ask-ai temporarily
 
         $results = [];
         foreach ($testRoutes as $route) {

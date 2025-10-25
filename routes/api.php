@@ -69,8 +69,8 @@ Route::middleware(['auth', 'web'])->group(function () {
     Route::post('/ai/denial-prediction', [BillingController::class, 'getDenialPrediction']);
 
     // Patient cases and visit history API routes
-    Route::get('/cases/patient-visits/{patientKey}', [\App\Http\Controllers\OpenAIController::class, 'getPatientVisits']);
-    Route::get('/cases/visit-history/{id}', [\App\Http\Controllers\OpenAIController::class, 'getVisitDetails']);
+    Route::get('/doctor/patient-management/patient-visits/{patientKey}', [\App\Http\Controllers\OpenAIController::class, 'getPatientVisits']);
+    Route::get('/doctor/patient-management/visit-history/{id}', [\App\Http\Controllers\OpenAIController::class, 'getVisitDetails']);
 });
 
 // Public routes (for guest access with token verification)

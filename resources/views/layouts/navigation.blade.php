@@ -112,7 +112,7 @@
                 @else
                     <!-- Guest Actions -->
                     <div class="flex items-center space-x-4">
-                        <a href="{{ route('patient.register') }}" class="text-sm font-medium text-primary-600 hover:text-primary-500">
+                        <a href="{{ route('register') }}" class="text-sm font-medium text-primary-600 hover:text-primary-500">
                             Create Account
                         </a>
                         <a href="{{ route('login') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
@@ -228,7 +228,7 @@
             <!-- Guest Options in Mobile -->
             <div class="pt-4 pb-1 border-t border-gray-200">
                 <div class="mt-3 space-y-1">
-                    <x-responsive-nav-link :href="route('patient.register')">
+                    <x-responsive-nav-link :href="route('register')">
                         <i class="fas fa-user-plus mr-2"></i>{{ __('Create Account') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('login')">

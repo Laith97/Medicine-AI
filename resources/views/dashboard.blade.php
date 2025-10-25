@@ -218,8 +218,8 @@
                     </a>
                 @endif
                 
-                @if(auth()->user()->canAccessRoute('cases'))
-                    <a href="{{ route('cases') }}" class="btn-custom-secondary">
+                @if(auth()->user()->canAccessRoute('doctor.patient-management.index'))
+                    <a href="{{ route('doctor.patient-management.index') }}" class="btn-custom-secondary">
                         <i class="fas fa-list me-2"></i> View All Patient Management
                     </a>
                 @endif
@@ -759,7 +759,7 @@
             <div class="col-lg-8 mb-4">
                 <div class="chart-card">
                     <h6 class="chart-title">Patient Management Over Time</h6>
-                    <div id="casesChart" style="height: 300px;"></div>
+                    <div id="patientManagementChart" style="height: 300px;"></div>
                 </div>
             </div>
             <div class="col-lg-4 mb-4">
@@ -922,7 +922,7 @@
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
-                    <a href="{{ route('cases') }}" class="btn-secondary-custom btn-sm">
+                    <a href="{{ route('doctor.patient-management.index') }}" class="btn-secondary-custom btn-sm">
                         <i class="fas fa-external-link-alt me-1"></i> View All
                     </a>
                 </div>
