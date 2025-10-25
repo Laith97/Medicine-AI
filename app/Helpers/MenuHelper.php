@@ -78,9 +78,9 @@ class MenuHelper
                 'permission' => 'dashboard',
             ],
 
-            // Clinical Tools Section
+            // Clinical Section
             [
-                'name' => 'Clinical Tools',
+                'name' => 'Clinical',
                 'icon' => 'fas fa-tools',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-clinical',
@@ -103,39 +103,38 @@ class MenuHelper
                 ]
             ],
 
-            // Patient Management Section
+            // Patients Section
             [
-                'name' => 'Patient Management',
+                'name' => 'Patients',
                 'icon' => 'fas fa-users',
                 'dropdown' => true,
-                'header_class' => 'sidebar-header-patient',
+                'header_class' => 'sidebar-header-patients',
                 'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => [
-
                     [
-                        'name' => 'My Notes',
+                        'name' => 'Patient Records',
                         'route' => 'doctor.notes.index',
                         'icon' => 'fas fa-sticky-note',
                         'permission' => 'notes',
                     ],
                     [
-                        'name' => 'Chat Messages',
+                        'name' => 'Communications',
                         'route' => 'doctor.chat.index',
                         'icon' => 'fas fa-comments',
                         'permission' => 'chat',
                     ],
                     [
-                        'name' => 'Reviews',
-                        'route' => 'doctor.reviews.index',
-                        'icon' => 'fas fa-star',
-                        'permission' => 'reviews',
+                        'name' => 'Patient Management',
+                        'route' => 'doctor.patient-management.index',
+                        'icon' => 'fas fa-folder',
+                        'permission' => 'cases',
                     ],
                 ]
             ],
 
-            // Practice Management Section
+            // Practice Section
             [
-                'name' => 'Practice Management',
+                'name' => 'Practice',
                 'icon' => 'fas fa-calendar-alt',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-practice',
@@ -162,26 +161,25 @@ class MenuHelper
                 ]
             ],
 
-            // Doctor Profile & Settings Section
+            // Analytics & Insights Section
             [
-                'name' => 'Profile & Settings',
-                'icon' => 'fas fa-user-cog',
+                'name' => 'Analytics & Insights',
+                'icon' => 'fas fa-chart-line',
                 'dropdown' => true,
-                'header_class' => 'sidebar-header-profile',
+                'header_class' => 'sidebar-header-analytics',
                 'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 4px solid #16a34a; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => [
-                    [
-                        'name' => 'Doctor Profile',
-                        'route' => 'doctor.profile.edit',
-                        'icon' => 'fas fa-user-md',
-                        'permission' => 'profile',
-                    ],
-  
                     [
                         'name' => 'Analytics',
                         'route' => 'doctor.analytics.index',
                         'icon' => 'fas fa-chart-bar',
                         'permission' => 'analytics',
+                    ],
+                    [
+                        'name' => 'Reviews',
+                        'route' => 'doctor.reviews.index',
+                        'icon' => 'fas fa-star',
+                        'permission' => 'reviews',
                     ],
                     [
                         'name' => 'Testimonials',
@@ -192,12 +190,29 @@ class MenuHelper
                 ]
             ],
 
-            // Business & Marketing Section
+            // Account Section
             [
-                'name' => 'Business & Marketing',
+                'name' => 'Account',
+                'icon' => 'fas fa-user-cog',
+                'dropdown' => true,
+                'header_class' => 'sidebar-header-account',
+                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-left: 4px solid #6b7280; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'items' => [
+                    [
+                        'name' => 'Doctor Profile',
+                        'route' => 'doctor.profile.edit',
+                        'icon' => 'fas fa-user-md',
+                        'permission' => 'profile',
+                    ],
+                ]
+            ],
+
+            // Business Tools Section
+            [
+                'name' => 'Business Tools',
                 'icon' => 'fas fa-briefcase',
                 'dropdown' => true,
-                'header_class' => 'sidebar-header-business',
+                'header_class' => 'sidebar-header-business-tools',
                 'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #d97706; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => array_filter([
                     // Only show billing for standalone doctors (not hospital doctors)
@@ -277,9 +292,9 @@ class MenuHelper
                 'icon' => 'fas fa-tachometer-alt',
             ],
 
-            // Clinical Tools Section - Show ALL items
+            // Clinical Section - Show ALL items
             [
-                'name' => 'Clinical Tools',
+                'name' => 'Clinical',
                 'icon' => 'fas fa-tools',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-clinical',
@@ -299,36 +314,35 @@ class MenuHelper
                 ]
             ],
 
-            // Patient Management Section
+            // Patients Section
             [
-                'name' => 'Patient Management',
+                'name' => 'Patients',
                 'icon' => 'fas fa-users',
                 'dropdown' => true,
-                'header_class' => 'sidebar-header-patient',
+                'header_class' => 'sidebar-header-patients',
                 'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => [
-
                     [
-                        'name' => 'My Notes',
+                        'name' => 'Patient Records',
                         'route' => 'doctor.notes.index',
                         'icon' => 'fas fa-sticky-note',
                     ],
                     [
-                        'name' => 'Chat Messages',
+                        'name' => 'Communications',
                         'route' => 'doctor.chat.index',
                         'icon' => 'fas fa-comments',
                     ],
                     [
-                        'name' => 'Reviews',
-                        'route' => 'doctor.reviews.index',
-                        'icon' => 'fas fa-star',
+                        'name' => 'Patient Management',
+                        'route' => 'doctor.patient-management.index',
+                        'icon' => 'fas fa-folder',
                     ],
                 ]
             ],
 
-            // Practice Management Section
+            // Practice Section
             [
-                'name' => 'Practice Management',
+                'name' => 'Practice',
                 'icon' => 'fas fa-calendar-alt',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-practice',
@@ -352,24 +366,23 @@ class MenuHelper
                 ]
             ],
 
-            // Doctor Profile & Settings Section
+            // Analytics & Insights Section
             [
-                'name' => 'Profile & Settings',
-                'icon' => 'fas fa-user-cog',
+                'name' => 'Analytics & Insights',
+                'icon' => 'fas fa-chart-line',
                 'dropdown' => true,
-                'header_class' => 'sidebar-header-profile',
+                'header_class' => 'sidebar-header-analytics',
                 'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 4px solid #16a34a; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => [
-                    [
-                        'name' => 'Doctor Profile',
-                        'route' => 'doctor.profile.edit',
-                        'icon' => 'fas fa-user-md',
-                    ],
-
                     [
                         'name' => 'Analytics',
                         'route' => 'doctor.analytics.index',
                         'icon' => 'fas fa-chart-bar',
+                    ],
+                    [
+                        'name' => 'Reviews',
+                        'route' => 'doctor.reviews.index',
+                        'icon' => 'fas fa-star',
                     ],
                     [
                         'name' => 'Testimonials',
@@ -379,12 +392,28 @@ class MenuHelper
                 ]
             ],
 
-            // Business & Marketing Section - Show restricted items but still respect hospital_id for billing
+            // Account Section
             [
-                'name' => 'Business & Marketing',
+                'name' => 'Account',
+                'icon' => 'fas fa-user-cog',
+                'dropdown' => true,
+                'header_class' => 'sidebar-header-account',
+                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-left: 4px solid #6b7280; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'items' => [
+                    [
+                        'name' => 'Doctor Profile',
+                        'route' => 'doctor.profile.edit',
+                        'icon' => 'fas fa-user-md',
+                    ],
+                ]
+            ],
+
+            // Business Tools Section - Show restricted items but still respect hospital_id for billing
+            [
+                'name' => 'Business Tools',
                 'icon' => 'fas fa-briefcase',
                 'dropdown' => true,
-                'header_class' => 'sidebar-header-business',
+                'header_class' => 'sidebar-header-business-tools',
                 'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #d97706; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => array_filter([
                     // Only show billing for standalone doctors (not hospital doctors) - even during impersonation

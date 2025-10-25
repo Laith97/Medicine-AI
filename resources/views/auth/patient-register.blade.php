@@ -40,8 +40,8 @@
 
                         <!-- Phone -->
                         <div class="mb-3">
-                            <label for="phone" class="form-label">Phone Number (Optional)</label>
-                            <input id="phone" name="phone" type="tel"
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input id="phone" name="phone" type="tel" required
                                    class="form-control @error('phone') is-invalid @enderror"
                                    placeholder="Enter your phone number" value="{{ old('phone') }}">
                             @error('phone')
@@ -51,8 +51,8 @@
 
                         <!-- Date of Birth -->
                         <div class="mb-3">
-                            <label for="date_of_birth" class="form-label">Date of Birth (Optional)</label>
-                            <input id="date_of_birth" name="date_of_birth" type="date"
+                            <label for="date_of_birth" class="form-label">Date of Birth</label>
+                            <input id="date_of_birth" name="date_of_birth" type="date" required
                                    class="form-control @error('date_of_birth') is-invalid @enderror"
                                    max="{{ date('Y-m-d') }}" value="{{ old('date_of_birth') }}">
                             @error('date_of_birth')
@@ -62,8 +62,8 @@
 
                         <!-- Gender -->
                         <div class="mb-3">
-                            <label for="gender" class="form-label">Gender (Optional)</label>
-                            <select id="gender" name="gender" class="form-select @error('gender') is-invalid @enderror">
+                            <label for="gender" class="form-label">Gender</label>
+                            <select id="gender" name="gender" required class="form-select @error('gender') is-invalid @enderror">
                                 <option value="">Select gender</option>
                                 <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
                                 <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>

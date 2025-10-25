@@ -989,7 +989,7 @@
                                         {{-- <a href="{{ route('ai.ask-ai') }}" class="btn btn-sm btn-success">
                                             <i class="fas fa-robot me-1"></i>Ask AI
                                         </a> --}}
-                                        <a href="{{ route('cases') }}" class="btn btn-sm btn-info">
+                                        <a href="{{ route('doctor.patient-management.index') }}" class="btn btn-sm btn-info">
                                             <i class="fas fa-folder me-1"></i>My Patient Management
                                         </a>
                                     @elseif($status === 'ready_to_subscribe')

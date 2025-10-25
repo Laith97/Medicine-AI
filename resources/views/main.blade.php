@@ -924,7 +924,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <a href="{{ route('doctors.index') }}" class="btn btn-theme-primary btn-lg">
                             <i class="fas fa-search me-2"></i>Find a Doctor
                         </a>
-                        <a href="{{ route('patient.register') }}" class="btn btn-theme-outline btn-lg">
+                        <a href="{{ route('register') }}" class="btn btn-theme-outline btn-lg">
                             <i class="fas fa-user-plus me-2"></i>Create Account
                         </a>
                     </div>

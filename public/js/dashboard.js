@@ -70,12 +70,12 @@ function showChartFallback() {
     });
 }
 
-// Initialize the cases over time chart
-function initializeCasesChart() {
+// Initialize the patient management over time chart
+function initializePatientManagementChart() {
     const labels = chartLabels;
     const data = chartData;
-    const chartElement = document.getElementById('casesChart');
-    if (!chartElement) return Promise.reject('Cases chart element not found');
+    const chartElement = document.getElementById('patientManagementChart');
+    if (!chartElement) return Promise.reject('Patient Management chart element not found');
 
     // Validate data
     if (!Array.isArray(labels) || !Array.isArray(data)) {
@@ -1273,7 +1273,7 @@ function setupExportFunctionality() {
 
     // Export table to CSV
     function exportTableToCSV(filename) {
-        const table = document.getElementById('cases-table');
+        const table = document.getElementById('patient-management-table');
         if (!table) return;
 
         const rows = table.querySelectorAll('tr');

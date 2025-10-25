@@ -51,7 +51,7 @@
                                 <a href="{{ route('settings') }}" class="btn btn-outline-secondary">
                                     <i class="fas fa-cog me-2"></i>Settings
                                 </a>
-                                <a href="{{ route('cases') }}" class="btn btn-outline-info">
+                                <a href="{{ route('doctor.patient-management.index') }}" class="btn btn-outline-info">
                                     <i class="fas fa-folder-open me-2"></i>Patient Management
                                 </a>
                                 @if(auth()->user()->canAccessRoute('doctor.appointments.index'))
