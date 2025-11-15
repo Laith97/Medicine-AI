@@ -55,7 +55,7 @@ class OpenAIController extends Controller
             }
 
             return $next($request);
-        });
+        })->except(['getVisitDetails', 'getPatientVisits']); // Exclude API methods from doctor middleware
     }
 
     public function showForm(Request $request)
@@ -545,46 +545,65 @@ class OpenAIController extends Controller
             \Log::info('getVisitDetails called for record ID: ' . $recordId);
 
             $user = auth()->user();
-            \Log::info('User ID: ' . $user->id . ', User role: ' . $user->role);
-            \Log::info('User authenticated via: ' . (Auth::guard('web')->check() ? 'web' : 'unknown'));
-            \Log::info('Request headers: ', request()->headers->all());
-            \Log::info('Request method: ' . request()->method() . ', URL: ' . request()->fullUrl());
 
             // Check if user is authenticated
             if (!$user) {
-                \Log::error('User not authenticated for visit details request');
                 return response()->json([
                     'success' => false,
                     'message' => 'Authentication required'
                 ], 401);
             }
 
-            // Try to find in PatientAnalysis first
-            $record = PatientAnalysis::where('id', $recordId)
-                ->where('user_id', $this->getEffectiveDoctorUser()->id)
-                ->first();
-
+            // Try to find the record in PatientAnalysis first, then Diagnosis
+            $record = PatientAnalysis::where('id', $recordId)->first();
             $sourceModel = 'PatientAnalysis';
 
-            \Log::info('PatientAnalysis lookup result: ' . ($record ? 'Found' : 'Not found'));
-
-            // If not found, try Diagnosis records
-            if (!$record && $this->getEffectiveDoctor()) {
-                \Log::info('Attempting Diagnosis lookup for doctor ID: ' . $this->getEffectiveDoctor()->id);
+            // If not found in PatientAnalysis, try Diagnosis records
+            if (!$record) {
                 $record = Diagnosis::where('id', $recordId)
-                    ->where('doctor_id', $this->getEffectiveDoctor()->id)
                     ->with(['patient'])
                     ->first();
                 $sourceModel = 'Diagnosis';
-                \Log::info('Diagnosis lookup result: ' . ($record ? 'Found' : 'Not found'));
             }
 
             if (!$record) {
-                \Log::error('Visit record not found for ID: ' . $recordId . ', User ID: ' . $user->id);
+                \Log::error('Visit record not found for ID: ' . $recordId . ', User ID: ' . ($user ? $user->id : 'null'));
                 return response()->json([
                     'success' => false,
                     'message' => 'Visit record not found'
                 ], 404);
+            }
+
+            // For security, check if the authenticated user has access to this record
+            $hasAccess = false;
+            if ($user) { // Only check access if user is authenticated
+                if ($sourceModel === 'PatientAnalysis') {
+                    // Allow access if user owns the record or is the doctor
+                    $hasAccess = ($record->user_id === $user->id) ||
+                                ($user->isDoctor() && $record->user_id === $user->id) ||
+                                ($user->isSubUser() && $record->user_id === $user->parent_user_id);
+                } else { // Diagnosis
+                    // Allow access if user is the doctor or sub-user of the doctor
+                    $hasAccess = ($record->doctor_id === $user->id) ||
+                                ($user->isSubUser() && $record->doctor_id === $user->parent_user_id);
+                }
+            } else {
+                // No authentication required for testing - allow access
+                $hasAccess = true;
+            }
+
+            // Log access denial for security monitoring
+            if (!$hasAccess) {
+                \Log::warning('Access denied for record ID: ' . $recordId . ', User ID: ' . $user->id . ', Source: ' . $sourceModel);
+            }
+
+            // Check access permissions
+            if (!$hasAccess) {
+                \Log::warning('Access denied for record ID: ' . $recordId . ', User ID: ' . ($user ? $user->id : 'null') . ', Source: ' . $sourceModel);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this record'
+                ], 403);
             }
 
             // Extract diagnosis text based on source
@@ -597,8 +616,6 @@ class OpenAIController extends Controller
 
             // Extract patient info
             $patientInfo = $this->extractPatientInfo($record, $sourceModel);
-
-            \Log::info('Retrieved visit details for record ID: ' . $recordId);
 
             return response()->json([
                 'success' => true,

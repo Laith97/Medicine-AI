@@ -11,11 +11,11 @@
     <div class="row justify-content-center">
         <div class="col-12">
             <!-- Page Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2><i class="fas fa-clipboard-list me-2"></i>My Diagnoses</h2>
-                    <p class="text-muted">Manage and view all diagnoses you've created</p>
-                </div>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2><i class="fas fa-clipboard-list me-2"></i>Diagnoses</h2>
+                        <p class="text-muted">Manage and view all diagnoses you've created</p>
+                    </div>
                 <a href="{{ route('diagnosis.create') }}" class="btn btn-primary">
                     <i class="fas fa-plus me-2"></i>Create New Diagnosis
                 </a>

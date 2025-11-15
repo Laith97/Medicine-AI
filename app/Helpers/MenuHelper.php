@@ -119,7 +119,7 @@ class MenuHelper
                 'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => [
                     [
-                        'name' => 'Patient Records',
+                        'name' => 'Doctor Notes',
                         'route' => 'doctor.notes.index',
                         'icon' => 'fas fa-sticky-note',
                         'permission' => 'notes',
@@ -335,7 +335,7 @@ class MenuHelper
                 'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
                 'items' => [
                     [
-                        'name' => 'Patient Records',
+                        'name' => 'Doctor Notes',
                         'route' => 'doctor.notes.index',
                         'icon' => 'fas fa-sticky-note',
                     ],
