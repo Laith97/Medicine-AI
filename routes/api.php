@@ -67,8 +67,10 @@ Route::middleware(['auth', 'web'])->group(function () {
     // AI-powered claims features
     Route::post('/ai/code-suggestions', [BillingController::class, 'getCodeSuggestions']);
     Route::post('/ai/denial-prediction', [BillingController::class, 'getDenialPrediction']);
+});
 
-    // Patient cases and visit history API routes
+// Patient cases and visit history API routes
+Route::middleware(['auth', 'web'])->group(function () {
     Route::get('/doctor/patient-management/patient-visits/{patientKey}', [\App\Http\Controllers\OpenAIController::class, 'getPatientVisits']);
     Route::get('/doctor/patient-management/visit-history/{id}', [\App\Http\Controllers\OpenAIController::class, 'getVisitDetails']);
 });
