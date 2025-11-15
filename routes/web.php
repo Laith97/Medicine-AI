@@ -82,7 +82,12 @@ if (config('app.debug')) {
 }
 
 Route::get('/', function () {
-    // Always show pricing section for SaaS model
+    // Redirect authenticated users to dashboard
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+
+    // Show homepage for guests only
     $showPricingSection = SystemSetting::get('show_pricing_section', true);
 
     // Get dynamic pricing from system settings
