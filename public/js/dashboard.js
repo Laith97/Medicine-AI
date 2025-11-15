@@ -40,15 +40,18 @@ function initializeCharts() {
             return;
         }
 
-        // Initialize the main charts with error handling
-        Promise.all([
-            initializeCasesChart(),
-            initializeVisitsTimelineChart(),
-            initializeDemographicsChart(),
-            initializeAgeDistributionChart()
-        ]).then(() => {
+        // Initialize the main charts with error handling - each chart fails independently
+        const chartPromises = [
+            initializePatientManagementChart().catch(() => showChartFallbackFor('patientManagementChart')),
+            initializeVisitsTimelineChart().catch(() => showChartFallbackFor('visitsTimelineChart')),
+            initializeDemographicsChart().catch(() => showChartFallbackFor('demographicsChart')),
+            initializeAgeDistributionChart().catch(() => showChartFallbackFor('ageDistributionChart'))
+        ];
+
+        Promise.all(chartPromises).then(() => {
         }).catch(error => {
-            showChartFallback();
+            // Only show general fallback if all charts fail
+            console.error('Chart initialization error:', error);
         });
 
     } catch (error) {
@@ -68,6 +71,20 @@ function showChartFallback() {
             </div>
         `;
     });
+}
+
+// Individual chart fallback function
+function showChartFallbackFor(chartId) {
+    const container = document.getElementById(chartId);
+    if (container) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-chart-line fa-2x mb-2"></i>
+                <p>Chart temporarily unavailable</p>
+                <small>Please refresh the page</small>
+            </div>
+        `;
+    }
 }
 
 // Initialize the patient management over time chart

@@ -39,11 +39,21 @@
                 ];
             @endphp
             <div class="text-end">
-                <span class="badge {{ $statusColors[$appointment->status] ?? 'bg-secondary' }} fs-6 px-3 py-2 shadow-sm">
-                    <i class="{{ $statusIcons[$appointment->status] ?? 'fas fa-question-circle' }} me-1"></i>
-                    {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
-                </span>
-                <div class="mt-2">
+                <div class="d-flex flex-column align-items-end">
+                    <span class="badge {{ $statusColors[$appointment->status] ?? 'bg-secondary' }} fs-6 px-3 py-2 shadow-sm mb-2">
+                        <i class="{{ $statusIcons[$appointment->status] ?? 'fas fa-question-circle' }} me-1"></i>
+                        {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
+                        @if($appointment->status == 'completed')
+                        <i class="fas fa-check-circle ms-1 text-white"></i>
+                        @endif
+                    </span>
+                    @if($appointment->status == 'completed')
+                    <div class="bg-success bg-opacity-25 px-3 py-1 rounded-pill mb-2">
+                        <small class="text-white fw-semibold">
+                            <i class="fas fa-trophy me-1"></i>Successfully Completed
+                        </small>
+                    </div>
+                    @endif
                     <small class="text-white-50">
                         <i class="fas fa-calendar-alt me-1"></i>{{ $appointment->appointment_date->format('l, F j, Y') }}
                     </small>
@@ -96,6 +106,50 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Next Steps Section for Completed Appointments -->
+                @if($appointment->status == 'completed')
+                <div class="table-card mb-4 shadow-lg border-0" style="border-radius: 15px; overflow: hidden;">
+                    <div class="bg-gradient-success text-white p-4" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-1 fw-bold">
+                                    <i class="fas fa-check-double me-2"></i>Appointment Completed Successfully
+                                </h4>
+                                <p class="mb-0 opacity-90 small">What would you like to do next?</p>
+                            </div>
+                            <div class="text-end">
+                                <i class="fas fa-rocket fa-3x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <a href="#ai-analytics" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 shadow-sm" style="border-radius: 12px; text-decoration: none; min-height: 120px;">
+                                    <i class="fas fa-brain fa-2x mb-2 text-primary"></i>
+                                    <span class="fw-bold">AI Analytics</span>
+                                    <small class="text-muted">View risk predictions & insights</small>
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="#prescriptions" class="btn btn-outline-success btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 shadow-sm" style="border-radius: 12px; text-decoration: none; min-height: 120px;">
+                                    <i class="fas fa-prescription-bottle fa-2x mb-2 text-success"></i>
+                                    <span class="fw-bold">Prescriptions</span>
+                                    <small class="text-muted">Manage medications</small>
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="{{ route('doctor.follow-ups.create', $appointment) }}" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 shadow-sm" style="border-radius: 12px; text-decoration: none; min-height: 120px;">
+                                    <i class="fas fa-calendar-plus fa-2x mb-2 text-info"></i>
+                                    <span class="fw-bold">Follow-ups</span>
+                                    <small class="text-muted">Schedule next appointment</small>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
 
                 <!-- Doctor Information -->
                 <div class="table-card mb-4 shadow-sm">
@@ -230,12 +284,23 @@
                 </div>
 
                 <!-- Predictive Analytics Section -->
-                <div class="table-card mb-4 shadow-lg border-0" style="border-radius: 15px; overflow: hidden;">
+                <div id="ai-analytics" class="table-card mb-4 shadow-lg border-0" style="border-radius: 15px; overflow: hidden;">
                     <div class="bg-gradient-info text-white p-4" style="background: linear-gradient(135deg, #DE6262 0%, #c54545 100%);">
-                        <h4 class="mb-0 fw-bold">
-                            <i class="fas fa-brain me-2"></i>AI Predictive Analytics
-                        </h4>
-                        <p class="mb-0 opacity-90 small">Machine Learning Risk Assessment</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0 fw-bold">
+                                    <i class="fas fa-brain me-2"></i>AI Predictive Analytics
+                                </h4>
+                                <p class="mb-0 opacity-90 small">Machine Learning Risk Assessment</p>
+                            </div>
+                            @if($appointment->status == 'completed')
+                            <div class="text-end">
+                                <span class="badge bg-success fs-6 px-3 py-2 shadow-sm">
+                                    <i class="fas fa-check-circle me-1"></i>Analysis Complete
+                                </span>
+                            </div>
+                            @endif
+                        </div>
                     </div>
                     <div class="p-4">
                         <h5 class="mb-4 text-primary fw-bold">
@@ -333,9 +398,25 @@
 
                 <!-- Prescriptions Section -->
                 @if(auth()->check() && auth()->user()->isDoctor())
-                <div class="table-card mb-4">
+                <div id="prescriptions" class="table-card mb-4">
                     <div class="bg-success text-white p-4 rounded-top">
-                        <h4 class="mb-0 fw-bold">Prescriptions</h4>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0 fw-bold">
+                                    <i class="fas fa-prescription-bottle me-2"></i>Prescriptions
+                                </h4>
+                                @if($appointment->status == 'completed')
+                                <p class="mb-0 opacity-90 small">Manage patient medications and treatments</p>
+                                @endif
+                            </div>
+                            @if($appointment->status == 'completed')
+                            <div class="text-end">
+                                <span class="badge bg-primary fs-6 px-3 py-2 shadow-sm">
+                                    <i class="fas fa-plus-circle me-1"></i>Ready to Prescribe
+                                </span>
+                            </div>
+                            @endif
+                        </div>
                     </div>
                     <div class="p-4">
                         @if($appointment->prescriptions && $appointment->prescriptions->count() > 0)
@@ -430,123 +511,259 @@
                         
                         <hr class="my-4">
                         
-                        <h5 class="mb-3">Add New Prescription</h5>
-                        
-                        <form id="prescriptionForm" method="POST" action="{{ route('doctor.prescriptions.store', $appointment->id) }}">
-                            @csrf
-                        
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-6">
-                                    <label for="medication_name" class="form-label fw-semibold">Medication Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="medication_name" name="medication_name" required>
+                        <!-- Prescription Workflow Header -->
+                        <div class="bg-light p-3 rounded mb-4 border">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="mb-0 text-primary fw-bold">
+                                    <i class="fas fa-prescription-bottle me-2"></i>Add New Prescription
+                                </h5>
+                                <button type="button" class="btn btn-outline-info btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#prescriptionHelpModal">
+                                    <i class="fas fa-question-circle me-1"></i>How to Use
+                                </button>
+                            </div>
+
+                            <!-- Quick Workflow Selector -->
+                            <div class="row g-2">
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-outline-success btn-sm workflow-btn active" data-workflow="manual">
+                                        <i class="fas fa-user-md me-1"></i>Manual Entry
+                                    </button>
                                 </div>
-                                <div class="col-md-6">
-                                    <label for="dosage" class="form-label fw-semibold">Dosage <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="dosage" name="dosage" placeholder="e.g., 500mg" required>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-outline-primary btn-sm workflow-btn" data-workflow="ai-first">
+                                        <i class="fas fa-brain me-1"></i>AI First
+                                    </button>
                                 </div>
-                                <div class="col-md-4">
-                                    <label for="form" class="form-label fw-semibold">Form <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="form" name="form" required>
-                                        <option value="">Select form</option>
-                                        <option value="tablet">Tablet</option>
-                                        <option value="capsule">Capsule</option>
-                                        <option value="liquid">Liquid</option>
-                                        <option value="injection">Injection</option>
-                                        <option value="cream">Cream/Ointment</option>
-                                        <option value="inhaler">Inhaler</option>
-                                        <option value="patch">Patch</option>
-                                        <option value="other">Other</option>
-                                    </select>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-outline-info btn-sm workflow-btn" data-workflow="ai-assisted">
+                                        <i class="fas fa-handshake me-1"></i>AI Assisted
+                                    </button>
                                 </div>
-                                <div class="col-md-4">
-                                    <label for="route" class="form-label fw-semibold">Route <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="route" name="route" required>
-                                        <option value="">Select route</option>
-                                        <option value="oral">Oral</option>
-                                        <option value="topical">Topical</option>
-                                        <option value="intravenous">Intravenous</option>
-                                        <option value="intramuscular">Intramuscular</option>
-                                        <option value="subcutaneous">Subcutaneous</option>
-                                        <option value="inhalation">Inhalation</option>
-                                        <option value="rectal">Rectal</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="quantity" class="form-label fw-semibold">Quantity <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" id="quantity" name="quantity" placeholder="e.g., 30" min="1" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="frequency" class="form-label fw-semibold">Frequency <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="frequency" name="frequency" required>
-                                        <option value="">Select frequency</option>
-                                        <option value="once daily">Once daily</option>
-                                        <option value="twice daily">Twice daily</option>
-                                        <option value="three times daily">Three times daily</option>
-                                        <option value="four times daily">Four times daily</option>
-                                        <option value="every 6 hours">Every 6 hours</option>
-                                        <option value="every 8 hours">Every 8 hours</option>
-                                        <option value="every 12 hours">Every 12 hours</option>
-                                        <option value="as needed">As needed</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="duration" class="form-label fw-semibold">Duration <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="duration" name="duration" required>
-                                        <option value="">Select duration</option>
-                                        <option value="3 days">3 days</option>
-                                        <option value="7 days">7 days</option>
-                                        <option value="10 days">10 days</option>
-                                        <option value="14 days">14 days</option>
-                                        <option value="1 month">1 month</option>
-                                        <option value="2 months">2 months</option>
-                                        <option value="3 months">3 months</option>
-                                        <option value="6 months">6 months</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="refills" class="form-label fw-semibold">Refills</label>
-                                    <input type="number" class="form-control" id="refills" name="refills" placeholder="0" min="0" value="0">
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="start_date" class="form-label fw-semibold">Start Date</label>
-                                    <input type="date" class="form-control" id="start_date" name="start_date">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="indication" class="form-label fw-semibold">Indication</label>
-                                    <input type="text" class="form-control" id="indication" name="indication" placeholder="e.g., Hypertension">
-                                </div>
-                                <div class="col-md-6 d-flex align-items-center">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="generic_allowed" name="generic_allowed" value="1" checked>
-                                        <label class="form-check-label" for="generic_allowed">
-                                            Allow generic substitution
-                                        </label>
-                                    </div>
-                                </div>
-                                @if(config('ai.prescription_suggestions.enabled', true))
-                                    @include('ai.prescription_suggestion')
-                                @endif
-                                <div class="col-md-6">
-                                    <label for="instructions" class="form-label fw-semibold">Specific Instructions</label>
-                                    <textarea class="form-control" id="instructions" name="instructions" rows="2" placeholder="e.g., Take with food, avoid alcohol"></textarea>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="notes" class="form-label fw-semibold">Additional Notes</label>
-                                    <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Additional instructions or special considerations..."></textarea>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-outline-warning btn-sm workflow-btn" data-workflow="explore">
+                                        <i class="fas fa-search me-1"></i>Explore AI
+                                    </button>
                                 </div>
                             </div>
-                        
-                        
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-plus me-1"></i>Save Prescription
-                                </button>
-                                <button type="button" class="btn btn-secondary" onclick="resetPrescriptionForm()">
-                                    <i class="fas fa-undo me-1"></i>Reset Form
-                                </button>
+
+                            <!-- Workflow Description -->
+                            <div id="workflow-description" class="mt-2 small text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <span id="workflow-text">Manual Entry: Fill the form directly with your prescription details.</span>
+                            </div>
+                        </div>
+
+                        <form id="prescriptionForm" method="POST" action="{{ route('doctor.prescriptions.store', $appointment->id) }}">
+                            @csrf
+
+                            <!-- Essential Information Section -->
+                            <div class="mb-4">
+                                <h6 class="text-primary fw-bold mb-3">
+                                    <i class="fas fa-pills me-2"></i>Medication Details
+                                    <span class="badge bg-danger ms-2">Required</span>
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="medication_name" class="form-label fw-semibold">
+                                            Medication Name <span class="text-danger">*</span>
+                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Enter the exact medication name as it appears on the drug label"></i>
+                                        </label>
+                                        <input type="text" class="form-control" id="medication_name" name="medication_name" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="dosage" class="form-label fw-semibold">
+                                            Dosage <span class="text-danger">*</span>
+                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="e.g., 500mg, 10mg/ml, 0.5% cream"></i>
+                                        </label>
+                                        <input type="text" class="form-control" id="dosage" name="dosage" placeholder="e.g., 500mg" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="form" class="form-label fw-semibold">
+                                            Form <span class="text-danger">*</span>
+                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Physical form of the medication"></i>
+                                        </label>
+                                        <select class="form-select" id="form" name="form" required>
+                                            <option value="">Select form</option>
+                                            <option value="tablet">Tablet</option>
+                                            <option value="capsule">Capsule</option>
+                                            <option value="liquid">Liquid/Syrup</option>
+                                            <option value="injection">Injection</option>
+                                            <option value="cream">Cream/Ointment</option>
+                                            <option value="inhaler">Inhaler</option>
+                                            <option value="patch">Patch</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="route" class="form-label fw-semibold">
+                                            Route <span class="text-danger">*</span>
+                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="How the medication is administered"></i>
+                                        </label>
+                                        <select class="form-select" id="route" name="route" required>
+                                            <option value="">Select route</option>
+                                            <option value="oral">Oral (by mouth)</option>
+                                            <option value="topical">Topical (skin)</option>
+                                            <option value="intravenous">Intravenous</option>
+                                            <option value="intramuscular">Intramuscular</option>
+                                            <option value="subcutaneous">Subcutaneous</option>
+                                            <option value="inhalation">Inhalation</option>
+                                            <option value="rectal">Rectal</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="quantity" class="form-label fw-semibold">
+                                            Quantity <span class="text-danger">*</span>
+                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Total number of units to dispense"></i>
+                                        </label>
+                                        <input type="number" class="form-control" id="quantity" name="quantity" placeholder="e.g., 30" min="1" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Administration Section -->
+                            <div class="mb-4">
+                                <h6 class="text-primary fw-bold mb-3">
+                                    <i class="fas fa-clock me-2"></i>Administration Schedule
+                                    <span class="badge bg-danger ms-2">Required</span>
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="frequency" class="form-label fw-semibold">
+                                            Frequency <span class="text-danger">*</span>
+                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="How often the medication should be taken"></i>
+                                        </label>
+                                        <select class="form-select" id="frequency" name="frequency" required>
+                                            <option value="">Select frequency</option>
+                                            <option value="once daily">Once daily</option>
+                                            <option value="twice daily">Twice daily</option>
+                                            <option value="three times daily">Three times daily</option>
+                                            <option value="four times daily">Four times daily</option>
+                                            <option value="every 6 hours">Every 6 hours</option>
+                                            <option value="every 8 hours">Every 8 hours</option>
+                                            <option value="every 12 hours">Every 12 hours</option>
+                                            <option value="as needed">As needed (PRN)</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="duration" class="form-label fw-semibold">
+                                            Duration <span class="text-danger">*</span>
+                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="How long the medication should be taken"></i>
+                                        </label>
+                                        <select class="form-select" id="duration" name="duration" required>
+                                            <option value="">Select duration</option>
+                                            <option value="3 days">3 days</option>
+                                            <option value="7 days">7 days</option>
+                                            <option value="10 days">10 days</option>
+                                            <option value="14 days">14 days</option>
+                                            <option value="1 month">1 month</option>
+                                            <option value="2 months">2 months</option>
+                                            <option value="3 months">3 months</option>
+                                            <option value="6 months">6 months</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- AI Clinical Support Section - Enhanced for completed appointments -->
+                            @if(config('ai.prescription_suggestions.enabled', true))
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="text-primary fw-bold mb-0">
+                                            <i class="fas fa-brain me-2"></i>AI Clinical Support
+                                            <span class="badge bg-warning text-dark ms-2">Optional</span>
+                                        </h6>
+                                        @if($appointment->status == 'completed')
+                                        <small class="text-muted">
+                                            <i class="fas fa-lightbulb text-warning me-1"></i>AI can suggest medications based on appointment data
+                                        </small>
+                                        @endif
+                                    </div>
+                                    @include('ai.prescription_suggestion')
+                                </div>
+                            @endif
+
+                            <!-- Additional Options Section -->
+                            <div class="mb-4">
+                                <h6 class="text-primary fw-bold mb-3">
+                                    <i class="fas fa-cogs me-2"></i>Additional Options
+                                    <span class="badge bg-info ms-2">Optional</span>
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="refills" class="form-label fw-semibold">
+                                            Refills
+                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Number of times the prescription can be refilled"></i>
+                                        </label>
+                                        <input type="number" class="form-control" id="refills" name="refills" placeholder="0" min="0" value="0">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="start_date" class="form-label fw-semibold">
+                                            Start Date
+                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="When the medication should begin (leave empty for immediate)"></i>
+                                        </label>
+                                        <input type="date" class="form-control" id="start_date" name="start_date">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="indication" class="form-label fw-semibold">
+                                            Indication
+                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Medical condition being treated"></i>
+                                        </label>
+                                        <input type="text" class="form-control" id="indication" name="indication" placeholder="e.g., Hypertension">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="generic_allowed" name="generic_allowed" value="1" checked>
+                                            <label class="form-check-label fw-semibold" for="generic_allowed">
+                                                <i class="fas fa-info-circle text-muted me-1" data-bs-toggle="tooltip" title="Allow pharmacist to substitute with generic equivalent"></i>
+                                                Allow generic substitution
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Instructions & Notes Section -->
+                            <div class="mb-4">
+                                <h6 class="text-primary fw-bold mb-3">
+                                    <i class="fas fa-sticky-note me-2"></i>Instructions & Notes
+                                    <span class="badge bg-info ms-2">Recommended</span>
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="instructions" class="form-label fw-semibold">
+                                            Specific Instructions
+                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Patient-specific directions (e.g., take with food, timing)"></i>
+                                        </label>
+                                        <textarea class="form-control" id="instructions" name="instructions" rows="2" placeholder="e.g., Take with food, avoid alcohol, take at bedtime"></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="notes" class="form-label fw-semibold">
+                                            Additional Notes
+                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Clinical notes, monitoring requirements, or special considerations"></i>
+                                        </label>
+                                        <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Additional instructions or special considerations..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex gap-2 justify-content-between align-items-center">
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary btn-lg fw-semibold">
+                                        <i class="fas fa-save me-2"></i>Save Prescription
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary fw-semibold" onclick="resetPrescriptionForm()">
+                                        <i class="fas fa-undo me-2"></i>Reset Form
+                                    </button>
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="fas fa-shield-alt me-1"></i>
+                                    All prescriptions require clinical review and approval
+                                </div>
                             </div>
                         </form>
                     </div>
@@ -626,12 +843,17 @@
                                 </div>
                             @endif
 
-                            @if($appointment->status == 'completed' && $appointment->doctor_notes)
+                            @if($appointment->status == 'completed')
                                 <div class="timeline-item d-flex">
-                                    <div class="timeline-marker bg-info rounded-circle shadow-sm me-3" style="width: 16px; height: 16px; margin-top: 6px;"></div>
+                                    <div class="timeline-marker bg-success rounded-circle shadow-sm me-3" style="width: 16px; height: 16px; margin-top: 6px;"></div>
                                     <div class="timeline-content flex-grow-1">
-                                        <h6 class="mb-1 fw-semibold">Appointment Completed</h6>
-                                        <small class="text-muted">Doctor notes added</small>
+                                        <h6 class="mb-1 fw-semibold text-success">
+                                            <i class="fas fa-check-circle me-1"></i>Appointment Completed Successfully
+                                        </h6>
+                                        <small class="text-muted">{{ $appointment->updated_at->format('M j, Y \a\t g:i A') }}</small>
+                                        @if($appointment->doctor_notes)
+                                            <br><small class="text-muted">Doctor notes added</small>
+                                        @endif
                                     </div>
                                 </div>
                             @endif
@@ -684,6 +906,164 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDeletePrescription()">Delete Prescription</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prescription Help Modal -->
+<div class="modal fade" id="prescriptionHelpModal" tabindex="-1" aria-labelledby="prescriptionHelpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="prescriptionHelpModalLabel">
+                    <i class="fas fa-prescription-bottle me-2"></i>How to Use the Prescription Feature
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Overview:</strong> This feature allows you to create medication prescriptions for patients. You can work manually or use AI assistance for clinical decision support.
+                </div>
+
+                <h6 class="text-success mb-3"><i class="fas fa-list-ol me-2"></i>Four Ways to Create Prescriptions:</h6>
+
+                <!-- Scenario 1 -->
+                <div class="card border-success mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-user-md me-2"></i>Scenario 1: Manual Entry (For Experienced Doctors)</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2"><strong>When to use:</strong> When you already know exactly what medication to prescribe.</p>
+                        <div class="bg-light p-3 rounded">
+                            <strong>Steps:</strong>
+                            <ol class="mb-0">
+                                <li>Fill out the prescription form manually with medication details</li>
+                                <li><strong>Do NOT press the AI button</strong></li>
+                                <li>Click "Save Prescription"</li>
+                            </ol>
+                        </div>
+                        <small class="text-muted">Example: Prescribing regular blood pressure medication for a known patient.</small>
+                    </div>
+                </div>
+
+                <!-- Scenario 2 -->
+                <div class="card border-primary mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-brain me-2"></i>Scenario 2: AI-First Approach (For Complex Cases)</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2"><strong>When to use:</strong> When you need AI suggestions before filling any form fields.</p>
+                        <div class="bg-light p-3 rounded">
+                            <strong>Steps:</strong>
+                            <ol class="mb-0">
+                                <li><strong>Click "AI Clinical Support" button first</strong> (form can be empty)</li>
+                                <li>AI analyzes patient data and shows medication suggestions</li>
+                                <li>Review suggestions and click "Use Suggestion" to auto-fill the form</li>
+                                <li>Modify the auto-filled form if needed</li>
+                                <li>Click "Save Prescription"</li>
+                            </ol>
+                        </div>
+                        <small class="text-muted">Example: Patient with "severe headache, nausea, light sensitivity" - AI suggests migraine treatment.</small>
+                    </div>
+                </div>
+
+                <!-- Scenario 3 -->
+                <div class="card border-info mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-handshake me-2"></i>Scenario 3: AI-Assisted Entry (For Guidance)</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2"><strong>When to use:</strong> When you start manually but want AI to check for issues.</p>
+                        <div class="bg-light p-3 rounded">
+                            <strong>Steps:</strong>
+                            <ol class="mb-0">
+                                <li>Fill some fields in the prescription form manually</li>
+                                <li><strong>Click "AI Clinical Support" button</strong></li>
+                                <li>AI provides suggestions, warnings, or alternative options</li>
+                                <li>Accept AI suggestions to modify your form, or continue manually</li>
+                                <li>Click "Save Prescription"</li>
+                            </ol>
+                        </div>
+                        <small class="text-muted">Example: You enter "Amoxicillin" and AI warns about penicillin allergy risk.</small>
+                    </div>
+                </div>
+
+                <!-- Scenario 4 -->
+                <div class="card border-warning mb-3">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0"><i class="fas fa-search me-2"></i>Scenario 4: AI Exploration (Research Only)</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2"><strong>When to use:</strong> When you want to see AI suggestions but plan to prescribe differently.</p>
+                        <div class="bg-light p-3 rounded">
+                            <strong>Steps:</strong>
+                            <ol class="mb-0">
+                                <li><strong>Click "AI Clinical Support" button</strong></li>
+                                <li>Review AI suggestions for educational purposes</li>
+                                <li><strong>Click "Dismiss" on all suggestions</strong></li>
+                                <li>Fill the prescription form manually with your chosen medication</li>
+                                <li>Click "Save Prescription"</li>
+                            </ol>
+                        </div>
+                        <small class="text-muted">Example: AI suggests antibiotics for viral infection, but you prescribe symptom relief instead.</small>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <h6 class="text-primary mb-3"><i class="fas fa-database me-2"></i>What Data Does the AI Use?</h6>
+                <div class="alert alert-light border">
+                    <p class="mb-2"><strong>The AI analyzes clinical data that has already been documented, independent of the prescription form:</strong></p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="mb-0">
+                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Appointment Symptoms:</strong> What patient reported</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Doctor Notes:</strong> Your clinical observations</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Patient Allergies:</strong> Known sensitivities</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Past Medications:</strong> Previous prescriptions</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="mb-0">
+                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Recent Diagnosis:</strong> Latest medical findings</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Medical History:</strong> Chronic conditions</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">
+                        <strong>Note:</strong> If no clinical documentation exists, AI provides general preventive care recommendations.
+                    </small>
+                </div>
+
+                <div class="alert alert-danger">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    <strong>⚠️ CRITICAL SAFETY INFORMATION:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>AI suggestions are <strong>clinical decision support only</strong> - not automatic prescriptions</li>
+                        <li><strong>All final prescription decisions must be made by qualified healthcare professionals</strong></li>
+                        <li>Always verify patient allergies and contraindications before prescribing</li>
+                        <li>Check current medications for potential interactions</li>
+                        <li>Consider patient age, weight, and organ function</li>
+                        <li>AI confidence levels (High/Medium/Low) help guide but don't replace clinical judgment</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>💡 Pro Tips:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Use "Reset Form" button to clear everything and start over</li>
+                        <li>AI suggestions include dosage, frequency, and duration recommendations</li>
+                        <li>You can modify any AI-suggested values before saving</li>
+                        <li>Always review AI warnings and interactions carefully</li>
+                        <li>The prescription form works independently - you can prescribe without AI</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -1082,5 +1462,47 @@ function resetFormField() {
         }
     });
 }
+
+// Workflow selector functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const workflowButtons = document.querySelectorAll('.workflow-btn');
+    const workflowText = document.getElementById('workflow-text');
+
+    const workflowDescriptions = {
+        'manual': 'Manual Entry: Fill the form directly with your prescription details.',
+        'ai-first': 'AI First: Click AI button first, then review and use suggestions to fill the form.',
+        'ai-assisted': 'AI Assisted: Fill some form fields, then use AI for additional guidance.',
+        'explore': 'Explore AI: Review AI suggestions for learning, then fill form manually.'
+    };
+
+    workflowButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            workflowButtons.forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+
+            // Update description
+            const workflow = this.dataset.workflow;
+            workflowText.textContent = workflowDescriptions[workflow];
+
+            // Optional: Show/hide AI section based on workflow
+            const aiSection = document.querySelector('.ai-section');
+            if (aiSection) {
+                if (workflow === 'manual') {
+                    aiSection.style.display = 'none';
+                } else {
+                    aiSection.style.display = 'block';
+                }
+            }
+        });
+    });
+
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
 </script>
 @endpush

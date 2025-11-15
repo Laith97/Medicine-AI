@@ -304,13 +304,12 @@ class Doctor extends Model
                 $slotEnd = $startTime->copy()->addMinutes($slot->slot_duration);
 
                 if ($slotEnd->lte($endTime)) {
-                    // Check if slot is already booked
-                    $existingAppointments = $this->appointments()
-                        ->where('appointment_date', $startTime)
-                        ->whereIn('status', ['pending', 'confirmed'])
-                        ->count();
+                    // Check if slot conflicts with existing appointments
+                    // For slot availability checking, we don't have patient context yet
+                    // so we only check this doctor's appointments
+                    $hasConflict = $this->hasAppointmentConflict($startTime, $slotEnd);
 
-                    if ($existingAppointments < $slot->max_bookings_per_slot) {
+                    if (!$hasConflict) {
                         $slots[] = [
                             'start_time' => $startTime->format('H:i'),
                             'end_time' => $slotEnd->format('H:i'),
@@ -325,6 +324,67 @@ class Doctor extends Model
         }
 
         return collect($slots)->sortBy('start_time')->values();
+    }
+
+    /**
+     * Check if a time slot conflicts with existing appointments
+     */
+    public function hasAppointmentConflict(Carbon $startTime, Carbon $endTime, $patientId = null)
+    {
+        // If patient ID is provided, check for conflicts across ALL doctors for this patient
+        if ($patientId) {
+            return $this->hasPatientAppointmentConflict($startTime, $endTime, $patientId);
+        }
+
+        // Otherwise, check only this doctor's appointments (legacy behavior)
+        $conflictingAppointments = $this->appointments()
+            ->whereNotIn('status', ['cancelled', 'completed', 'no_show'])
+            ->where(function ($query) use ($startTime, $endTime) {
+                // Case 1: Existing appointment starts within the new slot
+                $query->whereBetween('appointment_date', [$startTime, $endTime->copy()->subSecond()])
+                      // Case 2: Existing appointment ends within the new slot
+                      ->orWhere(function ($subQuery) use ($startTime, $endTime) {
+                          $subQuery->whereRaw('DATE_ADD(appointment_date, INTERVAL duration MINUTE) > ? AND DATE_ADD(appointment_date, INTERVAL duration MINUTE) <= ?',
+                                            [$startTime->toDateTimeString(), $endTime->toDateTimeString()]);
+                      })
+                      // Case 3: Existing appointment completely encompasses the new slot
+                      ->orWhere(function ($subQuery) use ($startTime, $endTime) {
+                          $subQuery->where('appointment_date', '<=', $startTime)
+                                   ->whereRaw('DATE_ADD(appointment_date, INTERVAL duration MINUTE) >= ?',
+                                            [$endTime->toDateTimeString()]);
+                      });
+            })
+            ->exists();
+
+        return $conflictingAppointments;
+    }
+
+    /**
+     * Check if a patient has any conflicting appointments across all doctors
+     */
+    public function hasPatientAppointmentConflict(Carbon $startTime, Carbon $endTime, $patientId)
+    {
+        // Check for any overlapping appointments for this patient across ALL doctors
+        $conflictingAppointments = \App\Models\Appointment::where('patient_id', $patientId)
+            ->whereNotIn('status', ['cancelled', 'completed', 'no_show'])
+            ->where(function ($query) use ($startTime, $endTime) {
+                // Case 1: Existing appointment starts within the new slot
+                $query->whereBetween('appointment_date', [$startTime, $endTime->copy()->subSecond()])
+                      // Case 2: Existing appointment ends within the new slot
+                      ->orWhere(function ($subQuery) use ($startTime, $endTime) {
+                          $subQuery->whereRaw('DATE_ADD(appointment_date, INTERVAL duration MINUTE) > ? AND DATE_ADD(appointment_date, INTERVAL duration MINUTE) <= ?',
+                                            [$startTime->toDateTimeString(), $endTime->toDateTimeString()]);
+                      })
+                      // Case 3: Existing appointment completely encompasses the new slot
+                      ->orWhere(function ($subQuery) use ($startTime, $endTime) {
+                          $subQuery->where('appointment_date', '<=', $startTime)
+                                   ->whereRaw('DATE_ADD(appointment_date, INTERVAL duration MINUTE) >= ?',
+                                            [$endTime->toDateTimeString()]);
+                      });
+            })
+            ->exists();
+
+        return $conflictingAppointments;
     }
 
     /**

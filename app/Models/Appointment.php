@@ -227,7 +227,7 @@ class Appointment extends Model
      */
     public function canBeCancelled()
     {
-        if (in_array($this->status, ['cancelled', 'completed'])) {
+        if (in_array($this->status, ['cancelled', 'completed', 'no_show'])) {
             return false;
         }
 
@@ -244,7 +244,7 @@ class Appointment extends Model
      */
     public function canBeRescheduled()
     {
-        if (in_array($this->status, ['cancelled', 'completed'])) {
+        if (in_array($this->status, ['cancelled', 'completed', 'no_show'])) {
             return false;
         }
 

@@ -7,7 +7,7 @@
     <div class="container">
         <!-- Header -->
         <div class="dashboard-header py-2 border-bottom">
-            <h2 class="h1 mb-1" style="font-weight: 700;">Doctor Notes</h2>
+            <h2 class="h1 mb-1" style="font-weight: 700;">Patient Records</h2>
             <p>View and manage doctor notes</p>
         </div>
 

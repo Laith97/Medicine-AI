@@ -95,6 +95,13 @@ class MenuHelper
                         'restricted' => true,
                     ],
                     [
+                        'name' => 'Recorded Voices',
+                        'route' => 'ai.voice-assistant.recorded-voices',
+                        'icon' => 'fas fa-history',
+                        'permission' => 'voice_assistant',
+                        'restricted' => true,
+                    ],
+                    [
                         'name' => 'Diagnoses',
                         'route' => 'diagnosis.index',
                         'icon' => 'fas fa-stethoscope',
@@ -305,6 +312,11 @@ class MenuHelper
                         'name' => 'Voice Assistant',
                         'route' => 'ai.voice-assistant.index',
                         'icon' => 'fas fa-microphone',
+                    ],
+                    [
+                        'name' => 'Recorded Voices',
+                        'route' => 'ai.voice-assistant.recorded-voices',
+                        'icon' => 'fas fa-history',
                     ],
                     [
                         'name' => 'Diagnoses',

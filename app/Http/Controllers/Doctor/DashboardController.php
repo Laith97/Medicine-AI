@@ -67,6 +67,14 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Get recently completed appointments
+        $recentCompletedAppointments = $doctor->appointments()
+            ->with(['patient.patientRiskScores'])
+            ->where('status', 'completed')
+            ->orderBy('completed_at', 'desc')
+            ->limit(5)
+            ->get();
+
         // Calculate statistics
         $stats = $this->getDashboardStats($doctor);
 
@@ -77,6 +85,7 @@ class DashboardController extends Controller
             'pendingAppointments',
             'recentReviews',
             'recentNotes',
+            'recentCompletedAppointments',
             'stats'
         ));
     }
@@ -198,7 +207,7 @@ class DashboardController extends Controller
             abort(403);
         }
 
-        if (in_array($appointment->status, ['cancelled', 'completed'])) {
+        if (in_array($appointment->status, ['cancelled', 'completed', 'no_show'])) {
             return back()->withErrors(['error' => 'This appointment cannot be cancelled.']);
         }
 
@@ -265,6 +274,30 @@ class DashboardController extends Controller
         $appointment->markAsNoShow();
 
         return back()->with('success', 'Appointment marked as no show.');
+    }
+
+    /**
+     * Toggle auto-approve appointments setting
+     */
+    public function toggleAutoApprove(Request $request)
+    {
+        $doctor = $this->getEffectiveDoctor();
+
+        $request->validate([
+            'auto_approve' => 'required|boolean'
+        ]);
+
+        $doctor->update([
+            'auto_approve_appointments' => $request->auto_approve
+        ]);
+
+        $status = $request->auto_approve ? 'enabled' : 'disabled';
+
+        return response()->json([
+            'success' => true,
+            'message' => "Auto-approve appointments {$status} successfully!",
+            'auto_approve' => $request->auto_approve
+        ]);
     }
 
     /**
@@ -442,6 +475,47 @@ class DashboardController extends Controller
     }
 
     /**
+     * Show completed appointment details
+     */
+    public function showCompletedAppointment(Appointment $appointment)
+    {
+        $doctor = $this->getEffectiveDoctor();
+
+        // Check if this appointment belongs to the doctor
+        if ($appointment->doctor_id !== $doctor->id) {
+            abort(403);
+        }
+
+        // Verify appointment is completed
+        if ($appointment->status !== 'completed') {
+            return redirect()->route('doctor.appointments.show', $appointment)
+                ->withErrors(['error' => 'This appointment is not completed yet.']);
+        }
+
+        // Log doctor access to patient appointment
+        if ($appointment->patient_id) {
+            \App\Services\AuditLoggingService::logDoctorAccessPatient(
+                $this->getEffectiveDoctorUser()->id,
+                $appointment->patient_id,
+                ['appointment_id' => $appointment->id]
+            );
+        }
+
+        // Load appointment with patient, prescriptions, and review
+        $appointment->load(['patient', 'prescriptions', 'review']);
+
+        // Generate risk predictions if they don't exist for this appointment
+        $this->ensureRiskPredictions($appointment);
+
+        // Reload appointment with risk scores
+        $appointment->load(['patient.patientRiskScores' => function($query) use ($appointment) {
+            $query->where('appointment_id', $appointment->id);
+        }]);
+
+        return view('doctor.appointments.completed', compact('appointment'));
+    }
+
+    /**
      * Ensure risk predictions exist for an appointment
      */
     private function ensureRiskPredictions(Appointment $appointment)
@@ -496,5 +570,69 @@ class DashboardController extends Controller
             // Cache failure for 5 minutes to avoid repeated attempts
             Cache::put($cacheKey, false, 300);
         }
+    }
+
+    /**
+     * Show form to create a follow-up appointment
+     */
+    public function createFollowUp(Appointment $appointment)
+    {
+        $doctor = $this->getEffectiveDoctor();
+
+        // Check if this appointment belongs to the doctor
+        if ($appointment->doctor_id !== $doctor->id) {
+            abort(403);
+        }
+
+        // Only allow follow-up creation for completed appointments
+        if ($appointment->status !== 'completed') {
+            return back()->withErrors(['error' => 'Follow-up appointments can only be created for completed appointments.']);
+        }
+
+        return view('doctor.appointments.create-follow-up', compact('appointment'));
+    }
+
+    /**
+     * Store a new follow-up appointment
+     */
+    public function storeFollowUp(Request $request, Appointment $appointment)
+    {
+        $doctor = $this->getEffectiveDoctor();
+
+        // Check if this appointment belongs to the doctor
+        if ($appointment->doctor_id !== $doctor->id) {
+            abort(403);
+        }
+
+        // Validate the request
+        $request->validate([
+            'appointment_date' => 'required|date|after:now',
+            'appointment_type' => 'required|in:video_call,phone_call,in_person,follow_up',
+            'consultation_fee' => 'required|numeric|min:0',
+            'reason' => 'required|string|max:1000',
+            'duration' => 'nullable|integer|min:15|max:240',
+        ]);
+
+        // Create new appointment as follow-up
+        $followUpAppointment = new Appointment();
+        $followUpAppointment->doctor_id = $doctor->id;
+        $followUpAppointment->patient_id = $appointment->patient_id;
+        $followUpAppointment->patient_name = $appointment->patient_name;
+        $followUpAppointment->patient_email = $appointment->patient_email;
+        $followUpAppointment->patient_phone = $appointment->patient_phone;
+        $followUpAppointment->appointment_date = $request->appointment_date;
+        $followUpAppointment->appointment_type = $request->appointment_type;
+        $followUpAppointment->consultation_fee = $request->consultation_fee * 100; // Convert to cents
+        $followUpAppointment->appointment_duration = $request->duration ?? 30;
+        $followUpAppointment->reason = $request->reason;
+        $followUpAppointment->status = 'pending';
+        $followUpAppointment->is_follow_up = true;
+        $followUpAppointment->original_appointment_id = $appointment->id;
+        $followUpAppointment->save();
+
+        // TODO: Send email notification to patient about new follow-up appointment
+
+        return redirect()->route('doctor.appointments.show', $appointment)
+            ->with('success', 'Follow-up appointment created successfully!');
     }
 }

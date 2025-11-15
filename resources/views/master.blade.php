@@ -1183,9 +1183,11 @@ body .dropdown .dropdown-menu.show,
     data-loader-html="<div id='css3-spinner-svg-pulse-wrapper'><svg id='css3-spinner-svg-pulse' version='1.2' height='210' width='550' xmlns='https://www.w3.org/2000/svg' viewport='0 0 60 60' xmlns:xlink='https://www.w3.org/1999/xlink'><path id='css3-spinner-pulse' stroke='#DE6262' fill='none' stroke-width='2' stroke-linejoin='round' d='M0,90L250,90Q257,60 262,87T267,95 270,88 273,92t6,35 7,-60T290,127 297,107s2,-11 10,-10 1,1 8,-10T319,95c6,4 8,-6 10,-17s2,10 9,11h210'></svg></div>">
 
     {{-- Sidebar CSS/JS --}}
+    @auth
     <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
     @include('layouts.sidebar')
-    <style>#header{display:none !important;}</style>
+    <style>#header{display:none !important;} #top-bar .top-bar-logo{display:none !important;}</style>
+    @endauth
 
 <!-- Prevent notification redirects after login -->
 <script>
@@ -1243,20 +1245,42 @@ body .dropdown .dropdown-menu.show,
 
         <!-- Top Bar Start -->
         <div id="top-bar" class="py-2 border-bottom"
-            style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white;">
+            style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; position: fixed; top: 0; left: 0; right: 0; z-index: 1050; width: 100%;">
             <div class="container">
                 <div class="row justify-content-between align-items-center">
 
-                    <!-- Left Side: Quick Info & Status -->
-                    <div class="col-md-auto d-none d-md-flex align-items-center gap-4 small">
-                        <div class="d-flex align-items-center">
-                            <div class="status-indicator bg-success rounded-circle me-2"
-                                style="width: 8px; height: 8px;"></div>
-                            <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
+                    <!-- Left Side: Logo & Navigation -->
+                    <div class="col-md-auto d-flex align-items-center gap-4">
+                        <!-- Logo in Top Bar -->
+                        <div class="top-bar-logo">
+                            <a href="{{ url('/') }}" class="d-flex align-items-center text-decoration-none">
+                                <img style="width: 120px; height: auto;" class="logo-default img-fluid"
+                                      srcset="{{ asset('demos/medical/images/logo-medical.png') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x"
+                                      src="{{ asset('demos/medical/images/logo-medical.png') }}"
+                                      alt="Medcura Logo">
+                            </a>
                         </div>
-                        <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
-                        <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com"
-                                class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
+
+                        <!-- Quick Info & Status / Navigation Links -->
+                        <div class="d-none d-md-flex align-items-center gap-4 small">
+                            @auth
+                            <div class="d-flex align-items-center">
+                                <div class="status-indicator bg-success rounded-circle me-2"
+                                    style="width: 8px; height: 8px;"></div>
+                                <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
+                            </div>
+                            <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
+                            <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com"
+                                    class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
+                            @else
+                            <div class="d-flex align-items-center gap-3">
+                                <a href="{{ url('/') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">Home</a>
+                                <a href="{{ route('about') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">About Us</a>
+                                <a href="{{ route('contact') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">Contact</a>
+                                <a href="{{ route('doctors.index') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">For Patients</a>
+                            </div>
+                            @endauth
+                        </div>
                     </div>
 
                     <!-- Right Side: Notifications & User Menu -->
@@ -1418,123 +1442,6 @@ body .dropdown .dropdown-menu.show,
     </div>
 </div>
 <!-- Top Bar End -->
-
-  <!-- Header
-  ============================================= -->
-<header id="header">
-    <div id="header-wrap">
-        <div class="container">
-            <div class="header-row d-flex align-items-center justify-content-between">
-
-                <!-- Logo and Desktop Nav Container -->
-                <div class="d-flex align-items-center flex-grow-1">
-                    <!-- Logo -->
-                    <div id="logo" class="me-4 flex-shrink-0">
-                        <a href="@auth{{ route('dashboard') }}@else{{ url('/') }}@endauth">
-                            <img style="width: 140px; height: auto;" class="logo-default img-fluid"
-                                 srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x"
-                                 src="{{ asset('demos/medical/images/logo-medical.jpeg') }}"
-                                 alt="Medcura Logo">
-                        </a>
-                    </div>
-
-                    <!-- Desktop Navigation -->
-                    <nav class="primary-menu style-3 menu-spacing-margin d-none d-lg-block mx-auto">
-                        <ul class="menu-container">
-                            @auth
-                                @if (Auth::guard('admin')->check())
-                                    <li
-                                        class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('admin.dashboard') }}">
-                                            <div>Dashboard</div>
-                                        </a>
-                                    </li>
-                                @else
-                                    @php
-                                        $menuItems = \App\Helpers\MenuHelper::getMenuItems(auth()->user());
-                                    @endphp
-
-                                    @foreach ($menuItems as $item)
-                                        @if (isset($item['dropdown']) && $item['dropdown'])
-                                            <!-- Dropdown Menu Item -->
-                                            <li class="menu-item {{ collect($item['items'])->contains(fn($subItem) => request()->routeIs($subItem['route'] ?? '')) ? 'current' : '' }}">
-                                                <a class="menu-link" href="#"><div>{{ $item['name'] }} <i class="fas fa-chevron-down"></i></div></a>
-                                                <ul class="sub-menu-container {{ $loop->last ? 'menu-pos-invert' : '' }}">
-                                                    @foreach($item['items'] as $subItem)
-                                                        <li class="menu-item {{ request()->routeIs($subItem['route'] ?? '') ? 'current' : '' }}">
-                                                            <a class="menu-link" href="{{ isset($subItem['route']) ? route($subItem['route']) : '#' }}">
-                                                                <div>
-                                                                    @if (isset($subItem['icon']))
-                                                                        <i
-                                                                            class="{{ $subItem['icon'] }} me-2"></i>
-                                                                    @endif
-                                                                    {{ $subItem['name'] }}
-                                                                </div>
-                                                            </a>
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
-                                            </li>
-                                        @else
-                                            <!-- Regular Menu Item -->
-                                            <li
-                                                class="menu-item {{ request()->routeIs($item['route'] ?? '') ? 'current' : '' }}">
-                                                <a class="menu-link"
-                                                    href="{{ isset($item['route']) ? route($item['route']) : '#' }}">
-                                                    <div>
-                                                        @if (isset($item['icon']))
-                                                            <i class="{{ $item['icon'] }} me-2"></i>
-                                                        @endif
-                                                        {{ $item['name'] }}
-                                                    </div>
-                                                </a>
-                                            </li>
-                                        @endif
-                                    @endforeach
-                                @endif
-                            @endauth
-
-                            @guest
-                                <li class="menu-item {{ request()->is('/') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ url('/') }}">
-                                        <div>Home</div>
-                                    </a>
-                                </li>
-                                <li class="menu-item {{ request()->is('about') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('about') }}">
-                                        <div>About Us</div>
-                                    </a>
-                                </li>
-                                <li class="menu-item {{ request()->is('contact') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('contact') }}">
-                                        <div>Contact</div>
-                                    </a>
-                                </li>
-                                <li class="menu-item {{ request()->is('doctors') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('doctors.index') }}">
-                                        <div>For Patients</div>
-                                    </a>
-                                </li>
-                            @endguest
-                        </ul>
-                    </nav>
-                </div>
-
-                <!-- Mobile Hamburger Button -->
-                <div class="primary-menu-trigger d-block d-lg-none flex-shrink-0 ms-auto">
-                    <button class="cnvs-hamburger" type="button" title="Open Mobile Menu">
-                        <span class="cnvs-hamburger-box"><span class="cnvs-hamburger-inner"></span></span>
-                    </button>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <div class="header-wrap-clone"></div>
-</header>
-
-
         <!-- Flash Messages -->
         @if (session('success') || session('error') || session('warning') || session('info'))
             <div class="container-fluid px-0">
@@ -1699,7 +1606,7 @@ body .dropdown .dropdown-menu.show,
         @endif
 
         <!-- Main Content -->
-        <div class="dashboard-container">
+        <div class="dashboard-container" style="padding-top: 70px;">
             <main class="app-main">
                 @yield('content')
             </main>
