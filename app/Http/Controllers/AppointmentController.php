@@ -123,6 +123,15 @@ class AppointmentController extends Controller
             return back()->withErrors(['appointment_date' => 'The selected time slot is no longer available.']);
         }
 
+        // Additional validation: Check for conflicts including time overlaps
+        $slotEndTime = $appointmentDate->copy()->addMinutes($doctor->appointment_duration);
+
+        // Check for conflicts with this doctor AND across all doctors for this patient
+        $patientId = Auth::check() ? Auth::id() : null;
+        if ($doctor->hasAppointmentConflict($appointmentDate, $slotEndTime, $patientId)) {
+            return back()->withErrors(['appointment_date' => 'This time slot conflicts with an existing appointment.']);
+        }
+
         DB::beginTransaction();
         try {
             $patientId = null;
@@ -321,6 +330,15 @@ class AppointmentController extends Controller
 
         if (!$requestedSlot) {
             return back()->withErrors(['new_appointment_date' => 'The selected time slot is not available.']);
+        }
+
+        // Additional validation: Check for conflicts including time overlaps
+        $slotEndTime = $newDate->copy()->addMinutes($doctor->appointment_duration);
+
+        // Check for conflicts with this doctor AND across all doctors for this patient
+        $patientId = Auth::check() ? Auth::id() : null;
+        if ($doctor->hasAppointmentConflict($newDate, $slotEndTime, $patientId)) {
+            return back()->withErrors(['new_appointment_date' => 'This time slot conflicts with an existing appointment.']);
         }
 
         DB::beginTransaction();

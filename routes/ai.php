@@ -11,7 +11,10 @@ Route::middleware(['auth', 'sub.user.permissions'])->prefix('ai')->name('ai.')->
     // Voice Assistant routes for AI prescription suggestions
     Route::prefix('voice-assistant')->name('voice-assistant.')->group(function () {
         Route::get('/', [VoiceAssistantController::class, 'index'])->name('index');
+        Route::get('/training', [VoiceAssistantController::class, 'training'])->name('training');
+        Route::get('/performance', [VoiceAssistantController::class, 'performance'])->name('performance');
         Route::get('/history', [VoiceAssistantController::class, 'history'])->name('history');
+        Route::get('/recorded-voices', [VoiceAssistantController::class, 'recordedVoices'])->name('recorded-voices');
         Route::get('/{transcription}', [VoiceAssistantController::class, 'show'])->name('show');
 
         // AJAX routes for jQuery implementation
@@ -22,8 +25,14 @@ Route::middleware(['auth', 'sub.user.permissions'])->prefix('ai')->name('ai.')->
         Route::post('/generate-ai-analysis', [VoiceAssistantController::class, 'generateAIAnalysis'])->name('generate-ai-analysis');
         Route::post('/create-ai-result', [VoiceAssistantController::class, 'createAiAssistantResult'])->name('create-ai-result');
         Route::post('/create-manual-diagnosis', [VoiceAssistantController::class, 'createManualDiagnosis'])->name('create-manual-diagnosis');
+        Route::post('/complete-appointment-with-diagnosis', [VoiceAssistantController::class, 'completeAppointmentWithDiagnosis'])->name('complete-appointment-with-diagnosis');
+        Route::post('/save-diagnosis-only', [VoiceAssistantController::class, 'saveDiagnosisOnly'])->name('save-diagnosis-only');
         Route::post('/create-new-patient', [VoiceAssistantController::class, 'createNewPatient'])->name('create-new-patient');
         Route::post('/reset-session', [VoiceAssistantController::class, 'resetSession'])->name('reset-session');
+        Route::post('/save-post-recording-diagnosis', [VoiceAssistantController::class, 'savePostRecordingDiagnosis'])->name('save-post-recording-diagnosis');
+        Route::post('/save-diagnosis-and-complete', [VoiceAssistantController::class, 'saveDiagnosisAndComplete'])->name('save-diagnosis-and-complete');
+        Route::post('/complete-consultation', [VoiceAssistantController::class, 'completeConsultation'])->name('complete-consultation');
+        Route::post('/process-audio-server', [VoiceAssistantController::class, 'processAudioServer'])->name('process-audio-server');
     });
 
     // AI suggestion route for appointments (prescription suggestions)

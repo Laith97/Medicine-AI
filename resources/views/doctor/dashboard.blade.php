@@ -159,6 +159,46 @@
             </div>
         </div>
 
+        <!-- Recently Completed Appointments -->
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="table-card">
+                    <h6 class="mb-3"><i class="fas fa-check-circle me-2"></i>Recently Completed Appointments</h6>
+                    @if(isset($recentCompletedAppointments) && $recentCompletedAppointments->count() > 0)
+                        @foreach($recentCompletedAppointments->take(5) as $appointment)
+                            <div class="d-flex align-items-center p-3 border rounded mb-3 bg-light-success">
+                                <!-- Completion Info -->
+                                <div class="me-3" style="min-width: 100px;">
+                                    <div class="fw-medium text-success">{{ $appointment->completed_at ? $appointment->completed_at->format('M j, g:i A') : $appointment->appointment_end->format('M j, g:i A') }}</div>
+                                    <small class="text-muted">Completed</small>
+                                </div>
+                                <!-- Patient Info -->
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ $appointment->patient_name }}</h6>
+                                    <p class="text-muted small mb-1">{{ $appointment->reason }}</p>
+                                    <small class="text-muted">{{ $appointment->appointment_date->format('M j, Y') }}</small>
+                                </div>
+                                <!-- Actions -->
+                                <div class="d-flex gap-2">
+                                    <a href="{{ route('doctor.appointments.show', $appointment) }}#analytics" class="btn btn-sm btn-success">
+                                        <i class="fas fa-brain me-1"></i>AI Analytics
+                                    </a>
+                                    <a href="{{ route('doctor.appointments.show', $appointment) }}#prescription" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-prescription me-1"></i>Prescription
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="empty-state">
+                            <i class="fas fa-check-circle"></i>
+                            <p>No completed appointments yet</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <!-- Today's Schedule -->
             <div class="col-lg-8 mb-4">
@@ -392,6 +432,11 @@ const records = @json($records ?? []);
 
 .badge {
     font-size: 0.7rem;
+}
+
+.bg-light-success {
+    background-color: rgba(40, 167, 69, 0.1) !important;
+    border-left: 4px solid #28a745 !important;
 }
 </style>
 @endpush

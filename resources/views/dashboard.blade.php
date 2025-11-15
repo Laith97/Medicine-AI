@@ -19,184 +19,82 @@
         </div>
 
         @auth
-            <!-- Subscription CTA (no free trial) -->
+            <!-- Subscription Status - Compact and Less Prominent -->
             @if(isset($trialInfo) && $trialInfo['is_in_trial'])
-                <!-- If some legacy users still in trial, show a neutral banner -->
-                <div class="alert alert-info alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(13, 202, 240, 0.2);">
+                <div class="alert alert-info alert-dismissible fade show mb-3" role="alert" style="border-radius: 10px; border: none; box-shadow: 0 4px 15px rgba(13, 202, 240, 0.15);">
                     <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            <i class="fas fa-info-circle fa-2x text-info"></i>
-                        </div>
+                        <i class="fas fa-info-circle text-info me-2"></i>
                         <div class="flex-grow-1">
-                            <h5 class="alert-heading mb-2">
-                                <i class="fas fa-clock me-2"></i>Trial Period Active
-                            </h5>
-                            <p class="mb-2">Some accounts may still have an active trial. You can subscribe anytime to Monthly or Yearly.</p>
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('subscription.pricing') }}" class="btn btn-info btn-sm">
-                                    <i class="fas fa-credit-card me-1"></i>Choose Monthly or Yearly
-                                </a>
-                                <a href="{{ route('subscription.manage') }}" class="btn btn-outline-info btn-sm">
-                                    <i class="fas fa-cog me-1"></i>Manage Subscription
-                                </a>
-                            </div>
+                            <small class="fw-bold">Trial Active</small> -
+                            <a href="{{ route('subscription.pricing') }}" class="text-decoration-none">Upgrade anytime</a>
                         </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @elseif($trialInfo['has_active_subscription'] && !$trialInfo['is_in_trial'])
-                <!-- Active Subscription Banner -->
-                <div class="alert alert-success alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(25, 135, 84, 0.2);">
+                <div class="alert alert-success alert-dismissible fade show mb-3" role="alert" style="border-radius: 10px; border: none; box-shadow: 0 4px 15px rgba(25, 135, 84, 0.15);">
                     <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            <i class="fas fa-check-circle fa-2x text-success"></i>
-                        </div>
+                        <i class="fas fa-check-circle text-success me-2"></i>
                         <div class="flex-grow-1">
-                            <h5 class="alert-heading mb-2">
-                                <i class="fas fa-star me-2"></i>Subscription Active
-                            </h5>
-                            <p class="mb-2">
-                                Your subscription is active and all features are available. 
-                                @if(Auth::user()->monthlyInvoiceSetting && Auth::user()->monthlyInvoiceSetting->subscription_ends_at)
-                                    <strong>Expires: {{ Auth::user()->monthlyInvoiceSetting->subscription_ends_at->format('M d, Y') }}</strong>
-                                @endif
-                            </p>
-                            
-                            @if(config('app.debug'))
-                                <div class="alert alert-warning mt-2 p-2 small">
-                                    <strong>DEBUG:</strong> has_active_subscription=true, is_in_trial=false, sub_ends={{ Auth::user()->monthlyInvoiceSetting ? Auth::user()->monthlyInvoiceSetting->subscription_ends_at : 'null' }}
-                                </div>
+                            <small class="fw-bold">Subscription Active</small>
+                            @if(Auth::user()->monthlyInvoiceSetting && Auth::user()->monthlyInvoiceSetting->subscription_ends_at)
+                                - Expires {{ Auth::user()->monthlyInvoiceSetting->subscription_ends_at->format('M d, Y') }}
                             @endif
-                            
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('subscription.manage') }}" class="btn btn-success btn-sm">
-                                    <i class="fas fa-cog me-1"></i>Manage Subscription
-                                </a>
-                                <a href="{{ route('invoices.index') }}" class="btn btn-outline-success btn-sm">
-                                    <i class="fas fa-file-invoice me-1"></i>View Invoices
-                                </a>
-                            </div>
                         </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @elseif($trialInfo['trial_status'] === 'expired' && Auth::user()->isRestricted())
-                <!-- Restriction Warning -->
-                <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(220, 53, 69, 0.2);">
+                <div class="alert alert-danger mb-3" role="alert" style="border-radius: 10px; border: none; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.15);">
                     <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            <i class="fas fa-ban fa-2x text-danger"></i>
-                        </div>
+                        <i class="fas fa-ban text-danger me-2"></i>
                         <div class="flex-grow-1">
-                            <h5 class="alert-heading mb-2">
-                                <i class="fas fa-exclamation-triangle me-2"></i>Free Trial Expired - Account Restricted
-                            </h5>
-                            <p class="mb-2">Your free trial has ended. {{ Auth::user()->getRestrictionMessage() }}</p>
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('subscription.pricing') }}" class="btn btn-danger btn-sm">
-                                    <i class="fas fa-credit-card me-1"></i> Pay Outstanding Invoices
-                                </a>
-                                <a href="{{ route('access.restricted') }}" class="btn btn-outline-danger btn-sm">
-                                    <i class="fas fa-info-circle me-1"></i> View Details
-                                </a>
-                            </div>
+                            <small class="fw-bold">Account Restricted</small> - {{ Auth::user()->getRestrictionMessage() }}
                         </div>
+                        <a href="{{ route('subscription.pricing') }}" class="btn btn-danger btn-sm ms-2">Pay Now</a>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @elseif(Auth::user()->isInGracePeriod())
-                <!-- Grace Period Warning -->
-                <div class="alert alert-warning alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(255, 193, 7, 0.2);">
+                <div class="alert alert-warning mb-3" role="alert" style="border-radius: 10px; border: none; box-shadow: 0 4px 15px rgba(255, 193, 7, 0.15);">
                     <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            <i class="fas fa-clock fa-2x text-warning"></i>
-                        </div>
+                        <i class="fas fa-clock text-warning me-2"></i>
                         <div class="flex-grow-1">
-                            <h5 class="alert-heading mb-2">
-                                <i class="fas fa-exclamation-triangle me-2"></i>Subscription Expired - Grace Period
-                            </h5>
-                            <p class="mb-2">
-                                <strong>Your subscription expired on {{ Auth::user()->getSubscriptionEndDate() ? Auth::user()->getSubscriptionEndDate()->format('M d, Y') : 'Unknown Date' }}</strong>
-                                <br>
-                                You have <strong>{{ Auth::user()->getDaysRemainingInCurrentPeriod() }} days remaining</strong> in your grace period
-                            </p>
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('subscription.manage') }}" class="btn btn-warning btn-sm">
-                                    <i class="fas fa-credit-card me-1"></i> Renew Subscription
-                                </a>
-                                <a href="{{ route('invoices.index') }}" class="btn btn-outline-warning btn-sm">
-                                    <i class="fas fa-file-invoice-dollar me-1"></i> View Invoices
-                                </a>
-                            </div>
+                            <small class="fw-bold">Grace Period</small> - {{ Auth::user()->getDaysRemainingInCurrentPeriod() }} days left
                         </div>
+                        <a href="{{ route('subscription.manage') }}" class="btn btn-warning btn-sm ms-2">Renew</a>
                     </div>
-                    <!-- Note: No close button - notification persists until payment -->
                 </div>
             @elseif(Auth::user()->isInWarningPeriod())
-                <!-- Warning Period Alert -->
-                <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(220, 53, 69, 0.2);">
+                <div class="alert alert-danger mb-3" role="alert" style="border-radius: 10px; border: none; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.15);">
                     <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
-                        </div>
+                        <i class="fas fa-exclamation-triangle text-danger me-2"></i>
                         <div class="flex-grow-1">
-                            <h5 class="alert-heading mb-2">
-                                <i class="fas fa-exclamation-triangle me-2"></i>Final Warning - Account Will Be Restricted Soon
-                            </h5>
-                            <p class="mb-2">
-                                <strong>Your subscription expired on {{ Auth::user()->getSubscriptionEndDate() ? Auth::user()->getSubscriptionEndDate()->format('M d, Y') : 'Unknown Date' }}</strong>
-                                <br>
-                                You have <strong>{{ Auth::user()->getDaysRemainingInCurrentPeriod() }} days remaining</strong> before your account is restricted
-                            </p>
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('subscription.manage') }}" class="btn btn-danger btn-sm">
-                                    <i class="fas fa-credit-card me-1"></i> Renew Now
-                                </a>
-                                <a href="{{ route('invoices.index') }}" class="btn btn-outline-danger btn-sm">
-                                    <i class="fas fa-file-invoice-dollar me-1"></i> Pay Invoices
-                                </a>
-                            </div>
+                            <small class="fw-bold">Final Warning</small> - {{ Auth::user()->getDaysRemainingInCurrentPeriod() }} days left
                         </div>
+                        <a href="{{ route('subscription.manage') }}" class="btn btn-danger btn-sm ms-2">Renew Now</a>
                     </div>
-                    <!-- Note: No close button - notification persists until payment -->
                 </div>
             @elseif(Auth::user()->getOverdueInvoicesCount() > 0)
-                <!-- Overdue Warning -->
-                <div class="alert alert-warning alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(255, 193, 7, 0.2);">
+                <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert" style="border-radius: 10px; border: none; box-shadow: 0 4px 15px rgba(255, 193, 7, 0.15);">
                     <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
-                        </div>
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
                         <div class="flex-grow-1">
-                            <h5 class="alert-heading mb-2">
-                                <i class="fas fa-clock me-2"></i>Overdue Invoices
-                            </h5>
-                            <p class="mb-2">You have {{ Auth::user()->getOverdueInvoicesCount() }} overdue invoice(s). Please pay them to avoid service interruption.</p>
-                            <a href="{{ route('invoices.index') }}" class="btn btn-warning btn-sm">
-                                <i class="fas fa-file-invoice-dollar me-1"></i> View Invoices
-                            </a>
+                            <small class="fw-bold">{{ Auth::user()->getOverdueInvoicesCount() }} Overdue Invoice(s)</small>
                         </div>
+                        <a href="{{ route('invoices.index') }}" class="btn btn-warning btn-sm ms-2">View</a>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @elseif(Auth::user()->getTotalUnpaidMonthlyAmount() > 0)
-                <!-- Monthly Invoice Reminder -->
-                <div class="alert alert-info alert-dismissible fade show" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(13, 202, 240, 0.2);">
+                <div class="alert alert-info alert-dismissible fade show mb-3" role="alert" style="border-radius: 10px; border: none; box-shadow: 0 4px 15px rgba(13, 202, 240, 0.15);">
                     <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            <i class="fas fa-calendar-alt fa-2x text-info"></i>
-                        </div>
+                        <i class="fas fa-calendar-alt text-info me-2"></i>
                         <div class="flex-grow-1">
-                            <h5 class="alert-heading mb-2">
-                                <i class="fas fa-info-circle me-2"></i>Monthly Service Fee Due
-                            </h5>
-                            <p class="mb-2">You have ${{ number_format(Auth::user()->getTotalUnpaidMonthlyAmount(), 2) }} in unpaid monthly service fees.</p>
-                            <a href="{{ route('invoices.index') }}" class="btn btn-info btn-sm">
-                                <i class="fas fa-credit-card me-1"></i> Pay Now
-                            </a>
+                            <small class="fw-bold">${{ number_format(Auth::user()->getTotalUnpaidMonthlyAmount(), 2) }} Due</small>
                         </div>
+                        <a href="{{ route('invoices.index') }}" class="btn btn-info btn-sm ms-2">Pay Now</a>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
         @endauth
@@ -245,206 +143,100 @@
             </div>
         </div>
 
-        <!-- Statistics Section -->
-        <div class="row mb-4 mb-md-5">
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <p class="stats-number">
-                        @php
-                            // Count distinct patients from combined records
-                            $patientKeys = [];
-                            foreach ($records as $record) {
-                                if (isset($record->patient_key) && $record->patient_key) {
-                                    $patientKeys[$record->patient_key] = true;
-                                } elseif (isset($record->patient_id)) {
-                                    $patientKeys['diagnosis_' . $record->patient_id] = true;
-                                }
-                            }
-                            echo count($patientKeys);
-                        @endphp
-                    </p>
-                    <p class="stats-label">Total Patients</p>
-                </div>
-            </div>
-
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon">
-                        <i class="fas fa-calendar-days"></i>
-                    </div>
-                    <p class="stats-number">
-                        @if(count($records) > 0)
-                            {{ $records->first()->created_at->format('M d') }}
-                        @else
-                            N/A
-                        @endif
-                    </p>
-                    <p class="stats-label">Latest Case</p>
-                </div>
-            </div>
-
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon">
-                        <i class="fas fa-venus-mars"></i>
-                    </div>
-                    <p class="stats-number">
-                        @php
-                            // Calculate male percentage based on distinct patients
-                            $uniquePatients = [];
-                            $maleCount = 0;
-                            foreach ($records as $record) {
-                                $key = isset($record->patient_key) && $record->patient_key ? $record->patient_key : ('diagnosis_' . ($record->patient_id ?? 'unknown'));
-                                if (!isset($uniquePatients[$key])) {
-                                    $uniquePatients[$key] = $record;
-                                    if (($record->gender ?? null) === 'male') {
-                                        $maleCount++;
+        <!-- Key Statistics Overview -->
+        <div class="row mb-4">
+            <div class="col-lg-8">
+                <div class="chart-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="chart-title mb-0">Patient Overview</h6>
+                        <div class="stats-summary">
+                            <span class="badge bg-primary me-2">
+                                @php
+                                    $patientKeys = [];
+                                    foreach ($records as $record) {
+                                        if (isset($record->patient_key) && $record->patient_key) {
+                                            $patientKeys[$record->patient_key] = true;
+                                        } elseif (isset($record->patient_id)) {
+                                            $patientKeys['diagnosis_' . $record->patient_id] = true;
+                                        }
                                     }
-                                }
-                            }
-                            $totalUniquePatients = count($uniquePatients);
-                            $ratio = $totalUniquePatients > 0 ? round(($maleCount / $totalUniquePatients) * 100) : 0;
-                        @endphp
-                        {{ $ratio }}%
-                    </p>
-                    <p class="stats-label">Male Patients</p>
+                                    echo count($patientKeys);
+                                @endphp Patients
+                            </span>
+                            <span class="badge bg-info">
+                                @php
+                                    $uniquePatients = [];
+                                    $ages = [];
+                                    foreach ($records as $record) {
+                                        $key = isset($record->patient_key) && $record->patient_key ? $record->patient_key : ('diagnosis_' . ($record->patient_id ?? 'unknown'));
+                                        if (!isset($uniquePatients[$key]) && isset($record->age) && $record->age) {
+                                            $uniquePatients[$key] = true;
+                                            $ages[] = (float) $record->age;
+                                        }
+                                    }
+                                    $avgAge = count($ages) > 0 ? round(array_sum($ages) / count($ages)) : 0;
+                                    echo $avgAge;
+                                @endphp Avg Age
+                            </span>
+                        </div>
+                    </div>
+                    <div id="patientManagementChart" style="height: 250px;"></div>
                 </div>
             </div>
-
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon">
-                        <i class="fas fa-user-doctor"></i>
-                    </div>
-                    <p class="stats-number">
-                        @php
-                            // Calculate average age based on distinct patients
-                            $uniquePatients = [];
-                            $ages = [];
-                            foreach ($records as $record) {
-                                $key = isset($record->patient_key) && $record->patient_key ? $record->patient_key : ('diagnosis_' . ($record->patient_id ?? 'unknown'));
-                                if (!isset($uniquePatients[$key]) && isset($record->age) && $record->age) {
-                                    $uniquePatients[$key] = true;
-                                    $ages[] = (float) $record->age;
-                                }
-                            }
-                            $avgAge = count($ages) > 0 ? round(array_sum($ages) / count($ages)) : 0;
-                        @endphp
-                        {{ $avgAge }}
-                    </p>
-                    <p class="stats-label">Avg. Patient Age</p>
+            <div class="col-lg-4">
+                <div class="stats-card h-100">
+                    <h6 class="mb-3"><i class="fas fa-chart-pie me-2"></i>Demographics</h6>
+                    <div id="demographicsChart" style="height: 200px;"></div>
                 </div>
             </div>
         </div>
 
         @if($doctorData)
-        <!-- Doctor-Specific Dashboard Sections -->
-        <div class="row mb-5">
+        <!-- Doctor Performance Overview -->
+        <div class="row mb-4">
             <div class="col-12">
-                <div class="dashboard-header" style="background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);">
-                    <h3 style="margin: 0; color: white; font-size: 1.8rem;">
-                        <i class="fas fa-stethoscope me-2"></i>
-                        Dashboard
-                    </h3>
-                    <p style="margin: 0.5rem 0 0 0; opacity: 0.9; color: white;">
-                        Manage your account
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Doctor Statistics Cards -->
-        <div class="row mb-5">
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
-                        <i class="fas fa-calendar-day"></i>
+                <div class="chart-card">
+                    <h6 class="chart-title mb-3">
+                        <i class="fas fa-stethoscope me-2"></i>Doctor Performance Overview
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="stats-card text-center">
+                                <div class="stats-icon mx-auto mb-2" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
+                                    <i class="fas fa-calendar-day"></i>
+                                </div>
+                                <h4 class="stats-number mb-1">{{ $doctorData['stats']['today_appointments'] }}</h4>
+                                <p class="stats-label mb-0">Today's Appointments</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stats-card text-center">
+                                <div class="stats-icon mx-auto mb-2" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%);">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <h4 class="stats-number mb-1">{{ number_format($doctorData['stats']['average_rating'], 1) }}</h4>
+                                <p class="stats-label mb-0">Average Rating</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stats-card text-center">
+                                <div class="stats-icon mx-auto mb-2" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">
+                                    <i class="fas fa-file-medical"></i>
+                                </div>
+                                <h4 class="stats-number mb-1">{{ auth()->user()->doctorDiagnoses()->count() }}</h4>
+                                <p class="stats-label mb-0">Total Diagnoses</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stats-card text-center">
+                                <div class="stats-icon mx-auto mb-2" style="background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%);">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                                <h4 class="stats-number mb-1">${{ number_format($doctorData['stats']['revenue_this_month'], 0) }}</h4>
+                                <p class="stats-label mb-0">This Month Revenue</p>
+                            </div>
+                        </div>
                     </div>
-                    <p class="stats-number">{{ $doctorData['stats']['today_appointments'] }}</p>
-                    <p class="stats-label">Today's Appointments</p>
-                </div>
-            </div>
-
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <p class="stats-number">{{ $doctorData['stats']['pending_appointments'] }}</p>
-                    <p class="stats-label">Pending Approval</p>
-                </div>
-            </div>
-
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%);">
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <p class="stats-number">{{ number_format($doctorData['stats']['average_rating'], 1) }}</p>
-                    <p class="stats-label">Average Rating</p>
-                </div>
-            </div>
-
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%);">
-                        <i class="fas fa-dollar-sign"></i>
-                    </div>
-                    <p class="stats-number">${{ number_format($doctorData['stats']['revenue_this_month'], 0) }}</p>
-                    <p class="stats-label">This Month Revenue</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Diagnosis Statistics Cards -->
-        <div class="row mb-5">
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">
-                        <i class="fas fa-file-medical"></i>
-                    </div>
-                    <p class="stats-number">{{ auth()->user()->doctorDiagnoses()->count() }}</p>
-                    <p class="stats-label">Total Diagnoses</p>
-                </div>
-            </div>
-
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #16a085 0%, #138d75 100%);">
-                        <i class="fas fa-calendar-day"></i>
-                    </div>
-                    <p class="stats-number">{{ auth()->user()->doctorDiagnoses()->whereDate('created_at', today())->count() }}</p>
-                    <p class="stats-label">Today's Diagnoses</p>
-                </div>
-            </div>
-
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);">
-                        <i class="fas fa-comments"></i>
-                    </div>
-                    <p class="stats-number">{{ auth()->user()->doctorDiagnoses()->withCount('followUps')->get()->sum('follow_ups_count') }}</p>
-                    <p class="stats-label">Follow-up Questions</p>
-                </div>
-            </div>
-
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <p class="stats-number">
-                        @php
-                            // Use existing review system instead of diagnosis-specific ratings
-                            $doctorReviews = auth()->user()->doctor ? auth()->user()->doctor->reviews() : collect();
-                            $avgRating = $doctorReviews->avg('rating');
-                        @endphp
-                        {{ $avgRating ? number_format($avgRating, 1) : 'N/A' }}
-                    </p>
-                    <p class="stats-label">Doctor Rating</p>
                 </div>
             </div>
         </div>
@@ -754,167 +546,71 @@
 </div>
 @endif
 @endif
-        <!-- Cases Over Time Chart -->
-        <div class="row mb-5">
-            <div class="col-lg-8 mb-4">
+        <!-- Activity Timeline -->
+        <div class="row mb-4">
+            <div class="col-12">
                 <div class="chart-card">
-                    <h6 class="chart-title">Patient Management Over Time</h6>
-                    <div id="patientManagementChart" style="height: 300px;"></div>
-                </div>
-            </div>
-            <div class="col-lg-4 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <p class="stats-number">{{ $weeklyCount }}</p>
-                    <p class="stats-label">Patient Management This Week</p>
+                    <h6 class="chart-title mb-3">Patient Visits Over Time</h6>
+                    <div id="visitsTimelineChart" style="height: 250px;"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Advanced Statistics & Filters -->
-        <div class="chart-card mb-5">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="chart-title mb-0">Advanced Statistics</h6>
-                <div class="filter-controls">
-                    <button class="btn btn-sm btn-outline-secondary me-2" id="refresh-stats">
-                        <i class="fas fa-sync-alt me-1"></i> Refresh
-                    </button>
-
+        <!-- Analytics Section -->
+        <div class="row mb-4">
+            <div class="col-lg-6 mb-4">
+                <div class="chart-card">
+                    <h6 class="chart-title mb-3">Age Distribution</h6>
+                    <div id="ageDistributionChart" style="height: 250px;"></div>
                 </div>
             </div>
-
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div class="card filter-card">
-                        <div class="card-body">
-                            <h6 class="mb-3"><i class="fas fa-filter me-2"></i>Filter Data</h6>
-                            <form id="stats-filter-form" class="row g-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Date Range</label>
-                                    <select class="form-select" id="date-range-select">
-                                        <option value="7">Last 7 days</option>
-                                        <option value="30" selected>Last 30 days</option>
-                                        <option value="90">Last 3 months</option>
-                                        <option value="180">Last 6 months</option>
-                                        <option value="365">Last year</option>
-                                        <option value="custom">Custom range</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3 custom-date-range" style="display: none;">
-                                    <label class="form-label">From</label>
-                                    <input type="date" class="form-control" id="date-from">
-                                </div>
-                                <div class="col-md-3 custom-date-range" style="display: none;">
-                                    <label class="form-label">To</label>
-                                    <input type="date" class="form-control" id="date-to">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Gender</label>
-                                    <select class="form-select" id="gender-filter">
-                                        <option value="all" selected>All</option>
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Age Group</label>
-                                    <select class="form-select" id="age-filter">
-                                        <option value="all" selected>All</option>
-                                        <option value="0-18">0-18</option>
-                                        <option value="19-35">19-35</option>
-                                        <option value="36-50">36-50</option>
-                                        <option value="51-65">51-65</option>
-                                        <option value="66+">66+</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-12 text-end">
-                                    <button type="submit" class="btn btn-primary-custom btn-sm">
-                                        <i class="fas fa-search me-1"></i> Apply Filters
-                                    </button>
-                                    <button type="reset" class="btn btn-secondary-custom btn-sm">
-                                        <i class="fas fa-undo me-1"></i> Reset
-                                    </button>
-                                </div>
-                            </form>
+            <div class="col-lg-6 mb-4">
+                <div class="stats-card h-100">
+                    <h6 class="mb-3"><i class="fas fa-chart-line me-2"></i>Key Metrics</h6>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h4 class="stats-number mb-1" id="new-patients-count">{{ $records->where('created_at', '>=', now()->subDays(30))->groupBy('patient_key')->count() }}</h4>
+                                <small class="text-muted">New Patients (30d)</small>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="stats-card">
-                        <h6 class="mb-3"><i class="fas fa-chart-pie me-2"></i>Patient Demographics</h6>
-                        <div id="demographicsChart" style="height: 250px;"></div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="stats-card">
-                        <h6 class="mb-3"><i class="fas fa-chart-bar me-2"></i>Age Distribution</h6>
-                        <div id="ageDistributionChart" style="height: 250px;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div class="stats-card">
-                        <h6 class="mb-3"><i class="fas fa-calendar-days me-2"></i>Patient Visits Over Time</h6>
-                        <div id="visitsTimelineChart" style="height: 250px;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="stats-card text-center">
-                        <div class="stats-icon mx-auto">
-                            <i class="fas fa-user-plus"></i>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h4 class="stats-number mb-1" id="return-visits-count">
+                                    @php
+                                        $returnVisits = $records->where('created_at', '>=', now()->subDays(30))->count() - $records->where('created_at', '>=', now()->subDays(30))->groupBy('patient_key')->count();
+                                        echo $returnVisits > 0 ? $returnVisits : 0;
+                                    @endphp
+                                </h4>
+                                <small class="text-muted">Return Visits (30d)</small>
+                            </div>
                         </div>
-                        <h3 class="stats-number" id="new-patients-count">{{ $records->where('created_at', '>=', now()->subDays(30))->groupBy('patient_key')->count() }}</h3>
-                        <p class="stats-label">New Patients (30 days)</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="stats-card text-center">
-                        <div class="stats-icon mx-auto">
-                            <i class="fas fa-redo"></i>
+                        <div class="col-12">
+                            <hr class="my-2">
                         </div>
-                        <h3 class="stats-number" id="return-visits-count">
-                            @php
-                                $returnVisits = $records->where('created_at', '>=', now()->subDays(30))->count() - $records->where('created_at', '>=', now()->subDays(30))->groupBy('patient_key')->count();
-                                echo $returnVisits > 0 ? $returnVisits : 0;
-                            @endphp
-                        </h3>
-                        <p class="stats-label">Return Visits (30 days)</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="stats-card text-center">
-                        <div class="stats-icon mx-auto">
-                            <i class="fas fa-chart-line"></i>
+                        <div class="col-12">
+                            <div class="text-center">
+                                <h4 class="stats-number mb-1" id="growth-rate">
+                                    @php
+                                        $currentMonth = $records->where('created_at', '>=', now()->startOfMonth())->count();
+                                        $lastMonth = $records->where('created_at', '>=', now()->subMonth()->startOfMonth())
+                                            ->where('created_at', '<', now()->startOfMonth())->count();
+                                        $growthRate = $lastMonth > 0 ? round((($currentMonth - $lastMonth) / $lastMonth) * 100) : 0;
+                                        echo $growthRate > 0 ? '+'.$growthRate : $growthRate;
+                                    @endphp%
+                                </h4>
+                                <small class="text-muted">Monthly Growth Rate</small>
+                            </div>
                         </div>
-                        <h3 class="stats-number" id="growth-rate">
-                            @php
-                                $currentMonth = $records->where('created_at', '>=', now()->startOfMonth())->count();
-                                $lastMonth = $records->where('created_at', '>=', now()->subMonth()->startOfMonth())
-                                    ->where('created_at', '<', now()->startOfMonth())->count();
-                                $growthRate = $lastMonth > 0 ? round((($currentMonth - $lastMonth) / $lastMonth) * 100) : 0;
-                                echo $growthRate > 0 ? '+'.$growthRate : $growthRate;
-                            @endphp%
-                        </h3>
-                        <p class="stats-label">Monthly Growth Rate</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Consolidated Patient List with Advanced Features -->
-        <div class="table-card mb-5">
+        <!-- Patient Management -->
+        <div class="table-card mb-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="table-title mb-0">Patient List</h6>
+                <h6 class="table-title mb-0">Recent Patients</h6>
                 <div>
                     <div class="input-group input-group-sm me-2 d-inline-flex" style="width: 200px;">
                         <input type="text" class="form-control" id="patient-search" placeholder="Search patients...">
@@ -922,74 +618,9 @@
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
-                    <a href="{{ route('doctor.patient-management.index') }}" class="btn-secondary-custom btn-sm">
+                    <a href="{{ route('doctor.patient-management.index') }}" class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-external-link-alt me-1"></i> View All
                     </a>
-                </div>
-            </div>
-
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div class="card filter-card">
-                        <div class="card-body">
-                            <h6 class="mb-3"><i class="fas fa-filter me-2"></i>Filter Patients</h6>
-                            <form id="patient-filter-form" class="row g-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Date Range</label>
-                                    <select class="form-select" id="patient-date-range">
-                                        <option value="all" selected>All Time</option>
-                                        <option value="7">Last 7 days</option>
-                                        <option value="30">Last 30 days</option>
-                                        <option value="90">Last 3 months</option>
-                                        <option value="custom">Custom range</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3 patient-custom-date" style="display: none;">
-                                    <label class="form-label">From</label>
-                                    <input type="date" class="form-control" id="patient-date-from">
-                                </div>
-                                <div class="col-md-3 patient-custom-date" style="display: none;">
-                                    <label class="form-label">To</label>
-                                    <input type="date" class="form-control" id="patient-date-to">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Gender</label>
-                                    <select class="form-select" id="patient-gender-filter">
-                                        <option value="all" selected>All</option>
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Age Group</label>
-                                    <select class="form-select" id="patient-age-filter">
-                                        <option value="all" selected>All</option>
-                                        <option value="0-18">0-18</option>
-                                        <option value="19-35">19-35</option>
-                                        <option value="36-50">36-50</option>
-                                        <option value="51-65">51-65</option>
-                                        <option value="66+">66+</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Visit Count</label>
-                                    <select class="form-select" id="patient-visit-filter">
-                                        <option value="all" selected>All</option>
-                                        <option value="1">Single Visit</option>
-                                        <option value="multiple">Multiple Visits</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-12 text-end">
-                                    <button type="submit" class="btn btn-primary-custom btn-sm">
-                                        <i class="fas fa-search me-1"></i> Apply Filters
-                                    </button>
-                                    <button type="reset" class="btn btn-secondary-custom btn-sm">
-                                        <i class="fas fa-undo me-1"></i> Reset
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
                 </div>
             </div>
 

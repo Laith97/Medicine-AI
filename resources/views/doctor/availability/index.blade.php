@@ -12,7 +12,7 @@
     <div class="container">
         <!-- Dashboard Header -->
         <div class="dashboard-header py-2 border-bottom">
-            <h2 class="h1 mb-1" style="font-weight: 700;">Doctor Availability</h2>
+            <h2 class="h1 mb-1" style="font-weight: 700;">Availability</h2>
             <p>Set your availability</p>
         </div>
 
