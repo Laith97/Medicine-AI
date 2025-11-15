@@ -294,6 +294,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     Route::get('/settings', [UserSettingsController::class, 'index'])->name('settings');
     Route::put('/user/settings/update', [UserSettingsController::class, 'update'])->name('settings.update');
     Route::get('/doctor/patient-management', [OpenAIController::class, 'getCases'])->name('doctor.patient-management.index');
+    Route::get('/openai/form', [OpenAIController::class, 'showForm'])->name('openai.form');
     Route::post('/patient/summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient.summary');
     Route::get('/dashboard', [OpenAIController::class, 'dashboard'])->name('dashboard');
 
