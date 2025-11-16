@@ -7,7 +7,7 @@
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0">Analytics Dashboard</h1>
+                <h1 class="h3 mb-0">Analytics</h1>
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-outline-primary active" data-period="7">7 Days</button>
                     <button type="button" class="btn btn-outline-primary" data-period="30">30 Days</button>

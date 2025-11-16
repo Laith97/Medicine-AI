@@ -28,17 +28,21 @@ class PatientRegistrationController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'phone' => ['nullable', 'string', 'max:20'],
-            'date_of_birth' => ['nullable', 'date', 'before:today'],
-            'gender' => ['nullable', 'in:male,female,other'],
+            'date_of_birth' => ['required', 'date', 'before:today'],
+            'gender' => ['required', 'in:male,female,other'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'terms' => ['required', 'accepted'],
         ]);
+
+        // Calculate age from date of birth
+        $age = \Carbon\Carbon::parse($request->date_of_birth)->age;
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
             'date_of_birth' => $request->date_of_birth,
+            'age' => $age,
             'gender' => $request->gender,
             'password' => Hash::make($request->password),
             'role' => 'patient',

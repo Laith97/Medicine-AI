@@ -13,7 +13,7 @@
     <div class="container">
         <!-- Dashboard Header -->
         <div class="dashboard-header py-2 border-bottom">
-            <h2 class="h1 mb-1" style="font-weight: 700;">Patient Reviews</h2>
+            <h2 class="h1 mb-1" style="font-weight: 700;">Reviews</h2>
             <p>Manage and view feedback from your patients</p>
         </div>
 

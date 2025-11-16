@@ -59,6 +59,8 @@ class AdminController extends Controller
             'phone' => ['required', 'string', 'regex:/^\+?[1-9]\d{6,14}$/', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'string', 'in:doctor,hospital_admin,patient'],
+            'date_of_birth' => ['nullable', 'date', 'before:today'],
+            'gender' => ['nullable', 'in:male,female,other'],
             'monthly_cost_limit' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'grace_period_days' => ['nullable', 'integer', 'min:1', 'max:30'],
             'warning_period_days' => ['nullable', 'integer', 'min:1', 'max:14'],
@@ -125,6 +127,8 @@ class AdminController extends Controller
             'monthly_cost_limit' => $request->monthly_cost_limit ?? 0,
             'role' => $request->role,
             'hospital_id' => $hospitalId,
+            'date_of_birth' => $request->date_of_birth,
+            'gender' => $request->gender,
         ];
 
         // Create the user first

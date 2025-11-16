@@ -11,7 +11,7 @@
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0">Chat Management</h1>
+                <h1 class="h3 mb-0">Communications</h1>
                 <div class="d-flex align-items-center">
                     <span id="unread-count" class="badge bg-danger me-3" style="display: none;">0 unread</span>
                     <a href="{{ route('doctor.chat.settings') }}" class="btn btn-outline-info btn-sm me-2">

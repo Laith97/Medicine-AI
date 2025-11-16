@@ -82,7 +82,12 @@ if (config('app.debug')) {
 }
 
 Route::get('/', function () {
-    // Always show pricing section for SaaS model
+    // Redirect authenticated users to dashboard
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+
+    // Show homepage for guests only
     $showPricingSection = SystemSetting::get('show_pricing_section', true);
 
     // Get dynamic pricing from system settings
@@ -289,6 +294,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     Route::get('/settings', [UserSettingsController::class, 'index'])->name('settings');
     Route::put('/user/settings/update', [UserSettingsController::class, 'update'])->name('settings.update');
     Route::get('/doctor/patient-management', [OpenAIController::class, 'getCases'])->name('doctor.patient-management.index');
+    Route::get('/openai/form', [OpenAIController::class, 'showForm'])->name('openai.form');
     Route::post('/patient/summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient.summary');
     Route::get('/dashboard', [OpenAIController::class, 'dashboard'])->name('dashboard');
 
@@ -750,6 +756,12 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
     Route::post('/appointments/{appointment}/complete', [DoctorDashboardController::class, 'completeAppointment'])->name('appointments.complete');
     Route::post('/appointments/{appointment}/no-show', [DoctorDashboardController::class, 'markNoShow'])->name('appointments.no-show');
     Route::get('/appointments/calendar/events', [DoctorDashboardController::class, 'getCalendarEvents'])->name('appointments.calendar.events');
+    Route::get('/appointments/{appointment}/completed', [DoctorDashboardController::class, 'showCompletedAppointment'])->name('appointments.completed');
+    Route::post('/appointments/toggle-auto-approve', [DoctorDashboardController::class, 'toggleAutoApprove'])->name('appointments.toggle-auto-approve');
+
+    // Follow-up appointment routes
+    Route::get('/appointments/{appointment}/follow-ups/create', [DoctorDashboardController::class, 'createFollowUp'])->name('follow-ups.create');
+    Route::post('/appointments/{appointment}/follow-ups', [DoctorDashboardController::class, 'storeFollowUp'])->name('follow-ups.store');
 
     // On-Deck Dashboard for real-time appointment tracking
     Route::get('/on-deck', [DoctorDashboardController::class, 'onDeck'])->name('on-deck');

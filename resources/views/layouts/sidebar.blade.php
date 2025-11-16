@@ -52,29 +52,6 @@
           @endif
         @endforeach
       @endauth
-
-      @guest
-        <li class="nav-item">
-          <a href="{{ url('/') }}" class="nav-link {{ request()->is('/') ? 'active' : '' }}">
-            <i class="fa-solid fa-house"></i><span>Home</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a href="{{ route('about') }}" class="nav-link {{ request()->is('about') ? 'active' : '' }}">
-            <i class="fa-solid fa-circle-info"></i><span>About Us</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a href="{{ route('contact') }}" class="nav-link {{ request()->is('contact') ? 'active' : '' }}">
-            <i class="fa-solid fa-envelope"></i><span>Contact</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a href="{{ route('doctors.index') }}" class="nav-link {{ request()->is('doctors') ? 'active' : '' }}">
-            <i class="fa-solid fa-user-doctor"></i><span>For Patients</span>
-          </a>
-        </li>
-      @endguest
     </ul>
   </nav>
 

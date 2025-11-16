@@ -125,8 +125,17 @@ class PrescriptionController extends Controller
             $patientData = $aiAssistant->processPatientData($patient);
             $symptoms = $patientData['symptoms'] ?: ($appointment->notes ? json_decode($appointment->notes, true) ?? [] : []);
 
+            // Prepare additional data for AI including patient demographics
+            $additionalData = [
+                'patient_age' => $patientData['age'],
+                'patient_gender' => $patientData['gender'],
+                'patient_name' => $patientData['name'],
+                'doctor_notes' => $appointment->doctor_notes,
+                'appointment_symptoms' => $appointment->symptoms,
+            ];
+
             try {
-                $aiResult = $aiAssistant->generatePrescriptionSuggestions($appointment, $symptoms, $patientData['allergies'], $patientData['past_medications']);
+                $aiResult = $aiAssistant->generatePrescriptionSuggestions($appointment, $symptoms, $patientData['allergies'], $patientData['past_medications'], $additionalData);
 
                 $prescription->ai_suggestions = $aiResult['suggestions'] ?? [];
                 $prescription->ai_risk_flags = array_merge($prescription->ai_risk_flags ?? [], $aiResult['risk_flags'] ?? []);
