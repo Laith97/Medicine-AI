@@ -12,10 +12,15 @@ class UnifonicProvider implements SmsProviderInterface
     private ?string $senderId;
     private string $baseUrl = 'https://el.cloud.unifonic.com/rest';
 
-    public function __construct()
+    public function __construct(?array $config = null)
     {
-        $this->appSid = config('sms.providers.unifonic.app_sid');
-        $this->senderId = config('sms.providers.unifonic.sender_id');
+        if ($config) {
+            $this->appSid = $config['app_sid'] ?? $config['appSid'] ?? config('sms.providers.unifonic.app_sid');
+            $this->senderId = $config['sender_id'] ?? $config['senderId'] ?? config('sms.providers.unifonic.sender_id');
+        } else {
+            $this->appSid = config('sms.providers.unifonic.app_sid');
+            $this->senderId = config('sms.providers.unifonic.sender_id');
+        }
     }
 
     public function send(string $to, string $message): array

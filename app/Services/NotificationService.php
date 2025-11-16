@@ -293,12 +293,28 @@ class NotificationService
     public function sendSmsNotification(User $user, Notification $notification): void
     {
         try {
-            // Here you would integrate with SMS service
-            // For now, we'll just log it
+            // Check if user has a valid phone number
+            if (empty($user->phone)) {
+                Log::warning('Cannot send SMS notification - user has no phone number', [
+                    'user_id' => $user->id,
+                    'notification_id' => $notification->id,
+                ]);
+                return;
+            }
+
+            // Integrate with SMS service using user-specific configuration
+            $smsService = new SmsService();
+            $message = $notification->title . ': ' . $notification->message;
+
+            // Use the user's specific SMS configuration if available
+            $result = $smsService->send($user->phone, $message, $user);
+
             Log::info('SMS notification sent', [
                 'user_id' => $user->id,
                 'notification_id' => $notification->id,
                 'title' => $notification->title,
+                'success' => $result['success'],
+                'provider_used' => $smsService->getActiveProviderForUser($user)
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to send SMS notification', [

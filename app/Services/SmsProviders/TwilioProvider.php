@@ -12,11 +12,17 @@ class TwilioProvider implements SmsProviderInterface
     protected $authToken;
     protected $fromNumber;
 
-    public function __construct()
+    public function __construct(?array $config = null)
     {
-        $this->accountSid = config('sms.providers.twilio.account_sid');
-        $this->authToken = config('sms.providers.twilio.auth_token');
-        $this->fromNumber = config('sms.providers.twilio.from_number');
+        if ($config) {
+            $this->accountSid = $config['account_sid'] ?? $config['accountSid'] ?? config('sms.providers.twilio.account_sid');
+            $this->authToken = $config['auth_token'] ?? $config['authToken'] ?? config('sms.providers.twilio.auth_token');
+            $this->fromNumber = $config['from_number'] ?? $config['fromNumber'] ?? config('sms.providers.twilio.from_number');
+        } else {
+            $this->accountSid = config('sms.providers.twilio.account_sid');
+            $this->authToken = config('sms.providers.twilio.auth_token');
+            $this->fromNumber = config('sms.providers.twilio.from_number');
+        }
     }
 
     public function send(string $to, string $message): array

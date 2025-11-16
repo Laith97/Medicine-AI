@@ -1051,6 +1051,15 @@ Route::middleware('auth')->group(function () {
 
     // Return to admin from user impersonation - requires web auth (impersonated user)
     Route::post('/return-to-admin', [AdminController::class, 'returnToAdmin'])->name('return-to-admin');
+
+    // SMS Configuration routes for doctors and hospital admins
+    Route::prefix('sms-config')->name('sms.config.')->group(function () {
+        Route::get('/', [App\Http\Controllers\UserSmsConfigurationController::class, 'index'])->name('index');
+        Route::post('/store', [App\Http\Controllers\UserSmsConfigurationController::class, 'store'])->name('store');
+        Route::post('/hospital/store', [App\Http\Controllers\UserSmsConfigurationController::class, 'storeHospital'])->name('store.hospital');
+        Route::post('/test', [App\Http\Controllers\UserSmsConfigurationController::class, 'testSms'])->name('test');
+        Route::delete('/{id}', [App\Http\Controllers\UserSmsConfigurationController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Debug route to test if routes are working
