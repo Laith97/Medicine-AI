@@ -299,6 +299,84 @@
                     </a>
                 </div>
 
+                <!-- Clearinghouse Integration Section -->
+                <div class="nav-section">Clearinghouse</div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.clearinghouse.accounts') }}" class="nav-link {{ request()->routeIs('admin.clearinghouse.accounts*') ? 'active' : '' }}">
+                        <i class="fas fa-building"></i>
+                        <span>Account Management</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.clearinghouse.monitoring') }}" class="nav-link {{ request()->routeIs('admin.clearinghouse.monitoring*') ? 'active' : '' }}">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Submission Monitoring</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.clearinghouse.errors') }}" class="nav-link {{ request()->routeIs('admin.clearinghouse.errors*') ? 'active' : '' }}">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Error Reporting</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.clearinghouse.providers') }}" class="nav-link {{ request()->routeIs('admin.clearinghouse.providers*') ? 'active' : '' }}">
+                        <i class="fas fa-cogs"></i>
+                        <span>Provider Config</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.clearinghouse.metrics') }}" class="nav-link {{ request()->routeIs('admin.clearinghouse.metrics*') ? 'active' : '' }}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Performance Metrics</span>
+                    </a>
+                </div>
+
+                <!-- HEP Management Section -->
+                <div class="nav-section">HEP Management</div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.exercises.index') }}" class="nav-link {{ request()->routeIs('admin.exercises.*') ? 'active' : '' }}">
+                        <i class="fas fa-dumbbell"></i>
+                        <span>Exercise Library</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.hep-templates.index') }}" class="nav-link {{ request()->routeIs('admin.hep-templates.*') ? 'active' : '' }}">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>HEP Templates</span>
+                    </a>
+                </div>
+
+                <!-- Payer Rules Engine Section -->
+                <div class="nav-section">Payer Rules Engine</div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.payers.index') }}" class="nav-link {{ request()->routeIs('admin.payers.*') ? 'active' : '' }}">
+                        <i class="fas fa-building"></i>
+                        <span>Payer Management</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.payers.index') }}?tab=rules" class="nav-link {{ request()->routeIs('admin.payers.rules.*') ? 'active' : '' }}">
+                        <i class="fas fa-cogs"></i>
+                        <span>Rules Configuration</span>
+                    </a>
+                </div>
+
+                <!-- Waitlist Management Section -->
+                <div class="nav-section">Waitlist Management</div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.waitlist.dashboard') }}" class="nav-link {{ request()->routeIs('admin.waitlist.dashboard') ? 'active' : '' }}">
+                        <i class="fas fa-list-ul"></i>
+                        <span>Waitlist Dashboard</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.waitlist.analytics') }}" class="nav-link {{ request()->routeIs('admin.waitlist.analytics') ? 'active' : '' }}">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Waitlist Analytics</span>
+                    </a>
+                </div>
+
                 <!-- System Section -->
                 <div class="nav-section">System</div>
                 <div class="nav-item">

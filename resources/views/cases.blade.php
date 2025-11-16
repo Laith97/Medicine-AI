@@ -416,6 +416,155 @@
             padding: 0.75rem;
         }
     }
+
+    /* Insurance and Eligibility Styles */
+    .insurance-eligibility-content {
+        padding: 1rem 0;
+    }
+
+    .insurance-item {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        transition: box-shadow 0.3s ease;
+    }
+
+    .insurance-item:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .insurance-info h6 {
+        margin-bottom: 0.5rem;
+    }
+
+    .insurance-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .insurance-management-form .form-label {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .insurance-management-form .form-control,
+    .insurance-management-form .form-select {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .insurance-management-form .form-control:focus,
+    .insurance-management-form .form-select:focus {
+        border-color: #DE6262;
+        box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.25);
+    }
+
+    .eligibility-status-dashboard .card {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: 12px;
+    }
+
+    .eligibility-status-display {
+        text-align: center;
+        padding: 1rem;
+    }
+
+    .status-indicator {
+        margin-bottom: 1.5rem;
+    }
+
+    .badge-lg {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+    }
+
+    .eligibility-info {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+    }
+
+    .info-item {
+        margin-bottom: 1rem;
+    }
+
+    .info-item label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+
+    .eligibility-actions {
+        padding-top: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .coverage-summary {
+        background: white;
+        padding: 1rem;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+    }
+
+    /* Accessibility improvements */
+    .insurance-management-form .form-control[aria-describedby],
+    .insurance-management-form .form-select[aria-describedby] {
+        position: relative;
+    }
+
+    .insurance-management-form .form-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    /* Screen reader only text */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* Focus indicators for keyboard navigation */
+    .btn:focus,
+    .form-control:focus,
+    .form-select:focus {
+        outline: 2px solid #DE6262;
+        outline-offset: 2px;
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+        .insurance-item {
+            border: 2px solid #000;
+        }
+
+        .eligibility-info {
+            border: 2px solid #000;
+        }
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+        .insurance-item,
+        .eligibility-status-dashboard .card {
+            transition: none;
+        }
+
+        .progress-bar-striped .progress-bar {
+            animation: none;
+        }
+    }
 </style>
 @endpush
 
@@ -538,6 +687,11 @@
                                 <i class="fas fa-calendar-alt me-1"></i>Scheduled
                             </button>
                         </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="insurance-tab" data-bs-toggle="tab" data-bs-target="#insurance-eligibility" type="button" role="tab" aria-controls="insurance-eligibility" aria-selected="false">
+                                <i class="fas fa-shield-alt me-1"></i>Insurance & Eligibility
+                            </button>
+                        </li>
                     </ul>
                 </div>
 
@@ -562,6 +716,44 @@
                     <div class="tab-pane fade" id="scheduled-patients" role="tabpanel" aria-labelledby="scheduled-tab">
                         @include('cases.partials.patient-table', ['patients' => $patientGroups, 'category' => 'scheduled'])
                     </div>
+
+                    <!-- Insurance & Eligibility Tab -->
+                    <div class="tab-pane fade" id="insurance-eligibility" role="tabpanel" aria-labelledby="insurance-tab">
+                        <div class="insurance-eligibility-content">
+                            <!-- Eligibility Status Dashboard -->
+                            <x-eligibility-status-dashboard :patientId="null" />
+
+                            <!-- Insurance Management Section -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="card-title mb-0">
+                                                <i class="fas fa-id-card me-2"></i>Insurance Information
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="insuranceListContainer">
+                                                <!-- Insurance list will be loaded here -->
+                                                <div class="text-center py-4">
+                                                    <div class="spinner-border text-primary" role="status">
+                                                        <span class="visually-hidden">Loading insurance information...</span>
+                                                    </div>
+                                                    <p class="mt-2 text-muted">Loading insurance information...</p>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-3">
+                                                <button type="button" class="btn btn-primary" onclick="showAddInsuranceModal()">
+                                                    <i class="fas fa-plus me-2"></i>Add Insurance
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 @else
                 <!-- Empty State -->
@@ -581,6 +773,55 @@
 
 <!-- Modals -->
 @include('cases.partials.modals')
+
+<!-- Insurance Management Modal -->
+<div class="modal fade" id="insuranceModal" tabindex="-1" aria-labelledby="insuranceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="insuranceModalLabel">
+                    <i class="fas fa-id-card me-2"></i>Insurance Information
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <x-insurance-management-form />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Eligibility Check Progress Modal -->
+<div class="modal fade" id="eligibilityProgressModal" tabindex="-1" aria-labelledby="eligibilityProgressModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eligibilityProgressModalLabel">
+                    <i class="fas fa-shield-check me-2"></i>Checking Eligibility
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Checking eligibility...</span>
+                    </div>
+                    <h6>Verifying Insurance Eligibility</h6>
+                    <p class="text-muted">This may take a few moments...</p>
+
+                    <div class="progress mt-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                             role="progressbar" style="width: 100%"></div>
+                    </div>
+
+                    <div class="mt-3">
+                        <small class="text-muted" id="progressStatus">Connecting to insurance provider...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection
 
@@ -805,7 +1046,9 @@ function showPatientSummary(patientData) {
     $('#summaryModal').modal('show');
 
     // Update modal header
-    $('#summaryModalLabel').html(`<i class="fas fa-user-doctor me-2"></i>${patientData.name}'s Medical Summary`);
+    $('#summaryModalLabel').empty()
+        .append($('<i class="fas fa-user-doctor me-2"></i>'))
+        .append(document.createTextNode(patientData.name + "'s Medical Summary"));
 
     // Update patient info
     $('#summaryPatientName').text(patientData.name);
@@ -856,18 +1099,19 @@ function loadPatientSummary(patientData) {
 
     // Generate visit summary
     if (patientRecords.length > 0) {
-        let visitHtml = `
-            <div class="table-responsive">
-                <table class="table table-hover table-sm">
-                    <thead>
-                        <tr>
-                            <th>Visit #</th>
-                            <th>Date</th>
-                            <th>Diagnosis Summary</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
+        // Create table using jQuery DOM methods to prevent XSS
+        const tableContainer = $('<div class="table-responsive"></div>');
+        const table = $('<table class="table table-hover table-sm"></table>');
+        const thead = $('<thead></thead>');
+        const headerRow = $('<tr></tr>');
+
+        headerRow.append('<th>Visit #</th>');
+        headerRow.append('<th>Date</th>');
+        headerRow.append('<th>Diagnosis Summary</th>');
+        thead.append(headerRow);
+        table.append(thead);
+
+        const tbody = $('<tbody></tbody>');
 
         patientRecords.forEach((record, index) => {
             const visitDate = new Date(record.created_at);
@@ -876,26 +1120,27 @@ function loadPatientSummary(patientData) {
                 diagnosisText.substring(0, 80) + '...' :
                 diagnosisText;
 
-            visitHtml += `
-                <tr>
-                    <td><span class="badge bg-light text-dark">Visit #${index + 1}</span></td>
-                    <td>${visitDate.toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                    })}</td>
-                    <td class="small">${diagnosisSummary}</td>
-                </tr>
-            `;
+            const tr = $('<tr></tr>');
+
+            // Create cells with proper text escaping
+            const visitTd = $('<td></td>').append(
+                $('<span class="badge bg-light text-dark"></span>').text('Visit #' + (index + 1))
+            );
+            const dateTd = $('<td></td>').text(visitDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            }));
+            const summaryTd = $('<td class="small"></td>').text(diagnosisSummary);
+
+            tr.append(visitTd, dateTd, summaryTd);
+            tbody.append(tr);
         });
 
-        visitHtml += `
-                    </tbody>
-                </table>
-            </div>
-        `;
+        table.append(tbody);
+        tableContainer.append(table);
 
-        $('#visitSummaryContainer').html(visitHtml);
+        $('#visitSummaryContainer').empty().append(tableContainer);
 
         // Generate AI-powered patient summary
         generatePatientSummary(patientRecords);
@@ -992,6 +1237,345 @@ function formatAIResponse(text) {
     formatted += '</div></div>';
 
     return formatted;
+}
+
+// Insurance and Eligibility Management Functions
+function showAddInsuranceModal() {
+    document.getElementById('insuranceModalLabel').textContent = 'Add Insurance Information';
+    // Reset form
+    document.getElementById('insuranceForm').reset();
+    // Clear any existing insurance ID
+    const insuranceIdInput = document.querySelector('input[name="insurance_id"]');
+    if (insuranceIdInput) {
+        insuranceIdInput.value = '';
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('insuranceModal'));
+    modal.show();
+}
+
+function editInsurance(insuranceId) {
+    // Load insurance data and show modal
+    fetch(`/api/patient-insurance/${insuranceId}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Populate form with insurance data
+            populateInsuranceForm(data.insurance);
+            document.getElementById('insuranceModalLabel').textContent = 'Edit Insurance Information';
+            const modal = new bootstrap.Modal(document.getElementById('insuranceModal'));
+            modal.show();
+        } else {
+            alert('Failed to load insurance information');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading insurance:', error);
+        alert('Error loading insurance information');
+    });
+}
+
+function populateInsuranceForm(insurance) {
+    document.getElementById('insurance_provider_id').value = insurance.insurance_provider_id;
+    document.getElementById('policy_number').value = insurance.policy_number;
+    document.getElementById('group_number').value = insurance.group_number || '';
+    document.getElementById('member_id').value = insurance.member_id;
+    document.getElementById('effective_date').value = insurance.effective_date ? new Date(insurance.effective_date).toISOString().split('T')[0] : '';
+    document.getElementById('expiration_date').value = insurance.expiration_date ? new Date(insurance.expiration_date).toISOString().split('T')[0] : '';
+    document.getElementById('notes').value = insurance.notes || '';
+
+    const insuranceIdInput = document.querySelector('input[name="insurance_id"]');
+    if (insuranceIdInput) {
+        insuranceIdInput.value = insurance.id;
+    }
+}
+
+function deleteInsurance(insuranceId) {
+    if (confirm('Are you sure you want to delete this insurance information?')) {
+        fetch(`/api/patient-insurance/${insuranceId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadInsuranceList();
+                alert('Insurance information deleted successfully');
+            } else {
+                alert('Failed to delete insurance information');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting insurance:', error);
+            alert('Error deleting insurance information');
+        });
+    }
+}
+
+function loadInsuranceList() {
+    const container = document.getElementById('insuranceListContainer');
+
+    fetch('/api/patient-insurance', {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            renderInsuranceList(data.insurances);
+        } else {
+            container.innerHTML = '<div class="alert alert-warning">Failed to load insurance information</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error loading insurance list:', error);
+        container.innerHTML = '<div class="alert alert-danger">Error loading insurance information</div>';
+    });
+}
+
+function renderInsuranceList(insurances) {
+    const container = document.getElementById('insuranceListContainer');
+
+    if (!insurances || insurances.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-id-card fa-3x text-muted mb-3"></i>
+                <h6 class="text-muted">No Insurance Information</h6>
+                <p class="text-muted small">Add insurance information to enable eligibility checking</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Clear the container
+    container.innerHTML = '';
+    const insuranceList = document.createElement('div');
+    insuranceList.className = 'insurance-list';
+
+    insurances.forEach(insurance => {
+        const provider = insurance.insurance_provider ? insurance.insurance_provider.name : 'Unknown Provider';
+        const expiryDate = new Date(insurance.expiration_date);
+        const isExpired = expiryDate < new Date();
+
+        // Create insurance item using DOM methods to prevent XSS
+        const insuranceItem = document.createElement('div');
+        insuranceItem.className = 'insurance-item card mb-3';
+
+        const cardBody = document.createElement('div');
+        cardBody.className = 'card-body';
+
+        // Create header row
+        const headerRow = document.createElement('div');
+        headerRow.className = 'd-flex justify-content-between align-items-start';
+
+        // Create insurance info section
+        const insuranceInfo = document.createElement('div');
+        insuranceInfo.className = 'insurance-info';
+
+        const cardTitle = document.createElement('h6');
+        cardTitle.className = 'card-title mb-2';
+
+        // Create the title with icon and provider name
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-building me-2';
+        cardTitle.appendChild(icon);
+
+        // Add provider text
+        cardTitle.appendChild(document.createTextNode(provider));
+
+        // Add status badge
+        if (insurance.insurance_provider) {
+            const statusSpan = document.createElement('span');
+            statusSpan.className = getInsuranceStatusClass(insurance);
+            statusSpan.textContent = getInsuranceStatusText(insurance);
+            statusSpan.style.marginLeft = '10px';
+            cardTitle.appendChild(statusSpan);
+        }
+
+        insuranceInfo.appendChild(cardTitle);
+
+        // Create row for details
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'row';
+
+        // Left column
+        const leftCol = document.createElement('div');
+        leftCol.className = 'col-md-6';
+
+        const policyText = document.createElement('small');
+        policyText.className = 'text-muted';
+        policyText.textContent = `Policy #: ${insurance.policy_number}`;
+        leftCol.appendChild(policyText);
+        leftCol.appendChild(document.createElement('br'));
+
+        const memberIdText = document.createElement('small');
+        memberIdText.className = 'text-muted';
+        memberIdText.textContent = `Member ID: ${insurance.member_id}`;
+        leftCol.appendChild(memberIdText);
+
+        // Right column
+        const rightCol = document.createElement('div');
+        rightCol.className = 'col-md-6';
+
+        const effectiveText = document.createElement('small');
+        effectiveText.className = 'text-muted';
+        effectiveText.textContent = `Effective: ${new Date(insurance.effective_date).toLocaleDateString()}`;
+        rightCol.appendChild(effectiveText);
+        rightCol.appendChild(document.createElement('br'));
+
+        const expiryText = document.createElement('small');
+        expiryText.className = isExpired ? 'text-muted text-danger' : 'text-muted';
+        expiryText.textContent = `Expires: ${expiryDate.toLocaleDateString()}${isExpired ? ' (Expired)' : ''}`;
+        rightCol.appendChild(expiryText);
+
+        rowDiv.appendChild(leftCol);
+        rowDiv.appendChild(rightCol);
+        insuranceInfo.appendChild(rowDiv);
+
+        // Add notes if available
+        if (insurance.notes) {
+            const notesDiv = document.createElement('div');
+            notesDiv.className = 'mt-2';
+            const notesText = document.createElement('small');
+            notesText.className = 'text-muted';
+            notesText.textContent = insurance.notes;
+            notesDiv.appendChild(notesText);
+            insuranceInfo.appendChild(notesDiv);
+        }
+
+        headerRow.appendChild(insuranceInfo);
+
+        // Create action buttons
+        const actionDiv = document.createElement('div');
+        actionDiv.className = 'insurance-actions';
+
+        // Edit button
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'btn btn-sm btn-outline-primary me-2';
+        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+        editBtn.onclick = function() { editInsurance(insurance.id); };
+
+        // Delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'btn btn-sm btn-outline-danger';
+        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+        deleteBtn.onclick = function() { deleteInsurance(insurance.id); };
+
+        actionDiv.appendChild(editBtn);
+        actionDiv.appendChild(deleteBtn);
+
+        headerRow.appendChild(actionDiv);
+
+        cardBody.appendChild(headerRow);
+        insuranceItem.appendChild(cardBody);
+        insuranceList.appendChild(insuranceItem);
+    });
+
+    container.appendChild(insuranceList);
+}
+
+function getInsuranceStatusClass(insurance) {
+    const expiryDate = new Date(insurance.expiration_date);
+    const now = new Date();
+    const daysUntilExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+
+    if (expiryDate < now) {
+        return 'badge bg-danger';
+    } else if (daysUntilExpiry <= 30) {
+        return 'badge bg-warning';
+    } else {
+        return 'badge bg-success';
+    }
+}
+
+function getInsuranceStatusText(insurance) {
+    const expiryDate = new Date(insurance.expiration_date);
+    const now = new Date();
+    const daysUntilExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+
+    if (expiryDate < now) {
+        return 'Expired';
+    } else if (daysUntilExpiry <= 30) {
+        return 'Expiring Soon';
+    } else {
+        return 'Active';
+    }
+}
+
+// Initialize insurance tab when it's shown
+document.addEventListener('DOMContentLoaded', function() {
+    const insuranceTab = document.getElementById('insurance-tab');
+    if (insuranceTab) {
+        insuranceTab.addEventListener('shown.bs.tab', function() {
+            loadInsuranceList();
+        });
+    }
+
+    // Handle insurance form submission
+    const insuranceForm = document.getElementById('insuranceForm');
+    if (insuranceForm) {
+        insuranceForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitInsuranceForm();
+        });
+    }
+});
+
+function submitInsuranceForm() {
+    const form = document.getElementById('insuranceForm');
+    const formData = new FormData(form);
+    const insuranceId = formData.get('insurance_id');
+    const isEdit = insuranceId && insuranceId !== '';
+
+    const url = isEdit ? `/api/patient-insurance/${insuranceId}` : '/api/patient-insurance';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method: method,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('insuranceModal'));
+            modal.hide();
+
+            // Reload insurance list
+            loadInsuranceList();
+
+            // Show success message
+            alert(isEdit ? 'Insurance information updated successfully' : 'Insurance information added successfully');
+        } else {
+            alert(data.message || 'Failed to save insurance information');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving insurance:', error);
+        alert('Error saving insurance information');
+    });
 }
 </script>
 @endpush

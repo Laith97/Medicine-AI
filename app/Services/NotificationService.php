@@ -271,12 +271,24 @@ class NotificationService
     public function sendPushNotification(User $user, Notification $notification): void
     {
         try {
-            // Here you would integrate with push notification service
-            // For now, we'll just log it
+            $pushService = app(PushNotificationService::class);
+
+            // Check if this is a critical notification
+            $isCritical = $this->isCriticalNotification($notification);
+
+            if ($isCritical) {
+                $pushService->sendCriticalPushNotification($user, $notification);
+            } elseif ($this->isAppointmentStatusNotification($notification)) {
+                $pushService->sendAppointmentStatusPushNotification($user, $notification);
+            } else {
+                $pushService->sendPushNotification($user, $notification);
+            }
+
             Log::info('Push notification sent', [
                 'user_id' => $user->id,
                 'notification_id' => $notification->id,
                 'title' => $notification->title,
+                'is_critical' => $isCritical,
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to send push notification', [
@@ -285,6 +297,34 @@ class NotificationService
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Check if notification is critical
+     */
+    protected function isCriticalNotification(Notification $notification): bool
+    {
+        $criticalTypes = [
+            'payment_failed',
+            'system_alert',
+            'appointment_cancelled',
+            'appointment_no_show',
+        ];
+
+        $type = $notification->data['type'] ?? '';
+        $newStatus = $notification->data['new_status'] ?? '';
+
+        return in_array($type, $criticalTypes) ||
+               in_array($newStatus, ['cancelled', 'no_show']);
+    }
+
+    /**
+     * Check if notification is appointment status related
+     */
+    protected function isAppointmentStatusNotification(Notification $notification): bool
+    {
+        return ($notification->data['type'] ?? '') === 'appointment_status_changed' ||
+               ($notification->data['related_type'] ?? '') === 'appointment';
     }
 
     /**
@@ -506,5 +546,150 @@ class NotificationService
             'type' => 'warning_period_reminder',
             'send_email' => true,
         ]);
+    }
+
+    /**
+     * Send waitlist slot available notification
+     */
+    public function sendWaitlistSlotAvailableNotification(User $user, $waitlistEntry): bool
+    {
+        $preferences = $user->notificationPreferences;
+
+        if (!$preferences || !$preferences->waitlist_slot_available) {
+            return false;
+        }
+
+        // Check quiet hours
+        if ($preferences->isQuietHoursActive()) {
+            return false;
+        }
+
+        try {
+            $user->notify(new \App\Notifications\WaitlistSlotAvailableNotification($waitlistEntry));
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send waitlist slot available notification', [
+                'user_id' => $user->id,
+                'waitlist_entry_id' => $waitlistEntry->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send waitlist offer expiring notification
+     */
+    public function sendWaitlistOfferExpiringNotification(User $user, $waitlistEntry): bool
+    {
+        $preferences = $user->notificationPreferences;
+
+        if (!$preferences || !$preferences->waitlist_offer_expiring) {
+            return false;
+        }
+
+        // Check quiet hours
+        if ($preferences->isQuietHoursActive()) {
+            return false;
+        }
+
+        try {
+            $user->notify(new \App\Notifications\WaitlistOfferExpiringNotification($waitlistEntry));
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send waitlist offer expiring notification', [
+                'user_id' => $user->id,
+                'waitlist_entry_id' => $waitlistEntry->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send waitlist position update notification
+     */
+    public function sendWaitlistPositionUpdateNotification(User $user, $waitlistEntry, int $oldPosition, int $newPosition): bool
+    {
+        $preferences = $user->notificationPreferences;
+
+        if (!$preferences || !$preferences->waitlist_position_update) {
+            return false;
+        }
+
+        // Check quiet hours
+        if ($preferences->isQuietHoursActive()) {
+            return false;
+        }
+
+        try {
+            $user->notify(new \App\Notifications\WaitlistPositionUpdateNotification($waitlistEntry, $oldPosition, $newPosition));
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send waitlist position update notification', [
+                'user_id' => $user->id,
+                'waitlist_entry_id' => $waitlistEntry->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send waitlist auto-booked notification
+     */
+    public function sendWaitlistAutoBookedNotification(User $user, $appointment): bool
+    {
+        $preferences = $user->notificationPreferences;
+
+        if (!$preferences || !$preferences->waitlist_auto_booked) {
+            return false;
+        }
+
+        // Check quiet hours
+        if ($preferences->isQuietHoursActive()) {
+            return false;
+        }
+
+        try {
+            $user->notify(new \App\Notifications\WaitlistAutoBookedNotification($appointment));
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send waitlist auto-booked notification', [
+                'user_id' => $user->id,
+                'appointment_id' => $appointment->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send waitlist expired notification
+     */
+    public function sendWaitlistExpiredNotification(User $user, $waitlistEntry): bool
+    {
+        $preferences = $user->notificationPreferences;
+
+        if (!$preferences || !$preferences->waitlist_expired) {
+            return false;
+        }
+
+        // Check quiet hours
+        if ($preferences->isQuietHoursActive()) {
+            return false;
+        }
+
+        try {
+            $user->notify(new \App\Notifications\WaitlistExpiredNotification($waitlistEntry));
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send waitlist expired notification', [
+                'user_id' => $user->id,
+                'waitlist_entry_id' => $waitlistEntry->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 }

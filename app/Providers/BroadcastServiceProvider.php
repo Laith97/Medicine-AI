@@ -39,6 +39,47 @@ class BroadcastServiceProvider extends ServiceProvider
         Broadcast::channel('debug.{id}', function ($user, $id) {
             return true; // Allow all connections for debugging
         });
+
+        // Appointment-related channels
+        Broadcast::channel('doctor.{doctorId}', function ($user, $doctorId) {
+            return $user->role === 'doctor' && $user->doctor && $user->doctor->id == $doctorId;
+        });
+
+        Broadcast::channel('patient.{patientId}', function ($user, $patientId) {
+            return $user->id == $patientId;
+        });
+
+        Broadcast::channel('appointments.{date}', function ($user, $date) {
+            // Allow authenticated users to subscribe to appointment date channels
+            return auth()->check();
+        });
+
+        Broadcast::channel('admin.appointments', function ($user) {
+            return in_array($user->role, ['admin', 'hospital_admin']);
+        });
+
+        // Synchronization channels
+        Broadcast::channel('sync.{userId}', function ($user, $userId) {
+            return $user->id == $userId;
+        });
+
+        // Real-time dashboard channels
+        Broadcast::channel('dashboard.{userId}.{dashboardId}', function ($user, $userId, $dashboardId) {
+            return $user->id == $userId;
+        });
+
+        Broadcast::channel('dashboard.{dashboardId}', function ($user, $dashboardId) {
+            return in_array($user->role, ['admin', 'hospital_admin', 'manager']);
+        });
+
+        // Notification channels
+        Broadcast::channel('notifications.{userId}', function ($user, $userId) {
+            return $user->id == $userId;
+        });
+
+        Broadcast::channel('alerts.{userId}', function ($user, $userId) {
+            return $user->id == $userId;
+        });
     }
 
     /**

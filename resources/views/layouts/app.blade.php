@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Stylesheets -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="{{ asset('css/responsive-modals.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin-enhancements.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin-tables.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/ui-consistency.css') }}">
     @stack('styles')
 
     <!-- Global Font Styling -->
@@ -373,10 +374,10 @@
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('adminSidebar');
             const toggle = document.querySelector('.mobile-toggle');
-            
-            if (window.innerWidth <= 768 && 
-                !sidebar.contains(event.target) && 
-                !toggle.contains(event.target) && 
+
+            if (window.innerWidth <= 768 &&
+                !sidebar.contains(event.target) &&
+                !toggle.contains(event.target) &&
                 sidebar.classList.contains('show')) {
                 sidebar.classList.remove('show');
             }

@@ -10,13 +10,13 @@
 @section('content')
 
 
-<div class="dashboard-container">
+<section class="dashboard-container">
     <div class="container">
         <!-- Enhanced Page Header -->
-        <div class="dashboard-header py-2 border-bottom">
-            <h2 class="h1 mb-1" style="font-weight: 700;">Dashboard</h2>
+        <header class="dashboard-header py-2 border-bottom">
+            <h1 class="h1 mb-1" style="font-weight: 700;">Dashboard</h1>
             <p>Overview of your activities</p>
-        </div>
+        </header>
 
         @auth
             <!-- Subscription CTA (no free trial) -->
@@ -56,18 +56,18 @@
                                 <i class="fas fa-star me-2"></i>Subscription Active
                             </h5>
                             <p class="mb-2">
-                                Your subscription is active and all features are available. 
+                                Your subscription is active and all features are available.
                                 @if(Auth::user()->monthlyInvoiceSetting && Auth::user()->monthlyInvoiceSetting->subscription_ends_at)
                                     <strong>Expires: {{ Auth::user()->monthlyInvoiceSetting->subscription_ends_at->format('M d, Y') }}</strong>
                                 @endif
                             </p>
-                            
+
                             @if(config('app.debug'))
                                 <div class="alert alert-warning mt-2 p-2 small">
                                     <strong>DEBUG:</strong> has_active_subscription=true, is_in_trial=false, sub_ends={{ Auth::user()->monthlyInvoiceSetting ? Auth::user()->monthlyInvoiceSetting->subscription_ends_at : 'null' }}
                                 </div>
                             @endif
-                            
+
                             <div class="d-flex gap-2">
                                 <a href="{{ route('subscription.manage') }}" class="btn btn-success btn-sm">
                                     <i class="fas fa-cog me-1"></i>Manage Subscription
@@ -211,19 +211,19 @@
                         <i class="fas fa-user-plus me-2"></i> Add New Patient
                     </a>
                 @endif --}}
-                
+
                 @if(auth()->user()->canAccessRoute('diagnosis'))
                     <a href="{{ route('diagnosis.create') }}" class="btn-custom-primary">
                         <i class="fas fa-file-medical me-2"></i> Create Diagnosis
                     </a>
                 @endif
-                
+
                 @if(auth()->user()->canAccessRoute('doctor.patient-management.index'))
                     <a href="{{ route('doctor.patient-management.index') }}" class="btn-custom-secondary">
                         <i class="fas fa-list me-2"></i> View All Patient Management
                     </a>
                 @endif
-                
+
                 @if(auth()->user()->canAccessRoute('diagnosis'))
                     <a href="{{ route('diagnosis.index') }}" class="btn-custom-secondary">
                         <i class="fas fa-clipboard-list me-2"></i> View Diagnoses
@@ -236,7 +236,7 @@
                         <i class="fas fa-calendar me-2"></i> Manage Appointments
                     </a>
                 @endif
-                
+
                 @if(auth()->user()->canAccessRoute('settings'))
                     <a href="{{ route('settings') }}" class="btn-custom-secondary">
                         <i class="fas fa-cog me-2"></i> Settings
@@ -246,11 +246,12 @@
         </div>
 
         <!-- Statistics Section -->
-        <div class="row mb-4 mb-md-5">
+        <section class="row mb-4 mb-md-5" aria-labelledby="statistics-heading">
+            <h2 id="statistics-heading" class="visually-hidden">Patient Statistics Overview</h2>
             <div class="col-md-3 mb-4">
-                <div class="stats-card">
+                <article class="stats-card">
                     <div class="stats-icon">
-                        <i class="fas fa-users"></i>
+                        <i class="fas fa-users" aria-hidden="true"></i>
                     </div>
                     <p class="stats-number">
                         @php
@@ -336,9 +337,9 @@
                         {{ $avgAge }}
                     </p>
                     <p class="stats-label">Avg. Patient Age</p>
-                </div>
+                </article>
             </div>
-        </div>
+        </section>
 
         @if($doctorData)
         <!-- Doctor-Specific Dashboard Sections -->
@@ -454,9 +455,14 @@
             <!-- Today's Schedule -->
             <div class="col-lg-8 mb-4">
                 <div class="table-card">
+                    <!-- Loading overlay for schedule updates -->
+                    <div id="schedule-loading" class="text-center py-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+                        <p class="mt-2 text-muted">Updating schedule...</p>
+                    </div>
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h6 class="table-title mb-0">
-                            <i class="fas fa-calendar-check me-2"></i>Today's Schedule
+                            <i class="fas fa-calendar-check me-2" aria-hidden="true"></i>Today's Schedule
                         </h6>
                         <span class="badge bg-primary">{{ now()->format('l, F j, Y') }}</span>
                     </div>
@@ -527,61 +533,61 @@
                                 <i class="fas fa-calendar me-2"></i>View All Appointments
                             </a>
                         @endif
-                        
+
                         @if(auth()->user()->canAccessRoute('diagnosis'))
                             <a href="{{ route('diagnosis.create') }}" class="btn btn-primary-custom btn-sm">
                                 <i class="fas fa-file-medical me-2"></i>Create Diagnosis
                             </a>
                         @endif
-                        
+
                         @if(auth()->user()->canAccessRoute('diagnosis'))
                             <a href="{{ route('diagnosis.index') }}" class="btn btn-secondary-custom btn-sm">
                                 <i class="fas fa-clipboard-list me-2"></i>View Diagnoses
                             </a>
                         @endif
-                        
+
                         @if(auth()->user()->canAccessRoute('doctor.availability.index'))
                             <a href="{{ route('doctor.availability.index') }}" class="btn btn-secondary-custom btn-sm">
                                 <i class="fas fa-clock me-2"></i>Manage Availability
                             </a>
                         @endif
-                        
+
                         @if(auth()->user()->canAccessRoute('doctor.reviews.index'))
                             <a href="{{ route('doctor.reviews.index') }}" class="btn btn-secondary-custom btn-sm">
                                 <i class="fas fa-star me-2"></i>View Reviews
                             </a>
                         @endif
-                        
+
                         @if(auth()->user()->canAccessRoute('doctor.profile.edit'))
                             <a href="{{ route('doctor.profile.edit') }}" class="btn btn-secondary-custom btn-sm">
                                 <i class="fas fa-user-edit me-2"></i>Edit Profile
                             </a>
                         @endif
-                        
+
                         @if(auth()->user()->canAccessRoute('doctor.settings.appointments'))
                             <a href="{{ route('doctor.settings.appointments') }}" class="btn btn-secondary-custom btn-sm">
                                 <i class="fas fa-cog me-2"></i>Appointment Settings
                             </a>
                         @endif
-                        
+
                         @if(auth()->user()->canAccessRoute('doctor.landing-page.index'))
                             <a href="{{ route('doctor.landing-page.index') }}" class="btn btn-secondary-custom btn-sm">
                                 <i class="fas fa-globe me-2"></i>Landing Page
                             </a>
                         @endif
-                        
+
                         @if(auth()->user()->canAccessRoute('doctor.notes.index'))
                             <a href="{{ route('doctor.notes.index') }}" class="btn btn-secondary-custom btn-sm">
                                 <i class="fas fa-sticky-note me-2"></i>My Notes
                             </a>
                         @endif
-                        
+
                         @if(auth()->user()->canAccessRoute('doctor.notes.create'))
                             <a href="{{ route('doctor.notes.create') }}" class="btn btn-secondary-custom btn-sm">
                                 <i class="fas fa-plus me-2"></i>Add Note
                             </a>
                         @endif
-                        
+
                         @if(auth()->user()->canAccessRoute('doctor.blog.index'))
                             <a href="{{ route('doctor.blog.index') }}" class="btn btn-secondary-custom btn-sm">
                                 <i class="fas fa-blog me-2"></i>Manage Blog
@@ -690,16 +696,16 @@
                 <p class="mb-0 small opacity-75">{{ $appointment->reason }}</p>
             </div>
             <div class="card-body">
-                <p class="mb-2"><strong>Status:</strong> 
+                <p class="mb-2"><strong>Status:</strong>
                     <span class="badge {{ $appointment->status == 'completed' ? 'bg-success' : ($appointment->status == 'cancelled' ? 'bg-danger' : 'bg-warning') }}">
                         {{ ucfirst($appointment->status) }}
                     </span>
                 </p>
-                
+
                 @if($appointment->prescription_given == true)
                 <div class="prescriptions-section mt-3 border-top pt-3">
                     <h6 class="mb-3"><i class="fas fa-pills me-2 text-primary"></i>Prescriptions</h6>
-                    
+
                     @if($appointment->prescriptions->count() > 0)
                     <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
                         @foreach($appointment->prescriptions as $prescription)
@@ -1088,14 +1094,21 @@
                 </div>
 
                 <!-- Patient Details Modal -->
-                <div class="modal fade" id="patientModal" tabindex="-1" aria-labelledby="patientModalLabel" aria-hidden="true">
+                <div class="modal fade" id="patientModal" tabindex="-1" aria-labelledby="patientModalLabel" aria-hidden="true" role="dialog">
                     <div class="modal-dialog modal-lg modal-dialog-centered">
                         <div class="modal-content">
                             <div class="modal-header" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white;">
                                 <h5 class="modal-title" id="patientModalLabel" style="color: #fff">Patient Details</h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close patient details modal"></button>
                             </div>
                             <div class="modal-body">
+                                <!-- Loading State -->
+                                <div id="patient-modal-loading" class="text-center py-4" style="display: none;" role="status" aria-live="polite">
+                                    <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+                                    <p class="mt-2 text-muted">Loading patient details...</p>
+                                </div>
+                                <!-- Content Container -->
+                                <div id="patient-modal-content">
                                 <div class="row mb-4">
                                     <div class="col-md-4">
                                         <div class="patient-info-card">
@@ -1181,4 +1194,204 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="{{ asset('js/dashboard.js') }}"></script>
+
+<script>
+// Focus management for modals and dynamic content
+document.addEventListener('DOMContentLoaded', function() {
+    // Patient modal focus management
+    const patientModal = document.getElementById('patientModal');
+    let lastFocusedElement = null;
+
+    if (patientModal) {
+        patientModal.addEventListener('show.bs.modal', function(event) {
+            // Store the element that triggered the modal
+            lastFocusedElement = event.relatedTarget;
+
+            // Focus the modal when it opens
+            setTimeout(() => {
+                const firstFocusable = patientModal.querySelector('.modal-body input, .modal-body button, .modal-body a, .modal-body [tabindex]:not([tabindex="-1"])');
+                if (firstFocusable) {
+                    firstFocusable.focus();
+                } else {
+                    patientModal.focus();
+                }
+            }, 100);
+        });
+
+        patientModal.addEventListener('hidden.bs.modal', function() {
+            // Return focus to the triggering element
+            if (lastFocusedElement) {
+                lastFocusedElement.focus();
+            }
+        });
+
+        // Keyboard navigation within modal
+        patientModal.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modalInstance = bootstrap.Modal.getInstance(patientModal);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            }
+
+            // Tab navigation within modal
+            if (e.key === 'Tab') {
+                const focusableElements = patientModal.querySelectorAll(
+                    'input, button, a, select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
+                const firstElement = focusableElements[0];
+                const lastElement = focusableElements[focusableElements.length - 1];
+
+                if (e.shiftKey) {
+                    // Shift + Tab
+                    if (document.activeElement === firstElement) {
+                        e.preventDefault();
+                        lastElement.focus();
+                    }
+                } else {
+                    // Tab
+                    if (document.activeElement === lastElement) {
+                        e.preventDefault();
+                        firstElement.focus();
+                    }
+                }
+            }
+        });
+    }
+
+    // Enhanced patient view button functionality
+    document.querySelectorAll('.btn-view-patient').forEach(button => {
+        button.addEventListener('click', function() {
+            const patientKey = this.dataset.patientKey;
+            const patientName = this.dataset.patientName;
+            const patientAge = this.dataset.patientAge;
+            const patientGender = this.dataset.patientGender;
+
+            // Show loading state
+            const loadingDiv = document.getElementById('patient-modal-loading');
+            const contentDiv = document.getElementById('patient-modal-content');
+
+            if (loadingDiv && contentDiv) {
+                loadingDiv.style.display = 'block';
+                contentDiv.style.display = 'none';
+            }
+
+            // Update modal title
+            const modalTitle = document.getElementById('patientModalLabel');
+            if (modalTitle) {
+                modalTitle.textContent = `Patient Details - ${patientName}`;
+            }
+
+            // Populate basic info
+            const nameElement = document.querySelector('.patient-name');
+            const ageElement = document.querySelector('.patient-age');
+            const genderElement = document.querySelector('.patient-gender');
+
+            if (nameElement) nameElement.textContent = patientName || 'N/A';
+            if (ageElement) ageElement.textContent = patientAge || 'N/A';
+            if (genderElement) genderElement.textContent = patientGender || 'N/A';
+
+            // Fetch patient visit history
+            fetch(`/api/patients/${patientKey}/visits`)
+                .then(response => response.json())
+                .then(data => {
+                    const visitBody = document.getElementById('visit-history-body');
+                    if (visitBody && data.visits) {
+                        let html = '';
+                        data.visits.forEach((visit, index) => {
+                            html += `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${new Date(visit.created_at).toLocaleDateString()}</td>
+                                    <td>${visit.symptoms || 'N/A'}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary view-visit-btn"
+                                                data-visit-id="${visit.id}"
+                                                data-visit-data="${JSON.stringify(visit).replace(/"/g, '"')}">
+                                            View
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        visitBody.innerHTML = html;
+
+                        // Add event listeners for visit detail buttons
+                        document.querySelectorAll('.view-visit-btn').forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                const visitData = JSON.parse(this.dataset.visitData);
+                                showVisitDetails(visitData);
+                            });
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading patient visits:', error);
+                })
+                .finally(() => {
+                    // Hide loading state
+                    if (loadingDiv && contentDiv) {
+                        loadingDiv.style.display = 'none';
+                        contentDiv.style.display = 'block';
+                    }
+                });
+        });
+    });
+
+    function showVisitDetails(visitData) {
+        const detailsSection = document.getElementById('visit-details-section');
+        const detailsContent = document.getElementById('visit-details-content');
+
+        if (detailsSection && detailsContent) {
+            detailsContent.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Symptoms</h6>
+                        <p>${visitData.symptoms || 'Not specified'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Diagnosis</h6>
+                        <p>${visitData.diagnosis || 'Not specified'}</p>
+                    </div>
+                </div>
+                ${visitData.notes ? `
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6>Notes</h6>
+                            <p>${visitData.notes}</p>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+            detailsSection.style.display = 'block';
+            detailsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    // Loading states for dynamic content updates
+    function showLoadingState(elementId, message = 'Loading...') {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+                    <p class="mt-2 text-muted">${message}</p>
+                </div>
+            `;
+            element.style.display = 'block';
+        }
+    }
+
+    function hideLoadingState(elementId) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.style.display = 'none';
+        }
+    }
+
+    // Make functions globally available
+    window.showLoadingState = showLoadingState;
+    window.hideLoadingState = hideLoadingState;
+});
+</script>
 
