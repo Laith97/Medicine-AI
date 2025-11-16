@@ -6,10 +6,26 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\User;
+use App\Models\ClearinghouseSubmission;
 
 class Claim extends Model
 {
     use HasFactory;
+
+    /**
+     * Boot the model
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::updating(function ($claim) {
+            if ($claim->isDirty()) {
+                // Increment version for optimistic locking
+                $claim->version = $claim->version + 1;
+            }
+        });
+    }
 
     protected $fillable = [
         'claim_id',
@@ -30,6 +46,8 @@ class Claim extends Model
         'service_date',
         'submission_date',
         'payment_date',
+        'eligibility_warning',
+        'version',
     ];
 
     protected $casts = [
@@ -50,6 +68,14 @@ class Claim extends Model
     public function patient(): BelongsTo
     {
         return $this->belongsTo(User::class, 'patient_id');
+    }
+
+    /**
+     * Get the clearinghouse submission for this claim.
+     */
+    public function clearinghouseSubmission(): BelongsTo
+    {
+        return $this->belongsTo(ClearinghouseSubmission::class, 'clearinghouse_submission_id');
     }
 
     /**

@@ -1,0 +1,470 @@
+/* On-Deck Dashboard Styles */
+
+/* Container and Layout */
+.on-deck-container {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+    padding: 1rem 0;
+}
+
+.on-deck-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 20px;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(44, 62, 80, 0.3);
+    text-align: center;
+}
+
+.on-deck-header h1 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 2.5rem;
+    color: white;
+}
+
+.on-deck-header p {
+    margin: 0.5rem 0 0 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+/* Appointment Cards */
+.appointment-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: none;
+    transition: all 0.3s ease;
+    cursor: move;
+    position: relative;
+    overflow: hidden;
+}
+
+.appointment-card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.appointment-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #DE6262, #c55252);
+}
+
+.appointment-card.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+}
+
+/* Status Indicators */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-check-in {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+}
+
+.status-in-progress {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+}
+
+.status-completed {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+}
+
+.status-no-show {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+.status-indicator i {
+    font-size: 1rem;
+}
+
+/* Appointment Content */
+.appointment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.appointment-time {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.appointment-patient {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #34495e;
+    margin-bottom: 0.5rem;
+}
+
+.appointment-details {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.appointment-details div {
+    margin-bottom: 0.25rem;
+}
+
+.appointment-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Drag Handle */
+.drag-handle {
+    cursor: move;
+    color: #adb5bd;
+    font-size: 1.2rem;
+    margin-right: 1rem;
+    transition: color 0.3s ease;
+}
+
+.drag-handle:hover {
+    color: #6c757d;
+}
+
+/* Real-time Updates */
+.realtime-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #27ae60;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Filters and Search */
+.on-deck-filters {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.filter-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.filter-controls .form-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-controls .btn {
+    white-space: nowrap;
+}
+
+/* Empty State */
+.on-deck-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6c757d;
+}
+
+.on-deck-empty i {
+    font-size: 4rem;
+    color: #DE6262;
+    margin-bottom: 1rem;
+}
+
+/* Sortable.js Styles */
+.sortable-ghost {
+    opacity: 0.4;
+    background: #f8f9fa;
+    border: 2px dashed #DE6262;
+}
+
+.sortable-chosen {
+    transform: scale(1.02);
+}
+
+.sortable-drag {
+    transform: rotate(5deg);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Priority Indicators */
+.priority-high {
+    border-left: 4px solid #e74c3c;
+}
+
+.priority-medium {
+    border-left: 4px solid #f39c12;
+}
+
+.priority-low {
+    border-left: 4px solid #27ae60;
+}
+
+/* Status Update Animations */
+.status-updating {
+    position: relative;
+    overflow: hidden;
+}
+
+.status-updating::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Tablet Responsive Design */
+@media (max-width: 1024px) {
+    .on-deck-header {
+        padding: 1.5rem;
+    }
+
+    .on-deck-header h1 {
+        font-size: 2rem;
+    }
+
+    .appointment-card {
+        padding: 1rem;
+    }
+
+    .appointment-time {
+        font-size: 1.1rem;
+    }
+
+    .appointment-patient {
+        font-size: 1rem;
+    }
+
+    .filter-controls {
+        gap: 0.5rem;
+    }
+
+    .filter-controls .form-group {
+        min-width: 150px;
+    }
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+    .on-deck-container {
+        padding: 0.5rem 0;
+    }
+
+    .on-deck-header {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .on-deck-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .appointment-card {
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .appointment-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .appointment-actions {
+        justify-content: center;
+    }
+
+    .filter-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-controls .form-group {
+        min-width: auto;
+    }
+
+    .on-deck-filters {
+        padding: 1rem;
+    }
+}
+
+/* Touch Interactions for Tablets */
+@media (pointer: coarse) {
+    .appointment-card {
+        cursor: grab;
+    }
+
+    .appointment-card:active {
+        cursor: grabbing;
+    }
+
+    .drag-handle {
+        display: block;
+        font-size: 1.5rem;
+        opacity: 1;
+    }
+
+    .appointment-card:hover {
+        transform: none; /* Disable hover transform on touch devices */
+    }
+}
+
+/* Small Mobile Devices */
+@media (max-width: 576px) {
+    .appointment-card {
+        padding: 0.75rem;
+    }
+
+    .appointment-time {
+        font-size: 1rem;
+    }
+
+    .appointment-patient {
+        font-size: 0.95rem;
+    }
+
+    .appointment-details {
+        font-size: 0.85rem;
+    }
+
+    .status-indicator {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    .appointment-actions .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .appointment-card {
+        border: 2px solid #000;
+    }
+
+    .status-indicator {
+        border: 1px solid #000;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .appointment-card,
+    .status-indicator,
+    .realtime-indicator {
+        transition: none;
+        animation: none;
+    }
+
+    .appointment-card:hover {
+        transform: none;
+    }
+}
+
+/* Print styles */
+@media print {
+    .on-deck-container {
+        background: white;
+    }
+
+    .appointment-card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        break-inside: avoid;
+    }
+
+    .appointment-actions,
+    .drag-handle,
+    .realtime-indicator {
+        display: none;
+    }
+}
+
+/* Focus styles for accessibility */
+.appointment-card:focus,
+.filter-controls .form-control:focus,
+.filter-controls .form-select:focus,
+.filter-controls .btn:focus {
+    outline: 2px solid #DE6262;
+    outline-offset: 2px;
+}
+
+/* Loading states */
+.appointments-loading {
+    text-align: center;
+    padding: 2rem;
+}
+
+.appointments-loading i {
+    font-size: 2rem;
+    color: #DE6262;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Error states */
+.appointments-error {
+    text-align: center;
+    padding: 2rem;
+    color: #e74c3c;
+}
+
+.appointments-error i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}

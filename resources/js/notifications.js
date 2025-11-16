@@ -89,6 +89,22 @@ class NotificationSystem {
     handleNewNotification(notification) {
         console.log('🔔 Processing new notification:', notification);
 
+        // Throttle rapid notifications (max 1 per second)
+        const now = Date.now();
+        if (this.lastNotificationTime && (now - this.lastNotificationTime) < 1000) {
+            console.log('🔔 Throttling rapid notifications');
+            if (this.throttleTimeout) clearTimeout(this.throttleTimeout);
+            this.throttleTimeout = setTimeout(() => {
+                this.processNotification(notification);
+            }, 1000);
+            return;
+        }
+
+        this.lastNotificationTime = now;
+        this.processNotification(notification);
+    }
+
+    processNotification(notification) {
         // Update unread count
         this.unreadCount += 1;
         this.updateUnreadCountDisplay();
@@ -122,13 +138,36 @@ class NotificationSystem {
     }
 
     async loadUnreadCount() {
+        // Debounce multiple calls
+        if (this.loadingUnreadCount) return;
+        this.loadingUnreadCount = true;
+
         try {
-            const response = await fetch('/api/notifications');
+            const response = await fetch('/api/notifications', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
+                },
+                // Add timeout
+                signal: AbortSignal.timeout(5000)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
             const data = await response.json();
             this.unreadCount = data.unread_count || 0;
             this.updateUnreadCountDisplay();
         } catch (error) {
-            console.error('Failed to load unread count:', error);
+            if (error.name === 'TimeoutError') {
+                console.warn('Unread count request timed out');
+            } else {
+                console.error('Failed to load unread count:', error);
+            }
+        } finally {
+            this.loadingUnreadCount = false;
         }
     }
 

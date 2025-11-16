@@ -100,6 +100,12 @@ class MenuHelper
                         'icon' => 'fas fa-stethoscope',
                         'permission' => 'diagnosis',
                     ],
+                    [
+                        'name' => 'HEP Programs',
+                        'route' => 'doctor.hep.index',
+                        'icon' => 'fas fa-dumbbell',
+                        'permission' => 'hep',
+                    ],
                 ]
             ],
 
@@ -310,6 +316,11 @@ class MenuHelper
                         'name' => 'Diagnoses',
                         'route' => 'diagnosis.index',
                         'icon' => 'fas fa-stethoscope',
+                    ],
+                    [
+                        'name' => 'HEP Programs',
+                        'route' => 'doctor.hep.index',
+                        'icon' => 'fas fa-dumbbell',
                     ],
                 ]
             ],

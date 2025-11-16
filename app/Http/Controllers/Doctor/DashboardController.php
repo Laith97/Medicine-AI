@@ -442,6 +442,189 @@ class DashboardController extends Controller
     }
 
     /**
+     * Display the on-deck dashboard for real-time appointment tracking
+     */
+    public function onDeck(Request $request)
+    {
+        $doctor = $this->getEffectiveDoctor();
+
+        // Get appointments for on-deck display (today and upcoming)
+        $query = $doctor->appointments()
+            ->with(['patient.patientRiskScores'])
+            ->whereIn('status', ['check_in', 'in_progress', 'confirmed'])
+            ->whereDate('appointment_date', '>=', today())
+            ->whereDate('appointment_date', '<=', today()->addDays(1)); // Today and tomorrow
+
+        // Filter by status if specified
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        // Order by appointment time and priority
+        $appointments = $query->orderBy('appointment_date')
+            ->orderByRaw("CASE
+                WHEN status = 'in_progress' THEN 1
+                WHEN status = 'check_in' THEN 2
+                WHEN status = 'confirmed' THEN 3
+                ELSE 4
+            END")
+            ->get();
+
+        // Add priority based on risk scores and appointment time
+        $appointments->transform(function ($appointment) {
+            $riskScore = $appointment->patient->patientRiskScores
+                ->where('appointment_id', $appointment->id)
+                ->first();
+
+            $priority = 'low';
+            if ($riskScore) {
+                $maxRisk = max($riskScore->no_show_risk, $riskScore->hospitalization_risk);
+                if ($maxRisk >= 0.7) {
+                    $priority = 'high';
+                } elseif ($maxRisk >= 0.3) {
+                    $priority = 'medium';
+                }
+            }
+
+            $appointment->priority = $priority;
+            return $appointment;
+        });
+
+        // Sort by priority and time
+        $appointments = $appointments->sort(function ($a, $b) {
+            $priorityOrder = ['high' => 3, 'medium' => 2, 'low' => 1];
+            $priorityDiff = $priorityOrder[$b->priority] - $priorityOrder[$a->priority];
+
+            if ($priorityDiff !== 0) {
+                return $priorityDiff;
+            }
+
+            return $a->appointment_date <=> $b->appointment_date;
+        })->values();
+
+        return view('doctor.on-deck', compact('appointments'));
+    }
+
+    /**
+     * Update appointment status via AJAX
+     */
+    public function updateAppointmentStatus(Request $request, Appointment $appointment)
+    {
+        $doctor = $this->getEffectiveDoctor();
+
+        // Check if this appointment belongs to the doctor
+        if ($appointment->doctor_id !== $doctor->id) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'status' => 'required|in:check_in,in_progress,completed,no_show'
+        ]);
+
+        $newStatus = $request->status;
+
+        // Validate status transitions
+        $validTransitions = [
+            'check_in' => ['in_progress', 'no_show'],
+            'in_progress' => ['completed', 'no_show'],
+            'confirmed' => ['check_in', 'no_show'],
+        ];
+
+        if (!isset($validTransitions[$appointment->status]) ||
+            !in_array($newStatus, $validTransitions[$appointment->status])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid status transition'
+            ], 400);
+        }
+
+        try {
+            // Update appointment status
+            switch ($newStatus) {
+                case 'in_progress':
+                    if ($appointment->status === 'check_in') {
+                        $appointment->update(['status' => 'in_progress']);
+                    }
+                    break;
+                case 'completed':
+                    if ($appointment->status === 'in_progress') {
+                        $appointment->complete();
+                    }
+                    break;
+                case 'no_show':
+                    if (in_array($appointment->status, ['check_in', 'in_progress', 'confirmed'])) {
+                        $appointment->markAsNoShow();
+                    }
+                    break;
+            }
+
+            // Broadcast the status change
+            broadcast(new \App\Events\AppointmentStatusUpdated($appointment))->toOthers();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Appointment status updated successfully',
+                'appointment' => [
+                    'id' => $appointment->id,
+                    'status' => $appointment->status,
+                    'updated_at' => $appointment->updated_at->toISOString()
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to update appointment status', [
+                'appointment_id' => $appointment->id,
+                'new_status' => $newStatus,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update appointment status'
+            ], 500);
+        }
+    }
+
+    /**
+     * Update appointment order (drag and drop)
+     */
+    public function reorderAppointments(Request $request)
+    {
+        $doctor = $this->getEffectiveDoctor();
+
+        $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'integer|exists:appointments,id'
+        ]);
+
+        try {
+            // Update sort order for the doctor's appointments
+            foreach ($request->order as $index => $appointmentId) {
+                $appointment = Appointment::where('id', $appointmentId)
+                    ->where('doctor_id', $doctor->id)
+                    ->first();
+
+                if ($appointment) {
+                    $appointment->update(['sort_order' => $index + 1]);
+                }
+            }
+
+            return response()->json(['success' => true]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to reorder appointments', [
+                'error' => $e->getMessage(),
+                'order' => $request->order
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update appointment order'
+            ], 500);
+        }
+    }
+
+    /**
      * Ensure risk predictions exist for an appointment
      */
     private function ensureRiskPredictions(Appointment $appointment)

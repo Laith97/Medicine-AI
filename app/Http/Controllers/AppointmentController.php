@@ -6,6 +6,8 @@ use App\Models\Appointment;
 use App\Events\AppointmentBookedEvent;
 use App\Models\Doctor;
 use App\Services\AIAssistant;
+use App\Services\AuthorizationService;
+use App\Services\BusinessRulesService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -83,6 +85,13 @@ class AppointmentController extends Controller
             'symptoms' => 'nullable|string|max:1000',
             'appointment_type' => 'required|in:' . implode(',', $enabledTypes),
             'patient_notes' => 'nullable|string|max:1000',
+            // Insurance fields (optional)
+            'insurance_provider_id' => 'nullable|exists:insurance_providers,id',
+            'policy_number' => 'nullable|string|max:255',
+            'group_number' => 'nullable|string|max:255',
+            'subscriber_id' => 'nullable|string|max:255',
+            'relationship_to_subscriber' => 'nullable|in:self,spouse,child,parent,other',
+            'effective_date' => 'nullable|date',
         ];
 
         // Add validation rules based on booking type for guests
@@ -177,9 +186,51 @@ class AppointmentController extends Controller
 
             $appointment = Appointment::create($appointmentData);
 
+            // Create patient insurance record if insurance information is provided
+            $patientInsurance = null;
+            if ($request->filled('insurance_provider_id') && $request->filled('policy_number')) {
+                $insuranceData = [
+                    'patient_id' => $patientId,
+                    'insurance_provider_id' => $request->insurance_provider_id,
+                    'policy_number' => $request->policy_number,
+                    'group_number' => $request->group_number,
+                    'subscriber_id' => $request->subscriber_id,
+                    'relationship_to_subscriber' => $request->relationship_to_subscriber,
+                    'effective_date' => $request->effective_date,
+                ];
+
+                $patientInsurance = \App\Models\PatientInsurance::create($insuranceData);
+            }
+
             // Generate verification token for guest appointments
             if ($appointment->isGuestAppointment()) {
                 $appointment->generateVerificationToken();
+            }
+
+            // Check eligibility if insurance is provided
+            $eligibilityWarning = null;
+            if ($patientInsurance) {
+                try {
+                    $eligibilityService = app(\App\Services\EligibilityServiceFactory::class)
+                        ->getServiceForProvider($patientInsurance->insuranceProvider);
+
+                    $eligibilityResult = $eligibilityService->checkEligibility(
+                        $patientInsurance,
+                        $request->appointment_type
+                    );
+
+                    if ($eligibilityResult['status'] === 'ineligible') {
+                        $eligibilityWarning = 'Warning: Patient appears ineligible for this service type. Please verify insurance information.';
+                    } elseif ($eligibilityResult['status'] === 'error') {
+                        $eligibilityWarning = 'Unable to verify insurance eligibility. Please check manually.';
+                    }
+                } catch (\Exception $e) {
+                    $eligibilityWarning = 'Unable to verify insurance eligibility. Please check manually.';
+                    \Log::warning('Eligibility check failed during appointment booking', [
+                        'appointment_id' => $appointment->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
 
             if ($doctor->auto_approve_appointments) {
@@ -191,14 +242,23 @@ class AppointmentController extends Controller
             // Send notifications
             $this->sendAppointmentNotifications($appointment);
 
+            // Prepare success message with eligibility warning if applicable
+            $successMessage = 'Appointment booked successfully! ';
+            if ($appointment->isGuestAppointment()) {
+                $successMessage .= 'Check your email for verification and appointment details.';
+            }
+            if ($eligibilityWarning) {
+                $successMessage .= ' ' . $eligibilityWarning;
+            }
+
             // Handle AJAX requests vs regular form submissions
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Appointment booked successfully! ' .
-                        ($appointment->isGuestAppointment() ? 'Check your email for verification and appointment details.' : ''),
+                    'message' => $successMessage,
                     'appointment_id' => $appointment->id,
                     'appointment_number' => $appointment->appointment_number,
+                    'eligibility_warning' => $eligibilityWarning,
                     'redirect_url' => $appointment->isGuestAppointment() ?
                         route('appointments.guest.show', [
                             'appointment' => $appointment->appointment_number,
@@ -207,14 +267,17 @@ class AppointmentController extends Controller
                         route('appointments.show', $appointment)
                 ]);
             } else {
-                if ($appointment->isGuestAppointment()) {
-                    return redirect()->route('appointments.guest.show', [
+                $redirect = $appointment->isGuestAppointment() ?
+                    redirect()->route('appointments.guest.show', [
                         'appointment' => $appointment->appointment_number,
                         'email' => $appointment->guest_email
-                    ])->with('success', 'Appointment booked successfully! Check your email for verification and appointment details.');
+                    ]) :
+                    redirect()->route('appointments.show', $appointment);
+
+                if ($eligibilityWarning) {
+                    return $redirect->with('success', $successMessage)->with('warning', $eligibilityWarning);
                 } else {
-                    return redirect()->route('appointments.show', $appointment)
-                        ->with('success', 'Appointment booked successfully!');
+                    return $redirect->with('success', $successMessage);
                 }
             }
 
@@ -239,26 +302,30 @@ class AppointmentController extends Controller
      */
     public function show(Appointment $appointment)
     {
-        // Check if user can view this appointment
-        if ($appointment->patient_id !== Auth::id() &&
-            (!Auth::user()->isDoctor() || $appointment->doctor->user_id !== Auth::id())) {
-            abort(403);
+        $authService = app(AuthorizationService::class);
+        $user = $authService->getAuthenticatedUser();
+
+        if (!$user || !$authService->canViewAppointment($user, $appointment)) {
+            abort(403, 'Unauthorized access to appointment');
         }
 
         // Log doctor access to patient appointment
-        if (Auth::user()->isDoctor() && $appointment->patient_id) {
+        if ($user->isDoctor() && $appointment->patient_id) {
             \App\Services\AuditLoggingService::logDoctorAccessPatient(
-                Auth::id(),
+                $user->id,
                 $appointment->patient_id,
                 ['appointment_id' => $appointment->id]
             );
         }
 
-        $relations = ['doctor.user', 'doctor.specialty', 'review', 'prescriptions'];
-
-        if (config('ai.enabled', true)) {
-            $relations[] = 'patient.patientData';
-        }
+        // Eager load all necessary relationships to prevent N+1 queries
+        $relations = [
+            'doctor.user',
+            'doctor.specialty',
+            'review',
+            'prescriptions',
+            'patient.patientData'
+        ];
 
         $appointment->load($relations);
 
@@ -270,26 +337,53 @@ class AppointmentController extends Controller
      */
     public function cancel(Request $request, Appointment $appointment)
     {
-        // Check if user can cancel this appointment
-        if ($appointment->patient_id !== Auth::id()) {
-            abort(403);
-        }
+        $authService = app(AuthorizationService::class);
+        $businessRulesService = app(BusinessRulesService::class);
 
-        if (!$appointment->canBeCancelled()) {
-            return back()->withErrors(['error' => 'This appointment cannot be cancelled.']);
+        $user = $authService->getAuthenticatedUser();
+
+        if (!$user || !$authService->canCancelAppointment($user, $appointment)) {
+            abort(403, 'Unauthorized to cancel this appointment');
         }
 
         $request->validate([
             'cancellation_reason' => 'nullable|string|max:500'
         ]);
 
-        $appointment->cancel('patient', $request->cancellation_reason);
+        // Validate business rules
+        $validationResult = $businessRulesService->validateAppointmentCancellation(
+            $appointment,
+            $request->cancellation_reason
+        );
 
-        // Send cancellation notifications
-        $this->sendAppointmentCancellationNotifications($appointment, $request->cancellation_reason);
+        if (!$validationResult['valid']) {
+            return back()->withErrors(['error' => implode(', ', $validationResult['errors'])]);
+        }
 
-        return redirect()->route('appointments.index')
-            ->with('success', 'Appointment cancelled successfully.');
+        // Show warnings if any
+        $redirect = redirect()->route('appointments.index');
+        if (!empty($validationResult['warnings'])) {
+            $redirect = $redirect->with('warning', implode(', ', $validationResult['warnings']));
+        }
+
+        DB::transaction(function () use ($appointment, $request, $user) {
+            // Lock the appointment for update to prevent concurrent modifications
+            $lockedAppointment = Appointment::where('id', $appointment->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$lockedAppointment) {
+                throw new \Exception('Appointment not found');
+            }
+
+            $cancelledBy = $user->isPatient() ? 'patient' : 'doctor';
+            $lockedAppointment->cancel($cancelledBy, $request->cancellation_reason);
+
+            // Send cancellation notifications
+            $this->sendAppointmentCancellationNotifications($lockedAppointment, $request->cancellation_reason);
+        });
+
+        return $redirect->with('success', 'Appointment cancelled successfully.');
     }
 
     /**
@@ -323,30 +417,32 @@ class AppointmentController extends Controller
             return back()->withErrors(['new_appointment_date' => 'The selected time slot is not available.']);
         }
 
-        DB::beginTransaction();
-        try {
-            $appointment->update([
+        DB::transaction(function () use ($appointment, $doctor, $newDate) {
+            // Lock the appointment for update to prevent concurrent modifications
+            $lockedAppointment = Appointment::where('id', $appointment->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$lockedAppointment) {
+                throw new \Exception('Appointment not found');
+            }
+
+            $lockedAppointment->update([
                 'appointment_date' => $newDate,
                 'appointment_end' => $newDate->copy()->addMinutes($doctor->appointment_duration),
                 'status' => $doctor->auto_approve_appointments ? 'confirmed' : 'pending',
             ]);
 
             if ($doctor->auto_approve_appointments) {
-                $appointment->confirm();
+                $lockedAppointment->confirm();
             }
 
-            DB::commit();
-
             // Send rescheduling notifications
-            $this->sendAppointmentReschedulingNotifications($appointment, $newDate);
+            $this->sendAppointmentReschedulingNotifications($lockedAppointment, $newDate);
+        });
 
-            return redirect()->route('appointments.show', $appointment)
-                ->with('success', 'Appointment rescheduled successfully!');
-
-        } catch (\Exception $e) {
-            DB::rollback();
-            return back()->withErrors(['error' => 'Failed to reschedule appointment. Please try again.']);
-        }
+        return redirect()->route('appointments.show', $appointment)
+            ->with('success', 'Appointment rescheduled successfully!');
     }
 
     /**
@@ -498,6 +594,15 @@ class AppointmentController extends Controller
     private function sendAppointmentNotifications(Appointment $appointment)
     {
         try {
+            // Eager load relationships to prevent N+1 queries
+            if (!$appointment->relationLoaded('doctor.user')) {
+                $appointment->load('doctor.user');
+            }
+
+            if ($appointment->patient_id && !$appointment->relationLoaded('patient')) {
+                $appointment->load('patient');
+            }
+
             // Send notification to doctor about new appointment
             if ($appointment->doctor && $appointment->doctor->user) {
                 $doctor = $appointment->doctor->user;
@@ -507,7 +612,7 @@ class AppointmentController extends Controller
                     // 直接发送通知，不使用队列
                     $notification = new \App\Notifications\AppointmentBookedNotification($appointment);
                     $doctor->notify($notification);
-                    
+
                     // 立即广播事件，不使用队列
                     event(new \App\Events\AppointmentBookedEvent($appointment));
                 }
