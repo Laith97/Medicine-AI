@@ -25,9 +25,21 @@ return [
     | When disabled, fallback logic will be used instead.
     */
 
+    // AI Prescription Suggestions - DISABLED BY DEFAULT FOR SAFETY
     'prescription_suggestions' => [
-        'enabled' => env('AI_PRESCRIPTION_SUGGESTIONS_ENABLED', true),
+        'enabled' => env('AI_PRESCRIPTION_SUGGESTIONS_ENABLED', true), // Temporarily enabled for testing
         'fallback_enabled' => env('AI_PRESCRIPTION_FALLBACK_ENABLED', true),
+        'require_clinical_validation' => true, // Always require clinical validation
+        'max_suggestions' => 3, // Limit suggestions to prevent overload
+        'confidence_threshold' => 70, // Minimum confidence level for suggestions
+    ],
+
+    // Safety settings
+    'safety' => [
+        'require_disclaimer' => true,
+        'require_professional_override' => true,
+        'log_all_suggestions' => true,
+        'audit_trail' => true,
     ],
 
     /*

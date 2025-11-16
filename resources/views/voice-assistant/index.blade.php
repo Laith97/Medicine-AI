@@ -8,7 +8,7 @@
         <div class="col-12">
             <div class="card bg-primary text-white">
                 <div class="card-body">
-                    <h1 class="card-title h3 mb-2">🎤 AI Voice Assistant</h1>
+                    <h1 class="card-title h3 mb-2">Voice Assistant</h1>
                     <p class="card-text">Hands-free medical consultation with real-time AI analysis</p>
 
                     <!-- Privacy Notice -->
@@ -41,7 +41,7 @@
                     <select id="patientSelect" class="form-select">
                         <option value="">Select a patient...</option>
                         @foreach($patients as $patient)
-                            <option value="{{ $patient['id'] }}">{{ $patient['name'] }} ({{ $patient['age'] }}y, {{ ucfirst($patient['gender']) }})</option>
+                            <option value="{{ $patient['id'] }}">{{ $patient['name'] }} ({{ $patient['age'] ? $patient['age'] . 'y' : 'Age N/A' }}, {{ $patient['gender'] ? ucfirst($patient['gender']) : 'Gender N/A' }})</option>
                         @endforeach
                     </select>
                 </div>
@@ -204,9 +204,19 @@
                             Reset
                         </button>
 
-                        <a href="{{ route('ai.voice-assistant.history') }}" class="btn btn-info">
+                        <a href="{{ route('ai.voice-assistant.training') }}" class="btn btn-success">
+                            <i class="fas fa-graduation-cap me-2"></i>
+                            Training Guide
+                        </a>
+
+                        <a href="{{ route('ai.voice-assistant.recorded-voices') }}" class="btn btn-info">
                             <i class="fas fa-history me-2"></i>
-                            History
+                            Recorded Voices
+                        </a>
+
+                        <a href="{{ route('ai.voice-assistant.performance') }}" class="btn btn-warning">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Performance
                         </a>
                     </div>
 
@@ -419,6 +429,48 @@
         </div>
     </div>
 
+    <!-- Post Recording Manual Diagnosis Form -->
+    <div id="postRecordingDiagnosisForm" class="row mb-4" style="display: none;">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-stethoscope me-2"></i>
+                        Manual Diagnosis After Recording
+                    </h5>
+                    <small>Enter your diagnosis based on the recorded session</small>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="postRecordingDiagnosisText" class="form-label">
+                            <strong>Your Diagnosis:</strong>
+                        </label>
+                        <textarea
+                            id="postRecordingDiagnosisText"
+                            class="form-control"
+                            rows="4"
+                            placeholder="Enter your diagnosis based on the recording..."
+                        ></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">Save your diagnosis and optionally complete an appointment</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button id="cancelPostRecordingDiagnosisBtn" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </button>
+                            <button id="saveAndCompletePostRecordingBtn" class="btn btn-success">
+                                <i class="fas fa-save me-1"></i>Save & Complete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- AI Analysis Section -->
     <div id="aiAnalysisSection" class="row mb-4" style="display: none;">
         <div class="col-12">
@@ -440,8 +492,8 @@
         </div>
     </div>
 
-    <!-- Manual Diagnosis Form -->
-    <div id="manualDiagnosisForm" class="row mb-4" style="display: none;">
+    <!-- Diagnosis Entry Form -->
+    <div id="diagnosisEntryForm" class="row mb-4" style="display: none;">
         <div class="col-12">
             <div class="card border-success">
                 <div class="card-header bg-success text-white">
@@ -449,34 +501,121 @@
                         <i class="fas fa-user-md me-2"></i>
                         Write Your Professional Diagnosis
                     </h5>
-                    <small>Based on the AI analysis above, write your professional diagnosis</small>
+                    <small>Complete your diagnosis to finish the consultation</small>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label for="manualDiagnosisText" class="form-label">
+                        <label for="diagnosisText" class="form-label">
                             <strong>Your Professional Diagnosis:</strong>
                         </label>
                         <textarea
-                            id="manualDiagnosisText"
+                            id="diagnosisText"
                             class="form-control"
                             rows="6"
-                            placeholder="Write your professional diagnosis based on the AI analysis and your clinical judgment..."
+                            placeholder="Write your professional diagnosis based on the consultation and your clinical judgment..."
                             required
                         ></textarea>
                         <div class="form-text">
                             <i class="fas fa-info-circle me-1"></i>
-                            This diagnosis will be saved to the patient's record and the AI analysis will be linked as supporting information.
+                            This diagnosis will be saved to the patient's record. You can link it to an appointment or save it independently.
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-end gap-2">
-                        <button id="cancelManualDiagnosisBtn" class="btn btn-secondary">
-                            <i class="fas fa-times me-1"></i>Cancel
-                        </button>
-                        <button id="saveManualDiagnosisBtn" class="btn btn-success">
-                            <i class="fas fa-save me-1"></i>Save Diagnosis
-                        </button>
+                    <div class="d-flex justify-content-end">
+                        <div class="d-flex gap-2">
+                            <button id="cancelDiagnosisBtn" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </button>
+                            <button id="completeConsultationBtn" class="btn btn-success" disabled>
+                                <i class="fas fa-check me-1"></i>Complete Consultation
+                            </button>
+                        </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complete Consultation Modal -->
+    <div class="modal fade" id="completeConsultationModal" tabindex="-1" aria-labelledby="completeConsultationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="completeConsultationModalLabel">
+                        <i class="fas fa-check me-2"></i>Complete Consultation
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Diagnosis Preview -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-primary">
+                            <i class="fas fa-file-medical me-2"></i>Diagnosis Preview
+                        </h6>
+                        <div id="diagnosisPreview" class="border rounded p-3 bg-light" style="max-height: 150px; overflow-y: auto;">
+                            <!-- Diagnosis text will be inserted here -->
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Complete this voice consultation:</strong>
+                        <p class="mb-0 mt-2">Link this diagnosis to a scheduled appointment and mark it as completed, or save it independently if no appointment is available.</p>
+                    </div>
+
+                    <!-- Patient Info Display -->
+                    <div class="mb-4">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <small class="text-muted">Patient:</small>
+                                <span id="modalPatientName" class="fw-bold"></span>
+                                <small class="text-muted ms-2">(Selected from main form)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Appointment Selection -->
+                    <div class="mb-4">
+                        <div id="appointmentInfo" class="alert alert-info" style="display: none;">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span id="appointmentInfoText"></span>
+                        </div>
+                    </div>
+
+
+                    <!-- Doctor Notes (shown when complete appointment is selected) -->
+                    <div id="doctorNotesSection" class="mb-3" style="display: none;">
+                        <label for="appointmentDoctorNotes" class="form-label fw-bold">
+                            Doctor Notes for Appointment:
+                        </label>
+                        <textarea
+                            id="appointmentDoctorNotes"
+                            class="form-control"
+                            rows="3"
+                            placeholder="Add notes about treatment plan, follow-up instructions, etc..."
+                        ></textarea>
+                        <div class="form-text">
+                            These notes will be added to the appointment record.
+                        </div>
+                    </div>
+
+                    <!-- Appointment Preview -->
+                    <div id="appointmentPreview" class="card bg-light" style="display: none;">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-calendar-alt me-2"></i>Appointment Details
+                            </h6>
+                            <div id="appointmentDetails"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" id="modalCompleteConsultationBtn" class="btn btn-success">
+                        <i class="fas fa-check me-1"></i>Complete Consultation
+                    </button>
                 </div>
             </div>
         </div>
@@ -489,6 +628,7 @@
 <!-- Make PHP variables available to JavaScript -->
 <script>
     window.records = @json($records ?? []);
+    window.patientAppointments = @json($patientAppointments ?? []);
 </script>
 
 <!-- Include the voice assistant JavaScript -->
@@ -527,20 +667,49 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Manual Diagnosis Form Handling
-    const cancelManualDiagnosisBtn = document.getElementById('cancelManualDiagnosisBtn');
-    const saveManualDiagnosisBtn = document.getElementById('saveManualDiagnosisBtn');
-    const manualDiagnosisForm = document.getElementById('manualDiagnosisForm');
+    // Show diagnosis entry form after recording stops
+    window.showDiagnosisEntryForm = function() {
+        const diagnosisEntryForm = document.getElementById('diagnosisEntryForm');
+        if (diagnosisEntryForm) {
+            diagnosisEntryForm.style.display = 'block';
+            const diagnosisText = document.getElementById('diagnosisText');
+            if (diagnosisText) {
+                diagnosisText.focus();
+            }
+        }
+    };
 
-    if (cancelManualDiagnosisBtn) {
-        cancelManualDiagnosisBtn.addEventListener('click', function() {
-            manualDiagnosisForm.style.display = 'none';
+    // Diagnosis Entry Form Handling
+    const cancelDiagnosisBtn = document.getElementById('cancelDiagnosisBtn');
+    const completeConsultationBtn = document.getElementById('completeConsultationBtn');
+    const diagnosisEntryForm = document.getElementById('diagnosisEntryForm');
+    const diagnosisText = document.getElementById('diagnosisText');
+
+    if (cancelDiagnosisBtn) {
+        cancelDiagnosisBtn.addEventListener('click', function() {
+            diagnosisEntryForm.style.display = 'none';
+            diagnosisText.value = '';
+            completeConsultationBtn.disabled = true;
         });
     }
 
-    if (saveManualDiagnosisBtn) {
-        saveManualDiagnosisBtn.addEventListener('click', function() {
-            saveManualDiagnosis();
+    if (diagnosisText) {
+        diagnosisText.addEventListener('input', function() {
+            completeConsultationBtn.disabled = !this.value.trim();
+        });
+    }
+
+    if (completeConsultationBtn) {
+        completeConsultationBtn.addEventListener('click', function() {
+            showCompleteConsultationModal();
+        });
+    }
+
+    // Modal complete consultation button handler
+    const modalCompleteConsultationBtn = document.getElementById('modalCompleteConsultationBtn');
+    if (modalCompleteConsultationBtn) {
+        modalCompleteConsultationBtn.addEventListener('click', function() {
+            completeConsultation();
         });
     }
 
@@ -625,7 +794,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const patientSelect = document.getElementById('patientSelect');
                     const option = document.createElement('option');
                     option.value = response.patient.id;
-                    option.textContent = response.patient.name + ' (' + response.patient.age + 'y, ' + response.patient.gender.charAt(0).toUpperCase() + response.patient.gender.slice(1) + ')';
+                    option.textContent = response.patient.name + ' (' + (response.patient.age ? response.patient.age + 'y' : 'Age N/A') + ', ' + (response.patient.gender ? response.patient.gender.charAt(0).toUpperCase() + response.patient.gender.slice(1) : 'Gender N/A') + ')';
                     patientSelect.appendChild(option);
 
                     // Select the new patient
@@ -657,73 +826,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Save manual diagnosis
-    function saveManualDiagnosis() {
-        const diagnosisText = document.getElementById('manualDiagnosisText').value.trim();
-
-        if (!diagnosisText) {
-            showNotification('Please enter your diagnosis text.', 'error');
-            return;
-        }
-
-        // Get session data from the container div
-        const container = document.querySelector('[data-session-id]');
-        const sessionId = container ? container.getAttribute('data-session-id') : '';
-        const selectedPatient = document.getElementById('patientSelect').value;
-
-        // Get AI result ID from voice assistant
-        const aiResultId = window.voiceAssistant ? window.voiceAssistant.getAiResultId() : null;
-
-        console.log('Manual diagnosis submission - aiResultId:', aiResultId);
-        console.log('Voice assistant available:', !!window.voiceAssistant);
-
-        if (!aiResultId) {
-            showNotification('AI result not found. Please generate AI analysis first.', 'error');
-            return;
-        }
-
-        // Get additional data from voice assistant if available
-        const transcription = window.voiceAssistant && document.getElementById('transcriptionArea') ?
-                             document.getElementById('transcriptionArea').value : '';
-        const extractedData = window.voiceAssistant ? window.voiceAssistant.getExtractedData() : {};
-
-        // AJAX call to save manual diagnosis
-        $.ajax({
-            url: '/ai/voice-assistant/create-manual-diagnosis',
-            method: 'POST',
-            data: {
-                manualDiagnosisText: diagnosisText,
-                aiResultId: aiResultId,
-                sessionId: sessionId,
-                selectedPatient: selectedPatient,
-                transcription: transcription,
-                extractedData: extractedData,
-                _token: $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                if (response.success) {
-                    // Hide form
-                    document.getElementById('manualDiagnosisForm').style.display = 'none';
-
-                    // Show success message
-                    showNotification(response.message, 'success');
-
-                    // Redirect to diagnosis if provided
-                    if (response.redirectUrl) {
-                        setTimeout(function() {
-                            window.location.href = response.redirectUrl;
-                        }, 2000);
-                    }
-                } else {
-                    showNotification(response.message || 'Failed to save diagnosis.', 'error');
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Save diagnosis error:', error);
-                showNotification('Failed to save diagnosis. Please try again.', 'error');
-            }
-        });
-    }
 
     // Show notification
     function showNotification(message, type = 'info') {
@@ -767,6 +869,207 @@ document.addEventListener('DOMContentLoaded', function() {
     function isValidEmail(email) {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return re.test(email);
+    }
+
+    // Complete Consultation Modal Functions
+    function showCompleteConsultationModal() {
+        const diagnosisText = document.getElementById('diagnosisText').value.trim();
+        if (!diagnosisText) {
+            showNotification('Please enter your diagnosis first.', 'error');
+            return;
+        }
+
+        const selectedPatient = document.getElementById('patientSelect').value;
+        if (!selectedPatient) {
+            showNotification('Please select a patient first.', 'error');
+            return;
+        }
+
+        // Update diagnosis preview
+        document.getElementById('diagnosisPreview').textContent = diagnosisText;
+
+        // Update patient name display in modal
+        const patientSelect = document.getElementById('patientSelect');
+        const selectedOption = patientSelect.options[patientSelect.selectedIndex];
+        const patientName = selectedOption ? selectedOption.text.split(' (')[0] : 'Unknown Patient';
+        document.getElementById('modalPatientName').textContent = patientName;
+
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('completeConsultationModal'));
+        modal.show();
+
+        // Load appointments for the selected patient
+        loadPatientAppointments(selectedPatient);
+
+        // Set up completion type change handler
+        setupCompletionTypeHandler();
+    }
+
+    function setupCompletionTypeHandler() {
+        // No longer needed since we removed the radio buttons
+        // Appointment selection is now always visible
+        updateCompleteButtonState();
+    }
+
+    function loadPatientAppointments(patientId) {
+        const appointmentInfoDiv = document.getElementById('appointmentInfo');
+        const appointmentInfoText = document.getElementById('appointmentInfoText');
+
+        // Debug logging
+        console.log('Loading appointments for patient:', patientId);
+        console.log('Available patient appointments:', window.patientAppointments);
+
+        // Use the pre-loaded appointments data instead of AJAX call
+        const appointments = window.patientAppointments[patientId] || [];
+
+        console.log('Found appointments for patient:', appointments);
+
+        if (appointments.length > 0) {
+            // Get the first available appointment
+            const appointment = appointments[0];
+            appointmentInfoDiv.style.display = 'block';
+            appointmentInfoText.textContent = `Found ${appointments.length} incomplete appointment(s). The first one will be automatically selected: ${appointment.appointment_date_formatted} (${appointment.appointment_type})`;
+            
+            // Store appointment ID for completion
+            window.selectedAppointmentId = appointment.id;
+            
+            // Show appointment details
+            showAppointmentPreview(appointment.id);
+        } else {
+            appointmentInfoDiv.style.display = 'block';
+            appointmentInfoText.textContent = 'No scheduled appointments available for this patient. Diagnosis will be saved without appointment completion.';
+            window.selectedAppointmentId = null;
+            showAppointmentPreview(null);
+            console.log('No appointments found for patient:', patientId);
+        }
+    }
+
+    function showAppointmentPreview(appointmentId) {
+        const previewDiv = document.getElementById('appointmentPreview');
+        const detailsDiv = document.getElementById('appointmentDetails');
+
+        if (!appointmentId) {
+            previewDiv.style.display = 'none';
+            return;
+        }
+
+        // Find appointment details
+        const appointments = window.patientAppointments[document.getElementById('patientSelect').value] || [];
+        const appointment = appointments.find(apt => apt.id == appointmentId);
+        
+        if (appointment) {
+            detailsDiv.innerHTML = `
+                <p><strong>Appointment:</strong> ${appointment.appointment_date_formatted}</p>
+                <p><strong>Type:</strong> ${appointment.appointment_type}</p>
+                <p><strong>Status:</strong> Will be marked as completed</p>
+                <p><strong>Diagnosis:</strong> Will be linked to current diagnosis</p>
+            `;
+        } else {
+            detailsDiv.innerHTML = '<p>Appointment details not found.</p>';
+        }
+
+        previewDiv.style.display = 'block';
+    }
+
+    function updateCompleteButtonState() {
+        const completeBtn = document.getElementById('modalCompleteConsultationBtn');
+        const hasAppointment = window.selectedAppointmentId !== null;
+
+        // Button is always enabled, but text changes based on appointment availability
+        completeBtn.disabled = false;
+        completeBtn.innerHTML = hasAppointment ?
+            '<i class="fas fa-check me-1"></i>Complete Appointment' :
+            '<i class="fas fa-save me-1"></i>Save Diagnosis';
+    }
+
+
+    function completeConsultation() {
+        const diagnosisText = document.getElementById('diagnosisText').value.trim();
+        const appointmentId = window.selectedAppointmentId;
+        const doctorNotes = document.getElementById('appointmentDoctorNotes').value.trim();
+        const completionType = appointmentId ? 'complete_appointment' : 'save_only';
+
+        if (!diagnosisText) {
+            showNotification('Please enter your diagnosis text.', 'error');
+            return;
+        }
+
+        const selectedPatient = document.getElementById('patientSelect').value;
+        if (!selectedPatient) {
+            showNotification('Please select a patient first.', 'error');
+            return;
+        }
+
+        // Get session data
+        const container = document.querySelector('[data-session-id]');
+        const sessionId = container ? container.getAttribute('data-session-id') : '';
+        const transcription = document.getElementById('transcriptionArea').value;
+
+        // Get AI data if available
+        const aiResultId = window.voiceAssistant ? window.voiceAssistant.getAiResultId() : null;
+        const extractedData = window.voiceAssistant ? window.voiceAssistant.getExtractedData() : {};
+
+        // Disable button and show loading
+        const completeBtn = document.getElementById('modalCompleteConsultationBtn');
+        const originalText = completeBtn.innerHTML;
+        completeBtn.disabled = true;
+        completeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Completing...';
+
+        // Prepare data for AJAX call
+        const ajaxData = {
+            diagnosisText: diagnosisText,
+            sessionId: sessionId,
+            selectedPatient: selectedPatient,
+            transcription: transcription,
+            completionType: completionType,
+            appointmentId: appointmentId || null,
+            doctorNotes: doctorNotes,
+            aiResultId: aiResultId,
+            extractedData: extractedData,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        };
+
+        // AJAX call to complete consultation
+        $.ajax({
+            url: '/ai/voice-assistant/complete-consultation',
+            method: 'POST',
+            data: ajaxData,
+            success: function(response) {
+                if (response.success) {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('completeConsultationModal'));
+                    modal.hide();
+
+                    // Hide the diagnosis form
+                    document.getElementById('diagnosisEntryForm').style.display = 'none';
+                    document.getElementById('diagnosisText').value = '';
+
+                    // Show appropriate success message
+                    const message = completionType === 'complete_appointment' ?
+                        'Diagnosis saved and appointment completed successfully!' :
+                        'Diagnosis saved successfully!';
+                    showNotification(message, 'success');
+
+                    // Redirect to diagnosis view
+                    if (response.redirectUrl) {
+                        setTimeout(function() {
+                            window.location.href = response.redirectUrl;
+                        }, 2000);
+                    }
+                } else {
+                    showNotification(response.message || 'Failed to complete consultation.', 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Complete consultation error:', error);
+                showNotification('Failed to complete consultation. Please try again.', 'error');
+            },
+            complete: function() {
+                // Re-enable button
+                completeBtn.disabled = false;
+                completeBtn.innerHTML = originalText;
+            }
+        });
     }
 
     // Debug function to check patient selection

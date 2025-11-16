@@ -12,8 +12,34 @@
     <div class="container">
         <!-- Dashboard Header -->
         <div class="dashboard-header py-2 border-bottom">
-            <h2 class="h1 mb-1" style="font-weight: 700;">Doctor Appointments</h2>
+            <h2 class="h1 mb-1" style="font-weight: 700;">Appointments</h2>
             <p>Manage your appointments</p>
+        </div>
+
+        <!-- Auto-Approve Settings -->
+        <div class="table-card mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1"><i class="fas fa-cog me-2"></i>Appointment Approval Settings</h6>
+                    <small class="text-muted">Control how new appointment requests are handled</small>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           id="auto_approve_toggle"
+                           {{ Auth::user()->doctor->auto_approve_appointments ? 'checked' : '' }}>
+                    <label class="form-check-label" for="auto_approve_toggle">
+                        <span class="fw-medium">Auto-approve appointments</span>
+                    </label>
+                </div>
+            </div>
+            <div class="mt-2">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    When enabled, new appointment requests are automatically confirmed.
+                    When disabled, you'll need to manually approve each appointment.
+                </small>
+            </div>
         </div>
 
         <!-- Filters -->
@@ -299,6 +325,51 @@
 </div>
 
 <script>
+// Auto-approve toggle functionality
+document.getElementById('auto_approve_toggle').addEventListener('change', function() {
+    const isEnabled = this.checked;
+    const toggleLabel = this.nextElementSibling.querySelector('.fw-medium');
+
+    // Show loading state
+    const originalText = toggleLabel.textContent;
+    toggleLabel.textContent = 'Updating...';
+    this.disabled = true;
+
+    // Make AJAX request
+    fetch('{{ route("doctor.appointments.toggle-auto-approve") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            auto_approve: isEnabled
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            toggleLabel.textContent = isEnabled ? 'Auto-approve appointments' : 'Manual approval required';
+            showNotification(data.message || 'Setting updated successfully!', 'success');
+        } else {
+            // Revert toggle on error
+            this.checked = !isEnabled;
+            throw new Error(data.message || 'Failed to update setting');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Revert toggle on error
+        this.checked = !isEnabled;
+        showNotification('Failed to update auto-approve setting. Please try again.', 'error');
+    })
+    .finally(() => {
+        toggleLabel.textContent = originalText;
+        this.disabled = false;
+    });
+});
+
 function completeAppointment(appointmentId) {
     const form = document.getElementById('completeForm');
     form.action = `/doctor/appointments/${appointmentId}/complete`;
@@ -328,6 +399,49 @@ function markNoShow(appointmentId) {
         document.body.appendChild(form);
         form.submit();
     }
+}
+
+// Notification helper function
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.auto-approve-notification');
+    existingNotifications.forEach(notification => notification.remove());
+
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : type} auto-approve-notification`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+
+    const icon = type === 'success' ? 'check-circle' :
+                 type === 'warning' ? 'exclamation-triangle' :
+                 type === 'error' ? 'exclamation-circle' : 'info-circle';
+
+    notification.innerHTML = `
+        <i class="fas fa-${icon} me-2"></i>${message}
+        <button type="button" class="btn-close" aria-label="Close"></button>
+    `;
+
+    // Add close functionality
+    notification.querySelector('.btn-close').addEventListener('click', function() {
+        notification.remove();
+    });
+
+    // Add to page
+    document.body.appendChild(notification);
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 3000);
 }
 
 // Close modals when clicking outside

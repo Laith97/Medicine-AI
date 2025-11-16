@@ -288,6 +288,33 @@ document.addEventListener('DOMContentLoaded', function() {
                             @enderror
                         </div>
 
+                        <!-- Date of Birth -->
+                        <div class="mb-4">
+                            <label for="date_of_birth" class="form-label fw-bold">Date of Birth</label>
+                            <input id="date_of_birth" type="date" name="date_of_birth" value="{{ old('date_of_birth') }}"
+                                   max="{{ date('Y-m-d') }}"
+                                   class="form-control @error('date_of_birth') is-invalid @enderror">
+                            <small class="text-muted">Required for AI analysis and patient identification</small>
+                            @error('date_of_birth')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Gender -->
+                        <div class="mb-4">
+                            <label for="gender" class="form-label fw-bold">Gender</label>
+                            <select id="gender" name="gender" class="form-control @error('gender') is-invalid @enderror">
+                                <option value="">-- Select Gender --</option>
+                                <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
+                                <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
+                                <option value="other" {{ old('gender') == 'other' ? 'selected' : '' }}>Other</option>
+                            </select>
+                            <small class="text-muted">Required for AI analysis and patient identification</small>
+                            @error('gender')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         <!-- Medical Specialty -->
                         <div class="mb-4" id="specialty-field" style="display: {{ old('role') == 'doctor' ? 'block' : 'none' }}">
                             <label for="specialty_select" class="form-label fw-bold">Medical Specialty <span class="text-danger">*</span></label>
