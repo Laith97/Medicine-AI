@@ -309,10 +309,10 @@
             <div class="col-lg-6">
                 <div class="text-white mb-5">
                     <h1 class="display-3 fw-bold mb-4" data-animate="fadeInUp">
-                        <span style="color: #DE6262;">Complete AI-Powered</span><br><span style="color: #FFE4E1;">Healthcare Platform</span>
+                        <span style="color: #DE6262;">AI-Powered</span><br><span style="color: #FFE4E1;">Electronic Medical Records</span>
                     </h1>
                     <p class="lead mb-4 opacity-90" data-animate="fadeInUp" data-delay="200">
-                        Revolutionary AI platform combining intelligent diagnosis, voice assistance, patient management, and professional online presence. Transform your medical practice with cutting-edge technology.
+                        Transform healthcare delivery with our comprehensive EMR system enhanced by artificial intelligence. Complete patient management, intelligent diagnosis, and seamless workflow integration in one platform.
                     </p>
                     <div class="d-flex flex-wrap gap-3" data-animate="fadeInUp" data-delay="400">
                         {{-- AI Ask temporarily disabled --}}
@@ -322,6 +322,9 @@
                         <a href="#features" class="btn btn-theme-outline btn-lg">
                             <i class="fas fa-play me-2"></i>Learn More
                         </a>
+                        <a href="/login" class="btn btn-theme-primary btn-lg">
+                            <i class="fas fa-user-md me-2"></i>Get Started
+                        </a>
                     </div>
                 </div>
             </div>
@@ -329,7 +332,7 @@
                 <div class="position-relative" data-animate="fadeInRight">
                     <div class="d-inline-block position-relative">
                         <div class="bg-white rounded-circle p-5 shadow-lg" style="width: 300px; height: 300px; display: flex; align-items: center; justify-content: center;">
-                            <i class="icon-medical-i-cardiology text-theme-primary" style="font-size: 120px;"></i>
+                            <i class="fas fa-file-medical text-theme-primary" style="font-size: 120px;"></i>
                         </div>
                         <div class="position-absolute top-0 end-0 bg-white rounded-circle p-3 shadow">
                             <i class="fas fa-brain text-theme-primary" style="font-size: 2rem;"></i>
@@ -348,8 +351,8 @@
 <section id="features" class="py-5" style="background: #F8F9FA;">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="section-title">Complete Healthcare Solution</h2>
-            <p class="section-subtitle">Everything you need to run a modern medical practice</p>
+            <h2 class="section-title">Comprehensive EMR System Features</h2>
+            <p class="section-subtitle">Complete healthcare management with artificial intelligence capabilities</p>
         </div>
         <div class="row g-4">
             <div class="col-lg-4 col-md-6">
@@ -358,7 +361,16 @@
                         <i class="fas fa-brain"></i>
                     </div>
                     <h4 class="mb-3">AI-Powered Diagnosis</h4>
-                    <p class="text-muted">Advanced GPT-4 powered analysis with voice transcription, manual diagnosis creation, and intelligent follow-up questions for comprehensive patient care.</p>
+                    <p class="text-muted">Advanced machine learning algorithms analyze patient symptoms, medical history, and test results to assist in clinical decision-making with confidence scoring.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-file-medical"></i>
+                    </div>
+                    <h4 class="mb-3">Comprehensive EMR System</h4>
+                    <p class="text-muted">Complete electronic medical records with patient history, treatments, prescriptions, lab results, and imaging in one secure, accessible platform.</p>
                 </div>
             </div>
             <div class="col-lg-4 col-md-6">
@@ -366,26 +378,17 @@
                     <div class="feature-icon">
                         <i class="fas fa-microphone"></i>
                     </div>
-                    <h4 class="mb-3">Voice Assistant</h4>
-                    <p class="text-muted">Hands-free consultation documentation with real-time speech-to-text, automatic chart filling, and AI-powered clinical analysis.</p>
+                    <h4 class="mb-3">AI Voice Transcription</h4>
+                    <p class="text-muted">Real-time speech-to-text conversion during consultations, automatically generating structured clinical notes for seamless documentation.</p>
                 </div>
             </div>
             <div class="col-lg-4 col-md-6">
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-users"></i>
+                        <i class="fas fa-calendar-check"></i>
                     </div>
-                    <h4 class="mb-3">Patient Management</h4>
-                    <p class="text-muted">Complete patient lifecycle management with appointment booking, case tracking, automated notifications, and review systems.</p>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-globe"></i>
-                    </div>
-                    <h4 class="mb-3">Professional Online Presence</h4>
-                    <p class="text-muted">Customizable landing pages, blog management, live chat widgets, and patient testimonials to grow your practice online.</p>
+                    <h4 class="mb-3">Smart Scheduling</h4>
+                    <p class="text-muted">Intelligent appointment management with automated reminders, conflict detection, and optimization for maximum practice efficiency.</p>
                 </div>
             </div>
             <div class="col-lg-4 col-md-6">
@@ -400,10 +403,37 @@
             <div class="col-lg-4 col-md-6">
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-mobile-alt"></i>
+                        <i class="fas fa-chart-line"></i>
                     </div>
-                    <h4 class="mb-3">Multi-Channel Communication</h4>
-                    <p class="text-muted">Automated email and SMS notifications, real-time chat, appointment reminders, and subscription management across all devices.</p>
+                    <h4 class="mb-3">AI Analytics Dashboard</h4>
+                    <p class="text-muted">Real-time insights and predictive analytics to optimize healthcare delivery, resource allocation, and patient outcomes.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h4 class="mb-3">Real-time Notifications</h4>
+                    <p class="text-muted">Instant updates and alerts for appointments, diagnoses, reviews, and system events through WebSocket-based notifications.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-user-friends"></i>
+                    </div>
+                    <h4 class="mb-3">Patient Management</h4>
+                    <p class="text-muted">Complete patient lifecycle management with registration, profile management, appointment booking, and communication tools.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <h4 class="mb-3">Billing & Claims</h4>
+                    <p class="text-muted">Automated medical billing, insurance verification, and claim submission with integrated payment processing.</p>
                 </div>
             </div>
         </div>
@@ -458,20 +488,20 @@
         <div class="row">
             <div class="col-lg-3 col-md-6">
                 <div class="stat-item">
-                    <div class="stat-number">25K+</div>
-                    <h5>AI Diagnoses Created</h5>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="stat-item">
-                    <div class="stat-number">1,200+</div>
-                    <h5>Healthcare Professionals</h5>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="stat-item">
                     <div class="stat-number">50K+</div>
-                    <h5>Patient Appointments</h5>
+                    <h5>AI Diagnoses Assisted</h5>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-item">
+                    <div class="stat-number">10K+</div>
+                    <h5>Electronic Records Managed</h5>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-item">
+                    <div class="stat-number">75K+</div>
+                    <h5>Patient Interactions</h5>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
@@ -491,7 +521,7 @@
             <h2 class="section-title">Platform Highlights</h2>
             <p class="section-subtitle">Advanced features that set us apart</p>
         </div>
-        
+
         <div class="row g-4">
             <div class="col-lg-6">
                 <div class="feature-card">
@@ -505,10 +535,28 @@
             <div class="col-lg-6">
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-mobile-alt"></i>
+                        <i class="fas fa-cloud"></i>
                     </div>
-                    <h4 class="mb-3">Multi-Channel Communication</h4>
-                    <p class="text-muted">Reach patients through SMS (Twilio, Plivo), automated email campaigns, live chat widgets, and appointment reminders across all devices.</p>
+                    <h4 class="mb-3">Cloud-Based Accessibility</h4>
+                    <p class="text-muted">Access patient records and tools from anywhere with secure cloud infrastructure and multi-device synchronization.</p>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                    <h4 class="mb-3">Real-time Synchronization</h4>
+                    <p class="text-muted">Multi-device support with real-time updates across all platforms for seamless workflow continuity.</p>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h4 class="mb-3">Workflow Automation</h4>
+                    <p class="text-muted">Automated processes for appointment scheduling, follow-up reminders, insurance verification, and billing workflows.</p>
                 </div>
             </div>
         </div>
@@ -527,20 +575,20 @@
                 <div class="testimonial-card">
                     <div class="mb-4">
                        <!-- <img src="https://via.placeholder.com/80x80/DE6262/FFFFFF?text=SA" alt="Dr. Sarah Ahmed" class="rounded-circle mb-3" width="80" height="80">-->
-                        <h5 class="mb-1">Dr. Saif Al-Zawahrah</h5>
-                        <small class="text-muted">Internal Medicine</small>
+                        <h5 class="mb-1">Dr. Sarah Johnson</h5>
+                        <small class="text-muted">Cardiology Practice</small>
                     </div>
-                    <p class="text-muted">This comprehensive AI platform has transformed my practice completely. From AI diagnosis to voice assistant and patient management - everything I need in one place. Patient satisfaction has increased dramatically.</p>
+                    <p class="text-muted">"The AI-powered EMR system has revolutionized our patient care. The diagnostic assistance and voice transcription capabilities have reduced documentation time by 60% while improving accuracy. The comprehensive patient records are always accessible and well-organized."</p>
                 </div>
             </div>
             <div class="col-lg-5 col-md-6">
                 <div class="testimonial-card">
                     <div class="mb-4">
                     <!--    <img src="https://via.placeholder.com/80x80/DE6262/FFFFFF?text=KM" alt="Dr. Khaled Mansour" class="rounded-circle mb-3" width="80" height="80">-->
-                        <h5 class="mb-1">Dr. Khaled Mansour</h5>
-                        <small class="text-muted">Family Physician</small>
+                        <h5 class="mb-1">Dr. Michael Chen</h5>
+                        <small class="text-muted">Family Medicine</small>
                     </div>
-                    <p class="text-muted">The voice assistant and automated patient communication features have saved me hours daily. The professional landing page has brought in 40% more patients. Incredible value!</p>
+                    <p class="text-muted">"The integration of AI diagnostics with our EMR system has improved our diagnostic accuracy and patient outcomes. The system's predictive analytics help us identify at-risk patients before complications arise. Essential for modern medical practice."</p>
                 </div>
             </div>
         </div>
@@ -947,19 +995,19 @@ document.addEventListener('DOMContentLoaded', function() {
 <section class="cta-section">
     <div class="container text-center">
         <h2 class="section-title">Ready to Transform Your Practice?</h2>
-        <p class="section-subtitle">Join thousands of doctors already using AI-powered diagnosis</p>
+        <p class="section-subtitle">Join thousands of healthcare professionals using AI-powered EMR technology</p>
         <div class="d-flex justify-content-center gap-3 flex-wrap">
             @auth
                 <a href="{{ route('subscription.pricing') }}" class="btn btn-theme-primary btn-lg">
-                    <i class="fas fa-credit-card me-2"></i>Choose Monthly or Yearly
+                    <i class="fas fa-file-medical me-2"></i>Get EMR Access
                 </a>
             @else
                 <a href="/login" class="btn btn-theme-primary btn-lg">
-                    <i class="fas fa-credit-card me-2"></i>Choose Monthly or Yearly
+                    <i class="fas fa-file-medical me-2"></i>Get EMR Access
                 </a>
             @endauth
             <a href="{{ route('contact') }}" class="btn btn-theme-outline btn-lg">
-                <i class="fas fa-phone me-2"></i>Contact Sales
+                <i class="fas fa-calendar-check me-2"></i>Schedule Demo
             </a>
         </div>
     </div>
