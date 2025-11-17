@@ -22,6 +22,13 @@ class NotificationPreference extends Model
         'sms_enabled',
         'sms_appointment_reminders',
         'sms_urgent_alerts',
+        // WhatsApp preferences
+        'whatsapp_enabled',
+        'whatsapp_appointment_reminders',
+        'whatsapp_urgent_alerts',
+        'whatsapp_diagnosis_updates',
+        'whatsapp_review_requests',
+        'whatsapp_system_alerts',
         // In-app preferences
         'in_app_enabled',
         'in_app_sound',
@@ -51,6 +58,12 @@ class NotificationPreference extends Model
         'sms_enabled' => 'boolean',
         'sms_appointment_reminders' => 'boolean',
         'sms_urgent_alerts' => 'boolean',
+        'whatsapp_enabled' => 'boolean',
+        'whatsapp_appointment_reminders' => 'boolean',
+        'whatsapp_urgent_alerts' => 'boolean',
+        'whatsapp_diagnosis_updates' => 'boolean',
+        'whatsapp_review_requests' => 'boolean',
+        'whatsapp_system_alerts' => 'boolean',
         'in_app_enabled' => 'boolean',
         'in_app_sound' => 'boolean',
         'in_app_desktop' => 'boolean',
@@ -277,5 +290,75 @@ class NotificationPreference extends Model
             'voice_transcription_completed' => true,
             'system_alert' => true,
         ]);
+    }
+
+    /**
+     * Check if user wants to receive WhatsApp notifications
+     */
+    public function wantsWhatsAppNotification(string $type): bool
+    {
+        if (!$this->whatsapp_enabled) {
+            return false;
+        }
+
+        switch ($type) {
+            case 'appointment_reminder':
+                return $this->whatsapp_appointment_reminders;
+            case 'urgent_alert':
+            case 'system_alert':
+                return $this->whatsapp_urgent_alerts;
+            case 'diagnosis_submitted':
+                return $this->whatsapp_diagnosis_updates;
+            case 'review_submitted':
+                return $this->whatsapp_review_requests;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Enable all WhatsApp notifications
+     */
+    public function enableAllWhatsAppNotifications(): void
+    {
+        $this->update([
+            'whatsapp_enabled' => true,
+            'whatsapp_appointment_reminders' => true,
+            'whatsapp_urgent_alerts' => true,
+            'whatsapp_diagnosis_updates' => true,
+            'whatsapp_review_requests' => true,
+            'whatsapp_system_alerts' => true,
+        ]);
+    }
+
+    /**
+     * Disable all WhatsApp notifications
+     */
+    public function disableAllWhatsAppNotifications(): void
+    {
+        $this->update([
+            'whatsapp_enabled' => false,
+            'whatsapp_appointment_reminders' => false,
+            'whatsapp_urgent_alerts' => false,
+            'whatsapp_diagnosis_updates' => false,
+            'whatsapp_review_requests' => false,
+            'whatsapp_system_alerts' => false,
+        ]);
+    }
+
+    /**
+     * Get active WhatsApp notification types
+     */
+    public function getActiveWhatsAppNotificationTypes(): array
+    {
+        $types = [];
+
+        if ($this->whatsapp_appointment_reminders) $types[] = 'appointment_reminder';
+        if ($this->whatsapp_urgent_alerts) $types[] = 'urgent_alert';
+        if ($this->whatsapp_diagnosis_updates) $types[] = 'diagnosis_submitted';
+        if ($this->whatsapp_review_requests) $types[] = 'review_submitted';
+        if ($this->whatsapp_system_alerts) $types[] = 'system_alert';
+
+        return $types;
     }
 }

@@ -34,7 +34,14 @@ class ReviewSubmittedNotification extends Notification implements ShouldBroadcas
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast', 'mail'];
+        $channels = ['database', 'broadcast', 'mail'];
+
+        // Add WhatsApp if user has WhatsApp notifications enabled
+        if ($notifiable->wantsNotificationChannel('whatsapp')) {
+            $channels[] = 'whatsapp';
+        }
+
+        return $channels;
     }
 
     /**
@@ -87,6 +94,15 @@ class ReviewSubmittedNotification extends Notification implements ShouldBroadcas
     public function toSms(object $notifiable): string
     {
         return "New review submitted for {$this->review->doctor->name}. Rating: {$this->review->rating} stars. View details: " . route('reviews.show', $this->review);
+    }
+
+    /**
+     * Get the WhatsApp representation of the notification.
+     */
+    public function toWhatsApp(object $notifiable): string
+    {
+        $patientName = $this->review->is_anonymous ? 'Anonymous Patient' : ($this->review->patient ? $this->review->patient->name : $this->review->guest_name);
+        return "⭐ New review submitted by {$patientName}. Rating: {$this->review->rating} stars. View details: " . route('reviews.show', $this->review);
     }
 
     /**

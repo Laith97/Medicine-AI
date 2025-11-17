@@ -904,6 +904,99 @@ public function destroy(User $user)
     }
 
     /**
+     * Show WhatsApp settings page
+     */
+    public function whatsappSettings()
+    {
+        $whatsappService = app(\App\Services\WhatsAppNotificationService::class);
+        $providers = config('whatsapp.available_providers', []);
+        $systemConfigs = \App\Models\UserWhatsAppConfiguration::whereNull('user_id')
+            ->whereNull('hospital_id')
+            ->get();
+
+        return view('admin.whatsapp-settings', compact(
+            'providers',
+            'systemConfigs'
+        ));
+    }
+
+    /**
+     * Update WhatsApp settings
+     */
+    public function updateWhatsAppSettings(Request $request)
+    {
+        $request->validate([
+            'provider_key' => 'required|string|in:' . implode(',', array_keys(config('whatsapp.available_providers', []))),
+            'provider_config' => 'required|array',
+            'is_active' => 'boolean',
+        ]);
+
+        try {
+            // Update or create system-wide WhatsApp configuration
+            $config = \App\Models\UserWhatsAppConfiguration::updateOrCreate(
+                [
+                    'user_id' => null,
+                    'hospital_id' => null,
+                    'provider_key' => $request->provider_key,
+                ],
+                [
+                    'provider_config' => $request->provider_config,
+                    'is_active' => $request->is_active ?? false,
+                    'use_admin_config' => true, // System-wide config is always used as admin config
+                ]
+            );
+
+            return redirect()->back()->with('success', 'WhatsApp settings updated successfully!');
+        } catch (\Exception $e) {
+            \Log::error('Error updating WhatsApp settings: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update WhatsApp settings: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send test WhatsApp message
+     */
+    public function sendTestWhatsApp(Request $request)
+    {
+        $request->validate([
+            'test_phone' => 'required|string|max:20',
+            'test_message' => 'required|string|max:1000',
+        ]);
+
+        try {
+            $whatsappService = app(\App\Services\WhatsAppNotificationService::class);
+
+            // Get system-wide configurations
+            $systemConfigs = \App\Models\UserWhatsAppConfiguration::whereNull('user_id')
+                ->whereNull('hospital_id')
+                ->where('is_active', true)
+                ->get();
+
+            if ($systemConfigs->isEmpty()) {
+                return redirect()->back()->with('error', 'No active WhatsApp provider configured in system settings.');
+            }
+
+            // Use the first active configuration
+            $config = $systemConfigs->first();
+            $options = [
+                'provider_key' => $config->provider_key,
+                'provider_config' => $config->provider_config,
+            ];
+
+            $result = $whatsappService->send($request->test_phone, $request->test_message, $options);
+
+            if ($result) {
+                return redirect()->back()->with('success', 'Test WhatsApp sent successfully!');
+            } else {
+                return redirect()->back()->with('error', 'Failed to send test WhatsApp. Please check configuration.');
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error sending test WhatsApp: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to send test WhatsApp: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Show the manual reminders form
      */
     public function showSendRemindersForm()

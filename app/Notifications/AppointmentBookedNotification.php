@@ -39,7 +39,14 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast', 'mail', 'sms'];
+        $channels = ['database', 'broadcast', 'mail', 'sms'];
+
+        // Add WhatsApp if user has WhatsApp notifications enabled
+        if ($notifiable->wantsNotificationChannel('whatsapp')) {
+            $channels[] = 'whatsapp';
+        }
+
+        return $channels;
     }
 
     /**
@@ -93,6 +100,16 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
         $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
 
         return "New appointment booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}. View details: " . route('appointments.show', $this->appointment->id);
+    }
+
+    /**
+     * Get the WhatsApp representation of the notification.
+     */
+    public function toWhatsApp(object $notifiable): string
+    {
+        $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
+
+        return "📅 New appointment booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}. View details: " . route('appointments.show', $this->appointment->id);
     }
 
     /**

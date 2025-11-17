@@ -34,7 +34,14 @@ class DiagnosisSubmittedNotification extends Notification implements ShouldBroad
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast', 'mail'];
+        $channels = ['database', 'broadcast', 'mail'];
+
+        // Add WhatsApp if user has WhatsApp notifications enabled
+        if ($notifiable->wantsNotificationChannel('whatsapp')) {
+            $channels[] = 'whatsapp';
+        }
+
+        return $channels;
     }
 
     /**
@@ -82,6 +89,14 @@ class DiagnosisSubmittedNotification extends Notification implements ShouldBroad
     public function toSms(object $notifiable): string
     {
         return "New diagnosis submitted by {$this->diagnosis->doctor->name} on {$this->diagnosis->created_at->format('M j, Y')}. View details: " . route('diagnosis.show', $this->diagnosis);
+    }
+
+    /**
+     * Get the WhatsApp representation of the notification.
+     */
+    public function toWhatsApp(object $notifiable): string
+    {
+        return "📄 New diagnosis submitted by Dr. {$this->diagnosis->doctor->name} on {$this->diagnosis->created_at->format('M j, Y')}. View details: " . route('diagnosis.show', $this->diagnosis);
     }
 
     /**

@@ -37,7 +37,14 @@ class SystemAlertNotification extends Notification implements ShouldBroadcast
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast', 'mail'];
+        $channels = ['database', 'broadcast', 'mail'];
+
+        // Add WhatsApp if user has WhatsApp notifications enabled
+        if ($notifiable->wantsNotificationChannel('whatsapp')) {
+            $channels[] = 'whatsapp';
+        }
+
+        return $channels;
     }
 
     /**
@@ -96,6 +103,14 @@ class SystemAlertNotification extends Notification implements ShouldBroadcast
     public function toSms(object $notifiable): string
     {
         return "System Alert: {$this->title}. {$this->message}. View details: " . ($this->data['link'] ?? route('notifications.index'));
+    }
+
+    /**
+     * Get the WhatsApp representation of the notification.
+     */
+    public function toWhatsApp(object $notifiable): string
+    {
+        return "🚨 System Alert: {$this->title}. {$this->message}. View details: " . ($this->data['link'] ?? route('notifications.index'));
     }
 
     /**

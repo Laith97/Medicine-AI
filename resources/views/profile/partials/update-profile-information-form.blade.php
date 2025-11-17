@@ -54,6 +54,77 @@
             <p class="mt-1 text-sm text-gray-600">{{ __('Used for SMS notifications about invoices and account updates.') }}</p>
         </div>
 
+        <!-- WhatsApp Notification Preferences -->
+        <div class="border-t border-gray-200 pt-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">WhatsApp Notifications</h3>
+            <p class="mt-1 text-sm text-gray-600 mb-4">{{ __('Configure how you receive notifications via WhatsApp.') }}</p>
+
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <input
+                            id="whatsapp_enabled"
+                            name="whatsapp_enabled"
+                            type="checkbox"
+                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            {{ old('whatsapp_enabled', $user->getOrCreateNotificationPreferences()->whatsapp_enabled ?? false) ? 'checked' : '' }}
+                        >
+                        <div>
+                            <x-input-label for="whatsapp_enabled" :value="__('Enable WhatsApp Notifications')" />
+                            <p class="text-sm text-gray-500">{{ __('Receive important notifications via WhatsApp') }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WhatsApp Notification Types -->
+                <div class="ml-7 space-y-2">
+                    <div class="flex items-center">
+                        <input
+                            id="whatsapp_appointment_reminders"
+                            name="whatsapp_appointment_reminders"
+                            type="checkbox"
+                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            {{ old('whatsapp_appointment_reminders', $user->getOrCreateNotificationPreferences()->whatsapp_appointment_reminders ?? false) ? 'checked' : '' }}
+                        >
+                        <x-input-label for="whatsapp_appointment_reminders" :value="__('Appointment Reminders')" class="ml-2" />
+                    </div>
+
+                    <div class="flex items-center">
+                        <input
+                            id="whatsapp_urgent_alerts"
+                            name="whatsapp_urgent_alerts"
+                            type="checkbox"
+                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            {{ old('whatsapp_urgent_alerts', $user->getOrCreateNotificationPreferences()->whatsapp_urgent_alerts ?? false) ? 'checked' : '' }}
+                        >
+                        <x-input-label for="whatsapp_urgent_alerts" :value="__('Urgent Alerts')" class="ml-2" />
+                    </div>
+
+                    <div class="flex items-center">
+                        <input
+                            id="whatsapp_diagnosis_updates"
+                            name="whatsapp_diagnosis_updates"
+                            type="checkbox"
+                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            {{ old('whatsapp_diagnosis_updates', $user->getOrCreateNotificationPreferences()->whatsapp_diagnosis_updates ?? false) ? 'checked' : '' }}
+                        >
+                        <x-input-label for="whatsapp_diagnosis_updates" :value="__('Diagnosis Updates')" class="ml-2" />
+                    </div>
+
+                    <div class="flex items-center">
+                        <input
+                            id="whatsapp_review_requests"
+                            name="whatsapp_review_requests"
+                            type="checkbox"
+                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            {{ old('whatsapp_review_requests', $user->getOrCreateNotificationPreferences()->whatsapp_review_requests ?? false) ? 'checked' : '' }}
+                        >
+                        <x-input-label for="whatsapp_review_requests" :value="__('Review Requests')" class="ml-2" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 

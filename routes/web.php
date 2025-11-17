@@ -1010,6 +1010,11 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::post('/sms-settings/remove-assignments', [AdminController::class, 'removeProviderCountryAssignments'])->name('sms-settings.remove-assignments');
     Route::post('/sms-settings/test', [AdminController::class, 'sendTestSms'])->name('sms-settings.test');
 
+    // WhatsApp Configuration routes
+    Route::get('/whatsapp-settings', [AdminController::class, 'whatsappSettings'])->name('whatsapp-settings');
+    Route::post('/whatsapp-settings/update', [AdminController::class, 'updateWhatsAppSettings'])->name('whatsapp-settings.update');
+    Route::post('/whatsapp-settings/test', [AdminController::class, 'sendTestWhatsApp'])->name('whatsapp-settings.test');
+
     // Invoice management for admin
     Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
     Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');
@@ -1097,6 +1102,7 @@ Route::get('/test-dropdown-fix', function () {
 })->name('test.dropdown.fix');
 
 require __DIR__.'/auth.php';
+require __DIR__.'/whatsapp-test.php';
 
 // Broadcasting test route
 Route::get('/test-broadcasting', function () {

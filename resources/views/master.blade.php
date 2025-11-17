@@ -2062,6 +2062,8 @@ body .dropdown .dropdown-menu.show,
                         { title: 'Dashboard', icon: 'fas fa-tachometer-alt', url: '{{ route("admin.dashboard") }}' },
                         { title: 'User Management', icon: 'fas fa-users-cog', url: '{{ route("admin.users.index") }}' },
                         { title: 'System Settings', icon: 'fas fa-sliders-h', url: '{{ route("admin.system-settings") }}' },
+                        { title: 'SMS Settings', icon: 'fas fa-comment-sms', url: '{{ route("admin.sms-settings") }}' },
+                        { title: 'WhatsApp Settings', icon: 'fab fa-whatsapp', url: '{{ route("admin.whatsapp-settings") }}' },
                         { title: 'Billing', icon: 'fas fa-dollar-sign', url: '{{ route("admin.billing") }}' }
                     ]
                 });

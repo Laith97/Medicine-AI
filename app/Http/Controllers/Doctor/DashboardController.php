@@ -373,6 +373,12 @@ class DashboardController extends Controller
             'allow_cancellation' => 'boolean',
             'allow_rescheduling' => 'boolean',
             'cancellation_hours' => 'required|integer|min:1|max:168',
+            // WhatsApp notification preferences
+            'whatsapp_enabled' => 'boolean',
+            'whatsapp_appointment_reminders' => 'boolean',
+            'whatsapp_urgent_alerts' => 'boolean',
+            'whatsapp_diagnosis_updates' => 'boolean',
+            'whatsapp_review_requests' => 'boolean',
         ]);
 
         $data = $request->except(['profile_image']);
@@ -391,6 +397,24 @@ class DashboardController extends Controller
         }
 
         $doctor->update($data);
+
+        // Update notification preferences if provided
+        if ($request->hasAny([
+            'whatsapp_enabled',
+            'whatsapp_appointment_reminders',
+            'whatsapp_urgent_alerts',
+            'whatsapp_diagnosis_updates',
+            'whatsapp_review_requests'
+        ])) {
+            $notificationPreferences = $doctor->user->getOrCreateNotificationPreferences();
+            $notificationPreferences->update([
+                'whatsapp_enabled' => $request->whatsapp_enabled ?? false,
+                'whatsapp_appointment_reminders' => $request->whatsapp_appointment_reminders ?? false,
+                'whatsapp_urgent_alerts' => $request->whatsapp_urgent_alerts ?? false,
+                'whatsapp_diagnosis_updates' => $request->whatsapp_diagnosis_updates ?? false,
+                'whatsapp_review_requests' => $request->whatsapp_review_requests ?? false,
+            ]);
+        }
 
         return back()->with('success', 'Profile updated successfully!');
     }

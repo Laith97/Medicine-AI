@@ -26,6 +26,12 @@ class ProfileUpdateRequest extends FormRequest
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
             'phone' => ['nullable', 'string', 'max:20', 'regex:/^[\+]?[1-9][\d]{0,15}$/'],
+            // WhatsApp notification preferences
+            'whatsapp_enabled' => ['boolean'],
+            'whatsapp_appointment_reminders' => ['boolean'],
+            'whatsapp_urgent_alerts' => ['boolean'],
+            'whatsapp_diagnosis_updates' => ['boolean'],
+            'whatsapp_review_requests' => ['boolean'],
         ];
     }
 }

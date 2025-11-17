@@ -31,7 +31,14 @@ class VoiceTranscriptionCompletedNotification extends Notification implements Sh
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast', 'mail'];
+        $channels = ['database', 'broadcast', 'mail'];
+
+        // Add WhatsApp if user has WhatsApp notifications enabled
+        if ($notifiable->wantsNotificationChannel('whatsapp')) {
+            $channels[] = 'whatsapp';
+        }
+
+        return $channels;
     }
 
     /**
@@ -82,6 +89,14 @@ class VoiceTranscriptionCompletedNotification extends Notification implements Sh
     public function toSms(object $notifiable): string
     {
         return "Voice transcription session completed. Session ID: {$this->transcription->session_id}. View details: " . route('ai.voice-assistant.show', $this->transcription->id);
+    }
+
+    /**
+     * Get the WhatsApp representation of the notification.
+     */
+    public function toWhatsApp(object $notifiable): string
+    {
+        return "🎙️ Voice transcription completed. Session ID: {$this->transcription->session_id}. View details: " . route('ai.voice-assistant.show', $this->transcription->id);
     }
 
     /**
