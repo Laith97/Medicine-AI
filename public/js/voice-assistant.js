@@ -141,11 +141,11 @@ document.addEventListener('DOMContentLoaded', function() {
         setupKeyboardShortcuts();
     
         // Log initialization status
-        console.log('🎙️ Voice Assistant Hybrid Method initialized');
-        console.log('✅ Live transcription: Active');
-        console.log('✅ Audio recording: ' + (audioRecordingSupported ? 'Supported' : 'Not supported'));
-        console.log('✅ Server processing: Ready');
-        console.log('🚀 Hybrid mode: ' + (hybridModeEnabled ? 'Enabled' : 'Disabled'));
+        // Voice Assistant Hybrid Method initialized
+        // Live transcription: Active
+        // Audio recording: ' + (audioRecordingSupported ? 'Supported' : 'Not supported')
+        // Server processing: Ready
+        // Hybrid mode: ' + (hybridModeEnabled ? 'Enabled' : 'Disabled')
         
     }
 
@@ -154,10 +154,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check MediaRecorder support
         audioRecordingSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
         
-        console.log('🔍 Hybrid Method Initialization:');
-        console.log('  📹 MediaRecorder support:', audioRecordingSupported);
-        console.log('  🎙️ Web Speech API support:', !!(window.SpeechRecognition || window.webkitSpeechRecognition));
-        console.log('  🌐 Browser:', navigator.userAgent.split(' ').pop());
+        // Hybrid Method Initialization:
+        //   MediaRecorder support:
+        //   Web Speech API support:
+        //   Browser:
         
         if (!audioRecordingSupported) {
             console.warn('⚠️ Audio recording not supported. Hybrid mode will use live transcription only.');
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Check for advanced audio features
             if (navigator.mediaDevices.getSupportedConstraints) {
                 const supported = navigator.mediaDevices.getSupportedConstraints();
-                console.log('🎵 Supported audio constraints:', supported);
+                // Supported audio constraints:
 
                 // Add advanced constraints if supported
                 if (supported.sampleRate) audioConstraints.sampleRate = { ideal: 48000, min: 44100 };
