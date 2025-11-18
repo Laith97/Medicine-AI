@@ -1381,3 +1381,41 @@ Route::middleware(['auth', 'role:patient'])->prefix('patient/hep')->name('patien
 
 // Include AI routes
 require __DIR__.'/ai.php';
+
+// Waitlist Routes
+Route::middleware(['auth', 'role:patient'])->prefix('patient/waitlist')->name('patient.waitlist.')->group(function () {
+    Route::get('/', [App\Http\Controllers\Patient\WaitlistController::class, 'dashboard'])->name('dashboard');
+    Route::get('/join', [App\Http\Controllers\Patient\WaitlistController::class, 'join'])->name('join');
+    Route::post('/join', [App\Http\Controllers\Patient\WaitlistController::class, 'store'])->name('store');
+    Route::get('/status/{waitlist}', [App\Http\Controllers\Patient\WaitlistController::class, 'show'])->name('status');
+    Route::get('/position/{waitlist}', [App\Http\Controllers\Patient\WaitlistController::class, 'getPosition'])->name('position');
+    Route::post('/accept-offer/{entry}', [App\Http\Controllers\Patient\WaitlistController::class, 'acceptOffer'])->name('accept-offer');
+    Route::post('/decline-offer/{entry}', [App\Http\Controllers\Patient\WaitlistController::class, 'declineOffer'])->name('decline-offer');
+    Route::delete('/leave/{waitlist}', [App\Http\Controllers\Patient\WaitlistController::class, 'leaveWaitlist'])->name('leave');
+    Route::get('/offer/{entry}', [App\Http\Controllers\Patient\WaitlistController::class, 'viewOffer'])->name('offer');
+    Route::get('/preferences', [App\Http\Controllers\Patient\WaitlistController::class, 'preferences'])->name('preferences');
+    Route::put('/preferences', [App\Http\Controllers\Patient\WaitlistController::class, 'updatePreferences'])->name('preferences.update');
+});
+
+Route::middleware(['auth', 'role:doctor'])->prefix('doctor/waitlist')->name('doctor.waitlist.')->group(function () {
+    Route::get('/', [App\Http\Controllers\Doctor\WaitlistController::class, 'dashboard'])->name('dashboard');
+    Route::get('/manage', [App\Http\Controllers\Doctor\WaitlistController::class, 'manage'])->name('manage');
+    Route::get('/manage/export', [App\Http\Controllers\Doctor\WaitlistController::class, 'export'])->name('export');
+    Route::get('/analytics', [App\Http\Controllers\Doctor\WaitlistController::class, 'analytics'])->name('analytics');
+    Route::get('/patient/{waitlist}', [App\Http\Controllers\Doctor\WaitlistController::class, 'showPatient'])->name('show-patient');
+    Route::post('/offer-slot', [App\Http\Controllers\Doctor\WaitlistController::class, 'offerSlot'])->name('offer-slot');
+    Route::post('/manual-offer', [App\Http\Controllers\Doctor\WaitlistController::class, 'manualOffer'])->name('manual-offer');
+    Route::post('/bulk-operations', [App\Http\Controllers\Doctor\WaitlistController::class, 'bulkOperations'])->name('bulk-operations');
+    Route::post('/update-priority/{waitlist}', [App\Http\Controllers\Doctor\WaitlistController::class, 'updatePriority'])->name('update-priority');
+    Route::post('/update-status/{waitlist}', [App\Http\Controllers\Doctor\WaitlistController::class, 'updateStatus'])->name('update-status');
+    Route::delete('/remove-patient/{waitlist}', [App\Http\Controllers\Doctor\WaitlistController::class, 'removePatient'])->name('remove-patient');
+    Route::post('/add-patient', [App\Http\Controllers\Doctor\WaitlistController::class, 'addPatient'])->name('add-patient');
+});
+
+// API Routes for Waitlist
+Route::middleware(['auth', \App\Http\Middleware\EnsureJsonResponse::class])->group(function () {
+    Route::get('/api/patient/waitlist/position/{waitlist}', [App\Http\Controllers\Patient\WaitlistController::class, 'getPosition'])->name('api.patient.waitlist.position');
+    Route::get('/api/doctor/waitlist/dashboard', [App\Http\Controllers\Doctor\WaitlistController::class, 'getDashboard'])->name('api.doctor.waitlist.dashboard');
+    Route::get('/api/doctor/waitlist/stats', [App\Http\Controllers\Doctor\WaitlistController::class, 'getStats'])->name('api.doctor.waitlist.stats');
+    Route::get('/api/doctor/waitlist/patient/{waitlist}', [App\Http\Controllers\Doctor\WaitlistController::class, 'getPatient'])->name('api.doctor.waitlist.patient');
+});

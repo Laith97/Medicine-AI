@@ -46,12 +46,30 @@ return new class extends Migration
                 $table->timestamps();
             });
 
-            // Copy data from old table to new table
-            DB::statement('INSERT INTO users_new SELECT * FROM users');
+            // Copy data from old table to new table - only copy existing columns
+            $existingColumns = collect(DB::select("SHOW COLUMNS FROM users"))->pluck('Field')->toArray();
+
+            // Define target columns in the new table
+            $targetColumns = ['id', 'name', 'email', 'email_verified_at', 'password', 'role', 'phone', 'date_of_birth', 'gender', 'address', 'city', 'state', 'zip_code', 'emergency_contact_name', 'emergency_contact_phone', 'stripe_customer_id', 'monthly_cost_limit', 'subscription_ends_at', 'subscription_active', 'hospital_id', 'remember_token', 'created_at', 'updated_at'];
+
+            // Find intersection of existing and target columns
+            $columnsToCopy = array_intersect($targetColumns, $existingColumns);
+
+            // Build INSERT statement with only existing columns
+            if (!empty($columnsToCopy)) {
+                $columnsList = implode(', ', $columnsToCopy);
+                DB::statement("INSERT INTO users_new ($columnsList) SELECT $columnsList FROM users");
+            }
+
+            // Disable foreign key checks temporarily to allow table drop
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
             // Drop old table and rename new table
             Schema::drop('users');
             Schema::rename('users_new', 'users');
+
+            // Re-enable foreign key checks
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
         } else {
             // MySQL/MariaDB approach
             DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('patient', 'doctor', 'admin', 'sub_user') DEFAULT 'patient'");
@@ -97,12 +115,30 @@ return new class extends Migration
                 $table->timestamps();
             });
 
-            // Copy data from old table to new table
-            DB::statement('INSERT INTO users_new SELECT * FROM users');
+            // Copy data from old table to new table - only copy existing columns
+            $existingColumns = collect(DB::select("SHOW COLUMNS FROM users"))->pluck('Field')->toArray();
+
+            // Define target columns in the new table
+            $targetColumns = ['id', 'name', 'email', 'email_verified_at', 'password', 'role', 'phone', 'date_of_birth', 'gender', 'address', 'city', 'state', 'zip_code', 'emergency_contact_name', 'emergency_contact_phone', 'stripe_customer_id', 'monthly_cost_limit', 'subscription_ends_at', 'subscription_active', 'hospital_id', 'remember_token', 'created_at', 'updated_at'];
+
+            // Find intersection of existing and target columns
+            $columnsToCopy = array_intersect($targetColumns, $existingColumns);
+
+            // Build INSERT statement with only existing columns
+            if (!empty($columnsToCopy)) {
+                $columnsList = implode(', ', $columnsToCopy);
+                DB::statement("INSERT INTO users_new ($columnsList) SELECT $columnsList FROM users");
+            }
+
+            // Disable foreign key checks temporarily to allow table drop
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
             // Drop old table and rename new table
             Schema::drop('users');
             Schema::rename('users_new', 'users');
+
+            // Re-enable foreign key checks
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
         } else {
             // MySQL/MariaDB approach
             DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('patient', 'doctor', 'admin') DEFAULT 'patient'");

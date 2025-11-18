@@ -2,13 +2,25 @@
 
 namespace Database\Factories;
 
+use App\Models\HepProgram;
+use App\Models\User;
+use App\Models\Doctor;
+use App\Models\Diagnosis;
+use App\Models\Appointment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\HEPProgram>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\HepProgram>
  */
 class HEPProgramFactory extends Factory
 {
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
+    protected $model = HepProgram::class;
+
     /**
      * Define the model's default state.
      *
@@ -19,14 +31,15 @@ class HEPProgramFactory extends Factory
         return [
             'title' => $this->faker->words(3, true),
             'description' => $this->faker->paragraph(),
-            'doctor_id' => 1, // Will be overridden in tests
-            'patient_id' => 1, // Will be overridden in tests
-            'diagnosis_id' => 1, // Will be overridden in tests
-            'appointment_id' => 1, // Will be overridden in tests
+            'doctor_id' => Doctor::factory(),
+            'patient_id' => User::factory(),
+            'diagnosis_id' => Diagnosis::factory(),
+            'appointment_id' => Appointment::factory(),
             'duration_weeks' => $this->faker->numberBetween(4, 12),
             'frequency_per_week' => $this->faker->numberBetween(1, 7),
-            'goals' => $this->faker->paragraph(),
-            'precautions' => $this->faker->paragraph(),
+            'goals' => [$this->faker->sentence(), $this->faker->sentence()],
+            'precautions' => [$this->faker->sentence(), $this->faker->sentence()],
+            'status' => $this->faker->randomElement(['active', 'completed', 'paused']),
         ];
     }
 }
