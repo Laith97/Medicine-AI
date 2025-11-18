@@ -67,7 +67,7 @@ class ManageHEPAssignmentRequest extends FormRequest
             $program = \App\Models\HepProgram::find($this->hep_program_id);
             $patient = \App\Models\User::find($this->patient_id);
 
-            if ($program && $program->doctor_id !== $this->user()->id) {
+            if ($program && $program->doctor->user_id !== $this->user()->id) {
                 $validator->errors()->add('hep_program_id', 'You can only assign your own HEP programs.');
             }
 

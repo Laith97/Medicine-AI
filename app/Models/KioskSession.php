@@ -11,8 +11,6 @@ class KioskSession extends Model
     use HasFactory;
 
     protected $primaryKey = 'session_id';
-    public $incrementing = false;
-    protected $keyType = 'string';
 
     protected $fillable = [
         'session_id',
@@ -37,9 +35,6 @@ class KioskSession extends Model
         parent::boot();
 
         static::creating(function ($session) {
-            if (empty($session->session_id)) {
-                $session->session_id = 'KS-' . strtoupper(uniqid());
-            }
             if (empty($session->start_time)) {
                 $session->start_time = now();
             }

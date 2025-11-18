@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('title', 'Register - AI Medical Diagnosis')
+@section('title', 'Register - MedCura Clinical Platform')
 
 @section('content')
 <div class="dashboard-header py-2 border-bottom">
@@ -18,7 +18,7 @@
                             <i class="bi bi-heart-pulse" style="font-size: 3rem; color: #DE6262;"></i>
                         </div>
                         <h2 class="auth-title">Create Account</h2>
-                        <p class="auth-subtitle">Join AI Medical Diagnosis platform today</p>
+                        <p class="auth-subtitle">Join MedCura Clinical Platform today</p>
                     </div>
 
                     <!-- Register Form -->

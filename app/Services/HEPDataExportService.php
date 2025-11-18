@@ -116,8 +116,8 @@ class HEPDataExportService
                         'program_status' => $program->status,
                         'diagnosis_condition' => $program->diagnosis->condition_name ?? '',
                         'diagnosis_icd_code' => $program->diagnosis->icd_code ?? '',
-                        'doctor_name' => $program->doctor->name,
-                        'doctor_specialty' => $program->doctor->specialty ?? '',
+                        'doctor_name' => $program->doctor->user->name,
+                        'doctor_specialty' => $program->doctor->specialty->name ?? '',
                         'patient_id' => $program->patient_id,
                         'patient_age' => $program->patient->date_of_birth ?
                             Carbon::parse($program->patient->date_of_birth)->age : null,

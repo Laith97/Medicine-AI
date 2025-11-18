@@ -187,10 +187,14 @@
                         </div>
                         @endif
 
-                        @if($assignment->hepProgram->goals)
+                        @if($assignment->hepProgram->goals && count($assignment->hepProgram->goals) > 0)
                         <div class="mt-3">
                             <strong>Goals:</strong>
-                            <p class="small text-muted mt-1">{{ $assignment->hepProgram->goals }}</p>
+                            <ul class="mb-0 small text-muted mt-1">
+                                @foreach($assignment->hepProgram->goals as $goal)
+                                    <li>{{ $goal }}</li>
+                                @endforeach
+                            </ul>
                         </div>
                         @endif
                     </div>

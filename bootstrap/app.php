@@ -10,12 +10,6 @@ use App\Jobs\SendInvoiceNotifications;
 use App\Jobs\SyncStripeInvoices;
 use App\Jobs\ProcessOverdueInvoices;
 use App\Jobs\ProcessInvoicePayments;
-use App\Events\AppointmentBookedEvent;
-use App\Events\AppointmentCancelledEvent;
-use App\Events\AppointmentCompletedEvent;
-use App\Listeners\CheckAppointmentEligibility;
-use App\Listeners\ProcessWaitlistOnAppointmentCancellation;
-use App\Listeners\ProcessWaitlistOnAppointmentCompletion;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -26,17 +20,6 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withProviders([
         SanctumServiceProvider::class,
-    ])
-    ->withEvents([
-        AppointmentBookedEvent::class => [
-            CheckAppointmentEligibility::class,
-        ],
-        AppointmentCancelledEvent::class => [
-            ProcessWaitlistOnAppointmentCancellation::class,
-        ],
-        AppointmentCompletedEvent::class => [
-            ProcessWaitlistOnAppointmentCompletion::class,
-        ],
     ])
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([

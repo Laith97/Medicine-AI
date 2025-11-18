@@ -33,13 +33,13 @@
                                     </div>
                                     <h4 class="option-title mb-3">Healthcare Professional</h4>
                                     <p class="option-description mb-4">
-                                        Register as a doctor, nurse, or healthcare provider to access AI-powered diagnosis tools, patient management, and professional features.
+                                        Register as a doctor, nurse, or healthcare provider to access clinical decision support tools, patient management, and professional features.
                                     </p>
                                     <div class="option-features mb-4">
                                         <div class="row text-start">
                                             <div class="col-6">
                                                 <i class="fas fa-check text-success me-2"></i>
-                                                <small>AI Diagnosis</small>
+                                                <small>Clinical Decision Support</small>
                                             </div>
                                             <div class="col-6">
                                                 <i class="fas fa-check text-success me-2"></i>
