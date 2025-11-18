@@ -11,7 +11,7 @@ class SpecialtyFactory extends Factory
 
     public function definition(): array
     {
-        $name = fake()->unique()->randomElement([
+        $specialties = [
             'Cardiology',
             'Dermatology',
             'Endocrinology',
@@ -35,16 +35,21 @@ class SpecialtyFactory extends Factory
             'Radiation Oncology',
             'Surgery',
             'Urology'
-        ]);
+        ];
+
+        // Use a unique counter to ensure no duplicates
+        static $counter = 0;
+        $counter++;
+
+        $name = $specialties[array_rand($specialties)] . " {$counter}";
+        $slug = \Illuminate\Support\Str::slug($name);
 
         return [
             'name' => $name,
-            'slug' => \Illuminate\Support\Str::slug($name) . '-' . fake()->unique()->numberBetween(1000, 9999),
-            'description' => fake()->paragraph(),
-            'icon' => fake()->optional()->randomElement(['fas fa-heart', 'fas fa-brain', 'fas fa-bone', 'fas fa-eye']),
-            'is_active' => fake()->boolean(90), // 90% chance of being active
-            'created_at' => fake()->dateTimeThisMonth(),
-            'updated_at' => fake()->dateTimeThisMonth(),
+            'slug' => $slug,
+            'description' => $this->faker->paragraph(),
+            'icon' => $this->faker->optional()->randomElement(['fas fa-heart', 'fas fa-brain', 'fas fa-bone', 'fas fa-eye']),
+            'is_active' => $this->faker->boolean(90),
         ];
     }
 }

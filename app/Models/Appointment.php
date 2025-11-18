@@ -686,4 +686,28 @@ class Appointment extends Model
     {
         return $this->belongsTo(Kiosk::class);
     }
+
+    /**
+     * Confirm the appointment (alias for confirm method for backward compatibility)
+     *
+     * @return void
+     * @throws \Exception If concurrent update is detected
+     */
+    public function confirmAppointment()
+    {
+        return $this->confirm();
+    }
+
+    /**
+     * Cancel the appointment (alias for cancel method for backward compatibility)
+     *
+     * @param string|null $reason Optional reason for cancellation
+     * @param int|null $cancelledBy ID of the user who cancelled the appointment
+     * @return void
+     * @throws \Exception If concurrent update is detected
+     */
+    public function cancelAppointment($reason = null, $cancelledBy = null)
+    {
+        return $this->cancel($reason, $cancelledBy);
+    }
 }

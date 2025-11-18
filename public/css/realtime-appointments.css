@@ -1,0 +1,845 @@
+/**
+ * Real-time Appointment Tracking Styles
+ *
+ * Comprehensive CSS for real-time appointment tracking UI components
+ * including status indicators, animations, notifications, and queue display.
+ */
+
+/* ========================================
+   Real-time Connection Indicator
+======================================== */
+
+.realtime-connection-indicator {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 25px;
+    padding: 8px 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.realtime-connection-indicator.connection-connected {
+    border-color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+}
+
+.realtime-connection-indicator.connection-connecting {
+    border-color: #ffc107;
+    background: rgba(255, 193, 7, 0.1);
+}
+
+.realtime-connection-indicator.connection-disconnected,
+.realtime-connection-indicator.connection-failed,
+.realtime-connection-indicator.connection-error {
+    border-color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.realtime-connection-indicator .connection-status-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse-dot 2s infinite;
+}
+
+.realtime-connection-indicator.connection-connected .connection-status-icon {
+    animation: pulse-dot-green 2s infinite;
+}
+
+.realtime-connection-indicator.connection-connecting .connection-status-icon {
+    animation: pulse-dot-yellow 1s infinite;
+}
+
+.realtime-connection-indicator.connection-disconnected .connection-status-icon,
+.realtime-connection-indicator.connection-failed .connection-status-icon,
+.realtime-connection-indicator.connection-error .connection-status-icon {
+    animation: pulse-dot-red 1s infinite;
+}
+
+/* ========================================
+   Real-time Indicators
+======================================== */
+
+.realtime-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    z-index: 10;
+}
+
+.realtime-indicator.online {
+    background: #28a745;
+    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    animation: pulse-online 2s infinite;
+}
+
+.realtime-indicator.offline {
+    background: #6c757d;
+}
+
+.realtime-indicator.updating {
+    background: #ffc107;
+    animation: pulse-updating 1s infinite;
+}
+
+.realtime-indicator.error {
+    background: #dc3545;
+    animation: pulse-error 0.5s infinite;
+}
+
+/* ========================================
+   Status Change Animations
+======================================== */
+
+.appointment-card {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.appointment-card.status-changing {
+    transform: scale(1.02);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.appointment-card.appointment-adding {
+    animation: slideInFromTop 0.5s ease-out;
+    border-left: 4px solid #28a745;
+}
+
+.appointment-card.appointment-removing {
+    animation: slideOutToBottom 0.3s ease-in;
+    opacity: 0;
+    transform: translateX(-20px);
+}
+
+.appointment-card.position-changing {
+    animation: positionChanged 1s ease-in-out;
+}
+
+.appointment-card.pulse-animation {
+    animation: statusPulse 1s ease-in-out;
+}
+
+/* Status-specific change animations */
+.appointment-card.status-confirmed-changed {
+    border-left: 4px solid #28a745;
+}
+
+.appointment-card.status-cancelled-changed {
+    border-left: 4px solid #dc3545;
+}
+
+.appointment-card.status-completed-changed {
+    border-left: 4px solid #17a2b8;
+}
+
+/* Status badge styles */
+.status-badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.3s ease;
+}
+
+.status-badge.status-pending {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.status-badge.status-confirmed {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-badge.status-cancelled {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-badge.status-completed {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.status-badge.status-check-in {
+    background: #cce7ff;
+    color: #004085;
+    border: 1px solid #b3d7ff;
+}
+
+.status-badge.status-in-progress {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+    animation: statusInProgress 2s infinite;
+}
+
+.status-badge.status-waiting {
+    background: #e2f3ff;
+    color: #004085;
+    border: 1px solid #b8daff;
+}
+
+.status-badge.status-ready {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    animation: statusReady 2s infinite;
+}
+
+.status-badge.status-no-show {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* ========================================
+   Queue Position Display
+======================================== */
+
+.queue-position {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin: 0 8px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.queue-position.priority-high {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+.queue-position.priority-medium {
+    background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
+    box-shadow: 0 2px 8px rgba(254, 202, 87, 0.3);
+}
+
+/* ========================================
+   Wait Time Display
+======================================== */
+
+.estimated-wait {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: #6c757d;
+    background: #f8f9fa;
+    padding: 2px 8px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.estimated-wait::before {
+    content: '⏱️';
+    font-size: 0.8rem;
+}
+
+.estimated-wait.wait-short {
+    color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+    border-color: rgba(40, 167, 69, 0.3);
+}
+
+.estimated-wait.wait-medium {
+    color: #ffc107;
+    background: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.3);
+}
+
+.estimated-wait.wait-long {
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+    border-color: rgba(220, 53, 69, 0.3);
+}
+
+/* ========================================
+   Real-time Notifications
+======================================== */
+
+.realtime-notifications-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1050;
+    max-width: 400px;
+    width: 100%;
+    pointer-events: none;
+}
+
+.realtime-notification {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    margin-bottom: 12px;
+    overflow: hidden;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: all;
+}
+
+.realtime-notification.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.realtime-notification.notification-appointment_status .notification-icon {
+    background: rgba(23, 162, 184, 0.1);
+    color: #17a2b8;
+}
+
+.realtime-notification.notification-appointment_created .notification-icon {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.realtime-notification.notification-queue_position .notification-icon {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+}
+
+.realtime-notification .notification-content {
+    display: flex;
+    align-items: flex-start;
+    padding: 16px;
+    gap: 12px;
+}
+
+.realtime-notification .notification-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.realtime-notification .notification-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.realtime-notification .notification-title {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+}
+
+.realtime-notification .notification-message {
+    color: #6c757d;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.realtime-notification .notification-actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.realtime-notification .notification-action {
+    font-size: 0.8rem;
+    color: #007bff;
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.realtime-notification .notification-action:hover {
+    background: rgba(0, 123, 255, 0.1);
+}
+
+.realtime-notification .notification-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.2s;
+}
+
+.realtime-notification .notification-close:hover {
+    color: #212529;
+}
+
+/* ========================================
+   Doctor Dashboard Real-time Updates
+======================================== */
+
+.doctor-dashboard-realtime {
+    position: relative;
+}
+
+.doctor-dashboard-realtime .stats-card {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.doctor-dashboard-realtime .stats-card.realtime-updating {
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.doctor-dashboard-realtime .stats-card.realtime-updating::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 49%, rgba(23, 162, 184, 0.1) 50%, transparent 51%);
+    animation: shimmer 1.5s infinite;
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.appointment-card-realtime {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.appointment-card-realtime.updated {
+    animation: highlight-update 1s ease-in-out;
+}
+
+.appointment-card-realtime .realtime-timestamp {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 0.7rem;
+    color: #6c757d;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* ========================================
+   Patient Status Display
+======================================== */
+
+.patient-status-display {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.patient-status-display .status-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+}
+
+.patient-status-display .status-icon.status-pending {
+    background: #ffc107;
+}
+
+.patient-status-display .status-icon.status-confirmed {
+    background: #28a745;
+}
+
+.patient-status-display .status-icon.status-check-in {
+    background: #007bff;
+}
+
+.patient-status-display .status-icon.status-in-progress {
+    background: #ffc107;
+    animation: statusInProgress 2s infinite;
+}
+
+.patient-status-display .status-icon.status-completed {
+    background: #17a2b8;
+}
+
+.patient-status-display .status-icon.status-cancelled {
+    background: #dc3545;
+}
+
+.patient-status-display .status-icon.status-no-show {
+    background: #6c757d;
+}
+
+.patient-status-display .status-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 8px;
+}
+
+.patient-status-display .status-description {
+    color: #6c757d;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.patient-status-display .status-timeline {
+    border-top: 1px solid #e9ecef;
+    padding-top: 16px;
+    margin-top: 16px;
+}
+
+.patient-status-display .timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.patient-status-display .timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.patient-status-display .timeline-item .timeline-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #dee2e6;
+}
+
+.patient-status-display .timeline-item.active .timeline-icon {
+    background: #007bff;
+    animation: pulse-dot-blue 2s infinite;
+}
+
+.patient-status-display .timeline-item.completed .timeline-icon {
+    background: #28a745;
+}
+
+/* ========================================
+   On-Deck Queue Enhancements
+======================================== */
+
+.on-deck-queue {
+    position: relative;
+}
+
+.queue-stats {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+
+.queue-stats .stat-item {
+    text-align: center;
+}
+
+.queue-stats .stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.queue-stats .stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.appointment-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    background: white;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.appointment-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.appointment-card .appointment-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.appointment-card .appointment-time {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.appointment-card .appointment-patient {
+    font-size: 1rem;
+    color: #495057;
+}
+
+.appointment-card .appointment-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.appointment-card .appointment-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ========================================
+   Drag and Drop Enhancements
+======================================== */
+
+.sortable-ghost {
+    opacity: 0.5;
+    transform: rotate(5deg);
+}
+
+.sortable-chosen {
+    transform: scale(1.02);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.sortable-drag {
+    opacity: 0.8;
+    transform: rotate(-2deg);
+    z-index: 1000;
+}
+
+/* ========================================
+   Mobile Responsiveness
+======================================== */
+
+@media (max-width: 768px) {
+    .realtime-connection-indicator {
+        top: 10px;
+        right: 10px;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .realtime-notifications-container {
+        top: 70px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+
+    .appointment-card {
+        padding: 12px;
+    }
+
+    .appointment-card .appointment-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .appointment-card .appointment-actions {
+        justify-content: center;
+    }
+
+    .queue-position {
+        min-width: 24px;
+        height: 24px;
+        font-size: 0.7rem;
+    }
+
+    .patient-status-display {
+        padding: 16px;
+    }
+
+    .patient-status-display .status-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+
+    .patient-status-display .status-title {
+        font-size: 1.2rem;
+    }
+}
+
+/* ========================================
+   Animations
+======================================== */
+
+@keyframes pulse-online {
+    0% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+@keyframes pulse-dot-green {
+    0%, 100% { background-color: #28a745; }
+    50% { background-color: #20c997; }
+}
+
+@keyframes pulse-dot-yellow {
+    0%, 100% { background-color: #ffc107; }
+    50% { background-color: #fd7e14; }
+}
+
+@keyframes pulse-dot-red {
+    0%, 100% { background-color: #dc3545; }
+    50% { background-color: #e83e8c; }
+}
+
+@keyframes pulse-dot-blue {
+    0%, 100% { background-color: #007bff; }
+    50% { background-color: #6f42c1; }
+}
+
+@keyframes slideInFromTop {
+    0% {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutToBottom {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+}
+
+@keyframes positionChanged {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+}
+
+@keyframes statusPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(23, 162, 184, 0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(23, 162, 184, 0); }
+}
+
+@keyframes statusInProgress {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 5px rgba(255, 193, 7, 0);
+    }
+}
+
+@keyframes statusReady {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4);
+    }
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 8px rgba(40, 167, 69, 0);
+    }
+}
+
+@keyframes highlight-update {
+    0% { background-color: transparent; }
+    50% { background-color: rgba(23, 162, 184, 0.1); }
+    100% { background-color: transparent; }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes pulse-dot {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+@keyframes pulse-updating {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.3);
+        opacity: 0.7;
+    }
+}
+
+@keyframes pulse-error {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.6;
+    }
+}

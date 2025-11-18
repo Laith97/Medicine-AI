@@ -47,10 +47,10 @@ class RealTimeAppointmentTrackingTest extends TestCase
         // Create an appointment
         $this->appointment = Appointment::factory()->create([
             'patient_id' => $this->patient->id,
-            'doctor_id' => $this->doctor->id,
+            'doctor_id' => $this->doctor->doctor->id,
             'appointment_date' => Carbon::now()->addDays(1),
-            'status' => 'scheduled',
-            'type' => 'consultation',
+            'status' => 'confirmed',
+            'appointment_type' => 'in_person',
         ]);
     }
 
@@ -70,7 +70,7 @@ class RealTimeAppointmentTrackingTest extends TestCase
     {
         $onDeckData = [
             'appointment_id' => $this->appointment->id,
-            'doctor_id' => $this->doctor->id,
+            'doctor_id' => $this->doctor->doctor->id,
             'patient_id' => $this->patient->id,
             'status' => 'waiting',
             'position' => 1,
@@ -81,7 +81,7 @@ class RealTimeAppointmentTrackingTest extends TestCase
 
         $this->assertDatabaseHas('on_deck_appointments', [
             'appointment_id' => $this->appointment->id,
-            'doctor_id' => $this->doctor->id,
+            'doctor_id' => $this->doctor->doctor->id,
             'status' => 'waiting',
             'position' => 1,
         ]);
@@ -91,14 +91,14 @@ class RealTimeAppointmentTrackingTest extends TestCase
     {
         $onDeck = OnDeckAppointment::create([
             'appointment_id' => $this->appointment->id,
-            'doctor_id' => $this->doctor->id,
+            'doctor_id' => $this->doctor->doctor->id,
             'patient_id' => $this->patient->id,
             'status' => 'waiting',
             'position' => 1,
         ]);
 
         // Update appointment status
-        $this->appointment->update(['status' => 'in-progress']);
+        $this->appointment->update(['status' => 'confirmed']);
 
         // Update corresponding on-deck status
         $onDeck->update(['status' => 'in-progress']);
@@ -111,22 +111,22 @@ class RealTimeAppointmentTrackingTest extends TestCase
         // Create multiple appointments for the same doctor
         $appointment2 = Appointment::factory()->create([
             'patient_id' => $this->patient->id,
-            'doctor_id' => $this->doctor->id,
+            'doctor_id' => $this->doctor->doctor->id,
             'appointment_date' => Carbon::now()->addDays(1)->addHours(1),
-            'status' => 'scheduled',
+            'status' => 'confirmed',
         ]);
 
         $appointment3 = Appointment::factory()->create([
             'patient_id' => $this->patient->id,
-            'doctor_id' => $this->doctor->id,
+            'doctor_id' => $this->doctor->doctor->id,
             'appointment_date' => Carbon::now()->addDays(1)->addHours(2),
-            'status' => 'scheduled',
+            'status' => 'confirmed',
         ]);
 
         // Create on-deck entries
         $onDeck1 = OnDeckAppointment::create([
             'appointment_id' => $this->appointment->id,
-            'doctor_id' => $this->doctor->id,
+            'doctor_id' => $this->doctor->doctor->id,
             'patient_id' => $this->patient->id,
             'status' => 'waiting',
             'position' => 1,
@@ -134,7 +134,7 @@ class RealTimeAppointmentTrackingTest extends TestCase
 
         $onDeck2 = OnDeckAppointment::create([
             'appointment_id' => $appointment2->id,
-            'doctor_id' => $this->doctor->id,
+            'doctor_id' => $this->doctor->doctor->id,
             'patient_id' => $this->patient->id,
             'status' => 'waiting',
             'position' => 2,
@@ -142,7 +142,7 @@ class RealTimeAppointmentTrackingTest extends TestCase
 
         $onDeck3 = OnDeckAppointment::create([
             'appointment_id' => $appointment3->id,
-            'doctor_id' => $this->doctor->id,
+            'doctor_id' => $this->doctor->doctor->id,
             'patient_id' => $this->patient->id,
             'status' => 'waiting',
             'position' => 3,
@@ -150,7 +150,7 @@ class RealTimeAppointmentTrackingTest extends TestCase
 
         // Test ordering by position
         $orderedAppointments = OnDeckAppointment::orderBy('position')->get();
-        
+
         $this->assertEquals(1, $orderedAppointments[0]->position);
         $this->assertEquals(2, $orderedAppointments[1]->position);
         $this->assertEquals(3, $orderedAppointments[2]->position);
@@ -160,16 +160,16 @@ class RealTimeAppointmentTrackingTest extends TestCase
     {
         $onDeck = OnDeckAppointment::create([
             'appointment_id' => $this->appointment->id,
-            'doctor_id' => $this->doctor->id,
+            'doctor_id' => $this->doctor->doctor->id,
             'patient_id' => $this->patient->id,
             'status' => 'waiting',
             'position' => 1,
             'risk_score' => 0.7, // High risk score
-            'risk_factors' => json_encode(['high_bp', 'diabetes']),
+            'risk_factors' => ['high_bp', 'diabetes'],
         ]);
 
         $this->assertGreaterThanOrEqual(0.5, $onDeck->risk_score);
-        $riskFactors = json_decode($onDeck->risk_factors, true);
+        $riskFactors = $onDeck->risk_factors;
         $this->assertContains('high_bp', $riskFactors);
         $this->assertContains('diabetes', $riskFactors);
     }
@@ -178,7 +178,7 @@ class RealTimeAppointmentTrackingTest extends TestCase
     {
         $onDeck = OnDeckAppointment::create([
             'appointment_id' => $this->appointment->id,
-            'doctor_id' => $this->doctor->id,
+            'doctor_id' => $this->doctor->doctor->id,
             'patient_id' => $this->patient->id,
             'status' => 'waiting',
             'position' => 1,
@@ -202,7 +202,7 @@ class RealTimeAppointmentTrackingTest extends TestCase
     {
         $onDeck = OnDeckAppointment::create([
             'appointment_id' => $this->appointment->id,
-            'doctor_id' => $this->doctor->id,
+            'doctor_id' => $this->doctor->doctor->id,
             'patient_id' => $this->patient->id,
             'status' => 'waiting',
             'position' => 1,
@@ -218,7 +218,7 @@ class RealTimeAppointmentTrackingTest extends TestCase
         $event = new AppointmentStatusUpdated($this->appointment);
 
         $broadcastData = $event->broadcastWith();
-        
+
         $this->assertArrayHasKey('appointmentId', $broadcastData);
         $this->assertArrayHasKey('status', $broadcastData);
         $this->assertArrayHasKey('patient_name', $broadcastData);

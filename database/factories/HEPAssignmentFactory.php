@@ -2,13 +2,23 @@
 
 namespace Database\Factories;
 
+use App\Models\HepAssignment;
+use App\Models\User;
+use App\Models\HepProgram;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\HEPAssignment>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\HepAssignment>
  */
 class HEPAssignmentFactory extends Factory
 {
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
+    protected $model = HepAssignment::class;
+
     /**
      * Define the model's default state.
      *
@@ -17,13 +27,14 @@ class HEPAssignmentFactory extends Factory
     public function definition(): array
     {
         return [
-            'hep_program_id' => 1, // Will be overridden in tests
-            'patient_id' => 1, // Will be overridden in tests
-            'doctor_id' => 1, // Will be overridden in tests
-            'assigned_date' => now(),
+            'hep_program_id' => HepProgram::factory(),
+            'patient_id' => User::factory(),
+            'assigned_by' => User::factory(),
+            'assigned_at' => now(),
             'due_date' => now()->addWeeks(2),
-            'notes' => $this->faker->optional()->paragraph(),
-            'status' => 'assigned',
+            'completion_status' => $this->faker->randomElement(['pending', 'in_progress', 'completed']),
+            'patient_notes' => $this->faker->optional()->paragraph(),
+            'clinician_feedback' => $this->faker->optional()->paragraph(),
         ];
     }
 }
