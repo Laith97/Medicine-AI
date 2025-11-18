@@ -496,109 +496,37 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function loadPatientsForAssignment() {
-        // Patients are now loaded from the server, no need for AJAX
+        // Patients are now loaded from server, no need for AJAX
         const modal = new bootstrap.Modal(document.getElementById('assignProgramModal'));
         // Modal is already shown by the caller
     }
 
-    // Handle form submission
+    // Handle form submission - simplified approach
     const assignForm = document.getElementById('assignProgramForm');
     if (assignForm) {
-        assignForm.addEventListener('submit', function(e) {
-            // Allow the form to submit normally without preventing default
-            // This will ensure proper form submission and redirect handling
+        // Show loading state when form is submitted
+        assignForm.addEventListener('submit', function() {
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Assigning...';
 
-            const formData = new FormData(this);
+            // Hide modal after a short delay
+            setTimeout(() => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('assignProgramModal'));
+                modal.hide();
 
-            // Convert form data to URL encoded format to ensure proper processing
-            const params = new URLSearchParams();
-            for (const [key, value] of formData.entries()) {
-                params.append(key, value);
-            }
-
-            fetch(this.action, {
-                method: 'POST',
-                body: params,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            })
-            .then(response => {
-                // Check if response is a redirect (302)
-                if (response.redirected) {
-                    // For redirects, we'll just reload the page to show the updated status
-                    window.location.reload();
-                    return;
-                }
-
-                // For non-redirect responses, check content type
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    // Process as JSON
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                } else {
-                    // If not JSON, just reload the page
-                    window.location.reload();
-                    return;
-                }
-            })
-            .then(data => {
-                if (data.success) {
-                    // Hide the modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('assignProgramModal'));
-                    modal.hide();
-                    
-                    // Show success message
-                    const alert = document.createElement('div');
-                    alert.className = 'alert alert-success alert-dismissible fade show';
-                    alert.innerHTML = `
-                        ${data.message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    `;
-                    
-                    // Insert alert at the top of the page
-                    const container = document.querySelector('.container-fluid');
-                    container.insertBefore(alert, container.firstChild);
-                    
-                    // Refresh the page after a short delay to show updated status
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    // Show error message
-                    const alert = document.createElement('div');
-                    alert.className = 'alert alert-danger alert-dismissible fade show';
-                    alert.innerHTML = `
-                        Error: ${data.message || 'Failed to assign program'}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    `;
-                    
-                    // Insert alert at the top of the page
-                    const container = document.querySelector('.container-fluid');
-                    container.insertBefore(alert, container.firstChild);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                
-                // Show error message
+                // Show loading message
                 const alert = document.createElement('div');
-                alert.className = 'alert alert-danger alert-dismissible fade show';
+                alert.className = 'alert alert-info alert-dismissible fade show';
                 alert.innerHTML = `
-                    An error occurred while assigning the program
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <i class="fas fa-spinner fa-spin me-2"></i>Assigning program to patient...
                 `;
-                
-                // Insert alert at the top of the page
+
                 const container = document.querySelector('.container-fluid');
                 container.insertBefore(alert, container.firstChild);
-            });
+            }, 500);
         });
     }
 
@@ -631,4 +559,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
-@endsection

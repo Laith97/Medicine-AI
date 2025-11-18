@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('title', 'MedCura AI - Complete Healthcare Platform | AI Diagnosis, Patient Management & Practice Growth')
+@section('title', 'MedCura AI - Complete Healthcare Platform | Clinical Decision Support, Patient Management & Practice Growth')
 
 @push('styles')
 <style>
@@ -309,10 +309,10 @@
             <div class="col-lg-6">
                 <div class="text-white mb-5">
                     <h1 class="display-3 fw-bold mb-4" data-animate="fadeInUp">
-                        <span style="color: #DE6262;">AI-Powered</span><br><span style="color: #FFE4E1;">Electronic Medical Records</span>
+                        <span style="color: #DE6262;">Clinical Decision</span><br><span style="color: #FFE4E1;">Electronic Medical Records</span>
                     </h1>
                     <p class="lead mb-4 opacity-90" data-animate="fadeInUp" data-delay="200">
-                        Transform healthcare delivery with our comprehensive EMR system enhanced by artificial intelligence. Complete patient management, intelligent diagnosis, and seamless workflow integration in one platform.
+                        Transform healthcare delivery with our comprehensive EMR system enhanced by advanced analytics. Complete patient management, clinical decision support, and seamless workflow integration in one platform.
                     </p>
                     <div class="d-flex flex-wrap gap-3" data-animate="fadeInUp" data-delay="400">
                         {{-- AI Ask temporarily disabled --}}
@@ -352,7 +352,7 @@
     <div class="container">
         <div class="text-center mb-5">
             <h2 class="section-title">Comprehensive EMR System Features</h2>
-            <p class="section-subtitle">Complete healthcare management with artificial intelligence capabilities</p>
+            <p class="section-subtitle">Complete healthcare management with advanced analytics capabilities</p>
         </div>
         <div class="row g-4">
             <div class="col-lg-4 col-md-6">
@@ -360,8 +360,8 @@
                     <div class="feature-icon">
                         <i class="fas fa-brain"></i>
                     </div>
-                    <h4 class="mb-3">AI-Powered Diagnosis</h4>
-                    <p class="text-muted">Advanced machine learning algorithms analyze patient symptoms, medical history, and test results to assist in clinical decision-making with confidence scoring.</p>
+                    <h4 class="mb-3">Clinical Decision Support</h4>
+                    <p class="text-muted">Advanced clinical tools analyze patient symptoms, medical history, and test results to assist in clinical decision-making with comprehensive analysis.</p>
                 </div>
             </div>
             <div class="col-lg-4 col-md-6">
@@ -464,7 +464,7 @@
                     <div class="mt-4">
                         <i class="fas fa-stethoscope text-theme-primary mb-3" style="font-size: 3rem;"></i>
                         <h4 class="mb-3">Manage Patients</h4>
-                        <p class="text-muted">Use AI diagnosis tools, voice assistant, appointment booking, and automated patient communication to streamline your practice.</p>
+                        <p class="text-muted">Use clinical decision support tools, voice assistant, appointment booking, and automated patient communication to streamline your practice.</p>
                     </div>
                 </div>
             </div>
@@ -489,7 +489,7 @@
             <div class="col-lg-3 col-md-6">
                 <div class="stat-item">
                     <div class="stat-number">50K+</div>
-                    <h5>AI Diagnoses Assisted</h5>
+                    <h5>Clinical Insights Provided</h5>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
@@ -578,7 +578,7 @@
                         <h5 class="mb-1">Dr. Sarah Johnson</h5>
                         <small class="text-muted">Cardiology Practice</small>
                     </div>
-                    <p class="text-muted">"The AI-powered EMR system has revolutionized our patient care. The diagnostic assistance and voice transcription capabilities have reduced documentation time by 60% while improving accuracy. The comprehensive patient records are always accessible and well-organized."</p>
+                    <p class="text-muted">"The advanced EMR system has revolutionized our patient care. The clinical decision support and voice transcription capabilities have reduced documentation time by 60% while improving accuracy. The comprehensive patient records are always accessible and well-organized."</p>
                 </div>
             </div>
             <div class="col-lg-5 col-md-6">
@@ -588,7 +588,7 @@
                         <h5 class="mb-1">Dr. Michael Chen</h5>
                         <small class="text-muted">Family Medicine</small>
                     </div>
-                    <p class="text-muted">"The integration of AI diagnostics with our EMR system has improved our diagnostic accuracy and patient outcomes. The system's predictive analytics help us identify at-risk patients before complications arise. Essential for modern medical practice."</p>
+                    <p class="text-muted">"The integration of clinical decision support with our EMR system has improved our diagnostic accuracy and patient outcomes. The system's predictive analytics help us identify at-risk patients before complications arise. Essential for modern medical practice."</p>
                 </div>
             </div>
         </div>
@@ -613,7 +613,7 @@
         </div>
 
 
-        
+
         <!-- 3 Pricing Plans -->
         <div class="row justify-content-center g-4">
             @if(isset($pricingPlans) && !empty($pricingPlans))
@@ -623,7 +623,7 @@
                         @if($plan['is_featured'])
                             <div class="popular-badge">Most Popular</div>
                         @endif
-                        
+
                         <div class="pricing-header">
                             <h3 class="plan-name">{{ $plan['name'] }}</h3>
                             <p class="text-muted mb-3">{{ $plan['description'] }}</p>
@@ -655,7 +655,7 @@
                                 @endif
                             </div>
                         </div>
-                        
+
                         <div class="pricing-body flex-grow-1">
                             <ul class="feature-list">
                                 @foreach($plan['features'] as $feature)
@@ -663,7 +663,7 @@
                                 @endforeach
                             </ul>
                         </div>
-                        
+
                         <div class="pricing-footer">
                             <a href="{{ $plan['button_url'] }}" class="btn {{ $plan['is_featured'] ? 'btn-theme-primary' : 'btn-theme-outline' }} btn-lg w-100">
                                 {{ $plan['button_text'] }}
@@ -744,7 +744,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const monthlyPrices = document.querySelectorAll('.monthly-price');
     const yearlyPrices = document.querySelectorAll('.yearly-price');
     const pricingCards = document.querySelectorAll('.pricing-card');
-    
+
     if (monthlyLabel && yearlyLabel) {
         monthlyLabel.addEventListener('click', function() {
             // Switch to monthly
@@ -752,10 +752,10 @@ document.addEventListener('DOMContentLoaded', function() {
             monthlyLabel.style.color = 'white';
             yearlyLabel.style.background = 'transparent';
             yearlyLabel.style.color = '#6C757D';
-            
+
             monthlyPrices.forEach(price => price.style.display = 'block');
             yearlyPrices.forEach(price => price.style.display = 'none');
-            
+
             // Update button links to monthly
             pricingCards.forEach(card => {
                 const button = card.querySelector('.pricing-footer a');
@@ -766,17 +766,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
-        
+
         yearlyLabel.addEventListener('click', function() {
             // Switch to yearly
             yearlyLabel.style.background = '#DE6262';
             yearlyLabel.style.color = 'white';
             monthlyLabel.style.background = 'transparent';
             monthlyLabel.style.color = '#6C757D';
-            
+
             monthlyPrices.forEach(price => price.style.display = 'none');
             yearlyPrices.forEach(price => price.style.display = 'block');
-            
+
             // Update button links to yearly
             pricingCards.forEach(card => {
                 const button = card.querySelector('.pricing-footer a');
@@ -917,7 +917,7 @@ document.addEventListener('DOMContentLoaded', function() {
         transform: none;
         margin-bottom: 2rem;
     }
-    
+
     .price-display .price {
         font-size: 2rem;
     }
@@ -995,7 +995,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <section class="cta-section">
     <div class="container text-center">
         <h2 class="section-title">Ready to Transform Your Practice?</h2>
-        <p class="section-subtitle">Join thousands of healthcare professionals using AI-powered EMR technology</p>
+        <p class="section-subtitle">Join thousands of healthcare professionals using advanced EMR technology</p>
         <div class="d-flex justify-content-center gap-3 flex-wrap">
             @auth
                 <a href="{{ route('subscription.pricing') }}" class="btn btn-theme-primary btn-lg">

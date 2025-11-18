@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('title', 'Contact Us - AI Medical Diagnosis')
+@section('title', 'Contact Us - MedCura Clinical Platform')
 
 @section('content')
 <div class="dashboard-header py-2 border-bottom">

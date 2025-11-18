@@ -41,17 +41,25 @@ return new class extends Migration
 
         // Add foreign key constraint only if user_id column exists
         if (Schema::hasColumn('notifications', 'user_id')) {
-            // Check if foreign key already exists by querying the database
-            $foreignKeyExists = \DB::select("
-                SELECT COUNT(*) as count
-                FROM information_schema.KEY_COLUMN_USAGE
-                WHERE TABLE_SCHEMA = DATABASE()
-                AND TABLE_NAME = 'notifications'
-                AND COLUMN_NAME = 'user_id'
-                AND REFERENCED_TABLE_NAME = 'users'
-            ");
+            // Skip foreign key check for SQLite as it doesn't support information_schema
+            if (DB::getDriverName() !== 'sqlite') {
+                // Check if foreign key already exists by querying the database
+                $foreignKeyExists = \DB::select("
+                    SELECT COUNT(*) as count
+                    FROM information_schema.KEY_COLUMN_USAGE
+                    WHERE TABLE_SCHEMA = DATABASE()
+                    AND TABLE_NAME = 'notifications'
+                    AND COLUMN_NAME = 'user_id'
+                    AND REFERENCED_TABLE_NAME = 'users'
+                ");
 
-            if ($foreignKeyExists[0]->count == 0) {
+                if ($foreignKeyExists[0]->count == 0) {
+                    Schema::table('notifications', function (Blueprint $table) {
+                        $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+                    });
+                }
+            } else {
+                // For SQLite, just add the foreign key without checking
                 Schema::table('notifications', function (Blueprint $table) {
                     $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
                 });

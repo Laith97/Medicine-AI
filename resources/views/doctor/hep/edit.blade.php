@@ -76,7 +76,7 @@
 
                             <div class="mb-3">
                                 <label for="goals" class="form-label">Goals & Objectives</label>
-                                <textarea class="form-control" id="goals" name="goals" rows="3">{{ old('goals', $program->goals) }}</textarea>
+                                <textarea class="form-control" id="goals" name="goals" rows="3">{{ old('goals', is_array($program->goals) ? implode("\n", $program->goals) : $program->goals) }}</textarea>
                             </div>
                         </div>
                     </div>

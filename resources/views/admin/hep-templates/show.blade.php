@@ -256,7 +256,7 @@
                                             Patient: {{ $program->patient->name }}
                                         </small>
                                         <small class="text-muted d-block">
-                                            Doctor: {{ $program->doctor->name }}
+                                            Doctor: {{ $program->doctor->user->name }}
                                         </small>
                                         <small class="text-muted d-block">
                                             Status: <span class="badge bg-{{ $program->status === 'active' ? 'success' : 'secondary' }}">{{ ucfirst($program->status) }}</span>

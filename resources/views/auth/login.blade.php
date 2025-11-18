@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('title', 'Login - AI Medical Diagnosis')
+@section('title', 'Login - MedCura Clinical Platform')
 
 @section('content')
 <div class="dashboard-header py-2 border-bottom">
@@ -18,7 +18,7 @@
                             <i class="bi bi-heart-pulse" style="font-size: 3rem; color: #DE6262;"></i>
                         </div>
                         <h2 class="auth-title">Welcome Back</h2>
-                        <p class="auth-subtitle">Sign in to your AI Medical Diagnosis account</p>
+                        <p class="auth-subtitle">Sign in to your MedCura Clinical Platform account</p>
                     </div>
 
                     <!-- Login Form -->

@@ -1186,9 +1186,11 @@ body .dropdown .dropdown-menu.show,
 <a href="#main-content" class="sr-only sr-only-focusable btn btn-primary position-fixed" style="top: 10px; left: 10px; z-index: 9999;">Skip to main content</a>
 
     {{-- Sidebar CSS/JS --}}
+    @auth
     <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
     @include('layouts.sidebar')
     <style>#header{display:none !important;}</style>
+    @endauth
 
 <!-- Prevent notification redirects after login -->
 <script>
@@ -1257,7 +1259,7 @@ body .dropdown .dropdown-menu.show,
                                 style="width: 8px; height: 8px;"></div>
                             <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
                         </div>
-                        <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
+                        <div><i class="bi bi-cpu me-1"></i> Advanced Clinical Support Available</div>
                         <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com"
                                 class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
                     </div>
@@ -1436,11 +1438,11 @@ body .dropdown .dropdown-menu.show,
                <div class="d-flex align-items-center flex-grow-1">
                    <!-- Logo -->
                    <div id="logo" class="me-4 flex-shrink-0">
-                       <a href="@auth{{ route('dashboard') }}@else{{ url('/') }}@endauth" aria-label="Medcura AI Medical Diagnosis - Go to homepage">
+                       <a href="@auth{{ route('dashboard') }}@else{{ url('/') }}@endauth" aria-label="Medcura Clinical Platform - Go to homepage">
                            <img style="width: 140px; height: auto;" class="logo-default img-fluid"
                                  srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x"
                                  src="{{ asset('demos/medical/images/logo-medical.jpeg') }}"
-                                 alt="Medcura AI Medical Diagnosis Logo">
+                                 alt="Medcura Clinical Platform Logo">
                        </a>
                    </div>
 
@@ -1745,11 +1747,11 @@ body .dropdown .dropdown-menu.show,
                 <div class="footer-brand mb-4">
                     <h4 class="text-white mb-3" style="color: #DE6262 !important;">
                         <i class="bi bi-heart-pulse me-2" style="color: #DE6262;"></i>
-                        AI Medical Diagnosis
+                        Clinical Decision Support
                     </h4>
                     <p class="text-white-50 mb-4">
-                        Revolutionizing healthcare with cutting-edge artificial intelligence.
-                        Empowering medical professionals with advanced diagnostic tools for
+                        Revolutionizing healthcare with cutting-edge clinical technology.
+                        Empowering medical professionals with advanced decision support tools for
                         superior patient care and outcomes.
                     </p>
 
@@ -1854,7 +1856,7 @@ body .dropdown .dropdown-menu.show,
         <div class="row align-items-center">
             <div class="col-md-6">
                 <p class="text-white-50 mb-0">
-                    &copy; {{ date('Y') }} AI Medical Diagnosis Platform. All rights reserved.
+                    &copy; {{ date('Y') }} MedCura Clinical Platform. All rights reserved.
                 </p>
             </div>
             <div class="col-md-6 text-md-end">
@@ -1911,8 +1913,10 @@ body .dropdown .dropdown-menu.show,
     <script src="{{ asset('js/functions.bundle.js') }}"></script>
     <!-- Ensure Bootstrap JS (with Popper) is available for dropdowns/modals -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    @auth
     <!-- Sidebar JS -->
     <script src="{{ asset('js/sidebar.js') }}" defer></script>
+    @endauth
 
     <!-- Vite Assets (Laravel Echo & Pusher) -->
     @vite(['resources/js/app.js', 'resources/css/app.css'])

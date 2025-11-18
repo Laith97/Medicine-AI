@@ -47,7 +47,7 @@
             </div>
         </div>
 
-        <form id="hepForm" method="POST" action="{{ route('doctor.hep.store') }}">
+        <form id="hepForm" method="POST" action="{{ route('doctor.hep.store') }}" enctype="multipart/form-data">
             @csrf
 
             <!-- Step 1: Diagnosis Selection -->
@@ -183,7 +183,7 @@
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <label for="program_title" class="form-label">Program Title</label>
-                                <input type="text" class="form-control" id="program_title" name="title" required>
+                                <input type="text" class="form-control" id="program_title" name="title">
                             </div>
                             <div class="col-md-3">
                                 <label for="program_duration_manual" class="form-label">Duration (Weeks)</label>
@@ -217,6 +217,10 @@
                             </div>
                         </div>
                     </div>
+                    <div class="card-footer">
+                        <button type="button" class="btn btn-outline-secondary prev-step" data-prev="2">Back</button>
+                        <button type="button" class="btn btn-primary next-step" data-next="4">Review & Save</button>
+                    </div>
                 </div>
             </div>
 
@@ -236,7 +240,7 @@
                     </div>
                     <div class="card-footer">
                         <button type="button" class="btn btn-outline-secondary prev-step" data-prev="3">Back</button>
-                        <button type="submit" class="btn btn-success btn-lg">
+                        <button type="submit" class="btn btn-success btn-lg" id="save-hep-btn">
                             <i class="fas fa-save me-2"></i>Save HEP Program
                         </button>
                     </div>
@@ -260,6 +264,10 @@
                     <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
                     <p>Loading exercises...</p>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="add-selected-exercise-btn" disabled>Add Exercise</button>
             </div>
         </div>
     </div>
@@ -384,6 +392,25 @@
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
 }
+
+.exercise-select-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.exercise-select-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.exercise-select-card.selected {
+    border: 2px solid #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+}
+
+.exercise-select-card .card {
+    height: 100%;
+}
 </style>
 @endpush
 
@@ -423,6 +450,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show/hide relevant forms
             document.querySelector('.ai-generation-card').style.display = selectedMethod === 'ai' ? 'block' : 'none';
             document.querySelector('.manual-creation-card').style.display = selectedMethod === 'manual' ? 'block' : 'none';
+
+            // Set required attribute on program_title based on method
+            const titleInput = document.getElementById('program_title');
+            if (selectedMethod === 'manual') {
+                titleInput.setAttribute('required', 'required');
+            } else {
+                titleInput.removeAttribute('required');
+            }
         });
     });
 
@@ -507,11 +542,27 @@ document.addEventListener('DOMContentLoaded', function() {
     function validateStep(step) {
         switch(step) {
             case 1:
-                return document.getElementById('diagnosis_id').value !== '';
+                const diagnosisValid = document.getElementById('diagnosis_id').value !== '';
+                console.log('Step 1 validation - diagnosis_id:', diagnosisValid, 'value:', document.getElementById('diagnosis_id').value);
+                return diagnosisValid;
             case 2:
-                return selectedMethod !== null;
+                const methodValid = selectedMethod !== null;
+                console.log('Step 2 validation - selectedMethod:', methodValid, selectedMethod);
+                return methodValid;
             case 3:
-                return selectedMethod === 'ai' || exercises.length > 0;
+                if (selectedMethod === 'ai') {
+                    console.log('Step 3 validation - AI mode: valid');
+                    return true;
+                } else if (selectedMethod === 'manual') {
+                    const titleValid = document.getElementById('program_title').value.trim() !== '';
+                    const exercisesValid = exercises.length > 0;
+                    const step3Valid = titleValid && exercisesValid;
+                    console.log('Step 3 validation - Manual mode: titleValid:', titleValid, 'exercisesValid:', exercisesValid, 'valid:', step3Valid);
+                    return step3Valid;
+                } else {
+                    console.log('Step 3 validation - No method selected: invalid');
+                    return false;
+                }
             default:
                 return true;
         }
@@ -531,11 +582,372 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
     }
+    
+    // Update program preview when moving to step 4
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('next-step') && e.target.dataset.next === '4') {
+            updateProgramPreview();
+        }
+    });
+    
+    function updateProgramPreview() {
+        const preview = document.getElementById('program-preview');
+        const title = document.getElementById('program_title').value;
+        const duration = document.getElementById('program_duration_manual').value;
+        const description = document.getElementById('program_description').value;
+        const goals = document.getElementById('program_goals').value;
+        const status = document.getElementById('program_status').value;
+        
+        let exercisesHtml = '';
+        const exerciseItems = document.querySelectorAll('.exercise-item');
+        
+        if (exerciseItems.length === 0) {
+            exercisesHtml = '<p class="text-muted">No exercises added to this program.</p>';
+        } else {
+            exercisesHtml = '<div class="table-responsive"><table class="table table-striped"><thead><tr><th>Exercise</th><th>Week</th><th>Sets</th><th>Reps</th><th>Duration</th><th>Frequency</th></tr></thead><tbody>';
+            
+            exerciseItems.forEach(item => {
+                const exerciseName = item.querySelector('h6').textContent;
+                const week = item.querySelector('input[name*="week_number"]').value;
+                const sets = item.querySelector('input[name*="sets"]').value;
+                const reps = item.querySelector('input[name*="reps"]').value;
+                const duration = item.querySelector('input[name*="duration_seconds"]').value;
+                const frequency = item.querySelector('input[name*="frequency"]').value;
+                
+                exercisesHtml += `<tr><td>${exerciseName}</td><td>${week}</td><td>${sets}</td><td>${reps}</td><td>${duration}s</td><td>${frequency}</td></tr>`;
+            });
+            
+            exercisesHtml += '</tbody></table></div>';
+        }
+        
+        preview.innerHTML = `
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h6>Program Details</h6>
+                    <p><strong>Title:</strong> ${title || 'Untitled Program'}</p>
+                    <p><strong>Duration:</strong> ${duration} weeks</p>
+                    <p><strong>Status:</strong> ${status}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Description</h6>
+                    <p>${description || 'No description provided'}</p>
+                </div>
+            </div>
+            
+            ${goals ? `<div class="mb-4"><h6>Goals & Objectives</h6><p>${goals.replace(/\n/g, '<br>')}</p></div>` : ''}
+            
+            <div class="mb-4">
+                <h6>Exercises (${exerciseItems.length})</h6>
+                ${exercisesHtml}
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Please review the program details above. Click "Save HEP Program" to create this program.
+            </div>
+        `;
+    }
 
-    // Add exercise functionality (simplified)
+    // Add exercise functionality
     document.getElementById('add-exercise-btn').addEventListener('click', function() {
         const exerciseModal = new bootstrap.Modal(document.getElementById('exerciseModal'));
+        
+        // Reset modal state
+        window.selectedExercise = null;
+        document.getElementById('add-selected-exercise-btn').disabled = true;
+        
+        loadExercises();
         exerciseModal.show();
+    });
+    
+    // Reset modal when hidden
+    document.getElementById('exerciseModal').addEventListener('hidden.bs.modal', function () {
+        window.selectedExercise = null;
+        document.getElementById('add-selected-exercise-btn').disabled = true;
+    });
+    
+    // Add selected exercise to program
+    document.getElementById('add-selected-exercise-btn').addEventListener('click', function() {
+        if (window.selectedExercise) {
+            addExerciseToProgram(window.selectedExercise.id, window.selectedExercise.name);
+            bootstrap.Modal.getInstance(document.getElementById('exerciseModal')).hide();
+        }
+    });
+    
+    function addExerciseToProgram(exerciseId, exerciseName) {
+        const exercisesContainer = document.getElementById('exercises-container');
+        const exerciseIndex = exercisesContainer.children.length;
+        
+        const exerciseHtml = `
+            <div class="exercise-item mb-3" data-exercise-id="${exerciseId}">
+                <div class="exercise-header d-flex justify-content-between align-items-center">
+                    <h6>${exerciseName}</h6>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-exercise-btn">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
+                </div>
+                <div class="exercise-details">
+                    <div class="mb-3">
+                        <label class="form-label">Week</label>
+                        <input type="number" name="exercises[${exerciseIndex}][week_number]" class="form-control" min="1" value="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sets</label>
+                        <input type="number" name="exercises[${exerciseIndex}][sets]" class="form-control" min="1" value="3">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reps</label>
+                        <input type="number" name="exercises[${exerciseIndex}][reps]" class="form-control" min="1" value="10">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Duration (seconds)</label>
+                        <input type="number" name="exercises[${exerciseIndex}][duration_seconds]" class="form-control" min="1" value="30">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Frequency</label>
+                        <input type="text" name="exercises[${exerciseIndex}][frequency]" class="form-control" value="Daily">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notes</label>
+                    <textarea name="exercises[${exerciseIndex}][notes]" class="form-control" rows="2" placeholder="Exercise instructions or notes..."></textarea>
+                </div>
+                <input type="hidden" name="exercises[${exerciseIndex}][exercise_id]" value="${exerciseId}">
+                <input type="hidden" name="exercises[${exerciseIndex}][order]" value="${exerciseIndex}">
+            </div>
+        `;
+        
+        exercisesContainer.insertAdjacentHTML('beforeend', exerciseHtml);
+        
+        // Update exercises array with actual form values
+        exercises.push({
+            exercise_id: exerciseId,
+            name: exerciseName,
+            week_number: 1,
+            sets: 3,
+            reps: 10,
+            duration_seconds: 30,
+            frequency: 'Daily',
+            notes: ''
+        });
+        
+        // Log exercises array for debugging
+        console.log('Exercises array after adding:', exercises);
+    }
+    
+    // Remove exercise functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-exercise-btn') || e.target.closest('.remove-exercise-btn')) {
+            const exerciseItem = e.target.closest('.exercise-item');
+            if (confirm('Are you sure you want to remove this exercise from the program?')) {
+                const exerciseId = exerciseItem.dataset.exerciseId;
+                exerciseItem.remove();
+                
+                // Update exercises array
+                exercises = exercises.filter(ex => ex.exercise_id != exerciseId);
+                
+                // Log exercises array for debugging
+                console.log('Exercises array after removal:', exercises);
+                
+                // Update exercise indices
+                updateExerciseIndices();
+            }
+        }
+    });
+    
+    function updateExerciseIndices() {
+        const exerciseItems = document.querySelectorAll('.exercise-item');
+        exerciseItems.forEach((item, index) => {
+            // Update all input names to use the new index
+            const inputs = item.querySelectorAll('input, textarea');
+            inputs.forEach(input => {
+                const name = input.getAttribute('name');
+                if (name && name.includes('exercises[')) {
+                    const newName = name.replace(/exercises\[\d+\]/, `exercises[${index}]`);
+                    input.setAttribute('name', newName);
+                }
+            });
+        });
+    }
+
+    function loadExercises() {
+        const modalBody = document.querySelector('#exerciseModal .modal-body');
+        modalBody.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin fa-2x mb-3"></i><p>Loading exercises...</p></div>';
+
+        // Fetch exercises from API
+        fetch('/api/hep/exercises')
+            .then(response => response.json())
+            .then(data => {
+                let html = '<div class="row">';
+                
+                // Add filter controls
+                html += `
+                    <div class="col-12 mb-3">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <select class="form-select" id="category-filter">
+                                    <option value="">All Categories</option>
+                                    @foreach($exerciseCategories as $category)
+                                        <option value="{{ $category }}">{{ $category }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <input type="text" class="form-control" id="exercise-search" placeholder="Search exercises...">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add exercise cards
+                data.data.forEach(exercise => {
+                    html += `
+                        <div class="col-md-6 col-lg-4 mb-3 exercise-select-card" data-exercise-id="${exercise.id}" data-exercise-name="${exercise.name}">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">${exercise.name}</h6>
+                                    <p class="card-text text-muted small">${exercise.description || 'No description available'}</p>
+                                    <span class="badge bg-primary">${exercise.category || 'General'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                modalBody.innerHTML = html;
+                
+                // Add click handlers to exercise cards
+                document.querySelectorAll('.exercise-select-card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        // Remove previous selections
+                        document.querySelectorAll('.exercise-select-card').forEach(c => c.classList.remove('selected'));
+                        
+                        // Mark this card as selected
+                        this.classList.add('selected');
+                        
+                        // Store selected exercise data
+                        window.selectedExercise = {
+                            id: this.dataset.exerciseId,
+                            name: this.dataset.exerciseName
+                        };
+                        
+                        // Enable the Add Exercise button
+                        document.getElementById('add-selected-exercise-btn').disabled = false;
+                    });
+                });
+                
+                // Add filter functionality
+                document.getElementById('category-filter')?.addEventListener('change', filterExercises);
+                document.getElementById('exercise-search')?.addEventListener('input', filterExercises);
+            })
+            .catch(error => {
+                console.error('Error loading exercises:', error);
+                modalBody.innerHTML = '<div class="alert alert-danger">Failed to load exercises. Please try again.</div>';
+            });
+    }
+    
+    function filterExercises() {
+        const category = document.getElementById('category-filter')?.value || '';
+        const searchTerm = document.getElementById('exercise-search')?.value.toLowerCase() || '';
+        
+        document.querySelectorAll('.exercise-select-card').forEach(card => {
+            const cardText = card.textContent.toLowerCase();
+            const matchesCategory = !category || card.textContent.includes(category);
+            const matchesSearch = !searchTerm || cardText.includes(searchTerm);
+            
+            card.style.display = matchesCategory && matchesSearch ? '' : 'none';
+        });
+    }
+
+    // Form submission handling
+    document.getElementById('hepForm').addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        
+        // Make sure we have the creation_method field set
+        if (!document.getElementById('creation_method').value) {
+            document.getElementById('creation_method').value = selectedMethod;
+        }
+        
+        // Debug form data before submission
+        const formData = new FormData(this);
+        console.log('Form submission data:');
+        for (let [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
+        
+        // Submit form via AJAX
+        const submitBtn = document.getElementById('save-hep-btn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Failed to save HEP program');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect_url || '/doctor/hep';
+            } else {
+                throw new Error(data.message || 'Failed to save HEP program');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving HEP program:', error);
+            alert(error.message || 'Failed to save HEP program. Please try again.');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        });
+        
+        // Log form data for debugging
+        if(selectedMethod === 'manual'){
+            const title = document.getElementById('program_title').value.trim();
+            console.log('Manual title value:', title, 'is empty:', title === '');
+            console.log('Exercises count:', exercises.length);
+            
+            // Check if we have exercises
+            if (exercises.length === 0) {
+                e.preventDefault();
+                alert('Please add at least one exercise to the program.');
+                return false;
+            }
+            
+            // Check if title is provided
+            if (title === '') {
+                e.preventDefault();
+                alert('Please provide a title for the program.');
+                goToStep(3);
+                return false;
+            }
+        }
+        
+        console.log('Form submission - selectedMethod:', selectedMethod, 'currentStep:', currentStep);
+    });
+    
+    // Form submission logging for debugging
+    document.getElementById('save-hep-btn').addEventListener('click', function() {
+        console.log('Save button clicked - selectedMethod:', selectedMethod, 'currentStep:', currentStep);
+        if(selectedMethod === 'manual'){
+            const title = document.getElementById('program_title').value.trim();
+            console.log('Manual title value:', title, 'is empty:', title === '');
+            const step3Display = document.getElementById('step3-content').style.display;
+            console.log('Step3-content display:', step3Display);
+        }
     });
 });
 </script>
