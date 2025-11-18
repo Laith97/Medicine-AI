@@ -11,7 +11,7 @@ class OfflineNotificationManager {
     }
 
     async init() {
-        console.log('🔌 Initializing Offline Notification Manager');
+        // Initializing Offline Notification Manager
 
         // Register service worker
         await this.registerServiceWorker();
@@ -25,14 +25,14 @@ class OfflineNotificationManager {
         // Check for stored notifications
         await this.checkStoredNotifications();
 
-        console.log('✅ Offline Notification Manager initialized');
+        // Offline Notification Manager initialized
     }
 
     // Register the service worker
     async registerServiceWorker() {
         if ('serviceWorker' in navigator) {
             try {
-                console.log('📝 Registering service worker...');
+                // Registering service worker...
 
                 const registration = await navigator.serviceWorker.register('/sw.js', {
                     scope: '/'
@@ -40,16 +40,16 @@ class OfflineNotificationManager {
 
                 this.serviceWorker = registration;
 
-                console.log('✅ Service worker registered:', registration);
+                // Service worker registered
 
                 // Listen for updates
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
-                    console.log('🔄 Service worker update found');
+                    // Service worker update found
 
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log('🔄 Service worker updated, reload recommended');
+                            // Service worker updated, reload recommended
                             this.showUpdateNotification();
                         }
                     });
@@ -59,10 +59,10 @@ class OfflineNotificationManager {
                 navigator.serviceWorker.addEventListener('message', this.handleServiceWorkerMessage.bind(this));
 
             } catch (error) {
-                console.error('❌ Service worker registration failed:', error);
+                // Service worker registration failed
             }
         } else {
-            console.warn('⚠️ Service workers not supported in this browser');
+            // Service workers not supported in this browser
         }
     }
 
@@ -72,13 +72,13 @@ class OfflineNotificationManager {
             const request = indexedDB.open('MedicineAINotifications', 1);
 
             request.onerror = () => {
-                console.error('❌ IndexedDB error:', request.error);
+                // IndexedDB error
                 reject(request.error);
             };
 
             request.onsuccess = () => {
                 this.db = request.result;
-                console.log('✅ IndexedDB initialized');
+                // IndexedDB initialized
                 resolve();
             };
 
@@ -89,14 +89,14 @@ class OfflineNotificationManager {
                 if (!db.objectStoreNames.contains('notifications')) {
                     const store = db.createObjectStore('notifications', { keyPath: 'id' });
                     store.createIndex('timestamp', 'timestamp', { unique: false });
-                    console.log('📦 Created notifications object store');
+                    // Created notifications object store
                 }
 
                 // Create sync queue object store
                 if (!db.objectStoreNames.contains('syncQueue')) {
                     const syncStore = db.createObjectStore('syncQueue', { keyPath: 'id', autoIncrement: true });
                     syncStore.createIndex('timestamp', 'timestamp', { unique: false });
-                    console.log('📦 Created sync queue object store');
+                    // Created sync queue object store
                 }
             };
         });
@@ -117,7 +117,7 @@ class OfflineNotificationManager {
 
     // Handle coming online
     async handleOnline() {
-        console.log('🌐 Connection restored');
+        // Connection restored
         this.isOnline = true;
 
         // Show connection restored notification
@@ -131,16 +131,16 @@ class OfflineNotificationManager {
             try {
                 const registration = await navigator.serviceWorker.ready;
                 await registration.sync.register('notification-sync');
-                console.log('🔄 Background sync registered');
+                // Background sync registered
             } catch (error) {
-                console.error('❌ Background sync registration failed:', error);
+                // Background sync registration failed
             }
         }
     }
 
     // Handle going offline
     handleOffline() {
-        console.log('📴 Connection lost');
+        // Connection lost
         this.isOnline = false;
 
         // Show offline notification
@@ -150,7 +150,7 @@ class OfflineNotificationManager {
     // Store notification locally when offline
     async storeNotificationLocally(notification) {
         if (!this.db) {
-            console.warn('⚠️ IndexedDB not initialized');
+            // IndexedDB not initialized
             return;
         }
 
@@ -173,13 +173,13 @@ class OfflineNotificationManager {
                 request.onerror = () => reject(request.error);
             });
 
-            console.log('💾 Notification stored locally:', offlineNotification.id);
+            // Notification stored locally
 
             // Also add to sync queue
             await this.addToSyncQueue(offlineNotification);
 
         } catch (error) {
-            console.error('❌ Failed to store notification locally:', error);
+            // Failed to store notification locally
         }
     }
 
@@ -203,9 +203,9 @@ class OfflineNotificationManager {
                 request.onerror = () => reject(request.error);
             });
 
-            console.log('📋 Added to sync queue:', notification.id);
+            // Added to sync queue
         } catch (error) {
-            console.error('❌ Failed to add to sync queue:', error);
+            // Failed to add to sync queue
         }
     }
 
@@ -216,7 +216,7 @@ class OfflineNotificationManager {
         }
 
         this.syncInProgress = true;
-        console.log('🔄 Starting notification sync...');
+        // Starting notification sync...
 
         try {
             const transaction = this.db.transaction(['syncQueue'], 'readwrite');
@@ -228,7 +228,7 @@ class OfflineNotificationManager {
                 request.onerror = () => reject(request.error);
             });
 
-            console.log(`📋 Found ${syncItems.length} items to sync`);
+            // Found items to sync
 
             for (const item of syncItems) {
                 try {
@@ -241,19 +241,19 @@ class OfflineNotificationManager {
                         // Mark as synced in notifications store
                         await this.markNotificationSynced(item.notification.id);
 
-                        console.log('✅ Notification synced:', item.notification.id);
+                        // Notification synced
                     } else {
                         // Increment attempt count
                         item.attempts++;
                         if (item.attempts < 3) {
                             await this.updateSyncQueueItem(item);
                         } else {
-                            console.warn('⚠️ Max sync attempts reached for:', item.notification.id);
+                            // Max sync attempts reached
                             await this.removeFromSyncQueue(item.id);
                         }
                     }
                 } catch (error) {
-                    console.error('❌ Error syncing notification:', item.notification.id, error);
+                    // Error syncing notification
                     item.attempts++;
                     if (item.attempts < 3) {
                         await this.updateSyncQueueItem(item);
@@ -273,7 +273,7 @@ class OfflineNotificationManager {
             }
 
         } catch (error) {
-            console.error('❌ Sync process failed:', error);
+            // Sync process failed
         } finally {
             this.syncInProgress = false;
         }
@@ -299,7 +299,7 @@ class OfflineNotificationManager {
 
             return response.ok;
         } catch (error) {
-            console.error('❌ Sync request failed:', error);
+            // Sync request failed
             return false;
         }
     }
@@ -318,7 +318,7 @@ class OfflineNotificationManager {
                 request.onerror = () => reject(request.error);
             });
         } catch (error) {
-            console.error('❌ Failed to remove from sync queue:', error);
+            // Failed to remove from sync queue
         }
     }
 
@@ -336,7 +336,7 @@ class OfflineNotificationManager {
                 request.onerror = () => reject(request.error);
             });
         } catch (error) {
-            console.error('❌ Failed to update sync queue item:', error);
+            // Failed to update sync queue item
         }
     }
 
@@ -363,7 +363,7 @@ class OfflineNotificationManager {
                 });
             }
         } catch (error) {
-            console.error('❌ Failed to mark notification as synced:', error);
+            // Failed to mark notification as synced
         }
     }
 
@@ -384,7 +384,7 @@ class OfflineNotificationManager {
             const unsyncedCount = notifications.filter(n => !n.synced).length;
 
             if (unsyncedCount > 0) {
-                console.log(`📋 Found ${unsyncedCount} unsynced notifications`);
+                // Found unsynced notifications
                 this.showConnectionNotification(`${unsyncedCount} offline notifications ready to sync`, 'info');
 
                 if (this.isOnline) {
@@ -392,7 +392,7 @@ class OfflineNotificationManager {
                 }
             }
         } catch (error) {
-            console.error('❌ Failed to check stored notifications:', error);
+            // Failed to check stored notifications
         }
     }
 
@@ -402,16 +402,16 @@ class OfflineNotificationManager {
 
         switch (type) {
             case 'notification-stored':
-                console.log('💾 Service worker stored notification:', data);
+                // Service worker stored notification
                 break;
 
             case 'notifications-synced':
-                console.log('🔄 Service worker synced notifications:', data);
+                // Service worker synced notifications
                 this.showConnectionNotification(`Synced ${data.count} notifications from service worker`, 'success');
                 break;
 
             case 'new-notifications-found':
-                console.log('🔔 Service worker found new notifications:', data);
+                // Service worker found new notifications
                 // Process new notifications
                 data.forEach(notification => {
                     if (window.enhancedNotificationSystem) {
@@ -421,7 +421,7 @@ class OfflineNotificationManager {
                 break;
 
             default:
-                console.log('❓ Unknown service worker message:', type, data);
+                // Unknown service worker message
         }
     }
 
@@ -464,7 +464,7 @@ class OfflineNotificationManager {
                 request.onerror = () => reject(request.error);
             });
         } catch (error) {
-            console.error('❌ Failed to get stored notifications:', error);
+            // Failed to get stored notifications
             return [];
         }
     }
@@ -488,9 +488,9 @@ class OfflineNotificationManager {
                 })
             ]);
 
-            console.log('🗑️ Cleared all stored notifications');
+            // Cleared all stored notifications
         } catch (error) {
-            console.error('❌ Failed to clear stored notifications:', error);
+            // Failed to clear stored notifications
         }
     }
 

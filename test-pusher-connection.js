@@ -8,9 +8,6 @@ const PUSHER_CLUSTER = 'ap2';
 // Test user ID (from the test notification we sent)
 const TEST_USER_ID = 1;
 
-console.log('🧪 Starting Pusher connection test...');
-console.log(`📡 Connecting to Pusher with key: ${PUSHER_APP_KEY}, cluster: ${PUSHER_CLUSTER}`);
-
 // Create Pusher instance
 const pusher = new Pusher(PUSHER_APP_KEY, {
     cluster: PUSHER_CLUSTER,
@@ -18,48 +15,43 @@ const pusher = new Pusher(PUSHER_APP_KEY, {
     enabledTransports: ['ws', 'wss']
 });
 
-console.log('🔌 Pusher instance created');
-
 // Listen for connection events
 pusher.connection.bind('connected', () => {
-    console.log('🟢 Connected to Pusher successfully!');
-    console.log(`🔗 Socket ID: ${pusher.connection.socket_id}`);
+    // Connected to Pusher successfully!
 
     // Subscribe to the user's private channel
     const channelName = `App.User.${TEST_USER_ID}`;
-    console.log(`📻 Subscribing to channel: ${channelName}`);
-
     const channel = pusher.subscribe(channelName);
 
     channel.bind('pusher:subscription_succeeded', () => {
-        console.log(`✅ Successfully subscribed to ${channelName}`);
+        // Successfully subscribed to channel
 
         // Listen for notifications - try different event names
         channel.bind('notification', (data) => {
-            console.log('🔔 NOTIFICATION RECEIVED (notification event)!');
-            console.log('📦 Notification data:', JSON.stringify(data, null, 2));
+            // NOTIFICATION RECEIVED (notification event)!
+            // Notification data: (data would be logged here)
         });
 
         channel.bind('TestNotification', (data) => {
-            console.log('🔔 NOTIFICATION RECEIVED (TestNotification event)!');
-            console.log('📦 Notification data:', JSON.stringify(data, null, 2));
+            // NOTIFICATION RECEIVED (TestNotification event)!
+            // Notification data: (data would be logged here)
         });
 
         channel.bind('App\\Notifications\\TestNotification', (data) => {
-            console.log('🔔 NOTIFICATION RECEIVED (App\\Notifications\\TestNotification event)!');
-            console.log('📦 Notification data:', JSON.stringify(data, null, 2));
+            // NOTIFICATION RECEIVED (App\\Notifications\\TestNotification event)!
+            // Notification data: (data would be logged here)
         });
 
         // Also listen for any event
         channel.bind_global((event, data) => {
-            console.log(`📡 GLOBAL EVENT RECEIVED: ${event}`);
-            console.log('📦 Event data:', JSON.stringify(data, null, 2));
+            // GLOBAL EVENT RECEIVED: (event would be logged here)
+            // Event data: (data would be logged here)
         });
 
-        console.log('👂 Listening for notifications...');
+        // Listening for notifications...
 
         // Test sending another notification to verify real-time delivery
-        console.log('🧪 Sending another test notification...');
+        // Sending another test notification...
 
         // Use fetch to send a test notification
         fetch('http://localhost:8000/notifications/test-debug', {
@@ -71,38 +63,38 @@ pusher.connection.bind('connected', () => {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('📤 Test notification sent:', data);
+            // Test notification sent: (data would be logged here)
 
             // Wait for the notification to be processed and broadcast
             setTimeout(() => {
-                console.log('⏰ Waiting for notification to be broadcast...');
+                // Waiting for notification to be broadcast...
             }, 2000);
         })
         .catch(error => {
-            console.error('❌ Failed to send test notification:', error);
+            // Failed to send test notification: (error would be logged here)
         });
 
     });
 
     channel.bind('pusher:subscription_error', (error) => {
-        console.error(`❌ Failed to subscribe to ${channelName}:`, error);
+        // Failed to subscribe to channel: (error would be logged here)
     });
 
 });
 
 pusher.connection.bind('disconnected', () => {
-    console.log('🔴 Disconnected from Pusher');
+    // Disconnected from Pusher
 });
 
 pusher.connection.bind('error', (error) => {
-    console.error('❌ Pusher connection error:', error);
+    // Pusher connection error: (error would be logged here)
 });
 
 // Timeout after 30 seconds
 setTimeout(() => {
-    console.log('⏰ Test timeout reached');
+    // Test timeout reached
     pusher.disconnect();
     process.exit(0);
 }, 30000);
 
-console.log('⏳ Connecting...');
+// Connecting...
