@@ -10,6 +10,7 @@ use Rubix\ML\Datasets\Labeled;
 use Rubix\ML\Datasets\Unlabeled;
 use Rubix\ML\Persisters\Filesystem;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class PredictiveAnalyticsService
 {
@@ -115,32 +116,73 @@ class PredictiveAnalyticsService
      */
     public function predictRisksFromFeatures(array $features): array
     {
+        // Debug: Log features being used
+        Log::info('ML Risk Assessment - Features', [
+            'features' => $features,
+            'feature_breakdown' => [
+                'no_show_count' => $features[0] ?? 'N/A',
+                'last_visit_days' => $features[1] ?? 'N/A',
+                'age' => $features[2] ?? 'N/A',
+                'gender' => $features[3] ?? 'N/A',
+                'chronic_conditions' => $features[4] ?? 'N/A'
+            ]
+        ]);
+
         // Try ML prediction first
         $mlNoShowRisk = $this->predictNoShowRisk($features);
         $mlHospitalizationRisk = $this->predictHospitalizationRisk($features);
 
+        Log::info('ML Risk Assessment - ML Predictions', [
+            'ml_no_show_risk' => $mlNoShowRisk,
+            'ml_hospitalization_risk' => $mlHospitalizationRisk
+        ]);
+
         // Check if ML models are adequately trained (have seen positive examples)
         $trainingDataCheck = $this->checkTrainingDataAdequacy();
+
+        Log::info('ML Risk Assessment - Training Data Check', $trainingDataCheck);
 
         // Use rule-based fallback if ML models are not adequately trained
         // or if predictions are suspiciously low (indicating poor training)
         $useFallback = !$trainingDataCheck['adequate'] ||
                        ($mlNoShowRisk < 0.001 && $mlHospitalizationRisk < 0.001);
 
+        Log::info('ML Risk Assessment - Prediction Method', [
+            'use_fallback' => $useFallback,
+            'reason' => $useFallback ?
+                ($trainingDataCheck['adequate'] ? 'ML predictions too low' : 'Training data inadequate') :
+                'Using ML predictions'
+        ]);
+
         if ($useFallback) {
             // Rule-based risk calculation
             $ruleBasedRisks = $this->calculateRuleBasedRisks($features);
             $noShowRisk = $ruleBasedRisks['no_show_risk'];
             $hospitalizationRisk = $ruleBasedRisks['hospitalization_risk'];
+
+            Log::info('ML Risk Assessment - Rule-based Results', [
+                'no_show_risk' => $noShowRisk,
+                'hospitalization_risk' => $hospitalizationRisk,
+                'rule_based_breakdown' => $ruleBasedRisks
+            ]);
         } else {
             $noShowRisk = $mlNoShowRisk;
             $hospitalizationRisk = $mlHospitalizationRisk;
+
+            Log::info('ML Risk Assessment - ML Results', [
+                'no_show_risk' => $noShowRisk,
+                'hospitalization_risk' => $hospitalizationRisk
+            ]);
         }
 
-        return [
+        $finalResult = [
             'no_show_risk' => round($noShowRisk, 4),
             'hospitalization_risk' => round($hospitalizationRisk, 4),
         ];
+
+        Log::info('ML Risk Assessment - Final Result', $finalResult);
+
+        return $finalResult;
     }
 
     /**
