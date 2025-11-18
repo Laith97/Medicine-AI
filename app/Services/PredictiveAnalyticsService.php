@@ -119,8 +119,15 @@ class PredictiveAnalyticsService
         $mlNoShowRisk = $this->predictNoShowRisk($features);
         $mlHospitalizationRisk = $this->predictHospitalizationRisk($features);
 
+        // Check if ML models are adequately trained (have seen positive examples)
+        $trainingDataCheck = $this->checkTrainingDataAdequacy();
+
         // Use rule-based fallback if ML models are not adequately trained
-        if ($mlNoShowRisk === 0.0 && $mlHospitalizationRisk === 0.0) {
+        // or if predictions are suspiciously low (indicating poor training)
+        $useFallback = !$trainingDataCheck['adequate'] ||
+                       ($mlNoShowRisk < 0.001 && $mlHospitalizationRisk < 0.001);
+
+        if ($useFallback) {
             // Rule-based risk calculation
             $ruleBasedRisks = $this->calculateRuleBasedRisks($features);
             $noShowRisk = $ruleBasedRisks['no_show_risk'];
@@ -176,6 +183,49 @@ class PredictiveAnalyticsService
         } catch (\Exception $e) {
             return 0.0;
         }
+    }
+
+    /**
+     * Check if training data is adequate for reliable ML predictions
+     */
+    private function checkTrainingDataAdequacy(): array
+    {
+        // Query recent historical appointments
+        $appointments = Appointment::with(['patient', 'patient.patientDiagnoses'])
+            ->whereNotNull('patient_id')
+            ->where('appointment_date', '<', now())
+            ->get();
+
+        $totalAppointments = $appointments->count();
+        $noShowCount = 0;
+        $highRiskCount = 0;
+
+        foreach ($appointments as $appointment) {
+            if (in_array($appointment->status, ['missed', 'no_show'])) {
+                $noShowCount++;
+            }
+            if ($appointment->patient && $this->featureExtractor->hasHighRiskCondition($appointment->patient)) {
+                $highRiskCount++;
+            }
+        }
+
+        // Minimum requirements for adequate training
+        $minAppointments = 50;
+        $minNoShowRate = 0.02; // At least 2% no-show rate
+        $minHighRiskRate = 0.05; // At least 5% high-risk patients
+
+        $adequate = $totalAppointments >= $minAppointments &&
+                   ($noShowCount / max($totalAppointments, 1)) >= $minNoShowRate &&
+                   ($highRiskCount / max($totalAppointments, 1)) >= $minHighRiskRate;
+
+        return [
+            'adequate' => $adequate,
+            'total_appointments' => $totalAppointments,
+            'no_show_count' => $noShowCount,
+            'high_risk_count' => $highRiskCount,
+            'no_show_rate' => $noShowCount / max($totalAppointments, 1),
+            'high_risk_rate' => $highRiskCount / max($totalAppointments, 1),
+        ];
     }
 
     /**
