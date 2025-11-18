@@ -12,17 +12,14 @@ class PatientRiskScore extends Model
 
     protected $fillable = [
         'patient_id',
-        'risk_score',
-        'risk_level',
-        'factors',
-        'model_version',
-        'calculated_at',
+        'appointment_id',
+        'no_show_risk',
+        'hospitalization_risk',
     ];
 
     protected $casts = [
-        'risk_score' => 'decimal:4',
-        'factors' => 'array',
-        'calculated_at' => 'datetime',
+        'no_show_risk' => 'decimal:3',
+        'hospitalization_risk' => 'decimal:3',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -36,27 +33,27 @@ class PatientRiskScore extends Model
     }
 
     /**
-     * Scope for high risk patients.
+     * Get the maximum risk score between no-show and hospitalization.
      */
-    public function scopeHighRisk($query)
+    public function getMaxRiskAttribute(): float
     {
-        return $query->where('risk_level', 'high');
+        return max($this->no_show_risk ?? 0, $this->hospitalization_risk ?? 0);
     }
 
     /**
-     * Scope for medium risk patients.
+     * Get risk level based on the maximum risk score.
      */
-    public function scopeMediumRisk($query)
+    public function getRiskLevelAttribute(): string
     {
-        return $query->where('risk_level', 'medium');
-    }
+        $maxRisk = $this->getMaxRiskAttribute();
 
-    /**
-     * Scope for low risk patients.
-     */
-    public function scopeLowRisk($query)
-    {
-        return $query->where('risk_level', 'low');
+        if ($maxRisk >= 0.7) {
+            return 'high';
+        } elseif ($maxRisk >= 0.3) {
+            return 'medium';
+        } else {
+            return 'low';
+        }
     }
 
     /**
@@ -64,7 +61,7 @@ class PatientRiskScore extends Model
      */
     public function getRiskLevelLabelAttribute(): string
     {
-        return match($this->risk_level) {
+        return match($this->getRiskLevelAttribute()) {
             'low' => 'Low Risk',
             'medium' => 'Medium Risk',
             'high' => 'High Risk',
@@ -73,11 +70,36 @@ class PatientRiskScore extends Model
     }
 
     /**
+     * Scope for high risk patients.
+     */
+    public function scopeHighRisk($query)
+    {
+        return $query->whereRaw('GREATEST(COALESCE(no_show_risk, 0), COALESCE(hospitalization_risk, 0)) >= 0.7');
+    }
+
+    /**
+     * Scope for medium risk patients.
+     */
+    public function scopeMediumRisk($query)
+    {
+        return $query->whereRaw('GREATEST(COALESCE(no_show_risk, 0), COALESCE(hospitalization_risk, 0)) >= 0.3')
+                    ->whereRaw('GREATEST(COALESCE(no_show_risk, 0), COALESCE(hospitalization_risk, 0)) < 0.7');
+    }
+
+    /**
+     * Scope for low risk patients.
+     */
+    public function scopeLowRisk($query)
+    {
+        return $query->whereRaw('GREATEST(COALESCE(no_show_risk, 0), COALESCE(hospitalization_risk, 0)) < 0.3');
+    }
+
+    /**
      * Check if the risk score indicates high risk.
      */
     public function isHighRisk(): bool
     {
-        return $this->risk_level === 'high';
+        return $this->getMaxRiskAttribute() >= 0.7;
     }
 
     /**
@@ -85,7 +107,8 @@ class PatientRiskScore extends Model
      */
     public function isMediumRisk(): bool
     {
-        return $this->risk_level === 'medium';
+        $maxRisk = $this->getMaxRiskAttribute();
+        return $maxRisk >= 0.3 && $maxRisk < 0.7;
     }
 
     /**
@@ -93,6 +116,6 @@ class PatientRiskScore extends Model
      */
     public function isLowRisk(): bool
     {
-        return $this->risk_level === 'low';
+        return $this->getMaxRiskAttribute() < 0.3;
     }
 }
