@@ -1293,84 +1293,24 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function debugMLRiskAssessment() {
-    console.log('🔍 ML Risk Assessment Debug Information');
-    console.log('=====================================');
+    console.log('🔍 ML RISK ASSESSMENT DEBUG');
+    console.log('===========================');
 
-    // Patient Information
-    console.log('👤 Patient Data:', {
-        id: '{{ $appointment->patient->id ?? "N/A" }}',
-        name: '{{ $appointment->patient->name ?? "N/A" }}',
-        age: '{{ $appointment->patient->age ?? "N/A" }}',
-        gender: '{{ $appointment->patient->gender ?? "N/A" }}',
-        email: '{{ $appointment->patient->email ?? "N/A" }}'
-    });
-
-    // Appointment Information
-    console.log('📅 Appointment Data:', {
-        id: '{{ $appointment->id }}',
-        date: '{{ $appointment->appointment_date->format("Y-m-d H:i:s") }}',
-        status: '{{ $appointment->status }}',
-        type: '{{ $appointment->appointment_type }}',
-        reason: '{{ $appointment->reason }}',
-        symptoms: '{{ $appointment->symptoms ?? "N/A" }}'
-    });
-
-    // Risk Scores
+    // Check if risk scores exist
     @php
         $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
     @endphp
+
     @if($riskScore)
-        console.log('📊 ML Risk Scores:', {
-            no_show_risk: '{{ number_format($riskScore->no_show_risk * 100, 4) }}%',
-            hospitalization_risk: '{{ number_format($riskScore->hospitalization_risk * 100, 4) }}%',
-            raw_no_show: {{ $riskScore->no_show_risk }},
-            raw_hospitalization: {{ $riskScore->hospitalization_risk }},
-            created_at: '{{ $riskScore->created_at->format("Y-m-d H:i:s") }}'
+        console.log('✅ Risk Scores Found:', {
+            no_show_risk: '{{ number_format($riskScore->no_show_risk * 100, 1) }}%',
+            hospitalization_risk: '{{ number_format($riskScore->hospitalization_risk * 100, 1) }}%'
         });
     @else
-        console.log('❌ No Risk Scores Found - ML prediction may not have run yet');
+        console.log('❌ NO RISK SCORES FOUND - ML prediction has not run');
     @endif
 
-    // Patient Medical History
-    @php
-        $diagnoses = $appointment->patient->patientDiagnoses ?? collect();
-        $patientData = $appointment->patient->patientData()->first();
-    @endphp
-    console.log('🏥 Medical History:', {
-        diagnoses_count: {{ $diagnoses->count() }},
-        diagnoses: [
-            @foreach($diagnoses as $diagnosis)
-                '{{ substr($diagnosis->diagnosis_text, 0, 50) }}...',
-            @endforeach
-        ],
-        allergies: {{ $patientData ? json_encode($patientData->allergies) : '[]' }},
-        past_medications: {{ $patientData ? json_encode($patientData->past_medications) : '[]' }}
-    });
-
-    // Feature Extraction Debug
-    @php
-        if ($appointment->patient) {
-            $extractor = app(\App\Services\FeatureExtractor::class);
-            $features = $extractor->extractFeatures($appointment->patient, $appointment);
-            $hasHighRisk = $extractor->hasHighRiskCondition($appointment->patient);
-        } else {
-            $features = [0,0,0,0,0];
-            $hasHighRisk = false;
-        }
-    @endphp
-    console.log('🔧 ML Features Extracted:', {
-        features_array: {{ json_encode($features) }},
-        breakdown: {
-            no_show_count: {{ $features[0] ?? 0 }},
-            last_visit_days: {{ $features[1] ?? 0 }},
-            age: {{ $features[2] ?? 0 }},
-            gender_encoded: {{ $features[3] ?? 0 }},
-            chronic_conditions: {{ $features[4] ?? 0 }}
-        },
-        has_high_risk_conditions: {{ $hasHighRisk ? 'true' : 'false' }}
-    });
-
-    // Training Data Check
+    // Check training data adequacy
     @php
         $service = app(\App\Services\PredictiveAnalyticsService::class);
         $reflection = new ReflectionClass($service);
@@ -1378,9 +1318,14 @@ function debugMLRiskAssessment() {
         $method->setAccessible(true);
         $adequacy = $method->invoke($service);
     @endphp
-    console.log('🎓 Training Data Adequacy:', {{ json_encode($adequacy) }});
 
-    // Expected vs Actual Results
+    console.log('🎓 Training Data Status:', {
+        adequate: {{ $adequacy['adequate'] ? 'true' : 'false' }},
+        total_appointments: {{ $adequacy['total_appointments'] }},
+        using_fallback: {{ !$adequacy['adequate'] ? 'YES (Rule-based)' : 'NO (ML)' }}
+    });
+
+    // Show what SHOULD be calculated
     @php
         if ($appointment->patient) {
             $result = $service->predictRisks($appointment->patient, $appointment);
@@ -1391,19 +1336,17 @@ function debugMLRiskAssessment() {
             $expectedHospitalization = 'N/A';
         }
     @endphp
-    console.log('🎯 Expected vs Displayed Results:', {
-        expected: {
-            no_show_risk: '{{ $expectedNoShow }}%',
-            hospitalization_risk: '{{ $expectedHospitalization }}%'
-        },
-        displayed: {
-            no_show_risk: '{{ $riskScore ? number_format($riskScore->no_show_risk * 100, 1) : "N/A" }}%',
-            hospitalization_risk: '{{ $riskScore ? number_format($riskScore->hospitalization_risk * 100, 1) : "N/A" }}%'
-        },
-        match: '{{ ($riskScore && $expectedNoShow === number_format($riskScore->no_show_risk * 100, 1) && $expectedHospitalization === number_format($riskScore->hospitalization_risk * 100, 1)) ? "YES" : "NO" }}'
+
+    console.log('🎯 Expected Calculation:', {
+        no_show_risk: '{{ $expectedNoShow }}%',
+        hospitalization_risk: '{{ $expectedHospitalization }}%'
     });
 
-    console.log('✅ Debug information logged to console. Check browser developer tools (F12) > Console tab.');
+    @if($riskScore)
+        console.log('📊 Match Check:', {
+            scores_match: '{{ ($expectedNoShow === number_format($riskScore->no_show_risk * 100, 1) && $expectedHospitalization === number_format($riskScore->hospitalization_risk * 100, 1)) ? "YES" : "NO" }}'
+        });
+    @endif
 }
 
 // Dynamic form transformation
