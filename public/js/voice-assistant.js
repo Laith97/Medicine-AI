@@ -1,13 +1,76 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced logging system for voice assistant debugging
+    const voiceAssistantLogger = {
+        logs: [],
+        maxLogs: 1000,
+
+        log: function(level, message, data = null) {
+            const timestamp = new Date().toISOString();
+            const logEntry = {
+                timestamp: timestamp,
+                level: level,
+                message: message,
+                data: data,
+                sessionId: sessionId,
+                userAgent: navigator.userAgent
+            };
+
+            this.logs.push(logEntry);
+
+            // Keep only the last maxLogs entries
+            if (this.logs.length > this.maxLogs) {
+                this.logs.shift();
+            }
+
+            // Console output with appropriate level
+            const consoleMessage = `[${timestamp}] ${level.toUpperCase()}: ${message}`;
+            if (data) {
+                console[level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log'](consoleMessage, data);
+            } else {
+                console[level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log'](consoleMessage);
+            }
+        },
+
+        info: function(message, data = null) { this.log('info', message, data); },
+        warn: function(message, data = null) { this.log('warn', message, data); },
+        error: function(message, data = null) { this.log('error', message, data); },
+        debug: function(message, data = null) { this.log('debug', message, data); },
+
+        getLogs: function(level = null, limit = 50) {
+            let filteredLogs = level ? this.logs.filter(log => log.level === level) : this.logs;
+            return filteredLogs.slice(-limit);
+        },
+
+        exportLogs: function() {
+            return {
+                sessionId: sessionId,
+                timestamp: new Date().toISOString(),
+                logs: this.logs,
+                systemInfo: {
+                    userAgent: navigator.userAgent,
+                    language: navigator.language,
+                    platform: navigator.platform,
+                    cookieEnabled: navigator.cookieEnabled,
+                    onLine: navigator.onLine
+                }
+            };
+        }
+    };
+
+    // Make logger globally available for debugging
+    window.voiceAssistantLogger = voiceAssistantLogger;
+
     // Global variables
     let recognition;
     let isListening = false;
+    let isStopping = false; // Prevent multiple stop operations
     let restartTimeout;
     let finalTranscript = '';
     let lastTranscriptTime = 0;
     let transcriptBuffer = '';
     let bufferTimeout;
     let interimBackupBuffer = ''; // NEW: Backup buffer for interim results
+    let liveConfidence = 0; // Live transcription confidence score
     // Regional language detection for better transcription accuracy
     function getRegionalDefaultLanguage() {
         try {
@@ -49,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let extractedData = {};
     let aiResultId = null;
 
-    // NEW: HYBRID METHOD - Audio recording alongside live transcription
+    // HYBRID METHOD - Audio recording and server processing
     let mediaRecorder;
     let audioChunks = [];
     let audioBlob = null;
@@ -57,6 +120,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let audioRecordingSupported = false;
     let serverProcessingInProgress = false;
     let hybridModeEnabled = true; // Enable hybrid processing by default
+
+    // ENHANCED MEDICAL TRANSCRIPTION SYSTEM
+    let liveTranscription = ''; // Real-time browser transcription
+    let serverTranscription = ''; // Advanced server processed transcription
+    let speakerSeparatedTranscription = {}; // Speaker-separated transcription data
+    let medicalDictionary = {}; // Enhanced medical terms dictionary
+    let speakerLabels = { 1: 'Doctor', 2: 'Patient', 3: 'Other' }; // Speaker identification
 
     // Enhanced hands-free variables
     let silenceTimeout;
@@ -80,6 +150,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let speakerChangeThreshold = 0.15; // Audio level difference threshold for speaker change detection
     let immediateProcessingEnabled = true; // Enable immediate processing for better completeness
 
+    // Continuous language detection variables
+    let languageDetectionBuffer = [];
+    let languageSwitchCooldown = 0;
+    let lastLanguageSwitch = 0;
+    let continuousLanguageDetection = true;
+    let languageConfidenceThreshold = 0.7;
+
     // DOM Elements
     const startRecordingBtn = document.getElementById('startRecordingBtn');
     const stopRecordingBtn = document.getElementById('stopRecordingBtn');
@@ -100,14 +177,98 @@ document.addEventListener('DOMContentLoaded', function() {
     const diagnosisField = document.getElementById('diagnosis');
     const carePlanField = document.getElementById('carePlan');
 
+    // Simple interface - no complex panel elements needed
+
+    // MEDICAL DICTIONARY - Arabic and English medical terms
+    function initMedicalDictionary() {
+        medicalDictionary = {
+            // Arabic medical terms
+            'ألم': 'pain',
+            'صداع': 'headache',
+            'حمى': 'fever',
+            'سعال': 'cough',
+            'غثيان': 'nausea',
+            'قيء': 'vomiting',
+            'إسهال': 'diarrhea',
+            'إمساك': 'constipation',
+            'ضغط دم': 'blood pressure',
+            'سكري': 'diabetes',
+            'ضغط': 'hypertension',
+            'قلب': 'heart',
+            'رئة': 'lung',
+            'كبد': 'liver',
+            'كلى': 'kidney',
+            'معدة': 'stomach',
+            'أمعاء': 'intestine',
+            'دم': 'blood',
+            'عظام': 'bones',
+            'مفاصل': 'joints',
+            'عضلات': 'muscles',
+            'جلد': 'skin',
+            'عيون': 'eyes',
+            'أذن': 'ear',
+            'أنف': 'nose',
+            'حلق': 'throat',
+            'أسنان': 'teeth',
+            'دواء': 'medicine',
+            'حقنة': 'injection',
+            'جراحة': 'surgery',
+            'تشخيص': 'diagnosis',
+            'علاج': 'treatment',
+            'فحص': 'examination',
+            'تحاليل': 'tests',
+            'أشعة': 'x-ray',
+            'سونار': 'ultrasound',
+            'رنين': 'MRI',
+            'طبيب': 'doctor',
+            'مريض': 'patient',
+            'مستشفى': 'hospital',
+            'عيادة': 'clinic',
+
+            // English medical terms (for recognition improvement)
+            'myocardial infarction': 'heart attack',
+            'cerebrovascular accident': 'stroke',
+            'chronic obstructive pulmonary disease': 'COPD',
+            'gastroesophageal reflux disease': 'GERD',
+            'hypertensive emergency': 'high blood pressure crisis'
+        };
+
+        console.log('🏥 Medical dictionary loaded with', Object.keys(medicalDictionary).length, 'terms');
+    }
+
+    // Simple quality validation
+    function validateTranscriptionQuality(text, source) {
+        if (!text || text.trim().length === 0) {
+            return { score: 0, issues: ['Empty transcription'] };
+        }
+
+        let score = 100;
+        const wordCount = text.trim().split(/\s+/).length;
+
+        if (wordCount < 3) {
+            score -= 30;
+        }
+
+        return {
+            score: Math.max(0, Math.min(100, score)),
+            issues: score < 50 ? ['Low quality transcription'] : []
+        };
+    }
+
     // Initialize the voice assistant
     function initVoiceAssistant() {
         // Set initial session ID from data attribute on the container div
         const container = document.querySelector('[data-session-id]');
         sessionId = container ? container.getAttribute('data-session-id') : generateUUID();
 
+        // Initialize medical dictionary
+        initMedicalDictionary();
+
         // NEW: Initialize hybrid method capabilities
         initHybridMethod();
+
+        // Initialize simple transcription system
+        initSimpleTranscription();
 
         // Restore session state from localStorage if available
         restoreSessionState();
@@ -129,46 +290,91 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Initialize Bootstrap tooltips
         initTooltips();
-    
+
         // Update UI based on initial state
+        console.log('🚀 Initial UI update - selectedPatient:', selectedPatient);
         updateRecordingUI();
         updateHandsFreeStatus();
-    
+
         // Set up periodic session state saving
         setInterval(saveSessionState, 5000); // Save every 5 seconds
-    
+
+        // Set up periodic UI state check to ensure buttons are correctly enabled/disabled
+        setInterval(() => {
+            if (!isListening && !audioRecording) {
+                // Only update if not actively recording
+                updateRecordingUI();
+            }
+        }, 1000); // Check every second
+
         // Set up keyboard shortcuts
         setupKeyboardShortcuts();
-    
-        // Log initialization status
-        console.log('🎙️ Voice Assistant Hybrid Method initialized');
+
+        // Log initialization status with enhanced logging
+        voiceAssistantLogger.info('🎙️ Voice Assistant initialized', {
+            liveTranscription: true,
+            audioRecordingSupported: audioRecordingSupported,
+            serverProcessing: true,
+            hybridModeEnabled: hybridModeEnabled,
+            medicalDictionary: Object.keys(medicalDictionary).length + ' terms',
+            simpleInterface: true,
+            currentLanguage: currentLanguage,
+            sessionId: sessionId
+        });
+
+        console.log('🎙️ Voice Assistant initialized');
         console.log('✅ Live transcription: Active');
         console.log('✅ Audio recording: ' + (audioRecordingSupported ? 'Supported' : 'Not supported'));
         console.log('✅ Server processing: Ready');
+        console.log('🏥 Medical dictionary: ' + Object.keys(medicalDictionary).length + ' terms loaded');
+        console.log('📝 Simple interface: Enabled');
         console.log('🚀 Hybrid mode: ' + (hybridModeEnabled ? 'Enabled' : 'Disabled'));
-        
+
     }
 
     // NEW: Initialize Hybrid Method capabilities
     function initHybridMethod() {
         // Check MediaRecorder support
         audioRecordingSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
-        
+
         console.log('🔍 Hybrid Method Initialization:');
         console.log('  📹 MediaRecorder support:', audioRecordingSupported);
         console.log('  🎙️ Web Speech API support:', !!(window.SpeechRecognition || window.webkitSpeechRecognition));
         console.log('  🌐 Browser:', navigator.userAgent.split(' ').pop());
-        
+
         if (!audioRecordingSupported) {
             console.warn('⚠️ Audio recording not supported. Hybrid mode will use live transcription only.');
         }
     }
 
-    // NEW: Start audio recording alongside live transcription with enhanced quality
+    // Simple transcription system initialization
+    function initSimpleTranscription() {
+        console.log('📝 Simple transcription system initialized');
+    }
+
+    // NEW: Start audio recording alongside live transcription with enhanced quality and robust error handling
     async function startAudioRecording() {
-        if (!audioRecordingSupported || audioRecording) return;
+        if (!audioRecordingSupported || audioRecording) {
+            console.log('🎵 Audio recording not supported or already recording');
+            return;
+        }
+
+        voiceAssistantLogger.info('🎵 Attempting to start enhanced audio recording', {
+            audioRecordingSupported: audioRecordingSupported,
+            hybridModeEnabled: hybridModeEnabled,
+            currentLanguage: currentLanguage
+        });
 
         try {
+            // Check microphone permissions first
+            voiceAssistantLogger.debug('🎙️ Checking microphone permissions');
+            const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+            voiceAssistantLogger.info('🎙️ Microphone permission status', { status: permissionStatus.state });
+
+            if (permissionStatus.state === 'denied') {
+                throw new Error('Microphone permission denied. Please allow microphone access.');
+            }
+
             // Enhanced audio constraints for medical consultations
             const audioConstraints = {
                 echoCancellation: true,
@@ -194,12 +400,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (supported.volume) audioConstraints.volume = { ideal: 0.8, max: 1.0 };
             }
 
+            console.log('🎵 Requesting microphone access with constraints:', audioConstraints);
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: audioConstraints
             });
 
+            console.log('🎙️ Microphone access granted successfully');
+
             // Get actual audio track settings for quality validation
             const audioTrack = stream.getAudioTracks()[0];
+            if (!audioTrack) {
+                throw new Error('No audio track available from microphone');
+            }
+
             const settings = audioTrack.getSettings();
             console.log('🎵 Audio track settings:', {
                 sampleRate: settings.sampleRate,
@@ -221,48 +434,110 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!MediaRecorder.isTypeSupported(mimeType)) {
                 mimeType = 'audio/webm';
+                console.log('🎵 Opus codec not supported, falling back to basic WebM');
             }
             if (!MediaRecorder.isTypeSupported(mimeType)) {
                 mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/wav';
+                console.log('🎵 WebM not supported, using:', mimeType);
             }
+
+            console.log('🎵 Selected MIME type:', mimeType);
 
             const options = {
                 mimeType: mimeType,
                 audioBitsPerSecond: 128000 // 128kbps for good quality balance
             };
 
-            mediaRecorder = new MediaRecorder(stream, options);
-            audioChunks = [];
+            // Test MediaRecorder creation before starting
+            try {
+                mediaRecorder = new MediaRecorder(stream, options);
+                console.log('🎵 MediaRecorder created successfully');
+            } catch (recorderError) {
+                console.error('❌ Failed to create MediaRecorder:', recorderError);
+                // Try fallback options
+                const fallbackOptions = { mimeType: '' }; // Let browser choose
+                mediaRecorder = new MediaRecorder(stream, fallbackOptions);
+                console.log('🎵 MediaRecorder created with fallback options');
+            }
 
-            // Enhanced audio data handling
+            audioChunks = [];
+            let recordingStartTime = Date.now();
+            let chunkCount = 0;
+            let totalChunkSize = 0;
+
+            // Enhanced audio data handling with validation
             mediaRecorder.ondataavailable = function(event) {
-                if (event.data.size > 0) {
+                if (event.data && event.data.size > 0) {
                     audioChunks.push(event.data);
+                    chunkCount++;
+                    totalChunkSize += event.data.size;
+
                     console.log('📊 Audio chunk captured:', {
+                        chunkNumber: chunkCount,
                         size: event.data.size,
                         type: event.data.type,
+                        totalSize: totalChunkSize,
                         timestamp: new Date().toISOString()
                     });
 
                     // Monitor audio quality during recording
                     monitorAudioChunkQuality(event.data);
+                } else {
+                    console.warn('⚠️ Empty or invalid audio chunk received');
                 }
             };
 
+            mediaRecorder.onerror = function(event) {
+                console.error('❌ MediaRecorder error:', event.error);
+                audioRecording = false;
+                showAlert('Audio recording error: ' + (event.error?.message || 'Unknown error'), 'error');
+            };
+
             mediaRecorder.onstop = function() {
+                const recordingDuration = Date.now() - recordingStartTime;
+                console.log('🎵 Audio recording stopped:', {
+                    duration: recordingDuration + 'ms',
+                    chunks: chunkCount,
+                    totalSize: totalChunkSize
+                });
+
+                // Validate recording before processing
+                if (audioChunks.length === 0 || totalChunkSize === 0) {
+                    console.error('❌ No audio data captured during recording');
+                    audioBlob = null;
+                    showAlert('No audio data was captured. Please check your microphone and try again.', 'error');
+                    return;
+                }
+
                 // Preprocess audio before creating blob
                 const processedChunks = preprocessAudioChunks(audioChunks);
+
+                if (processedChunks.length === 0) {
+                    console.error('❌ All audio chunks were filtered out during preprocessing');
+                    audioBlob = null;
+                    showAlert('Audio recording failed validation. Please try again.', 'error');
+                    return;
+                }
 
                 audioBlob = new Blob(processedChunks, {
                     type: mediaRecorder.mimeType || 'audio/webm'
                 });
 
-                console.log('🎵 Audio recording completed:', {
+                // Validate the final blob
+                if (!validateAudioBlob(audioBlob)) {
+                    console.error('❌ Audio blob validation failed');
+                    audioBlob = null;
+                    showAlert('Audio recording is invalid. Please try again with a better microphone.', 'error');
+                    return;
+                }
+
+                console.log('🎵 Audio recording completed successfully:', {
                     size: audioBlob.size,
                     type: audioBlob.type,
                     chunks: processedChunks.length,
                     estimatedDuration: estimateAudioDuration(audioChunks),
-                    quality: assessAudioQuality(audioBlob)
+                    quality: assessAudioQuality(audioBlob),
+                    recordingDuration: recordingDuration + 'ms'
                 });
 
                 // Store quality metrics for performance tracking
@@ -270,29 +545,57 @@ document.addEventListener('DOMContentLoaded', function() {
                     fileSize: audioBlob.size,
                     format: audioBlob.type,
                     estimatedDuration: estimateAudioDuration(audioChunks),
-                    qualityScore: assessAudioQuality(audioBlob)
+                    qualityScore: assessAudioQuality(audioBlob),
+                    recordingDuration: recordingDuration,
+                    chunkCount: chunkCount,
+                    averageChunkSize: totalChunkSize / chunkCount
                 };
+
+                // NEW: Trigger server-side processing now that audioBlob is available and valid
+                if (hybridModeEnabled && !serverProcessingInProgress) {
+                    triggerServerSideProcessing();
+                }
             };
 
             // Start recording with optimized timeslice
             mediaRecorder.start(200); // 200ms chunks for better processing
             audioRecording = true;
 
-            console.log('🎵 Enhanced audio recording started:', {
+            console.log('🎵 Enhanced audio recording started successfully:', {
                 mimeType: mimeType,
                 sampleRate: settings.sampleRate,
                 channels: settings.channelCount,
-                qualityValidated: true
+                qualityValidated: true,
+                startTime: new Date().toISOString()
             });
 
         } catch (error) {
-            console.error('❌ Failed to start enhanced audio recording:', error);
+            voiceAssistantLogger.error('❌ Failed to start enhanced audio recording', {
+                error: error.message,
+                name: error.name,
+                stack: error.stack,
+                audioRecordingSupported: audioRecordingSupported,
+                hybridModeEnabled: hybridModeEnabled
+            });
+
             audioRecordingSupported = false;
 
-            // Fallback to basic recording if enhanced fails
-            if (error.name === 'NotSupportedError') {
-                console.log('🔄 Falling back to basic audio recording...');
+            // Provide specific error messages based on error type
+            if (error.name === 'NotAllowedError' || error.message.includes('permission')) {
+                voiceAssistantLogger.warn('Microphone permission denied');
+                showAlert('Microphone access denied. Please allow microphone access in your browser settings and try again.', 'error');
+            } else if (error.name === 'NotFoundError') {
+                voiceAssistantLogger.warn('No microphone found');
+                showAlert('No microphone found. Please check your microphone connection.', 'error');
+            } else if (error.name === 'NotSupportedError') {
+                voiceAssistantLogger.info('🔄 Falling back to basic audio recording due to NotSupportedError');
                 await startBasicAudioRecording();
+            } else if (error.name === 'AbortError') {
+                voiceAssistantLogger.warn('Audio recording was interrupted');
+                showAlert('Audio recording was interrupted. Please try again.', 'error');
+            } else {
+                voiceAssistantLogger.error('Unknown audio recording error', { error: error.message });
+                showAlert('Failed to start audio recording: ' + error.message, 'error');
             }
         }
     }
@@ -376,9 +679,55 @@ document.addEventListener('DOMContentLoaded', function() {
         return Math.max(0, Math.min(100, score)); // Clamp between 0-100
     }
 
-    // NEW: Fallback basic audio recording
+    // NEW: Validate audio blob before sending to server
+    function validateAudioBlob(blob) {
+        if (!blob) {
+            console.error('❌ Audio blob validation failed: blob is null or undefined');
+            return false;
+        }
+
+        if (blob.size === 0) {
+            console.error('❌ Audio blob validation failed: blob size is 0');
+            return false;
+        }
+
+        if (blob.size < 1000) { // Minimum reasonable audio size
+            console.error('❌ Audio blob validation failed: blob too small', blob.size, 'bytes');
+            return false;
+        }
+
+        if (blob.size > 100 * 1024 * 1024) { // Maximum 100MB
+            console.error('❌ Audio blob validation failed: blob too large', blob.size, 'bytes');
+            return false;
+        }
+
+        // Check MIME type
+        const validTypes = ['audio/webm', 'audio/mp4', 'audio/wav', 'audio/mpeg', 'audio/mp3'];
+        if (!validTypes.some(type => blob.type.includes(type))) {
+            console.warn('⚠️ Audio blob type may be unsupported:', blob.type);
+            // Don't fail validation for unknown types, just warn
+        }
+
+        console.log('✅ Audio blob validation passed:', {
+            size: blob.size,
+            type: blob.type,
+            sizeKB: Math.round(blob.size / 1024)
+        });
+
+        return true;
+    }
+
+    // NEW: Fallback basic audio recording with enhanced error handling
     async function startBasicAudioRecording() {
+        console.log('🎵 Attempting basic audio recording fallback...');
+
         try {
+            // Check microphone permissions for basic recording
+            const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+            if (permissionStatus.state === 'denied') {
+                throw new Error('Microphone permission denied for basic recording');
+            }
+
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     echoCancellation: true,
@@ -387,46 +736,158 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            const options = {
-                mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' :
-                         MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/wav'
-            };
+            console.log('🎙️ Basic microphone access granted');
+
+            // Choose supported format for basic recording
+            let mimeType = '';
+            if (MediaRecorder.isTypeSupported('audio/webm')) {
+                mimeType = 'audio/webm';
+            } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                mimeType = 'audio/mp4';
+            } else if (MediaRecorder.isTypeSupported('audio/wav')) {
+                mimeType = 'audio/wav';
+            }
+
+            const options = mimeType ? { mimeType: mimeType } : {};
 
             mediaRecorder = new MediaRecorder(stream, options);
             audioChunks = [];
+            let basicRecordingStartTime = Date.now();
+            let basicChunkCount = 0;
+
+            console.log('🎵 Basic MediaRecorder created with options:', options);
 
             mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
+                if (event.data && event.data.size > 0) {
                     audioChunks.push(event.data);
+                    basicChunkCount++;
+                    console.log('📊 Basic audio chunk:', {
+                        chunkNumber: basicChunkCount,
+                        size: event.data.size,
+                        type: event.data.type
+                    });
+                } else {
+                    console.warn('⚠️ Empty basic audio chunk received');
                 }
             };
 
+            mediaRecorder.onerror = function(event) {
+                console.error('❌ Basic MediaRecorder error:', event.error);
+                audioRecording = false;
+                showAlert('Basic audio recording error: ' + (event.error?.message || 'Unknown error'), 'error');
+            };
+
             mediaRecorder.onstop = () => {
-                audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
-                console.log('🎵 Basic audio recording completed:', {
-                    size: audioBlob.size,
-                    type: audioBlob.type
+                const recordingDuration = Date.now() - basicRecordingStartTime;
+                console.log('🎵 Basic audio recording stopped:', {
+                    duration: recordingDuration + 'ms',
+                    chunks: basicChunkCount,
+                    totalSize: audioChunks.reduce((sum, chunk) => sum + chunk.size, 0)
                 });
+
+                // Validate basic recording
+                if (audioChunks.length === 0 || audioChunks.every(chunk => chunk.size === 0)) {
+                    console.error('❌ Basic audio recording captured no data');
+                    audioBlob = null;
+                    showAlert('Basic audio recording failed to capture data. Please check your microphone.', 'error');
+                    return;
+                }
+
+                audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+
+                // Validate the basic audio blob
+                if (!validateAudioBlob(audioBlob)) {
+                    console.error('❌ Basic audio blob validation failed');
+                    audioBlob = null;
+                    showAlert('Basic audio recording validation failed. Audio quality may be insufficient.', 'error');
+                    return;
+                }
+
+                console.log('🎵 Basic audio recording completed successfully:', {
+                    size: audioBlob.size,
+                    type: audioBlob.type,
+                    chunks: audioChunks.length,
+                    quality: assessAudioQuality(audioBlob)
+                });
+
+                // Store basic quality metrics
+                audioQualityMetrics = {
+                    fileSize: audioBlob.size,
+                    format: audioBlob.type,
+                    estimatedDuration: estimateAudioDuration(audioChunks),
+                    qualityScore: assessAudioQuality(audioBlob),
+                    recordingDuration: recordingDuration,
+                    chunkCount: basicChunkCount,
+                    isBasicMode: true
+                };
+
+                // Trigger server processing even with basic recording
+                if (hybridModeEnabled && !serverProcessingInProgress) {
+                    console.log('🔄 Triggering server processing with basic audio recording');
+                    triggerServerSideProcessing();
+                }
             };
 
             mediaRecorder.start(1000); // 1 second chunks for basic recording
             audioRecording = true;
 
-            console.log('🎵 Basic audio recording started (fallback mode)');
+            console.log('🎵 Basic audio recording started successfully (fallback mode)', {
+                mimeType: mimeType,
+                startTime: new Date().toISOString()
+            });
 
         } catch (error) {
-            console.error('❌ Basic audio recording also failed:', error);
+            console.error('❌ Basic audio recording failed:', {
+                error: error.message,
+                name: error.name,
+                stack: error.stack
+            });
+
             audioRecordingSupported = false;
+
+            // Provide specific error messages for basic recording
+            if (error.name === 'NotAllowedError' || error.message.includes('permission')) {
+                showAlert('Microphone access denied. Please allow microphone access and refresh the page.', 'error');
+            } else if (error.name === 'NotFoundError') {
+                showAlert('No microphone found. Please connect a microphone and refresh the page.', 'error');
+            } else {
+                showAlert('Audio recording not supported on this device. Only live transcription will be available.', 'warning');
+            }
+
+            // Log the failure for debugging
+            console.warn('🎵 Audio recording completely unavailable, live transcription only mode activated');
         }
     }
 
     // NEW: Stop audio recording
     function stopAudioRecording() {
         if (mediaRecorder && audioRecording) {
-            mediaRecorder.stop();
-            mediaRecorder.stream.getTracks().forEach(track => track.stop());
-            audioRecording = false;
-            console.log('🎵 Audio recording stopped');
+            try {
+                // Stop the MediaRecorder
+                if (mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                }
+
+                // Stop all media tracks
+                if (mediaRecorder.stream) {
+                    mediaRecorder.stream.getTracks().forEach(track => {
+                        track.stop();
+                    });
+                }
+
+                audioRecording = false;
+                console.log('🎵 Audio recording stopped successfully');
+
+                // Update UI immediately
+                updateRecordingUI();
+
+            } catch (error) {
+                console.error('❌ Error stopping audio recording:', error);
+                audioRecording = false;
+                updateRecordingUI();
+            }
+        } else {
+            console.log('🎵 No active audio recording to stop');
         }
     }
 
@@ -664,25 +1125,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
             recognition.onresult = function(event) {
                         let interimTranscript = '';
-                        let newFinalTranscript = '';
-        
+                        let finalTranscripts = []; // Collect all final transcripts in this event
+
                         for (let i = event.resultIndex; i < event.results.length; i++) {
                             const result = event.results[i];
                             const transcript = result[0].transcript;
-        
+
                             if (result.isFinal) {
-                                newFinalTranscript += transcript + ' ';
+                                finalTranscripts.push(transcript);
                                 console.log('🎤 Final transcript received:', transcript);
-        
+
                                 // FIXED: More conservative language detection - only on substantial final results
                                 if (transcript.trim().length > 10) { // Only check substantial content
                                     const detectedLang = detectLanguage(transcript);
                                     console.log('🔍 Language detection for final result:', detectedLang, 'Current:', currentLanguage);
-        
+
                                     if (detectedLang !== currentLanguage) {
                                         const previousLanguage = currentLanguage;
                                         currentLanguage = detectedLang;
-        
+
                                         // Only show notification for significant language changes
                                         if (previousLanguage !== detectedLang && transcript.length > 20) {
                                             const languageNames = {
@@ -694,7 +1155,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             };
                                             showAlert(`Language switched to ${languageNames[detectedLang] || detectedLang}`, 'info');
                                         }
-        
+
                                         // FIXED: Only restart recognition for significant changes
                                         if (isListening && transcript.length > 30) {
                                             recognition.stop();
@@ -711,30 +1172,81 @@ document.addEventListener('DOMContentLoaded', function() {
                                 interimTranscript += transcript;
                             }
                         }
-        
-                        // FIXED: Proper transcript management to prevent duplication
-                        if (newFinalTranscript) {
-                            // Only add new final transcript to avoid duplication
-                            const lastAddedIndex = finalTranscript.lastIndexOf(newFinalTranscript.trim());
-                            if (lastAddedIndex === -1 || lastAddedIndex + newFinalTranscript.length < finalTranscript.length) {
-                                finalTranscript += newFinalTranscript;
-                                lastTranscriptTime = Date.now();
+
+                        // FIXED: Process all final transcripts at once to prevent overwriting
+                        if (finalTranscripts.length > 0) {
+                            const newFinalText = finalTranscripts.join(' ') + ' ';
+                            const trimmedNew = newFinalText.trim();
+
+                            console.log('🎤 Processing final transcripts:', {
+                                count: finalTranscripts.length,
+                                combinedText: trimmedNew,
+                                currentLiveLength: liveTranscription.length
+                            });
+
+                            // FIXED: Always append final transcripts - don't try to detect duplicates within the same event
+                            // The Web Speech API may return multiple final results for the same audio segment
+                            if (liveTranscription.length === 0) {
+                                // First transcription
+                                liveTranscription = newFinalText;
+                            } else {
+                                // Check if this is likely a duplicate or correction of existing text
+                                const currentWords = liveTranscription.trim().split(/\s+/);
+                                const newWords = trimmedNew.split(/\s+/);
+
+                                // If new text is much shorter than current, it might be a correction
+                                if (newWords.length < currentWords.length * 0.5) {
+                                    console.log('🎤 Detected possible correction, replacing last part');
+                                    // Replace the last portion with the new text
+                                    const keepWords = Math.max(0, currentWords.length - newWords.length);
+                                    const keepText = currentWords.slice(0, keepWords).join(' ');
+                                    liveTranscription = (keepText ? keepText + ' ' : '') + newFinalText;
+                                } else {
+                                    // Normal append
+                                    liveTranscription += (liveTranscription.endsWith(' ') ? '' : ' ') + newFinalText;
+                                }
                             }
+
+                            lastTranscriptTime = Date.now();
+
+                            // Update live transcription quality
+                            const liveQuality = validateTranscriptionQuality(liveTranscription, 'live');
+                            liveConfidence = liveQuality.score;
+
+                            updateLiveTranscriptionDisplay();
+                            updateTranscriptionDisplay();
+
+                            // Continuous language detection
+                            detectLanguageContinuously(trimmedNew);
+
+                            console.log('🎤 Live transcript updated:', {
+                                newText: trimmedNew,
+                                totalLength: liveTranscription.length,
+                                quality: liveConfidence + '%',
+                                currentLanguage: currentLanguage
+                            });
                         }
-        
+
                         // FIXED: Better buffering system - only show current content
-                        const currentDisplayText = finalTranscript + interimTranscript;
+                        const currentDisplayText = liveTranscription + interimTranscript;
                         if (currentDisplayText.trim() && currentDisplayText !== transcriptBuffer) {
                             transcriptBuffer = currentDisplayText;
-                            
+
+                            console.log('🔄 Buffer updated:', {
+                                liveLength: liveTranscription.length,
+                                interimLength: interimTranscript.length,
+                                totalLength: currentDisplayText.length
+                            });
+
                             // Clear existing timeout
                             if (bufferTimeout) {
                                 clearTimeout(bufferTimeout);
                             }
-        
+
                             // Process with reasonable delay to avoid over-processing
                             bufferTimeout = setTimeout(() => {
                                 if (transcriptBuffer.trim()) {
+                                    console.log('⏰ Processing buffered transcript, length:', transcriptBuffer.trim().length);
                                     handleTranscription(transcriptBuffer.trim());
                                 }
                             }, 200); // Balanced delay
@@ -1073,7 +1585,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (stopRecordingBtn) {
-            stopRecordingBtn.addEventListener('click', stopSession);
+            stopRecordingBtn.addEventListener('click', function() {
+                console.log('🛑 Stop button clicked');
+                stopSession();
+            });
         }
 
         // Generate analysis button
@@ -1089,16 +1604,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Patient selection
         if (patientSelect) {
             patientSelect.addEventListener('change', function() {
-                selectedPatient = this.value || null;
-                
-                
+                const newValue = this.value;
+                selectedPatient = newValue && newValue !== '' ? newValue : null;
+                console.log('👤 Patient selected:', selectedPatient, 'from dropdown value:', newValue, 'dropdown options:', this.options.length);
                 updateRecordingUI();
             });
 
             // Also listen for input events in case of programmatic changes
             patientSelect.addEventListener('input', function() {
-                selectedPatient = this.value || null;
-                
+                const newValue = this.value;
+                selectedPatient = newValue && newValue !== '' ? newValue : null;
+                console.log('👤 Patient input changed:', selectedPatient, 'from dropdown value:', newValue);
                 updateRecordingUI();
             });
         }
@@ -1154,18 +1670,24 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadPatients() {
         // This would typically be an AJAX call to load patients
         // For now, we'll just check if patients are already loaded
-        
+        console.log('👥 Patient select element:', patientSelect);
+        if (patientSelect) {
+            console.log('👥 Patient select options:', patientSelect.options.length);
+            console.log('👥 Patient select current value:', patientSelect.value);
+        } else {
+            console.warn('⚠️ Patient select element not found');
+        }
     }
 
     // Sync patient selection
     function syncPatientSelection() {
-        if (patientSelect && patientSelect.value) {
+        if (patientSelect && patientSelect.value && patientSelect.value !== '') {
             selectedPatient = patientSelect.value;
-            
+            console.log('👤 Patient synced from dropdown:', selectedPatient);
             return true;
         }
         selectedPatient = null;
-        
+        console.log('👤 No patient selected, selectedPatient set to null');
         return false;
     }
 
@@ -1270,12 +1792,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Stop session (HYBRID METHOD)
+    // Stop session (HYBRID METHOD) - FIXED: Immediate session completion with proper cleanup
     function stopSession() {
+        // Prevent multiple stop operations
+        if (isStopping) {
+            console.log('🛑 Stop operation already in progress...');
+            return;
+        }
+
+        isStopping = true;
         console.log('🛑 Stopping hybrid voice session...');
-        
-        // Stop live transcription
+        console.log('📊 Current state:', {
+            isListening: isListening,
+            audioRecording: audioRecording,
+            hybridModeEnabled: hybridModeEnabled,
+            mediaRecorderState: mediaRecorder ? mediaRecorder.state : 'no mediaRecorder'
+        });
+
+        // Stop live transcription first
         if (recognition && isListening) {
+            console.log('🎙️ Stopping live transcription...');
             isListening = false;
 
             // Clear timeouts and enhanced features
@@ -1286,26 +1822,54 @@ document.addEventListener('DOMContentLoaded', function() {
 
             try {
                 recognition.stop();
-                
+                console.log('✅ Live transcription stopped');
+
                 // Send any remaining buffered transcript
                 if (transcriptBuffer.trim()) {
                     handleTranscription(transcriptBuffer.trim());
+                }
+
+                // Also ensure final transcript is processed if different from buffer
+                if (finalTranscript.trim() && finalTranscript.trim() !== transcriptBuffer.trim()) {
+                    console.log('📝 Processing final accumulated transcript on stop');
+                    handleTranscription(finalTranscript.trim());
                 }
             } catch (error) {
                 console.error('❌ Error stopping recognition:', error);
             }
         }
 
-        // NEW: Stop audio recording and trigger server-side processing
-        if (hybridModeEnabled && audioRecording && audioBlob) {
-            console.log('🎵 Audio recording stopped, preparing for server processing...');
+        // Stop audio recording immediately
+        if (hybridModeEnabled && audioRecording) {
+            console.log('🎵 Stopping audio recording...');
             stopAudioRecording();
-            
-            // Initiate server-side processing with the recorded audio
-            triggerServerSideProcessing();
+
+            // Complete session immediately after stopping audio recording
+            // Server processing will happen in the background
+            setTimeout(() => {
+                console.log('📝 Completing session after audio recording stop...');
+                completeSession();
+            }, 500); // Small delay to ensure audio recording stops
+        } else {
+            console.log('📝 No audio recording, completing session immediately...');
+            // No audio recording, complete session immediately
+            completeSession();
         }
 
-        // AJAX call to stop session
+        // Reset stopping flag after a delay
+        setTimeout(() => {
+            isStopping = false;
+        }, 2000); // Allow 2 seconds for all operations to complete
+
+        // Force UI update
+        updateRecordingUI();
+    }
+
+    // NEW: Separate function to complete the session (mark as completed in database)
+    function completeSession() {
+        console.log('📝 Completing session in database...');
+
+        // AJAX call to stop session (mark as completed)
         $.ajax({
             url: '/ai/voice-assistant/stop-session',
             method: 'POST',
@@ -1323,7 +1887,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.showDiagnosisEntryForm();
 
                     const stopMessage = hybridModeEnabled && audioRecordingSupported
-                        ? 'Session stopped successfully. Server-side processing initiated.'
+                        ? 'Session stopped successfully. Server-side processing completed.'
                         : 'Session stopped successfully.';
                     showAlert(stopMessage, 'success');
                 } else {
@@ -1337,83 +1901,209 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // NEW: Server-side audio processing for hybrid method
+    // NEW: Server-side audio processing for hybrid method with enhanced validation - FIXED: Returns promise for session completion timing
     function triggerServerSideProcessing() {
-        if (!audioBlob || !hybridModeEnabled) return;
-
-        console.log('🔄 Triggering server-side audio processing...');
-
-        const formData = new FormData();
-        formData.append('session_id', sessionId);
-        formData.append('audio_file', audioBlob, `session_${sessionId}.webm`);
-        formData.append('transcription', finalTranscript);
-        formData.append('has_live_transcription', finalTranscript.length > 0);
-
-        // Add performance metrics
-        const performanceData = collectPerformanceMetrics();
-        formData.append('network_type', performanceData.network_type);
-        formData.append('connection_speed', performanceData.connection_speed);
-
-        // Add audio quality metrics if available
-        if (typeof audioQualityMetrics !== 'undefined' && audioQualityMetrics) {
-            formData.append('audio_quality[sample_rate]', performanceData.audioSampleRate || 44100);
-            formData.append('audio_quality[channels]', performanceData.audioChannels || 1);
-            formData.append('audio_quality[average_level]', audioLevel || 0);
-            formData.append('audio_quality[quality_score]', audioQualityMetrics.qualityScore || 0);
-        }
-
-        serverProcessingInProgress = true;
-        updateServerProcessingStatus('Uploading audio for server processing...');
-
-        $.ajax({
-            url: '/ai/voice-assistant/process-audio-server',
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                console.log('✅ Server-side processing response:', response);
-
-                if (response.success) {
-                    updateServerProcessingStatus('Server processing completed successfully!');
-
-                    // If server processing was more accurate, update the transcription
-                    if (response.improved_transcription && response.improved_transcription.length > finalTranscript.length) {
-                        console.log('🔄 Updating transcription with server result...');
-                        finalTranscript = response.improved_transcription;
-                        if (transcriptionArea) {
-                            transcriptionArea.value = finalTranscript;
-                        }
-                    }
-
-                    // Update extracted data if server provided better results
-                    if (response.server_extracted_data) {
-                        console.log('🔄 Updating extracted data with server results...');
-                        extractedData = response.server_extracted_data;
-                        updateChartFields(extractedData);
-                    }
-
-                    // Log performance improvement if available
-                    if (response.performance_metrics) {
-                        console.log('📊 Performance metrics:', response.performance_metrics);
-                        if (response.performance_metrics.server_improved) {
-                            console.log('🎯 Server processing improved transcription quality!');
-                        }
-                    }
-
-                    showAlert('Server-side processing completed! Enhanced accuracy achieved.', 'success');
-                } else {
-                    updateServerProcessingStatus('Server processing failed, using live transcription only.');
-                    console.warn('⚠️ Server processing failed:', response.message);
-                }
-
-                serverProcessingInProgress = false;
-            },
-            error: function(xhr, status, error) {
-                console.error('❌ Server processing error:', error);
-                updateServerProcessingStatus('Server processing failed, using live transcription only.');
-                serverProcessingInProgress = false;
+        return new Promise((resolve, reject) => {
+            if (!hybridModeEnabled) {
+                console.log('🔄 Server-side processing skipped: hybrid mode disabled');
+                resolve(); // Resolve immediately if not enabled
+                return;
             }
+
+            if (serverProcessingInProgress) {
+                console.log('🔄 Server-side processing already in progress');
+                resolve(); // Resolve immediately if already in progress
+                return;
+            }
+
+            console.log('🔄 Triggering server-side audio processing...');
+
+            // Validate that we have valid audio data before sending
+            if (!audioBlob || !validateAudioBlob(audioBlob)) {
+                console.warn('⚠️ No valid audio blob available for server processing, skipping...');
+                updateServerProcessingStatus('Audio recording failed validation, using live transcription only.');
+                showAlert('Audio recording validation failed. Using live transcription only.', 'warning');
+
+                // Hide server processing status for validation failures
+                setTimeout(() => {
+                    const processingStatus = document.getElementById('processingStatus');
+                    if (processingStatus) {
+                        processingStatus.style.display = 'none';
+                    }
+                }, 2000); // Keep message visible for 2 seconds
+
+                resolve(); // Resolve even if validation fails
+                return;
+            }
+
+            // Validate transcription data
+            if (!finalTranscript || finalTranscript.trim().length === 0) {
+                console.warn('⚠️ No transcription data available');
+                // Still proceed with audio-only processing
+            }
+
+            const formData = new FormData();
+            formData.append('session_id', sessionId);
+            formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+
+            // Append validated audio file
+            const audioFilename = `session_${sessionId}_${Date.now()}.webm`;
+            formData.append('audio_file', audioBlob, audioFilename);
+
+            formData.append('transcription', finalTranscript || '');
+            formData.append('has_live_transcription', (finalTranscript && finalTranscript.length > 0));
+            formData.append('has_audio_recording', true);
+
+            // Add performance metrics
+            const performanceData = collectPerformanceMetrics();
+            formData.append('network_type', performanceData.network_type || 'unknown');
+            formData.append('connection_speed', performanceData.connection_speed || 0);
+
+            // Add audio quality metrics if available
+            if (audioQualityMetrics) {
+                formData.append('audio_quality[sample_rate]', performanceData.audioSampleRate || 44100);
+                formData.append('audio_quality[channels]', performanceData.audioChannels || 1);
+                formData.append('audio_quality[average_level]', audioLevel || 0);
+                formData.append('audio_quality[quality_score]', audioQualityMetrics.qualityScore || 0);
+                formData.append('audio_quality[file_size]', audioBlob.size);
+                formData.append('audio_quality[format]', audioBlob.type);
+                formData.append('audio_quality[estimated_duration]', audioQualityMetrics.estimatedDuration || 0);
+            }
+
+            console.log('📤 Preparing to send audio data to server:', {
+                sessionId: sessionId,
+                audioSize: audioBlob.size,
+                audioType: audioBlob.type,
+                transcriptionLength: finalTranscript ? finalTranscript.length : 0,
+                hasQualityMetrics: !!audioQualityMetrics
+            });
+
+            serverProcessingInProgress = true;
+            updateServerProcessingStatus('Uploading audio for server processing...');
+
+            $.ajax({
+                url: '/ai/voice-assistant/process-audio-server',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                timeout: 300000, // 5 minute timeout for large audio files
+                success: function(response) {
+                    console.log('✅ Server-side processing response:', response);
+
+                    if (response.success) {
+                        updateServerProcessingStatus('Server processing completed successfully!');
+
+                        // Update transcription with enhanced server results
+                        if (response.improved_transcription && response.improved_transcription.trim().length > 0) {
+                            const improvedText = response.improved_transcription.trim();
+                            const originalLength = liveTranscription ? liveTranscription.length : 0;
+
+                            // Update server transcription
+                            serverTranscription = improvedText;
+
+                            // Process speaker-separated transcription if available
+                            if (response.speakers && response.speakers.length > 0) {
+                                speakerSeparatedTranscription = response.speakers;
+                                console.log('🎯 Speaker-separated transcription available:', response.speakers.length, 'speakers');
+                            }
+
+                            // Calculate server confidence based on improvement and medical terms
+                            const improvementRatio = originalLength > 0 ? improvedText.length / originalLength : 1;
+                            const medicalTermsBonus = response.medical_terms ? response.medical_terms.length * 2 : 0;
+                            transcriptionConfidence = Math.min(98, Math.max(60, improvementRatio * 70 + medicalTermsBonus));
+
+                            // Update transcription display with speaker separation
+                            updateTranscriptionWithSpeakerSeparation(improvedText, response.speakers);
+
+                            console.log('🔄 Enhanced server transcription updated:', {
+                                originalLength: originalLength,
+                                improvedLength: improvedText.length,
+                                speakers: response.speakers ? response.speakers.length : 0,
+                                medicalTerms: response.medical_terms ? response.medical_terms.length : 0,
+                                confidence: transcriptionConfidence + '%',
+                                improvement: ((improvementRatio - 1) * 100).toFixed(1) + '%'
+                            });
+                        }
+
+                        // Update extracted data if server provided better results
+                        if (response.server_extracted_data && Object.keys(response.server_extracted_data).length > 0) {
+                            console.log('🔄 Updating extracted data with server results...');
+                            extractedData = response.server_extracted_data;
+                            updateChartFields(extractedData);
+                        }
+
+                        // Update speaker identification UI
+                        updateSpeakerIdentificationUI();
+
+                        // Log performance improvement if available
+                        if (response.performance_metrics) {
+                            console.log('📊 Performance metrics:', response.performance_metrics);
+                            if (response.performance_metrics.server_improved) {
+                                console.log('🎯 Server processing improved transcription quality!');
+                            }
+                        }
+
+                        // Hide server processing status
+                        updateServerProcessingStatus('');
+                        const processingStatus = document.getElementById('processingStatus');
+                        if (processingStatus) {
+                            processingStatus.style.display = 'none';
+                        }
+
+                        showAlert('Server-side processing completed! Enhanced accuracy achieved.', 'success');
+                        resolve(); // Resolve on success
+                    } else {
+                        updateServerProcessingStatus('Server processing failed, using live transcription only.');
+                        console.warn('⚠️ Server processing failed:', response.message);
+
+                        // Hide server processing status on failure
+                        setTimeout(() => {
+                            const processingStatus = document.getElementById('processingStatus');
+                            if (processingStatus) {
+                                processingStatus.style.display = 'none';
+                            }
+                        }, 2000); // Keep error message visible for 2 seconds
+
+                        showAlert('Server processing failed: ' + (response.message || 'Unknown error'), 'warning');
+                        resolve(); // Resolve even on failure to continue session completion
+                    }
+
+                    serverProcessingInProgress = false;
+                },
+                error: function(xhr, status, error) {
+                    console.error('❌ Server processing error:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        responseText: xhr.responseText,
+                        error: error
+                    });
+
+                    updateServerProcessingStatus('Server processing failed, using live transcription only.');
+                    serverProcessingInProgress = false;
+
+                    // Hide server processing status on error
+                    setTimeout(() => {
+                        const processingStatus = document.getElementById('processingStatus');
+                        if (processingStatus) {
+                            processingStatus.style.display = 'none';
+                        }
+                    }, 2000); // Keep error message visible for 2 seconds
+
+                    // Provide user-friendly error messages
+                    if (xhr.status === 413) {
+                        showAlert('Audio file too large for server processing. Using live transcription only.', 'warning');
+                    } else if (xhr.status === 415) {
+                        showAlert('Audio format not supported by server. Using live transcription only.', 'warning');
+                    } else if (xhr.status >= 500) {
+                        showAlert('Server error during audio processing. Using live transcription only.', 'warning');
+                    } else {
+                        showAlert('Failed to process audio on server. Using live transcription only.', 'warning');
+                    }
+
+                    resolve(); // Resolve on error to continue session completion
+                }
+            });
         });
     }
 
@@ -1494,6 +2184,319 @@ document.addEventListener('DOMContentLoaded', function() {
         return { isComplete: true, missingText: '' };
     }
 
+    // ENHANCED MEDICAL TRANSCRIPTION DISPLAY FUNCTIONS
+    function updateLiveTranscriptionDisplay() {
+        // FIXED: Only update if we have new content and avoid conflicts with handleTranscription
+        if (transcriptionArea && liveTranscription.trim()) {
+            // Don't update if handleTranscription is currently processing (to avoid conflicts)
+            if (!bufferTimeout) {
+                transcriptionArea.value = liveTranscription;
+                console.log('📝 Live transcription display updated, length:', liveTranscription.length);
+            } else {
+                console.log('📝 Skipping live display update (buffer timeout active)');
+            }
+        }
+    }
+
+    /**
+     * Update transcription display with speaker separation
+     */
+    function updateTranscriptionWithSpeakerSeparation(fullText, speakers) {
+        const transcriptionContainer = document.getElementById('transcriptionContainer');
+        const transcriptionArea = document.getElementById('transcriptionArea');
+        const speakerLegend = document.getElementById('speakerLegend');
+        const speakerLegendText = document.getElementById('speakerLegendText');
+
+        if (!transcriptionContainer || !transcriptionArea) return;
+
+        if (speakers && speakers.length > 0) {
+            // Create enhanced speaker-separated display
+            let speakerHtml = '<div class="speaker-transcription">';
+
+            speakers.forEach((speaker, index) => {
+                const speakerName = speaker.role === 'doctor' ? 'Doctor' : 'Patient';
+                const speakerClass = speaker.role === 'doctor' ? 'speaker-doctor' : 'speaker-patient';
+                const speakerIcon = speaker.role === 'doctor' ? 'fas fa-user-md' : 'fas fa-user';
+                const timestamp = speaker.start_time ? formatTimestamp(speaker.start_time) : '';
+
+                speakerHtml += `
+                    <div class="speaker-segment ${speakerClass} mb-2 p-2 rounded" style="border-left: 3px solid ${speaker.role === 'doctor' ? '#007bff' : '#28a745'}; background-color: ${speaker.role === 'doctor' ? '#f8f9ff' : '#f8fff9'};">
+                        <div class="speaker-header d-flex align-items-center mb-1">
+                            <i class="${speakerIcon} me-1"></i>
+                            <strong class="speaker-label">${speakerName}</strong>
+                            ${timestamp ? `<small class="text-muted ms-2">${timestamp}</small>` : ''}
+                        </div>
+                        <div class="speaker-text">${speaker.text}</div>
+                    </div>
+                `;
+            });
+
+            speakerHtml += '</div>';
+
+            // Update the container with HTML
+            transcriptionContainer.innerHTML = speakerHtml;
+
+            // Show speaker legend
+            if (speakerLegend && speakerLegendText) {
+                const doctorCount = speakers.filter(s => s.role === 'doctor').length;
+                const patientCount = speakers.filter(s => s.role === 'patient').length;
+                speakerLegendText.innerHTML = `
+                    <span class="badge bg-primary me-2"><i class="fas fa-user-md"></i> Doctor: ${doctorCount}</span>
+                    <span class="badge bg-success"><i class="fas fa-user"></i> Patient: ${patientCount}</span>
+                `;
+                speakerLegend.classList.remove('d-none');
+            }
+
+            console.log('🎯 Enhanced speaker-separated transcription displayed');
+        } else {
+            // Fallback to regular transcription
+            transcriptionContainer.innerHTML = '<textarea id="transcriptionArea" class="form-control" style="height: 100%; border: none; background: transparent; resize: none;" placeholder="Start recording to see transcription here..."></textarea>';
+            const newTextArea = document.getElementById('transcriptionArea');
+            if (newTextArea) {
+                newTextArea.value = fullText;
+            }
+
+            // Hide speaker legend
+            if (speakerLegend) {
+                speakerLegend.classList.add('d-none');
+            }
+        }
+
+        // Update transcription status
+        updateTranscriptionStatus(speakers);
+    }
+
+    /**
+     * Update transcription status indicators
+     */
+    function updateTranscriptionStatus(speakers) {
+        const transcriptionStatus = document.getElementById('transcriptionStatus');
+        if (!transcriptionStatus) return;
+
+        let statusHtml = '';
+
+        if (speakers && speakers.length > 0) {
+            const speakerCount = new Set(speakers.map(s => s.speaker)).size;
+            statusHtml += `<span class="badge bg-info"><i class="fas fa-users me-1"></i>${speakerCount} Speaker${speakerCount > 1 ? 's' : ''}</span>`;
+        }
+
+        if (currentLanguage) {
+            const langName = currentLanguage === 'ar-SA' ? 'العربية' : 'English';
+            const langFlag = currentLanguage === 'ar-SA' ? '🇸🇦' : '🇺🇸';
+            statusHtml += ` <span class="badge bg-secondary">${langFlag} ${langName}</span>`;
+        }
+
+        transcriptionStatus.innerHTML = statusHtml;
+    }
+
+    /**
+     * Format timestamp for speaker display
+     */
+    function formatTimestamp(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    /**
+     * Update UI to show speaker identification status
+     */
+    function updateSpeakerIdentificationUI() {
+        const speakerCount = Object.keys(speakerSeparatedTranscription).length;
+        if (speakerCount > 1) {
+            // Update recording status to show multi-speaker mode
+            const recordingStatus = document.getElementById('recordingStatus');
+            if (recordingStatus) {
+                recordingStatus.innerHTML = '<span class="badge bg-info me-2"><i class="fas fa-users-medical fa-xs"></i></span><span class="text-info fw-bold">Recording (Multi-speaker)</span>';
+            }
+
+            // Show speaker identification info
+            showSpeakerIdentificationInfo(speakerCount);
+        }
+    }
+
+    /**
+     * Show speaker identification information
+     */
+    function showSpeakerIdentificationInfo(speakerCount) {
+        const alertContainer = document.getElementById('alertContainer');
+        if (!alertContainer) return;
+
+        const speakerInfo = `
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <i class="fas fa-users-medical me-2"></i>
+                <strong>Speaker Identification Active:</strong> ${speakerCount} speakers detected.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+
+        alertContainer.innerHTML = speakerInfo;
+    }
+
+    /**
+     * Continuous language detection for seamless switching
+     */
+    function detectLanguageContinuously(text) {
+        if (!continuousLanguageDetection || !text || text.length < 10) {
+            return;
+        }
+
+        const now = Date.now();
+
+        // Cooldown check to prevent too frequent switches
+        if (now - lastLanguageSwitch < languageSwitchCooldown) {
+            return;
+        }
+
+        // Add to detection buffer
+        languageDetectionBuffer.push({
+            text: text,
+            timestamp: now,
+            length: text.length
+        });
+
+        // Keep only recent detections (last 30 seconds)
+        languageDetectionBuffer = languageDetectionBuffer.filter(
+            detection => now - detection.timestamp < 30000
+        );
+
+        // Need at least 3 samples for reliable detection
+        if (languageDetectionBuffer.length < 3) {
+            return;
+        }
+
+        // Analyze language patterns
+        const languageAnalysis = analyzeLanguagePatterns(languageDetectionBuffer);
+
+        if (languageAnalysis.confidence > languageConfidenceThreshold &&
+            languageAnalysis.detectedLanguage !== currentLanguage) {
+
+            const previousLanguage = currentLanguage;
+            currentLanguage = languageAnalysis.detectedLanguage;
+            lastLanguageSwitch = now;
+            languageSwitchCooldown = 10000; // 10 second cooldown
+
+            // Update language selector UI
+            updateLanguageSelectorForDetection(currentLanguage);
+
+            // Show language switch notification
+            showLanguageSwitchNotification(previousLanguage, currentLanguage, languageAnalysis.confidence);
+
+            console.log('🌐 Continuous language detection - Auto-switched:', {
+                from: previousLanguage,
+                to: currentLanguage,
+                confidence: languageAnalysis.confidence,
+                samples: languageDetectionBuffer.length
+            });
+        }
+    }
+
+    /**
+     * Analyze language patterns from text samples
+     */
+    function analyzeLanguagePatterns(samples) {
+        let arabicScore = 0;
+        let englishScore = 0;
+        let totalLength = 0;
+
+        // Arabic character ranges
+        const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+
+        samples.forEach(sample => {
+            const text = sample.text;
+            const length = text.length;
+            totalLength += length;
+
+            // Count Arabic characters
+            const arabicChars = (text.match(arabicRegex) || []).length;
+            const arabicRatio = arabicChars / length;
+
+            // Language scoring
+            if (arabicRatio > 0.3) {
+                arabicScore += length * arabicRatio;
+            } else {
+                englishScore += length * (1 - arabicRatio);
+            }
+
+            // Check for language-specific words
+            const arabicWords = ['أنا', 'أنت', 'هو', 'هي', 'نحن', 'أنتم', 'هم', 'الألم', 'الصداع', 'الحمى'];
+            const englishWords = ['I', 'you', 'he', 'she', 'we', 'they', 'pain', 'headache', 'fever'];
+
+            arabicWords.forEach(word => {
+                if (text.includes(word)) arabicScore += 10;
+            });
+
+            englishWords.forEach(word => {
+                if (text.includes(word)) englishScore += 10;
+            });
+        });
+
+        const totalScore = arabicScore + englishScore;
+        const arabicConfidence = totalScore > 0 ? arabicScore / totalScore : 0;
+        const englishConfidence = totalScore > 0 ? englishScore / totalScore : 0;
+
+        return {
+            detectedLanguage: arabicConfidence > englishConfidence ? 'ar-SA' : 'en-US',
+            confidence: Math.max(arabicConfidence, englishConfidence),
+            arabicScore: arabicScore,
+            englishScore: englishScore
+        };
+    }
+
+    /**
+     * Update language selector when auto-detection occurs
+     */
+    function updateLanguageSelectorForDetection(detectedLanguage) {
+        const languageSelector = document.getElementById('languageSelector');
+        if (!languageSelector) return;
+
+        const selectorValue = detectedLanguage === 'ar-SA' ? 'ar' : 'en';
+        languageSelector.value = selectorValue;
+
+        // Add visual indicator for auto-detection
+        languageSelector.style.borderColor = '#28a745';
+        languageSelector.style.boxShadow = '0 0 0 0.2rem rgba(40, 167, 69, 0.25)';
+
+        setTimeout(() => {
+            languageSelector.style.borderColor = '';
+            languageSelector.style.boxShadow = '';
+        }, 3000);
+    }
+
+    /**
+     * Show language switch notification
+     */
+    function showLanguageSwitchNotification(fromLang, toLang, confidence) {
+        const languageNames = {
+            'ar-SA': 'العربية',
+            'en-US': 'English'
+        };
+
+        const alertContainer = document.getElementById('alertContainer');
+        if (!alertContainer) return;
+
+        const notification = `
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-language me-2"></i>
+                <strong>Language Auto-Switched:</strong> ${languageNames[fromLang] || fromLang} → ${languageNames[toLang] || toLang}
+                <small class="text-muted ms-2">(Confidence: ${Math.round(confidence * 100)}%)</small>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+
+        alertContainer.innerHTML = notification;
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            const alert = alertContainer.querySelector('.alert');
+            if (alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 5000);
+    }
+
+
     // Handle transcription with enhanced completeness checking
     function handleTranscription(text) {
         // Clean and validate the input
@@ -1502,40 +2505,31 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // NEW: Get previous text for completeness validation
-        const previousText = transcriptionArea ? transcriptionArea.value : '';
-        
-        // NEW: Validate text completeness
-        const completenessCheck = validateTextCompleteness(cleanText, previousText);
+        // FIXED: Only update transcription area if it's different and we're not in the middle of live updates
+        if (transcriptionArea && transcriptionArea.value !== cleanText) {
+            transcriptionArea.value = cleanText;
+            console.log('📝 Transcription area updated via handleTranscription, length:', cleanText.length);
+        }
+
+        // PROFESSIONAL: Update final transcription if we're in final mode
+        // Note: transcriptionMode not used in simple interface, always update final transcript
+        if (!finalTranscript || finalTranscript !== cleanText) {
+            finalTranscript = cleanText;
+            console.log('📝 Final transcript updated, length:', cleanText.length);
+        }
+
+        // Validate text completeness
+        const completenessCheck = validateTextCompleteness(cleanText, liveTranscription || '');
         if (!completenessCheck.isComplete) {
             console.log('🔍 Text completeness issue detected:', completenessCheck.missingText);
-            
+
             // Show notification but still process the text
             if (completenessCheck.missingText) {
                 showAlert(`⚠️ ${completenessCheck.missingText}`, 'warning');
             }
         }
 
-        // Avoid duplicate processing of the same text (enhanced check)
-        if (transcriptionArea && transcriptionArea.value === cleanText) {
-            return;
-        }
-
-        // Update UI
-        if (transcriptionArea) {
-            transcriptionArea.value = cleanText;
-            
-            // NEW: Add visual indicator for multi-speaker sessions
-            if (speakerTransitions.length > 1) {
-                transcriptionArea.style.borderLeft = '4px solid #ffc107';
-                transcriptionArea.style.backgroundColor = '#fff3cd';
-            } else {
-                transcriptionArea.style.borderLeft = 'none';
-                transcriptionArea.style.backgroundColor = 'transparent';
-            }
-        }
-
-        // AJAX call to handle transcription
+        // AJAX call to handle transcription (for backward compatibility)
         $.ajax({
             url: '/ai/voice-assistant/handle-transcription',
             method: 'POST',
@@ -2304,6 +3298,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         sessionId = generateUUID();
         isListening = false;
+        isStopping = false; // Reset stopping flag
         isHandsFreeMode = false;
         isHandsFreePaused = false;
         restartAttempts = 0;
@@ -2344,12 +3339,68 @@ document.addEventListener('DOMContentLoaded', function() {
         showAlert('Session reset successfully!', 'success');
     }
 
+    // SIMPLE TRANSCRIPTION DISPLAY MANAGEMENT
+    function updateTranscriptionDisplay() {
+        // Simple interface - just update the main transcription area
+        if (transcriptionArea) {
+            transcriptionArea.value = liveTranscription || '';
+        }
+    }
+
+    // Simple transcription status update
+    function updateTranscriptionStatus() {
+        // Simple interface doesn't need complex status updates
+        console.log('📝 Transcription status: ' + (isListening ? 'Recording' : 'Ready'));
+    }
+
+    // Simple transcription merging (use server results if available)
+    function mergeBestTranscriptions() {
+        if (serverTranscription && serverTranscription.trim().length > 0) {
+            // Use server transcription if available
+            if (transcriptionArea) {
+                transcriptionArea.value = serverTranscription;
+            }
+            showAlert('Using server-processed transcription', 'success');
+        } else if (liveTranscription && liveTranscription.trim().length > 0) {
+            // Fall back to live transcription
+            if (transcriptionArea) {
+                transcriptionArea.value = liveTranscription;
+            }
+            showAlert('Using live transcription', 'info');
+        } else {
+            showAlert('No transcription available', 'warning');
+        }
+    }
+
+    // Simple audit logging (just console logging)
+    function recordTranscriptionEdit(editType, oldText, newText, description) {
+        console.log('📝 Transcription edit:', {
+            type: editType,
+            description: description,
+            oldLength: oldText ? oldText.length : 0,
+            newLength: newText ? newText.length : 0,
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // Simple medical disclaimer (just console log)
+    function showMedicalDisclaimer() {
+        console.log('⚠️ Medical disclaimer: AI transcription is for reference only');
+    }
+
     // Update recording UI
     function updateRecordingUI() {
+        console.log('🔄 Updating recording UI:', {
+            isListening: isListening,
+            audioRecording: audioRecording,
+            selectedPatient: selectedPatient,
+            isProcessing: isProcessing
+        });
+
         // Update recording status display
         const recordingStatus = document.getElementById('recordingStatus');
         if (recordingStatus) {
-            if (isListening) {
+            if (isListening || audioRecording) {
                 recordingStatus.innerHTML = '<span class="badge bg-danger me-2"><i class="fas fa-circle fa-xs"></i></span><span class="text-danger fw-bold">Recording...</span>';
             } else {
                 recordingStatus.innerHTML = '<span class="badge bg-secondary me-2"><i class="fas fa-circle fa-xs"></i></span><span class="text-muted">Not Recording</span>';
@@ -2358,16 +3409,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Update button states
         if (startRecordingBtn) {
-            startRecordingBtn.disabled = !selectedPatient || isListening;
+            const hasValidPatient = selectedPatient && selectedPatient !== '' && selectedPatient !== null;
+            const shouldBeDisabled = !hasValidPatient || isListening || audioRecording;
+            startRecordingBtn.disabled = shouldBeDisabled;
+            console.log('🔘 Start button disabled:', shouldBeDisabled, {
+                selectedPatient: selectedPatient,
+                hasValidPatient: hasValidPatient,
+                isListening: isListening,
+                audioRecording: audioRecording,
+                buttonDisabled: startRecordingBtn.disabled
+            });
         }
 
         if (stopRecordingBtn) {
-            stopRecordingBtn.disabled = !isListening;
+            stopRecordingBtn.disabled = !isListening && !audioRecording;
+            console.log('🔘 Stop button disabled:', stopRecordingBtn.disabled);
         }
 
         if (generateAnalysisBtn) {
-            const transcription = transcriptionArea ? transcriptionArea.value : '';
+            // Use final transcription if available, otherwise live
+            const transcription = finalTranscript || liveTranscription || (transcriptionArea ? transcriptionArea.value : '');
             generateAnalysisBtn.disabled = empty(transcription) || isProcessing;
+            console.log('🔘 Generate button disabled:', generateAnalysisBtn.disabled, 'transcription length:', transcription.length);
         }
     }
 
@@ -2483,6 +3546,23 @@ document.addEventListener('DOMContentLoaded', function() {
             // This should return the current diagnosis ID after manual diagnosis is saved
             // For now, we'll need to track it when the diagnosis is created
             return window.currentDiagnosisId || null;
+        },
+        // Debug patient selection
+        debugPatientSelection: function() {
+            console.log('🔍 Patient Selection Debug:');
+            console.log('  selectedPatient variable:', selectedPatient);
+            console.log('  patientSelect element:', patientSelect);
+            if (patientSelect) {
+                console.log('  patientSelect.value:', patientSelect.value);
+                console.log('  patientSelect.options.length:', patientSelect.options.length);
+                console.log('  patientSelect.disabled:', patientSelect.disabled);
+            }
+            console.log('  startRecordingBtn.disabled:', startRecordingBtn ? startRecordingBtn.disabled : 'button not found');
+            return {
+                selectedPatient: selectedPatient,
+                patientSelectValue: patientSelect ? patientSelect.value : null,
+                startButtonDisabled: startRecordingBtn ? startRecordingBtn.disabled : null
+            };
         },
         detectLanguage: detectLanguage,
         // Debug functions
@@ -2632,21 +3712,185 @@ document.addEventListener('DOMContentLoaded', function() {
                     validationEnabled: true,
                     backupBuffering: !!interimBackupBuffer,
                     duplicatePrevention: true
+                },
+                audioRecording: {
+                    supported: audioRecordingSupported,
+                    hybridMode: hybridModeEnabled,
+                    blobValidation: true,
+                    emptyBlobPrevention: true,
+                    fallbackMechanisms: true
                 }
             };
+        },
+
+        // NEW: Export logs for debugging and support
+        exportLogs: function() {
+            return voiceAssistantLogger.exportLogs();
+        },
+
+        // NEW: Get recent logs for debugging
+        getRecentLogs: function(level = null, limit = 20) {
+            return voiceAssistantLogger.getLogs(level, limit);
+        },
+
+        // NEW: Clear logs
+        clearLogs: function() {
+            voiceAssistantLogger.logs = [];
+            console.log('🧹 Voice assistant logs cleared');
+        },
+
+        // NEW: Get audio recording health status
+        getAudioHealth: function() {
+            return {
+                recordingSupported: audioRecordingSupported,
+                currentlyRecording: audioRecording,
+                hasValidBlob: audioBlob && validateAudioBlob(audioBlob),
+                blobSize: audioBlob ? audioBlob.size : 0,
+                blobType: audioBlob ? audioBlob.type : null,
+                qualityMetrics: audioQualityMetrics,
+                hybridModeEnabled: hybridModeEnabled,
+                serverProcessingInProgress: serverProcessingInProgress,
+                lastRecordingError: null // Could be enhanced to track errors
+            };
+        },
+
+        // NEW: Force stop recording (emergency stop)
+        forceStopRecording: function() {
+            console.log('🚨 Force stopping all recording activities...');
+
+            // Force stop live transcription
+            isListening = false;
+            if (recognition) {
+                try {
+                    recognition.stop();
+                } catch (e) {
+                    console.log('Recognition already stopped');
+                }
+            }
+
+            // Force stop audio recording
+            audioRecording = false;
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                try {
+                    mediaRecorder.stop();
+                } catch (e) {
+                    console.log('MediaRecorder already stopped');
+                }
+            }
+
+            // Stop all media tracks
+            if (mediaRecorder && mediaRecorder.stream) {
+                mediaRecorder.stream.getTracks().forEach(track => {
+                    try {
+                        track.stop();
+                    } catch (e) {
+                        console.log('Track already stopped');
+                    }
+                });
+            }
+
+            // Clear all timeouts
+            if (restartTimeout) clearTimeout(restartTimeout);
+            if (bufferTimeout) clearTimeout(bufferTimeout);
+
+            // Stop enhanced features
+            stopSilenceDetection();
+            stopRecordingTimer();
+            stopAudioLevelMonitoring();
+
+            // Update UI
+            updateRecordingUI();
+
+            // Complete session
+            completeSession();
+
+            console.log('✅ Force stop completed');
+            isStopping = false; // Reset stopping flag
+            showAlert('Recording force stopped', 'warning');
+        },
+
+        // Force UI update (for debugging and manual fixes)
+        forceUIUpdate: function() {
+            console.log('🔄 Force updating UI...');
+            syncPatientSelection();
+            updateRecordingUI();
+            updateHandsFreeStatus();
+            console.log('✅ UI update completed');
+        },
+
+        // Debug transcription state
+        debugTranscription: function() {
+            console.log('🔍 Transcription Debug:');
+            console.log('  liveTranscription:', liveTranscription);
+            console.log('  finalTranscript:', finalTranscript);
+            console.log('  transcriptBuffer:', transcriptBuffer);
+            console.log('  interimBackupBuffer:', interimBackupBuffer);
+            console.log('  transcriptionArea.value:', transcriptionArea ? transcriptionArea.value : 'N/A');
+            console.log('  isListening:', isListening);
+            console.log('  bufferTimeout active:', !!bufferTimeout);
+            console.log('  lastTranscriptTime:', lastTranscriptTime ? new Date(lastTranscriptTime).toLocaleTimeString() : 'Never');
+            return {
+                liveTranscription: liveTranscription,
+                finalTranscript: finalTranscript,
+                transcriptBuffer: transcriptBuffer,
+                transcriptionAreaValue: transcriptionArea ? transcriptionArea.value : null,
+                isListening: isListening,
+                bufferTimeoutActive: !!bufferTimeout
+            };
+        },
+
+        // Reset transcription state (for debugging)
+        resetTranscription: function() {
+            console.log('🔄 Resetting transcription state...');
+            liveTranscription = '';
+            finalTranscript = '';
+            transcriptBuffer = '';
+            interimBackupBuffer = '';
+            if (transcriptionArea) {
+                transcriptionArea.value = '';
+            }
+            if (bufferTimeout) {
+                clearTimeout(bufferTimeout);
+                bufferTimeout = null;
+            }
+            console.log('✅ Transcription state reset');
         }
     };
     
-    // NEW: Log system improvements summary
-    console.log('🎯 Voice Assistant Improvements Applied:');
-    console.log('✅ Enhanced buffering system with backup interim results');
-    console.log('✅ Reduced language switching delay from 500ms to 200ms');
-    console.log('✅ Reduced buffer timeout from 500ms to 100ms');
-    console.log('✅ Implemented immediate processing for text completeness');
-    console.log('✅ Added speaker transition detection and multi-speaker support');
-    console.log('✅ Reduced silence timeout from 30s to 5s for better conversation flow');
-    console.log('✅ Added text completeness validation');
-    console.log('✅ Enhanced audio level monitoring with smoothing');
-    console.log('✅ Added comprehensive debugging and monitoring functions');
-    console.log('🚀 Use window.voiceAssistant.getSystemPerformance() to see all improvements');
+    // Log system improvements summary
+    voiceAssistantLogger.info('🎙️ Voice Assistant Initialized', {
+        features: [
+            'Live transcription with browser speech recognition',
+            'Server-side audio processing with OpenAI Whisper',
+            'Hybrid audio recording and processing',
+            'Medical dictionary integration',
+            'Enhanced error handling and fallback mechanisms',
+            'Simple and clean user interface'
+        ],
+        audioRecording: {
+            validationEnabled: true,
+            fallbackMechanisms: true,
+            emptyBlobPrevention: true,
+            enhancedErrorHandling: true
+        },
+        interface: {
+            simpleMode: true,
+            medicalDictionary: Object.keys(medicalDictionary).length + ' terms'
+        }
+    });
+
+    console.log('🎙️ Voice Assistant Initialized:');
+    console.log('✅ Live transcription: Active');
+    console.log('✅ Server processing: Ready');
+    console.log('🎵 Audio recording: Enhanced with validation');
+    console.log('🏥 Medical dictionary: ' + Object.keys(medicalDictionary).length + ' terms loaded');
+    console.log('📝 Simple interface: Enabled');
+    console.log('🚀 Hybrid mode: ' + (hybridModeEnabled ? 'Enabled' : 'Disabled'));
+    console.log('🔍 Use window.voiceAssistant.getAudioHealth() to check audio recording status');
+    console.log('🚨 If recording won\'t stop, use: window.voiceAssistant.forceStopRecording()');
+    console.log('📊 Debug transcription: window.voiceAssistant.debugTranscription()');
+    console.log('🔄 Reset transcription: window.voiceAssistant.resetTranscription()');
+
+    // Simple interface - no complex styles needed
+    console.log('🎨 Simple transcription interface loaded');
 });

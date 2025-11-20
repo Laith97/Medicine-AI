@@ -1322,7 +1322,7 @@ function debugMLRiskAssessment() {
     console.log('🎓 Training Data Status:', {
         adequate: {{ $adequacy['adequate'] ? 'true' : 'false' }},
         total_appointments: {{ $adequacy['total_appointments'] }},
-        using_fallback: {{ !$adequacy['adequate'] ? 'YES (Rule-based)' : 'NO (ML)' }}
+        using_fallback: '{{ !$adequacy['adequate'] ? 'YES (Rule-based)' : 'NO (ML)' }}'
     });
 
     // Show what SHOULD be calculated
@@ -1337,6 +1337,29 @@ function debugMLRiskAssessment() {
         }
     @endphp
 
+    // Feature Extraction Debug
+    @php
+        if ($appointment->patient) {
+            $extractor = app(\App\Services\FeatureExtractor::class);
+            $features = $extractor->extractFeatures($appointment->patient, $appointment);
+            $hasHighRisk = $extractor->hasHighRiskCondition($appointment->patient);
+        } else {
+            $features = [0,0,0,0,0];
+            $hasHighRisk = false;
+        }
+    @endphp
+    console.log('🔧 ML Features Extracted:', {
+        features_array: {{ json_encode($features) }},
+        breakdown: {
+            no_show_count: {{ $features[0] ?? 0 }},
+            last_visit_days: {{ $features[1] ?? 0 }},
+            age: {{ $features[2] ?? 0 }},
+            gender_encoded: {{ $features[3] ?? 0 }},
+            chronic_conditions_from_appointments: {{ $features[4] ?? 0 }}
+        },
+        has_high_risk_conditions: {{ $hasHighRisk ? 'true' : 'false' }}
+    });
+
     console.log('🎯 Expected Calculation:', {
         no_show_risk: '{{ $expectedNoShow }}%',
         hospitalization_risk: '{{ $expectedHospitalization }}%'
@@ -1344,7 +1367,7 @@ function debugMLRiskAssessment() {
 
     @if($riskScore)
         console.log('📊 Match Check:', {
-            scores_match: '{{ ($expectedNoShow === number_format($riskScore->no_show_risk * 100, 1) && $expectedHospitalization === number_format($riskScore->hospitalization_risk * 100, 1)) ? "YES" : "NO" }}'
+            scores_match: '{{ ($expectedNoShow === number_format($riskScore->no_show_risk * 100, 1) && $expectedHospitalization === number_format($riskScore->hospitalization_risk * 100, 1)) ? 'YES' : 'NO' }}'
         });
     @endif
 }

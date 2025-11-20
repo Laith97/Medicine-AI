@@ -1748,10 +1748,19 @@ class VoiceAssistantController extends Controller
             $sessionId = $request->input('session_id');
             $transcription = $request->input('transcription', '');
             $hasLiveTranscription = $request->input('has_live_transcription', false);
-    
+
+            // Validate required parameters
+            if (empty($sessionId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Session ID is required'
+                ], 400);
+            }
+
             // Initialize performance metrics
+            $doctorId = Auth::id();
             $metrics = [
-                'doctor_id' => Auth::id(),
+                'doctor_id' => $doctorId,
                 'session_id' => $sessionId,
                 'processing_type' => 'hybrid',
                 'live_transcription_success' => !empty($transcription),
@@ -1761,44 +1770,86 @@ class VoiceAssistantController extends Controller
                 'network_type' => $request->input('network_type', 'unknown'),
                 'connection_speed' => $request->input('connection_speed'),
             ];
-    
+
             \Log::info('HYBRID METHOD - Server audio processing started', [
                 'session_id' => $sessionId,
                 'transcription_length' => strlen($transcription),
                 'has_live_transcription' => $hasLiveTranscription,
-                'user_id' => Auth::id()
+                'user_id' => Auth::id(),
+                'request_has_file' => $request->hasFile('audio_file')
             ]);
-    
+
             try {
                 // Check if audio file is provided
+                $hasAudioRecording = $request->input('has_audio_recording', false);
                 if (!$request->hasFile('audio_file')) {
-                    $metrics['error_type'] = 'audio_upload';
-                    $metrics['error_message'] = 'No audio file provided';
-                    $this->recordPerformanceMetrics($metrics);
-    
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'No audio file provided for server processing'
-                    ], 400);
+                    if ($hasAudioRecording) {
+                        $metrics['error_type'] = 'audio_upload';
+                        $metrics['error_message'] = 'Client indicated audio recording exists but no file provided';
+                        $this->recordPerformanceMetrics($metrics);
+
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Audio file expected but not received'
+                        ], 400);
+                    } else {
+                        // No audio expected, skip processing
+                        $metrics['audio_processing_skipped'] = true;
+                        $metrics['reason'] = 'No audio recording expected';
+                        $this->recordPerformanceMetrics($metrics);
+
+                        return response()->json([
+                            'success' => true,
+                            'message' => 'No audio processing needed',
+                            'improved_transcription' => $transcription,
+                            'server_extracted_data' => []
+                        ]);
+                    }
                 }
-    
+
                 $audioFile = $request->file('audio_file');
-    
-                // Validate audio file
-                if (!$this->isValidAudioFile($audioFile)) {
+
+                // Enhanced audio file validation with detailed error reporting
+                $validationResult = $this->validateAudioFile($audioFile);
+                if (!$validationResult['valid']) {
+                    $errorMessage = implode('; ', $validationResult['errors']);
                     $metrics['error_type'] = 'audio_validation';
-                    $metrics['error_message'] = 'Invalid audio file format';
+                    $metrics['error_message'] = $errorMessage;
                     $this->recordPerformanceMetrics($metrics);
-    
+
+                    \Log::warning('HYBRID METHOD - Audio file validation failed', [
+                        'session_id' => $sessionId,
+                        'errors' => $validationResult['errors'],
+                        'file_size' => $audioFile ? $audioFile->getSize() : 0,
+                        'mime_type' => $audioFile ? $audioFile->getMimeType() : 'unknown',
+                        'original_name' => $audioFile ? $audioFile->getClientOriginalName() : 'unknown'
+                    ]);
+
                     return response()->json([
                         'success' => false,
-                        'message' => 'Invalid audio file format. Supported: wav, mp3, webm, mp4'
+                        'message' => 'Audio file validation failed: ' . $errorMessage,
+                        'errors' => $validationResult['errors']
                     ], 400);
                 }
+
+                $fileSize = $audioFile->getSize();
+
+                \Log::info('HYBRID METHOD - Audio file validation passed', [
+                    'session_id' => $sessionId,
+                    'file_size' => $fileSize,
+                    'mime_type' => $audioFile->getMimeType(),
+                    'original_name' => $audioFile->getClientOriginalName(),
+                    'extension' => $audioFile->getClientOriginalExtension()
+                ]);
     
                 // Record enhanced audio file metrics
-                $metrics['audio_file_size'] = $audioFile->getSize();
-                $metrics['audio_format'] = $audioFile->getClientOriginalExtension();
+                if ($audioFile && $audioFile->getSize() > 0) {
+                    $metrics['audio_file_size'] = $audioFile->getSize();
+                    $metrics['audio_format'] = $audioFile->getClientOriginalExtension();
+                } else {
+                    $metrics['audio_file_size'] = 0;
+                    $metrics['audio_format'] = 'none';
+                }
     
                 // Get additional audio quality parameters from request
                 $audioQuality = $request->input('audio_quality', []);
@@ -1809,24 +1860,90 @@ class VoiceAssistantController extends Controller
                 }
     
                 // Estimate audio duration from file size and format
-                $metrics['audio_duration'] = $this->estimateAudioDuration($audioFile);
+                $metrics['audio_duration'] = ($audioFile && $audioFile->getSize() > 0) ? $this->estimateAudioDuration($audioFile) : 0;
     
-                // Store audio file temporarily
-                $storeStartTime = microtime(true);
-                $tempPath = $this->storeAudioFile($audioFile, $sessionId);
-    
-                // Process audio with server-side speech recognition
-                $sttStartTime = microtime(true);
-                $serverTranscription = $this->processAudioWithServerSTT($tempPath);
-                $sttEndTime = microtime(true);
-    
-                $metrics['server_processing_success'] = !empty($serverTranscription);
-                $metrics['server_processing_time'] = round(($sttEndTime - $sttStartTime) * 1000, 3); // Convert to milliseconds
-                $metrics['server_transcript_length'] = strlen($serverTranscription);
-    
-                // Clean up temporary file
-                if (file_exists($tempPath)) {
-                    unlink($tempPath);
+                // Store audio file permanently and process it
+                $serverTranscription = '';
+                $permanentPath = null;
+                $audioStoredSuccessfully = false;
+
+                if ($audioFile && $fileSize > 0) {
+                    try {
+                        // Get file size before moving the file (temporary file will be deleted after move)
+                        $fileSizeBeforeMove = $audioFile->getSize();
+
+                        $storeStartTime = microtime(true);
+                        $permanentPath = $this->storeAudioFilePermanently($audioFile, $sessionId);
+                        $storeEndTime = microtime(true);
+
+                        $metrics['audio_storage_success'] = true;
+                        $metrics['audio_storage_time'] = round(($storeEndTime - $storeStartTime) * 1000, 3);
+
+                        \Log::info('HYBRID METHOD - Audio file stored successfully', [
+                            'session_id' => $sessionId,
+                            'permanent_path' => $permanentPath,
+                            'storage_time_ms' => $metrics['audio_storage_time']
+                        ]);
+
+                        $audioStoredSuccessfully = true;
+
+                        // Update the voice transcription record with audio file path immediately
+                        // Use the file size we captured before moving
+                        $this->updateVoiceTranscriptionWithAudio($sessionId, $permanentPath, $fileSizeBeforeMove, $audioFile->getClientOriginalExtension(), $metrics['audio_duration']);
+
+                    } catch (\Exception $storageException) {
+                        \Log::error('HYBRID METHOD - Audio file storage failed', [
+                            'session_id' => $sessionId,
+                            'error' => $storageException->getMessage(),
+                            'file_size' => $fileSize
+                        ]);
+
+                        $metrics['audio_storage_success'] = false;
+                        $metrics['audio_storage_error'] = $storageException->getMessage();
+
+                        // Continue with processing even if storage fails - we can still process the audio
+                        $permanentPath = null;
+                    }
+
+                    // Process audio with server-side speech recognition if we have a stored file
+                    if ($permanentPath && file_exists(storage_path('app/public/' . $permanentPath))) {
+                        try {
+                            $sttStartTime = microtime(true);
+                            $serverTranscription = $this->processAudioWithServerSTT(storage_path('app/public/' . $permanentPath));
+                            $sttEndTime = microtime(true);
+
+                            $metrics['server_processing_success'] = !empty($serverTranscription);
+                            $metrics['server_processing_time'] = round(($sttEndTime - $sttStartTime) * 1000, 3);
+                            $metrics['server_transcript_length'] = strlen($serverTranscription);
+
+                            \Log::info('HYBRID METHOD - Server STT completed', [
+                                'session_id' => $sessionId,
+                                'transcription_length' => strlen($serverTranscription),
+                                'processing_time_ms' => $metrics['server_processing_time']
+                            ]);
+
+                        } catch (\Exception $sttException) {
+                            \Log::error('HYBRID METHOD - Server STT failed', [
+                                'session_id' => $sessionId,
+                                'error' => $sttException->getMessage(),
+                                'permanent_path' => $permanentPath
+                            ]);
+
+                            $metrics['server_processing_success'] = false;
+                            $metrics['server_processing_error'] = $sttException->getMessage();
+                            $serverTranscription = ''; // Ensure empty string for fallback
+                        }
+                    } else {
+                        $metrics['server_processing_success'] = false;
+                        $metrics['server_processing_time'] = 0;
+                        $metrics['server_transcript_length'] = 0;
+                        $metrics['reason'] = 'Audio file not available for server processing';
+                    }
+                } else {
+                    $metrics['server_processing_success'] = false;
+                    $metrics['server_processing_time'] = 0;
+                    $metrics['server_transcript_length'] = 0;
+                    $metrics['reason'] = 'No audio file to process';
                 }
     
                 // Compare results and return the better one
@@ -1862,29 +1979,44 @@ class VoiceAssistantController extends Controller
                 $endTime = microtime(true);
                 $metrics['overall_success'] = $metrics['live_transcription_success'] || $metrics['server_processing_success'];
                 $metrics['total_processing_time'] = round(($endTime - $startTime) * 1000, 3);
-    
+
+                // Determine processing status and messages
+                $processingStatus = $this->determineProcessingStatus($metrics, $transcription, $serverTranscription, $improvedTranscription);
+                $successMessage = $this->generateSuccessMessage($processingStatus, $metrics);
+
                 // Record the performance metrics
                 $this->recordPerformanceMetrics($metrics);
-    
+
                 \Log::info('HYBRID METHOD - Server processing completed', [
                     'session_id' => $sessionId,
                     'live_length' => strlen($transcription),
                     'server_length' => strlen($serverTranscription),
                     'improved_length' => strlen($improvedTranscription),
                     'data_extracted' => !empty($serverExtractedData),
-                    'processing_time_ms' => $metrics['total_processing_time']
+                    'processing_time_ms' => $metrics['total_processing_time'],
+                    'status' => $processingStatus
                 ]);
-    
+
+                // Prepare speaker data for response (enhanced with AI-based speaker detection)
+                $speakerData = $this->extractSpeakerDataFromTranscription($improvedTranscription);
+
                 return response()->json([
                     'success' => true,
-                    'message' => 'Server-side processing completed',
+                    'message' => $successMessage,
                     'improved_transcription' => $improvedTranscription,
                     'server_extracted_data' => $serverExtractedData,
-                    'processing_method' => strlen($serverTranscription) > strlen($transcription) ? 'server' : 'live',
+                    'speakers' => $speakerData['speakers'],
+                    'medical_terms' => $speakerData['medical_terms'],
+                    'processing_method' => $processingStatus['method'],
+                    'processing_status' => $processingStatus,
                     'improvement_ratio' => $metrics['transcript_improvement_ratio'] ?? 1,
                     'performance_metrics' => [
                         'processing_time_ms' => $metrics['total_processing_time'],
-                        'server_improved' => $metrics['server_better_than_live'] ?? false
+                        'server_improved' => $metrics['server_better_than_live'] ?? false,
+                        'audio_stored' => $audioStoredSuccessfully,
+                        'extraction_success' => !empty($serverExtractedData),
+                        'speakers_detected' => count($speakerData['speakers']),
+                        'medical_terms_found' => count($speakerData['medical_terms'])
                     ]
                 ]);
     
@@ -1894,56 +2026,137 @@ class VoiceAssistantController extends Controller
                 $metrics['total_processing_time'] = round(($endTime - $startTime) * 1000, 3);
                 $metrics['error_type'] = 'server_processing';
                 $metrics['error_message'] = $e->getMessage();
-    
+
                 $this->recordPerformanceMetrics($metrics);
-    
+
                 \Log::error('HYBRID METHOD - Server processing failed', [
                     'error' => $e->getMessage(),
                     'session_id' => $request->input('session_id'),
                     'user_id' => Auth::id(),
-                    'processing_time_ms' => $metrics['total_processing_time']
+                    'processing_time_ms' => $metrics['total_processing_time'],
+                    'trace' => $e->getTraceAsString()
                 ]);
-    
+
+                // Provide fallback response with live transcription if available
+                $fallbackTranscription = $transcription ?: '';
+                $fallbackMessage = 'Server processing encountered an error. ';
+
+                if (!empty($fallbackTranscription)) {
+                    $fallbackMessage .= 'Using live transcription as fallback.';
+                } else {
+                    $fallbackMessage .= 'No transcription available. Please try recording again.';
+                }
+
+                // Try to extract basic medical data from live transcription as fallback
+                $fallbackExtractedData = [];
+                if (!empty($fallbackTranscription) && strlen($fallbackTranscription) > 5) {
+                    try {
+                        $fallbackExtractedData = $this->extractMedicalDataFromText($fallbackTranscription);
+                        if (!empty($fallbackExtractedData)) {
+                            $fallbackMessage .= ' Basic medical data extracted from live transcription.';
+                        }
+                    } catch (\Exception $fallbackException) {
+                        \Log::warning('HYBRID METHOD - Fallback extraction also failed', [
+                            'session_id' => $request->input('session_id'),
+                            'error' => $fallbackException->getMessage()
+                        ]);
+                    }
+                }
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Server processing failed: ' . $e->getMessage(),
-                    'improved_transcription' => $transcription, // Fallback to live transcription
-                    'server_extracted_data' => []
-                ]);
+                    'message' => $fallbackMessage,
+                    'error_details' => $e->getMessage(),
+                    'improved_transcription' => $fallbackTranscription,
+                    'server_extracted_data' => $fallbackExtractedData,
+                    'fallback_used' => true,
+                    'processing_method' => 'fallback'
+                ], 500);
             }
         }
     
         /**
-         * Validate audio file format and size
+         * Validate audio file format and size with detailed error reporting
+         */
+        private function validateAudioFile($file)
+        {
+            $errors = [];
+
+            if (!$file->isValid()) {
+                $errors[] = 'File upload failed or file is corrupted';
+                return ['valid' => false, 'errors' => $errors];
+            }
+
+            $fileSize = $file->getSize();
+
+            // Check for empty file
+            if ($fileSize === 0) {
+                $errors[] = 'Audio file is empty';
+                return ['valid' => false, 'errors' => $errors];
+            }
+
+            // More reasonable minimum size for audio files (44 bytes for WAV header minimum)
+            if ($fileSize < 44) {
+                $errors[] = 'Audio file is too small to be valid (minimum 44 bytes)';
+                return ['valid' => false, 'errors' => $errors];
+            }
+
+            // Maximum size: 100MB for longer recordings
+            $maxSize = 100 * 1024 * 1024; // 100MB
+            if ($fileSize > $maxSize) {
+                $errors[] = 'Audio file is too large (maximum 100MB allowed)';
+                return ['valid' => false, 'errors' => $errors];
+            }
+
+            $mimeType = $file->getMimeType();
+            $extension = strtolower($file->getClientOriginalExtension());
+
+            // Expanded list of supported audio formats
+            $allowedMimeTypes = [
+                // Common audio formats
+                'audio/wav', 'audio/x-wav',
+                'audio/mp3', 'audio/mpeg', 'audio/mpeg3',
+                'audio/webm', 'audio/webm;codecs=opus',
+                'audio/mp4', 'audio/x-m4a',
+                'audio/ogg', 'audio/oga',
+                'audio/flac',
+                'audio/aac',
+                // Video formats that may contain audio
+                'video/webm', 'video/mp4',
+                // Additional formats
+                'application/octet-stream' // For files that might not have proper MIME detection
+            ];
+
+            $allowedExtensions = ['wav', 'mp3', 'webm', 'mp4', 'm4a', 'ogg', 'oga', 'flac', 'aac'];
+
+            $mimeTypeValid = in_array($mimeType, $allowedMimeTypes);
+            $extensionValid = in_array($extension, $allowedExtensions);
+
+            if (!$mimeTypeValid && !$extensionValid) {
+                $errors[] = "Unsupported audio format. MIME type: {$mimeType}, Extension: {$extension}. Supported formats: " . implode(', ', $allowedExtensions);
+                return ['valid' => false, 'errors' => $errors];
+            }
+
+            // Log warning for MIME/extension mismatch but allow if either is valid
+            if (!$mimeTypeValid || !$extensionValid) {
+                \Log::warning('Audio file validation warning: MIME/extension mismatch', [
+                    'mime_type' => $mimeType,
+                    'extension' => $extension,
+                    'mime_valid' => $mimeTypeValid,
+                    'extension_valid' => $extensionValid
+                ]);
+            }
+
+            return ['valid' => true, 'errors' => []];
+        }
+
+        /**
+         * Legacy method for backward compatibility
          */
         private function isValidAudioFile($file)
         {
-            if (!$file->isValid()) {
-                return false;
-            }
-    
-            $maxSize = 50 * 1024 * 1024; // 50MB
-            if ($file->getSize() > $maxSize) {
-                return false;
-            }
-    
-            $allowedMimeTypes = [
-                'audio/wav',
-                'audio/mp3',
-                'audio/mpeg',
-                'audio/webm',
-                'audio/mp4',
-                'video/webm',
-                'video/mp4'
-            ];
-    
-            $allowedExtensions = ['wav', 'mp3', 'webm', 'mp4'];
-            
-            $mimeType = $file->getMimeType();
-            $extension = $file->getClientOriginalExtension();
-    
-            return in_array($mimeType, $allowedMimeTypes) &&
-                   in_array(strtolower($extension), $allowedExtensions);
+            $result = $this->validateAudioFile($file);
+            return $result['valid'];
         }
     
         /**
@@ -1955,17 +2168,93 @@ class VoiceAssistantController extends Controller
             if (!is_dir($tempDir)) {
                 mkdir($tempDir, 0755, true);
             }
-    
+
             $filename = "session_{$sessionId}_" . time() . '.' . $file->getClientOriginalExtension();
             $tempPath = $tempDir . '/' . $filename;
-            
+
             $file->move($tempDir, $filename);
-            
+
             return $tempPath;
+        }
+
+        /**
+         * Store audio file permanently for long-term access
+         */
+        private function storeAudioFilePermanently($file, $sessionId)
+        {
+            $permanentDir = storage_path('app/public/audio/voice_transcriptions');
+            if (!is_dir($permanentDir)) {
+                mkdir($permanentDir, 0755, true);
+            }
+
+            $filename = "session_{$sessionId}_" . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $permanentPath = $permanentDir . '/' . $filename;
+
+            $file->move($permanentDir, $filename);
+
+            // Verify file was moved successfully
+            if (!file_exists($permanentPath)) {
+                throw new \Exception('Failed to move audio file to permanent storage');
+            }
+
+            // Return the public path for database storage
+            return 'audio/voice_transcriptions/' . $filename;
+        }
+
+        /**
+         * Update voice transcription record with audio file information
+         */
+        private function updateVoiceTranscriptionWithAudio($sessionId, $audioPath, $fileSize, $fileExtension, $estimatedDuration)
+        {
+            try {
+                $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)->first();
+    
+                if (!$transcriptionRecord) {
+                    \Log::warning('HYBRID METHOD - Voice transcription record not found for audio update', [
+                        'session_id' => $sessionId
+                    ]);
+                    return false;
+                }
+    
+                $updateData = [
+                    'audio_file' => $audioPath,
+                    'audio_file_size' => $fileSize,
+                    'audio_format' => $fileExtension,
+                    'audio_duration' => $estimatedDuration,
+                    'updated_at' => now()
+                ];
+    
+                $updated = $transcriptionRecord->update($updateData);
+    
+                if ($updated) {
+                    \Log::info('HYBRID METHOD - Voice transcription record updated with audio info', [
+                        'session_id' => $sessionId,
+                        'record_id' => $transcriptionRecord->id,
+                        'audio_path' => $audioPath,
+                        'file_size' => $fileSize,
+                        'file_extension' => $fileExtension
+                    ]);
+                } else {
+                    \Log::warning('HYBRID METHOD - Failed to update voice transcription record', [
+                        'session_id' => $sessionId,
+                        'record_id' => $transcriptionRecord->id
+                    ]);
+                }
+    
+                return $updated;
+    
+            } catch (\Exception $e) {
+                \Log::error('HYBRID METHOD - Error updating voice transcription with audio', [
+                    'session_id' => $sessionId,
+                    'error' => $e->getMessage(),
+                    'audio_path' => $audioPath
+                ]);
+                return false;
+            }
         }
     
         /**
-         * Process audio with server-side speech-to-text (OpenAI Whisper)
+         * Process audio with advanced medical speech recognition (Google Cloud Speech-to-Text Healthcare)
          */
         private function processAudioWithServerSTT($audioPath)
         {
@@ -1975,29 +2264,396 @@ class VoiceAssistantController extends Controller
                     throw new \Exception('Audio file not found');
                 }
     
-                // Use OpenAI Whisper API for server-side transcription
-                $response = OpenAI::audio()->transcribe('whisper-1', fopen($audioPath, 'r'), [
-                    'response_format' => 'text',
-                    'language' => 'auto' // Auto-detect language
+                // Get file info for processing
+                $fileInfo = pathinfo($audioPath);
+                $fileSize = filesize($audioPath);
+    
+                \Log::info('HYBRID METHOD - Starting advanced medical speech recognition', [
+                    'audio_path' => $audioPath,
+                    'file_size' => $fileSize,
+                    'extension' => $fileInfo['extension']
                 ]);
     
-                $transcription = is_string($response) ? $response : '';
-                
-                \Log::info('HYBRID METHOD - OpenAI Whisper transcription completed', [
-                    'transcription_length' => strlen($transcription),
-                    'preview' => substr($transcription, 0, 100)
-                ]);
+                // Try Google Cloud Speech-to-Text Healthcare API first (preferred for medical)
+                $result = $this->processWithGoogleHealthcareSTT($audioPath);
+    
+                if ($result['success']) {
+                    \Log::info('HYBRID METHOD - Google Healthcare STT successful', [
+                        'transcription_length' => strlen($result['transcription']),
+                        'speakers_detected' => count($result['speakers'] ?? []),
+                        'medical_terms_found' => count($result['medical_terms'] ?? [])
+                    ]);
+    
+                    return $result['transcription'];
+                }
+    
+                // Fallback to OpenAI Whisper if Google fails
+                \Log::warning('HYBRID METHOD - Google Healthcare STT failed, falling back to OpenAI Whisper');
+                $transcription = $this->processWithOpenAIWhisper($audioPath);
     
                 return trim($transcription);
     
             } catch (\Exception $e) {
-                \Log::error('HYBRID METHOD - OpenAI Whisper error', [
+                \Log::error('HYBRID METHOD - Advanced STT processing failed', [
                     'error' => $e->getMessage(),
                     'audio_path' => $audioPath
                 ]);
-                
+    
+                // Final fallback to basic OpenAI Whisper
+                return $this->processWithOpenAIWhisper($audioPath);
+            }
+        }
+    
+        /**
+         * Process audio with Google Cloud Speech-to-Text Healthcare API
+         */
+        private function processWithGoogleHealthcareSTT($audioPath)
+        {
+            try {
+                // Check if Google Cloud SDK is available
+                if (!class_exists('\Google\Cloud\Speech\V1\SpeechClient')) {
+                    throw new \Exception('Google Cloud Speech SDK not installed');
+                }
+    
+                // Check if Google Cloud credentials are available
+                $credentialsPath = env('GOOGLE_CLOUD_CREDENTIALS');
+                if (!$credentialsPath || !file_exists($credentialsPath)) {
+                    throw new \Exception('Google Cloud credentials not configured');
+                }
+    
+                // Initialize Google Cloud client
+                $client = new \Google\Cloud\Speech\V1\SpeechClient([
+                    'credentials' => $credentialsPath
+                ]);
+    
+                // Read audio file
+                $audioContent = file_get_contents($audioPath);
+                if (!$audioContent) {
+                    throw new \Exception('Could not read audio file');
+                }
+    
+                // Configure recognition with healthcare features
+                $config = new \Google\Cloud\Speech\V1\RecognitionConfig([
+                    'encoding' => \Google\Cloud\Speech\V1\AudioEncoding::LINEAR16,
+                    'sample_rate_hertz' => 16000,
+                    'language_code' => 'ar-SA', // Primary Arabic, will auto-detect
+                    'alternative_language_codes' => ['en-US'],
+                    'enable_automatic_punctuation' => true,
+                    'enable_word_time_offsets' => true,
+                    'enable_speaker_diarization' => true,
+                    'diarization_speaker_count' => 2, // Doctor and patient
+                    'min_speaker_count' => 1,
+                    'max_speaker_count' => 3,
+                    'model' => 'medical_dictation', // Healthcare model
+                    'use_enhanced' => true,
+                    // Healthcare-specific features
+                    'adaptation' => new \Google\Cloud\Speech\V1\SpeechAdaptation([
+                        'phrase_sets' => [
+                            new \Google\Cloud\Speech\V1\PhraseSet([
+                                'phrases' => $this->getMedicalPhraseSet()
+                            ])
+                        ]
+                    ])
+                ]);
+    
+                $audio = new \Google\Cloud\Speech\V1\RecognitionAudio([
+                    'content' => $audioContent
+                ]);
+    
+                // Perform recognition
+                $response = $client->recognize($config, $audio);
+    
+                // Process results with speaker diarization
+                $transcription = '';
+                $speakers = [];
+                $medicalTerms = [];
+    
+                foreach ($response->getResults() as $result) {
+                    $alternative = $result->getAlternatives()[0];
+                    $transcript = $alternative->getTranscript();
+    
+                    // Extract speaker information
+                    $words = $alternative->getWords();
+                    $currentSpeaker = null;
+                    $speakerText = [];
+    
+                    foreach ($words as $word) {
+                        $speakerTag = $word->getSpeakerTag();
+    
+                        if ($currentSpeaker !== $speakerTag) {
+                            if ($currentSpeaker !== null && !empty($speakerText)) {
+                                $speakers[] = [
+                                    'speaker' => $currentSpeaker,
+                                    'text' => implode(' ', $speakerText),
+                                    'start_time' => $word->getStartTime()->getSeconds(),
+                                    'end_time' => $word->getEndTime()->getSeconds()
+                                ];
+                            }
+                            $currentSpeaker = $speakerTag;
+                            $speakerText = [];
+                        }
+    
+                        $wordText = $word->getWord();
+                        $speakerText[] = $wordText;
+    
+                        // Check for medical terms
+                        if ($this->isMedicalTerm($wordText)) {
+                            $medicalTerms[] = $wordText;
+                        }
+                    }
+    
+                    // Add final speaker segment
+                    if ($currentSpeaker !== null && !empty($speakerText)) {
+                        $speakers[] = [
+                            'speaker' => $currentSpeaker,
+                            'text' => implode(' ', $speakerText)
+                        ];
+                    }
+    
+                    $transcription .= $transcript . ' ';
+                }
+    
+                $client->close();
+    
+                return [
+                    'success' => true,
+                    'transcription' => trim($transcription),
+                    'speakers' => $speakers,
+                    'medical_terms' => array_unique($medicalTerms),
+                    'method' => 'google_healthcare'
+                ];
+    
+            } catch (\Exception $e) {
+                Log::error('Google Healthcare STT failed', [
+                    'error' => $e->getMessage(),
+                    'audio_path' => $audioPath
+                ]);
+    
+                return [
+                    'success' => false,
+                    'error' => $e->getMessage()
+                ];
+            }
+        }
+    
+        /**
+         * Fallback to OpenAI Whisper
+         */
+        private function processWithOpenAIWhisper($audioPath)
+        {
+            try {
+                $transcribeParams = [
+                    'model' => 'whisper-1',
+                    'file' => fopen($audioPath, 'r'),
+                    'response_format' => 'text',
+                    'language' => 'auto'
+                ];
+    
+                $response = OpenAI::audio()->transcribe($transcribeParams);
+                $transcription = is_string($response) ? $response : '';
+    
+                return trim($transcription);
+    
+            } catch (\Exception $e) {
+                \Log::error('OpenAI Whisper fallback failed', [
+                    'error' => $e->getMessage()
+                ]);
                 return '';
             }
+        }
+    
+        /**
+         * Get medical phrase set for Google Speech adaptation
+         */
+        private function getMedicalPhraseSet()
+        {
+            return [
+                // Arabic medical terms
+                'ألم', 'صداع', 'حمى', 'سعال', 'غثيان', 'قيء', 'إسهال', 'إمساك',
+                'ضغط دم', 'سكري', 'ضغط', 'قلب', 'رئة', 'كبد', 'كلى', 'معدة',
+                'دواء', 'حقنة', 'جراحة', 'تشخيص', 'علاج', 'فحص', 'تحاليل', 'أشعة',
+                'طبيب', 'مريض', 'مستشفى', 'عيادة', 'صيدلية', 'تمريض',
+    
+                // English medical terms
+                'pain', 'headache', 'fever', 'cough', 'nausea', 'vomiting', 'diarrhea', 'constipation',
+                'blood pressure', 'diabetes', 'hypertension', 'heart', 'lung', 'liver', 'kidney', 'stomach',
+                'medicine', 'injection', 'surgery', 'diagnosis', 'treatment', 'examination', 'tests', 'x-ray',
+                'doctor', 'patient', 'hospital', 'clinic', 'pharmacy', 'nursing',
+    
+                // Medical procedures and conditions
+                'electrocardiogram', 'echocardiogram', 'endoscopy', 'colonoscopy', 'biopsy',
+                'myocardial infarction', 'cerebrovascular accident', 'chronic obstructive pulmonary disease',
+                'gastroesophageal reflux disease', 'hypertensive emergency',
+    
+                // Vital signs
+                'temperature', 'pulse', 'respiration', 'blood pressure', 'oxygen saturation',
+                'heart rate', 'respiratory rate', 'body mass index'
+            ];
+        }
+    
+        /**
+         * Check if a word is a medical term
+         */
+        private function isMedicalTerm($word)
+        {
+            $medicalTerms = [
+                'pain', 'headache', 'fever', 'cough', 'nausea', 'vomiting', 'diarrhea', 'constipation',
+                'hypertension', 'diabetes', 'myocardial', 'infarction', 'stroke', 'copd', 'gerd',
+                'electrocardiogram', 'echocardiogram', 'endoscopy', 'colonoscopy', 'biopsy',
+                'ألم', 'صداع', 'حمى', 'سعال', 'غثيان', 'قيء', 'إسهال', 'إمساك',
+                'ضغط', 'سكري', 'قلب', 'رئة', 'كبد', 'كلى', 'معدة'
+            ];
+    
+            $lowerWord = strtolower(trim($word));
+            return in_array($lowerWord, $medicalTerms);
+        }
+    
+        /**
+         * Extract speaker data from transcription using AI analysis
+         */
+        private function extractSpeakerDataFromTranscription($transcription)
+        {
+            try {
+                // Use AI to analyze transcription and separate speakers
+                $response = OpenAI::chat()->create([
+                    'model' => 'gpt-4o',
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'You are a medical transcription specialist. Analyze this doctor-patient conversation and separate the speakers. Return ONLY valid JSON with speaker segments.
+    
+                            Rules:
+                            - Speaker 1 is typically the DOCTOR (asks questions, gives medical advice, uses medical terminology)
+                            - Speaker 2 is typically the PATIENT (describes symptoms, answers questions, expresses concerns)
+                            - Identify medical terms used
+                            - Estimate timing for each speaker segment
+                            - Return JSON: {"speakers": [{"speaker": 1, "text": "...", "start_time": 0, "role": "doctor/patient"}], "medical_terms": ["term1", "term2"]}'
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => "Analyze this medical conversation and separate speakers:\n\n" . $transcription
+                        ]
+                    ],
+                    'temperature' => 0.1,
+                    'max_tokens' => 1000
+                ]);
+    
+                $aiResponse = $response['choices'][0]['message']['content'] ?? '';
+                $speakerData = json_decode($aiResponse, true);
+    
+                if ($speakerData && isset($speakerData['speakers'])) {
+                    return [
+                        'speakers' => $speakerData['speakers'],
+                        'medical_terms' => $speakerData['medical_terms'] ?? []
+                    ];
+                }
+    
+            } catch (\Exception $e) {
+                Log::error('Speaker extraction failed', ['error' => $e->getMessage()]);
+            }
+    
+            // Fallback: basic speaker separation based on content patterns
+            return $this->fallbackSpeakerSeparation($transcription);
+        }
+    
+        /**
+         * Fallback speaker separation based on content analysis
+         */
+        private function fallbackSpeakerSeparation($transcription)
+        {
+            $sentences = preg_split('/[.!?]+/', $transcription);
+            $speakers = [];
+            $medicalTerms = [];
+    
+            $currentSpeaker = 1; // Start with doctor
+            $speakerText = [];
+            $startTime = 0;
+    
+            foreach ($sentences as $index => $sentence) {
+                $sentence = trim($sentence);
+                if (empty($sentence)) continue;
+    
+                // Simple heuristic: questions and medical terms suggest doctor
+                $hasQuestion = strpos($sentence, '?') !== false;
+                $hasMedicalTerms = $this->containsMedicalTerms($sentence);
+    
+                if ($hasQuestion || $hasMedicalTerms) {
+                    // Likely doctor speaking
+                    if ($currentSpeaker === 2 && !empty($speakerText)) {
+                        // Save previous speaker segment
+                        $speakers[] = [
+                            'speaker' => 2,
+                            'text' => implode('. ', $speakerText),
+                            'start_time' => $startTime,
+                            'role' => 'patient'
+                        ];
+                        $speakerText = [];
+                        $startTime = $index * 5; // Rough estimate
+                    }
+                    $currentSpeaker = 1;
+                } else {
+                    // Likely patient speaking
+                    if ($currentSpeaker === 1 && !empty($speakerText)) {
+                        // Save previous speaker segment
+                        $speakers[] = [
+                            'speaker' => 1,
+                            'text' => implode('. ', $speakerText),
+                            'start_time' => $startTime,
+                            'role' => 'doctor'
+                        ];
+                        $speakerText = [];
+                        $startTime = $index * 5; // Rough estimate
+                    }
+                    $currentSpeaker = 2;
+                }
+    
+                $speakerText[] = $sentence;
+    
+                // Extract medical terms
+                $words = explode(' ', $sentence);
+                foreach ($words as $word) {
+                    if ($this->isMedicalTerm($word)) {
+                        $medicalTerms[] = $word;
+                    }
+                }
+            }
+    
+            // Add final speaker segment
+            if (!empty($speakerText)) {
+                $speakers[] = [
+                    'speaker' => $currentSpeaker,
+                    'text' => implode('. ', $speakerText),
+                    'start_time' => $startTime,
+                    'role' => $currentSpeaker === 1 ? 'doctor' : 'patient'
+                ];
+            }
+    
+            return [
+                'speakers' => $speakers,
+                'medical_terms' => array_unique($medicalTerms)
+            ];
+        }
+    
+        /**
+         * Check if text contains medical terms
+         */
+        private function containsMedicalTerms($text)
+        {
+            $medicalKeywords = [
+                'pain', 'headache', 'fever', 'cough', 'nausea', 'vomiting', 'diarrhea',
+                'blood pressure', 'diabetes', 'hypertension', 'heart', 'lung', 'liver',
+                'kidney', 'stomach', 'medicine', 'treatment', 'diagnosis', 'symptoms',
+                'ألم', 'صداع', 'حمى', 'سعال', 'غثيان', 'ضغط', 'سكري', 'قلب', 'دواء'
+            ];
+    
+            $lowerText = strtolower($text);
+            foreach ($medicalKeywords as $keyword) {
+                if (strpos($lowerText, $keyword) !== false) {
+                    return true;
+                }
+            }
+    
+            return false;
         }
     
         /**
@@ -2076,6 +2732,10 @@ class VoiceAssistantController extends Controller
         private function recordPerformanceMetrics(array $metrics): void
         {
             try {
+                // Ensure doctor_id is in metrics
+                if (!isset($metrics['doctor_id'])) {
+                    $metrics['doctor_id'] = Auth::id();
+                }
                 VoiceAssistantPerformanceMetric::recordMetric($metrics);
             } catch (\Exception $e) {
                 \Log::error('Failed to record performance metrics', [
@@ -2108,7 +2768,7 @@ class VoiceAssistantController extends Controller
         {
             $fileSize = $file->getSize();
             $extension = strtolower($file->getClientOriginalExtension());
-    
+
             // Rough estimation based on common audio formats and bitrates
             // These are approximations for typical medical consultation recordings
             $estimates = [
@@ -2117,13 +2777,87 @@ class VoiceAssistantController extends Controller
                 'webm' => 64000 / 8,  // ~64 kbps WebM/Opus
                 'mp4' => 128000 / 8,  // 128 kbps AAC
             ];
-    
+
             $bytesPerSecond = $estimates[$extension] ?? 100000; // Fallback estimate
-    
+
             if ($bytesPerSecond > 0) {
                 return round($fileSize / $bytesPerSecond, 2);
             }
-    
+
             return null;
+        }
+
+        /**
+         * Determine the processing status based on results
+         */
+        private function determineProcessingStatus($metrics, $liveTranscription, $serverTranscription, $improvedTranscription)
+        {
+            $status = [
+                'method' => 'live', // default
+                'server_processed' => $metrics['server_processing_success'] ?? false,
+                'audio_stored' => $metrics['audio_storage_success'] ?? false,
+                'extraction_success' => !empty($metrics['medical_extraction_success'] ?? false),
+                'improvement_detected' => false,
+                'fallback_used' => false
+            ];
+    
+            // Determine which method was used based on what was attempted, not just what succeeded
+            $serverAttempted = isset($metrics['server_processing_success']); // Server processing was attempted if this key exists
+    
+            if ($serverAttempted) {
+                $status['method'] = 'server';
+                // Check if server transcription was better than live
+                if (!empty($serverTranscription) && strlen($serverTranscription) > strlen($liveTranscription) * 1.1) {
+                    $status['improvement_detected'] = true;
+                }
+            } elseif (!empty($liveTranscription)) {
+                $status['method'] = 'live';
+            } else {
+                $status['method'] = 'none';
+                $status['fallback_used'] = true;
+            }
+    
+            // Check if fallback was used (when both server and live failed but we have improved transcription)
+            if (empty($liveTranscription) && empty($serverTranscription) && !empty($improvedTranscription)) {
+                $status['fallback_used'] = true;
+            }
+    
+            return $status;
+        }
+
+        /**
+         * Generate appropriate success message based on processing status
+         */
+        private function generateSuccessMessage($processingStatus, $metrics)
+        {
+            $messages = [];
+
+            if ($processingStatus['audio_stored']) {
+                $messages[] = 'Audio file stored successfully';
+            }
+
+            if ($processingStatus['server_processed']) {
+                if ($processingStatus['improvement_detected']) {
+                    $messages[] = 'Server processing improved transcription quality';
+                } else {
+                    $messages[] = 'Server processing completed';
+                }
+            } elseif ($processingStatus['method'] === 'live') {
+                $messages[] = 'Using live transcription';
+            }
+
+            if ($processingStatus['extraction_success']) {
+                $messages[] = 'Medical data extracted successfully';
+            }
+
+            if ($processingStatus['fallback_used']) {
+                $messages[] = 'Fallback methods used due to processing limitations';
+            }
+
+            if (empty($messages)) {
+                return 'Audio processing completed with basic transcription';
+            }
+
+            return implode('. ', $messages) . '.';
         }
     }
