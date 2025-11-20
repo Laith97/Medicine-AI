@@ -150,9 +150,12 @@ class VoiceAssistantPerformanceMetric extends Model
      */
     public static function recordMetric(array $data): self
     {
-        return self::create(array_merge($data, [
-            'doctor_id' => auth()->id(),
-        ]));
+        // Ensure doctor_id is provided in the data array
+        if (!isset($data['doctor_id'])) {
+            $data['doctor_id'] = auth()->id();
+        }
+
+        return self::create($data);
     }
 
     /**

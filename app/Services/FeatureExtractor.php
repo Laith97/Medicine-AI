@@ -118,36 +118,44 @@ class FeatureExtractor
     }
 
     /**
-     * Get count of chronic conditions
+     * Get count of chronic conditions from appointment history
+     * Since this system doesn't have separate patient medical history,
+     * we look at past appointment reasons and symptoms for chronic conditions
      *
      * @param User $patient
      * @return int
      */
     private function getChronicConditionCount(User $patient): int
     {
-        return $patient->patientDiagnoses()
-            ->where(function($query) {
-                foreach ($this->getHighRiskConditions() as $condition) {
-                    $query->orWhereRaw('LOWER(diagnosis_text) LIKE ?', ['%' . strtolower($condition) . '%']);
+        // Get all past appointment reasons and symptoms
+        $pastAppointments = Appointment::where('patient_id', $patient->id)
+            ->where('status', 'completed')
+            ->whereNotNull('reason')
+            ->get(['reason', 'symptoms']);
+
+        $chronicConditionsFound = [];
+
+        foreach ($pastAppointments as $appointment) {
+            $textToCheck = strtolower($appointment->reason . ' ' . ($appointment->symptoms ?? ''));
+
+            foreach ($this->getHighRiskConditions() as $condition) {
+                if (strpos($textToCheck, strtolower($condition)) !== false) {
+                    $chronicConditionsFound[$condition] = true;
                 }
-            })
-            ->count();
+            }
+        }
+
+        return count($chronicConditionsFound);
     }
 
     /**
-     * Check if patient has high-risk conditions
+     * Check if patient has high-risk conditions from appointment history
      *
      * @param User $patient
      * @return bool
      */
     public function hasHighRiskCondition(User $patient): bool
     {
-        return $patient->patientDiagnoses()
-            ->where(function($query) {
-                foreach ($this->getHighRiskConditions() as $condition) {
-                    $query->orWhereRaw('LOWER(diagnosis_text) LIKE ?', ['%' . strtolower($condition) . '%']);
-                }
-            })
-            ->exists();
+        return $this->getChronicConditionCount($patient) > 0;
     }
 }
