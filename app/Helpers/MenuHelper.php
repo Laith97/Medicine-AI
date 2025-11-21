@@ -95,7 +95,7 @@ class MenuHelper
                         'restricted' => true,
                     ],
                     [
-                        'name' => 'Recorded Voices',
+                        'name' => 'Session Recordings',
                         'route' => 'ai.voice-assistant.recorded-voices',
                         'icon' => 'fas fa-history',
                         'permission' => 'voice_assistant',
@@ -314,7 +314,7 @@ class MenuHelper
                         'icon' => 'fas fa-microphone',
                     ],
                     [
-                        'name' => 'Recorded Voices',
+                        'name' => 'Session Recordings',
                         'route' => 'ai.voice-assistant.recorded-voices',
                         'icon' => 'fas fa-history',
                     ],

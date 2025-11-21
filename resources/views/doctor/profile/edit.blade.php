@@ -41,7 +41,7 @@
 <div class="dashboard-container">
     <div class="container">
         <!-- Dashboard Header -->
-        <div class="dashboard-header py-2 border-bottom">
+        <div class="dashboard-header">
             <h2>Doctor Profile</h2>
             <p>Manage your professional profile and settings</p>
         </div>

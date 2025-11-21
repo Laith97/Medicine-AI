@@ -64,23 +64,26 @@ class DiagnosisController extends Controller
             'patient_phone' => 'nullable|string|max:20',
             'patient_gender' => 'required_without:existing_patient|in:male,female,other',
             'diagnosis_text' => 'nullable|string',
-            'voice_file' => 'nullable|file|mimetypes:audio/mpeg,audio/mp3,audio/wav,audio/wave,audio/x-wav,audio/m4a,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/webm,application/ogg,video/mp4|max:10240', // 10MB max
+            'voice_files' => 'nullable|array',
+            'voice_files.*' => 'file|mimetypes:audio/mpeg,audio/mp3,audio/wav,audio/wave,audio/x-wav,audio/m4a,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/webm,application/ogg,video/mp4|max:10240', // 10MB max each
             'patient_data' => 'nullable|array',
         ]);
 
-        // Optional: Log voice file details for debugging (can be removed in production)
-        if ($request->hasFile('voice_file')) {
-            $voiceFileDebug = $request->file('voice_file');
-            Log::debug('Voice file received', [
-                'original_name' => $voiceFileDebug->getClientOriginalName(),
-                'mime_type' => $voiceFileDebug->getMimeType(),
-                'extension' => $voiceFileDebug->getClientOriginalExtension(),
-                'size' => $voiceFileDebug->getSize()
-            ]);
+        // Optional: Log voice files details for debugging (can be removed in production)
+        if ($request->hasFile('voice_files')) {
+            foreach ($request->file('voice_files') as $index => $voiceFileDebug) {
+                Log::debug('Voice file received', [
+                    'index' => $index,
+                    'original_name' => $voiceFileDebug->getClientOriginalName(),
+                    'mime_type' => $voiceFileDebug->getMimeType(),
+                    'extension' => $voiceFileDebug->getClientOriginalExtension(),
+                    'size' => $voiceFileDebug->getSize()
+                ]);
+            }
         }
 
         // Custom validation to ensure at least one input method is provided
-        if (empty(trim($request->input('diagnosis_text', ''))) && !$request->hasFile('voice_file')) {
+        if (empty(trim($request->input('diagnosis_text', ''))) && !$request->hasFile('voice_files')) {
             $validator->after(function ($validator) {
                 $validator->errors()->add('input_method', 'Please provide either diagnosis text or voice recording.');
             });
@@ -92,35 +95,49 @@ class DiagnosisController extends Controller
 
         try {
             // Handle voice input if provided
-            $voiceTranscript = null;
-            $voiceFilePath = null;
+            $voiceTranscripts = [];
+            $voiceFilePaths = [];
             $diagnosisText = $request->diagnosis_text;
             $transcriptionFailed = false;
+            $transcriptionFailedCount = 0;
 
-            if ($request->hasFile('voice_file')) {
-                $voiceFile = $request->file('voice_file');
-                $voiceFilePath = $voiceFile->store('diagnosis_voices', 'local');
+            if ($request->hasFile('voice_files')) {
+                $voiceFiles = $request->file('voice_files');
 
-                // Transcribe voice to text using OpenAI Whisper
-                $voiceTranscript = $this->transcribeVoice($voiceFile);
+                foreach ($voiceFiles as $index => $voiceFile) {
+                    // Store the voice file
+                    $voiceFilePath = $voiceFile->store('diagnosis_voices', 'local');
+                    $voiceFilePaths[] = $voiceFilePath;
 
-                // Check if transcription failed
-                if (strpos($voiceTranscript, 'Voice transcription') !== false ||
-                    strpos($voiceTranscript, 'audio file format') !== false ||
-                    strpos($voiceTranscript, 'temporarily unavailable') !== false) {
-                    $transcriptionFailed = true;
-                    Log::warning('Voice transcription failed during diagnosis creation', [
-                        'file_name' => $voiceFile->getClientOriginalName(),
-                        'transcript_result' => $voiceTranscript
-                    ]);
+                    // Transcribe voice to text using OpenAI Whisper
+                    $voiceTranscript = $this->transcribeVoice($voiceFile);
+                    $voiceTranscripts[] = $voiceTranscript;
+
+                    // Check if transcription failed
+                    if (strpos($voiceTranscript, 'Voice transcription') !== false ||
+                        strpos($voiceTranscript, 'audio file format') !== false ||
+                        strpos($voiceTranscript, 'temporarily unavailable') !== false) {
+                        $transcriptionFailed = true;
+                        $transcriptionFailedCount++;
+                        Log::warning('Voice transcription failed during diagnosis creation', [
+                            'file_index' => $index,
+                            'file_name' => $voiceFile->getClientOriginalName(),
+                            'transcript_result' => $voiceTranscript
+                        ]);
+                    }
                 }
 
-                // If no manual text provided and transcription succeeded, use transcript
-                if (empty($diagnosisText) && !$transcriptionFailed) {
-                    $diagnosisText = $voiceTranscript;
-                } elseif (empty($diagnosisText) && $transcriptionFailed) {
-                    // If no text and transcription failed, use a placeholder
-                    $diagnosisText = '[Voice recording uploaded - transcription failed. Please review the audio file and add text manually if needed.]';
+                // If no manual text provided and at least one transcription succeeded, combine transcripts
+                if (empty($diagnosisText) && count($voiceTranscripts) > $transcriptionFailedCount) {
+                    $successfulTranscripts = array_filter($voiceTranscripts, function($transcript) {
+                        return strpos($transcript, 'Voice transcription') === false &&
+                               strpos($transcript, 'audio file format') === false &&
+                               strpos($transcript, 'temporarily unavailable') === false;
+                    });
+                    $diagnosisText = implode("\n\n", $successfulTranscripts);
+                } elseif (empty($diagnosisText) && $transcriptionFailedCount > 0) {
+                    // If no text and all transcriptions failed, use a placeholder
+                    $diagnosisText = '[Voice recordings uploaded - transcription failed. Please review the audio files and add text manually if needed.]';
                 }
             }
 
@@ -141,8 +158,8 @@ class DiagnosisController extends Controller
                 'patient_id' => $patient->id,
                 'type' => 'manual',
                 'diagnosis_text' => $diagnosisText,
-                'voice_transcript' => $voiceTranscript,
-                'voice_file_path' => $voiceFilePath,
+                'voice_transcripts' => $voiceTranscripts,
+                'voice_files' => $voiceFilePaths,
                 'patient_data' => $request->patient_data,
             ]);
 
@@ -194,7 +211,8 @@ class DiagnosisController extends Controller
             }
 
             if ($transcriptionFailed) {
-                $successMessage .= ' Note: Voice transcription failed - please review the audio file and add text manually if needed.';
+                $fileWord = count($voiceFilePaths) > 1 ? 'files' : 'file';
+                $successMessage .= " Note: Voice transcription failed for {$transcriptionFailedCount} {$fileWord} - please review the audio files and add text manually if needed.";
             }
 
             return redirect()->route('diagnosis.show', $diagnosis)
@@ -203,10 +221,16 @@ class DiagnosisController extends Controller
         } catch (\Exception $e) {
             Log::error('Diagnosis creation failed: ' . $e->getMessage(), [
                 'user_id' => Auth::id(),
-                'request_data' => $request->except(['voice_file']),
-                'has_voice_file' => $request->hasFile('voice_file'),
-                'voice_file_size' => $request->hasFile('voice_file') ? $request->file('voice_file')->getSize() : null,
-                'voice_file_type' => $request->hasFile('voice_file') ? $request->file('voice_file')->getMimeType() : null,
+                'request_data' => $request->except(['voice_files']),
+                'has_voice_files' => $request->hasFile('voice_files'),
+                'voice_files_count' => $request->hasFile('voice_files') ? count($request->file('voice_files')) : 0,
+                'voice_files_info' => $request->hasFile('voice_files') ? collect($request->file('voice_files'))->map(function($file) {
+                    return [
+                        'name' => $file->getClientOriginalName(),
+                        'size' => $file->getSize(),
+                        'type' => $file->getMimeType()
+                    ];
+                }) : null,
                 'error_trace' => $e->getTraceAsString()
             ]);
             return back()->with('error', 'Failed to create diagnosis: ' . $e->getMessage())->withInput();
@@ -773,14 +797,48 @@ class DiagnosisController extends Controller
             abort(403, 'Access denied.');
         }
 
-        // Check if diagnosis has a voice file
-        if (!$diagnosis->voice_file_path || !Storage::exists($diagnosis->voice_file_path)) {
+        // Get file index from query parameter (default to 0 for backward compatibility)
+        $fileIndex = request('file', 0);
+
+        // Check if diagnosis has voice files
+        if (!$diagnosis->voice_files || !is_array($diagnosis->voice_files) || !isset($diagnosis->voice_files[$fileIndex])) {
             abort(404, 'Voice file not found.');
         }
 
+        $voiceFilePath = $diagnosis->voice_files[$fileIndex];
+
+        // Handle empty/corrupted paths from migration
+        if (empty(trim($voiceFilePath))) {
+            // Try to find a file in the old location based on diagnosis creation time
+            $oldFiles = Storage::files('public/audio/voice_transcriptions');
+            $diagnosisTime = $diagnosis->created_at->timestamp;
+
+            // Look for files created around the diagnosis time (± 1 hour)
+            foreach ($oldFiles as $oldFile) {
+                $fileName = basename($oldFile);
+                // Extract timestamp from filename (format: session_uuid_timestamp_hash.ext)
+                if (preg_match('/_(\d+)_\w+\./', $fileName, $matches)) {
+                    $fileTime = (int) $matches[1];
+                    if (abs($fileTime - $diagnosisTime) < 3600) { // Within 1 hour
+                        $voiceFilePath = $oldFile;
+                        break;
+                    }
+                }
+            }
+
+            if (empty($voiceFilePath) || !Storage::exists($voiceFilePath)) {
+                abort(404, 'Voice file not found.');
+            }
+        } else {
+            // Check if the file exists in the new location
+            if (!Storage::exists($voiceFilePath)) {
+                abort(404, 'Voice file not found.');
+            }
+        }
+
         // Get the file path and headers
-        $filePath = Storage::path($diagnosis->voice_file_path);
-        $mimeType = Storage::mimeType($diagnosis->voice_file_path);
+        $filePath = Storage::path($voiceFilePath);
+        $mimeType = Storage::mimeType($voiceFilePath);
 
         // Set appropriate headers for audio streaming
         $headers = [
