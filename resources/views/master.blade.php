@@ -896,17 +896,28 @@ body .dropdown .dropdown-menu.show,
             .header-row {
                 display: flex !important;
                 padding: 0.5rem 0 !important;
-                flex-wrap: nowrap !important;
+                flex-wrap: wrap !important; /* Allow wrapping on mobile */
                 justify-content: space-between !important;
                 align-items: center !important;
                 width: 100% !important;
+                min-height: 60px !important;
             }
 
-            /* Logo and nav container adjustments for mobile */
-            .d-flex.align-items-center.flex-grow-1 {
-                display: flex !important;
-                align-items: center !important;
-                flex-grow: 1 !important;
+            /* Left side: Logo and navigation links */
+            .col-md-auto.d-flex.align-items-center.gap-4:first-child {
+                order: 1 !important;
+                flex: 1 !important;
+                justify-content: flex-start !important;
+                min-width: 0 !important;
+            }
+
+            /* Right side: User menu and notifications */
+            .col-md-auto.d-flex.align-items-center.gap-3:last-child {
+                order: 3 !important;
+                flex-shrink: 0 !important;
+                margin-top: 0.5rem !important;
+                width: 100% !important;
+                justify-content: center !important;
             }
 
             /* Logo adjustments for mobile */
@@ -920,6 +931,22 @@ body .dropdown .dropdown-menu.show,
                 max-width: 120px !important;
                 height: auto !important;
                 display: block !important;
+            }
+
+            /* Navigation links - show on mobile in a separate row */
+            .d-none.d-md-flex.align-items-center.gap-4.small {
+                display: flex !important;
+                order: 2 !important;
+                width: 100% !important;
+                justify-content: center !important;
+                margin: 0.5rem 0 !important;
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+
+            .d-none.d-md-flex.align-items-center.gap-4.small .top-link {
+                font-size: 12px !important;
+                padding: 4px 8px !important;
             }
 
             /* Hide desktop navigation */
@@ -1286,6 +1313,12 @@ body .dropdown .dropdown-menu.show,
                     <!-- Right Side: Notifications & User Menu -->
                     <div class="col-md-auto d-flex align-items-center gap-3">
                         @auth
+                            <!-- Mobile Sidebar Toggle Button -->
+                            <button id="sidebarCollapse" class="btn btn-sm btn-outline-secondary d-lg-none"
+                                    aria-label="Toggle sidebar" aria-expanded="false" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; line-height: 1; backdrop-filter: blur(10px);">
+                                <i class="fa-solid fa-bars"></i>
+                            </button>
+
                             {{-- AI Ask temporarily disabled --}}
                             {{-- AI Ask temporarily disabled --}}
                             {{-- <!-- Quick Action Button for Emergency -->
@@ -1606,8 +1639,10 @@ body .dropdown .dropdown-menu.show,
         @endif
 
         <!-- Main Content -->
-        <div class="dashboard-container" style="padding-top: 70px;">
-            <main class="app-main">
+        <div class="dashboard-container" style="padding-top: 0px; margin-top: -5px; border-top: 5px solid #DE6262; border-radius: 15px 15px 0 0; box-shadow: 0 -4px 20px rgba(222, 98, 98, 0.1); position: relative; z-index: 1;">
+            <!-- Seamless connection gradient -->
+            <div style="position: absolute; top: -5px; left: 0; right: 0; height: 15px; background: linear-gradient(to bottom, rgba(222, 98, 98, 0.2), transparent); pointer-events: none;"></div>
+            <main class="app-main" style="padding-top: 25px;">
                 @yield('content')
             </main>
         </div>

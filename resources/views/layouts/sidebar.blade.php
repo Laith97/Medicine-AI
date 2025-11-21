@@ -4,9 +4,6 @@
       <i class="fa-solid fa-hospital"></i>
       <span class="brand-text">MedAssist</span>
     </a>
-    <button id="sidebarCollapse" class="btn btn-sm btn-outline-secondary d-lg-none" aria-label="Toggle sidebar" aria-expanded="false">
-      <i class="fa-solid fa-bars"></i>
-    </button>
   </div>
 
   <nav class="sidebar-nav">

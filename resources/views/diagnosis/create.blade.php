@@ -130,7 +130,7 @@
 
                                 <input type="radio" class="btn-check" name="input_method" id="voice_input" value="voice">
                                 <label class="btn btn-outline-primary" for="voice_input">
-                                    <i class="fas fa-microphone me-2"></i>Voice Input
+                                    <i class="fas fa-microphone me-2"></i>Voice Notes
                                 </label>
 
                                 <input type="radio" class="btn-check" name="input_method" id="both_input" value="both">
@@ -150,7 +150,7 @@
 
                         <!-- Voice Input -->
                         <div id="voice_input_section" class="mb-4" style="display: none;">
-                            <label for="voice_file" class="form-label">Voice Recording</label>
+                            <label class="form-label">Voice Notes</label>
                             <div class="voice-input-container">
                                 <div class="voice-recorder mb-3">
                                     <button type="button" id="recordBtn" class="btn btn-danger">
@@ -166,19 +166,22 @@
                                 </div>
 
                                 <div class="file-upload-section">
-                                    <label class="form-label">Or Upload Audio File</label>
-                                    <input type="file" class="form-control" id="voice_file" name="voice_file"
-                                           accept=".mp3,.wav,.m4a,.ogg,.webm" />
-                                    <div class="form-text">
+                                    <div id="voice-files-container">
+                                        <!-- Voice files will be added here dynamically -->
+                                    </div>
+                                    <button type="button" id="add-voice-file" class="btn btn-outline-primary btn-sm mt-2">
+                                        <i class="fas fa-plus me-2"></i>Add Another Voice Note
+                                    </button>
+                                    <div class="form-text mt-2">
                                         <strong>Recommended:</strong> MP3, WAV, M4A files work best<br>
-                                        <small class="text-muted">Supported: MP3, WAV, M4A, OGG, WebM (Max: 10MB)</small>
+                                        <small class="text-muted">Supported: MP3, WAV, M4A, OGG, WebM (Max: 10MB each)</small>
                                     </div>
                                 </div>
 
                                 <div id="transcription-status" class="mt-2" style="display: none;">
                                     <div class="alert alert-info">
                                         <i class="fas fa-info-circle me-2"></i>
-                                        <strong>Note:</strong> If voice transcription fails, you can still submit the audio file and add text manually,
+                                        <strong>Note:</strong> If voice transcription fails, you can still submit the audio files and add text manually,
                                         or try recording again with a different browser.
                                     </div>
                                 </div>
@@ -279,12 +282,49 @@ document.addEventListener('DOMContentLoaded', function() {
     const textSection = document.getElementById('text_input_section');
     const voiceSection = document.getElementById('voice_input_section');
     const diagnosisTextarea = document.getElementById('diagnosis_text');
-    const voiceFileInput = document.getElementById('voice_file');
+    const voiceFilesContainer = document.getElementById('voice-files-container');
+    const addVoiceFileBtn = document.getElementById('add-voice-file');
 
     // Voice recording variables
     let mediaRecorder;
     let audioChunks = [];
     let recordedBlob;
+
+    // Function to create a new voice file input entry
+    function createVoiceFileEntry() {
+        const entryDiv = document.createElement('div');
+        entryDiv.className = 'voice-file-entry mb-2 p-2 border rounded';
+        entryDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <input type="file" class="form-control form-control-sm me-2" name="voice_files[]"
+                       accept=".mp3,.wav,.m4a,.ogg,.webm" />
+                <button type="button" class="btn btn-sm btn-outline-danger remove-voice-file">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        return entryDiv;
+    }
+
+    // Function to add a new voice file input
+    function addVoiceFileInput() {
+        const entry = createVoiceFileEntry();
+        voiceFilesContainer.appendChild(entry);
+        updateRemoveButtons();
+    }
+
+    // Function to update remove button visibility (show only if more than 1 file)
+    function updateRemoveButtons() {
+        const entries = voiceFilesContainer.querySelectorAll('.voice-file-entry');
+        entries.forEach((entry, index) => {
+            const removeBtn = entry.querySelector('.remove-voice-file');
+            if (entries.length > 1) {
+                removeBtn.style.display = 'block';
+            } else {
+                removeBtn.style.display = 'none';
+            }
+        });
+    }
 
     // Input method change handlers
     function updateInputSections() {
@@ -292,23 +332,41 @@ document.addEventListener('DOMContentLoaded', function() {
             textSection.style.display = 'block';
             voiceSection.style.display = 'none';
             diagnosisTextarea.required = true;
-            voiceFileInput.required = false;
+            // Clear voice files when switching away
+            voiceFilesContainer.innerHTML = '';
         } else if (voiceInputRadio.checked) {
             textSection.style.display = 'none';
             voiceSection.style.display = 'block';
             diagnosisTextarea.required = false;
-            voiceFileInput.required = true;
+            // Add initial voice file input if none exist
+            if (voiceFilesContainer.children.length === 0) {
+                addVoiceFileInput();
+            }
         } else if (bothInputRadio.checked) {
             textSection.style.display = 'block';
             voiceSection.style.display = 'block';
             diagnosisTextarea.required = false;
-            voiceFileInput.required = false;
+            // Add initial voice file input if none exist
+            if (voiceFilesContainer.children.length === 0) {
+                addVoiceFileInput();
+            }
         }
     }
 
     textInputRadio.addEventListener('change', updateInputSections);
     voiceInputRadio.addEventListener('change', updateInputSections);
     bothInputRadio.addEventListener('change', updateInputSections);
+
+    // Add voice file button event listener
+    addVoiceFileBtn.addEventListener('click', addVoiceFileInput);
+
+    // Event delegation for remove buttons
+    voiceFilesContainer.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-voice-file') || e.target.closest('.remove-voice-file')) {
+            e.target.closest('.voice-file-entry').remove();
+            updateRemoveButtons();
+        }
+    });
 
     // Patient selection handling
     const existingPatientSelect = document.getElementById('existing_patient');
@@ -423,14 +481,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     fileName = 'recorded_diagnosis.m4a';
                 }
 
-                // Create a file from the blob and set it to the file input
+                // Create a file from the blob and add it to the voice files
                 const file = new File([recordedBlob], fileName, { type: selectedMimeType });
+
+                // Add a new voice file entry with the recorded file
+                const entry = createVoiceFileEntry();
+                voiceFilesContainer.appendChild(entry);
+                updateRemoveButtons();
+
+                // Set the file to the new input
+                const newFileInput = entry.querySelector('input[type="file"]');
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
-                voiceFileInput.files = dataTransfer.files;
+                newFileInput.files = dataTransfer.files;
 
                 playBtn.disabled = false;
-                recordingStatus.textContent = `Recording saved (${extension.toUpperCase()})`;
+                recordingStatus.textContent = `Recording saved and added (${extension.toUpperCase()})`;
                 recordingStatus.className = 'ms-3 text-success';
 
                 console.log('Recording saved:', {
@@ -476,19 +542,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form validation
     document.getElementById('diagnosisForm').addEventListener('submit', function(e) {
         const textInput = diagnosisTextarea.value.trim();
-        const voiceFile = voiceFileInput.files.length > 0;
+        const voiceFileInputs = document.querySelectorAll('input[name="voice_files[]"]');
+        let hasVoiceFiles = false;
+
+        voiceFileInputs.forEach(input => {
+            if (input.files.length > 0) {
+                hasVoiceFiles = true;
+            }
+        });
 
         // Remove any previous custom validation messages
         const existingError = document.querySelector('.input-method-error');
         if (existingError) existingError.remove();
 
-        if (!textInput && !voiceFile) {
+        if (!textInput && !hasVoiceFiles) {
             e.preventDefault();
 
             // Show error message
             const errorDiv = document.createElement('div');
             errorDiv.className = 'alert alert-danger input-method-error mt-3';
-            errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Please provide either diagnosis text or voice recording.';
+            errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Please provide either diagnosis text or at least one voice note.';
 
             // Insert error message before the form
             const form = document.getElementById('diagnosisForm');

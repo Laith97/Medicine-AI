@@ -13,8 +13,8 @@ class Diagnosis extends Model
         'doctor_id',
         'patient_id',
         'diagnosis_text',
-        'voice_transcript',
-        'voice_file_path',
+        'voice_transcripts',
+        'voice_files',
         'patient_data',
         'follow_up_count',
         'patient_notified',
@@ -25,6 +25,8 @@ class Diagnosis extends Model
 
     protected $casts = [
         'patient_data' => 'array',
+        'voice_files' => 'array',
+        'voice_transcripts' => 'array',
         'patient_notified' => 'boolean',
         'patient_reviewed' => 'boolean',
         'patient_viewed_at' => 'datetime',

@@ -44,6 +44,7 @@
     min-height: 100vh;
     position: relative;
     overflow: hidden;
+    margin-top: 80px; /* Account for fixed navbar height */
 }
 
 .hero-pattern {
