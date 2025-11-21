@@ -128,7 +128,7 @@
                 <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-volume-up me-2"></i>
-                        Audio Recording
+                        Session Audio
                     </h5>
                 </div>
                 <div class="card-body">
@@ -169,7 +169,7 @@
                     @else
                         <div class="text-center py-4">
                             <i class="fas fa-microphone-slash fa-3x text-muted mb-3"></i>
-                            <h6 class="text-muted">No Audio Recording Available</h6>
+                            <h6 class="text-muted">No Session Audio Available</h6>
                             <p class="text-muted mb-0">This voice session was recorded using live transcription only. Audio recording functionality may not have been available or enabled during this session.</p>
                         </div>
                     @endif

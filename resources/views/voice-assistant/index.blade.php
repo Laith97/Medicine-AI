@@ -211,7 +211,7 @@
 
                         <a href="{{ route('ai.voice-assistant.recorded-voices') }}" class="btn btn-info">
                             <i class="fas fa-history me-2"></i>
-                            Recorded Voices
+                            Session Recordings
                         </a>
 
                         <a href="{{ route('ai.voice-assistant.performance') }}" class="btn btn-warning">
