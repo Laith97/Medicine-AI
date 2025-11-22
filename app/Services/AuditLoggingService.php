@@ -239,4 +239,106 @@ class AuditLoggingService
             'audit_timestamp' => now(),
         ]));
     }
+
+    /**
+     * Log appointment status change
+     */
+    public static function logAppointmentStatusChange($appointmentId, $oldStatus, $newStatus, $userId = null, $context = [])
+    {
+        $userId = $userId ?? Auth::id();
+
+        AuditLog::log('appointment_status_change', $userId, null, null, array_merge($context, [
+            'appointment_id' => $appointmentId,
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'status_transition' => "{$oldStatus}_to_{$newStatus}",
+            'action_type' => 'appointment_management',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'change_timestamp' => now(),
+        ]));
+    }
+
+    /**
+     * Log appointment broadcasting event
+     */
+    public static function logAppointmentBroadcast($appointmentId, $eventType, $channel, $userId = null, $context = [])
+    {
+        $userId = $userId ?? Auth::id();
+
+        AuditLog::log('appointment_broadcast', $userId, null, null, array_merge($context, [
+            'appointment_id' => $appointmentId,
+            'event_type' => $eventType,
+            'broadcast_channel' => $channel,
+            'action_type' => 'real_time_broadcasting',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'broadcast_timestamp' => now(),
+        ]));
+    }
+
+    /**
+     * Log appointment broadcasting failure
+     */
+    public static function logAppointmentBroadcastFailure($appointmentId, $eventType, $channel, $error, $userId = null, $context = [])
+    {
+        $userId = $userId ?? Auth::id();
+
+        AuditLog::log('appointment_broadcast_failure', $userId, null, null, array_merge($context, [
+            'appointment_id' => $appointmentId,
+            'event_type' => $eventType,
+            'broadcast_channel' => $channel,
+            'error_message' => $error,
+            'action_type' => 'real_time_broadcasting',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'failure_timestamp' => now(),
+        ]));
+    }
+
+    /**
+     * Log appointment real-time subscription
+     */
+    public static function logAppointmentSubscription($userId, $subscriptionType, $filters = [], $context = [])
+    {
+        AuditLog::log('appointment_subscription', $userId, null, null, array_merge($context, [
+            'subscription_type' => $subscriptionType,
+            'filters' => $filters,
+            'action_type' => 'real_time_subscription',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'subscription_timestamp' => now(),
+        ]));
+    }
+
+    /**
+     * Log appointment broadcasting rate limit hit
+     */
+    public static function logAppointmentBroadcastRateLimit($userId, $limitType, $currentAttempts, $maxAttempts, $context = [])
+    {
+        AuditLog::log('appointment_broadcast_rate_limit', $userId, null, null, array_merge($context, [
+            'limit_type' => $limitType,
+            'current_attempts' => $currentAttempts,
+            'max_attempts' => $maxAttempts,
+            'action_type' => 'rate_limiting',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'rate_limit_timestamp' => now(),
+        ]));
+    }
+
+    /**
+     * Log appointment broadcasting security event
+     */
+    public static function logAppointmentBroadcastSecurity($userId, $eventType, $channel = null, $context = [])
+    {
+        AuditLog::log('appointment_broadcast_security', $userId, null, null, array_merge($context, [
+            'security_event_type' => $eventType,
+            'channel' => $channel,
+            'action_type' => 'broadcasting_security',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'security_timestamp' => now(),
+        ]));
+    }
 }

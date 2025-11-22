@@ -855,6 +855,21 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
         Route::get('/{program}/progress', [App\Http\Controllers\Doctor\HEPController::class, 'progress'])->name('progress');
         Route::post('/generate-ai', [App\Http\Controllers\Doctor\HEPController::class, 'generateAI'])->name('generate-ai');
     });
+
+    // Claims Management
+    Route::resource('claims', App\Http\Controllers\Doctor\ClaimsController::class);
+
+    // Kiosk Management
+    Route::prefix('kiosk')->name('kiosk.')->group(function () {
+        Route::get('/setup', [App\Http\Controllers\Doctor\KioskController::class, 'setup'])->name('setup');
+        Route::post('/setup', [App\Http\Controllers\Doctor\KioskController::class, 'storeSetup'])->name('setup.store');
+        Route::get('/management', [App\Http\Controllers\Doctor\KioskController::class, 'management'])->name('management');
+        Route::get('/analytics', [App\Http\Controllers\Doctor\KioskController::class, 'analytics'])->name('analytics');
+        Route::get('/access-url', [App\Http\Controllers\Doctor\KioskController::class, 'getAccessUrl'])->name('access-url');
+        Route::post('/activate', [App\Http\Controllers\Doctor\KioskController::class, 'activate'])->name('activate');
+        Route::post('/deactivate', [App\Http\Controllers\Doctor\KioskController::class, 'deactivate'])->name('deactivate');
+        Route::post('/regenerate-token', [App\Http\Controllers\Doctor\KioskController::class, 'regenerateToken'])->name('regenerate-token');
+    });
 });
 
 // Hospital Admin routes
