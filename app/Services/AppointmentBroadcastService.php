@@ -6,6 +6,10 @@ use App\Services\PusherConnectionPool;
 use App\Services\MultiDeviceSynchronizationService;
 use App\Services\PayloadCompressionService;
 use App\Services\RealtimePerformanceMonitoringService;
+use App\Services\AuditLoggingService;
+use App\Exceptions\BroadcastingRateLimitException;
+use App\Exceptions\BroadcastingConnectionException;
+use App\Exceptions\BroadcastingValidationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
@@ -66,102 +70,203 @@ class AppointmentBroadcastService
 
     /**
      * Broadcast appointment status change with rate limiting and multi-device sync
-     */
+      */
     public function broadcastStatusChange(Appointment $appointment, string $oldStatus, string $newStatus, $changedBy = null): bool
     {
         $startTime = microtime(true);
+        $userId = $changedBy instanceof \App\Models\User ? $changedBy->id : null;
 
-        // Check rate limits
-        if (!$this->checkBurstLimit('status_change') ||
-            !$this->checkRateLimit('status_change_minute', $this->maxBroadcastsPerMinute) ||
-            !$this->checkRateLimit('status_change_hour', $this->maxBroadcastsPerHour, 3600)) {
-            Log::warning('Status change broadcast blocked by rate limiting', [
-                'appointment_id' => $appointment->id,
-                'old_status' => $oldStatus,
-                'new_status' => $newStatus
+        try {
+            // Check rate limits
+            if (!$this->checkBurstLimit('status_change')) {
+                throw BroadcastingRateLimitException::burstLimitExceeded(
+                    RateLimiter::attempts("broadcast:burst:status_change"),
+                    $this->burstLimit,
+                    10
+                )->setUserId($userId)->setChannel('appointment.' . $appointment->id);
+            }
+
+            if (!$this->checkRateLimit('status_change_minute', $this->maxBroadcastsPerMinute)) {
+                throw BroadcastingRateLimitException::statusChangeLimitExceeded(
+                    RateLimiter::attempts("broadcast:burst:status_change"),
+                    $this->maxBroadcastsPerMinute,
+                    60
+                )->setUserId($userId)->setChannel('appointment.' . $appointment->id);
+            }
+
+            if (!$this->checkRateLimit('status_change_hour', $this->maxBroadcastsPerHour, 3600)) {
+                throw BroadcastingRateLimitException::statusChangeLimitExceeded(
+                    RateLimiter::attempts("broadcast:burst:status_change"),
+                    $this->maxBroadcastsPerHour,
+                    3600
+                )->setUserId($userId)->setChannel('appointment.' . $appointment->id);
+            }
+
+            // Fire the event which handles broadcasting
+            event(new AppointmentStatusChangedEvent($appointment, $oldStatus, $newStatus, $changedBy));
+
+            // Trigger multi-device synchronization if user context is available
+            if ($changedBy && $changedBy instanceof \App\Models\User) {
+                $this->triggerMultiDeviceSync($appointment, $changedBy, [
+                    'status' => $newStatus,
+                    'updated_at' => $appointment->updated_at
+                ]);
+            }
+
+            $latency = (microtime(true) - $startTime) * 1000;
+
+            // Record successful broadcast metrics
+            $this->performanceService->recordBroadcastMetrics([
+                'success' => true,
+                'latency' => $latency,
+                'compressed' => true, // Status change events use compression
+                'compression_ratio' => 0.7 // Estimated compression ratio
             ]);
 
-            // Record failed broadcast
+            // Audit log the status change
+            AuditLoggingService::logAppointmentStatusChange(
+                $appointment->id,
+                $oldStatus,
+                $newStatus,
+                $userId,
+                [
+                    'appointment_number' => $appointment->appointment_number,
+                    'broadcast_latency_ms' => round($latency, 2),
+                    'changed_by_type' => $changedBy ? get_class($changedBy) : 'system'
+                ]
+            );
+
+            // Audit log the broadcast event
+            AuditLoggingService::logAppointmentBroadcast(
+                $appointment->id,
+                'status_change',
+                'appointment.' . $appointment->id,
+                $userId,
+                [
+                    'old_status' => $oldStatus,
+                    'new_status' => $newStatus,
+                    'latency_ms' => round($latency, 2)
+                ]
+            );
+
+            Log::info('Appointment status change broadcasted', [
+                'appointment_id' => $appointment->id,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+                'changed_by' => $changedBy,
+                'latency_ms' => round($latency, 2)
+            ]);
+
+            return true;
+
+        } catch (BroadcastingRateLimitException $e) {
+            // Record failed broadcast due to rate limiting
             $this->performanceService->recordBroadcastMetrics([
                 'success' => false,
                 'latency' => (microtime(true) - $startTime) * 1000,
-                'compressed' => false
+                'compressed' => false,
+                'error_type' => 'rate_limit'
             ]);
 
-            return false;
-        }
+            // Re-throw to allow proper error handling
+            throw $e;
 
-        // Fire the event which handles broadcasting
-        event(new AppointmentStatusChangedEvent($appointment, $oldStatus, $newStatus, $changedBy));
-
-        // Trigger multi-device synchronization if user context is available
-        if ($changedBy && $changedBy instanceof \App\Models\User) {
-            $this->triggerMultiDeviceSync($appointment, $changedBy, [
-                'status' => $newStatus,
-                'updated_at' => $appointment->updated_at
+        } catch (\Exception $e) {
+            // Record failed broadcast due to other errors
+            $this->performanceService->recordBroadcastMetrics([
+                'success' => false,
+                'latency' => (microtime(true) - $startTime) * 1000,
+                'compressed' => false,
+                'error_type' => 'general_error'
             ]);
+
+            // Log the error
+            Log::error('Failed to broadcast appointment status change', [
+                'appointment_id' => $appointment->id,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+                'error' => $e->getMessage()
+            ]);
+
+            // Convert to broadcasting exception if not already one
+            if (!$e instanceof BroadcastingException) {
+                throw new BroadcastingConnectionException(
+                    'Broadcasting operation failed: ' . $e->getMessage(),
+                    'general',
+                    [],
+                    0,
+                    $e
+                );
+            }
+
+            throw $e;
         }
-
-        $latency = (microtime(true) - $startTime) * 1000;
-
-        // Record successful broadcast metrics
-        $this->performanceService->recordBroadcastMetrics([
-            'success' => true,
-            'latency' => $latency,
-            'compressed' => true, // Status change events use compression
-            'compression_ratio' => 0.7 // Estimated compression ratio
-        ]);
-
-        Log::info('Appointment status change broadcasted', [
-            'appointment_id' => $appointment->id,
-            'old_status' => $oldStatus,
-            'new_status' => $newStatus,
-            'changed_by' => $changedBy,
-            'latency_ms' => round($latency, 2)
-        ]);
-
-        return true;
     }
 
     /**
      * Subscribe user to real-time appointment updates
-     */
-    public function subscribeToAppointments(User $user, array $filters = []): bool
-    {
-        $subscriptionKey = "appointment_sub_{$user->id}";
+      */
+     public function subscribeToAppointments(User $user, array $filters = []): bool
+     {
+         $subscriptionKey = "appointment_sub_{$user->id}";
 
-        $subscription = [
-            'user_id' => $user->id,
-            'filters' => $filters,
-            'subscribed_at' => now(),
-            'last_activity' => now()
-        ];
+         $subscription = [
+             'user_id' => $user->id,
+             'filters' => $filters,
+             'subscribed_at' => now(),
+             'last_activity' => now()
+         ];
 
-        Cache::put($subscriptionKey, $subscription, $this->cacheTtl);
+         Cache::put($subscriptionKey, $subscription, $this->cacheTtl);
 
-        Log::info('User subscribed to appointment updates', [
-            'user_id' => $user->id,
-            'filters' => $filters
-        ]);
+         // Audit log the subscription
+         AuditLoggingService::logAppointmentSubscription(
+             $user->id,
+             'appointment_updates',
+             $filters,
+             [
+                 'subscription_channels' => $this->getUserSubscriptionChannels($user),
+                 'cache_ttl' => $this->cacheTtl
+             ]
+         );
 
-        return true;
-    }
+         Log::info('User subscribed to appointment updates', [
+             'user_id' => $user->id,
+             'filters' => $filters
+         ]);
 
-    /**
-     * Unsubscribe user from appointment updates
-     */
-    public function unsubscribeFromAppointments(User $user): bool
-    {
-        $subscriptionKey = "appointment_sub_{$user->id}";
+         return true;
+     }
 
-        Cache::forget($subscriptionKey);
+     /**
+      * Unsubscribe user from appointment updates
+      */
+     public function unsubscribeFromAppointments(User $user): bool
+     {
+         $subscriptionKey = "appointment_sub_{$user->id}";
 
-        Log::info('User unsubscribed from appointment updates', [
-            'user_id' => $user->id
-        ]);
+         $subscription = Cache::get($subscriptionKey);
+         Cache::forget($subscriptionKey);
 
-        return true;
-    }
+         // Audit log the unsubscription
+         AuditLoggingService::logAppointmentSubscription(
+             $user->id,
+             'appointment_updates_unsubscribed',
+             $subscription['filters'] ?? [],
+             [
+                 'subscription_duration_seconds' => $subscription
+                     ? now()->diffInSeconds($subscription['subscribed_at'])
+                     : null,
+                 'last_activity' => $subscription['last_activity'] ?? null
+             ]
+         );
+
+         Log::info('User unsubscribed from appointment updates', [
+             'user_id' => $user->id
+         ]);
+
+         return true;
+     }
 
     /**
      * Get today's appointments for a user with real-time subscription
@@ -332,93 +437,200 @@ class AppointmentBroadcastService
 
     /**
      * Broadcast appointment creation with rate limiting
-     */
-    public function broadcastAppointmentCreated(Appointment $appointment): bool
-    {
-        // Check rate limits for appointment creation broadcasts
-        if (!$this->checkBurstLimit('appointment_created') ||
-            !$this->checkRateLimit('appointment_created_minute', $this->maxBroadcastsPerMinute)) {
-            Log::warning('Appointment creation broadcast blocked by rate limiting', [
-                'appointment_id' => $appointment->id
-            ]);
-            return false;
-        }
+      */
+     public function broadcastAppointmentCreated(Appointment $appointment): bool
+     {
+         // Check rate limits for appointment creation broadcasts
+         if (!$this->checkBurstLimit('appointment_created') ||
+             !$this->checkRateLimit('appointment_created_minute', $this->maxBroadcastsPerMinute)) {
 
-        $channels = $this->getAppointmentChannels($appointment);
+             // Audit log rate limit hit
+             AuditLoggingService::logAppointmentBroadcastRateLimit(
+                 $appointment->patient_id,
+                 'appointment_created',
+                 RateLimiter::attempts("broadcast:burst:appointment_created"),
+                 $this->burstLimit,
+                 ['appointment_id' => $appointment->id]
+             );
 
-        $eventData = [
-            'type' => 'appointment_created',
-            'appointment' => $this->formatAppointmentData($appointment),
-            'timestamp' => now()->toISOString(),
-            'event_id' => uniqid('appointment_created_', true)
-        ];
+             Log::warning('Appointment creation broadcast blocked by rate limiting', [
+                 'appointment_id' => $appointment->id
+             ]);
+             return false;
+         }
 
-        // Compress appointment data for efficient broadcasting
-        $compressedPayload = $this->compressionService->compressAppointmentData($eventData);
+         $channels = $this->getAppointmentChannels($appointment);
 
-        return $this->pusherPool->broadcast($channels, 'appointment.created', $compressedPayload);
-    }
+         $eventData = [
+             'type' => 'appointment_created',
+             'appointment' => $this->formatAppointmentData($appointment),
+             'timestamp' => now()->toISOString(),
+             'event_id' => uniqid('appointment_created_', true)
+         ];
+
+         // Compress appointment data for efficient broadcasting
+         $compressedPayload = $this->compressionService->compressAppointmentData($eventData);
+
+         $success = $this->pusherPool->broadcast($channels, 'appointment.created', $compressedPayload);
+
+         // Audit log the broadcast
+         if ($success) {
+             AuditLoggingService::logAppointmentBroadcast(
+                 $appointment->id,
+                 'appointment_created',
+                 implode(',', $channels),
+                 $appointment->patient_id,
+                 [
+                     'appointment_number' => $appointment->appointment_number,
+                     'channels_count' => count($channels)
+                 ]
+             );
+         } else {
+             AuditLoggingService::logAppointmentBroadcastFailure(
+                 $appointment->id,
+                 'appointment_created',
+                 implode(',', $channels),
+                 'Pusher broadcast failed',
+                 $appointment->patient_id
+             );
+         }
+
+         return $success;
+     }
 
     /**
      * Broadcast appointment update (non-status changes) with rate limiting
-     */
-    public function broadcastAppointmentUpdated(Appointment $appointment, array $changedAttributes): bool
-    {
-        // Check rate limits for appointment update broadcasts
-        if (!$this->checkBurstLimit('appointment_updated') ||
-            !$this->checkRateLimit('appointment_updated_minute', $this->maxBroadcastsPerMinute)) {
-            Log::warning('Appointment update broadcast blocked by rate limiting', [
-                'appointment_id' => $appointment->id,
-                'changed_attributes' => array_keys($changedAttributes)
-            ]);
-            return false;
-        }
+      */
+     public function broadcastAppointmentUpdated(Appointment $appointment, array $changedAttributes): bool
+     {
+         // Check rate limits for appointment update broadcasts
+         if (!$this->checkBurstLimit('appointment_updated') ||
+             !$this->checkRateLimit('appointment_updated_minute', $this->maxBroadcastsPerMinute)) {
 
-        $channels = $this->getAppointmentChannels($appointment);
+             // Audit log rate limit hit
+             AuditLoggingService::logAppointmentBroadcastRateLimit(
+                 $appointment->patient_id,
+                 'appointment_updated',
+                 RateLimiter::attempts("broadcast:burst:appointment_updated"),
+                 $this->burstLimit,
+                 [
+                     'appointment_id' => $appointment->id,
+                     'changed_attributes' => array_keys($changedAttributes)
+                 ]
+             );
 
-        $eventData = [
-            'type' => 'appointment_updated',
-            'appointment' => $this->formatAppointmentData($appointment),
-            'changed_attributes' => array_keys($changedAttributes),
-            'timestamp' => now()->toISOString(),
-            'event_id' => uniqid('appointment_updated_', true)
-        ];
+             Log::warning('Appointment update broadcast blocked by rate limiting', [
+                 'appointment_id' => $appointment->id,
+                 'changed_attributes' => array_keys($changedAttributes)
+             ]);
+             return false;
+         }
 
-        // Compress appointment data for efficient broadcasting
-        $compressedPayload = $this->compressionService->compressAppointmentData($eventData);
+         $channels = $this->getAppointmentChannels($appointment);
 
-        return $this->pusherPool->broadcast($channels, 'appointment.updated', $compressedPayload);
-    }
+         $eventData = [
+             'type' => 'appointment_updated',
+             'appointment' => $this->formatAppointmentData($appointment),
+             'changed_attributes' => array_keys($changedAttributes),
+             'timestamp' => now()->toISOString(),
+             'event_id' => uniqid('appointment_updated_', true)
+         ];
 
-    /**
-     * Broadcast appointment deletion with rate limiting
-     */
-    public function broadcastAppointmentDeleted(Appointment $appointment): bool
-    {
-        // Check rate limits for appointment deletion broadcasts
-        if (!$this->checkBurstLimit('appointment_deleted') ||
-            !$this->checkRateLimit('appointment_deleted_minute', $this->maxBroadcastsPerMinute / 4)) { // Very low limit for deletions
-            Log::warning('Appointment deletion broadcast blocked by rate limiting', [
-                'appointment_id' => $appointment->id
-            ]);
-            return false;
-        }
+         // Compress appointment data for efficient broadcasting
+         $compressedPayload = $this->compressionService->compressAppointmentData($eventData);
 
-        $channels = $this->getAppointmentChannels($appointment);
+         $success = $this->pusherPool->broadcast($channels, 'appointment.updated', $compressedPayload);
 
-        $eventData = [
-            'type' => 'appointment_deleted',
-            'appointment_id' => $appointment->id,
-            'appointment_number' => $appointment->appointment_number,
-            'timestamp' => now()->toISOString(),
-            'event_id' => uniqid('appointment_deleted_', true)
-        ];
+         // Audit log the broadcast
+         if ($success) {
+             AuditLoggingService::logAppointmentBroadcast(
+                 $appointment->id,
+                 'appointment_updated',
+                 implode(',', $channels),
+                 $appointment->patient_id,
+                 [
+                     'appointment_number' => $appointment->appointment_number,
+                     'changed_attributes' => array_keys($changedAttributes),
+                     'channels_count' => count($channels)
+                 ]
+             );
+         } else {
+             AuditLoggingService::logAppointmentBroadcastFailure(
+                 $appointment->id,
+                 'appointment_updated',
+                 implode(',', $channels),
+                 'Pusher broadcast failed',
+                 $appointment->patient_id,
+                 ['changed_attributes' => array_keys($changedAttributes)]
+             );
+         }
 
-        // Compress the payload for efficient broadcasting
-        $compressedPayload = $this->compressionService->compress($eventData);
+         return $success;
+     }
 
-        return $this->pusherPool->broadcast($channels, 'appointment.deleted', $compressedPayload);
-    }
+     /**
+      * Broadcast appointment deletion with rate limiting
+      */
+     public function broadcastAppointmentDeleted(Appointment $appointment): bool
+     {
+         // Check rate limits for appointment deletion broadcasts
+         if (!$this->checkBurstLimit('appointment_deleted') ||
+             !$this->checkRateLimit('appointment_deleted_minute', $this->maxBroadcastsPerMinute / 4)) { // Very low limit for deletions
+
+             // Audit log rate limit hit
+             AuditLoggingService::logAppointmentBroadcastRateLimit(
+                 $appointment->patient_id,
+                 'appointment_deleted',
+                 RateLimiter::attempts("broadcast:burst:appointment_deleted"),
+                 $this->burstLimit,
+                 ['appointment_id' => $appointment->id]
+             );
+
+             Log::warning('Appointment deletion broadcast blocked by rate limiting', [
+                 'appointment_id' => $appointment->id
+             ]);
+             return false;
+         }
+
+         $channels = $this->getAppointmentChannels($appointment);
+
+         $eventData = [
+             'type' => 'appointment_deleted',
+             'appointment_id' => $appointment->id,
+             'appointment_number' => $appointment->appointment_number,
+             'timestamp' => now()->toISOString(),
+             'event_id' => uniqid('appointment_deleted_', true)
+         ];
+
+         // Compress the payload for efficient broadcasting
+         $compressedPayload = $this->compressionService->compress($eventData);
+
+         $success = $this->pusherPool->broadcast($channels, 'appointment.deleted', $compressedPayload);
+
+         // Audit log the broadcast
+         if ($success) {
+             AuditLoggingService::logAppointmentBroadcast(
+                 $appointment->id,
+                 'appointment_deleted',
+                 implode(',', $channels),
+                 $appointment->patient_id,
+                 [
+                     'appointment_number' => $appointment->appointment_number,
+                     'channels_count' => count($channels)
+                 ]
+             );
+         } else {
+             AuditLoggingService::logAppointmentBroadcastFailure(
+                 $appointment->id,
+                 'appointment_deleted',
+                 implode(',', $channels),
+                 'Pusher broadcast failed',
+                 $appointment->patient_id
+             );
+         }
+
+         return $success;
+     }
 
     /**
      * Get channels for appointment broadcasting

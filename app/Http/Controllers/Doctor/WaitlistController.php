@@ -11,6 +11,7 @@ use App\Services\WaitlistService;
 use App\Services\WaitlistPreferenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class WaitlistController extends Controller
@@ -169,17 +170,62 @@ class WaitlistController extends Controller
 
         $doctor = Auth::user()->doctor;
 
-        $waitlist = Waitlist::where('id', $waitlistId)
-            ->where('doctor_id', $doctor->id)
-            ->firstOrFail();
+        // Validate waitlist ID format
+        if (!is_numeric($waitlistId) || $waitlistId <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid waitlist ID.',
+            ], 400);
+        }
 
-        $waitlist->update(['priority_level' => $request->priority_level]);
+        try {
+            $waitlist = Waitlist::where('id', $waitlistId)
+                ->where('doctor_id', $doctor->id)
+                ->where('status', 'active')
+                ->firstOrFail();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Priority updated successfully.',
-            'waitlist' => $waitlist->fresh(),
-        ]);
+            // Additional business logic validation
+            if ($waitlist->isFulfilled() || $waitlist->isCancelled()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot update priority for completed or cancelled waitlists.',
+                ], 422);
+            }
+
+            $oldPriority = $waitlist->priority_level;
+            $waitlist->update(['priority_level' => $request->priority_level]);
+
+            // Log the priority change for audit
+            Log::info('Waitlist priority updated', [
+                'waitlist_id' => $waitlist->id,
+                'doctor_id' => $doctor->id,
+                'old_priority' => $oldPriority,
+                'new_priority' => $request->priority_level,
+                'updated_by' => Auth::id(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Priority updated successfully.',
+                'waitlist' => $waitlist->fresh(),
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Waitlist not found or access denied.',
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Failed to update waitlist priority', [
+                'waitlist_id' => $waitlistId,
+                'doctor_id' => $doctor->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while updating priority.',
+            ], 500);
+        }
     }
 
     /**
@@ -193,17 +239,80 @@ class WaitlistController extends Controller
 
         $doctor = Auth::user()->doctor;
 
-        $waitlist = Waitlist::where('id', $waitlistId)
-            ->where('doctor_id', $doctor->id)
-            ->firstOrFail();
+        // Validate waitlist ID format
+        if (!is_numeric($waitlistId) || $waitlistId <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid waitlist ID.',
+            ], 400);
+        }
 
-        $waitlist->update(['status' => $request->status]);
+        try {
+            $waitlist = Waitlist::where('id', $waitlistId)
+                ->where('doctor_id', $doctor->id)
+                ->firstOrFail();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Status updated successfully.',
-            'waitlist' => $waitlist->fresh(),
-        ]);
+            $oldStatus = $waitlist->status;
+
+            // Business logic validation
+            if ($oldStatus === 'fulfilled') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot change status of fulfilled waitlists.',
+                ], 422);
+            }
+
+            if ($oldStatus === 'cancelled' && $request->status !== 'active') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cancelled waitlists can only be reactivated.',
+                ], 422);
+            }
+
+            // Check if there are pending offers before pausing/cancelling
+            if (in_array($request->status, ['paused', 'cancelled'])) {
+                $pendingOffers = $waitlist->entries()->where('status', 'offered')->count();
+                if ($pendingOffers > 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Cannot {$request->status} waitlist with {$pendingOffers} pending offer(s). Cancel offers first.",
+                    ], 422);
+                }
+            }
+
+            $waitlist->update(['status' => $request->status]);
+
+            // Log the status change for audit
+            Log::info('Waitlist status updated', [
+                'waitlist_id' => $waitlist->id,
+                'doctor_id' => $doctor->id,
+                'old_status' => $oldStatus,
+                'new_status' => $request->status,
+                'updated_by' => Auth::id(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status updated successfully.',
+                'waitlist' => $waitlist->fresh(),
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Waitlist not found or access denied.',
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Failed to update waitlist status', [
+                'waitlist_id' => $waitlistId,
+                'doctor_id' => $doctor->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while updating status.',
+            ], 500);
+        }
     }
 
     /**
@@ -212,48 +321,125 @@ class WaitlistController extends Controller
     public function offerSlot(Request $request, $waitlistId)
     {
         $request->validate([
-            'slot_date' => 'required|date|after:today',
+            'slot_date' => 'required|date|after_or_equal:today',
             'slot_time' => 'required|date_format:H:i',
         ]);
 
         $doctor = Auth::user()->doctor;
 
-        $waitlist = Waitlist::where('id', $waitlistId)
-            ->where('doctor_id', $doctor->id)
-            ->where('status', 'active')
-            ->firstOrFail();
-
-        // Check if slot is available
-        $availableSlots = $this->waitlistService->findAvailableSlots($doctor->id, 30);
-        $requestedSlot = $request->slot_date . ' ' . $request->slot_time;
-
-        $slotExists = collect($availableSlots)->contains(function ($slot) use ($requestedSlot) {
-            return $slot['date'] . ' ' . $slot['time'] === $requestedSlot;
-        });
-
-        if (!$slotExists) {
+        // Validate waitlist ID format
+        if (!is_numeric($waitlistId) || $waitlistId <= 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Selected slot is not available.',
-            ], 422);
+                'message' => 'Invalid waitlist ID.',
+            ], 400);
         }
 
-        // Create manual entry
-        $entry = WaitlistEntry::create([
-            'waitlist_id' => $waitlist->id,
-            'slot_date' => $request->slot_date,
-            'slot_time' => $request->slot_time,
-            'status' => 'pending',
-        ]);
+        try {
+            $waitlist = Waitlist::where('id', $waitlistId)
+                ->where('doctor_id', $doctor->id)
+                ->where('status', 'active')
+                ->firstOrFail();
 
-        // Offer to patient
-        $this->waitlistService->offerSlotToPatient($entry);
+            // Business logic validation
+            if ($waitlist->isPaused()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot offer slots to paused waitlists.',
+                ], 422);
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Slot offered to patient successfully.',
-            'entry' => $entry,
-        ]);
+            // Check for existing pending offers
+            $existingOffers = $waitlist->entries()->where('status', 'offered')->count();
+            if ($existingOffers >= 3) { // Limit concurrent offers
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Patient already has maximum pending offers (3).',
+                ], 422);
+            }
+
+            // Validate slot is not in the past
+            $slotDateTime = Carbon::createFromFormat('Y-m-d H:i', $request->slot_date . ' ' . $request->slot_time);
+            if ($slotDateTime->isPast()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot offer slots in the past.',
+                ], 422);
+            }
+
+            // Check if slot is available
+            $availableSlots = $this->waitlistService->findAvailableSlots($doctor->id, 60); // Extended range
+            $requestedSlot = $request->slot_date . ' ' . $request->slot_time;
+
+            $slotExists = collect($availableSlots)->contains(function ($slot) use ($requestedSlot) {
+                return $slot['date'] . ' ' . $slot['time'] === $requestedSlot;
+            });
+
+            if (!$slotExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Selected slot is not available.',
+                ], 422);
+            }
+
+            // Check if slot is already offered to this patient
+            $duplicateOffer = $waitlist->entries()
+                ->where('slot_date', $request->slot_date)
+                ->where('slot_time', $request->slot_time)
+                ->whereIn('status', ['pending', 'offered'])
+                ->exists();
+
+            if ($duplicateOffer) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This slot has already been offered to the patient.',
+                ], 422);
+            }
+
+            // Create manual entry
+            $entry = WaitlistEntry::create([
+                'waitlist_id' => $waitlist->id,
+                'slot_date' => $request->slot_date,
+                'slot_time' => $request->slot_time,
+                'status' => 'pending',
+            ]);
+
+            // Offer to patient
+            $this->waitlistService->offerSlotToPatient($entry);
+
+            Log::info('Manual slot offer created', [
+                'waitlist_id' => $waitlist->id,
+                'entry_id' => $entry->id,
+                'doctor_id' => $doctor->id,
+                'slot_date' => $request->slot_date,
+                'slot_time' => $request->slot_time,
+                'offered_by' => Auth::id(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Slot offered to patient successfully.',
+                'entry' => $entry->load('waitlist.patient:id,name,email'),
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Waitlist not found or access denied.',
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Failed to offer slot to patient', [
+                'waitlist_id' => $waitlistId,
+                'doctor_id' => $doctor->id,
+                'slot_date' => $request->slot_date ?? null,
+                'slot_time' => $request->slot_time ?? null,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while offering the slot.',
+            ], 500);
+        }
     }
 
     /**
@@ -331,32 +517,96 @@ class WaitlistController extends Controller
     public function addPatient(Request $request)
     {
         $request->validate([
-            'patient_id' => 'required|exists:users,id',
+            'patient_id' => 'required|integer|exists:users,id',
             'service_type' => 'required|string|in:consultation,follow-up,urgent-care',
             'priority_level' => 'required|string|in:low,medium,high,urgent',
+            'max_wait_days' => 'nullable|integer|min:1|max:365',
+            'preferred_time_slots' => 'nullable|array',
+            'preferred_time_slots.*' => 'string|regex:/^\d{2}:\d{2}-\d{2}:\d{2}$/',
+            'preferred_days' => 'nullable|array',
+            'preferred_days.*' => 'string|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'notification_channels' => 'nullable|array',
+            'notification_channels.*' => 'string|in:email,sms,push',
         ]);
 
         $doctor = Auth::user()->doctor;
 
         try {
+            // Verify patient belongs to doctor's hospital (if applicable)
+            $patient = \App\Models\User::findOrFail($request->patient_id);
+            if ($patient->role !== 'patient') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Selected user is not a patient.',
+                ], 422);
+            }
+
+            // Check if patient already has an active waitlist with this doctor
+            $existingWaitlist = Waitlist::where('patient_id', $request->patient_id)
+                ->where('doctor_id', $doctor->id)
+                ->where('status', 'active')
+                ->first();
+
+            if ($existingWaitlist) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Patient is already on the active waitlist for this doctor.',
+                ], 422);
+            }
+
+            // Validate preferred time slots format
+            if ($request->preferred_time_slots) {
+                foreach ($request->preferred_time_slots as $slot) {
+                    if (!preg_match('/^\d{2}:\d{2}-\d{2}:\d{2}$/', $slot)) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Invalid time slot format. Use HH:MM-HH:MM format.',
+                        ], 422);
+                    }
+                }
+            }
+
             $data = [
                 'service_type' => $request->service_type,
                 'priority_level' => $request->priority_level,
-                'max_wait_days' => 30,
+                'max_wait_days' => $request->max_wait_days ?? 30,
+                'preferred_time_slots' => $request->preferred_time_slots ?? [],
+                'preferred_days' => $request->preferred_days ?? [],
+                'notification_channels' => $request->notification_channels ?? ['email'],
             ];
 
             $waitlist = $this->waitlistService->addToWaitlist($request->patient_id, $doctor->id, $data);
+
+            Log::info('Patient manually added to waitlist', [
+                'waitlist_id' => $waitlist->id,
+                'patient_id' => $request->patient_id,
+                'doctor_id' => $doctor->id,
+                'service_type' => $request->service_type,
+                'priority_level' => $request->priority_level,
+                'added_by' => Auth::id(),
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Patient added to waitlist successfully.',
                 'waitlist' => $waitlist->load('patient:id,name,email'),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+                'message' => 'Patient not found.',
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Failed to add patient to waitlist', [
+                'patient_id' => $request->patient_id ?? null,
+                'doctor_id' => $doctor->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while adding the patient to waitlist.',
+            ], 500);
         }
     }
 

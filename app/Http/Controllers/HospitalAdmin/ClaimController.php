@@ -11,10 +11,16 @@ use App\Services\ClaimDenialPredictionService;
 use App\Services\UnderpaymentDetectionService;
 use App\Services\ClaimSubmissionService;
 use App\Services\ClearinghouseComplianceService;
+use App\Exceptions\ClaimValidationException;
+use App\Exceptions\ClaimSecurityException;
+use App\Exceptions\ClaimProcessingException;
+use App\Exceptions\Handlers\ClaimExceptionHandler;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 
 class ClaimController extends Controller
 {
@@ -103,26 +109,24 @@ class ClaimController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'patient_name' => 'required|string|max:255',
-            'patient_dob' => 'required|date',
-            'patient_gender' => 'nullable|string|in:male,female,other',
-            'patient_insurance_id' => 'nullable|string|max:255',
-            'patient_insurance_provider' => 'nullable|string|max:255',
-            'provider_name' => 'required|string|max:255',
-            'provider_npi' => 'nullable|string|max:10',
-            'service_date' => 'required|date',
-            'facility_name' => 'nullable|string|max:255',
-            'diagnosis_description' => 'required|string',
-            'icd10_codes' => 'nullable|string',
-            'cpt_codes' => 'nullable|string',
-            'total_amount' => 'required|numeric|min:0',
-            'allowed_amount' => 'nullable|numeric|min:0',
-            'paid_amount' => 'nullable|numeric|min:0',
-            'status' => 'nullable|string|in:pending,approved,denied,paid,draft'
-        ]);
-
         try {
+            // Comprehensive validation with sanitization
+            $validator = Validator::make($request->all(), $this->getClaimValidationRules());
+
+            if ($validator->fails()) {
+                throw new ClaimValidationException(
+                    $validator->errors()->toArray(),
+                    'Claim data validation failed',
+                    [
+                        'user_id' => Auth::id(),
+                        'hospital_id' => Auth::user()->hospital_id,
+                        'input_data' => $this->sanitizeInputForLogging($request->all())
+                    ]
+                );
+            }
+
+            $validated = $validator->validated();
+            $validated = $this->sanitizeClaimData($validated);
             // Check eligibility if patient insurance information is provided
             $eligibilityWarning = null;
             if ($validated['patient_insurance_id'] && $validated['patient_insurance_provider']) {
@@ -230,27 +234,35 @@ class ClaimController extends Controller
     {
         // Ensure claim belongs to user's hospital
         if ($claim->hospital_id !== Auth::user()->hospital_id) {
-            abort(403);
+            throw new ClaimSecurityException(
+                'Access denied: Claim does not belong to your hospital',
+                [
+                    'claim_id' => $claim->id,
+                    'claim_hospital_id' => $claim->hospital_id,
+                    'user_hospital_id' => Auth::user()->hospital_id,
+                    'user_id' => Auth::id()
+                ]
+            );
         }
 
-        $validated = $request->validate([
-            'patient_name' => 'required|string|max:255',
-            'patient_dob' => 'required|date',
-            'patient_gender' => 'nullable|string|in:male,female,other',
-            'patient_insurance_id' => 'nullable|string|max:255',
-            'patient_insurance_provider' => 'nullable|string|max:255',
-            'provider_name' => 'required|string|max:255',
-            'provider_npi' => 'nullable|string|max:10',
-            'service_date' => 'required|date',
-            'facility_name' => 'nullable|string|max:255',
-            'diagnosis_description' => 'required|string',
-            'icd10_codes' => 'nullable|string',
-            'cpt_codes' => 'nullable|string',
-            'total_amount' => 'required|numeric|min:0',
-            'allowed_amount' => 'nullable|numeric|min:0',
-            'paid_amount' => 'nullable|numeric|min:0',
-            'status' => 'nullable|string|in:pending,approved,denied,paid,draft'
-        ]);
+        // Comprehensive validation with sanitization
+        $validator = Validator::make($request->all(), $this->getClaimValidationRules());
+
+        if ($validator->fails()) {
+            throw new ClaimValidationException(
+                $validator->errors()->toArray(),
+                'Claim update validation failed',
+                [
+                    'claim_id' => $claim->id,
+                    'user_id' => Auth::id(),
+                    'hospital_id' => Auth::user()->hospital_id,
+                    'input_data' => $this->sanitizeInputForLogging($request->all())
+                ]
+            );
+        }
+
+        $validated = $validator->validated();
+        $validated = $this->sanitizeClaimData($validated);
 
         try {
             $claim->fill($validated);
@@ -865,6 +877,171 @@ class ClaimController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get comprehensive claim validation rules
+     */
+    protected function getClaimValidationRules(): array
+    {
+        return [
+            'patient_name' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[\p{L}\s\-\.\'"]+$/u' // Allow letters, spaces, hyphens, dots, apostrophes, quotes
+            ],
+            'patient_dob' => [
+                'required',
+                'date',
+                'before:today',
+                'after:1900-01-01'
+            ],
+            'patient_gender' => [
+                'nullable',
+                Rule::in(['male', 'female', 'other', 'unknown'])
+            ],
+            'patient_insurance_id' => [
+                'nullable',
+                'string',
+                'max:50',
+                'regex:/^[A-Za-z0-9\-]+$/'
+            ],
+            'patient_insurance_provider' => [
+                'nullable',
+                'string',
+                'max:255',
+                'regex:/^[\p{L}\s\-\.\'"]+$/u'
+            ],
+            'provider_name' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[\p{L}\s\-\.\'"]+$/u'
+            ],
+            'provider_npi' => [
+                'nullable',
+                'string',
+                'regex:/^\d{10}$/',
+                'unique:claims,provider_npi'
+            ],
+            'service_date' => [
+                'required',
+                'date',
+                'before_or_equal:today',
+                'after:2020-01-01'
+            ],
+            'facility_name' => [
+                'nullable',
+                'string',
+                'max:255',
+                'regex:/^[\p{L}\d\s\-\.\'"]+$/u'
+            ],
+            'diagnosis_description' => [
+                'required',
+                'string',
+                'max:2000',
+                'min:10'
+            ],
+            'icd10_codes' => [
+                'nullable',
+                'string',
+                'max:1000',
+                'regex:/^[A-Z0-9\.\-\s\n,]*$/'
+            ],
+            'cpt_codes' => [
+                'nullable',
+                'string',
+                'max:1000',
+                'regex:/^[0-9]{5}[A-Z0-9\s\n,]*$/'
+            ],
+            'total_amount' => [
+                'required',
+                'numeric',
+                'min:0',
+                'max:999999.99',
+                'decimal:0,2'
+            ],
+            'allowed_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:999999.99',
+                'decimal:0,2',
+                'lte:total_amount'
+            ],
+            'paid_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:999999.99',
+                'decimal:0,2',
+                'lte:allowed_amount'
+            ],
+            'status' => [
+                'nullable',
+                Rule::in(['pending', 'approved', 'denied', 'paid', 'draft', 'submitted'])
+            ]
+        ];
+    }
+
+    /**
+     * Sanitize claim data for security
+     */
+    protected function sanitizeClaimData(array $data): array
+    {
+        $sanitized = [];
+
+        foreach ($data as $key => $value) {
+            if (is_string($value)) {
+                // Remove potentially dangerous characters
+                $sanitized[$key] = $this->sanitizeString($value);
+            } elseif (is_array($value)) {
+                $sanitized[$key] = array_map([$this, 'sanitizeString'], $value);
+            } else {
+                $sanitized[$key] = $value;
+            }
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * Sanitize string input
+     */
+    protected function sanitizeString(string $value): string
+    {
+        // Remove null bytes and other dangerous characters
+        $value = str_replace(["\0", "\r", "\x1a"], '', $value);
+
+        // Trim whitespace
+        $value = trim($value);
+
+        // Remove excessive whitespace
+        $value = preg_replace('/\s+/', ' ', $value);
+
+        return $value;
+    }
+
+    /**
+     * Sanitize input data for logging (remove sensitive information)
+     */
+    protected function sanitizeInputForLogging(array $data): array
+    {
+        $sensitiveFields = [
+            'patient_ssn', 'credit_card', 'bank_account', 'password',
+            'patient_insurance_id', 'provider_npi'
+        ];
+
+        $sanitized = $data;
+
+        foreach ($sensitiveFields as $field) {
+            if (isset($sanitized[$field])) {
+                $sanitized[$field] = '[REDACTED]';
+            }
+        }
+
+        return $sanitized;
     }
 
     /**
