@@ -211,7 +211,7 @@
             <!-- Brand -->
             <div class="sidebar-brand">
                 <a href="{{ route('admin.dashboard') }}">
-                    <img src="{{ asset('demos/medical/images/logo-medical.jpeg') }}" alt="MedCura AI" class="img-fluid">
+                    <img src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}" alt="MedCura AI" class="img-fluid">
                 </a>
                 <div class="mt-2">
                     <small class="text-white-50">Admin Panel</small>
