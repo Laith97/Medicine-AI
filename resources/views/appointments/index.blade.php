@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
 <link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
 
+<style>
 /* Professional Dashboard Header Styling */
 .dashboard-header {
     background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
@@ -65,6 +66,7 @@
         font-size: 1rem;
     }
 }
+</style>
 @endpush
 
 @section('content')

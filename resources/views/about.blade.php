@@ -133,9 +133,9 @@
         <div class="row text-center g-4">
             <div class="col-md-3">
                 <div class="p-4 rounded shadow-sm bg-white">
-                    <i class="fas fa-brain fa-3x mb-2" style="color: #DE6262;"></i>
-                    <h2 class="fw-bold mb-0">25,000+</h2>
-                    <p class="mb-0 text-muted">AI Diagnoses Created</p>
+                    <i class="fas fa-stethoscope fa-3x mb-2" style="color: #DE6262;"></i>
+                    <h2 class="fw-bold mb-0">15,000+</h2>
+                    <p class="mb-0 text-muted">Consultations Completed</p>
                 </div>
             </div>
             <div class="col-md-3">
@@ -148,15 +148,15 @@
             <div class="col-md-3">
                 <div class="p-4 rounded shadow-sm bg-white">
                     <i class="fas fa-calendar-check fa-3x mb-2" style="color: #DE6262;"></i>
-                    <h2 class="fw-bold mb-0">50,000+</h2>
+                    <h2 class="fw-bold mb-0">75,000+</h2>
                     <p class="mb-0 text-muted">Patient Appointments</p>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="p-4 rounded shadow-sm bg-white">
                     <i class="fas fa-microphone fa-3x mb-2" style="color: #DE6262;"></i>
-                    <h2 class="fw-bold mb-0">15,000+</h2>
-                    <p class="mb-0 text-muted">Voice Consultations</p>
+                    <h2 class="fw-bold mb-0">4.8★</h2>
+                    <p class="mb-0 text-muted">Patient Satisfaction</p>
                 </div>
             </div>
         </div>
@@ -204,9 +204,9 @@
                         </div>
                         <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
                         <div class="col-6 col-md-2">
-                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="fas fa-brain"></i></div>
-                            <div class="fw-semibold small">AI Diagnosis</div>
-                            <div class="small text-muted">Use AI tools</div>
+                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="fas fa-stethoscope"></i></div>
+                            <div class="fw-semibold small">Patient Care</div>
+                            <div class="small text-muted">Provide treatment</div>
                         </div>
                         <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
                         <div class="col-6 col-md-2">
@@ -232,7 +232,7 @@
                         <span class="text-muted">What drives MedCura AI Platform</span>
                     </div>
                     <ul class="list-unstyled mb-0">
-                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> AI-powered evidence-based diagnosis</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Evidence-based medical practice</li>
                         <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Comprehensive patient management</li>
                         <li class="mb-2"><i class="fas fa-check text-success me-2"></i> HIPAA-compliant security standards</li>
                         <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Professional practice growth tools</li>
