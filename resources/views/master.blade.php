@@ -1837,7 +1837,7 @@ body .dropdown .dropdown-menu.show,
         @endif
 
         <!-- Main Content -->
-        <div class="dashboard-container" style="padding-top: 0px; margin-top: -5px; border-top: 5px solid #DE6262; border-radius: 15px 15px 0 0; box-shadow: 0 -4px 20px rgba(222, 98, 98, 0.1); position: relative; z-index: 1;">
+        <div class="dashboard-container" style="padding-top: 0px; margin-top: 70px; border-top: 5px solid #DE6262; border-radius: 15px 15px 0 0; box-shadow: 0 -4px 20px rgba(222, 98, 98, 0.1); position: relative; z-index: 1;">
             <!-- Seamless connection gradient -->
             <div style="position: absolute; top: -5px; left: 0; right: 0; height: 15px; background: linear-gradient(to bottom, rgba(222, 98, 98, 0.2), transparent); pointer-events: none;"></div>
             <main class="app-main" style="padding-top: 25px;">
