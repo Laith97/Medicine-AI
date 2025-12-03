@@ -421,6 +421,15 @@
         margin-top: 1rem;
     }
 
+    /* Modal z-index fixes to ensure popups appear above sidebar */
+    .modal {
+        z-index: 1055 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 1050 !important;
+    }
+
     @media (max-width: 768px) {
         .dashboard-container {
             padding: 1rem 0;

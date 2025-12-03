@@ -2382,7 +2382,7 @@ body .dropdown .dropdown-menu.show,
                         const time = new Date(notification.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
                         html += `
-                            <div class="notification-item ${notification.read_at ? 'read' : 'unread'}" data-id="${notification.id}">
+                            <div class="notification-item ${notification.read_at ? 'read' : 'unread'}" data-id="${notification.id}" data-link="${notification.data?.link || ''}" data-message="${notification.data?.message || ''}">
                                 <div class="d-flex align-items-start gap-3 p-3 border-bottom">
                                     <div class="notification-icon">
                                         <i class="bi ${notification.data?.icon || 'bi-bell'} text-${notification.data?.color || 'primary'}"></i>
@@ -2408,11 +2408,34 @@ body .dropdown .dropdown-menu.show,
 
                     notificationList.innerHTML = html;
 
-                    // Add click handlers to mark as read
+                    // Add click handlers to mark as read and redirect
                     document.querySelectorAll('.notification-item.unread').forEach(item => {
-                        item.addEventListener('click', function() {
+                        item.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+
                             const notificationId = this.dataset.id;
+                            const link = this.dataset.link;
+                            const message = this.dataset.message;
+
                             markAsRead(notificationId);
+
+                            // Close the dropdown
+                            const dropdown = bootstrap.Dropdown.getInstance(document.querySelector('.notifications-dropdown .dropdown-toggle'));
+                            if (dropdown) dropdown.hide();
+
+                            // Small delay to ensure dropdown closes before redirect
+                            setTimeout(() => {
+                                // Redirect based on notification type
+                                if (link) {
+                                    window.location.href = link;
+                                } else if (message && message.toLowerCase().includes('appointment')) {
+                                    window.location.href = '/appointments';
+                                } else {
+                                    // Default fallback to dashboard
+                                    window.location.href = '/dashboard';
+                                }
+                            }, 100);
                         });
                     });
 
