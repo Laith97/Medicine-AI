@@ -758,6 +758,116 @@ body .dropdown .dropdown-menu.show,
             z-index: 1050 !important;
         }
 
+        /* Professional Skeleton Loading Animation */
+        .skeleton-loader {
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+            background: linear-gradient(90deg,
+                rgba(222, 98, 98, 0.1) 25%,
+                rgba(222, 98, 98, 0.05) 50%,
+                rgba(222, 98, 98, 0.1) 75%);
+            background-size: 200% 100%;
+            border: 1px solid rgba(222, 98, 98, 0.1);
+        }
+
+        /* Loading indicator overlay */
+        .ajax-loading-overlay {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9998;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(222, 98, 98, 0.2);
+            border-radius: 50px;
+            padding: 8px 16px;
+            box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #DE6262;
+            font-weight: 500;
+        }
+
+        .ajax-loading-overlay.show {
+            display: flex;
+        }
+
+        .ajax-loading-overlay .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(222, 98, 98, 0.3);
+            border-top: 2px solid #DE6262;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes skeleton-loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .skeleton-header {
+            height: 60px;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+
+        .skeleton-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .skeleton-stat-card {
+            flex: 1;
+            height: 120px;
+            border-radius: 20px;
+        }
+
+        .skeleton-tabs {
+            height: 50px;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .skeleton-table {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .skeleton-table-header {
+            height: 50px;
+            margin-bottom: 1rem;
+        }
+
+        .skeleton-table-row {
+            height: 60px;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+        }
+
+        /* Responsive skeleton adjustments */
+        @media (max-width: 768px) {
+            .skeleton-stats {
+                flex-direction: column;
+            }
+
+            .skeleton-stat-card {
+                height: 100px;
+                margin-bottom: 1rem;
+            }
+        }
+
         /* Professional Mobile Responsiveness for Top Bar */
         @media (max-width: 991px) {
             #top-bar {
@@ -1836,8 +1946,14 @@ body .dropdown .dropdown-menu.show,
             </div>
         @endif
 
+        <!-- AJAX Loading Indicator -->
+        <div id="ajax-loading-overlay" class="ajax-loading-overlay">
+            <div class="loading-spinner"></div>
+            <span>Loading...</span>
+        </div>
+
         <!-- Main Content -->
-        <div class="dashboard-container" style="padding-top: 0px; margin-top: 70px; border-top: 5px solid #DE6262; border-radius: 15px 15px 0 0; box-shadow: 0 -4px 20px rgba(222, 98, 98, 0.1); position: relative; z-index: 1;">
+        <div id="main-content" class="dashboard-container" style="padding-top: 0px; margin-top: 70px; border-top: 5px solid #DE6262; border-radius: 15px 15px 0 0; box-shadow: 0 -4px 20px rgba(222, 98, 98, 0.1); position: relative; z-index: 1;">
             <!-- Seamless connection gradient -->
             <div style="position: absolute; top: -5px; left: 0; right: 0; height: 15px; background: linear-gradient(to bottom, rgba(222, 98, 98, 0.2), transparent); pointer-events: none;"></div>
             <main class="app-main" style="padding-top: 25px;">
@@ -2048,6 +2164,212 @@ body .dropdown .dropdown-menu.show,
 
 {{-- Extra scripts --}}
 @stack('scripts')
+
+{{-- AJAX Navigation Script --}}
+<script>
+$(document).ready(function() {
+   // Intercept sidebar link clicks
+   $(document).on('click', '.sidebar-nav a[data-ajax="true"]', function(e) {
+       e.preventDefault();
+
+       const $link = $(this);
+       const route = $link.data('route');
+       const url = $link.attr('href');
+
+       // Don't navigate if already active
+       if ($link.hasClass('active')) {
+           return;
+       }
+
+       // Update active state
+       $('.sidebar-nav .nav-link').removeClass('active');
+       $link.addClass('active');
+
+       // Load content via AJAX
+       loadPageContent(url, route);
+
+       // Update browser history
+       history.pushState({route: route, url: url}, '', url);
+   });
+
+   // Handle browser back/forward buttons
+   window.addEventListener('popstate', function(e) {
+       if (e.state && e.state.url) {
+           loadPageContent(e.state.url, e.state.route);
+       }
+   });
+});
+
+function loadPageContent(url, route) {
+    // Show loading overlay and skeleton
+    const $loadingOverlay = $('#ajax-loading-overlay');
+    const $mainContent = $('#main-content');
+    const originalContent = $mainContent.html();
+
+    // Show loading overlay
+    $loadingOverlay.addClass('show');
+
+    $mainContent.html(`
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10">
+                    <!-- Skeleton Header -->
+                    <div class="skeleton-loader skeleton-header"></div>
+
+                    <!-- Skeleton Stats Cards -->
+                    <div class="skeleton-stats">
+                        <div class="skeleton-loader skeleton-stat-card"></div>
+                        <div class="skeleton-loader skeleton-stat-card"></div>
+                        <div class="skeleton-loader skeleton-stat-card"></div>
+                        <div class="skeleton-loader skeleton-stat-card"></div>
+                    </div>
+
+                    <!-- Skeleton Tabs -->
+                    <div class="skeleton-loader skeleton-tabs"></div>
+
+                    <!-- Skeleton Table -->
+                    <div class="skeleton-loader skeleton-table">
+                        <div class="skeleton-loader skeleton-table-header"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `);
+
+   $.ajax({
+       url: url,
+       method: 'GET',
+       headers: {
+           'X-Requested-With': 'XMLHttpRequest',
+           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+       },
+       success: function(response) {
+           try {
+               // Hide loading overlay
+               $loadingOverlay.removeClass('show');
+
+               // Extract content from the response (between main-content div)
+               const $temp = $('<div>').html(response);
+               const newContent = $temp.find('#main-content').html();
+
+               if (newContent) {
+                   $mainContent.html(newContent);
+
+                   // Update page title
+                   const newTitle = $temp.find('title').text();
+                   if (newTitle) {
+                       document.title = newTitle;
+                   }
+
+                   // Re-initialize any JavaScript components
+                   initializePageComponents(route);
+
+                   // Scroll to top smoothly
+                   $('html, body').animate({ scrollTop: 0 }, 300);
+               } else {
+                   // If no main-content found, assume full page response
+                   $mainContent.html(response);
+               }
+           } catch (error) {
+               console.error('Error parsing AJAX response:', error);
+               $mainContent.html(originalContent);
+               showAjaxError('Failed to load page content. Please try again.');
+           }
+       },
+       error: function(xhr, status, error) {
+           // Hide loading overlay
+           $loadingOverlay.removeClass('show');
+
+           console.error('AJAX Error:', error);
+           $mainContent.html(originalContent);
+
+           // Fallback to regular navigation for critical errors
+           if (xhr.status === 0 || xhr.status >= 500) {
+               showAjaxError('Connection failed. Redirecting...');
+               setTimeout(() => {
+                   window.location.href = url;
+               }, 2000);
+           } else {
+               showAjaxError('Failed to load page. Please refresh and try again.');
+           }
+       }
+   });
+}
+
+function initializePageComponents(route) {
+   // Re-initialize DataTables if present
+   if (typeof $.fn.DataTable !== 'undefined') {
+       $('.dataTable').each(function() {
+           if ($.fn.DataTable.isDataTable(this)) {
+               $(this).DataTable().destroy();
+           }
+       });
+
+       // Re-initialize DataTables with new content
+       if (typeof initializeDataTable === 'function') {
+           initializeDataTable();
+       }
+   }
+
+   // Re-initialize Bootstrap components (Bootstrap 5 - no jQuery plugins)
+   if (typeof bootstrap !== 'undefined') {
+       // Re-initialize tooltips
+       document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(element => {
+           const tooltip = bootstrap.Tooltip.getInstance(element);
+           if (tooltip) {
+               tooltip.dispose();
+           }
+           new bootstrap.Tooltip(element);
+       });
+
+       // Re-initialize popovers
+       document.querySelectorAll('[data-bs-toggle="popover"]').forEach(element => {
+           const popover = bootstrap.Popover.getInstance(element);
+           if (popover) {
+               popover.dispose();
+           }
+           new bootstrap.Popover(element);
+       });
+
+       // Clean up modals (dispose existing instances)
+       document.querySelectorAll('.modal').forEach(modalElement => {
+           const modal = bootstrap.Modal.getInstance(modalElement);
+           if (modal) {
+               modal.dispose();
+           }
+       });
+   }
+
+   // Trigger custom event for page-specific initializations
+   $(document).trigger('pageContentLoaded', [route]);
+}
+
+function showAjaxError(message) {
+   // Create a temporary error notification
+   const $error = $(`
+       <div class="alert alert-danger alert-dismissible fade show position-fixed"
+            style="top: 80px; right: 20px; z-index: 9999; min-width: 300px;">
+           <i class="fas fa-exclamation-triangle me-2"></i>
+           ${message}
+           <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+       </div>
+   `);
+
+   $('body').append($error);
+
+   // Auto-remove after 5 seconds
+   setTimeout(() => {
+       $error.alert('close');
+   }, 5000);
+}
+</script>
 
 <script>
     // Dropdown initialization
