@@ -689,6 +689,7 @@ public function destroy(User $user)
                   ->selectRaw('user_id, SUM(total_tokens) as total_tokens, SUM(cost_estimate) as total_cost')
                   ->groupBy('user_id');
         }])
+        ->groupBy('id')
         ->having('total_requests', '>', 0)
         ->orderBy('total_requests', 'desc')
         ->limit(10)
