@@ -637,9 +637,6 @@
                     <i class="fas fa-user-injured"></i>
                     <h5>No Patient Records Found</h5>
                     <p>You haven't created any patient records yet. Start by adding a new patient analysis or diagnosis.</p>
-                    <a href="{{ route('openai.form') }}" class="btn-custom-primary">
-                        <i class="fas fa-plus me-2"></i>Add New Patient
-                    </a>
                 </div>
                 @endif
             </div>
