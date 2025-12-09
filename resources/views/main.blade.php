@@ -321,9 +321,6 @@
                         <a href="#features" class="btn btn-theme-outline btn-lg">
                             <i class="fas fa-play me-2"></i>Explore Features
                         </a>
-                        <a href="/login" class="btn btn-theme-primary btn-lg">
-                            <i class="fas fa-user-md me-2"></i>Get Started
-                        </a>
                     </div>
                 </div>
             </div>

@@ -94,8 +94,6 @@
                             <i class="bi bi-check-circle text-success me-3"></i>
                             <span class="text-white">Voice Assistant Access</span>
                         </div>
-                        <h2 class="auth-title">Welcome Back</h2>
-                        <p class="auth-subtitle">Sign in to your MedCura Clinical Platform account</p>
                     </div>
                 </div>
             </div>
