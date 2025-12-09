@@ -2268,7 +2268,10 @@ function loadPageContent(url, route) {
                        document.title = newTitle;
                    }
 
-                   // Re-initialize any JavaScript components
+                   // Mark content as AJAX loaded for components that need to know
+                   $mainContent.attr('data-ajax-loaded', 'true');
+
+                   // Re-initialize any JavaScript components (including executing scripts)
                    initializePageComponents(route);
 
                    // Scroll to top smoothly
@@ -2304,51 +2307,138 @@ function loadPageContent(url, route) {
 }
 
 function initializePageComponents(route) {
-   // Re-initialize DataTables if present
-   if (typeof $.fn.DataTable !== 'undefined') {
-       $('.dataTable').each(function() {
-           if ($.fn.DataTable.isDataTable(this)) {
-               $(this).DataTable().destroy();
-           }
-       });
+    // Execute any script tags in the newly loaded content
+    executeScriptsInContent();
 
-       // Re-initialize DataTables with new content
-       if (typeof initializeDataTable === 'function') {
-           initializeDataTable();
-       }
-   }
+    // Re-initialize DataTables if present
+    if (typeof $.fn.DataTable !== 'undefined') {
+        $('.dataTable').each(function() {
+            if ($.fn.DataTable.isDataTable(this)) {
+                $(this).DataTable().destroy();
+            }
+        });
 
-   // Re-initialize Bootstrap components (Bootstrap 5 - no jQuery plugins)
-   if (typeof bootstrap !== 'undefined') {
-       // Re-initialize tooltips
-       document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(element => {
-           const tooltip = bootstrap.Tooltip.getInstance(element);
-           if (tooltip) {
-               tooltip.dispose();
-           }
-           new bootstrap.Tooltip(element);
-       });
+        // Re-initialize DataTables with new content
+        if (typeof initializeDataTable === 'function') {
+            initializeDataTable();
+        }
+    }
 
-       // Re-initialize popovers
-       document.querySelectorAll('[data-bs-toggle="popover"]').forEach(element => {
-           const popover = bootstrap.Popover.getInstance(element);
-           if (popover) {
-               popover.dispose();
-           }
-           new bootstrap.Popover(element);
-       });
+    // Re-initialize Bootstrap components (Bootstrap 5 - no jQuery plugins)
+    if (typeof bootstrap !== 'undefined') {
+        // Re-initialize tooltips
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(element => {
+            const tooltip = bootstrap.Tooltip.getInstance(element);
+            if (tooltip) {
+                tooltip.dispose();
+            }
+            new bootstrap.Tooltip(element);
+        });
 
-       // Clean up modals (dispose existing instances)
-       document.querySelectorAll('.modal').forEach(modalElement => {
-           const modal = bootstrap.Modal.getInstance(modalElement);
-           if (modal) {
-               modal.dispose();
-           }
-       });
-   }
+        // Re-initialize popovers
+        document.querySelectorAll('[data-bs-toggle="popover"]').forEach(element => {
+            const popover = bootstrap.Popover.getInstance(element);
+            if (popover) {
+                popover.dispose();
+            }
+            new bootstrap.Popover(element);
+        });
 
-   // Trigger custom event for page-specific initializations
-   $(document).trigger('pageContentLoaded', [route]);
+        // Clean up modals (dispose existing instances)
+        document.querySelectorAll('.modal').forEach(modalElement => {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.dispose();
+            }
+        });
+    }
+
+    // Trigger custom event for page-specific initializations
+    $(document).trigger('pageContentLoaded', [route]);
+}
+
+// Function to execute script tags in dynamically loaded content
+function executeScriptsInContent() {
+    // Find all script tags in the main content area that haven't been executed yet
+    const scripts = document.querySelectorAll('#main-content script:not([data-executed])');
+
+    // Separate external and inline scripts
+    const externalScripts = [];
+    const inlineScripts = [];
+
+    scripts.forEach(script => {
+        if (script.src) {
+            externalScripts.push(script);
+        } else if (script.textContent) {
+            inlineScripts.push(script);
+        }
+    });
+
+    // Load external scripts first, then execute inline scripts
+    if (externalScripts.length > 0) {
+        loadExternalScriptsSequentially(externalScripts, () => {
+            executeInlineScripts(inlineScripts);
+        });
+    } else {
+        executeInlineScripts(inlineScripts);
+    }
+}
+
+function loadExternalScriptsSequentially(scripts, callback) {
+    let index = 0;
+
+    function loadNext() {
+        if (index >= scripts.length) {
+            callback();
+            return;
+        }
+
+        const script = scripts[index];
+        const newScript = document.createElement('script');
+        newScript.src = script.src;
+        newScript.async = false; // Load synchronously to ensure proper order
+        newScript.defer = false;
+
+        // Copy any data attributes
+        Array.from(script.attributes).forEach(attr => {
+            if (attr.name.startsWith('data-')) {
+                newScript.setAttribute(attr.name, attr.value);
+            }
+        });
+
+        newScript.onload = () => {
+            console.log('Loaded external script:', script.src);
+            script.setAttribute('data-executed', 'true');
+            index++;
+            loadNext();
+        };
+
+        newScript.onerror = () => {
+            console.error('Failed to load external script:', script.src);
+            script.setAttribute('data-executed', 'true');
+            index++;
+            loadNext(); // Continue with next script even if one fails
+        };
+
+        // Replace the old script with the new one
+        script.parentNode.replaceChild(newScript, script);
+    }
+
+    loadNext();
+}
+
+function executeInlineScripts(scripts) {
+    scripts.forEach(script => {
+        try {
+            // Execute the script in global scope
+            (function() {
+                eval(script.textContent);
+            })();
+            script.setAttribute('data-executed', 'true');
+        } catch (error) {
+            console.error('Error executing inline script:', error);
+        }
+    });
 }
 
 function showAjaxError(message) {
