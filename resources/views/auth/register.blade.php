@@ -2,24 +2,144 @@
 
 @section('title', 'Register - MedCura Clinical Platform')
 
+@push('styles')
+<style>
+/* Professional Dashboard Header Styling */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    margin-top: 90px; /* Add space from fixed top-bar */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+}
+
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header h2::before {
+    content: '👤';
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+}
+
+/* Responsive adjustments for auth layout */
+@media (max-width: 991px) {
+    .auth-form-section {
+        padding: 1rem;
+    }
+
+    .auth-card {
+        padding: 1.5rem;
+    }
+
+    .auth-info-content .display-5 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .auth-card {
+        padding: 1rem;
+        margin: 0.5rem;
+    }
+
+    .auth-form-container {
+        max-width: 100%;
+    }
+}
+</style>
+@endpush
+
 @section('content')
-<div class="dashboard-header py-2 border-bottom">
-    <h2 class="h1 mb-1" style="font-weight: 700;">Register</h2>
-    <p>Create a new account</p>
-</div>
-<div class="auth-wrapper hero-section d-flex align-items-center" style="background: linear-gradient(135deg, #fbfdff00 0%, #34495e 100%); min-height: 100vh; padding: 2rem 0;">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-12 col-md-6 col-lg-5">
-                <div class="auth-card">
-                    <!-- Header -->
-                    <div class="auth-header text-center mb-4">
-                        <div class="auth-logo mb-3">
-                            <i class="bi bi-heart-pulse" style="font-size: 3rem; color: #DE6262;"></i>
+<div class="auth-page">
+    <div class="container-fluid">
+        <div class="row min-vh-100">
+            <!-- Left side - Information -->
+            <div class="col-lg-6 auth-info-section d-none d-lg-flex">
+                <div class="auth-info-content">
+                    <i class="bi bi-heart-pulse display-1 text-primary mb-4"></i>
+                    <h1 class="display-5 fw-bold text-white mb-3">Join Our AI Healthcare Platform</h1>
+                    <p class="lead text-white-50 mb-4">Create your account and start revolutionizing patient care with advanced AI diagnosis tools.</p>
+                    <div class="auth-features">
+                        <div class="feature-item mb-3">
+                            <i class="bi bi-check-circle text-success me-3"></i>
+                            <span class="text-white">AI-Powered Diagnosis</span>
                         </div>
-                        <h2 class="auth-title">Create Account</h2>
-                        <p class="auth-subtitle">Join MedCura Clinical Platform today</p>
+                        <div class="feature-item mb-3">
+                            <i class="bi bi-check-circle text-success me-3"></i>
+                            <span class="text-white">Voice Assistant Technology</span>
+                        </div>
+                        <div class="feature-item mb-3">
+                            <i class="bi bi-check-circle text-success me-3"></i>
+                            <span class="text-white">Patient Management</span>
+                        </div>
+                        <div class="feature-item mb-3">
+                            <i class="bi bi-check-circle text-success me-3"></i>
+                            <span class="text-white">Professional Landing Pages</span>
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Right side - Form -->
+            <div class="col-lg-6 col-12 auth-form-section">
+                <div class="auth-form-container">
+                    <!-- Compact header for mobile -->
+                    <div class="text-center mb-4 d-lg-none">
+                        <i class="bi bi-heart-pulse text-primary mb-3" style="font-size: 2.5rem;"></i>
+                        <h2 class="h5 text-muted">Welcome to AI Medical Diagnosis</h2>
+                    </div>
+
+                    <!-- Main form card -->
+                    <div class="auth-card">
+                        <!-- Header -->
+                        <div class="auth-header text-center mb-4">
+                            <h2 class="auth-title">Create Account</h2>
+                            <p class="auth-subtitle">Join our healthcare platform today</p>
+                        </div>
 
                     <!-- Register Form -->
                     <form method="POST" action="{{ route('register') }}" class="auth-form">
@@ -290,7 +410,13 @@
                                 Sign in here <i class="bi bi-arrow-right ms-1"></i>
                             </a>
                         </div>
-                    </form>
+                        </form>
+                    </div>
+
+                    <!-- Footer links -->
+                    <div class="text-center mt-4">
+                        <small class="text-muted">Need help? <a href="{{ route('contact') }}" class="text-decoration-none">Contact Support</a></small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -298,31 +424,63 @@
 </div>
 
 <style>
-.auth-wrapper {
+.auth-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
     position: relative;
     overflow: hidden;
 }
 
-.auth-wrapper::before {
+.auth-info-section {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    position: relative;
+}
+
+.auth-info-section::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="a" cx="50%" cy="50%"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.1"/><stop offset="100%" stop-color="%23ffffff" stop-opacity="0"/></radialGradient></defs><circle cx="200" cy="200" r="100" fill="url(%23a)"/><circle cx="800" cy="300" r="150" fill="url(%23a)"/><circle cx="400" cy="700" r="120" fill="url(%23a)"/></svg>');
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="a" cx="50%" cy="50%"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.05"/><stop offset="100%" stop-color="%23ffffff" stop-opacity="0"/></radialGradient></defs><circle cx="200" cy="200" r="100" fill="url(%23a)"/><circle cx="800" cy="300" r="150" fill="url(%23a)"/><circle cx="400" cy="700" r="120" fill="url(%23a)"/></svg>');
     opacity: 0.3;
 }
 
-.auth-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    border-radius: 20px;
-    padding: 3rem;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+.auth-info-content {
     position: relative;
-    z-index: 1;
+    z-index: 2;
+    max-width: 500px;
+    text-align: center;
+}
+
+.auth-form-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    min-height: 100vh;
+}
+
+.auth-form-container {
+    width: 100%;
+    max-width: 450px;
+}
+
+.auth-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    z-index: 2;
 }
 
 .auth-title {

@@ -16,13 +16,43 @@ use Illuminate\Support\Facades\Auth;
 
 // Private user channel - allows users to listen to their own notifications
 Broadcast::channel('App.User.{id}', function ($user, $id) {
-    // User can only listen to their own channel
-    return (int) $user->id === (int) $id;
+    try {
+        // User can only listen to their own channel
+        return $user && (int) $user->id === (int) $id;
+    } catch (\Exception $e) {
+        \Log::error('Broadcasting auth error for App.User.' . $id, ['error' => $e->getMessage()]);
+        return false;
+    }
+});
+
+// Alternative user channel naming (used by notification catcher)
+Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
+    try {
+        return $user && (int) $user->id === (int) $id;
+    } catch (\Exception $e) {
+        \Log::error('Broadcasting auth error for App.Models.User.' . $id, ['error' => $e->getMessage()]);
+        return false;
+    }
 });
 
 // General user channel (alternative naming)
 Broadcast::channel('user.{id}', function ($user, $id) {
-    return (int) $user->id === (int) $id;
+    try {
+        return $user && (int) $user->id === (int) $id;
+    } catch (\Exception $e) {
+        \Log::error('Broadcasting auth error for user.' . $id, ['error' => $e->getMessage()]);
+        return false;
+    }
+});
+
+// Private user channel (alternative naming)
+Broadcast::channel('private-user.{id}', function ($user, $id) {
+    try {
+        return $user && (int) $user->id === (int) $id;
+    } catch (\Exception $e) {
+        \Log::error('Broadcasting auth error for private-user.' . $id, ['error' => $e->getMessage()]);
+        return false;
+    }
 });
 
 // Doctor-specific channels

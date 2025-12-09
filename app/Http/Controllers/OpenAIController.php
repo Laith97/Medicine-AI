@@ -442,6 +442,11 @@ class OpenAIController extends Controller
             return $b['last_visit'] <=> $a['last_visit'];
         });
 
+        // Handle AJAX requests for dynamic content loading
+        if (request()->ajax()) {
+            return response()->view('cases', compact('records', 'patientGroups'))->header('Content-Type', 'text/html');
+        }
+
         return view('cases', compact('records', 'patientGroups'));
     }
 

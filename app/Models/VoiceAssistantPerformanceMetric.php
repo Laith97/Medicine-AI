@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Log;
 
 class VoiceAssistantPerformanceMetric extends Model
 {
@@ -150,9 +151,12 @@ class VoiceAssistantPerformanceMetric extends Model
      */
     public static function recordMetric(array $data): self
     {
-        return self::create(array_merge($data, [
-            'doctor_id' => auth()->id(),
-        ]));
+        // Ensure doctor_id is provided in the data array
+        if (!isset($data['doctor_id'])) {
+            $data['doctor_id'] = auth()->id();
+        }
+
+        return self::create($data);
     }
 
     /**
@@ -219,18 +223,32 @@ class VoiceAssistantPerformanceMetric extends Model
      */
     private static function sendPerformanceAlert(array $alerts, array $metrics): void
     {
-        // In a real application, this would send notifications to administrators
-        // For now, we'll log the alerts
-        \Log::warning('Voice Assistant Performance Alert', [
+        // Log the alerts for debugging
+        Log::warning('Voice Assistant Performance Alert', [
             'alerts' => $alerts,
             'metrics' => $metrics,
             'timestamp' => now()->toISOString()
         ]);
 
-        // TODO: Implement actual notification system (email, Slack, etc.)
-        // Example:
-        // Notification::route('slack', env('SLACK_WEBHOOK'))
-        //     ->notify(new PerformanceAlertNotification($alerts, $metrics));
+        // Send notifications to administrators
+        try {
+            // Get all admin users
+            $admins = \App\Models\User::where('role', 'admin')->get();
+
+            if ($admins->isNotEmpty()) {
+                foreach ($admins as $admin) {
+                    $admin->notify(new \App\Notifications\VoiceAssistantPerformanceAlert($alerts, $metrics));
+                }
+            } else {
+                // Fallback: send to the first user if no admins exist (for development)
+                $fallbackUser = \App\Models\User::first();
+                if ($fallbackUser) {
+                    $fallbackUser->notify(new \App\Notifications\VoiceAssistantPerformanceAlert($alerts, $metrics));
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send voice assistant performance alert notification: ' . $e->getMessage());
+        }
     }
 
     /**

@@ -3,8 +3,8 @@
 @section('title', 'Patient Management')
 
 @section('content')
-<div class="dashboard-header py-2 border-bottom">
-    <h2 class="h1 mb-1" style="font-weight: 700;">Patient Management</h2>
+<div class="dashboard-header">
+    <h2>Patient Management</h2>
     <p>Manage patient records and appointments</p>
 </div>
 
@@ -12,6 +12,65 @@
 <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
 <style>
+/* Professional Dashboard Header Styling */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+}
+
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header h2::before {
+    content: '👥';
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+}
     .dashboard-container {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         min-height: 100vh;
@@ -360,6 +419,15 @@
         font-size: 0.9rem;
         color: #6c757d;
         margin-top: 1rem;
+    }
+
+    /* Modal z-index fixes to ensure popups appear above sidebar */
+    .modal {
+        z-index: 1055 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 1050 !important;
     }
 
     @media (max-width: 768px) {
@@ -761,9 +829,6 @@
                     <i class="fas fa-user-injured"></i>
                     <h5>No Patient Records Found</h5>
                     <p>You haven't created any patient records yet. Start by adding a new patient analysis or diagnosis.</p>
-                    <a href="{{ route('openai.form') }}" class="btn-custom-primary">
-                        <i class="fas fa-plus me-2"></i>Add New Patient
-                    </a>
                 </div>
                 @endif
             </div>

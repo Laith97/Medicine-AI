@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Broadcasting\BroadcastServiceProvider;
 use Laravel\Sanctum\SanctumServiceProvider;
 use App\Jobs\CreateMonthlyInvoices;
 use App\Jobs\SendInvoiceNotifications;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withProviders([
         SanctumServiceProvider::class,
+        BroadcastServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([

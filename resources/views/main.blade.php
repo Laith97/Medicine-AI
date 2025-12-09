@@ -315,12 +315,11 @@
                         Transform healthcare delivery with our comprehensive EMR system enhanced by advanced analytics. Complete patient management, clinical decision support, and seamless workflow integration in one platform.
                     </p>
                     <div class="d-flex flex-wrap gap-3" data-animate="fadeInUp" data-delay="400">
-                        {{-- AI Ask temporarily disabled --}}
-                        {{-- <a href="/login" class="btn btn-theme-primary btn-lg">
-                            <i class="fas fa-stethoscope me-2"></i>Start Diagnosis
-                        </a> --}}
+                        <a href="{{ route('register.doctor') }}" class="btn btn-theme-primary btn-lg">
+                            <i class="fas fa-stethoscope me-2"></i>Start Free Trial
+                        </a>
                         <a href="#features" class="btn btn-theme-outline btn-lg">
-                            <i class="fas fa-play me-2"></i>Learn More
+                            <i class="fas fa-play me-2"></i>Explore Features
                         </a>
                         <a href="/login" class="btn btn-theme-primary btn-lg">
                             <i class="fas fa-user-md me-2"></i>Get Started
@@ -358,7 +357,7 @@
             <div class="col-lg-4 col-md-6">
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-brain"></i>
+                        <i class="fas fa-stethoscope"></i>
                     </div>
                     <h4 class="mb-3">Clinical Decision Support</h4>
                     <p class="text-muted">Advanced clinical tools analyze patient symptoms, medical history, and test results to assist in clinical decision-making with comprehensive analysis.</p>
@@ -511,6 +510,32 @@
                 </div>
             </div>
         </div>
+        <div class="row mt-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-item">
+                    <div class="stat-number">4.8★</div>
+                    <h5>Patient Satisfaction</h5>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-item">
+                    <div class="stat-number">40%</div>
+                    <h5>Avg. Time Saved</h5>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-item">
+                    <div class="stat-number">300+</div>
+                    <h5>Medical Practices</h5>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-item">
+                    <div class="stat-number">24/7</div>
+                    <h5>Support Available</h5>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -575,7 +600,7 @@
                 <div class="testimonial-card">
                     <div class="mb-4">
                        <!-- <img src="https://via.placeholder.com/80x80/DE6262/FFFFFF?text=SA" alt="Dr. Sarah Ahmed" class="rounded-circle mb-3" width="80" height="80">-->
-                        <h5 class="mb-1">Dr. Sarah Johnson</h5>
+                        <h5 class="mb-1">Dr. Sarah Al-Zawahrah</h5>
                         <small class="text-muted">Cardiology Practice</small>
                     </div>
                     <p class="text-muted">"The advanced EMR system has revolutionized our patient care. The clinical decision support and voice transcription capabilities have reduced documentation time by 60% while improving accuracy. The comprehensive patient records are always accessible and well-organized."</p>
@@ -585,7 +610,7 @@
                 <div class="testimonial-card">
                     <div class="mb-4">
                     <!--    <img src="https://via.placeholder.com/80x80/DE6262/FFFFFF?text=KM" alt="Dr. Khaled Mansour" class="rounded-circle mb-3" width="80" height="80">-->
-                        <h5 class="mb-1">Dr. Michael Chen</h5>
+                        <h5 class="mb-1">Dr. Khaled Mansour</h5>
                         <small class="text-muted">Family Medicine</small>
                     </div>
                     <p class="text-muted">"The integration of clinical decision support with our EMR system has improved our diagnostic accuracy and patient outcomes. The system's predictive analytics help us identify at-risk patients before complications arise. Essential for modern medical practice."</p>
@@ -599,16 +624,11 @@
 <!-- Pricing Plans Section -->
 <section id="pricing" class="py-5 bg-white">
     <div class="container">
-        <div class="text-center mb-5">
-            <h2 class="section-title">Simple, Transparent Pricing</h2>
-            <p class="section-subtitle">Choose the plan that fits your practice</p>
-        </div>
-
         <!-- Billing Toggle for All Users -->
         <div class="text-center mb-5">
             <div class="d-inline-flex align-items-center p-2 rounded-pill" style="background: #f8f9fa; border: 1px solid #e9ecef;">
-                <span class="px-3 py-2 billing-period-label" id="monthly-label" style="border-radius: 20px; cursor: pointer; transition: all 0.3s ease; background: #DE6262; color: white;">Monthly</span>
-                <span class="px-3 py-2 billing-period-label" id="yearly-label" style="border-radius: 20px; cursor: pointer; transition: all 0.3s ease; margin-left: 5px;">Yearly <small class="text-success">(Save up to 17%)</small></span>
+                <span class="px-3 py-2 billing-period-label active" id="monthly-label" style="border-radius: 20px; cursor: pointer; transition: all 0.3s ease; background: #DE6262; color: white;">Monthly</span>
+                <span class="px-3 py-2 billing-period-label" id="yearly-label" style="border-radius: 20px; cursor: pointer; transition: all 0.3s ease; margin-left: 5px;">Yearly <small class="text-success">(Save 17%)</small></span>
             </div>
         </div>
 
@@ -682,55 +702,53 @@
             @endif
         </div>
 
-        @auth
-            <!-- For authenticated users, show their current plan info -->
-            @if(Auth::user()->monthlyInvoiceSetting && Auth::user()->monthlyInvoiceSetting->is_active)
-            <div class="row justify-content-center mt-5">
-                <div class="col-lg-8">
-                    <div class="user-pricing-info p-4 rounded text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #DE6262;">
-                        <h4 class="text-theme-primary mb-3">Your Current Plan</h4>
-                        @php
-                            $setting = Auth::user()->monthlyInvoiceSetting;
-                            $monthlyPrice = $setting->monthly_price ?? 0;
-                            $yearlyPrice = $setting->yearly_price ?? 0;
-                        @endphp
-                        <div class="pricing-options mb-3">
-                            <div class="row text-center">
-                                <div class="col-md-6">
-                                    <div class="price-option p-3 rounded" style="background: rgba(222, 98, 98, 0.1);">
-                                        <small class="text-muted d-block">Monthly</small>
-                                        <span class="h4 text-theme-primary">${{ number_format($monthlyPrice, 0) }}</span>
-                                        <small class="text-muted">/month</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="price-option p-3 rounded" style="background: rgba(222, 98, 98, 0.1);">
-                                        <small class="text-muted d-block">Yearly</small>
-                                        <span class="h4 text-theme-primary">${{ number_format($yearlyPrice, 0) }}</span>
-                                        <small class="text-muted">/year</small>
-                                    </div>
+        <!-- Pricing Display with Toggle -->
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="pricing-card featured text-center">
+                    <div class="popular-badge">Most Popular</div>
+                    <div class="pricing-header">
+                        <h3 class="plan-name">Professional Plan</h3>
+                        <p class="text-muted">Complete healthcare management solution</p>
+                        <div class="price-container">
+                            <div class="price-display monthly-price">
+                                <span class="price">${{ $professionalMonthly ?? 30 }}</span>
+                                <span class="period">/month</span>
+                            </div>
+                            <div class="price-display yearly-price" style="display: none;">
+                                <span class="price">${{ $professionalYearly ?? 300 }}</span>
+                                <span class="period">/year</span>
+                                <div class="mt-2">
+                                    <small class="text-success">Save ${{ (($professionalMonthly ?? 30) * 12) - ($professionalYearly ?? 300) }}</small>
                                 </div>
                             </div>
                         </div>
-                        <p class="text-muted mb-3">Your current subscription plan</p>
-                        <a href="{{ route('subscription.manage') }}" class="btn btn-theme-primary">
-                            <i class="fas fa-cog me-2"></i>
-                            Manage Subscription
+                    </div>
+
+                    <div class="pricing-body">
+                        <ul class="feature-list text-start">
+                            <li><i class="fas fa-check text-success me-2"></i>Comprehensive Diagnosis</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Voice Assistant</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Patient Management</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Practice Analytics</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Professional Landing Page</li>
+                            <li><i class="fas fa-check text-success me-2"></i>24/7 Support</li>
+                        </ul>
+                    </div>
+
+                    <div class="pricing-footer">
+                        <a href="{{ route('register.doctor') }}" class="btn btn-theme-primary btn-lg w-100">
+                            Start Free Trial
                         </a>
                     </div>
                 </div>
             </div>
-            @endif
-        @endauth
+        </div>
 
-        <div class="text-center mt-5">
+        <div class="text-center mt-4">
             <p class="text-muted">
                 <i class="fas fa-shield-alt text-success me-2"></i>
-                All plans include HIPAA compliance and secure data handling
-            </p>
-            <p class="text-muted">
-                <i class="fas fa-headset text-theme-primary me-2"></i>
-                Need help choosing? <a href="{{ route('contact') }}" class="text-theme-primary">Contact our team</a>
+                HIPAA compliant • No credit card required • Cancel anytime
             </p>
         </div>
     </div>
@@ -933,22 +951,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="pe-lg-5">
                     <h2 class="section-title text-start mb-4">
                         <i class="fas fa-user-injured text-theme-primary me-3"></i>
-                        Are You a Patient?
+                        For Patients: Seamless Healthcare Experience
                     </h2>
                     <p class="lead mb-4">
-                        Find qualified doctors, book appointments, and manage your healthcare journey with ease.
+                        Access world-class healthcare with advanced diagnostics, easy appointment booking, and comprehensive patient management - all in one secure platform.
                     </p>
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <div class="d-flex align-items-center">
                                 <i class="fas fa-search text-theme-primary me-3"></i>
-                                <span>Find Doctors by Specialty</span>
+                                <span>Find Doctors by Specialty & Location</span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="d-flex align-items-center">
                                 <i class="fas fa-calendar-check text-theme-primary me-3"></i>
-                                <span>Easy Online Booking</span>
+                                <span>Instant Online Booking</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-file-medical text-theme-primary me-3"></i>
+                                <span>Access Your Medical Records</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-comments text-theme-primary me-3"></i>
+                                <span>Direct Doctor Communication</span>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -960,7 +990,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="col-md-6">
                             <div class="d-flex align-items-center">
                                 <i class="fas fa-star text-theme-primary me-3"></i>
-                                <span>Leave Reviews</span>
+                                <span>Rate & Review Doctors</span>
                             </div>
                         </div>
                     </div>
@@ -969,13 +999,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="fas fa-search me-2"></i>Find a Doctor
                         </a>
                         <a href="{{ route('register') }}" class="btn btn-theme-outline btn-lg">
-                            <i class="fas fa-user-plus me-2"></i>Create Account
+                            <i class="fas fa-user-plus me-2"></i>Create Free Account
                         </a>
                     </div>
                     <div class="mt-3">
                         <p class="text-muted small mb-0">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Account creation is optional - you can book appointments as a guest
+                            <i class="fas fa-shield-alt text-success me-1"></i>
+                            HIPAA-compliant platform • No registration required for booking • 24/7 secure access to your health data
                         </p>
                     </div>
                 </div>
@@ -985,6 +1015,84 @@ document.addEventListener('DOMContentLoaded', function() {
                     <img src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
                          alt="Patient Care" class="img-fluid rounded-3 shadow-lg">
                     <div class="position-absolute top-0 start-0 w-100 h-100 bg-gradient-overlay rounded-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- For Healthcare Providers Section -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 text-center mb-4 mb-lg-0">
+                <div class="position-relative">
+                    <img src="https://images.unsplash.com/photo-1551190822-a9333d879b1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                         alt="Healthcare Professional" class="img-fluid rounded-3 shadow-lg">
+                    <div class="position-absolute top-0 start-0 w-100 h-100 bg-gradient-overlay rounded-3"></div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="ps-lg-5">
+                    <h2 class="section-title text-start mb-4">
+                        <i class="fas fa-user-md text-theme-primary me-3"></i>
+                        For Healthcare Providers: Complete Practice Management
+                    </h2>
+                    <p class="lead mb-4">
+                        Transform your practice with advanced diagnostics, comprehensive patient management, and business growth tools designed specifically for modern healthcare professionals.
+                    </p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-stethoscope text-theme-primary me-3"></i>
+                                <span>Advanced Diagnostics</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-users-cog text-theme-primary me-3"></i>
+                                <span>Staff Management</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-chart-line text-theme-primary me-3"></i>
+                                <span>Practice Analytics</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-blog text-theme-primary me-3"></i>
+                                <span>Content Marketing</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-file-prescription text-theme-primary me-3"></i>
+                                <span>Digital Prescriptions</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-dollar-sign text-theme-primary me-3"></i>
+                                <span>Automated Billing</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="{{ route('register.doctor') }}" class="btn btn-theme-primary btn-lg">
+                            <i class="fas fa-stethoscope me-2"></i>Start Free Trial
+                        </a>
+                        <a href="{{ route('contact') }}" class="btn btn-theme-outline btn-lg">
+                            <i class="fas fa-phone me-2"></i>Schedule Demo
+                        </a>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-muted small mb-0">
+                            <i class="fas fa-clock text-warning me-1"></i>
+                            14-day free trial • No setup fees • Cancel anytime • Enterprise-grade security
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1009,6 +1117,21 @@ document.addEventListener('DOMContentLoaded', function() {
             <a href="{{ route('contact') }}" class="btn btn-theme-outline btn-lg">
                 <i class="fas fa-calendar-check me-2"></i>Schedule Demo
             </a>
+            <a href="{{ route('contact') }}" class="btn btn-theme-outline btn-lg btn-lg-custom">
+                <i class="fas fa-calendar-check me-2"></i>Book Live Demo
+            </a>
+            <a href="{{ route('doctors.index') }}" class="btn btn-outline-light btn-lg btn-lg-custom">
+                <i class="fas fa-search me-2"></i>Find a Doctor
+            </a>
+        </div>
+        <div class="mt-4">
+            <p class="text-white-50 mb-2">
+                <i class="fas fa-shield-alt text-success me-2"></i>
+                HIPAA Compliant • 99.9% Uptime • 24/7 Support
+            </p>
+            <p class="text-white-50 small">
+                No credit card required • Cancel anytime • Enterprise-grade security
+            </p>
         </div>
     </div>
 </section>
@@ -1051,9 +1174,36 @@ document.querySelectorAll('.feature-card, .step-card, .testimonial-card, .pricin
     observer.observe(el);
 });
 
-// Custom pricing system - no complex subscription handling needed here
+// Pricing billing toggle for guests
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Custom pricing system loaded - individual pricing managed per user');
+    const monthlyLabel = document.getElementById('monthly-label');
+    const yearlyLabel = document.getElementById('yearly-label');
+    const monthlyPrices = document.querySelectorAll('.monthly-price');
+    const yearlyPrices = document.querySelectorAll('.yearly-price');
+
+    if (monthlyLabel && yearlyLabel) {
+        monthlyLabel.addEventListener('click', function() {
+            // Switch to monthly
+            monthlyLabel.style.background = '#DE6262';
+            monthlyLabel.style.color = 'white';
+            yearlyLabel.style.background = 'transparent';
+            yearlyLabel.style.color = '#6C757D';
+
+            monthlyPrices.forEach(price => price.style.display = 'block');
+            yearlyPrices.forEach(price => price.style.display = 'none');
+        });
+
+        yearlyLabel.addEventListener('click', function() {
+            // Switch to yearly
+            yearlyLabel.style.background = '#DE6262';
+            yearlyLabel.style.color = 'white';
+            monthlyLabel.style.background = 'transparent';
+            monthlyLabel.style.color = '#6C757D';
+
+            monthlyPrices.forEach(price => price.style.display = 'none');
+            yearlyPrices.forEach(price => price.style.display = 'block');
+        });
+    }
 });
 </script>
 @endsection

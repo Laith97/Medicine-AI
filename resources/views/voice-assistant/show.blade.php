@@ -121,6 +121,63 @@
         </div>
     </div>
 
+    <!-- Audio Recording -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-volume-up me-2"></i>
+                        Session Audio
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if($transcription->audio_file)
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <audio controls class="w-100" style="max-width: 100%;">
+                                    <source src="{{ asset('storage/' . $transcription->audio_file) }}" type="audio/{{ $transcription->audio_format ?? 'webm' }}">
+                                    Your browser does not support the audio element.
+                                </audio>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <small class="text-muted">Format:</small><br>
+                                        <span class="badge bg-secondary">{{ strtoupper($transcription->audio_format ?? 'WEBM') }}</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Size:</small><br>
+                                        <span class="text-muted">{{ $transcription->audio_file_size ? number_format($transcription->audio_file_size / 1024, 1) . ' KB' : 'Unknown' }}</span>
+                                    </div>
+                                    @if($transcription->audio_duration)
+                                        <div class="col-6">
+                                            <small class="text-muted">Duration:</small><br>
+                                            <span class="text-muted">{{ number_format($transcription->audio_duration, 1) }} sec</span>
+                                        </div>
+                                    @endif
+                                    <div class="col-6">
+                                        <small class="text-muted">Download:</small><br>
+                                        <a href="{{ asset('storage/' . $transcription->audio_file) }}" download class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-download me-1"></i>
+                                            Download
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="text-center py-4">
+                            <i class="fas fa-microphone-slash fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">No Session Audio Available</h6>
+                            <p class="text-muted mb-0">This voice session was recorded using live transcription only. Audio recording functionality may not have been available or enabled during this session.</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Raw Transcription -->
     @if($transcription->raw_transcription)
         <div class="row mb-4">

@@ -398,7 +398,25 @@ REQUIRED JSON FORMAT:
         $prompt .= "CRITICAL SAFETY INFORMATION:\n";
 
         if (!empty($allergies)) {
-            $prompt .= "- KNOWN ALLERGIES: " . implode(', ', $allergies) . "\n";
+            $allergiesList = implode(', ', $allergies);
+            $prompt .= "- KNOWN ALLERGIES: " . $allergiesList . "\n";
+
+            // Specific allergy warnings for common medication classes
+            if (in_array('penicillin', array_map('strtolower', $allergies)) ||
+                in_array('penicillins', array_map('strtolower', $allergies)) ||
+                in_array('beta-lactam', array_map('strtolower', $allergies))) {
+                $prompt .= "- PENICILLIN/BETA-LACTAM ALLERGY: Patient has penicillin allergy. NEVER suggest penicillins (amoxicillin, ampicillin, etc.), cephalosporins, or other beta-lactam antibiotics.\n";
+            }
+
+            if (in_array('sulfa', array_map('strtolower', $allergies)) ||
+                in_array('sulfonamides', array_map('strtolower', $allergies)) ||
+                in_array('sulfamethoxazole', array_map('strtolower', $allergies))) {
+                $prompt .= "- SULFA ALLERGY: Patient has sulfa allergy. NEVER suggest sulfonamide antibiotics (Bactrim, Septra, etc.).\n";
+            }
+
+            if (in_array('codeine', array_map('strtolower', $allergies))) {
+                $prompt .= "- CODEINE ALLERGY: Patient has codeine allergy. Avoid codeine and other opioids with similar structures.\n";
+            }
         } else {
             $prompt .= "- Allergies: None reported (verify with patient)\n";
         }

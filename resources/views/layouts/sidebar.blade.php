@@ -4,9 +4,6 @@
       <i class="fa-solid fa-hospital"></i>
       <span class="brand-text">MedAssist</span>
     </a>
-    <button id="sidebarCollapse" class="btn btn-sm btn-outline-secondary d-lg-none" aria-label="Toggle sidebar" aria-expanded="false">
-      <i class="fa-solid fa-bars"></i>
-    </button>
   </div>
 
   <nav class="sidebar-nav">
@@ -22,7 +19,8 @@
                   <span>{{ $item['name'] }}</span>
                 </div>
               @elseif(isset($item['href']))
-                <a href="{{ route($item['href']) }}" class="nav-link {{ request()->routeIs($item['href']) ? 'active' : '' }}">
+                <a href="{{ route($item['href']) }}" class="nav-link {{ request()->routeIs($item['href']) ? 'active' : '' }}"
+                   data-route="{{ $item['href'] }}" data-ajax="true">
                   @if(isset($item['icon']))<i class="{{ $item['icon'] }}"></i>@endif
                   <span>{{ $item['name'] }}</span>
                 </a>
@@ -35,7 +33,8 @@
               @foreach ($item['items'] as $subItem)
                 <a href="{{ isset($subItem['route']) ? route($subItem['route']) : '#' }}"
                    class="nav-link {{ request()->routeIs($subItem['route'] ?? '') ? 'active' : '' }}"
-                   style="font-weight: 400; color: #6b7280; padding-left: 24px;">
+                   style="font-weight: 400; color: #6b7280; padding-left: 24px;"
+                   @if(isset($subItem['route'])) data-route="{{ $subItem['route'] }}" data-ajax="true" @endif>
                   @if(isset($subItem['icon']))<i class="{{ $subItem['icon'] }}"></i>@else<i class="fa-solid fa-angle-right"></i>@endif
                   <span>{{ $subItem['name'] }}</span>
                 </a>
@@ -44,7 +43,8 @@
           @else
             <li class="nav-item">
               <a href="{{ isset($item['route']) ? route($item['route']) : '#' }}"
-                 class="nav-link {{ request()->routeIs($item['route'] ?? '') ? 'active' : '' }}">
+                 class="nav-link {{ request()->routeIs($item['route'] ?? '') ? 'active' : '' }}"
+                 @if(isset($item['route'])) data-route="{{ $item['route'] }}" data-ajax="true" @endif>
                 @if(isset($item['icon']))<i class="{{ $item['icon'] }}"></i>@else<i class="fa-solid fa-circle"></i>@endif
                 <span>{{ $item['name'] }}</span>
               </a>
