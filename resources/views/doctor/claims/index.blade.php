@@ -17,7 +17,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h3 class="card-title mb-0"><i class="fas fa-file-medical me-2"></i>Claims Management</h3>
-                            <p class="text-muted mb-0">Manage insurance claims and billing submissions</p>
+                            <p class="text-muted mb-0">Track and manage insurance claims and billing information</p>
                         </div>
                         <a href="{{ route('doctor.claims.create') }}" class="btn btn-primary">
                             <i class="fas fa-plus me-2"></i>Create New Claim
@@ -46,8 +46,8 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h4 class="mb-0">{{ $claims->where('status', 'pending')->count() }}</h4>
-                                    <small>Pending</small>
+                                    <h4 class="mb-0">{{ $claims->where('claim_status', 'pending')->count() }}</h4>
+                                    <small>Draft</small>
                                 </div>
                                 <i class="fas fa-clock fa-2x opacity-50"></i>
                             </div>
@@ -59,7 +59,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h4 class="mb-0">{{ $claims->where('status', 'approved')->count() }}</h4>
+                                    <h4 class="mb-0">{{ $claims->where('claim_status', 'approved')->count() }}</h4>
                                     <small>Approved</small>
                                 </div>
                                 <i class="fas fa-check-circle fa-2x opacity-50"></i>
@@ -72,7 +72,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h4 class="mb-0">{{ $claims->where('status', 'denied')->count() }}</h4>
+                                    <h4 class="mb-0">{{ $claims->where('claim_status', 'denied')->count() }}</h4>
                                     <small>Denied</small>
                                 </div>
                                 <i class="fas fa-times-circle fa-2x opacity-50"></i>
@@ -108,15 +108,15 @@
                                                 <small class="text-muted">{{ $claim->patient->email }}</small>
                                             </div>
                                         </td>
-                                        <td>${{ number_format($claim->amount, 2) }}</td>
-                                        <td>{{ $claim->insurance_provider }}</td>
+                                        <td>${{ number_format($claim->expected_amount, 2) }}</td>
+                                        <td>{{ $claim->payer }}</td>
                                         <td>
-                                            @switch($claim->status)
+                                            @switch($claim->claim_status)
                                                 @case('pending')
-                                                    <span class="badge bg-warning">Pending</span>
+                                                    <span class="badge bg-warning">Draft</span>
                                                     @break
                                                 @case('submitted')
-                                                    <span class="badge bg-info">Submitted</span>
+                                                    <span class="badge bg-info">Ready for Processing</span>
                                                     @break
                                                 @case('approved')
                                                     <span class="badge bg-success">Approved</span>
@@ -125,7 +125,7 @@
                                                     <span class="badge bg-danger">Denied</span>
                                                     @break
                                                 @default
-                                                    <span class="badge bg-secondary">{{ ucfirst($claim->status) }}</span>
+                                                    <span class="badge bg-secondary">{{ ucfirst($claim->claim_status) }}</span>
                                             @endswitch
                                         </td>
                                         <td>{{ $claim->created_at->format('M d, Y') }}</td>
@@ -134,19 +134,19 @@
                                                 <a href="{{ route('doctor.claims.show', $claim) }}" class="btn btn-sm btn-outline-primary" title="View Claim">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                @if($claim->status === 'pending')
+                                                @if($claim->claim_status === 'pending')
                                                     <a href="{{ route('doctor.claims.edit', $claim) }}" class="btn btn-sm btn-outline-secondary" title="Edit Claim">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
-                                                    @if($claim->status === 'pending')
-                                                        <form action="{{ route('doctor.claims.submit-to-clearinghouse', $claim) }}" method="POST" style="display: inline;">
+                                                    @if($claim->claim_status === 'pending')
+                                                        <form action="{{ route('doctor.claims.submit-to-clearinghouse', $claim) }}" method="POST" style="display: inline; margin-bottom: 0;">
                                                             @csrf
-                                                            <button type="submit" class="btn btn-sm btn-success" title="Submit to Clearinghouse">
+                                                            <button type="submit" class="btn btn-sm btn-success" title="Submit for Processing">
                                                                 <i class="fas fa-paper-plane"></i>
                                                             </button>
                                                         </form>
                                                     @endif
-                                                    <form action="{{ route('doctor.claims.destroy', $claim) }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this claim?')">
+                                                    <form action="{{ route('doctor.claims.destroy', $claim) }}" method="POST" style="display: inline; margin-bottom: 0;" onsubmit="return confirm('Are you sure you want to delete this claim?')">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Claim">

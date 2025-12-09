@@ -1,6 +1,11 @@
-@extends('layouts.app')
+@extends('master')
 
 @section('title', 'Kiosk Setup - Doctor Dashboard')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+@endpush
 
 @section('content')
 <div class="container-fluid">
@@ -269,7 +274,7 @@
                                             <div class="alert alert-info">
                                                 <i class="fas fa-info-circle"></i>
                                                 <strong>Kiosk Access URL:</strong>
-                                                <code>{{ route('kiosk.welcome') }}?token={{ $kioskConfig->kiosk_token }}&doctor={{ auth()->id() }}</code>
+                                                <code style="word-break: break-all;">{{ route('kiosk.welcome') }}?token={{ $kioskConfig->kiosk_token }}&doctor={{ auth()->id() }}</code>
                                                 <br>
                                                 <small class="text-muted">
                                                     Share this URL with patients or print it for kiosk placement

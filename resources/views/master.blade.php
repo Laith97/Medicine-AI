@@ -758,6 +758,23 @@ body .dropdown .dropdown-menu.show,
             z-index: 1050 !important;
         }
 
+        /* Ensure alerts appear above sidebar */
+        .alert {
+            z-index: 1060 !important;
+            position: relative;
+        }
+
+        /* Ensure alert close buttons also have high z-index */
+        .alert .btn-close {
+            z-index: 1065 !important;
+        }
+
+        /* Ensure top-level alert containers have proper positioning */
+        .container-fluid > .row > .col-12 > .alert {
+            position: relative !important;
+            z-index: 1060 !important;
+        }
+
         /* Professional Skeleton Loading Animation */
         .skeleton-loader {
             animation: skeleton-loading 1.5s ease-in-out infinite;
@@ -1594,9 +1611,6 @@ body .dropdown .dropdown-menu.show,
                                     style="width: 8px; height: 8px;"></div>
                                 <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
                             </div>
-                            <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
-                            <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com"
-                                    class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
                             @else
                             <a href="{{ url('/') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">Home</a>
                             <a href="{{ route('about') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">About Us</a>
@@ -1616,14 +1630,6 @@ body .dropdown .dropdown-menu.show,
                                     style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px; backdrop-filter: blur(10px);">
                                 <i class="fa-solid fa-bars" aria-hidden="true"></i>
                             </button>
-
-                            {{-- AI Ask temporarily disabled --}}
-                            {{-- AI Ask temporarily disabled --}}
-                            {{-- <!-- Quick Action Button for Emergency -->
-                            <a href="{{ route('ai.ask-ai') }}" class="btn btn-sm px-3 py-1"
-                                style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; font-size: 12px;"> --}}
-                                <i class="bi bi-lightning-charge me-1"></i> Quick Diagnosis
-                            </a>
 
                             <!-- Notifications Bell -->
                             <div class="dropdown notifications-dropdown">

@@ -320,16 +320,29 @@
     <div class="admin-wrapper">
         <!-- Sidebar -->
         <nav class="admin-sidebar" id="adminSidebar">
+            @php
+                $user = Auth::user();
+                $isHospitalAdmin = $user->isHospitalAdmin();
+                $isDoctor = $user->isDoctor();
+
+                // Check if admin is impersonating (either admin or hospital admin)
+                $isImpersonating = session()->has('impersonating_admin_id') || session()->has('impersonating_hospital_admin_id');
+
+                // Determine which navigation to show
+                $showHospitalAdminNav = $isHospitalAdmin && !$isImpersonating;
+                $showDoctorNav = ($isDoctor || $isImpersonating) && !$isHospitalAdmin;
+            @endphp
+
             <!-- Brand -->
             <div class="sidebar-brand">
-                <a href="{{ route('hospital-admin.dashboard') }}">
+                <a href="{{ $showHospitalAdminNav ? route('hospital-admin.dashboard') : route('dashboard') }}">
                     <img src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}" alt="MedCura AI" class="img-fluid">
                 </a>
                 <div class="mt-2">
-                    <small class="text-white-50">Hospital Admin</small>
-                    @if(Auth::user()->hospital)
+                    <small class="text-white-50">{{ $showHospitalAdminNav ? 'Hospital Admin' : ($isDoctor ? 'Doctor' : 'User') }}</small>
+                    @if($user->hospital)
                         <div class="hospital-badge mt-1">
-                            {{ Str::limit(Auth::user()->hospital->name, 20) }}
+                            {{ Str::limit($user->hospital->name, 20) }}
                         </div>
                     @endif
                 </div>
@@ -337,65 +350,103 @@
 
             <!-- Navigation -->
             <div class="sidebar-nav">
-                <!-- Dashboard Section -->
-                <div class="nav-section">Dashboard</div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.dashboard') }}" class="nav-link {{ request()->routeIs('hospital-admin.dashboard') ? 'active' : '' }}" data-ajax="true">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <span>Overview</span>
-                    </a>
-                </div>
+                @if($showHospitalAdminNav)
+                    <!-- Hospital Admin Navigation -->
+                    <!-- Dashboard Section -->
+                    <div class="nav-section">Dashboard</div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.dashboard') }}" class="nav-link {{ request()->routeIs('hospital-admin.dashboard') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Overview</span>
+                        </a>
+                    </div>
 
-                <!-- Hospital Management Section -->
-                <div class="nav-section">Hospital Management</div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.doctors.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.doctors.*') ? 'active' : '' }}" data-ajax="true">
-                        <i class="fas fa-user-md"></i>
-                        <span>Doctors</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.departments.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.departments.*') ? 'active' : '' }}" data-ajax="true">
-                        <i class="fas fa-building"></i>
-                        <span>Departments</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.hospital.profile') }}" class="nav-link {{ request()->routeIs('hospital-admin.hospital.*') ? 'active' : '' }}" data-ajax="true">
-                        <i class="fas fa-hospital"></i>
-                        <span>Hospital Profile</span>
-                    </a>
-                </div>
+                    <!-- Hospital Management Section -->
+                    <div class="nav-section">Hospital Management</div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.doctors.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.doctors.*') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-user-md"></i>
+                            <span>Doctors</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.departments.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.departments.*') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-building"></i>
+                            <span>Departments</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.hospital.profile') }}" class="nav-link {{ request()->routeIs('hospital-admin.hospital.*') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-hospital"></i>
+                            <span>Hospital Profile</span>
+                        </a>
+                    </div>
 
-                <!-- Analytics & Reports Section -->
-                <div class="nav-section">Analytics & Reports</div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.analytics.overview') }}" class="nav-link {{ request()->routeIs('hospital-admin.analytics.*') ? 'active' : '' }}" data-ajax="true">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Analytics</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.usage.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.usage.*') ? 'active' : '' }}" data-ajax="true">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Usage Reports</span>
-                    </a>
-                </div>
+                    <!-- Analytics & Reports Section -->
+                    <div class="nav-section">Analytics & Reports</div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.analytics.overview') }}" class="nav-link {{ request()->routeIs('hospital-admin.analytics.*') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Analytics</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.usage.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.usage.*') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Usage Reports</span>
+                        </a>
+                    </div>
 
-                <!-- Billing Section -->
-                <div class="nav-section">Billing & Finance</div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.subscription.manage') }}" class="nav-link {{ request()->routeIs('hospital-admin.subscription.*') ? 'active' : '' }}" data-ajax="true">
-                        <i class="fas fa-credit-card"></i>
-                        <span>Subscription</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.invoices.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.invoices.*') ? 'active' : '' }}" data-ajax="true">
-                        <i class="fas fa-file-invoice"></i>
-                        <span>Invoices</span>
-                    </a>
-                </div>
+                    <!-- Administration Section -->
+                    <div class="nav-section">Administration</div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.subscription.manage') }}" class="nav-link {{ request()->routeIs('hospital-admin.subscription.*') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Subscription</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.invoices.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.invoices.*') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-file-invoice"></i>
+                            <span>Invoices</span>
+                        </a>
+                    </div>
+                @elseif($showDoctorNav)
+                    <!-- Doctor Navigation -->
+                    <!-- Generate doctor menu dynamically using MenuHelper -->
+                    @php
+                        $menuItems = App\Helpers\MenuHelper::getMenuItems($user);
+                    @endphp
+                    @foreach($menuItems as $item)
+                        @if(isset($item['dropdown']) && isset($item['items']))
+                            @php
+                                $isActiveDropdown = false;
+                                foreach($item['items'] as $subItem) {
+                                    if(request()->routeIs($subItem['route'])) {
+                                        $isActiveDropdown = true;
+                                        break;
+                                    }
+                                }
+                            @endphp
+                            <div class="nav-section" style="{{ $item['header_style'] ?? 'font-weight: 600; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 12px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.75rem;' }}">{{ $item['name'] }}</div>
+                            @foreach($item['items'] as $subItem)
+                                <div class="nav-item">
+                                    <a href="{{ route($subItem['route']) }}" class="nav-link {{ request()->routeIs($subItem['route']) ? 'active' : '' }}" data-ajax="true">
+                                        <i class="{{ $subItem['icon'] }}"></i>
+                                        <span>{{ $subItem['name'] }}</span>
+                                    </a>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="nav-item">
+                                <a href="{{ route($item['route']) }}" class="nav-link {{ request()->routeIs($item['route']) ? 'active' : '' }}" data-ajax="true">
+                                    <i class="{{ $item['icon'] }}"></i>
+                                    <span>{{ $item['name'] }}</span>
+                                </a>
+                            </div>
+                        @endif
+                    @endforeach
+                @endif
             </div>
 
             <!-- User Info -->
@@ -406,18 +457,26 @@
                     </div>
                     <div class="flex-grow-1">
                         <div class="fw-semibold">{{ Auth::user()->name }}</div>
-                        <small class="text-white-50">Hospital Admin</small>
+                        <small class="text-white-50">{{ $showHospitalAdminNav ? 'Hospital Admin' : ($isDoctor ? 'Doctor' : 'User') }}</small>
                     </div>
                     <div class="dropdown">
                         <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
                             <i class="fas fa-ellipsis-v"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <a class="dropdown-item" href="{{ route('hospital-admin.hospital.profile') }}">
-                                    <i class="fas fa-user-cog me-2"></i>Profile
-                                </a>
-                            </li>
+                            @if($showHospitalAdminNav)
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('hospital-admin.hospital.profile') }}">
+                                        <i class="fas fa-user-cog me-2"></i>Profile
+                                    </a>
+                                </li>
+                            @else
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('profile.edit') }}">
+                                        <i class="fas fa-user-cog me-2"></i>Profile
+                                    </a>
+                                </li>
+                            @endif
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
@@ -442,7 +501,7 @@
                         <button class="btn btn-outline-secondary mobile-toggle me-3" onclick="toggleSidebar()">
                             <i class="fas fa-bars"></i>
                         </button>
-                        <h4 class="mb-0">@yield('page-title', 'Hospital Admin Panel')</h4>
+                        <h4 class="mb-0">@yield('page-title', $showHospitalAdminNav ? 'Hospital Admin Panel' : ($isDoctor || $isImpersonating ? 'Doctor Dashboard' : 'User Panel'))</h4>
                     </div>
                     <div class="d-flex align-items-center">
                         @if(Auth::user()->hospital)

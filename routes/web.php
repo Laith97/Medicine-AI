@@ -858,6 +858,9 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
 
     // Claims Management
     Route::resource('claims', App\Http\Controllers\Doctor\ClaimsController::class);
+    Route::post('/claims/{claim}/submit-to-clearinghouse', [App\Http\Controllers\Doctor\ClaimsController::class, 'submitToClearinghouse'])->name('claims.submit-to-clearinghouse');
+    Route::post('/claims/{claim}/approve', [App\Http\Controllers\Doctor\ClaimsController::class, 'markApproved'])->name('claims.approve');
+    Route::post('/claims/{claim}/deny', [App\Http\Controllers\Doctor\ClaimsController::class, 'markDenied'])->name('claims.deny');
 
     // Kiosk Management
     Route::prefix('kiosk')->name('kiosk.')->group(function () {
