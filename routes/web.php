@@ -108,10 +108,22 @@ Route::get('/', function () {
                 'Professional landing page',
                 'Priority email support',
                 'Export capabilities',
-                'Basic analytics'
+                'Practice analytics',
+                'Electronic Medical Records (EMR)',
+                'Telehealth & video consultations',
+                'Digital prescriptions',
+                'Automated billing & invoicing',
+                'HIPAA-compliant security',
+                'Real-time appointment scheduling',
+                'Patient testimonials & reviews',
+                'Blog management system',
+                'Sub-user management',
+                'Practice performance analytics',
+                'Kiosk check-in system',
+                'Predictive analytics & risk assessment'
             ],
             'is_featured' => true,
-            'button_text' => 'Choose Monthly or Yearly',
+            'button_text' => 'Start Free Trial',
             'button_url' => '/register?plan=professional',
             'plan_id' => 'professional'
         ]

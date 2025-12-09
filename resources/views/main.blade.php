@@ -4,273 +4,506 @@
 
 @push('styles')
 <style>
+/* ==================== THEME COLORS ==================== */
 .theme-primary { background-color: #DE6262 !important; }
 .text-theme-primary { color: #DE6262 !important; }
 .border-theme-primary { border-color: #DE6262 !important; }
 
+/* ==================== MODERN BUTTONS ==================== */
 .btn-theme-primary {
-    background: linear-gradient(45deg, #DE6262, #E87A7A);
+    background: linear-gradient(135deg, #DE6262 0%, #E87A7A 100%);
     border: none;
     color: white;
-    padding: 12px 30px;
+    padding: 14px 35px;
     border-radius: 50px;
     font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(222, 98, 98, 0.3);
+    font-size: 16px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 25px rgba(222, 98, 98, 0.35);
+    position: relative;
+    overflow: hidden;
 }
+
+.btn-theme-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+}
+
+.btn-theme-primary:hover::before {
+    left: 100%;
+}
+
 .btn-theme-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(222, 98, 98, 0.4);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 12px 35px rgba(222, 98, 98, 0.5);
     color: white;
 }
 
 .btn-theme-outline {
-    background: transparent;
-    border: 2px solid #DE6262;
-    color: #DE6262;
-    padding: 12px 30px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 14px 35px;
     border-radius: 50px;
     font-weight: 600;
-    transition: all 0.3s ease;
-}
-.btn-theme-outline:hover {
-    background: #DE6262;
-    color: white;
-    transform: translateY(-2px);
+    font-size: 16px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.btn-theme-outline:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: white;
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2);
+}
+
+/* ==================== ANIMATED HERO SECTION ==================== */
 .hero-section {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     min-height: 100vh;
     position: relative;
     overflow: hidden;
 }
 
+/* Animated gradient background */
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(222,98,98,0.1) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Floating particles effect */
 .hero-pattern {
     position: absolute;
     top: 0;
-    right: 0;
-    width: 50%;
+    left: 0;
+    width: 100%;
     height: 100%;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="10" cy="50" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="90" cy="30" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+    overflow: hidden;
 }
 
+.hero-pattern::before,
+.hero-pattern::after {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.3;
+    animation: float 15s infinite ease-in-out;
+}
+
+.hero-pattern::before {
+    background: linear-gradient(135deg, #DE6262, #E87A7A);
+    top: 20%;
+    right: 10%;
+    animation-delay: -5s;
+}
+
+.hero-pattern::after {
+    background: linear-gradient(135deg, #4A90E2, #7B68EE);
+    bottom: 20%;
+    left: 10%;
+}
+
+@keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -30px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+}
+
+/* ==================== GLASSMORPHISM CARDS ==================== */
 .feature-card {
-    background: white;
-    border-radius: 20px;
-    padding: 40px 30px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 45px 35px;
     text-align: center;
-    transition: all 0.3s ease;
-    border: 1px solid #f0f0f0;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(222, 98, 98, 0.1);
     height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(222,98,98,0.05), transparent);
+    transition: left 0.6s;
+}
+
+.feature-card:hover::before {
+    left: 100%;
 }
 
 .feature-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    transform: translateY(-15px) scale(1.02);
+    box-shadow: 0 25px 50px rgba(222, 98, 98, 0.2);
+    border-color: rgba(222, 98, 98, 0.3);
 }
 
+/* Animated gradient icon */
 .feature-icon {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(45deg, #DE6262, #E87A7A);
+    width: 90px;
+    height: 90px;
+    background: linear-gradient(135deg, #DE6262 0%, #E87A7A 50%, #FF9A9A 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 20px;
+    margin: 0 auto 25px;
     color: white;
-    font-size: 2rem;
+    font-size: 2.2rem;
+    position: relative;
+    animation: iconFloat 3s ease-in-out infinite;
+    box-shadow: 0 10px 30px rgba(222, 98, 98, 0.3);
 }
 
+.feature-icon::after {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #DE6262, #E87A7A);
+    opacity: 0.3;
+    filter: blur(15px);
+    z-index: -1;
+}
+
+@keyframes iconFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+/* ==================== STEP CARDS WITH ANIMATION ==================== */
 .step-card {
-    background: white;
-    border-radius: 20px;
-    padding: 30px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 40px 30px;
     text-align: center;
     position: relative;
-    transition: all 0.3s ease;
-    border: 1px solid #f0f0f0;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid rgba(222, 98, 98, 0.1);
 }
 
 .step-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    transform: translateY(-10px) scale(1.03);
+    box-shadow: 0 20px 40px rgba(222, 98, 98, 0.2);
+    border-color: rgba(222, 98, 98, 0.4);
 }
 
 .step-number {
     position: absolute;
-    top: -20px;
+    top: -25px;
     left: 50%;
     transform: translateX(-50%);
-    width: 40px;
-    height: 40px;
-    background: #DE6262;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #DE6262, #E87A7A);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-weight: bold;
-    font-size: 1.2rem;
+    font-size: 1.4rem;
+    box-shadow: 0 8px 20px rgba(222, 98, 98, 0.4);
+    animation: pulse 2s infinite;
 }
 
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 8px 20px rgba(222, 98, 98, 0.4); }
+    50% { box-shadow: 0 8px 30px rgba(222, 98, 98, 0.6); }
+}
+
+/* ==================== ANIMATED STATS SECTION ==================== */
 .stats-section {
-    background: linear-gradient(135deg, #2C3E50 0%, #34495E 100%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     position: relative;
+    overflow: hidden;
+}
+
+.stats-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(222,98,98,0.05)" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>');
+    background-size: cover;
+    opacity: 0.3;
 }
 
 .stat-item {
     text-align: center;
-    padding: 30px 20px;
+    padding: 35px 25px;
+    transition: all 0.4s ease;
 }
-.stat-item h5{
-    color: white
+
+.stat-item:hover {
+    transform: scale(1.05);
+}
+
+.stat-item h5 {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    font-size: 1.1rem;
 }
 
 .stat-number {
-    font-size: 3rem;
-    font-weight: bold;
-    color: #DE6262;
+    font-size: 3.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #DE6262, #E87A7A, #FF9A9A);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin-bottom: 10px;
+    animation: numberGlow 2s ease-in-out infinite;
 }
 
+@keyframes numberGlow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+/* ==================== TESTIMONIAL CARDS ==================== */
 .testimonial-card {
-    background: white;
-    border-radius: 20px;
-    padding: 30px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.95) 100%);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 40px;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.08);
     position: relative;
-    margin-top: 30px;
+    margin-top: 35px;
+    border: 2px solid rgba(222, 98, 98, 0.1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.testimonial-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 50px rgba(222, 98, 98, 0.15);
+    border-color: rgba(222, 98, 98, 0.3);
 }
 
 .testimonial-card::before {
     content: '"';
     position: absolute;
-    top: -10px;
-    left: 30px;
-    font-size: 4rem;
-    color: #DE6262;
+    top: -15px;
+    left: 35px;
+    font-size: 5rem;
+    background: linear-gradient(135deg, #DE6262, #E87A7A);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     font-family: serif;
-}
-
-.cta-section {
-    background: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
-    padding: 80px 0;
-}
-
-.section-title {
-    font-size: 2.5rem;
     font-weight: bold;
-    margin-bottom: 20px;
-    color: #2C3E50;
 }
 
-.section-subtitle {
-    font-size: 1.2rem;
-    color: #6C757D;
-    margin-bottom: 50px;
-}
-
-/* Pricing Section Styles */
+/* ==================== PREMIUM PRICING CARDS ==================== */
 .pricing-card {
-    background: white;
-    border-radius: 20px;
-    padding: 30px;
-    border: 2px solid #f0f0f0;
-    transition: all 0.3s ease;
+    background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.95) 100%);
+    backdrop-filter: blur(20px);
+    border-radius: 28px;
+    padding: 40px 35px;
+    border: 2px solid rgba(222, 98, 98, 0.15);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+.pricing-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #DE6262, #E87A7A, #FF9A9A);
+    transform: scaleX(0);
+    transition: transform 0.5s;
+}
+
+.pricing-card:hover::before {
+    transform: scaleX(1);
 }
 
 .pricing-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-    border-color: #DE6262;
+    transform: translateY(-15px) scale(1.02);
+    box-shadow: 0 25px 60px rgba(222, 98, 98, 0.25);
+    border-color: rgba(222, 98, 98, 0.4);
 }
 
 .pricing-card.featured {
     border-color: #DE6262;
     transform: scale(1.05);
+    box-shadow: 0 20px 50px rgba(222, 98, 98, 0.3);
 }
 
 .pricing-card.featured:hover {
-    transform: scale(1.05) translateY(-10px);
+    transform: scale(1.05) translateY(-15px);
 }
 
 .popular-badge {
     position: absolute;
-    top: 20px;
-    right: -30px;
-    background: linear-gradient(45deg, #DE6262, #E87A7A);
+    top: 25px;
+    right: -35px;
+    background: linear-gradient(135deg, #DE6262, #E87A7A);
     color: white;
-    padding: 5px 40px;
-    font-size: 0.8rem;
-    font-weight: 600;
+    padding: 6px 45px;
+    font-size: 0.85rem;
+    font-weight: 700;
     transform: rotate(45deg);
     text-align: center;
-}
-
-.pricing-header {
-    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(222, 98, 98, 0.4);
+    letter-spacing: 0.5px;
 }
 
 .plan-name {
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.8rem;
+    font-weight: 800;
     color: #2C3E50;
-    margin-bottom: 15px;
-}
-
-.price-container {
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 .price {
-    font-size: 3rem;
-    font-weight: 700;
-    color: #DE6262;
+    font-size: 3.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #DE6262, #E87A7A);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .period {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     color: #6C757D;
     font-weight: 500;
 }
 
-.pricing-body {
-    margin-bottom: 30px;
-}
-
-.feature-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
 .feature-list li {
-    padding: 8px 0;
-    font-size: 1rem;
+    padding: 12px 0;
+    font-size: 1.05rem;
     color: #495057;
+    transition: all 0.3s ease;
 }
 
-.pricing-footer {
-    margin-top: auto;
+.feature-list li:hover {
+    transform: translateX(5px);
+    color: #DE6262;
 }
 
-/* Billing Toggle */
-.form-check-input:checked {
-    background-color: #DE6262;
-    border-color: #DE6262;
+/* ==================== SCROLL ANIMATIONS ==================== */
+[data-animate] {
+    opacity: 0;
+    animation-fill-mode: forwards;
 }
 
-.form-check-input:focus {
-    border-color: #DE6262;
-    box-shadow: 0 0 0 0.25rem rgba(222, 98, 98, 0.25);
+[data-animate="fadeInUp"] {
+    animation: fadeInUp 0.8s ease-out forwards;
 }
 
-/* Responsive pricing cards */
+[data-animate="fadeInLeft"] {
+    animation: fadeInLeft 0.8s ease-out forwards;
+}
+
+[data-animate="fadeInRight"] {
+    animation: fadeInRight 0.8s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ==================== SECTION TITLES ==================== */
+.section-title {
+    font-size: 2.8rem;
+    font-weight: 800;
+    margin-bottom: 25px;
+    background: linear-gradient(135deg, #2C3E50, #34495E);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.section-subtitle {
+    font-size: 1.3rem;
+    color: #6C757D;
+    margin-bottom: 60px;
+    font-weight: 400;
+}
+
+/* ==================== BILLING TOGGLE ==================== */
+.billing-period-label {
+    padding: 10px 25px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.billing-period-label:hover {
+    transform: scale(1.05);
+}
+
+/* ==================== RESPONSIVE DESIGN ==================== */
 @media (max-width: 992px) {
     .pricing-card.featured {
         transform: none;
@@ -280,21 +513,34 @@
     .pricing-card.featured:hover {
         transform: translateY(-10px);
     }
+    
+    .section-title {
+        font-size: 2.2rem;
+    }
+    
+    .stat-number {
+        font-size: 2.8rem;
+    }
 }
 
 @media (max-width: 768px) {
     .pricing-card {
-        padding: 20px;
-        margin-bottom: 20px;
+        padding: 25px;
+        margin-bottom: 25px;
     }
 
     .price {
-        font-size: 2.5rem;
+        font-size: 2.8rem;
     }
 
-    .popular-badge {
-        font-size: 0.7rem;
-        padding: 3px 35px;
+    .section-title {
+        font-size: 1.9rem;
+    }
+    
+    .feature-icon {
+        width: 70px;
+        height: 70px;
+        font-size: 1.8rem;
     }
 }
 </style>
@@ -700,7 +946,7 @@
         </div>
 
         <!-- Pricing Display with Toggle -->
-        <div class="row justify-content-center">
+        <!-- <div class="row justify-content-center">
             <div class="col-lg-6">
                 <div class="pricing-card featured text-center">
                     <div class="popular-badge">Most Popular</div>
@@ -740,7 +986,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
 
         <div class="text-center mt-4">
             <p class="text-muted">
@@ -1202,5 +1448,173 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// ==================== SCROLL ANIMATIONS ====================
+// Intersection Observer for scroll animations
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.animation = entry.target.dataset.animate + ' 0.8s ease-out forwards';
+            observer.unobserve(entry.target);
+        }
+    });
+}, observerOptions);
+
+// Observe all animated elements
+document.addEventListener('DOMContentLoaded', () => {
+    // Add animations to elements
+    document.querySelectorAll('[data-animate]').forEach(el => {
+        observer.observe(el);
+    });
+
+    // Feature cards animation
+    document.querySelectorAll('.feature-card').forEach((card, index) => {
+        card.style.opacity = '0';
+        card.dataset.animate = 'fadeInUp';
+        card.style.animationDelay = `${index * 0.1}s`;
+        observer.observe(card);
+    });
+
+    // Step cards animation
+    document.querySelectorAll('.step-card').forEach((card, index) => {
+        card.style.opacity = '0';
+        card.dataset.animate = 'fadeInUp';
+        card.style.animationDelay = `${index * 0.15}s`;
+        observer.observe(card);
+    });
+
+    // Testimonial cards animation
+    document.querySelectorAll('.testimonial-card').forEach((card, index) => {
+        card.style.opacity = '0';
+        card.dataset.animate = index % 2 === 0 ? 'fadeInLeft' : 'fadeInRight';
+        card.style.animationDelay = `${index * 0.2}s`;
+        observer.observe(card);
+    });
+
+    // Pricing cards animation
+    document.querySelectorAll('.pricing-card').forEach((card, index) => {
+        card.style.opacity = '0';
+        card.dataset.animate = 'fadeInUp';
+        card.style.animationDelay = `${index * 0.15}s`;
+        observer.observe(card);
+    });
+
+    // ==================== COUNTER ANIMATION ====================
+    const animateCounter = (element) => {
+        const target = parseInt(element.textContent.replace(/[^0-9.]/g, ''));
+        const duration = 2000;
+        const increment = target / (duration / 16);
+        let current = 0;
+        const suffix = element.textContent.replace(/[0-9.]/g, '');
+
+        const updateCounter = () => {
+            current += increment;
+            if (current < target) {
+                element.textContent = Math.floor(current) + suffix;
+                requestAnimationFrame(updateCounter);
+            } else {
+                element.textContent = target + suffix;
+            }
+        };
+
+        updateCounter();
+    };
+
+    // Stats counter animation
+    const statsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const statNumber = entry.target.querySelector('.stat-number');
+                if (statNumber && !statNumber.dataset.animated) {
+                    statNumber.dataset.animated = 'true';
+                    animateCounter(statNumber);
+                }
+                statsObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('.stat-item').forEach(item => {
+        statsObserver.observe(item);
+    });
+
+    // ==================== PARALLAX EFFECT ====================
+    const heroSection = document.querySelector('.hero-section');
+    if (heroSection) {
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const parallaxElements = heroSection.querySelectorAll('.hero-pattern, .hero-section::before');
+            
+            if (scrolled < heroSection.offsetHeight) {
+                heroSection.style.transform = `translateY(${scrolled * 0.5}px)`;
+            }
+        });
+    }
+
+    // ==================== SMOOTH SCROLL ====================
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            const href = this.getAttribute('href');
+            if (href !== '#' && href !== '') {
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+        });
+    });
+
+    // ==================== BUTTON RIPPLE EFFECT ====================
+    document.querySelectorAll('.btn-theme-primary, .btn-theme-outline').forEach(button => {
+        button.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.className = 'ripple';
+
+            this.appendChild(ripple);
+
+            setTimeout(() => ripple.remove(), 600);
+        });
+    });
+});
+
+// Add ripple effect styles
+const style = document.createElement('style');
+style.textContent = `
+    .btn-theme-primary .ripple,
+    .btn-theme-outline .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.6);
+        transform: scale(0);
+        animation: ripple-animation 0.6s ease-out;
+        pointer-events: none;
+    }
+
+    @keyframes ripple-animation {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
 </script>
 @endsection
