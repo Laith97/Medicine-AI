@@ -84,7 +84,7 @@ class MenuHelper
                 'icon' => 'fas fa-tools',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-clinical',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-left: 4px solid #3b82f6; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem;',
                 'items' => [
                     // AI Ask temporarily disabled - removed completely
                     [
@@ -116,7 +116,7 @@ class MenuHelper
                 'icon' => 'fas fa-users',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-patients',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem;',
                 'items' => [
                     [
                         'name' => 'Doctor Notes',
@@ -145,7 +145,7 @@ class MenuHelper
                 'icon' => 'fas fa-calendar-alt',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-practice',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left: 4px solid #2563eb; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem;',
                 'items' => [
                     [
                         'name' => 'Appointments',
@@ -174,7 +174,7 @@ class MenuHelper
                 'icon' => 'fas fa-chart-line',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-analytics',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 4px solid #16a34a; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem;',
                 'items' => [
                     [
                         'name' => 'Analytics',
@@ -203,7 +203,7 @@ class MenuHelper
                 'icon' => 'fas fa-user-cog',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-account',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-left: 4px solid #6b7280; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem;',
                 'items' => [
                     [
                         'name' => 'Doctor Profile',
@@ -220,7 +220,7 @@ class MenuHelper
                 'icon' => 'fas fa-briefcase',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-business-tools',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #d97706; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem;',
                 'items' => array_filter([
                     // Only show billing for standalone doctors (not hospital doctors)
                     !$user->hospital_id ? [
@@ -305,7 +305,7 @@ class MenuHelper
                 'icon' => 'fas fa-tools',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-clinical',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-left: 4px solid #3b82f6; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem;',
                 'items' => [
                     // AI Ask temporarily disabled - removed completely
                     [
@@ -332,7 +332,7 @@ class MenuHelper
                 'icon' => 'fas fa-users',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-patients',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem;',
                 'items' => [
                     [
                         'name' => 'Doctor Notes',
@@ -358,7 +358,7 @@ class MenuHelper
                 'icon' => 'fas fa-calendar-alt',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-practice',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left: 4px solid #2563eb; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem;',
                 'items' => [
                     [
                         'name' => 'Appointments',
@@ -384,7 +384,7 @@ class MenuHelper
                 'icon' => 'fas fa-chart-line',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-analytics',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 4px solid #16a34a; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem;',
                 'items' => [
                     [
                         'name' => 'Analytics',
@@ -410,7 +410,7 @@ class MenuHelper
                 'icon' => 'fas fa-user-cog',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-account',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-left: 4px solid #6b7280; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem;',
                 'items' => [
                     [
                         'name' => 'Doctor Profile',
@@ -426,7 +426,7 @@ class MenuHelper
                 'icon' => 'fas fa-briefcase',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-business-tools',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #d97706; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem;',
                 'items' => array_filter([
                     // Only show billing for standalone doctors (not hospital doctors) - even during impersonation
                     !$user->hospital_id ? [

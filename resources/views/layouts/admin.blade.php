@@ -35,6 +35,8 @@
     <link rel="stylesheet" href="{{ asset('css/responsive-modals.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin-enhancements.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin-tables.css') }}">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @stack('styles')
 
     <!-- Global Font Styling -->
