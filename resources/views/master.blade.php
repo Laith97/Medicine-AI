@@ -1604,9 +1604,6 @@ body .dropdown .dropdown-menu.show,
                             <a href="{{ route('doctors.index') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">For Patients</a>
                             @endauth
                         </div>
-                        <div><i class="bi bi-cpu me-1"></i> Advanced Clinical Support Available</div>
-                        <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com"
-                                class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
                     </div>
 
                     <!-- Right Side: Notifications & User Menu -->
@@ -1791,124 +1788,6 @@ body .dropdown .dropdown-menu.show,
     </div>
 </div>
 <!-- Top Bar End -->
-
-  <!-- Header
-  ============================================= -->
-<header id="header" role="banner">
-   <div id="header-wrap">
-       <div class="container">
-           <div class="header-row d-flex align-items-center justify-content-between">
-
-               <!-- Logo and Desktop Nav Container -->
-               <div class="d-flex align-items-center flex-grow-1">
-                   <!-- Logo -->
-                   <div id="logo" class="me-4 flex-shrink-0">
-                       <a href="@auth{{ route('dashboard') }}@else{{ url('/') }}@endauth" aria-label="Medcura Clinical Platform - Go to homepage">
-                           <img style="width: 140px; height: auto;" class="logo-default img-fluid"
-                                 srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x"
-                                 src="{{ asset('demos/medical/images/logo-medical.jpeg') }}"
-                                 alt="Medcura Clinical Platform Logo">
-                       </a>
-                   </div>
-
-                   <!-- Desktop Navigation -->
-                   <nav class="primary-menu style-3 menu-spacing-margin d-none d-lg-block mx-auto" role="navigation" aria-label="Main navigation">
-                        <ul class="menu-container">
-                            @auth
-                                @if (Auth::guard('admin')->check())
-                                    <li
-                                        class="menu-item {{ request()->routeIs('admin.dashboard') ? 'current' : '' }}">
-                                        <a class="menu-link" href="{{ route('admin.dashboard') }}">
-                                            <div>Dashboard</div>
-                                        </a>
-                                    </li>
-                                @else
-                                    @php
-                                        $menuItems = \App\Helpers\MenuHelper::getMenuItems(auth()->user());
-                                    @endphp
-
-                                    @foreach ($menuItems as $item)
-                                        @if (isset($item['dropdown']) && $item['dropdown'])
-                                            <!-- Dropdown Menu Item -->
-                                            <li class="menu-item {{ collect($item['items'])->contains(fn($subItem) => request()->routeIs($subItem['route'] ?? '')) ? 'current' : '' }}">
-                                                <a class="menu-link" href="#"><div>{{ $item['name'] }} <i class="fas fa-chevron-down"></i></div></a>
-                                                <ul class="sub-menu-container {{ $loop->last ? 'menu-pos-invert' : '' }}">
-                                                    @foreach($item['items'] as $subItem)
-                                                        <li class="menu-item {{ request()->routeIs($subItem['route'] ?? '') ? 'current' : '' }}">
-                                                            <a class="menu-link" href="{{ isset($subItem['route']) ? route($subItem['route']) : '#' }}">
-                                                                <div>
-                                                                    @if (isset($subItem['icon']))
-                                                                        <i
-                                                                            class="{{ $subItem['icon'] }} me-2"></i>
-                                                                    @endif
-                                                                    {{ $subItem['name'] }}
-                                                                </div>
-                                                            </a>
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
-                                            </li>
-                                        @else
-                                            <!-- Regular Menu Item -->
-                                            <li
-                                                class="menu-item {{ request()->routeIs($item['route'] ?? '') ? 'current' : '' }}">
-                                                <a class="menu-link"
-                                                    href="{{ isset($item['route']) ? route($item['route']) : '#' }}">
-                                                    <div>
-                                                        @if (isset($item['icon']))
-                                                            <i class="{{ $item['icon'] }} me-2"></i>
-                                                        @endif
-                                                        {{ $item['name'] }}
-                                                    </div>
-                                                </a>
-                                            </li>
-                                        @endif
-                                    @endforeach
-                                @endif
-                            @endauth
-
-                            @guest
-                                <li class="menu-item {{ request()->is('/') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ url('/') }}">
-                                        <div>Home</div>
-                                    </a>
-                                </li>
-                                <li class="menu-item {{ request()->is('about') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('about') }}">
-                                        <div>About Us</div>
-                                    </a>
-                                </li>
-                                <li class="menu-item {{ request()->is('contact') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('contact') }}">
-                                        <div>Contact</div>
-                                    </a>
-                                </li>
-                                <li class="menu-item {{ request()->is('doctors') ? 'current' : '' }}">
-                                    <a class="menu-link" href="{{ route('doctors.index') }}">
-                                        <div>For Patients</div>
-                                    </a>
-                                </li>
-                            @endguest
-                        </ul>
-                    </nav>
-                </div>
-
-                <!-- Mobile Hamburger Button -->
-                <div class="primary-menu-trigger d-block d-lg-none flex-shrink-0 ms-auto">
-                    <button class="cnvs-hamburger" type="button"
-                        aria-expanded="false"
-                        aria-controls="mobile-navigation-menu"
-                        aria-label="Toggle mobile navigation menu">
-                        <span class="cnvs-hamburger-box"><span class="cnvs-hamburger-inner"></span></span>
-                    </button>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <div class="header-wrap-clone"></div>
-</header>
 
 
         <!-- Screen Reader Announcements for Flash Messages -->
@@ -2097,7 +1976,7 @@ body .dropdown .dropdown-menu.show,
         </div>
 
         <!-- Main Content -->
-        <div id="main-content" class="dashboard-container" style="padding-top: 0px; margin-top: 70px; border-top: 5px solid #DE6262; border-radius: 15px 15px 0 0; box-shadow: 0 -4px 20px rgba(222, 98, 98, 0.1); position: relative; z-index: 1;">
+        <div id="main-content" class="dashboard-container">
             <!-- Seamless connection gradient -->
             <div style="position: absolute; top: -5px; left: 0; right: 0; height: 15px; background: linear-gradient(to bottom, rgba(222, 98, 98, 0.2), transparent); pointer-events: none;"></div>
             <main class="app-main" style="padding-top: 25px;">
