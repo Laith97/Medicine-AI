@@ -4,17 +4,19 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
 <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('css/custom-dashboard.css') }}">
 <style>
-/* Professional Dashboard Header Styling */
+/* Modern Dashboard Header Styling */
 .dashboard-header {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    border-radius: 15px;
-    padding: 2rem;
+    background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
+    border-radius: 16px;
+    padding: 2.5rem;
     margin-bottom: 2rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(222, 98, 98, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     position: relative;
     overflow: hidden;
+    transition: all 0.3s ease;
 }
 
 .dashboard-header::before {
@@ -24,10 +26,18 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+    background: linear-gradient(90deg, #DE6262, #4ecdc4, #45b7d1, #96ceb4);
+    background-size: 400% 400%;
+    animation: gradient 3s ease infinite;
 }
 
-.dashboard-header h2 {
+@keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.dashboard-header h1 {
     color: #ffffff;
     font-weight: 700;
     font-size: 2.5rem;
@@ -35,18 +45,178 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-}
-
-.dashboard-header h2::before {
-    content: '📊';
-    font-size: 2rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .dashboard-header p {
     color: rgba(255, 255, 255, 0.9);
     font-size: 1.1rem;
-    font-weight: 500;
+    font-weight: 400;
     margin-bottom: 0;
+}
+
+/* Enhanced Stats Cards */
+.stats-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #2c3e50, #DE6262);
+}
+
+.stats-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
+}
+
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0.5rem 0;
+}
+
+.stats-label {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* Enhanced Table Cards */
+.table-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
+}
+
+.table-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.table-title {
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+/* Modern Table Styles */
+.custom-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.custom-table thead th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+    font-weight: 600;
+    color: #2c3e50;
+    padding: 1rem;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+.custom-table tbody tr {
+    border-bottom: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+.custom-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.custom-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.custom-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+/* Enhanced Buttons */
+.btn-primary-custom {
+    background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 0.5rem 1.2rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary-custom:hover {
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(222, 98, 98, 0.3);
+}
+
+.btn-secondary-custom {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    color: #495057;
+    padding: 0.5rem 1.2rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary-custom:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #7f8c8d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+}
+
+.empty-state h5 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
 }
 
 /* Responsive adjustments */
@@ -56,13 +226,75 @@
         margin-bottom: 1.5rem;
     }
 
-    .dashboard-header h2 {
+    .dashboard-header h1 {
         font-size: 2rem;
     }
 
     .dashboard-header p {
         font-size: 1rem;
     }
+
+    .stats-number {
+        font-size: 2rem;
+    }
+
+    .stats-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+}
+
+/* Sort Links */
+.sort-link {
+    color: #2c3e50;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.sort-link:hover {
+    color: #DE6262;
+}
+
+/* Modal Styling */
+.modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    border-radius: 16px 16px 0 0;
+    border: none;
+}
+
+.modal-footer {
+    border-radius: 0 0 16px 16px;
+    border: none;
+}
+
+/* Progress bars */
+.progress {
+    height: 8px;
+    border-radius: 4px;
+    background: #f8f9fa;
+    overflow: visible;
+}
+
+.progress-bar {
+    position: relative;
+    overflow: visible;
+}
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: 0;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
 }
 </style>
 @endpush
@@ -309,7 +541,7 @@
         <section class="row mb-4 mb-md-5" aria-labelledby="statistics-heading">
             <h2 id="statistics-heading" class="visually-hidden">Patient Statistics Overview</h2>
             <div class="col-md-3 mb-4">
-                <article class="stats-card">
+                <div class="stats-card">
                     <div class="stats-icon">
                         <i class="fas fa-users" aria-hidden="true"></i>
                     </div>
@@ -397,7 +629,7 @@
                         {{ $avgAge }}
                     </p>
                     <p class="stats-label">Avg. Patient Age</p>
-                </article>
+                </div>
             </div>
         </section>
 
@@ -405,13 +637,13 @@
         <!-- Doctor-Specific Dashboard Sections -->
         <div class="row mb-5">
             <div class="col-12">
-                <div class="dashboard-header" style="background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);">
+                <div class="dashboard-header" style="background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);">
                     <h3 style="margin: 0; color: white; font-size: 1.8rem;">
                         <i class="fas fa-stethoscope me-2"></i>
-                        Dashboard
+                        Doctor Dashboard
                     </h3>
                     <p style="margin: 0.5rem 0 0 0; opacity: 0.9; color: white;">
-                        Manage your account
+                        Manage your practice and appointments
                     </p>
                 </div>
             </div>
@@ -419,43 +651,63 @@
 
         <!-- Doctor Statistics Cards -->
         <div class="row mb-5">
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stats-card h-100">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);">
                         <i class="fas fa-calendar-day"></i>
                     </div>
                     <p class="stats-number">{{ $doctorData['stats']['today_appointments'] }}</p>
                     <p class="stats-label">Today's Appointments</p>
+                    <div class="progress mt-2" style="height: 6px;">
+                        <div class="progress-bar bg-info" role="progressbar"
+                             style="width: {{ $doctorData['stats']['today_appointments'] > 10 ? 100 : ($doctorData['stats']['today_appointments'] * 10) }}%">
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stats-card h-100">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);">
                         <i class="fas fa-clock"></i>
                     </div>
                     <p class="stats-number">{{ $doctorData['stats']['pending_appointments'] }}</p>
                     <p class="stats-label">Pending Approval</p>
+                    <div class="progress mt-2" style="height: 6px;">
+                        <div class="progress-bar bg-warning" role="progressbar"
+                             style="width: {{ $doctorData['stats']['pending_appointments'] > 10 ? 100 : ($doctorData['stats']['pending_appointments'] * 10) }}%">
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%);">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stats-card h-100">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);">
                         <i class="fas fa-star"></i>
                     </div>
                     <p class="stats-number">{{ number_format($doctorData['stats']['average_rating'], 1) }}</p>
                     <p class="stats-label">Average Rating</p>
+                    <div class="progress mt-2" style="height: 6px;">
+                        <div class="progress-bar bg-success" role="progressbar"
+                             style="width: {{ $doctorData['stats']['average_rating'] * 20 }}%">
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="col-md-3 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%);">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stats-card h-100">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);">
                         <i class="fas fa-dollar-sign"></i>
                     </div>
                     <p class="stats-number">${{ number_format($doctorData['stats']['revenue_this_month'], 0) }}</p>
                     <p class="stats-label">This Month Revenue</p>
+                    <div class="progress mt-2" style="height: 6px;">
+                        <div class="progress-bar bg-danger" role="progressbar"
+                             style="width: {{ $doctorData['stats']['revenue_this_month'] > 10000 ? 100 : ($doctorData['stats']['revenue_this_month'] / 100) }}%">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -464,7 +716,7 @@
         <div class="row mb-5">
             <div class="col-md-3 mb-4">
                 <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);">
                         <i class="fas fa-file-medical"></i>
                     </div>
                     <p class="stats-number">{{ auth()->user()->doctorDiagnoses()->count() }}</p>
@@ -474,7 +726,7 @@
 
             <div class="col-md-3 mb-4">
                 <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #16a085 0%, #138d75 100%);">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);">
                         <i class="fas fa-calendar-day"></i>
                     </div>
                     <p class="stats-number">{{ auth()->user()->doctorDiagnoses()->whereDate('created_at', today())->count() }}</p>
@@ -484,7 +736,7 @@
 
             <div class="col-md-3 mb-4">
                 <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);">
                         <i class="fas fa-comments"></i>
                     </div>
                     <p class="stats-number">{{ auth()->user()->doctorDiagnoses()->withCount('followUps')->get()->sum('follow_ups_count') }}</p>
@@ -494,7 +746,7 @@
 
             <div class="col-md-3 mb-4">
                 <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);">
                         <i class="fas fa-star"></i>
                     </div>
                     <p class="stats-number">
@@ -515,66 +767,60 @@
             <!-- Today's Schedule -->
             <div class="col-lg-8 mb-4">
                 <div class="table-card">
-                    <!-- Loading overlay for schedule updates -->
-                    <div id="schedule-loading" class="text-center py-4" style="display: none;">
-                        <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
-                        <p class="mt-2 text-muted">Updating schedule...</p>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
                         <h6 class="table-title mb-0">
                             <i class="fas fa-calendar-check me-2" aria-hidden="true"></i>Today's Schedule
                         </h6>
-                        <span class="badge bg-primary">{{ now()->format('l, F j, Y') }}</span>
+                        <span class="badge bg-primary bg-gradient rounded-pill px-3 py-2">{{ now()->format('l, F j, Y') }}</span>
                     </div>
 
                     @if($doctorData['todayAppointments']->count() > 0)
-                        <div class="table-responsive">
-                            <table class="table custom-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Time</th>
-                                        <th>Patient</th>
-                                        <th>Type</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($doctorData['todayAppointments'] as $appointment)
-                                        <tr>
-                                            <td>
-                                                <strong>{{ $appointment->appointment_date->format('g:i A') }}</strong><br>
-                                                <small class="text-muted">{{ $appointment->appointment_date->diffInMinutes($appointment->appointment_end) }}min</small>
-                                            </td>
-                                            <td>
-                                                <strong>{{ $appointment->patient->name ?? 'Unknown Patient' }}</strong><br>
-                                                <small class="text-muted">{{ $appointment->reason }}</small>
-                                            </td>
-                                            <td>
-                                                <i class="fas fa-{{ $appointment->appointment_type == 'video_call' ? 'video' : ($appointment->appointment_type == 'phone_call' ? 'phone' : 'hospital') }} me-1"></i>
-                                                {{ ucfirst(str_replace('_', ' ', $appointment->appointment_type)) }}
-                                            </td>
-                                            <td>
-                                                <span class="badge {{ $appointment->status == 'confirmed' ? 'bg-success' : 'bg-warning' }}">
-                                                    {{ ucfirst($appointment->status) }}
-                                                </span>
-                                            </td>
-                                            <td>
+                        <div class="appointment-cards">
+                            @foreach($doctorData['todayAppointments'] as $appointment)
+                                <div class="appointment-card mb-3 p-3 border rounded" style="background: #f8f9fa;">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="time-circle me-3" style="background: linear-gradient(135deg, #3498db, #2980b9); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                                    {{ $appointment->appointment_date->format('g:i A') }}
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">{{ $appointment->patient->name ?? 'Unknown Patient' }}</h6>
+                                                    <p class="text-muted small mb-1">{{ $appointment->reason }}</p>
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-{{ $appointment->appointment_type == 'video_call' ? 'video' : ($appointment->appointment_type == 'phone_call' ? 'phone' : 'hospital') }} me-1 small text-primary"></i>
+                                                        <small class="text-muted">{{ ucfirst(str_replace('_', ' ', $appointment->appointment_type)) }}</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <small class="text-muted d-block">
+                                                <i class="fas fa-clock me-1"></i>
+                                                {{ $appointment->appointment_date->diffInMinutes($appointment->appointment_end) }} min appointment
+                                            </small>
+                                        </div>
+                                        <div>
+                                            <span class="badge {{ $appointment->status == 'confirmed' ? 'bg-success' : 'bg-warning' }} rounded-pill px-3 py-2">
+                                                {{ ucfirst($appointment->status) }}
+                                            </span>
+                                            <div class="mt-2">
                                                 <a href="{{ route('doctor.appointments.show', $appointment) }}"
-                                                   class="btn btn-sm btn-outline-primary">
+                                                   class="btn btn-sm btn-outline-primary rounded-pill px-3">
                                                     <i class="fas fa-eye me-1"></i>View
                                                 </a>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
                     @else
-                        <div class="empty-state">
-                            <i class="fas fa-calendar-check"></i>
-                            <h5>No appointments today</h5>
-                            <p>Your schedule is clear for today</p>
+                        <div class="empty-state py-5">
+                            <i class="fas fa-calendar-check" style="font-size: 3rem; opacity: 0.3;"></i>
+                            <h5 class="text-muted">No appointments today</h5>
+                            <p class="text-muted">Your schedule is clear for today</p>
+                            <a href="{{ route('doctor.appointments.index') }}" class="btn btn-primary-custom rounded-pill px-4">
+                                <i class="fas fa-calendar-plus me-1"></i>View All Appointments
+                            </a>
                         </div>
                     @endif
                 </div>
@@ -583,103 +829,104 @@
             <!-- Doctor Sidebar -->
             <div class="col-lg-4">
                 <!-- Quick Actions -->
-                <div class="stats-card mb-4">
-                    <h6 class="mb-3">
+                <div class="table-card mb-4">
+                    <h6 class="table-title mb-3">
                         <i class="fas fa-bolt me-2"></i>Quick Actions
                     </h6>
-                    <div class="d-grid gap-2">
+                    <div class="row g-2">
                         @if(auth()->user()->canAccessRoute('doctor.appointments.index'))
-                            <a href="{{ route('doctor.appointments.index') }}" class="btn btn-primary-custom btn-sm">
-                                <i class="fas fa-calendar me-2"></i>View All Appointments
-                            </a>
+                            <div class="col-md-6 col-12">
+                                <a href="{{ route('doctor.appointments.index') }}" class="btn btn-primary-custom btn-sm w-100 rounded-pill px-3 py-2">
+                                    <i class="fas fa-calendar me-1"></i>Appointments
+                                </a>
+                            </div>
                         @endif
 
                         @if(auth()->user()->canAccessRoute('diagnosis'))
-                            <a href="{{ route('diagnosis.create') }}" class="btn btn-primary-custom btn-sm">
-                                <i class="fas fa-file-medical me-2"></i>Create Diagnosis
-                            </a>
+                            <div class="col-md-6 col-12">
+                                <a href="{{ route('diagnosis.create') }}" class="btn btn-primary-custom btn-sm w-100 rounded-pill px-3 py-2">
+                                    <i class="fas fa-file-medical me-1"></i>Create
+                                </a>
+                            </div>
                         @endif
 
                         @if(auth()->user()->canAccessRoute('diagnosis'))
-                            <a href="{{ route('diagnosis.index') }}" class="btn btn-secondary-custom btn-sm">
-                                <i class="fas fa-clipboard-list me-2"></i>View Diagnoses
-                            </a>
+                            <div class="col-md-6 col-12">
+                                <a href="{{ route('diagnosis.index') }}" class="btn btn-secondary-custom btn-sm w-100 rounded-pill px-3 py-2">
+                                    <i class="fas fa-clipboard-list me-1"></i>Diagnoses
+                                </a>
+                            </div>
                         @endif
 
                         @if(auth()->user()->canAccessRoute('doctor.availability.index'))
-                            <a href="{{ route('doctor.availability.index') }}" class="btn btn-secondary-custom btn-sm">
-                                <i class="fas fa-clock me-2"></i>Manage Availability
-                            </a>
+                            <div class="col-md-6 col-12">
+                                <a href="{{ route('doctor.availability.index') }}" class="btn btn-secondary-custom btn-sm w-100 rounded-pill px-3 py-2">
+                                    <i class="fas fa-clock me-1"></i>Availability
+                                </a>
+                            </div>
                         @endif
 
                         @if(auth()->user()->canAccessRoute('doctor.reviews.index'))
-                            <a href="{{ route('doctor.reviews.index') }}" class="btn btn-secondary-custom btn-sm">
-                                <i class="fas fa-star me-2"></i>View Reviews
-                            </a>
+                            <div class="col-md-6 col-12">
+                                <a href="{{ route('doctor.reviews.index') }}" class="btn btn-secondary-custom btn-sm w-100 rounded-pill px-3 py-2">
+                                    <i class="fas fa-star me-1"></i>Reviews
+                                </a>
+                            </div>
                         @endif
 
                         @if(auth()->user()->canAccessRoute('doctor.profile.edit'))
-                            <a href="{{ route('doctor.profile.edit') }}" class="btn btn-secondary-custom btn-sm">
-                                <i class="fas fa-user-edit me-2"></i>Edit Profile
-                            </a>
+                            <div class="col-md-6 col-12">
+                                <a href="{{ route('doctor.profile.edit') }}" class="btn btn-secondary-custom btn-sm w-100 rounded-pill px-3 py-2">
+                                    <i class="fas fa-user-edit me-1"></i>Profile
+                                </a>
+                            </div>
                         @endif
 
                         @if(auth()->user()->canAccessRoute('doctor.settings.appointments'))
-                            <a href="{{ route('doctor.settings.appointments') }}" class="btn btn-secondary-custom btn-sm">
-                                <i class="fas fa-cog me-2"></i>Appointment Settings
-                            </a>
-                        @endif
-
-                        @if(auth()->user()->canAccessRoute('doctor.landing-page.index'))
-                            <a href="{{ route('doctor.landing-page.index') }}" class="btn btn-secondary-custom btn-sm">
-                                <i class="fas fa-globe me-2"></i>Landing Page
-                            </a>
+                            <div class="col-md-6 col-12">
+                                <a href="{{ route('doctor.settings.appointments') }}" class="btn btn-secondary-custom btn-sm w-100 rounded-pill px-3 py-2">
+                                    <i class="fas fa-cog me-1"></i>Settings
+                                </a>
+                            </div>
                         @endif
 
                         @if(auth()->user()->canAccessRoute('doctor.notes.index'))
-                            <a href="{{ route('doctor.notes.index') }}" class="btn btn-secondary-custom btn-sm">
-                                <i class="fas fa-sticky-note me-2"></i>My Notes
-                            </a>
-                        @endif
-
-                        @if(auth()->user()->canAccessRoute('doctor.notes.create'))
-                            <a href="{{ route('doctor.notes.create') }}" class="btn btn-secondary-custom btn-sm">
-                                <i class="fas fa-plus me-2"></i>Add Note
-                            </a>
-                        @endif
-
-                        @if(auth()->user()->canAccessRoute('doctor.blog.index'))
-                            <a href="{{ route('doctor.blog.index') }}" class="btn btn-secondary-custom btn-sm">
-                                <i class="fas fa-blog me-2"></i>Manage Blog
-                            </a>
+                            <div class="col-md-6 col-12">
+                                <a href="{{ route('doctor.notes.index') }}" class="btn btn-secondary-custom btn-sm w-100 rounded-pill px-3 py-2">
+                                    <i class="fas fa-sticky-note me-1"></i>Notes
+                                </a>
+                            </div>
                         @endif
                     </div>
                 </div>
 
                 <!-- Pending Appointments -->
                 @if(auth()->user()->canAccessRoute('doctor.appointments.index') && $doctorData['pendingAppointments']->count() > 0)
-                    <div class="stats-card" style="margin-bottom: 2rem; position: relative; z-index: 2;">
-                        <h6 class="mb-3">
+                    <div class="table-card" style="margin-bottom: 2rem; position: relative; z-index: 2;">
+                        <h6 class="table-title mb-3">
                             <i class="fas fa-clock me-2"></i>Pending Appointments
                         </h6>
-                        <div class="list-group list-group-flush">
+                        <div class="appointment-list">
                             @foreach($doctorData['pendingAppointments'] as $appointment)
-                                <div class="list-group-item border-0 px-0 py-2">
+                                <div class="appointment-item p-3 mb-2 rounded" style="background: #fff9db; border: 1px solid #f0e498;">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>
                                             <strong class="text-dark">{{ $appointment->patient->name ?? 'Unknown Patient' }}</strong><br>
-                                            <small class="text-muted">{{ $appointment->appointment_date->format('M j, g:i A') }}</small>
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i>
+                                                {{ $appointment->appointment_date->format('M j, g:i A') }}
+                                            </small>
                                         </div>
-                                        <div class="btn-group-sm">
+                                        <div class="btn-group">
                                             <form method="POST" action="{{ route('doctor.appointments.confirm', $appointment) }}" class="d-inline">
                                                 @csrf
-                                                <button type="submit" class="btn btn-success btn-sm" title="Confirm">
-                                                    <i class="fas fa-check"></i>
+                                                <button type="submit" class="btn btn-sm btn-success rounded-pill px-3" title="Confirm">
+                                                    <i class="fas fa-check me-1"></i>Confirm
                                                 </button>
                                             </form>
                                             <a href="{{ route('doctor.appointments.show', $appointment) }}"
-                                               class="btn btn-primary btn-sm" title="View Details">
-                                                <i class="fas fa-eye"></i>
+                                               class="btn btn-sm btn-outline-primary rounded-pill px-3" title="View Details">
+                                                <i class="fas fa-eye me-1"></i>View
                                             </a>
                                         </div>
                                     </div>
@@ -688,8 +935,8 @@
                         </div>
                         <div class="text-center mt-3">
                             <a href="{{ route('doctor.appointments.index', ['status' => 'pending']) }}"
-                               class="btn btn-sm btn-primary-custom">
-                                View all pending →
+                               class="btn btn-sm btn-primary-custom rounded-pill px-4">
+                                <i class="fas fa-arrow-right me-1"></i>View all pending
                             </a>
                         </div>
                     </div>
@@ -697,36 +944,45 @@
 
                 <!-- Recent Reviews -->
                 @if($doctorData['recentReviews']->count() > 0)
-                    <div class="stats-card" style="margin-bottom: 2rem; position: relative; z-index: 2;">
-                        <h6 class="mb-3">
+                    <div class="table-card" style="margin-bottom: 2rem; position: relative; z-index: 2;">
+                        <h6 class="table-title mb-3">
                             <i class="fas fa-star me-2"></i>Recent Reviews
                         </h6>
-                        <div class="list-group list-group-flush">
+                        <div class="review-list">
                             @foreach($doctorData['recentReviews'] as $review)
-                                <div class="list-group-item border-0 px-0 py-2">
-                                    <div class="d-flex text-warning mb-1">
-                                        @for($i = 1; $i <= 5; $i++)
-                                            @if($i <= $review->rating)
-                                                <i class="fas fa-star"></i>
-                                            @else
-                                                <i class="far fa-star"></i>
-                                            @endif
-                                        @endfor
+                                <div class="review-item p-3 mb-2 rounded" style="background: #f8f9fa;">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="text-warning">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                @if($i <= $review->rating)
+                                                    <i class="fas fa-star"></i>
+                                                @else
+                                                    <i class="far fa-star"></i>
+                                                @endif
+                                            @endfor
+                                        </div>
+                                        <span class="badge bg-light text-dark rounded-pill px-2 py-1">
+                                            {{ $review->rating }}/5
+                                        </span>
                                     </div>
                                     @if($review->comment)
-                                        <p class="mb-1 small">{{ Str::limit($review->comment, 60) }}</p>
+                                        <p class="mb-2 small text-dark">{{ Str::limit($review->comment, 80) }}</p>
                                     @endif
-                                    <small class="text-muted">
-                                        by {{ $review->is_anonymous ? 'Anonymous' : ($review->patient->name ?? 'Unknown Patient') }} •
-                                        {{ $review->created_at->diffForHumans() }}
+                                    <small class="text-muted d-block">
+                                        <i class="fas fa-user me-1"></i>
+                                        {{ $review->is_anonymous ? 'Anonymous' : ($review->patient->name ?? 'Unknown Patient') }}
+                                        <span class="ms-2">
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ $review->created_at->diffForHumans() }}
+                                        </span>
                                     </small>
                                 </div>
                             @endforeach
                         </div>
                         <div class="text-center mt-3">
                             <a href="{{ route('doctor.reviews.index') }}"
-                               class="btn btn-sm btn-primary-custom">
-                                View all reviews →
+                               class="btn btn-sm btn-primary-custom rounded-pill px-4">
+                                <i class="fas fa-arrow-right me-1"></i>View all reviews
                             </a>
                         </div>
                     </div>
@@ -823,31 +1079,39 @@
         <!-- Cases Over Time Chart -->
         <div class="row mb-5">
             <div class="col-lg-8 mb-4">
-                <div class="chart-card">
-                    <h6 class="chart-title">Patient Management Over Time</h6>
-                    <div id="patientManagementChart" style="height: 300px;"></div>
+                <div class="table-card">
+                    <h6 class="table-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Patient Management Over Time
+                    </h6>
+                    <div id="patientManagementChart" style="height: 300px; padding: 1rem 0;"></div>
                 </div>
             </div>
             <div class="col-lg-4 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon">
-                        <i class="fas fa-chart-line"></i>
+                <div class="stats-card h-100">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);">
+                        <i class="fas fa-calendar-week"></i>
                     </div>
                     <p class="stats-number">{{ $weeklyCount }}</p>
                     <p class="stats-label">Patient Management This Week</p>
+                    <div class="progress mt-2" style="height: 6px;">
+                        <div class="progress-bar bg-info" role="progressbar"
+                             style="width: {{ $weeklyCount > 20 ? 100 : ($weeklyCount * 5) }}%">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Advanced Statistics & Filters -->
-        <div class="chart-card mb-5">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="chart-title mb-0">Advanced Statistics</h6>
+        <div class="table-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="table-title mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>Advanced Statistics
+                </h6>
                 <div class="filter-controls">
-                    <button class="btn btn-sm btn-outline-secondary me-2" id="refresh-stats">
+                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3" id="refresh-stats">
                         <i class="fas fa-sync-alt me-1"></i> Refresh
                     </button>
-
                 </div>
             </div>
 
@@ -979,16 +1243,18 @@
 
         <!-- Consolidated Patient List with Advanced Features -->
         <div class="table-card mb-5">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="table-title mb-0">Patient List</h6>
-                <div>
-                    <div class="input-group input-group-sm me-2 d-inline-flex" style="width: 200px;">
-                        <input type="text" class="form-control" id="patient-search" placeholder="Search patients...">
-                        <button class="btn btn-outline-secondary" type="button" id="search-btn">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+                <h6 class="table-title mb-0">
+                    <i class="fas fa-user-injured me-2"></i>Patient Management
+                </h6>
+                <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+                    <div class="input-group input-group-sm me-2" style="min-width: 200px;">
+                        <input type="text" class="form-control rounded-start-pill" id="patient-search" placeholder="Search patients...">
+                        <button class="btn btn-outline-primary rounded-end-pill" type="button" id="search-btn">
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
-                    <a href="{{ route('doctor.patient-management.index') }}" class="btn-secondary-custom btn-sm">
+                    <a href="{{ route('doctor.patient-management.index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-4">
                         <i class="fas fa-external-link-alt me-1"></i> View All
                     </a>
                 </div>
@@ -1256,9 +1522,244 @@
 <script src="{{ asset('js/dashboard.js') }}"></script>
 
 <script>
-// Focus management for modals and dynamic content
+// Initialize charts when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-    // Patient modal focus management
+    // Initialize main patient management chart
+    if (window.chartLabels && window.chartData) {
+        const patientChartOptions = {
+            chart: {
+                type: 'line',
+                height: 300,
+                toolbar: {
+                    show: false
+                },
+                animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 800,
+                }
+            },
+            series: [{
+                name: 'Patient Management',
+                data: window.chartData
+            }],
+            xaxis: {
+                categories: window.chartLabels,
+                labels: {
+                    style: {
+                        fontSize: '12px',
+                        fontWeight: 400,
+                        colors: '#7f8c8d'
+                    }
+                }
+            },
+            yaxis: {
+                labels: {
+                    style: {
+                        fontSize: '12px',
+                        fontWeight: 400,
+                        colors: '#7f8c8d'
+                    }
+                }
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 3
+            },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shade: 'light',
+                    gradientToColors: ['#667eea'],
+                    shadeIntensity: 1,
+                    type: 'horizontal',
+                    opacityFrom: 0.4,
+                    opacityTo: 0.1,
+                    stops: [0, 100]
+                }
+            },
+            colors: ['#667eea'],
+            tooltip: {
+                theme: 'dark',
+                style: {
+                    fontSize: '12px',
+                }
+            }
+        };
+
+        if (document.getElementById('patientManagementChart')) {
+            const patientChart = new ApexCharts(document.getElementById('patientManagementChart'), patientChartOptions);
+            patientChart.render();
+        }
+    }
+
+    // Initialize demographics chart
+    const demographicsChartOptions = {
+        chart: {
+            type: 'pie',
+            height: 250,
+            toolbar: {
+                show: false
+            }
+        },
+        series: [], // Example data - would be dynamic in real implementation
+        labels: ['Male', 'Female', 'Other'],
+        colors: ['#3498db', '#e74c3c', '#9b59b6'],
+        responsive: [{
+            breakpoint: 480,
+            options: {
+                chart: {
+                    width: 200
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }],
+        tooltip: {
+            theme: 'dark',
+            style: {
+                fontSize: '12px',
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            style: {
+                fontSize: '10px',
+                fontWeight: 'bold',
+                colors: ['#000']
+            },
+            dropShadow: {
+                enabled: true,
+                color: '#fff',
+                top: 1,
+                left: 1,
+                blur: 1,
+                opacity: 0.5
+            }
+        }
+    };
+
+    if (document.getElementById('demographicsChart')) {
+        const demographicsChart = new ApexCharts(document.getElementById('demographicsChart'), demographicsChartOptions);
+        demographicsChart.render();
+    }
+
+    // Initialize age distribution chart
+    const ageDistributionChartOptions = {
+        chart: {
+            type: 'bar',
+            height: 250,
+            toolbar: {
+                show: false
+            }
+        },
+        series: [{
+            name: 'Patients',
+            data: [10, 25, 35, 20, 15] // Example data - would be dynamic in real implementation
+        }],
+        xaxis: {
+            categories: ['0-18', '19-35', '36-50', '51-65', '66+'],
+            labels: {
+                style: {
+                    fontSize: '10px',
+                    fontWeight: 400,
+                    colors: '#7f8c8d'
+                }
+            }
+        },
+        yaxis: {
+            labels: {
+                style: {
+                    fontSize: '10px',
+                    fontWeight: 400,
+                    colors: '#7f8c8d'
+                }
+            }
+        },
+        plotOptions: {
+            bar: {
+                borderRadius: 4,
+                horizontal: false,
+            }
+        },
+        colors: ['#2ecc71'],
+        tooltip: {
+            theme: 'dark',
+            style: {
+                fontSize: '12px',
+            }
+        }
+    };
+
+    if (document.getElementById('ageDistributionChart')) {
+        const ageDistributionChart = new ApexCharts(document.getElementById('ageDistributionChart'), ageDistributionChartOptions);
+        ageDistributionChart.render();
+    }
+
+    // Initialize visits timeline chart
+    const visitsTimelineChartOptions = {
+        chart: {
+            type: 'area',
+            height: 250,
+            toolbar: {
+                show: false
+            }
+        },
+        series: [{
+            name: 'Visits',
+            data: [30, 40, 35, 50, 49, 60, 70, 91, 125] // Example data - would be dynamic in real implementation
+        }],
+        xaxis: {
+            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+            labels: {
+                style: {
+                    fontSize: '10px',
+                    fontWeight: 400,
+                    colors: '#7f8c8d'
+                }
+            }
+        },
+        yaxis: {
+            labels: {
+                style: {
+                    fontSize: '10px',
+                    fontWeight: 400,
+                    colors: '#7f8c8d'
+                }
+            }
+        },
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shade: 'light',
+                gradientToColors: ['#3498db'],
+                shadeIntensity: 1,
+                type: 'horizontal',
+                opacityFrom: 0.4,
+                opacityTo: 0.1,
+                stops: [0, 100]
+            }
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 2
+        },
+        colors: ['#3498db'],
+        tooltip: {
+            theme: 'dark',
+            style: {
+                fontSize: '12px',
+            }
+        }
+    };
+
+    if (document.getElementById('visitsTimelineChart')) {
+        const visitsTimelineChart = new ApexCharts(document.getElementById('visitsTimelineChart'), visitsTimelineChartOptions);
+        visitsTimelineChart.render();
+    }
+
+    // Focus management for modals and dynamic content
     const patientModal = document.getElementById('patientModal');
     let lastFocusedElement = null;
 
@@ -1365,10 +1866,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <td>${new Date(visit.created_at).toLocaleDateString()}</td>
                                     <td>${visit.symptoms || 'N/A'}</td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-primary view-visit-btn"
+                                        <button class="btn btn-sm btn-outline-primary view-visit-btn rounded-pill px-3"
                                                 data-visit-id="${visit.id}"
                                                 data-visit-data="${JSON.stringify(visit).replace(/"/g, '"')}">
-                                            View
+                                            <i class="fas fa-eye me-1"></i>View
                                         </button>
                                     </td>
                                 </tr>
@@ -1406,19 +1907,19 @@ document.addEventListener('DOMContentLoaded', function() {
             detailsContent.innerHTML = `
                 <div class="row">
                     <div class="col-md-6">
-                        <h6>Symptoms</h6>
-                        <p>${visitData.symptoms || 'Not specified'}</p>
+                        <h6 class="text-primary mb-2"><i class="fas fa-stethoscope me-1"></i> Symptoms</h6>
+                        <p class="bg-light p-3 rounded">${visitData.symptoms || 'Not specified'}</p>
                     </div>
                     <div class="col-md-6">
-                        <h6>Diagnosis</h6>
-                        <p>${visitData.diagnosis || 'Not specified'}</p>
+                        <h6 class="text-primary mb-2"><i class="fas fa-file-medical me-1"></i> Diagnosis</h6>
+                        <p class="bg-light p-3 rounded">${visitData.diagnosis || 'Not specified'}</p>
                     </div>
                 </div>
                 ${visitData.notes ? `
                     <div class="row mt-3">
                         <div class="col-12">
-                            <h6>Notes</h6>
-                            <p>${visitData.notes}</p>
+                            <h6 class="text-primary mb-2"><i class="fas fa-sticky-note me-1"></i> Notes</h6>
+                            <p class="bg-light p-3 rounded">${visitData.notes}</p>
                         </div>
                     </div>
                 ` : ''}
