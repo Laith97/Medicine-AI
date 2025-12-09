@@ -651,6 +651,7 @@
 
 @push('scripts')
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
@@ -813,29 +814,29 @@ function updateShowingCount(count) {
 }
 
 function loadVisitDetails(visitId, buttonData) {
-    const visitDetailsContent = $(`.visit-item[data-visit-id="${visitId}"] .visit-details-content`);
+    const visitDetailsContent = document.querySelector(`.visit-item[data-visit-id="${visitId}"] .visit-details-content`);
 
     // Check if already loaded
-    if (visitDetailsContent.find('.diagnosis-content').length > 0) {
+    if (visitDetailsContent.querySelector('.diagnosis-content')) {
         return;
     }
 
     // Show loading state
-    visitDetailsContent.html(`
+    visitDetailsContent.innerHTML = `
         <div class="text-center py-3">
             <div class="spinner-border spinner-border-sm text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
             <p class="mt-2 mb-0">Loading visit details...</p>
         </div>
-    `);
+    `;
 
     // Make AJAX call to get visit details
     $.ajax({
         url: `/api/doctor/patient-management/visit-history/${visitId}`,
         method: 'GET',
         headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'application/json'
         },
@@ -844,7 +845,7 @@ function loadVisitDetails(visitId, buttonData) {
                 const diagnosisText = response.visit.diagnosis || 'No diagnosis available';
                 const formattedContent = formatAIResponse(diagnosisText);
 
-                visitDetailsContent.html(`
+                visitDetailsContent.innerHTML = `
                     <div class="diagnosis-content">
                         <div class="visit-diagnosis-header mb-3">
                             <h6 class="mb-0"><i class="fas fa-stethoscope me-2"></i>Diagnosis Details</h6>
@@ -853,29 +854,29 @@ function loadVisitDetails(visitId, buttonData) {
                             ${formattedContent}
                         </div>
                     </div>
-                `);
+                `;
             } else {
-                visitDetailsContent.html('<div class="alert alert-warning">Failed to load visit details.</div>');
+                visitDetailsContent.innerHTML = '<div class="alert alert-warning">Failed to load visit details.</div>';
             }
         },
         error: function(xhr, status, error) {
             console.error('Error loading visit details:', error);
-            visitDetailsContent.html('<div class="alert alert-danger">Error loading visit details. Please try again.</div>');
+            visitDetailsContent.innerHTML = '<div class="alert alert-danger">Error loading visit details. Please try again.</div>';
         }
     });
 }
 
 function showPatientSummary(patientData) {
     // Show loading modal
-    $('#summaryModal').modal('show');
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('summaryModal')).show();
 
     // Update modal header
-    $('#summaryModalLabel').html(`<i class="fas fa-user-doctor me-2"></i>${patientData.name}'s Medical Summary`);
+    document.getElementById('summaryModalLabel').innerHTML = `<i class="fas fa-user-doctor me-2"></i>${patientData.name}'s Medical Summary`;
 
     // Update patient info
-    $('#summaryPatientName').text(patientData.name);
-    $('#summaryPatientAge').text(patientData.age);
-    $('#summaryPatientGender').text(patientData.gender.charAt(0).toUpperCase() + patientData.gender.slice(1));
+    document.getElementById('summaryPatientName').textContent = patientData.name;
+    document.getElementById('summaryPatientAge').textContent = patientData.age;
+    document.getElementById('summaryPatientGender').textContent = patientData.gender.charAt(0).toUpperCase() + patientData.gender.slice(1);
 
     // Load summary data
     loadPatientSummary(patientData);
@@ -883,23 +884,23 @@ function showPatientSummary(patientData) {
 
 function loadPatientSummary(patientData) {
     // Reset containers
-    $('#visitSummaryContainer').html(`
+    document.getElementById('visitSummaryContainer').innerHTML = `
         <div class="text-center py-4">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
             <p class="mt-2">Loading patient history...</p>
         </div>
-    `);
+    `;
 
-    $('#aiSummaryContainer').html(`
+    document.getElementById('aiSummaryContainer').innerHTML = `
         <div class="text-center py-4">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
             <p class="mt-2">Generating summary...</p>
         </div>
-    `);
+    `;
 
     // Find patient records
     const allRecords = @json($records);
@@ -960,13 +961,13 @@ function loadPatientSummary(patientData) {
             </div>
         `;
 
-        $('#visitSummaryContainer').html(visitHtml);
+        document.getElementById('visitSummaryContainer').innerHTML = visitHtml;
 
         // Generate AI-powered patient summary
         generatePatientSummary(patientRecords);
     } else {
-        $('#visitSummaryContainer').html('<div class="alert alert-info">No visit history found for this patient.</div>');
-        $('#aiSummaryContainer').html('<div class="alert alert-info">Cannot generate summary without patient history.</div>');
+        document.getElementById('visitSummaryContainer').innerHTML = '<div class="alert alert-info">No visit history found for this patient.</div>';
+        document.getElementById('aiSummaryContainer').innerHTML = '<div class="alert alert-info">Cannot generate summary without patient history.</div>';
     }
 }
 
@@ -974,9 +975,9 @@ function generatePatientSummary(patientRecords) {
     // Prepare data for AI summary
     const summaryData = {
         patient_id: patientRecords.length > 0 ? patientRecords[0].id : 0,
-        patient_name: $('#summaryPatientName').text(),
-        patient_age: $('#summaryPatientAge').text(),
-        patient_gender: $('#summaryPatientGender').text().toLowerCase(),
+        patient_name: document.getElementById('summaryPatientName').textContent,
+        patient_age: document.getElementById('summaryPatientAge').textContent,
+        patient_gender: document.getElementById('summaryPatientGender').textContent.toLowerCase(),
         visit_count: patientRecords.length,
         visits: patientRecords.map(record => ({
             visit_number: record.visit_number || 'unknown',
@@ -990,7 +991,7 @@ function generatePatientSummary(patientRecords) {
     };
 
     // Show loading state
-    $('#aiSummaryContainer').html(`
+    document.getElementById('aiSummaryContainer').innerHTML = `
         <div class="text-center py-4">
             <div class="spinner-border text-primary mb-3" role="status">
                 <span class="visually-hidden">Loading...</span>
@@ -1001,14 +1002,14 @@ function generatePatientSummary(patientRecords) {
                       role="progressbar" style="width: 100%"></div>
             </div>
         </div>
-    `);
+    `;
 
     // Call AI summary generation API
     $.ajax({
         url: '/ai/patient-summary',
         method: 'POST',
         headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'application/json',
             'Content-Type': 'application/json'
@@ -1017,23 +1018,23 @@ function generatePatientSummary(patientRecords) {
         success: function(response) {
             if (response.success) {
                 const formattedSummary = formatAIResponse(response.summary);
-                $('#aiSummaryContainer').html(`<div class="response-text">${formattedSummary}</div>`);
+                document.getElementById('aiSummaryContainer').innerHTML = `<div class="response-text">${formattedSummary}</div>`;
             } else {
-                $('#aiSummaryContainer').html(`
+                document.getElementById('aiSummaryContainer').innerHTML = `
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         ${response.message || 'Failed to generate summary'}
                     </div>
-                `);
+                `;
             }
         },
         error: function(xhr, status, error) {
-            $('#aiSummaryContainer').html(`
+            document.getElementById('aiSummaryContainer').innerHTML = `
                 <div class="alert alert-danger">
                     <i class="fas fa-exclamation-circle me-2"></i>
                     Failed to generate AI summary. Please try again.
                 </div>
-            `);
+            `;
         }
     });
 }
