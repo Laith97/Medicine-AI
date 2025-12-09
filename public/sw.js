@@ -79,10 +79,14 @@ self.addEventListener('fetch', event => {
                     // If not in cache, try to fetch and cache
                     return fetch(event.request)
                         .then(response => {
-                            if (response.ok) {
+                            // Only cache successful, complete responses (not partial 206 responses)
+                            if (response.ok && response.status === 200 && !response.headers.get('content-range')) {
                                 const responseClone = response.clone();
                                 caches.open(NOTIFICATION_CACHE)
-                                    .then(cache => cache.put(event.request, responseClone));
+                                    .then(cache => cache.put(event.request, responseClone))
+                                    .catch(error => {
+                                        console.warn('⚠️ Failed to cache response:', error);
+                                    });
                             }
                             return response;
                         })

@@ -211,7 +211,7 @@
 
                         <a href="{{ route('ai.voice-assistant.recorded-voices') }}" class="btn btn-info">
                             <i class="fas fa-history me-2"></i>
-                            Recorded Voices
+                            Session Recordings
                         </a>
 
                         <a href="{{ route('ai.voice-assistant.performance') }}" class="btn btn-warning">
@@ -363,6 +363,60 @@
             backdrop-filter: blur(5px);
             background: rgba(0, 0, 0, 0.8) !important;
         }
+
+        /* Speaker identification styles */
+        .speaker-transcription {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.5;
+        }
+
+        .speaker-segment {
+            transition: all 0.3s ease;
+        }
+
+        .speaker-segment:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .speaker-header {
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .speaker-label {
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .speaker-doctor .speaker-label {
+            color: #007bff;
+        }
+
+        .speaker-patient .speaker-label {
+            color: #28a745;
+        }
+
+        .speaker-text {
+            font-size: 0.9rem;
+            color: #212529;
+            margin-left: 1.5rem;
+        }
+
+        /* Enhanced transcription status */
+        #transcriptionStatus .badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        /* Language auto-detection indicator */
+        .language-auto-detected {
+            animation: languagePulse 2s ease-in-out;
+        }
+
+        @keyframes languagePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); background-color: #17a2b8 !important; }
+        }
     </style>
 
     <!-- Main Content Grid -->
@@ -370,15 +424,27 @@
         <!-- Left Column: Transcription -->
         <div class="col-lg-6 mb-4">
             <div class="card h-100">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-microphone-alt me-2"></i>
                         Live Transcription
                     </h5>
+                    <div id="transcriptionStatus" class="d-flex align-items-center gap-2">
+                        <!-- Status indicators will be inserted here -->
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="border rounded p-3" style="height: 300px; overflow-y: auto; background-color: #f8f9fa;">
-                        <textarea id="transcriptionArea" class="form-control" style="height: 100%; border: none; background: transparent; resize: none;" placeholder="Start recording to see transcription here..."></textarea>
+                        <div id="transcriptionContainer" style="height: 100%;">
+                            <textarea id="transcriptionArea" class="form-control" style="height: 100%; border: none; background: transparent; resize: none;" placeholder="Start recording to see transcription here..."></textarea>
+                        </div>
+                    </div>
+                    <!-- Speaker Legend -->
+                    <div id="speakerLegend" class="mt-2 d-none">
+                        <small class="text-muted">
+                            <i class="fas fa-users me-1"></i>
+                            <span id="speakerLegendText"></span>
+                        </small>
                     </div>
                 </div>
             </div>

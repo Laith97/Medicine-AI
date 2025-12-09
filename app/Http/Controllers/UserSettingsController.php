@@ -71,7 +71,7 @@ class UserSettingsController extends Controller
             [
                 'icon' => 'fas fa-microphone',
                 'title' => 'Voice Assistant',
-                'description' => 'Hands-free consultation documentation with real-time speech-to-text, automatic chart filling, and AI-powered clinical analysis.',
+                'description' => 'Hands-free consultation documentation with real-time speech-to-text, automatic chart filling, and clinical note generation.',
                 'delay' => '200'
             ],
             [
@@ -108,31 +108,31 @@ class UserSettingsController extends Controller
             ],
             [
                 'icon' => 'fas fa-microphone',
-                'description' => 'Voice Assistant for hands-free consultation documentation with automatic transcription and chart filling.'
+                'description' => 'Voice Assistant for hands-free consultation documentation with real-time speech-to-text and clinical note generation.'
             ],
             [
                 'icon' => 'fas fa-calendar-alt',
-                'description' => 'Complete appointment management system with online booking, availability settings, and automated reminders.'
+                'description' => 'Smart scheduling system with appointment booking, calendar integration, and automated patient reminders.'
             ],
             [
                 'icon' => 'fas fa-file-medical',
                 'description' => 'Manual diagnosis system with voice input, patient notifications, and intelligent follow-up questions.'
             ],
             [
-                'icon' => 'fas fa-comments',
-                'description' => 'Real-time chat system with patients, automated responses, and comprehensive message management.'
+                'icon' => 'fas fa-mobile-alt',
+                'description' => 'Multi-channel communication through SMS, email campaigns, live chat, and automated appointment reminders.'
             ],
             [
-                'icon' => 'fas fa-blog',
-                'description' => 'Professional blog management with SEO optimization, featured images, and reading time calculation.'
+                'icon' => 'fas fa-chart-line',
+                'description' => 'Practice analytics dashboard with patient demographics, revenue tracking, and performance insights for data-driven decisions.'
             ],
             [
-                'icon' => 'fas fa-star',
-                'description' => 'Patient review and testimonial system with verification badges and case study management.'
+                'icon' => 'fas fa-users-cog',
+                'description' => 'Staff management with role-based permissions, sub-user accounts, and collaborative practice management tools.'
             ],
             [
-                'icon' => 'fas fa-chart-bar',
-                'description' => 'Advanced analytics with visit tracking, performance metrics, and comprehensive reporting tools.'
+                'icon' => 'fas fa-globe',
+                'description' => 'Professional online presence with customizable landing pages, blog management, and patient testimonial systems.'
             ],
         ];
         $team = [

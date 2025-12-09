@@ -2,6 +2,70 @@
 
 @section('title', 'Doctor Dashboard')
 
+@push('styles')
+<style>
+/* Professional Dashboard Header Styling */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+}
+
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header h2::before {
+    content: '🏥';
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 <div class="dashboard-container">
     <div class="container">
@@ -14,8 +78,8 @@
                         <div>
                             <strong>Chain Impersonation Mode</strong>
                             <p class="mb-0 small">
-                                <strong>{{ session('impersonating_admin_name', 'Admin') }}</strong> → 
-                                <strong>{{ session('impersonating_hospital_admin_name') }}</strong> → 
+                                <strong>{{ session('impersonating_admin_name', 'Admin') }}</strong> →
+                                <strong>{{ session('impersonating_hospital_admin_name') }}</strong> →
                                 <strong>Dr. {{ auth()->user()->name }}</strong>
                             </p>
                         </div>
@@ -58,7 +122,7 @@
         @endif
 
         <!-- Dashboard Header -->
-        <div class="dashboard-header py-2 border-bottom">
+        <div class="dashboard-header">
             <div>
                 <h2>Welcome back, Dr. {{ explode(' ', $doctor->user->name)[1] ?? $doctor->user->name }}</h2>
                 <p>Here's what's happening with your practice today</p>

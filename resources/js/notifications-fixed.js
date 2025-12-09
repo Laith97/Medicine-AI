@@ -1017,7 +1017,8 @@ class EnhancedNotificationSystem {
             window.notificationSound.addEventListener('error', (e) => {
                 console.warn(`⚠️ Failed to preload sound: ${soundFile}`, e);
                 console.log('💡 Notification will work without sound');
-                window.notificationSound = null;
+                // Don't set to null, let fallback handle it
+                delete window.notificationSound;
             });
 
             // Try to load the sound

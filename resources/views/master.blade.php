@@ -8,7 +8,11 @@
     <meta name="description"
         content="Create Medical Clinic & Hospital Websites with Canvas Template. Get Canvas to build powerful websites easily with the Highly Customizable & Best Selling Bootstrap Template, today.">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-@auth
+    <!-- Force fresh logo loading - prevent JPEG caching -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+ @auth
     <meta name="user-id" content="{{ Auth::id() }}">
     <meta name="notification-sound-enabled" content="{{ env('NOTIFICATION_SOUND_ENABLED', 'true') }}">
     <meta name="notification-toast-enabled" content="{{ env('NOTIFICATION_TOAST_ENABLED', 'true') }}">
@@ -182,14 +186,16 @@
     }
 
     .cnvs-hamburger:hover {
-        opacity: 0.8 !important;
+        background: rgba(222, 98, 98, 0.2) !important;
+        border-color: rgba(222, 98, 98, 0.5) !important;
+        transform: scale(1.05) !important;
     }
 
     /* Make sure hamburger lines are visible */
-    .cnvs-hamburger-inner,
-    .cnvs-hamburger-inner::before,
-    .cnvs-hamburger-inner::after {
-        background-color: #333 !important;
+    .cnvs-hamburger .cnvs-hamburger-inner,
+    .cnvs-hamburger .cnvs-hamburger-inner::before,
+    .cnvs-hamburger .cnvs-hamburger-inner::after {
+        background-color: white !important;
     }
 
     /* Fix logo positioning on mobile - keep it on the left */
@@ -752,6 +758,268 @@ body .dropdown .dropdown-menu.show,
             z-index: 1050 !important;
         }
 
+        /* Professional Skeleton Loading Animation */
+        .skeleton-loader {
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+            background: linear-gradient(90deg,
+                rgba(222, 98, 98, 0.1) 25%,
+                rgba(222, 98, 98, 0.05) 50%,
+                rgba(222, 98, 98, 0.1) 75%);
+            background-size: 200% 100%;
+            border: 1px solid rgba(222, 98, 98, 0.1);
+        }
+
+        /* Loading indicator overlay */
+        .ajax-loading-overlay {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9998;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(222, 98, 98, 0.2);
+            border-radius: 50px;
+            padding: 8px 16px;
+            box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #DE6262;
+            font-weight: 500;
+        }
+
+        .ajax-loading-overlay.show {
+            display: flex;
+        }
+
+        .ajax-loading-overlay .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(222, 98, 98, 0.3);
+            border-top: 2px solid #DE6262;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes skeleton-loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .skeleton-header {
+            height: 60px;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+
+        .skeleton-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .skeleton-stat-card {
+            flex: 1;
+            height: 120px;
+            border-radius: 20px;
+        }
+
+        .skeleton-tabs {
+            height: 50px;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .skeleton-table {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .skeleton-table-header {
+            height: 50px;
+            margin-bottom: 1rem;
+        }
+
+        .skeleton-table-row {
+            height: 60px;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+        }
+
+        /* Responsive skeleton adjustments */
+        @media (max-width: 768px) {
+            .skeleton-stats {
+                flex-direction: column;
+            }
+
+            .skeleton-stat-card {
+                height: 100px;
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Professional Mobile Responsiveness for Top Bar */
+        @media (max-width: 991px) {
+            #top-bar {
+                padding: 0.75rem 0 !important;
+                min-height: 60px !important;
+            }
+
+            #top-bar .container {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+                max-width: 100% !important;
+            }
+
+            /* Improve logo sizing for mobile */
+            #top-bar .top-bar-logo img {
+                width: 110px !important;
+                height: auto !important;
+            }
+
+            /* Better spacing for status indicators */
+            #top-bar .status-indicator {
+                width: 6px !important;
+                height: 6px !important;
+            }
+
+            /* Improve button touch targets */
+            #top-bar .btn {
+                min-height: 44px !important;
+                min-width: 44px !important;
+                padding: 0.5rem !important;
+                border-radius: 8px !important;
+            }
+
+            /* Better text readability */
+            #top-bar .small {
+                font-size: 0.75rem !important;
+                line-height: 1.2 !important;
+            }
+
+            /* User dropdown improvements */
+            #top-bar .user-dropdown-toggle {
+                padding: 0.5rem 0.75rem !important;
+                min-height: 44px !important;
+            }
+
+            #top-bar .user-dropdown-toggle .small {
+                font-size: 0.7rem !important;
+                opacity: 0.8 !important;
+            }
+
+            /* Notification bell improvements */
+            #top-bar .notification-bell {
+                position: relative !important;
+            }
+
+            /* Improve spacing between elements */
+            #top-bar .d-flex.align-items-center.gap-3 {
+                gap: 0.5rem !important;
+            }
+
+            /* Status text improvements */
+            #top-bar .d-flex.align-items-center .me-1 {
+                margin-right: 0.25rem !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #top-bar {
+                padding: 0.5rem 0 !important;
+                min-height: 56px !important;
+            }
+
+            /* Stack elements better on very small screens */
+            #top-bar .row {
+                align-items: stretch !important;
+            }
+
+            #top-bar .col-md-auto {
+                padding: 0.25rem 0 !important;
+            }
+
+            /* Reduce logo size further */
+            #top-bar .top-bar-logo img {
+                width: 100px !important;
+            }
+
+            /* Hide some less critical elements on very small screens */
+            #top-bar .text-muted {
+                display: none !important;
+            }
+
+            /* Make buttons more compact but still touchable */
+            #top-bar .btn {
+                padding: 0.375rem !important;
+                font-size: 0.875rem !important;
+            }
+
+            /* Improve notification badge positioning */
+            #top-bar .notification-count {
+                font-size: 9px !important;
+                padding: 1px 5px !important;
+                min-width: 14px !important;
+                height: 14px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #top-bar {
+                padding: 0.375rem 0 !important;
+                min-height: 52px !important;
+            }
+
+            /* Minimal logo for very small screens */
+            #top-bar .top-bar-logo img {
+                width: 90px !important;
+            }
+
+            /* Simplify user dropdown for small screens */
+            #top-bar .user-dropdown-toggle .d-flex {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 0 !important;
+            }
+
+            #top-bar .user-dropdown-toggle .small {
+                font-size: 0.65rem !important;
+                line-height: 1 !important;
+            }
+
+            /* Hide status indicators on very small screens */
+            #top-bar .status-indicator {
+                display: none !important;
+            }
+
+            /* Make login/register buttons full width on very small screens */
+            #top-bar .flex.items-center.space-x-4 {
+                flex-direction: column !important;
+                gap: 0.25rem !important;
+                width: 100% !important;
+            }
+
+            #top-bar .flex.items-center.space-x-4 .btn {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+
+            /* Prevent top-bar row from wrapping on mobile */
+            #top-bar .row {
+                flex-wrap: nowrap !important;
+            }
+        }
+
         /* Header Layout - Fix Z-Index Issues */
         #header {
             overflow: visible !important;
@@ -896,22 +1164,35 @@ body .dropdown .dropdown-menu.show,
             .header-row {
                 display: flex !important;
                 padding: 0.5rem 0 !important;
-                flex-wrap: nowrap !important;
+                flex-wrap: wrap !important; /* Allow wrapping on mobile */
                 justify-content: space-between !important;
                 align-items: center !important;
                 width: 100% !important;
+                min-height: 60px !important;
             }
 
-            /* Logo and nav container adjustments for mobile */
-            .d-flex.align-items-center.flex-grow-1 {
-                display: flex !important;
+            /* Left side: Logo only */
+            .col-md-auto.d-flex.align-items-center.gap-3:first-child {
+                order: 1 !important;
+                flex: 0 0 auto !important;
+                justify-content: flex-start !important;
+                width: auto !important;
+            }
+
+            /* Right side: Login/Register buttons and hamburger */
+            .col-md-auto.d-flex.align-items-center.gap-3:last-child {
+                order: 2 !important;
+                flex: 0 0 auto !important;
+                justify-content: space-between !important;
                 align-items: center !important;
-                flex-grow: 1 !important;
+                margin-top: 0 !important;
+                margin-left: auto !important;
+                width: auto !important;
             }
 
             /* Logo adjustments for mobile */
             #logo {
-                margin-right: 1rem !important;
+                margin-right: 0 !important;
                 flex-shrink: 0 !important;
             }
 
@@ -920,6 +1201,48 @@ body .dropdown .dropdown-menu.show,
                 max-width: 120px !important;
                 height: auto !important;
                 display: block !important;
+            }
+
+            /* Mobile navigation dropdown - positioned below top bar */
+            .show-mobile-nav {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 0.5rem !important;
+                position: absolute !important;
+                top: 100% !important; /* Below the top bar */
+                left: 0 !important;
+                right: 0 !important;
+                background: white !important;
+                border: 1px solid #dee2e6 !important;
+                border-top: none !important;
+                padding: 1rem !important;
+                z-index: 10000 !important;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+                max-height: 60vh !important;
+                overflow-y: auto !important;
+                width: 100% !important;
+            }
+
+            .show-mobile-nav .top-link {
+                color: #333 !important;
+                background: #f8f9fa !important;
+                border: 1px solid #dee2e6 !important;
+                font-size: 14px !important;
+                padding: 12px 16px !important;
+                width: 100% !important;
+                text-align: center !important;
+                border-radius: 6px !important;
+                margin: 4px 0 !important;
+                text-decoration: none !important;
+                display: block !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .show-mobile-nav .top-link:hover {
+                background: #DE6262 !important;
+                color: white !important;
+                border-color: #DE6262 !important;
             }
 
             /* Hide desktop navigation */
@@ -931,8 +1254,8 @@ body .dropdown .dropdown-menu.show,
             .primary-menu-trigger,
             .primary-menu-trigger.d-block.d-lg-none {
                 display: block !important;
-                margin-left: auto !important;
                 padding: 0.5rem !important;
+                order: 2 !important;
             }
 
             /* Mobile hamburger styling */
@@ -1252,12 +1575,34 @@ body .dropdown .dropdown-menu.show,
             <div class="container">
                 <div class="row justify-content-between align-items-center">
 
-                    <!-- Left Side: Quick Info & Status -->
-                    <div class="col-md-auto d-none d-md-flex align-items-center gap-4 small">
-                        <div class="d-flex align-items-center">
-                            <div class="status-indicator bg-success rounded-circle me-2"
-                                style="width: 8px; height: 8px;"></div>
-                            <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
+                    <!-- Left Side: Logo & Navigation -->
+                    <div class="col-md-auto d-flex align-items-center gap-3 flex-nowrap">
+                        <!-- Logo in Top Bar -->
+                        <div class="top-bar-logo">
+                            <a href="{{ url('/') }}" class="d-flex align-items-center text-decoration-none">
+                                <img style="width: 120px; height: auto;" class="logo-default img-fluid"
+                                      src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}"
+                                      alt="Medcura Logo">
+                            </a>
+                        </div>
+
+                        <!-- Quick Info & Status / Navigation Links -->
+                        <div class="d-none d-md-flex align-items-center gap-3 small">
+                            @auth
+                            <div class="d-flex align-items-center">
+                                <div class="status-indicator bg-success rounded-circle me-2"
+                                    style="width: 8px; height: 8px;"></div>
+                                <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
+                            </div>
+                            <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
+                            <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com"
+                                    class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
+                            @else
+                            <a href="{{ url('/') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">Home</a>
+                            <a href="{{ route('about') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">About Us</a>
+                            <a href="{{ route('contact') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">Contact</a>
+                            <a href="{{ route('doctors.index') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">For Patients</a>
+                            @endauth
                         </div>
                         <div><i class="bi bi-cpu me-1"></i> Advanced Clinical Support Available</div>
                         <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com"
@@ -1267,6 +1612,14 @@ body .dropdown .dropdown-menu.show,
                     <!-- Right Side: Notifications & User Menu -->
                     <div class="col-md-auto d-flex align-items-center gap-3">
                         @auth
+                            <!-- Mobile Sidebar Toggle Button -->
+                            <button id="sidebarCollapse" class="btn btn-sm btn-outline-secondary d-lg-none d-flex align-items-center justify-content-center"
+                                    type="button" aria-label="Toggle navigation sidebar" aria-expanded="false"
+                                    title="Open sidebar menu"
+                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px; backdrop-filter: blur(10px);">
+                                <i class="fa-solid fa-bars" aria-hidden="true"></i>
+                            </button>
+
                             {{-- AI Ask temporarily disabled --}}
                             {{-- AI Ask temporarily disabled --}}
                             {{-- <!-- Quick Action Button for Emergency -->
@@ -1277,18 +1630,14 @@ body .dropdown .dropdown-menu.show,
 
                             <!-- Notifications Bell -->
                             <div class="dropdown notifications-dropdown">
-                                <button class="btn btn-sm position-relative notification-bell dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                                    aria-expanded="false"
-                                    aria-haspopup="true"
-                                    aria-label="Notifications menu"
-                                    role="button"
-                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 44px; height: 44px; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; line-height: 1; backdrop-filter: blur(10px);">
+                                <button class="btn btn-sm position-relative notification-bell dropdown-toggle d-flex align-items-center justify-content-center" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true"
+                                    aria-label="Notifications menu" title="Notifications"
+                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px; backdrop-filter: blur(10px);">
                                     <i class="bi bi-bell" aria-hidden="true"></i>
-                                    <span
-                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count"
-                                        id="notification-count"
-                                        aria-label="unread notifications count"
-                                        style="font-size: 10px; padding: 2px 6px; display: none;">
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count"
+                                        id="notification-count" aria-label="unread notifications count"
+                                        style="font-size: 10px; padding: 2px 6px; display: none; font-weight: 600;">
                                         0
                                     </span>
                                 </button>
@@ -1325,17 +1674,18 @@ body .dropdown .dropdown-menu.show,
                             <!-- User Dropdown -->
                             <div class="dropdown">
                                 <button class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle user-dropdown-toggle" type="button"
-                                    role="button" data-bs-toggle="dropdown" aria-expanded="false"
-                                    aria-haspopup="true" aria-label="User account menu"
-                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px; min-height: 44px; padding: 8px 12px;">
+                                    data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true"
+                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
                                     <i class="bi bi-person-circle" aria-hidden="true"></i>
-                                    <div class="d-flex flex-column align-items-start">
-                                        <span class="small">{{ Auth::user()->name }}</span>
+                                    <div class="d-flex flex-column align-items-start d-none d-sm-flex">
+                                        <span class="small fw-semibold">{{ Auth::user()->name }}</span>
                                         @if (Auth::user()->isSubUser())
-                                            <small
-                                                class="opacity-75 small">{{ \App\Helpers\MenuHelper::getUserRoleDisplay(Auth::user()) }}</small>
+                                            <small class="opacity-75 small text-truncate" style="max-width: 120px;">{{ \App\Helpers\MenuHelper::getUserRoleDisplay(Auth::user()) }}</small>
                                         @endif
                                     </div>
+                                    <span class="d-sm-none">
+                                        <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                                    </span>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end shadow user-dropdown-menu">
                                     @if (Auth::guard('admin')->check())
@@ -1405,16 +1755,31 @@ body .dropdown .dropdown-menu.show,
                             </div>
                         @endauth
                         @guest
-                            <a href="{{ route('login') }}"
-                                class="btn btn-sm px-4 me-2"
-                                style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
-                                <i class="bi bi-box-arrow-in-right me-1"></i> Login
-                            </a>
-                            <a href="{{ route('register') }}"
-                                class="btn btn-sm px-4"
-                                style="background: white; color: #DE6262; border: none; font-weight: 500; border-radius: 25px;">
-                                <i class="bi bi-person-plus me-1"></i> Register
-                            </a>
+                            <div class="d-flex gap-2 align-items-center">
+                                <a href="{{ route('login') }}"
+                                    class="btn btn-sm px-3 d-flex align-items-center justify-content-center"
+                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px); min-height: 40px;">
+                                    <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>
+                                    <span class="d-none d-sm-inline">Login</span>
+                                    <span class="d-sm-none">Sign In</span>
+                                </a>
+                                <a href="{{ route('register') }}"
+                                    class="btn btn-sm px-3 d-flex align-items-center justify-content-center"
+                                    style="background: white; color: #DE6262; border: none; font-weight: 500; border-radius: 25px; min-height: 40px;">
+                                    <i class="bi bi-person-plus me-1" aria-hidden="true"></i>
+                                    <span class="d-none d-sm-inline">Register</span>
+                                    <span class="d-sm-none">Sign Up</span>
+                                </a>
+                                <!-- Hamburger Button for Mobile Navigation -->
+                                <button class="cnvs-hamburger d-lg-none d-flex align-items-center justify-content-center"
+                                    type="button" aria-label="Toggle navigation menu" aria-expanded="false"
+                                    title="Open navigation menu"
+                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px; backdrop-filter: blur(10px);">
+                                    <div class="cnvs-hamburger-box">
+                                        <div class="cnvs-hamburger-inner"></div>
+                                    </div>
+                                </button>
+                            </div>
                         @endguest
                     </div>
                 </div>
@@ -1725,9 +2090,17 @@ body .dropdown .dropdown-menu.show,
             </div>
         @endif
 
+        <!-- AJAX Loading Indicator -->
+        <div id="ajax-loading-overlay" class="ajax-loading-overlay">
+            <div class="loading-spinner"></div>
+            <span>Loading...</span>
+        </div>
+
         <!-- Main Content -->
-        <main id="main-content" class="dashboard-container" role="main">
-            <div class="app-main">
+        <div id="main-content" class="dashboard-container" style="padding-top: 0px; margin-top: 70px; border-top: 5px solid #DE6262; border-radius: 15px 15px 0 0; box-shadow: 0 -4px 20px rgba(222, 98, 98, 0.1); position: relative; z-index: 1;">
+            <!-- Seamless connection gradient -->
+            <div style="position: absolute; top: -5px; left: 0; right: 0; height: 15px; background: linear-gradient(to bottom, rgba(222, 98, 98, 0.2), transparent); pointer-events: none;"></div>
+            <main class="app-main" style="padding-top: 25px;">
                 @yield('content')
             </div>
         </main>
@@ -1938,6 +2311,212 @@ body .dropdown .dropdown-menu.show,
 {{-- Extra scripts --}}
 @stack('scripts')
 
+{{-- AJAX Navigation Script --}}
+<script>
+$(document).ready(function() {
+   // Intercept sidebar link clicks
+   $(document).on('click', '.sidebar-nav a[data-ajax="true"]', function(e) {
+       e.preventDefault();
+
+       const $link = $(this);
+       const route = $link.data('route');
+       const url = $link.attr('href');
+
+       // Don't navigate if already active
+       if ($link.hasClass('active')) {
+           return;
+       }
+
+       // Update active state
+       $('.sidebar-nav .nav-link').removeClass('active');
+       $link.addClass('active');
+
+       // Load content via AJAX
+       loadPageContent(url, route);
+
+       // Update browser history
+       history.pushState({route: route, url: url}, '', url);
+   });
+
+   // Handle browser back/forward buttons
+   window.addEventListener('popstate', function(e) {
+       if (e.state && e.state.url) {
+           loadPageContent(e.state.url, e.state.route);
+       }
+   });
+});
+
+function loadPageContent(url, route) {
+    // Show loading overlay and skeleton
+    const $loadingOverlay = $('#ajax-loading-overlay');
+    const $mainContent = $('#main-content');
+    const originalContent = $mainContent.html();
+
+    // Show loading overlay
+    $loadingOverlay.addClass('show');
+
+    $mainContent.html(`
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10">
+                    <!-- Skeleton Header -->
+                    <div class="skeleton-loader skeleton-header"></div>
+
+                    <!-- Skeleton Stats Cards -->
+                    <div class="skeleton-stats">
+                        <div class="skeleton-loader skeleton-stat-card"></div>
+                        <div class="skeleton-loader skeleton-stat-card"></div>
+                        <div class="skeleton-loader skeleton-stat-card"></div>
+                        <div class="skeleton-loader skeleton-stat-card"></div>
+                    </div>
+
+                    <!-- Skeleton Tabs -->
+                    <div class="skeleton-loader skeleton-tabs"></div>
+
+                    <!-- Skeleton Table -->
+                    <div class="skeleton-loader skeleton-table">
+                        <div class="skeleton-loader skeleton-table-header"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `);
+
+   $.ajax({
+       url: url,
+       method: 'GET',
+       headers: {
+           'X-Requested-With': 'XMLHttpRequest',
+           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+       },
+       success: function(response) {
+           try {
+               // Hide loading overlay
+               $loadingOverlay.removeClass('show');
+
+               // Extract content from the response (between main-content div)
+               const $temp = $('<div>').html(response);
+               const newContent = $temp.find('#main-content').html();
+
+               if (newContent) {
+                   $mainContent.html(newContent);
+
+                   // Update page title
+                   const newTitle = $temp.find('title').text();
+                   if (newTitle) {
+                       document.title = newTitle;
+                   }
+
+                   // Re-initialize any JavaScript components
+                   initializePageComponents(route);
+
+                   // Scroll to top smoothly
+                   $('html, body').animate({ scrollTop: 0 }, 300);
+               } else {
+                   // If no main-content found, assume full page response
+                   $mainContent.html(response);
+               }
+           } catch (error) {
+               console.error('Error parsing AJAX response:', error);
+               $mainContent.html(originalContent);
+               showAjaxError('Failed to load page content. Please try again.');
+           }
+       },
+       error: function(xhr, status, error) {
+           // Hide loading overlay
+           $loadingOverlay.removeClass('show');
+
+           console.error('AJAX Error:', error);
+           $mainContent.html(originalContent);
+
+           // Fallback to regular navigation for critical errors
+           if (xhr.status === 0 || xhr.status >= 500) {
+               showAjaxError('Connection failed. Redirecting...');
+               setTimeout(() => {
+                   window.location.href = url;
+               }, 2000);
+           } else {
+               showAjaxError('Failed to load page. Please refresh and try again.');
+           }
+       }
+   });
+}
+
+function initializePageComponents(route) {
+   // Re-initialize DataTables if present
+   if (typeof $.fn.DataTable !== 'undefined') {
+       $('.dataTable').each(function() {
+           if ($.fn.DataTable.isDataTable(this)) {
+               $(this).DataTable().destroy();
+           }
+       });
+
+       // Re-initialize DataTables with new content
+       if (typeof initializeDataTable === 'function') {
+           initializeDataTable();
+       }
+   }
+
+   // Re-initialize Bootstrap components (Bootstrap 5 - no jQuery plugins)
+   if (typeof bootstrap !== 'undefined') {
+       // Re-initialize tooltips
+       document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(element => {
+           const tooltip = bootstrap.Tooltip.getInstance(element);
+           if (tooltip) {
+               tooltip.dispose();
+           }
+           new bootstrap.Tooltip(element);
+       });
+
+       // Re-initialize popovers
+       document.querySelectorAll('[data-bs-toggle="popover"]').forEach(element => {
+           const popover = bootstrap.Popover.getInstance(element);
+           if (popover) {
+               popover.dispose();
+           }
+           new bootstrap.Popover(element);
+       });
+
+       // Clean up modals (dispose existing instances)
+       document.querySelectorAll('.modal').forEach(modalElement => {
+           const modal = bootstrap.Modal.getInstance(modalElement);
+           if (modal) {
+               modal.dispose();
+           }
+       });
+   }
+
+   // Trigger custom event for page-specific initializations
+   $(document).trigger('pageContentLoaded', [route]);
+}
+
+function showAjaxError(message) {
+   // Create a temporary error notification
+   const $error = $(`
+       <div class="alert alert-danger alert-dismissible fade show position-fixed"
+            style="top: 80px; right: 20px; z-index: 9999; min-width: 300px;">
+           <i class="fas fa-exclamation-triangle me-2"></i>
+           ${message}
+           <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+       </div>
+   `);
+
+   $('body').append($error);
+
+   // Auto-remove after 5 seconds
+   setTimeout(() => {
+       $error.alert('close');
+   }, 5000);
+}
+</script>
+
 <script>
     // Dropdown initialization
     document.addEventListener('DOMContentLoaded', function() {
@@ -2067,11 +2646,9 @@ body .dropdown .dropdown-menu.show,
         }, 500);
     });
 
-        // NEW SIMPLE MOBILE MENU - Bottom Sheet Style
-        function createBottomSheetMenu() {
-            const body = document.body;
-
-            // Try multiple selectors to find the hamburger button
+        // MOBILE NAVIGATION TOGGLE - Show/Hide navigation links
+        function initializeMobileNavigation() {
+            // Find the hamburger button
             let mobileMenuTrigger = document.querySelector('.primary-menu-trigger .cnvs-hamburger');
             if (!mobileMenuTrigger) {
                 mobileMenuTrigger = document.querySelector('.cnvs-hamburger');
@@ -2081,480 +2658,211 @@ body .dropdown .dropdown-menu.show,
             }
 
             if (!mobileMenuTrigger) {
-                // Only log if we're in debug mode
-                if (window.location.search.includes('debug=true')) {
-                }
+                console.log('Hamburger button not found - checking all possible selectors');
+                console.log('Available hamburger buttons:', document.querySelectorAll('.cnvs-hamburger'));
+                console.log('Available primary-menu-trigger:', document.querySelectorAll('.primary-menu-trigger'));
                 return;
             }
 
-            // Remove existing mobile menu if it exists
-            const existingMobileMenu = document.querySelector('.bottom-sheet-menu');
-            const existingOverlay = document.querySelector('.bottom-sheet-overlay');
-            if (existingMobileMenu) existingMobileMenu.remove();
-            if (existingOverlay) existingOverlay.remove();
+            console.log('Hamburger button found:', mobileMenuTrigger);
 
-            // Create overlay
-            const overlay = document.createElement('div');
-            overlay.className = 'bottom-sheet-overlay';
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 999998;
-                opacity: 0;
-                visibility: hidden;
-                transition: all 0.3s ease;
-            `;
+            // Find the navigation links container
+            const navLinks = document.querySelector('.d-none.d-md-flex.align-items-center.gap-3.small');
 
-            // Create bottom sheet menu
-            const bottomSheet = document.createElement('div');
-            bottomSheet.className = 'bottom-sheet-menu';
-            bottomSheet.style.cssText = `
-                position: fixed;
-                bottom: -100%;
-                left: 0;
-                width: 100%;
-                max-height: 80vh;
-                background: white;
-                z-index: 9999999;
-                border-radius: 20px 20px 0 0;
-                box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
-                transition: bottom 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-                overflow-y: auto;
-            `;
-
-            // Create menu content
-            const menuContent = `
-                <div style="
-                    padding: 20px;
-                    border-bottom: 1px solid #eee;
-                    background: linear-gradient(135deg, #DE6262 0%, #c54545 100%);
-                    color: white;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                ">
-                    <h3 style="margin: 0; font-size: 18px; font-weight: 600;">
-                        <i class="fas fa-bars me-2"></i>Navigation Menu
-                    </h3>
-                    <button class="close-bottom-sheet" style="
-                        background: none;
-                        border: none;
-                        color: white;
-                        font-size: 24px;
-                        cursor: pointer;
-                        padding: 5px;
-                    ">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="menu-items-container" style="padding: 20px;">
-                    <!-- Menu items will be added here -->
-                </div>
-            `;
-
-            bottomSheet.innerHTML = menuContent;
-
-            // Add menu items
-            const menuItemsContainer = bottomSheet.querySelector('.menu-items-container');
-
-            // Define menu items manually (since cloning was problematic)
-            const menuItems = [
-                {
-                    title: 'Dashboard',
-                    icon: 'fas fa-tachometer-alt',
-                    url: '{{ route("dashboard") }}',
-                    submenu: null
-                },
-                {{-- AI Ask temporarily disabled --}}
-                {{-- {
-                    title: 'Ask AI',
-                    // icon: 'fas fa-robot',
-                    // url: '{{ route("ai.ask-ai") }}',
-                    // submenu: null
-                }, --}}
-                {
-                    title: 'Voice Assistant',
-                    icon: 'fas fa-microphone',
-                    url: '{{ route("ai.voice-assistant.index") }}',
-                    submenu: null
-                },
-                {
-                    title: 'Medical Tools',
-                    icon: 'fas fa-stethoscope',
-                    url: '#',
-                    submenu: [
-                        { title: 'Patient Management', icon: 'fas fa-folder-medical', url: '/doctor/patient-management' },
-                        { title: 'Diagnosis', icon: 'fas fa-diagnoses', url: '/diagnosis' },
-                        { title: 'Medical Notes', icon: 'fas fa-notes-medical', url: '/medical-notes' }
-                    ]
-                },
-                {
-                    title: 'Appointments',
-                    icon: 'fas fa-calendar-check',
-                    url: '#',
-                    submenu: [
-                        { title: 'View Appointments', icon: 'fas fa-calendar', url: '{{ route("appointments.index") }}' },
-                        { title: 'Reviews', icon: 'fas fa-star', url: '{{ route("reviews.index") }}' }
-                    ]
-                },
-                {
-                    title: 'Sub Users',
-                    icon: 'fas fa-users',
-                    url: '{{ route("sub-users.index") }}',
-                    submenu: null
-                },
-
-                {
-                    title: 'Profile',
-                    icon: 'fas fa-user',
-                    url: '{{ route("doctor.profile.edit") }}',
-                    submenu: null
-                },
-                {
-                    title: 'Settings',
-                    icon: 'fas fa-cog',
-                    url: '{{ route("settings") }}',
-                    submenu: null
-                }
-            ];
-
-            // Add admin menu item if user is admin
-            const isAdmin = {{ Auth::check() && Auth::user() && Auth::user()->isAdmin() ? 'true' : 'false' }};
-            if (isAdmin) {
-                menuItems.splice(-2, 0, {
-                    title: 'Admin Panel',
-                    icon: 'fas fa-cog',
-                    url: '#',
-                    submenu: [
-                        { title: 'Dashboard', icon: 'fas fa-tachometer-alt', url: '{{ route("admin.dashboard") }}' },
-                        { title: 'User Management', icon: 'fas fa-users-cog', url: '{{ route("admin.users.index") }}' },
-                        { title: 'System Settings', icon: 'fas fa-sliders-h', url: '{{ route("admin.system-settings") }}' },
-                        { title: 'Billing', icon: 'fas fa-dollar-sign', url: '{{ route("admin.billing") }}' }
-                    ]
-                });
+            if (!navLinks) {
+                console.log('Navigation links container not found - checking all possible selectors');
+                console.log('Available navigation containers:', document.querySelectorAll('[class*="d-none"][class*="d-md-flex"]'));
+                console.log('All div elements:', document.querySelectorAll('div').length);
+                return;
             }
 
-            // Create menu items HTML
-            menuItems.forEach(item => {
-                const menuItem = document.createElement('div');
-                menuItem.className = 'bottom-sheet-menu-item';
-                menuItem.style.cssText = `
-                    margin-bottom: 8px;
-                    border-radius: 12px;
-                    background: #f8f9fa;
-                    border: 1px solid #e9ecef;
-                    overflow: hidden;
-                `;
+            console.log('Navigation links container found:', navLinks);
+            console.log('Navigation links HTML:', navLinks.innerHTML);
 
-                if (item.submenu) {
-                    // Menu item with submenu
-                    menuItem.innerHTML = `
-                        <div class="menu-item-header" style="
-                            display: flex;
-                            align-items: center;
-                            justify-content: space-between;
-                            padding: 16px 20px;
-                            cursor: pointer;
-                            background: white;
-                            transition: all 0.2s ease;
-                        ">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <i class="${item.icon}" style="color: #DE6262; width: 20px; text-align: center;"></i>
-                                <span style="font-weight: 500; color: #333;">${item.title}</span>
-                            </div>
-                            <i class="fas fa-chevron-down" style="color: #666; transition: transform 0.3s ease;"></i>
-                        </div>
-                        <div class="submenu-items" style="
-                            display: none;
-                            background: #f8f9fa;
-                            border-top: 1px solid #e9ecef;
-                        ">
-                            ${item.submenu.map(subItem => `
-                                <a href="${subItem.url}" style="
-                                    display: flex;
-                                    align-items: center;
-                                    gap: 12px;
-                                    padding: 12px 20px 12px 52px;
-                                    color: #555;
-                                    text-decoration: none;
-                                    transition: all 0.2s ease;
-                                    border-bottom: 1px solid rgba(0,0,0,0.05);
-                                " class="submenu-link">
-                                    <i class="${subItem.icon}" style="color: #DE6262; width: 16px; text-align: center; font-size: 14px;"></i>
-                                    <span style="font-size: 14px;">${subItem.title}</span>
-                                </a>
-                            `).join('')}
-                        </div>
-                    `;
+            // Function to toggle navigation
+            function toggleMobileNav() {
+                console.log('Toggling mobile navigation');
 
-                    // Add click handler for dropdown
-                    const header = menuItem.querySelector('.menu-item-header');
-                    const submenu = menuItem.querySelector('.submenu-items');
-                    const arrow = menuItem.querySelector('.fa-chevron-down');
-
-                    header.addEventListener('click', function() {
-                        const isOpen = submenu.style.display === 'block';
-
-                        // Close all other submenus
-                        bottomSheet.querySelectorAll('.submenu-items').forEach(sub => {
-                            if (sub !== submenu) {
-                                sub.style.display = 'none';
-                            }
-                        });
-                        bottomSheet.querySelectorAll('.fa-chevron-down').forEach(arr => {
-                            if (arr !== arrow) {
-                                arr.style.transform = 'rotate(0deg)';
-                            }
-                        });
-
-                        // Toggle current submenu
-                        if (isOpen) {
-                            submenu.style.display = 'none';
-                            arrow.style.transform = 'rotate(0deg)';
-                        } else {
-                            submenu.style.display = 'block';
-                            arrow.style.transform = 'rotate(180deg)';
-                        }
-                    });
-
-                    // Add hover effects for submenu links
-                    menuItem.querySelectorAll('.submenu-link').forEach(link => {
-                        link.addEventListener('mouseenter', function() {
-                            this.style.background = 'rgba(222, 98, 98, 0.1)';
-                            this.style.color = '#DE6262';
-                        });
-                        link.addEventListener('mouseleave', function() {
-                            this.style.background = 'transparent';
-                            this.style.color = '#555';
-                        });
-                        link.addEventListener('click', function() {
-                            closeBottomSheet();
-                        });
-                    });
-
+                if (navLinks.classList.contains('show-mobile-nav')) {
+                    // Hide navigation - remove the dropdown and event listeners
+                    navLinks.classList.remove('show-mobile-nav');
+                    if (navLinks._dropdown) {
+                        navLinks._dropdown.remove();
+                        navLinks._dropdown = null;
+                        console.log('Navigation dropdown removed');
+                    }
+                    // Remove any click outside listeners
+                    document.removeEventListener('click', navLinks._closeHandler);
+                    navLinks._closeHandler = null;
+                    console.log('Navigation hidden');
                 } else {
-                    // Simple menu item
-                    menuItem.innerHTML = `
-                        <a href="${item.url}" style="
-                            display: flex;
-                            align-items: center;
-                            gap: 12px;
-                            padding: 16px 20px;
-                            color: #333;
-                            text-decoration: none;
-                            background: white;
-                            transition: all 0.2s ease;
-                        " class="simple-menu-link">
-                            <i class="${item.icon}" style="color: #DE6262; width: 20px; text-align: center;"></i>
-                            <span style="font-weight: 500;">${item.title}</span>
-                        </a>
+                    // Create a professional dropdown matching site style
+                    const dropdown = document.createElement('div');
+                    dropdown.id = 'mobile-nav-dropdown';
+                    dropdown.style.cssText = `
+                        position: fixed;
+                        top: 80px;
+                        left: 0;
+                        right: 0;
+                        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+                        border-bottom: 1px solid rgba(255,255,255,0.1);
+                        padding: 20px;
+                        z-index: 99999;
+                        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    `;
+                    dropdown.innerHTML = `
+                        <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
+                            <a href="/" style="color: white; text-decoration: none; font-weight: 500; padding: 12px 20px; border-radius: 8px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); display: block; width: 100%; text-align: center; font-size: 16px;">Home</a>
+                            <a href="/about" style="color: white; text-decoration: none; font-weight: 500; padding: 12px 20px; border-radius: 8px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); display: block; width: 100%; text-align: center; font-size: 16px;">About Us</a>
+                            <a href="/contact" style="color: white; text-decoration: none; font-weight: 500; padding: 12px 20px; border-radius: 8px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); display: block; width: 100%; text-align: center; font-size: 16px;">Contact</a>
+                            <a href="/doctors" style="color: white; text-decoration: none; font-weight: 500; padding: 12px 20px; border-radius: 8px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); display: block; width: 100%; text-align: center; font-size: 16px;">For Patients</a>
+                        </div>
                     `;
 
-                    // Add hover effect and close on click
-                    const link = menuItem.querySelector('.simple-menu-link');
-                    link.addEventListener('mouseenter', function() {
-                        this.style.background = 'rgba(222, 98, 98, 0.05)';
-                        this.style.color = '#DE6262';
-                    });
-                    link.addEventListener('mouseleave', function() {
-                        this.style.background = 'white';
-                        this.style.color = '#333';
-                    });
-                    link.addEventListener('click', function() {
-                        closeBottomSheet();
-                    });
-                }
+                    document.body.appendChild(dropdown);
+                    console.log('Created new visible dropdown element');
 
-                menuItemsContainer.appendChild(menuItem);
-            });
+                    // Store reference to remove it later
+                    navLinks._dropdown = dropdown;
 
-            // Add to body
-            body.appendChild(overlay);
-            body.appendChild(bottomSheet);
-
-            // Functions to open/close
-            function openBottomSheet() {
-                overlay.style.opacity = '1';
-                overlay.style.visibility = 'visible';
-                bottomSheet.style.bottom = '0';
-                body.style.overflow = 'hidden';
-            }
-
-            function closeBottomSheet() {
-                overlay.style.opacity = '0';
-                overlay.style.visibility = 'hidden';
-                bottomSheet.style.bottom = '-100%';
-                body.style.overflow = '';
-
-                // Close all submenus
-                bottomSheet.querySelectorAll('.submenu-items').forEach(sub => {
-                    sub.style.display = 'none';
-                });
-                bottomSheet.querySelectorAll('.fa-chevron-down').forEach(arrow => {
-                    arrow.style.transform = 'rotate(0deg)';
-                });
-            }
-
-            // Event listeners
-            mobileMenuTrigger.addEventListener('click', openBottomSheet);
-            overlay.addEventListener('click', closeBottomSheet);
-            bottomSheet.querySelector('.close-bottom-sheet').addEventListener('click', closeBottomSheet);
-
-            // Add keyboard navigation support for mobile menu
-            bottomSheet.addEventListener('keydown', function(e) {
-                const focusableElements = bottomSheet.querySelectorAll(
-                    '.close-bottom-sheet, .simple-menu-link, .menu-item-header, .submenu-link'
-                );
-                const firstElement = focusableElements[0];
-                const lastElement = focusableElements[focusableElements.length - 1];
-
-                switch (e.key) {
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        const currentIndex = Array.from(focusableElements).indexOf(document.activeElement);
-                        const nextIndex = currentIndex < focusableElements.length - 1 ? currentIndex + 1 : 0;
-                        focusableElements[nextIndex].focus();
-                        break;
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        const currentIndexUp = Array.from(focusableElements).indexOf(document.activeElement);
-                        const prevIndex = currentIndexUp > 0 ? currentIndexUp - 1 : focusableElements.length - 1;
-                        focusableElements[prevIndex].focus();
-                        break;
-                    case 'Home':
-                        e.preventDefault();
-                        firstElement.focus();
-                        break;
-                    case 'End':
-                        e.preventDefault();
-                        lastElement.focus();
-                        break;
-                    case 'Escape':
-                        e.preventDefault();
-                        closeBottomSheet();
-                        break;
-                    case 'Enter':
-                        // Handle submenu expansion
-                        if (document.activeElement.classList.contains('menu-item-header')) {
-                            e.preventDefault();
-                            document.activeElement.click();
+                    // Add click outside to close
+                    const closeDropdown = (e) => {
+                        if (!dropdown.contains(e.target) && e.target !== mobileMenuTrigger && !mobileMenuTrigger.contains(e.target)) {
+                            dropdown.remove();
+                            navLinks.classList.remove('show-mobile-nav');
+                            navLinks._dropdown = null;
+                            document.removeEventListener('click', closeDropdown);
+                            navLinks._closeHandler = null;
+                            console.log('Dropdown closed by clicking outside');
                         }
-                        break;
+                    };
+
+                    // Store the handler for cleanup
+                    navLinks._closeHandler = closeDropdown;
+
+                    // Add the event listener after a short delay to avoid immediate closing
+                    setTimeout(() => {
+                        document.addEventListener('click', closeDropdown);
+                    }, 100);
+                }
+
+                console.log('Navigation links classes:', navLinks.className);
+                console.log('Navigation links style display:', navLinks.style.display);
+
+                // Update hamburger animation
+                const hamburger = mobileMenuTrigger;
+                if (hamburger) {
+                    hamburger.classList.toggle('active');
+                    console.log('Hamburger active class toggled');
+                }
+            }
+
+            // Function to close navigation
+            function closeMobileNav() {
+                console.log('Closing mobile navigation');
+                navLinks.classList.remove('show-mobile-nav');
+
+                // Reset hamburger animation
+                const hamburger = mobileMenuTrigger;
+                if (hamburger) {
+                    hamburger.classList.remove('active');
+                }
+            }
+
+            // Add click event to hamburger
+            mobileMenuTrigger.addEventListener('click', function(e) {
+                console.log('Hamburger clicked');
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMobileNav();
+            });
+
+            // Close navigation when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!mobileMenuTrigger.contains(e.target) && !navLinks.contains(e.target)) {
+                    closeMobileNav();
                 }
             });
 
-            // Close on window resize
+            // Close navigation on window resize to desktop
             window.addEventListener('resize', function() {
                 if (window.innerWidth > 991) {
-                    closeBottomSheet();
+                    closeMobileNav();
                 }
             });
 
-            // Only log in debug mode
-            if (window.location.search.includes('debug=true')) {
+            // Close navigation when a link is clicked
+            navLinks.addEventListener('click', function(e) {
+                if (e.target.closest('.top-link')) {
+                    closeMobileNav();
+                }
+            });
+        }
+
+        // Force fresh logo loading on mobile devices
+        function forceFreshLogoLoading() {
+            // Check if we're on mobile
+            if (window.innerWidth <= 768) {
+                const logos = document.querySelectorAll('img[src*="logo-medical"]');
+                logos.forEach(img => {
+                    const currentSrc = img.src;
+                    // Add timestamp to force fresh load
+                    const separator = currentSrc.includes('?') ? '&' : '?';
+                    img.src = currentSrc + separator + 'force=' + Date.now();
+                });
             }
         }
 
-        // Initialize mobile menu on DOM ready
+        // Initialize mobile navigation on DOM ready
         document.addEventListener('DOMContentLoaded', function() {
+            // Force fresh logo loading
+            forceFreshLogoLoading();
+
+            // Initialize mobile navigation toggle
+            initializeMobileNavigation();
+
             // Only log in debug mode
             if (window.location.search.includes('debug=true')) {
-            }
-            createBottomSheetMenu();
-
-            // Fallback: Add click listener directly to hamburger button
-            const hamburger = document.querySelector('.cnvs-hamburger');
-            if (hamburger) {
-                hamburger.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    // Try to trigger bottom sheet
-                    const bottomSheet = document.querySelector('.bottom-sheet-menu');
-                    const overlay = document.querySelector('.bottom-sheet-overlay');
-                    if (bottomSheet && overlay) {
-                        bottomSheet.style.bottom = '0';
-                        overlay.style.opacity = '1';
-                        overlay.style.visibility = 'visible';
-                        document.body.style.overflow = 'hidden';
-                    } else {
-                        createBottomSheetMenu();
-                        // Try again after recreation
-                        setTimeout(() => {
-                            const newBottomSheet = document.querySelector('.bottom-sheet-menu');
-                            const newOverlay = document.querySelector('.bottom-sheet-overlay');
-                            if (newBottomSheet && newOverlay) {
-                                newBottomSheet.style.bottom = '0';
-                                newOverlay.style.opacity = '1';
-                                newOverlay.style.visibility = 'visible';
-                                document.body.style.overflow = 'hidden';
-                            }
-                        }, 100);
-                    }
-                });
-            } else {
             }
         });
 
         // Add manual test trigger (temporary for debugging)
-        window.testMobileMenu = function() {
-            const bottomSheet = document.querySelector('.bottom-sheet-menu');
-            const overlay = document.querySelector('.bottom-sheet-overlay');
-            if (bottomSheet && overlay) {
-                bottomSheet.style.bottom = '0';
-                overlay.style.opacity = '1';
-                overlay.style.visibility = 'visible';
-                document.body.style.overflow = 'hidden';
-            } else {
-                createBottomSheetMenu();
-                setTimeout(() => {
-                    const newBottomSheet = document.querySelector('.bottom-sheet-menu');
-                    const newOverlay = document.querySelector('.bottom-sheet-overlay');
-                    if (newBottomSheet && newOverlay) {
-                        newBottomSheet.style.bottom = '0';
-                        newOverlay.style.opacity = '1';
-                        newOverlay.style.visibility = 'visible';
-                        document.body.style.overflow = 'hidden';
-                    }
-                }, 100);
+        window.testMobileNav = function() {
+            const navLinks = document.querySelector('.d-none.d-md-flex.align-items-center.gap-4.small');
+            if (navLinks) {
+                navLinks.classList.toggle('show-mobile-nav');
             }
         };
 
         // Also initialize on page show (for back/forward navigation)
         window.addEventListener('pageshow', function() {
-            // Only create if it doesn't exist
-            const existingMobileMenu = document.querySelector('.bottom-sheet-menu');
-            if (!existingMobileMenu) {
-                createBottomSheetMenu();
-            }
+            // Re-initialize mobile navigation if needed
+            initializeMobileNavigation();
         });
 
-        // For SPA-like navigation, reinitialize only when needed
-        let mobileMenuInitialized = false;
+        // For SPA-like navigation, reinitialize mobile navigation when needed
+        let mobileNavInitialized = false;
 
-        function initializeMobileMenuIfNeeded() {
-            const existingMobileMenu = document.querySelector('.bottom-sheet-menu');
-            const mobileMenuTrigger = document.querySelector('.primary-menu-trigger .cnvs-hamburger');
+        function initializeMobileNavIfNeeded() {
+            const mobileMenuTrigger = document.querySelector('.primary-menu-trigger .cnvs-hamburger') ||
+                                     document.querySelector('.cnvs-hamburger');
 
-            // Only reinitialize if elements exist but mobile menu doesn't and we haven't initialized recently
-            if (mobileMenuTrigger && !existingMobileMenu && !mobileMenuInitialized) {
-                createBottomSheetMenu();
-                mobileMenuInitialized = true;
+            // Only reinitialize if trigger exists but we haven't initialized recently
+            if (mobileMenuTrigger && !mobileNavInitialized) {
+                initializeMobileNavigation();
+                mobileNavInitialized = true;
 
                 // Reset flag after a delay to allow re-initialization if needed
                 setTimeout(() => {
-                    mobileMenuInitialized = false;
+                    mobileNavInitialized = false;
                 }, 5000);
             }
         }
 
         // Check on navigation events instead of continuous polling
-        window.addEventListener('popstate', initializeMobileMenuIfNeeded);
-        window.addEventListener('hashchange', initializeMobileMenuIfNeeded);
+        window.addEventListener('popstate', initializeMobileNavIfNeeded);
+        window.addEventListener('hashchange', initializeMobileNavIfNeeded);
 
     // Function to load notifications into dropdown
     function loadNotifications() {
@@ -2591,7 +2899,7 @@ body .dropdown .dropdown-menu.show,
                         const time = new Date(notification.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
                         html += `
-                            <div class="notification-item ${notification.read_at ? 'read' : 'unread'}" data-id="${notification.id}">
+                            <div class="notification-item ${notification.read_at ? 'read' : 'unread'}" data-id="${notification.id}" data-link="${notification.data?.link || ''}" data-message="${notification.data?.message || ''}">
                                 <div class="d-flex align-items-start gap-3 p-3 border-bottom">
                                     <div class="notification-icon">
                                         <i class="bi ${notification.data?.icon || 'bi-bell'} text-${notification.data?.color || 'primary'}"></i>
@@ -2617,11 +2925,34 @@ body .dropdown .dropdown-menu.show,
 
                     notificationList.innerHTML = html;
 
-                    // Add click handlers to mark as read
+                    // Add click handlers to mark as read and redirect
                     document.querySelectorAll('.notification-item.unread').forEach(item => {
-                        item.addEventListener('click', function() {
+                        item.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+
                             const notificationId = this.dataset.id;
+                            const link = this.dataset.link;
+                            const message = this.dataset.message;
+
                             markAsRead(notificationId);
+
+                            // Close the dropdown
+                            const dropdown = bootstrap.Dropdown.getInstance(document.querySelector('.notifications-dropdown .dropdown-toggle'));
+                            if (dropdown) dropdown.hide();
+
+                            // Small delay to ensure dropdown closes before redirect
+                            setTimeout(() => {
+                                // Redirect based on notification type
+                                if (link) {
+                                    window.location.href = link;
+                                } else if (message && message.toLowerCase().includes('appointment')) {
+                                    window.location.href = '/appointments';
+                                } else {
+                                    // Default fallback to dashboard
+                                    window.location.href = '/dashboard';
+                                }
+                            }, 100);
                         });
                     });
 

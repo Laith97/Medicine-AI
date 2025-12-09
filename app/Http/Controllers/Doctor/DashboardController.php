@@ -6,11 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Review;
 use App\Models\DoctorNote;
+use App\Mail\AppointmentConfirmationMail;
+use App\Mail\AppointmentCancellationMail;
+use App\Mail\AppointmentCompletionMail;
+use App\Mail\FollowUpAppointmentMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 use App\Traits\HandlesEffectiveDoctor;
 
@@ -181,7 +186,45 @@ class DashboardController extends Controller
 
         $appointment->confirm();
 
-        // TODO: Send confirmation email to patient
+        // Load patient relationship for email sending
+        $appointment->load('patient');
+
+        // Send confirmation email to patient
+        if ($appointment->patient && $appointment->patient->email) {
+            Log::info('Sending appointment confirmation email', [
+                'appointment_id' => $appointment->id,
+                'patient_id' => $appointment->patient->id,
+                'patient_email' => $appointment->patient->email,
+                'doctor_id' => $appointment->doctor_id,
+                'appointment_date' => $appointment->appointment_date,
+                'status' => $appointment->status
+            ]);
+
+            try {
+                Mail::to($appointment->patient->email)->send(new AppointmentConfirmationMail($appointment));
+                Log::info('Appointment confirmation email sent successfully', [
+                    'appointment_id' => $appointment->id,
+                    'patient_email' => $appointment->patient->email
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to send appointment confirmation email', [
+                    'appointment_id' => $appointment->id,
+                    'patient_email' => $appointment->patient->email,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                // Continue with the process even if email fails
+            }
+        } else {
+            Log::warning('Cannot send appointment confirmation email - missing patient or email', [
+                'appointment_id' => $appointment->id,
+                'has_patient' => $appointment->patient ? true : false,
+                'patient_id' => $appointment->patient ? $appointment->patient->id : null,
+                'has_email' => $appointment->patient && $appointment->patient->email ? true : false,
+                'guest_appointment' => $appointment->isGuestAppointment(),
+                'guest_email' => $appointment->guest_email
+            ]);
+        }
 
         return back()->with('success', 'Appointment confirmed successfully.');
     }
@@ -208,7 +251,46 @@ class DashboardController extends Controller
 
         $appointment->cancel('doctor', $request->cancellation_reason);
 
-        // TODO: Send cancellation email to patient
+        // Load patient relationship for email sending
+        $appointment->load('patient');
+
+        // Send cancellation email to patient
+        if ($appointment->patient && $appointment->patient->email) {
+            Log::info('Sending appointment cancellation email', [
+                'appointment_id' => $appointment->id,
+                'patient_id' => $appointment->patient->id,
+                'patient_email' => $appointment->patient->email,
+                'doctor_id' => $appointment->doctor_id,
+                'appointment_date' => $appointment->appointment_date,
+                'status' => $appointment->status,
+                'cancellation_reason' => $request->cancellation_reason
+            ]);
+
+            try {
+                Mail::to($appointment->patient->email)->send(new AppointmentCancellationMail($appointment, $request->cancellation_reason));
+                Log::info('Appointment cancellation email sent successfully', [
+                    'appointment_id' => $appointment->id,
+                    'patient_email' => $appointment->patient->email
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to send appointment cancellation email', [
+                    'appointment_id' => $appointment->id,
+                    'patient_email' => $appointment->patient->email,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                // Continue with the process even if email fails
+            }
+        } else {
+            Log::warning('Cannot send appointment cancellation email - missing patient or email', [
+                'appointment_id' => $appointment->id,
+                'has_patient' => $appointment->patient ? true : false,
+                'patient_id' => $appointment->patient ? $appointment->patient->id : null,
+                'has_email' => $appointment->patient && $appointment->patient->email ? true : false,
+                'guest_appointment' => $appointment->isGuestAppointment(),
+                'guest_email' => $appointment->guest_email
+            ]);
+        }
 
         return back()->with('success', 'Appointment cancelled successfully.');
     }
@@ -241,7 +323,47 @@ class DashboardController extends Controller
 
         $appointment->complete();
 
-        // TODO: Send completion email to patient with review request
+        // Load patient relationship for email sending
+        $appointment->load('patient');
+
+        // Send completion email to patient with review request
+        if ($appointment->patient && $appointment->patient->email) {
+            Log::info('Sending appointment completion email', [
+                'appointment_id' => $appointment->id,
+                'patient_id' => $appointment->patient->id,
+                'patient_email' => $appointment->patient->email,
+                'doctor_id' => $appointment->doctor_id,
+                'appointment_date' => $appointment->appointment_date,
+                'status' => $appointment->status,
+                'diagnosis_id' => $appointment->diagnosis_id
+            ]);
+
+            try {
+                $diagnosis = $appointment->diagnosis_id ? \App\Models\Diagnosis::find($appointment->diagnosis_id) : null;
+                Mail::to($appointment->patient->email)->send(new AppointmentCompletionMail($appointment, $diagnosis));
+                Log::info('Appointment completion email sent successfully', [
+                    'appointment_id' => $appointment->id,
+                    'patient_email' => $appointment->patient->email
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to send appointment completion email', [
+                    'appointment_id' => $appointment->id,
+                    'patient_email' => $appointment->patient->email,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                // Continue with the process even if email fails
+            }
+        } else {
+            Log::warning('Cannot send appointment completion email - missing patient or email', [
+                'appointment_id' => $appointment->id,
+                'has_patient' => $appointment->patient ? true : false,
+                'patient_id' => $appointment->patient ? $appointment->patient->id : null,
+                'has_email' => $appointment->patient && $appointment->patient->email ? true : false,
+                'guest_appointment' => $appointment->isGuestAppointment(),
+                'guest_email' => $appointment->guest_email
+            ]);
+        }
 
         return back()->with('success', 'Appointment completed successfully.');
     }
@@ -679,5 +801,109 @@ class DashboardController extends Controller
             // Cache failure for 5 minutes to avoid repeated attempts
             Cache::put($cacheKey, false, 300);
         }
+    }
+
+    /**
+     * Show form to create a follow-up appointment
+     */
+    public function createFollowUp(Appointment $appointment)
+    {
+        $doctor = $this->getEffectiveDoctor();
+
+        // Check if this appointment belongs to the doctor
+        if ($appointment->doctor_id !== $doctor->id) {
+            abort(403);
+        }
+
+        // Only allow follow-up creation for completed appointments
+        if ($appointment->status !== 'completed') {
+            return back()->withErrors(['error' => 'Follow-up appointments can only be created for completed appointments.']);
+        }
+
+        return view('doctor.appointments.create-follow-up', compact('appointment'));
+    }
+
+    /**
+     * Store a new follow-up appointment
+     */
+    public function storeFollowUp(Request $request, Appointment $appointment)
+    {
+        $doctor = $this->getEffectiveDoctor();
+
+        // Check if this appointment belongs to the doctor
+        if ($appointment->doctor_id !== $doctor->id) {
+            abort(403);
+        }
+
+        // Validate the request
+        $request->validate([
+            'appointment_date' => 'required|date|after:now',
+            'appointment_type' => 'required|in:video_call,phone_call,in_person,follow_up',
+            'consultation_fee' => 'required|numeric|min:0',
+            'reason' => 'required|string|max:1000',
+            'duration' => 'nullable|integer|min:15|max:240',
+        ]);
+
+        // Create new appointment as follow-up
+        $followUpAppointment = new Appointment();
+        $followUpAppointment->doctor_id = $doctor->id;
+        $followUpAppointment->patient_id = $appointment->patient_id;
+        $followUpAppointment->patient_name = $appointment->patient_name;
+        $followUpAppointment->patient_email = $appointment->patient_email;
+        $followUpAppointment->patient_phone = $appointment->patient_phone;
+        $followUpAppointment->appointment_date = $request->appointment_date;
+        $followUpAppointment->appointment_type = $request->appointment_type;
+        $followUpAppointment->consultation_fee = $request->consultation_fee * 100; // Convert to cents
+        $followUpAppointment->appointment_duration = $request->duration ?? 30;
+        $followUpAppointment->reason = $request->reason;
+        $followUpAppointment->status = 'pending';
+        $followUpAppointment->is_follow_up = true;
+        $followUpAppointment->original_appointment_id = $appointment->id;
+        $followUpAppointment->save();
+
+        // Load the patient relationship for email sending
+        $followUpAppointment->load('patient');
+
+        // Send email notification to patient about new follow-up appointment
+        if ($followUpAppointment->patient && $followUpAppointment->patient->email) {
+            Log::info('Sending follow-up appointment email', [
+                'follow_up_appointment_id' => $followUpAppointment->id,
+                'original_appointment_id' => $appointment->id,
+                'patient_id' => $followUpAppointment->patient->id,
+                'patient_email' => $followUpAppointment->patient->email,
+                'doctor_id' => $followUpAppointment->doctor_id,
+                'appointment_date' => $followUpAppointment->appointment_date,
+                'status' => $followUpAppointment->status
+            ]);
+
+            try {
+                Mail::to($followUpAppointment->patient->email)->send(new FollowUpAppointmentMail($followUpAppointment, $appointment));
+                Log::info('Follow-up appointment email sent successfully', [
+                    'follow_up_appointment_id' => $followUpAppointment->id,
+                    'patient_email' => $followUpAppointment->patient->email
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to send follow-up appointment email', [
+                    'follow_up_appointment_id' => $followUpAppointment->id,
+                    'patient_email' => $followUpAppointment->patient->email,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                // Continue with the process even if email fails
+            }
+        } else {
+            Log::warning('Cannot send follow-up appointment email - missing patient or email', [
+                'follow_up_appointment_id' => $followUpAppointment->id,
+                'original_appointment_id' => $appointment->id,
+                'has_patient' => $followUpAppointment->patient ? true : false,
+                'patient_id' => $followUpAppointment->patient ? $followUpAppointment->patient->id : null,
+                'has_email' => $followUpAppointment->patient && $followUpAppointment->patient->email ? true : false,
+                'guest_appointment' => $followUpAppointment->isGuestAppointment(),
+                'guest_email' => $followUpAppointment->guest_email
+            ]);
+        }
+
+        return redirect()->route('doctor.appointments.show', $appointment)
+            ->with('success', 'Follow-up appointment created successfully!');
     }
 }

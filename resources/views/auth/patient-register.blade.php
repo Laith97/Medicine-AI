@@ -2,17 +2,137 @@
 
 @section('title', 'Create Patient Account')
 
-@section('content')
-<div class="dashboard-container">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="text-center mb-4">
-                    <h2>Create Your Patient Account</h2>
-                    <p class="text-muted">Join our platform to easily manage your appointments and health records</p>
-                </div>
+@push('styles')
+<style>
+.auth-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    position: relative;
+    overflow: hidden;
+}
 
-                <div class="table-card">
+.auth-info-section {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    position: relative;
+}
+
+.auth-info-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="a" cx="50%" cy="50%"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.05"/><stop offset="100%" stop-color="%23ffffff" stop-opacity="0"/></radialGradient></defs><circle cx="200" cy="200" r="100" fill="url(%23a)"/><circle cx="800" cy="300" r="150" fill="url(%23a)"/><circle cx="400" cy="700" r="120" fill="url(%23a)"/></svg>');
+    opacity: 0.3;
+}
+
+.auth-info-content {
+    position: relative;
+    z-index: 2;
+    max-width: 500px;
+    text-align: center;
+}
+
+.auth-form-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    min-height: 100vh;
+}
+
+.auth-form-container {
+    width: 100%;
+    max-width: 450px;
+}
+
+.auth-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    z-index: 2;
+}
+
+/* Responsive adjustments for auth layout */
+@media (max-width: 991px) {
+    .auth-form-section {
+        padding: 1rem;
+    }
+
+    .auth-card {
+        padding: 1.5rem;
+    }
+
+    .auth-info-content .display-5 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .auth-card {
+        padding: 1rem;
+        margin: 0.5rem;
+    }
+
+    .auth-form-container {
+        max-width: 100%;
+    }
+}
+</style>
+@endpush
+
+@section('content')
+<div class="auth-page">
+    <div class="container-fluid">
+        <div class="row min-vh-100">
+            <!-- Left side - Information -->
+            <div class="col-lg-6 auth-info-section d-none d-lg-flex">
+                <div class="auth-info-content">
+                    <i class="bi bi-heart-pulse display-1 text-primary mb-4"></i>
+                    <h1 class="display-5 fw-bold text-white mb-3">Join Our Patient Portal</h1>
+                    <p class="lead text-white-50 mb-4">Take control of your healthcare journey with easy appointment booking and secure health record management.</p>
+                    <div class="auth-features">
+                        <div class="feature-item mb-3">
+                            <i class="bi bi-check-circle text-success me-3"></i>
+                            <span class="text-white">Easy Appointment Booking</span>
+                        </div>
+                        <div class="feature-item mb-3">
+                            <i class="bi bi-check-circle text-success me-3"></i>
+                            <span class="text-white">Secure Health Records</span>
+                        </div>
+                        <div class="feature-item mb-3">
+                            <i class="bi bi-check-circle text-success me-3"></i>
+                            <span class="text-white">Appointment History</span>
+                        </div>
+                        <div class="feature-item mb-3">
+                            <i class="bi bi-check-circle text-success me-3"></i>
+                            <span class="text-white">Email Reminders</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right side - Form -->
+            <div class="col-lg-6 col-12 auth-form-section">
+                <div class="auth-form-container">
+                    <!-- Compact header for mobile -->
+                    <div class="text-center mb-4 d-lg-none">
+                        <i class="bi bi-heart-pulse text-primary mb-3" style="font-size: 2.5rem;"></i>
+                        <h2 class="h5 text-muted">Join Our Patient Portal</h2>
+                    </div>
+
+                    <!-- Main form card -->
+                    <div class="auth-card">
                     <form method="POST" action="{{ route('patient.register.store') }}">
                         @csrf
 
@@ -111,52 +231,23 @@
                                 Create Account
                             </button>
                         </div>
-                    </form>
+                        </form>
 
-                    <div class="mt-4 text-center">
-                        <hr class="my-3">
-                        <p class="text-muted mb-2">Already have an account?</p>
-                        <a href="{{ route('login') }}" class="btn btn-outline-primary">
-                            Sign in to your account
-                        </a>
+                        <div class="mt-4 text-center">
+                            <hr class="my-3">
+                            <p class="text-muted mb-2">Already have an account?</p>
+                            <a href="{{ route('login') }}" class="btn btn-outline-primary">
+                                Sign in to your account
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Footer links -->
+                    <div class="text-center mt-4">
+                        <small class="text-muted">Need help? <a href="{{ route('contact') }}" class="text-decoration-none">Contact Support</a></small>
                     </div>
                 </div>
             </div>
-        </div>
-        <!-- Benefits Section -->
-        <div class="mt-8 bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Benefits of Creating an Account</h3>
-            <ul class="space-y-2 text-sm text-gray-600">
-                <li class="flex items-center">
-                    <i class="fas fa-check text-green-500 mr-2"></i>
-                    Easy appointment booking and management
-                </li>
-                <li class="flex items-center">
-                    <i class="fas fa-check text-green-500 mr-2"></i>
-                    Access to your appointment history
-                </li>
-                <li class="flex items-center">
-                    <i class="fas fa-check text-green-500 mr-2"></i>
-                    Personalized doctor recommendations
-                </li>
-                <li class="flex items-center">
-                    <i class="fas fa-check text-green-500 mr-2"></i>
-                    Secure storage of your health information
-                </li>
-                <li class="flex items-center">
-                    <i class="fas fa-check text-green-500 mr-2"></i>
-                    Email reminders for upcoming appointments
-                </li>
-            </ul>
-        </div>
-        <!-- Guest Option -->
-        <div class="mt-6 text-center">
-            <p class="text-sm text-gray-600">
-                Don't want to create an account?
-                <a href="{{ route('doctors.index') }}" class="text-primary-600 hover:text-primary-500">
-                    Continue as guest
-                </a>
-            </p>
         </div>
     </div>
 </div>
