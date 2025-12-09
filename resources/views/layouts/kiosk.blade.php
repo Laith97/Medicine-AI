@@ -315,6 +315,32 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
             display: none;
         }
+
+        /* Fallback for Font Awesome icons */
+        .fas::before,
+        .far::before,
+        .fab::before {
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+        }
+
+        /* Icon fallback styling */
+        i[class*="fa-"] {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            font-style: normal;
+            font-variant: normal;
+            text-rendering: auto;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* For cases where Font Awesome fails to load */
+        [class*="fas fa-"],
+        [class*="far fa-"],
+        [class*="fab fa-"] {
+            font-family: "Font Awesome 6 Free";
+        }
     </style>
 
     <!-- Font Imports -->
@@ -325,7 +351,20 @@
     <!-- Stylesheets -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Fallback Font Awesome CSS -->
+    <script>
+        // Check if Font Awesome loaded, if not load local fallback
+        window.addEventListener('load', function() {
+            if (!window.FontAwesome) {
+                // Create link element for Font Awesome
+                const faLink = document.createElement('link');
+                faLink.rel = 'stylesheet';
+                faLink.href = 'https://use.fontawesome.com/releases/v6.4.0/css/all.css';
+                document.head.appendChild(faLink);
+            }
+        });
+    </script>
     <link rel="stylesheet" href="{{ asset('css/ui-consistency.css') }}">
 
     <!-- Global Font Styling -->
@@ -365,7 +404,7 @@
         <div class="kiosk-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
-                    <img src="{{ asset('demos/medical/images/logo-medical.jpeg') }}"
+                    <img src="{{ asset('demos/medical/images/logo-medical.png') }}"
                          alt="MedCura AI"
                          style="height: 50px; margin-right: 1rem;">
                     <div>

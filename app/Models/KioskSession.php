@@ -66,6 +66,21 @@ class KioskSession extends Model
     }
 
     /**
+     * Get the appointments associated with this session through check-ins
+     */
+    public function appointments()
+    {
+        return $this->hasManyThrough(
+            Appointment::class,
+            KioskCheckin::class,
+            'kiosk_session_id', // Foreign key on kiosk_checkins table
+            'id',               // Foreign key on appointments table
+            'session_id',       // Local key on kiosk_sessions table
+            'appointment_id'    // Local key on kiosk_checkins table
+        );
+    }
+
+    /**
      * Scope for active sessions
      */
     public function scopeActive($query)

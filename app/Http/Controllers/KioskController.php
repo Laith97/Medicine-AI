@@ -21,6 +21,78 @@ class KioskController extends Controller
      */
     public function welcome(Request $request): View
     {
+        // Validate the token and doctor parameters if provided
+        $token = $request->query('token');
+        $doctorId = $request->query('doctor');
+
+        if ($token && $doctorId) {
+            // Verify the token is valid for this doctor
+            $kioskConfig = \DB::table('doctor_kiosk_configs')
+                ->where('kiosk_token', $token)
+                ->where('doctor_id', $doctorId)
+                ->first();
+
+            if (!$kioskConfig) {
+                // Check if the doctor exists using DB query to avoid model issues
+                $doctorExists = \DB::table('doctors')->where('id', $doctorId)->exists();
+                if (!$doctorExists) {
+                    // Check if this might be a user ID instead of doctor ID
+                    $userAsDoctor = \DB::table('users')->where('id', $doctorId)->where('role', 'doctor')->first();
+                    if ($userAsDoctor) {
+                        // Find the actual doctor profile for this user
+                        $actualDoctor = \DB::table('doctors')->where('user_id', $doctorId)->first();
+                        if ($actualDoctor) {
+                            // Redirect to the correct URL with the actual doctor ID
+                            $correctUrl = url('/kiosk') . '?token=' . $token . '&doctor=' . $actualDoctor->id;
+                            return redirect($correctUrl);
+                        }
+                    }
+
+                    abort(403, 'Invalid doctor ID.');
+                }
+
+                // For now, allow access with a warning that the kiosk isn't fully configured
+                session(['kiosk_doctor_id' => $doctorId, 'kiosk_token' => $token]);
+                session()->flash('warning', 'This kiosk is not fully configured. Please contact your administrator.');
+            } else {
+                // Store doctor context in session for this kiosk session
+                session(['kiosk_doctor_id' => $doctorId]);
+            }
+        } elseif ($token) {
+            // Token provided without doctor ID - try to find by token only
+            $kioskConfig = \DB::table('doctor_kiosk_configs')
+                ->where('kiosk_token', $token)
+                ->first();
+
+            if ($kioskConfig) {
+                session(['kiosk_doctor_id' => $kioskConfig->doctor_id]);
+            } else {
+                abort(403, 'Invalid kiosk access token.');
+            }
+        } elseif ($doctorId) {
+            // Doctor ID provided without token - check if doctor exists
+            $doctorExists = \DB::table('doctors')->where('id', $doctorId)->exists();
+            if (!$doctorExists) {
+                // Check if this might be a user ID instead of doctor ID
+                $userAsDoctor = \DB::table('users')->where('id', $doctorId)->where('role', 'doctor')->first();
+                if ($userAsDoctor) {
+                    // Find the actual doctor profile for this user
+                    $actualDoctor = \DB::table('doctors')->where('user_id', $doctorId)->first();
+                    if ($actualDoctor) {
+                        // Redirect to the correct URL with the actual doctor ID
+                        $correctUrl = url('/kiosk') . '?doctor=' . $actualDoctor->id;
+                        if ($token) {
+                            $correctUrl .= '&token=' . $token;
+                        }
+                        return redirect($correctUrl);
+                    }
+                }
+
+                abort(403, 'Invalid doctor ID.');
+            }
+            session(['kiosk_doctor_id' => $doctorId]);
+        }
+
         // Start a kiosk session if not already started
         $this->ensureKioskSession($request);
 
@@ -64,38 +136,71 @@ class KioskController extends Controller
         }
 
         try {
-            // Call the API to search for appointments
-            $response = Http::timeout(30)->post(route('api.appointments.search'), [
-                'search_type' => $request->search_type,
-                'search_value' => $request->search_value,
-                'kiosk_session_id' => session('kiosk_session_id'),
-            ]);
+            // Search for appointments directly instead of using API call
+            $query = \App\Models\Appointment::with(['doctor', 'patient'])
+                ->where('status', 'confirmed')
+                ->whereDate('appointment_date', '>=', today());
 
-            if ($response->successful()) {
-                $data = $response->json();
+            // Apply the appropriate search filter based on search_type
+            switch ($request->search_type) {
+                case 'name':
+                    $query->where(function ($q) use ($request) {
+                        $q->where('guest_name', 'LIKE', '%' . $request->search_value . '%')
+                          ->orWhereHas('patient', function ($patientQuery) use ($request) {
+                              $patientQuery->where('name', 'LIKE', '%' . $request->search_value . '%');
+                          });
+                    });
+                    break;
+                case 'phone':
+                    $query->where(function ($q) use ($request) {
+                        $q->where('guest_phone', 'LIKE', '%' . $request->search_value . '%')
+                          ->orWhereHas('patient', function ($patientQuery) use ($request) {
+                              $patientQuery->where('phone', 'LIKE', '%' . $request->search_value . '%');
+                          });
+                    });
+                    break;
+                case 'appointment_number':
+                    $query->where('id', $request->search_value);
+                    break;
+                default:
+                    // For other search types, default to searching by name
+                    $query->where(function ($q) use ($request) {
+                        $q->where('guest_name', 'LIKE', '%' . $request->search_value . '%')
+                          ->orWhereHas('patient', function ($patientQuery) use ($request) {
+                              $patientQuery->where('name', 'LIKE', '%' . $request->search_value . '%');
+                          });
+                    });
+                    break;
+            }
 
-                if ($data['success'] && !empty($data['data']['appointments'])) {
-                    $appointments = $data['data']['appointments'];
+            // Exclude already checked-in appointments
+            $query->whereDoesntHave('kioskCheckins');
 
-                    // If only one appointment found, redirect to verification
-                    if (count($appointments) === 1) {
-                        return redirect()->route('kiosk.checkin.verify', $appointments[0]['id']);
-                    }
+            $appointments = $query->orderBy('appointment_date')
+                                 ->limit(20) // Limit results
+                                 ->get();
 
-                    // Multiple appointments found, show selection
-                    return view('kiosk.checkin.search-results', compact('appointments'));
-                } else {
-                    return back()->with('error', 'No appointments found matching your search criteria.')->withInput();
+            if ($appointments->count() > 0) {
+                $appointmentData = $appointments->map(function ($appointment) {
+                    return [
+                        'id' => $appointment->id,
+                        'appointment_date' => $appointment->appointment_date->format('Y-m-d'),
+                        'start_time' => $appointment->start_time->format('H:i'),
+                        'end_time' => $appointment->end_time->format('H:i'),
+                        'patient_name' => $appointment->patient ? $appointment->patient->name : $appointment->guest_name,
+                        'patient_phone' => $appointment->patient ? $appointment->patient->phone : $appointment->guest_phone,
+                        'doctor_name' => $appointment->doctor ? $appointment->doctor->user->name : 'N/A',
+                    ];
+                })->toArray();
+
+                if (count($appointmentData) === 1) {
+                    return redirect()->route('kiosk.checkin.verify', $appointmentData[0]['id']);
                 }
-            } else {
-                Log::error('Kiosk appointment search failed', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                    'search_type' => $request->search_type,
-                    'search_value' => $request->search_value,
-                ]);
 
-                return back()->with('error', 'Unable to search for appointments. Please try again.')->withInput();
+                // Multiple appointments found, show selection
+                return view('kiosk.checkin.search-results', ['appointments' => $appointmentData]);
+            } else {
+                return back()->with('error', 'No appointments found matching your search criteria.')->withInput();
             }
         } catch (\Exception $e) {
             Log::error('Kiosk appointment search exception', [
@@ -137,33 +242,35 @@ class KioskController extends Controller
         }
 
         try {
-            // Call the API to check in the appointment
-            $response = Http::timeout(30)->post(route('api.appointments.checkin', $appointment), [
-                'kiosk_session_id' => session('kiosk_session_id'),
+            // Direct check-in logic instead of API call
+            // Check if kiosk session exists
+            $sessionId = session('kiosk_session_id');
+            if (!$sessionId) {
+                return back()->with('error', 'No active kiosk session found. Please start again.');
+            }
+
+            // Check if appointment is already checked in
+            $existingCheckin = \App\Models\KioskCheckin::where('appointment_id', $appointment->id)->first();
+            if ($existingCheckin) {
+                return back()->with('error', 'This appointment has already been checked in.');
+            }
+
+            // Create kiosk checkin record
+            $kioskCheckin = \App\Models\KioskCheckin::create([
+                'appointment_id' => $appointment->id,
+                'kiosk_session_id' => $sessionId,
                 'verification_method' => $request->verification_method,
+                'checkin_time' => now(),
             ]);
 
-            if ($response->successful()) {
-                $data = $response->json();
-
-                if ($data['success']) {
-                    // Check if payment is required
-                    if ($appointment->requires_payment) {
-                        return redirect()->route('kiosk.payment.amount', $appointment);
-                    } else {
-                        return redirect()->route('kiosk.checkin.success', $appointment);
-                    }
+            if ($kioskCheckin) {
+                // Check if payment is required
+                if ($appointment->requires_payment || $appointment->fee > 0) {
+                    return redirect()->route('kiosk.payment.amount', $appointment);
                 } else {
-                    return back()->with('error', $data['message'] ?? 'Check-in failed.');
+                    return redirect()->route('kiosk.checkin.success', $appointment);
                 }
             } else {
-                Log::error('Kiosk check-in failed', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                    'appointment_id' => $appointment->id,
-                    'verification_method' => $request->verification_method,
-                ]);
-
                 return back()->with('error', 'Check-in failed. Please try again.');
             }
         } catch (\Exception $e) {
@@ -220,35 +327,27 @@ class KioskController extends Controller
     {
         $this->ensureKioskSession($request);
 
-        // This would integrate with Stripe or other payment processor
-        // For now, simulate successful payment
-
         try {
-            // Call the API to create payment intent
-            $response = Http::timeout(30)->post(route('api.appointments.payments.create-intent', $appointment), [
-                'kiosk_session_id' => session('kiosk_session_id'),
-                'amount' => $appointment->payment_amount ?? $appointment->doctor->consultation_fee,
-            ]);
+            // Determine the payment amount (could be appointment fee, consultation fee, or other charges)
+            $amount = $appointment->fee ?? $appointment->doctor->consultation_fee ?? 0;
 
-            if ($response->successful()) {
-                $data = $response->json();
+            // Ensure amount is in cents for Stripe
+            $amountInCents = (int)($amount * 100);
 
-                if ($data['success']) {
-                    // In a real implementation, this would redirect to Stripe checkout
-                    // For demo purposes, simulate successful payment
-                    return redirect()->route('kiosk.payment.receipt', $appointment);
-                } else {
-                    return back()->with('error', $data['message'] ?? 'Payment setup failed.');
-                }
-            } else {
-                Log::error('Kiosk payment intent creation failed', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                    'appointment_id' => $appointment->id,
-                ]);
-
-                return back()->with('error', 'Unable to process payment. Please try again.');
+            if ($amountInCents <= 0) {
+                // If no payment is required, redirect to success
+                return redirect()->route('kiosk.payment.receipt', $appointment);
             }
+
+            // For now, simulate payment processing directly instead of API call
+            // In a real implementation, this would create a payment intent with Stripe
+            $sessionId = session('kiosk_session_id');
+            if (!$sessionId) {
+                return back()->with('error', 'No active kiosk session found. Please start again.');
+            }
+
+            // For now, just redirect to receipt since we're simulating the payment process
+            return redirect()->route('kiosk.payment.receipt', $appointment);
         } catch (\Exception $e) {
             Log::error('Kiosk payment processing exception', [
                 'error' => $e->getMessage(),
@@ -294,7 +393,7 @@ class KioskController extends Controller
 
         try {
             // Call the API to start session
-            $response = Http::timeout(30)->post(route('api.kiosk-sessions.start', $request->kiosk_id));
+            $response = Http::timeout(30)->post(url('/api/kiosk-sessions/start/'.$request->kiosk_id));
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -365,7 +464,7 @@ class KioskController extends Controller
 
         try {
             // Call the API to end session
-            $response = Http::timeout(30)->post(route('api.kiosk-sessions.end', $sessionId));
+            $response = Http::timeout(30)->post(url('/api/kiosk-sessions/'.$sessionId.'/end'));
 
             // Clear session regardless of API response
             session()->forget('kiosk_session_id');
@@ -447,10 +546,71 @@ class KioskController extends Controller
      */
     private function ensureKioskSession(Request $request): void
     {
-        if (!session()->has('kiosk_session_id')) {
-            // For demo purposes, create a mock session
-            // In production, this would be handled by kiosk registration
-            session(['kiosk_session_id' => 'kiosk_' . time() . '_' . rand(1000, 9999)]);
+        // Check if we have a valid kiosk session
+        $sessionId = session('kiosk_session_id');
+
+        if (!$sessionId) {
+            // No session found, try to create one automatically
+            $this->autoStartKioskSession($request);
+            return;
+        }
+
+        // Verify the session exists in the database and is still active
+        $kioskSession = \App\Models\KioskSession::where('session_id', $sessionId)->first();
+
+        if (!$kioskSession || $kioskSession->status !== 'active') {
+            // Session is invalid or expired, clear it and try to start a new one
+            session()->forget('kiosk_session_id');
+            session()->flash('error', 'Your kiosk session has expired. Starting a new session.');
+
+            $this->autoStartKioskSession($request);
+        }
+    }
+
+    /**
+     * Automatically start a kiosk session
+     */
+    private function autoStartKioskSession(Request $request): void
+    {
+        try {
+            // Create a new kiosk session automatically
+            // For now we'll create a generic kiosk session using the doctor context if available
+            $doctorId = session('kiosk_doctor_id');
+
+            // Create a new session ID
+            $sessionId = 'kiosk_' . bin2hex(random_bytes(16)) . '_' . time();
+
+            // Create a kiosk session record in the database
+            $kioskSession = \App\Models\KioskSession::create([
+                'session_id' => $sessionId,
+                'kiosk_id' => null, // Allow null for web-based access (kiosk access URL opened in browser)
+                'start_time' => now(),
+                'status' => 'active',
+                'session_data' => [
+                    'doctor_id' => $doctorId,
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ],
+            ]);
+
+            // Store session ID in session
+            session(['kiosk_session_id' => $sessionId]);
+
+            // Log successful session start
+            \App\Services\AuditLoggingService::logKioskSessionStarted(null, $sessionId, [
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'doctor_id' => $doctorId,
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Auto-start kiosk session failed', [
+                'error' => $e->getMessage(),
+                'doctor_id' => session('kiosk_doctor_id'),
+            ]);
+
+            // If auto-start fails, we can't proceed but we shouldn't redirect to a POST route
+            // Instead, we could show an error or redirect to a different page
+            abort(500, 'Unable to start kiosk session. Please try again later.');
         }
     }
 }

@@ -26,10 +26,20 @@ class KioskController extends Controller
     public function setup()
     {
         $user = Auth::user();
+        $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+        if (!$effectiveDoctorUser) {
+            throw new \Exception('No effective doctor user found for this account.');
+        }
+
+        // Get the effective doctor profile to get the actual doctor ID
+        $effectiveDoctor = $user->getEffectiveDoctor();
+        if (!$effectiveDoctor) {
+            throw new \Exception('No effective doctor profile found for this account.');
+        }
 
         // Get or create kiosk configuration for this doctor
         $kioskConfig = DB::table('doctor_kiosk_configs')
-            ->where('doctor_id', $user->id)
+            ->where('doctor_id', $effectiveDoctor->id)
             ->first();
 
         return view('doctor.kiosk.setup', compact('kioskConfig'));
@@ -144,6 +154,18 @@ class KioskController extends Controller
 
             DB::beginTransaction();
 
+            // Get the effective doctor user (handles both main users and sub-users)
+            $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+            if (!$effectiveDoctorUser) {
+                throw new \Exception('No effective doctor user found for this account.');
+            }
+
+            // Get the effective doctor profile to get the actual doctor ID
+            $effectiveDoctor = $user->getEffectiveDoctor();
+            if (!$effectiveDoctor) {
+                throw new \Exception('No effective doctor profile found for this account.');
+            }
+
             // Update or insert kiosk configuration
             $configData = [
                 'clinic_name' => $sanitizedData['clinic_name'],
@@ -162,14 +184,14 @@ class KioskController extends Controller
             ];
 
             DB::table('doctor_kiosk_configs')->updateOrInsert(
-                ['doctor_id' => $user->id],
+                ['doctor_id' => $effectiveDoctor->id],
                 $configData
             );
 
             // Log the configuration change
             Log::info('Kiosk configuration updated', [
                 'user_id' => $user->id,
-                'doctor_id' => $user->id,
+                'doctor_id' => $effectiveDoctor->id,
                 'clinic_name' => $sanitizedData['clinic_name'],
                 'ip' => $request->ip(),
                 'user_agent' => $request->userAgent(),
@@ -186,6 +208,7 @@ class KioskController extends Controller
 
             Log::error('Kiosk setup failed', [
                 'user_id' => Auth::id(),
+                'doctor_id' => $effectiveDoctor->id ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'ip' => $request->ip(),
@@ -203,10 +226,20 @@ class KioskController extends Controller
     public function management()
     {
         $user = Auth::user();
+        $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+        if (!$effectiveDoctorUser) {
+            throw new \Exception('No effective doctor user found for this account.');
+        }
+
+        // Get the effective doctor profile to get the actual doctor ID
+        $effectiveDoctor = $user->getEffectiveDoctor();
+        if (!$effectiveDoctor) {
+            throw new \Exception('No effective doctor profile found for this account.');
+        }
 
         // Get kiosk configuration
         $kioskConfig = DB::table('doctor_kiosk_configs')
-            ->where('doctor_id', $user->id)
+            ->where('doctor_id', $effectiveDoctor->id)
             ->first();
 
         if (!$kioskConfig) {
@@ -214,29 +247,39 @@ class KioskController extends Controller
                 ->with('warning', 'Please set up your kiosk configuration first.');
         }
 
-        // Get recent kiosk sessions
+        // Since kiosks aren't directly associated with doctors in the current schema,
+        // we can only show information based on appointments created via kiosks for this doctor
+        // Get appointments associated with this doctor that were created via kiosks
+        $appointmentKioskIds = DB::table('appointments')
+            ->where('doctor_id', $effectiveDoctor->id)
+            ->whereNotNull('kiosk_id')
+            ->pluck('kiosk_id')
+            ->unique();
+
+        // Get sessions for kiosks that created appointments for this doctor
         $recentSessions = DB::table('kiosk_sessions')
-            ->where('doctor_id', $user->id)
+            ->whereIn('kiosk_id', $appointmentKioskIds)
             ->latest()
             ->limit(10)
             ->get();
 
-        // Get kiosk usage statistics
+        // Get kiosk usage statistics for this doctor's appointments
         $stats = [
             'total_sessions' => DB::table('kiosk_sessions')
-                ->where('doctor_id', $user->id)
+                ->whereIn('kiosk_id', $appointmentKioskIds)
                 ->count(),
             'today_sessions' => DB::table('kiosk_sessions')
-                ->where('doctor_id', $user->id)
+                ->whereIn('kiosk_id', $appointmentKioskIds)
                 ->whereDate('created_at', today())
                 ->count(),
-            'appointments_created' => DB::table('kiosk_sessions')
-                ->where('doctor_id', $user->id)
-                ->whereNotNull('appointment_created_at')
+            'appointments_created' => DB::table('appointments')
+                ->where('doctor_id', $effectiveDoctor->id)
+                ->whereNotNull('kiosk_id')
                 ->count(),
-            'payments_processed' => DB::table('kiosk_sessions')
-                ->where('doctor_id', $user->id)
-                ->where('payment_status', 'completed')
+            'payments_processed' => DB::table('kiosk_payments')
+                ->join('kiosk_sessions', 'kiosk_payments.kiosk_session_id', '=', 'kiosk_sessions.session_id')
+                ->whereIn('kiosk_sessions.kiosk_id', $appointmentKioskIds)
+                ->where('kiosk_payments.status', 'succeeded')
                 ->count(),
         ];
 
@@ -250,12 +293,22 @@ class KioskController extends Controller
     {
         try {
             $user = Auth::user();
+            $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+            if (!$effectiveDoctorUser) {
+                throw new \Exception('No effective doctor user found for this account.');
+            }
+
+            // Get the effective doctor profile to get the actual doctor ID
+            $effectiveDoctor = $user->getEffectiveDoctor();
+            if (!$effectiveDoctor) {
+                throw new \Exception('No effective doctor profile found for this account.');
+            }
 
             // Check rate limiting for URL generation
             $this->checkRateLimit($user->id, 'kiosk_url_generation', 10, 60); // 10 requests per hour
 
             $kioskConfig = DB::table('doctor_kiosk_configs')
-                ->where('doctor_id', $user->id)
+                ->where('doctor_id', $effectiveDoctor->id)
                 ->first();
 
             if (!$kioskConfig) {
@@ -272,6 +325,7 @@ class KioskController extends Controller
             if (empty($kioskConfig->kiosk_token)) {
                 Log::error('Kiosk configuration missing token', [
                     'user_id' => $user->id,
+                    'doctor_id' => $effectiveDoctor->id,
                     'config_id' => $kioskConfig->id ?? null,
                 ]);
 
@@ -282,12 +336,12 @@ class KioskController extends Controller
             }
 
             // Generate a secure URL with token
-            $kioskUrl = route('kiosk.welcome') . '?token=' . urlencode($kioskConfig->kiosk_token) . '&doctor=' . $user->id;
+            $kioskUrl = route('kiosk.welcome') . '?token=' . urlencode($kioskConfig->kiosk_token) . '&doctor=' . $effectiveDoctor->id;
 
             // Log access URL generation
             Log::info('Kiosk access URL generated', [
                 'user_id' => $user->id,
-                'doctor_id' => $user->id,
+                'doctor_id' => $effectiveDoctor->id,
                 'clinic_name' => $kioskConfig->clinic_name,
                 'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
@@ -304,6 +358,7 @@ class KioskController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to generate kiosk access URL', [
                 'user_id' => Auth::id(),
+                'doctor_id' => $effectiveDoctor->id ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'ip' => request()->ip(),
@@ -333,12 +388,22 @@ class KioskController extends Controller
     {
         try {
             $user = Auth::user();
+            $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+            if (!$effectiveDoctorUser) {
+                throw new \Exception('No effective doctor user found for this account.');
+            }
+
+            // Get the effective doctor profile to get the actual doctor ID
+            $effectiveDoctor = $user->getEffectiveDoctor();
+            if (!$effectiveDoctor) {
+                throw new \Exception('No effective doctor profile found for this account.');
+            }
 
             // Check rate limiting for deactivation
             $this->checkRateLimit($user->id, 'kiosk_deactivation', 5, 60); // 5 deactivations per hour
 
             $kioskConfig = DB::table('doctor_kiosk_configs')
-                ->where('doctor_id', $user->id)
+                ->where('doctor_id', $effectiveDoctor->id)
                 ->first();
 
             if (!$kioskConfig) {
@@ -352,7 +417,7 @@ class KioskController extends Controller
             }
 
             DB::table('doctor_kiosk_configs')
-                ->where('doctor_id', $user->id)
+                ->where('doctor_id', $effectiveDoctor->id)
                 ->update([
                     'is_active' => false,
                     'updated_at' => now()
@@ -361,7 +426,7 @@ class KioskController extends Controller
             // Log deactivation
             Log::info('Kiosk deactivated', [
                 'user_id' => $user->id,
-                'doctor_id' => $user->id,
+                'doctor_id' => $effectiveDoctor->id,
                 'clinic_name' => $kioskConfig->clinic_name,
                 'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
@@ -373,6 +438,7 @@ class KioskController extends Controller
         } catch (\Exception $e) {
             Log::error('Kiosk deactivation failed', [
                 'user_id' => Auth::id(),
+                'doctor_id' => $effectiveDoctor->id ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'ip' => request()->ip(),
@@ -390,12 +456,22 @@ class KioskController extends Controller
     {
         try {
             $user = Auth::user();
+            $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+            if (!$effectiveDoctorUser) {
+                throw new \Exception('No effective doctor user found for this account.');
+            }
+
+            // Get the effective doctor profile to get the actual doctor ID
+            $effectiveDoctor = $user->getEffectiveDoctor();
+            if (!$effectiveDoctor) {
+                throw new \Exception('No effective doctor profile found for this account.');
+            }
 
             // Check rate limiting for activation
             $this->checkRateLimit($user->id, 'kiosk_activation', 5, 60); // 5 activations per hour
 
             $kioskConfig = DB::table('doctor_kiosk_configs')
-                ->where('doctor_id', $user->id)
+                ->where('doctor_id', $effectiveDoctor->id)
                 ->first();
 
             if (!$kioskConfig) {
@@ -424,7 +500,7 @@ class KioskController extends Controller
             }
 
             DB::table('doctor_kiosk_configs')
-                ->where('doctor_id', $user->id)
+                ->where('doctor_id', $effectiveDoctor->id)
                 ->update([
                     'is_active' => true,
                     'updated_at' => now()
@@ -433,7 +509,7 @@ class KioskController extends Controller
             // Log activation
             Log::info('Kiosk activated', [
                 'user_id' => $user->id,
-                'doctor_id' => $user->id,
+                'doctor_id' => $effectiveDoctor->id,
                 'clinic_name' => $kioskConfig->clinic_name,
                 'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
@@ -445,6 +521,7 @@ class KioskController extends Controller
         } catch (\Exception $e) {
             Log::error('Kiosk activation failed', [
                 'user_id' => Auth::id(),
+                'doctor_id' => $effectiveDoctor->id ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'ip' => request()->ip(),
@@ -462,6 +539,16 @@ class KioskController extends Controller
     {
         try {
             $user = Auth::user();
+            $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+            if (!$effectiveDoctorUser) {
+                throw new \Exception('No effective doctor user found for this account.');
+            }
+
+            // Get the effective doctor profile to get the actual doctor ID
+            $effectiveDoctor = $user->getEffectiveDoctor();
+            if (!$effectiveDoctor) {
+                throw new \Exception('No effective doctor profile found for this account.');
+            }
 
             // Check rate limiting for analytics requests
             $this->checkRateLimit($user->id, 'kiosk_analytics', 20, 60); // 20 requests per hour
@@ -469,11 +556,18 @@ class KioskController extends Controller
             $cacheKey = "kiosk_analytics_{$user->id}";
             $cacheDuration = 300; // 5 minutes
 
-            $analytics = cache()->remember($cacheKey, $cacheDuration, function () use ($user) {
+            $analytics = cache()->remember($cacheKey, $cacheDuration, function () use ($effectiveDoctor) {
+                // Get kiosk IDs that have created appointments for this doctor
+                $appointmentKioskIds = DB::table('appointments')
+                    ->where('doctor_id', $effectiveDoctor->id)
+                    ->whereNotNull('kiosk_id')
+                    ->pluck('kiosk_id')
+                    ->unique();
+
                 // Get daily usage for the last 30 days with optimized query
                 $dailyUsage = DB::table('kiosk_sessions')
                     ->selectRaw('DATE(created_at) as date, COUNT(*) as sessions')
-                    ->where('doctor_id', $user->id)
+                    ->whereIn('kiosk_id', $appointmentKioskIds)
                     ->where('created_at', '>=', now()->subDays(30))
                     ->groupByRaw('DATE(created_at)')
                     ->orderByRaw('DATE(created_at)')
@@ -492,7 +586,7 @@ class KioskController extends Controller
 
                 // Get appointment creation rate with optimized query
                 $appointmentStats = DB::table('kiosk_sessions')
-                    ->where('doctor_id', $user->id)
+                    ->whereIn('kiosk_id', $appointmentKioskIds)
                     ->where('created_at', '>=', now()->subDays(30))
                     ->selectRaw('
                         COUNT(*) as total_sessions,
@@ -513,7 +607,7 @@ class KioskController extends Controller
                 // Get peak usage hours
                 $peakHours = DB::table('kiosk_sessions')
                     ->selectRaw('HOUR(created_at) as hour, COUNT(*) as sessions')
-                    ->where('doctor_id', $user->id)
+                    ->whereIn('kiosk_id', $appointmentKioskIds)
                     ->where('created_at', '>=', now()->subDays(30))
                     ->groupByRaw('HOUR(created_at)')
                     ->orderByRaw('sessions DESC')
@@ -538,7 +632,7 @@ class KioskController extends Controller
             // Log analytics access
             Log::info('Kiosk analytics accessed', [
                 'user_id' => $user->id,
-                'doctor_id' => $user->id,
+                'doctor_id' => $effectiveDoctor->id,
                 'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ]);
@@ -551,6 +645,7 @@ class KioskController extends Controller
         } catch (\Exception $e) {
             Log::error('Kiosk analytics failed', [
                 'user_id' => Auth::id(),
+                'doctor_id' => $effectiveDoctor->id ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'ip' => request()->ip(),
@@ -571,6 +666,16 @@ class KioskController extends Controller
     {
         try {
             $user = Auth::user();
+            $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+            if (!$effectiveDoctorUser) {
+                throw new \Exception('No effective doctor user found for this account.');
+            }
+
+            // Get the effective doctor profile to get the actual doctor ID
+            $effectiveDoctor = $user->getEffectiveDoctor();
+            if (!$effectiveDoctor) {
+                throw new \Exception('No effective doctor profile found for this account.');
+            }
 
             // Check rate limiting for token regeneration
             $this->checkRateLimit($user->id, 'kiosk_token_regeneration', 3, 60); // 3 regenerations per hour
@@ -578,13 +683,13 @@ class KioskController extends Controller
             $newToken = $this->generateSecureKioskToken();
 
             DB::table('doctor_kiosk_configs')
-                ->where('doctor_id', $user->id)
+                ->where('doctor_id', $effectiveDoctor->id)
                 ->update(['kiosk_token' => $newToken]);
 
             // Log token regeneration
             Log::info('Kiosk access token regenerated', [
                 'user_id' => $user->id,
-                'doctor_id' => $user->id,
+                'doctor_id' => $effectiveDoctor->id,
                 'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ]);
@@ -598,6 +703,7 @@ class KioskController extends Controller
         } catch (\Exception $e) {
             Log::error('Token regeneration failed', [
                 'user_id' => Auth::id(),
+                'doctor_id' => $effectiveDoctor->id ?? null,
                 'error' => $e->getMessage(),
                 'ip' => request()->ip(),
             ]);
@@ -686,13 +792,23 @@ class KioskController extends Controller
     {
         try {
             $user = Auth::user();
+            $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+            if (!$effectiveDoctorUser) {
+                throw new \Exception('No effective doctor user found for this account.');
+            }
+
+            // Get the effective doctor profile to get the actual doctor ID
+            $effectiveDoctor = $user->getEffectiveDoctor();
+            if (!$effectiveDoctor) {
+                throw new \Exception('No effective doctor profile found for this account.');
+            }
 
             // Check rate limiting for performance metrics access
             $this->checkRateLimit($user->id, 'kiosk_performance_access', 10, 60); // 10 requests per hour
 
             // Get all kiosks associated with this doctor's appointments
             $kioskIds = DB::table('appointments')
-                ->where('doctor_id', $user->id)
+                ->where('doctor_id', $effectiveDoctor->id)
                 ->whereNotNull('kiosk_id')
                 ->distinct()
                 ->pluck('kiosk_id')
@@ -710,6 +826,7 @@ class KioskController extends Controller
             // Log performance metrics access
             Log::info('Kiosk performance metrics accessed', [
                 'user_id' => $user->id,
+                'doctor_id' => $effectiveDoctor->id,
                 'kiosk_count' => count($kioskIds),
                 'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
@@ -727,6 +844,7 @@ class KioskController extends Controller
         } catch (\Exception $e) {
             Log::error('Kiosk performance metrics failed', [
                 'user_id' => Auth::id(),
+                'doctor_id' => $effectiveDoctor->id ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'ip' => request()->ip(),
@@ -747,10 +865,20 @@ class KioskController extends Controller
     {
         try {
             $user = Auth::user();
+            $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+            if (!$effectiveDoctorUser) {
+                throw new \Exception('No effective doctor user found for this account.');
+            }
+
+            // Get the effective doctor profile to get the actual doctor ID
+            $effectiveDoctor = $user->getEffectiveDoctor();
+            if (!$effectiveDoctor) {
+                throw new \Exception('No effective doctor profile found for this account.');
+            }
 
             // Only allow clearing metrics for kiosks associated with this doctor
             $kioskIds = DB::table('appointments')
-                ->where('doctor_id', $user->id)
+                ->where('doctor_id', $effectiveDoctor->id)
                 ->whereNotNull('kiosk_id')
                 ->distinct()
                 ->pluck('kiosk_id')
@@ -762,6 +890,7 @@ class KioskController extends Controller
 
             Log::info('Kiosk performance metrics cleared', [
                 'user_id' => $user->id,
+                'doctor_id' => $effectiveDoctor->id,
                 'kiosks_cleared' => count($kioskIds),
                 'ip' => request()->ip(),
             ]);
@@ -774,6 +903,7 @@ class KioskController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to clear performance metrics', [
                 'user_id' => Auth::id(),
+                'doctor_id' => $effectiveDoctor->id ?? null,
                 'error' => $e->getMessage(),
                 'ip' => request()->ip(),
             ]);
@@ -792,6 +922,16 @@ class KioskController extends Controller
     {
         try {
             $user = Auth::user();
+            $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+            if (!$effectiveDoctorUser) {
+                throw new \Exception('No effective doctor user found for this account.');
+            }
+
+            // Get the effective doctor profile to get the actual doctor ID
+            $effectiveDoctor = $user->getEffectiveDoctor();
+            if (!$effectiveDoctor) {
+                throw new \Exception('No effective doctor profile found for this account.');
+            }
 
             // Check rate limiting for backup creation
             $this->checkRateLimit($user->id, 'kiosk_backup_creation', 5, 60); // 5 backups per hour
@@ -807,7 +947,7 @@ class KioskController extends Controller
             // If kiosk_id is specified, ensure it belongs to this doctor's appointments
             if ($kioskId) {
                 $hasAccess = DB::table('appointments')
-                    ->where('doctor_id', $user->id)
+                    ->where('doctor_id', $effectiveDoctor->id)
                     ->where('kiosk_id', $kioskId)
                     ->exists();
 
@@ -820,6 +960,7 @@ class KioskController extends Controller
 
             Log::info('Kiosk backup created via API', [
                 'user_id' => $user->id,
+                'doctor_id' => $effectiveDoctor->id,
                 'backup_id' => $result['backup_id'],
                 'backup_type' => $backupType,
                 'kiosk_id' => $kioskId,
@@ -835,6 +976,7 @@ class KioskController extends Controller
         } catch (\Exception $e) {
             Log::error('Kiosk backup creation failed', [
                 'user_id' => Auth::id(),
+                'doctor_id' => $effectiveDoctor->id ?? null,
                 'error' => $e->getMessage(),
                 'ip' => request()->ip(),
             ]);
@@ -853,10 +995,20 @@ class KioskController extends Controller
     {
         try {
             $user = Auth::user();
+            $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+            if (!$effectiveDoctorUser) {
+                throw new \Exception('No effective doctor user found for this account.');
+            }
+
+            // Get the effective doctor profile to get the actual doctor ID
+            $effectiveDoctor = $user->getEffectiveDoctor();
+            if (!$effectiveDoctor) {
+                throw new \Exception('No effective doctor profile found for this account.');
+            }
 
             // Get kiosk IDs this doctor has access to
             $kioskIds = DB::table('appointments')
-                ->where('doctor_id', $user->id)
+                ->where('doctor_id', $effectiveDoctor->id)
                 ->whereNotNull('kiosk_id')
                 ->distinct()
                 ->pluck('kiosk_id')
@@ -877,6 +1029,7 @@ class KioskController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to list kiosk backups', [
                 'user_id' => Auth::id(),
+                'doctor_id' => $effectiveDoctor->id ?? null,
                 'error' => $e->getMessage(),
                 'ip' => request()->ip(),
             ]);
@@ -895,6 +1048,16 @@ class KioskController extends Controller
     {
         try {
             $user = Auth::user();
+            $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+            if (!$effectiveDoctorUser) {
+                throw new \Exception('No effective doctor user found for this account.');
+            }
+
+            // Get the effective doctor profile to get the actual doctor ID
+            $effectiveDoctor = $user->getEffectiveDoctor();
+            if (!$effectiveDoctor) {
+                throw new \Exception('No effective doctor profile found for this account.');
+            }
 
             // Check rate limiting for backup restoration
             $this->checkRateLimit($user->id, 'kiosk_backup_restoration', 2, 60); // 2 restorations per hour
@@ -921,7 +1084,7 @@ class KioskController extends Controller
             // Check access if backup is for a specific kiosk
             if ($backup['kiosk_id']) {
                 $hasAccess = DB::table('appointments')
-                    ->where('doctor_id', $user->id)
+                    ->where('doctor_id', $effectiveDoctor->id)
                     ->where('kiosk_id', $backup['kiosk_id'])
                     ->exists();
 
@@ -939,6 +1102,7 @@ class KioskController extends Controller
 
             Log::info('Kiosk backup restored via API', [
                 'user_id' => $user->id,
+                'doctor_id' => $effectiveDoctor->id,
                 'backup_id' => $backupId,
                 'options' => $options,
                 'results' => $result['results'],
@@ -954,6 +1118,7 @@ class KioskController extends Controller
         } catch (\Exception $e) {
             Log::error('Kiosk backup restoration failed', [
                 'user_id' => Auth::id(),
+                'doctor_id' => $effectiveDoctor->id ?? null,
                 'backup_id' => $request->backup_id ?? null,
                 'error' => $e->getMessage(),
                 'ip' => request()->ip(),
@@ -973,6 +1138,16 @@ class KioskController extends Controller
     {
         try {
             $user = Auth::user();
+            $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+            if (!$effectiveDoctorUser) {
+                throw new \Exception('No effective doctor user found for this account.');
+            }
+
+            // Get the effective doctor profile to get the actual doctor ID
+            $effectiveDoctor = $user->getEffectiveDoctor();
+            if (!$effectiveDoctor) {
+                throw new \Exception('No effective doctor profile found for this account.');
+            }
 
             $request->validate([
                 'backup_id' => 'required|string',
@@ -994,7 +1169,7 @@ class KioskController extends Controller
             // Check access if backup is for a specific kiosk
             if ($backup['kiosk_id']) {
                 $hasAccess = DB::table('appointments')
-                    ->where('doctor_id', $user->id)
+                    ->where('doctor_id', $effectiveDoctor->id)
                     ->where('kiosk_id', $backup['kiosk_id'])
                     ->exists();
 
@@ -1008,6 +1183,7 @@ class KioskController extends Controller
             if ($deleted) {
                 Log::info('Kiosk backup deleted via API', [
                     'user_id' => $user->id,
+                    'doctor_id' => $effectiveDoctor->id,
                     'backup_id' => $backupId,
                     'ip' => $request->ip(),
                 ]);
@@ -1026,6 +1202,7 @@ class KioskController extends Controller
         } catch (\Exception $e) {
             Log::error('Kiosk backup deletion failed', [
                 'user_id' => Auth::id(),
+                'doctor_id' => $effectiveDoctor->id ?? null,
                 'backup_id' => $request->backup_id ?? null,
                 'error' => $e->getMessage(),
                 'ip' => request()->ip(),
