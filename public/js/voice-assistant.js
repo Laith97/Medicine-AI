@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+(function() {
     // Enhanced logging system for voice assistant debugging
     const voiceAssistantLogger = {
         logs: [],
@@ -257,6 +257,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize the voice assistant
     function initVoiceAssistant() {
+        // Clean up any leftover keyboard shortcuts help from previous page loads
+        cleanupKeyboardShortcutsHelp();
+
         // Set initial session ID from data attribute on the container div
         const container = document.querySelector('[data-session-id]');
         sessionId = container ? container.getAttribute('data-session-id') : generateUUID();
@@ -1011,6 +1014,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Cleanup function for keyboard shortcuts help
+    function cleanupKeyboardShortcutsHelp() {
+        const helpIndicator = document.querySelector('.keyboard-shortcuts-help');
+        if (helpIndicator) {
+            helpIndicator.remove();
+        }
+    }
+
     // Keyboard shortcuts
     function setupKeyboardShortcuts() {
         document.addEventListener('keydown', function(event) {
@@ -1067,6 +1078,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showKeyboardShortcutsHelp() {
+        // Only show keyboard shortcuts help on the main voice-assistant page (not sub-pages)
+        if (window.location.pathname !== '/ai/voice-assistant') {
+            return;
+        }
+
         // Create a small help indicator
         const helpIndicator = document.createElement('div');
         helpIndicator.className = 'position-fixed bottom-0 end-0 m-3 p-3 keyboard-shortcuts-help text-white rounded shadow-lg';
@@ -1571,10 +1587,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize Bootstrap tooltips
     function initTooltips() {
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
+        if (typeof bootstrap === 'undefined' || !bootstrap.Tooltip) {
+            console.warn('Bootstrap tooltips not available, skipping tooltip initialization');
+            return;
+        }
+        try {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        } catch (error) {
+            console.warn('Error initializing tooltips:', error);
+        }
     }
 
     // Set up event listeners
@@ -1884,7 +1908,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateHandsFreeStatus();
 
                     // Show the diagnosis entry form immediately after recording stops
-                    window.showDiagnosisEntryForm();
+                    if (typeof window.showDiagnosisEntryForm === 'function') {
+                        window.showDiagnosisEntryForm();
+                    } else {
+                        console.warn('⚠️ showDiagnosisEntryForm function not available');
+                    }
 
                     const stopMessage = hybridModeEnabled && audioRecordingSupported
                         ? 'Session stopped successfully. Server-side processing completed.'
@@ -3893,4 +3921,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Simple interface - no complex styles needed
     console.log('🎨 Simple transcription interface loaded');
-});
+
+    // Initialize immediately for AJAX-loaded content, or on DOMContentLoaded for direct loading
+    if (document.readyState === 'loading') {
+        // Page is still loading, wait for DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initVoiceAssistant();
+        });
+    } else {
+        // Page is already loaded (AJAX case), initialize immediately
+        initVoiceAssistant();
+    }
+
+    // Also listen for the pageContentLoaded event from AJAX navigation
+    if (typeof $ !== 'undefined' && typeof $.fn !== 'undefined') {
+        $(document).on('pageContentLoaded', function(event, route) {
+            // Clean up keyboard shortcuts help if not on the main voice-assistant page
+            if (!route || route !== '/ai/voice-assistant') {
+                cleanupKeyboardShortcutsHelp();
+            }
+
+            // Only initialize voice assistant on the main voice-assistant page
+            if (route === '/ai/voice-assistant') {
+                setTimeout(function() {
+                    initVoiceAssistant();
+                }, 100);
+            }
+        });
+    } else {
+        console.warn('⚠️ jQuery not available, skipping AJAX navigation event listener');
+    }
+})();
