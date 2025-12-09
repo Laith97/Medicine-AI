@@ -344,13 +344,13 @@ class Doctor extends Model
                 $query->whereBetween('appointment_date', [$startTime, $endTime->copy()->subSecond()])
                       // Case 2: Existing appointment ends within the new slot
                       ->orWhere(function ($subQuery) use ($startTime, $endTime) {
-                          $subQuery->whereRaw('DATE_ADD(appointment_date, INTERVAL duration MINUTE) > ? AND DATE_ADD(appointment_date, INTERVAL duration MINUTE) <= ?',
+                          $subQuery->whereRaw("datetime(appointment_date, '+' || duration || ' minutes') > ? AND datetime(appointment_date, '+' || duration || ' minutes') <= ?",
                                             [$startTime->toDateTimeString(), $endTime->toDateTimeString()]);
                       })
                       // Case 3: Existing appointment completely encompasses the new slot
                       ->orWhere(function ($subQuery) use ($startTime, $endTime) {
                           $subQuery->where('appointment_date', '<=', $startTime)
-                                   ->whereRaw('DATE_ADD(appointment_date, INTERVAL duration MINUTE) >= ?',
+                                   ->whereRaw("datetime(appointment_date, '+' || duration || ' minutes') >= ?",
                                             [$endTime->toDateTimeString()]);
                       });
             })
@@ -372,13 +372,13 @@ class Doctor extends Model
                 $query->whereBetween('appointment_date', [$startTime, $endTime->copy()->subSecond()])
                       // Case 2: Existing appointment ends within the new slot
                       ->orWhere(function ($subQuery) use ($startTime, $endTime) {
-                          $subQuery->whereRaw('DATE_ADD(appointment_date, INTERVAL duration MINUTE) > ? AND DATE_ADD(appointment_date, INTERVAL duration MINUTE) <= ?',
+                          $subQuery->whereRaw("datetime(appointment_date, '+' || duration || ' minutes') > ? AND datetime(appointment_date, '+' || duration || ' minutes') <= ?",
                                             [$startTime->toDateTimeString(), $endTime->toDateTimeString()]);
                       })
                       // Case 3: Existing appointment completely encompasses the new slot
                       ->orWhere(function ($subQuery) use ($startTime, $endTime) {
                           $subQuery->where('appointment_date', '<=', $startTime)
-                                   ->whereRaw('DATE_ADD(appointment_date, INTERVAL duration MINUTE) >= ?',
+                                   ->whereRaw("datetime(appointment_date, '+' || duration || ' minutes') >= ?",
                                             [$endTime->toDateTimeString()]);
                       });
             })

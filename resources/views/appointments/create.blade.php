@@ -440,6 +440,9 @@
                                 <input type="text" name="reg_name" id="reg_name"
                                        class="form-control"
                                        placeholder="Enter your full name">
+                                @error('reg_name')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label for="reg_email" class="form-label fw-medium">
@@ -448,6 +451,9 @@
                                 <input type="email" name="reg_email" id="reg_email"
                                        class="form-control"
                                        placeholder="Enter your email">
+                                @error('reg_email')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label for="reg_password" class="form-label fw-medium">
@@ -456,6 +462,9 @@
                                 <input type="password" name="reg_password" id="reg_password"
                                        class="form-control"
                                        placeholder="Create a strong password">
+                                @error('reg_password')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label for="reg_password_confirmation" class="form-label fw-medium">
@@ -508,6 +517,9 @@
                                 <!-- Time slots populated by JavaScript -->
                             </div>
                             <input type="hidden" name="appointment_date" id="selectedDateTime">
+                            @error('appointment_date')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
 
@@ -553,6 +565,9 @@
                                 </div>
                             @endforeach
                         </div>
+                        @error('appointment_type')
+                            <div class="text-danger small mt-1">{{ $message }}</div>
+                        @enderror
 
                         @if(count($enabledTypes) === 0)
                             <div class="alert alert-warning">
@@ -851,11 +866,11 @@ document.addEventListener('DOMContentLoaded', function() {
             button.addEventListener('click', function() {
                 // Remove previous selection
                 document.querySelectorAll('.time-slot').forEach(btn => {
-                    btn.classList.remove('active');
+                    btn.classList.remove('selected');
                 });
 
                 // Add selection to current
-                this.classList.add('active');
+                this.classList.add('selected');
 
                 selectedTime = this.dataset.time;
                 selectedDateTimeInput.value = this.dataset.datetime;
