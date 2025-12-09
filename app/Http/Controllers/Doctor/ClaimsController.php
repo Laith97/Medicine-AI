@@ -16,7 +16,7 @@ class ClaimsController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $claims = Claim::where('user_id', $user->id)
+        $claims = Claim::where('doctor_id', $user->id)
             ->latest()
             ->paginate(20);
 
@@ -37,26 +37,28 @@ class ClaimsController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'appointment_id' => 'required|exists:appointments,id',
             'patient_id' => 'required|exists:users,id',
-            'diagnosis_codes' => 'required|string',
-            'procedure_codes' => 'required|string',
-            'amount' => 'required|numeric|min:0',
-            'insurance_provider' => 'required|string|max:255',
-            'claim_notes' => 'nullable|string',
+            'diagnosis_text' => 'required|string',
+            'procedure_text' => 'required|string',
+            'icd10_codes' => 'nullable|json',
+            'cpt_codes' => 'nullable|json',
+            'payer' => 'required|string|max:255',
+            'expected_amount' => 'required|numeric|min:0',
+            'service_date' => 'nullable|date',
         ]);
 
         $user = Auth::user();
         $claim = Claim::create([
-            'user_id' => $user->id,
-            'appointment_id' => $validatedData['appointment_id'],
+            'doctor_id' => $user->id,
             'patient_id' => $validatedData['patient_id'],
-            'diagnosis_codes' => $validatedData['diagnosis_codes'],
-            'procedure_codes' => $validatedData['procedure_codes'],
-            'amount' => $validatedData['amount'],
-            'insurance_provider' => $validatedData['insurance_provider'],
-            'claim_notes' => $validatedData['claim_notes'],
-            'status' => 'pending',
+            'diagnosis_text' => $validatedData['diagnosis_text'],
+            'procedure_text' => $validatedData['procedure_text'],
+            'icd10_codes' => $validatedData['icd10_codes'] ? json_decode($validatedData['icd10_codes'], true) : null,
+            'cpt_codes' => $validatedData['cpt_codes'] ? json_decode($validatedData['cpt_codes'], true) : null,
+            'payer' => $validatedData['payer'],
+            'expected_amount' => $validatedData['expected_amount'],
+            'service_date' => $validatedData['service_date'] ?? null,
+            'claim_status' => 'submitted', // Changed to match actual column name
         ]);
 
         return redirect()->route('doctor.claims.index')
@@ -69,7 +71,7 @@ class ClaimsController extends Controller
     public function show(Claim $claim)
     {
         // Ensure the claim belongs to the authenticated doctor
-        if ($claim->user_id !== Auth::id()) {
+        if ($claim->doctor_id !== Auth::id()) {
             abort(403);
         }
 
@@ -82,12 +84,12 @@ class ClaimsController extends Controller
     public function edit(Claim $claim)
     {
         // Ensure the claim belongs to the authenticated doctor
-        if ($claim->user_id !== Auth::id()) {
+        if ($claim->doctor_id !== Auth::id()) {
             abort(403);
         }
 
-        // Only allow editing if claim is pending
-        if ($claim->status !== 'pending') {
+        // Only allow editing if claim is not yet submitted
+        if ($claim->claim_status === 'submitted') {
             return redirect()->route('doctor.claims.show', $claim)
                 ->with('error', 'This claim cannot be edited because it has already been processed.');
         }
@@ -101,22 +103,24 @@ class ClaimsController extends Controller
     public function update(Request $request, Claim $claim)
     {
         // Ensure the claim belongs to the authenticated doctor
-        if ($claim->user_id !== Auth::id()) {
+        if ($claim->doctor_id !== Auth::id()) {
             abort(403);
         }
 
-        // Only allow updating if claim is pending
-        if ($claim->status !== 'pending') {
+        // Only allow updating if claim is not yet submitted
+        if ($claim->claim_status === 'submitted') {
             return redirect()->route('doctor.claims.show', $claim)
                 ->with('error', 'This claim cannot be edited because it has already been processed.');
         }
 
         $validatedData = $request->validate([
-            'diagnosis_codes' => 'required|string',
-            'procedure_codes' => 'required|string',
-            'amount' => 'required|numeric|min:0',
-            'insurance_provider' => 'required|string|max:255',
-            'claim_notes' => 'nullable|string',
+            'diagnosis_text' => 'required|string',
+            'procedure_text' => 'required|string',
+            'icd10_codes' => 'nullable|json',
+            'cpt_codes' => 'nullable|json',
+            'payer' => 'required|string|max:255',
+            'expected_amount' => 'required|numeric|min:0',
+            'service_date' => 'nullable|date',
         ]);
 
         $claim->update($validatedData);
@@ -131,12 +135,12 @@ class ClaimsController extends Controller
     public function destroy(Claim $claim)
     {
         // Ensure the claim belongs to the authenticated doctor
-        if ($claim->user_id !== Auth::id()) {
+        if ($claim->doctor_id !== Auth::id()) {
             abort(403);
         }
 
-        // Only allow deletion if claim is pending
-        if ($claim->status !== 'pending') {
+        // Only allow deletion if claim is not yet submitted
+        if ($claim->claim_status === 'submitted') {
             return redirect()->route('doctor.claims.index')
                 ->with('error', 'This claim cannot be deleted because it has already been processed.');
         }
@@ -154,11 +158,11 @@ class ClaimsController extends Controller
     {
         $user = Auth::user();
         $stats = [
-            'total_claims' => Claim::where('user_id', $user->id)->count(),
-            'pending_claims' => Claim::where('user_id', $user->id)->where('status', 'pending')->count(),
-            'approved_claims' => Claim::where('user_id', $user->id)->where('status', 'approved')->count(),
-            'denied_claims' => Claim::where('user_id', $user->id)->where('status', 'denied')->count(),
-            'total_amount' => Claim::where('user_id', $user->id)->where('status', 'approved')->sum('amount'),
+            'total_claims' => Claim::where('doctor_id', $user->id)->count(),
+            'pending_claims' => Claim::where('doctor_id', $user->id)->where('claim_status', 'submitted')->count(),
+            'approved_claims' => Claim::where('doctor_id', $user->id)->where('claim_status', 'approved')->count(),
+            'denied_claims' => Claim::where('doctor_id', $user->id)->where('claim_status', 'denied')->count(),
+            'total_amount' => Claim::where('doctor_id', $user->id)->where('claim_status', 'approved')->sum('expected_amount'),
         ];
 
         return response()->json($stats);
@@ -170,12 +174,12 @@ class ClaimsController extends Controller
     public function submitToClearinghouse(Claim $claim)
     {
         // Ensure the claim belongs to the authenticated doctor
-        if ($claim->user_id !== Auth::id()) {
+        if ($claim->doctor_id !== Auth::id()) {
             abort(403);
         }
 
-        // Only allow submission if claim is pending
-        if ($claim->status !== 'pending') {
+        // Only allow submission if claim is not already submitted
+        if ($claim->claim_status === 'submitted') {
             return redirect()->route('doctor.claims.show', $claim)
                 ->with('error', 'This claim has already been submitted for processing.');
         }
@@ -183,8 +187,7 @@ class ClaimsController extends Controller
         // Here you would integrate with actual clearinghouse API
         // For now, we'll just update the status
         $claim->update([
-            'status' => 'submitted',
-            'submitted_at' => now(),
+            'claim_status' => 'submitted',
         ]);
 
         return redirect()->route('doctor.claims.show', $claim)
