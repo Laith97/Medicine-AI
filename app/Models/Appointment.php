@@ -688,6 +688,22 @@ class Appointment extends Model
     }
 
     /**
+     * Get the kiosk checkins for this appointment
+     */
+    public function kioskCheckins()
+    {
+        return $this->hasMany(KioskCheckin::class);
+    }
+
+    /**
+     * Get the kiosk payments for this appointment
+     */
+    public function kioskPayments()
+    {
+        return $this->hasMany(KioskPayment::class);
+    }
+
+    /**
      * Confirm the appointment (alias for confirm method for backward compatibility)
      *
      * @return void

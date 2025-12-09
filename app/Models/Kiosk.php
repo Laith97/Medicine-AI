@@ -40,6 +40,36 @@ class Kiosk extends Model
     }
 
     /**
+     * Get the checkins processed by this kiosk
+     */
+    public function checkins()
+    {
+        return $this->hasManyThrough(
+            KioskCheckin::class,
+            KioskSession::class,
+            'kiosk_id',       // Foreign key on kiosk_sessions table
+            'kiosk_session_id', // Foreign key on kiosk_checkins table
+            'id',             // Local key on kiosks table
+            'session_id'      // Local key on kiosk_sessions table
+        );
+    }
+
+    /**
+     * Get the payments processed by this kiosk
+     */
+    public function payments()
+    {
+        return $this->hasManyThrough(
+            KioskPayment::class,
+            KioskSession::class,
+            'kiosk_id',       // Foreign key on kiosk_sessions table
+            'kiosk_session_id', // Foreign key on kiosk_payments table
+            'id',             // Local key on kiosks table
+            'session_id'      // Local key on kiosk_sessions table
+        );
+    }
+
+    /**
      * Scope for active kiosks
      */
     public function scopeActive($query)
