@@ -906,4 +906,26 @@ class DashboardController extends Controller
         return redirect()->route('doctor.appointments.show', $appointment)
             ->with('success', 'Follow-up appointment created successfully!');
     }
+
+    /**
+     * Toggle auto-approval of appointments for the doctor
+     */
+    public function toggleAutoApprove(Request $request)
+    {
+        $doctor = $this->getEffectiveDoctor();
+
+        // Toggle the auto_approve_appointments setting
+        $currentStatus = $doctor->auto_approve_appointments;
+        $newStatus = !$currentStatus;
+
+        $doctor->update([
+            'auto_approve_appointments' => $newStatus
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'auto_approve_appointments' => $newStatus,
+            'message' => $newStatus ? 'Auto-approval enabled successfully' : 'Auto-approval disabled successfully'
+        ]);
+    }
 }
