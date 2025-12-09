@@ -29,6 +29,7 @@ class Claim extends Model
 
     protected $fillable = [
         'claim_id',
+        'doctor_id',
         'patient_id',
         'diagnosis_text',
         'procedure_text',
@@ -61,6 +62,14 @@ class Claim extends Model
         'submission_date' => 'date',
         'payment_date' => 'date',
     ];
+
+    /**
+     * Get the doctor that owns the claim.
+     */
+    public function doctor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'doctor_id');
+    }
 
     /**
      * Get the patient that owns the claim.
