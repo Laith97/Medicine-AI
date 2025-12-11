@@ -324,21 +324,26 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function loadPatientsForAssignment() {
-        // This would typically load patients via AJAX
-        // For now, we'll add a placeholder
         const patientSelect = document.getElementById('assign_patient_id');
         patientSelect.innerHTML = '<option value="">Loading patients...</option>';
 
-        // In a real implementation, you'd make an AJAX call here
-        // For demo purposes, we'll simulate loading
-        setTimeout(() => {
-            patientSelect.innerHTML = `
-                <option value="">Choose a patient...</option>
-                <option value="1">John Doe</option>
-                <option value="2">Jane Smith</option>
-                <option value="3">Bob Johnson</option>
-            `;
-        }, 500);
+        fetch('{{ route("doctor.hep.patients-list") }}')
+            .then(response => response.json())
+            .then(data => {
+                let options = '<option value="">Choose a patient...</option>';
+                if (data.patients && data.patients.length > 0) {
+                    data.patients.forEach(patient => {
+                        options += `<option value="${patient.id}">${patient.name} (${patient.email})</option>`;
+                    });
+                } else {
+                    options += '<option value="" disabled>No patients found</option>';
+                }
+                patientSelect.innerHTML = options;
+            })
+            .catch(error => {
+                console.error('Error loading patients:', error);
+                patientSelect.innerHTML = '<option value="">Error loading patients</option>';
+            });
     }
 
     // Handle form submission
@@ -346,12 +351,20 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
 
         const formData = new FormData(this);
+        const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfTokenMeta ? csrfTokenMeta.content : '';
+
+        if (!csrfToken) {
+            alert('Security token missing. Please refresh the page.');
+            return;
+        }
 
         fetch(this.action, {
             method: 'POST',
             body: formData,
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
             }
         })
         .then(response => response.json())

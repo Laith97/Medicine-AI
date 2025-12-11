@@ -856,6 +856,7 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
 
     // HEP Program Management
     Route::prefix('hep')->name('hep.')->group(function () {
+        Route::get('/patients-list', [App\Http\Controllers\Doctor\HEPController::class, 'getPatients'])->name('patients-list');
         Route::get('/', [App\Http\Controllers\Doctor\HEPController::class, 'index'])->name('index');
         Route::get('/create', [App\Http\Controllers\Doctor\HEPController::class, 'create'])->name('create');
         Route::post('/', [App\Http\Controllers\Doctor\HEPController::class, 'store'])->name('store');
