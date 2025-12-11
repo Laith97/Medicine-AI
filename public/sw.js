@@ -23,40 +23,40 @@ const NOTIFICATION_ASSETS = [
 
 // Install event - cache notification assets
 self.addEventListener('install', event => {
-    console.log('🛠️ Installing notification service worker');
+    // Installing notification service worker
 
     event.waitUntil(
         caches.open(NOTIFICATION_CACHE)
             .then(cache => {
-                console.log('📦 Caching notification assets');
+                // Caching notification assets
                 return cache.addAll(NOTIFICATION_ASSETS);
             })
             .then(() => {
-                console.log('✅ Notification assets cached successfully');
+                // Notification assets cached successfully
                 return self.skipWaiting();
             })
             .catch(error => {
-                console.error('❌ Failed to cache notification assets:', error);
+                // Failed to cache notification assets
             })
     );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', event => {
-    console.log('🚀 Activating notification service worker');
+    // Activating notification service worker
 
     event.waitUntil(
         caches.keys().then(cacheNames => {
             return Promise.all(
                 cacheNames.map(cacheName => {
                     if (cacheName !== CACHE_NAME && cacheName !== NOTIFICATION_CACHE) {
-                        console.log('🗑️ Deleting old cache:', cacheName);
+                        // Deleting old cache:
                         return caches.delete(cacheName);
                     }
                 })
             );
         }).then(() => {
-            console.log('✅ Service worker activated and old caches cleaned');
+            // Service worker activated and old caches cleaned
             return self.clients.claim();
         })
     );
@@ -72,7 +72,7 @@ self.addEventListener('fetch', event => {
             caches.match(event.request)
                 .then(response => {
                     if (response) {
-                        console.log('📦 Serving cached asset:', url.pathname);
+                        // Serving cached asset:
                         return response;
                     }
 
@@ -91,7 +91,7 @@ self.addEventListener('fetch', event => {
                             return response;
                         })
                         .catch(error => {
-                            console.error('❌ Failed to fetch asset:', error);
+                            // Failed to fetch asset:
                             // Return a basic fallback for critical assets
                             if (url.pathname.includes('notification.mp3')) {
                                 return new Response('', { status: 404 });
@@ -104,7 +104,7 @@ self.addEventListener('fetch', event => {
 
 // Background sync for missed notifications
 self.addEventListener('sync', event => {
-    console.log('🔄 Background sync triggered:', event.tag);
+    // Background sync triggered:
 
     if (event.tag === 'notification-sync') {
         event.waitUntil(syncMissedNotifications());
@@ -113,11 +113,11 @@ self.addEventListener('sync', event => {
 
 // Push event for handling push notifications
 self.addEventListener('push', event => {
-    console.log('📲 Push notification received');
+    // Push notification received
 
     if (event.data) {
         const data = event.data.json();
-        console.log('📋 Push data:', data);
+        // Push data:
 
         const options = {
             body: data.message || 'You have a new notification',
@@ -156,7 +156,7 @@ self.addEventListener('push', event => {
 
 // Notification click event
 self.addEventListener('notificationclick', event => {
-    console.log('🔔 Notification clicked:', event.action);
+    // Notification clicked:
 
     event.notification.close();
 
@@ -183,7 +183,7 @@ self.addEventListener('notificationclick', event => {
 
 // Message event for communication with the main thread
 self.addEventListener('message', event => {
-    console.log('💬 Message received from main thread:', event.data);
+    // Message received from main thread:
 
     const { type, data } = event.data;
 
@@ -210,7 +210,7 @@ self.addEventListener('message', event => {
             break;
 
         default:
-            console.log('❓ Unknown message type:', type);
+            // Unknown message type:
     }
 });
 
@@ -233,13 +233,13 @@ async function storeNotificationLocally(notification) {
             request.onerror = () => reject(request.error);
         });
 
-        console.log('💾 Notification stored locally:', notification.id);
+        // Notification stored locally:
 
         // Notify clients about the new notification
         notifyClients('notification-stored', notification);
 
     } catch (error) {
-        console.error('❌ Failed to store notification locally:', error);
+        // Failed to store notification locally:
     }
 }
 
@@ -254,13 +254,13 @@ async function getStoredNotifications() {
             const request = store.getAll();
             request.onsuccess = () => {
                 const notifications = request.result;
-                console.log('📋 Retrieved stored notifications:', notifications.length);
+                // Retrieved stored notifications:
                 resolve(notifications);
             };
             request.onerror = () => reject(request.error);
         });
     } catch (error) {
-        console.error('❌ Failed to get stored notifications:', error);
+        // Failed to get stored notifications:
         return [];
     }
 }
@@ -278,21 +278,21 @@ async function clearStoredNotifications() {
             request.onerror = () => reject(request.error);
         });
 
-        console.log('🗑️ Cleared stored notifications');
+        // Cleared stored notifications
     } catch (error) {
-        console.error('❌ Failed to clear stored notifications:', error);
+        // Failed to clear stored notifications:
     }
 }
 
 // Sync missed notifications when connection is restored
 async function syncMissedNotifications() {
-    console.log('🔄 Syncing missed notifications');
+    // Syncing missed notifications
 
     try {
         const storedNotifications = await getStoredNotifications();
 
         if (storedNotifications.length === 0) {
-            console.log('📭 No stored notifications to sync');
+            // No stored notifications to sync
             return;
         }
 
@@ -309,14 +309,14 @@ async function syncMissedNotifications() {
                 });
 
                 if (response.ok) {
-                    console.log('✅ Notification synced successfully:', notification.id);
+                    // Notification synced successfully:
                     // Remove from local storage
                     await removeNotificationFromStorage(notification.id);
                 } else {
-                    console.warn('⚠️ Failed to sync notification:', notification.id, response.status);
+                    // Failed to sync notification:
                 }
             } catch (error) {
-                console.error('❌ Error syncing notification:', notification.id, error);
+                // Error syncing notification:
             }
         }
 
@@ -324,7 +324,7 @@ async function syncMissedNotifications() {
         notifyClients('notifications-synced', { count: storedNotifications.length });
 
     } catch (error) {
-        console.error('❌ Failed to sync missed notifications:', error);
+        // Failed to sync missed notifications:
     }
 }
 
@@ -341,9 +341,9 @@ async function removeNotificationFromStorage(notificationId) {
             request.onerror = () => reject(request.error);
         });
 
-        console.log('🗑️ Removed notification from storage:', notificationId);
+        // Removed notification from storage:
     } catch (error) {
-        console.error('❌ Failed to remove notification from storage:', error);
+        // Failed to remove notification from storage:
     }
 }
 
@@ -362,7 +362,7 @@ function openNotificationDB() {
             if (!db.objectStoreNames.contains('notifications')) {
                 const store = db.createObjectStore('notifications', { keyPath: 'id' });
                 store.createIndex('timestamp', 'timestamp', { unique: false });
-                console.log('📦 Created notifications object store');
+                // Created notifications object store
             }
         };
     });
@@ -394,7 +394,7 @@ self.addEventListener('periodicsync', event => {
 
 // Check for new notifications periodically
 async function checkForNewNotifications() {
-    console.log('🔍 Checking for new notifications');
+    // Checking for new notifications
 
     try {
         const response = await fetch('/api/notifications/check', {
@@ -406,7 +406,7 @@ async function checkForNewNotifications() {
         if (response.ok) {
             const data = await response.json();
             if (data.notifications && data.notifications.length > 0) {
-                console.log('🔔 Found new notifications:', data.notifications.length);
+                // Found new notifications:
 
                 // Store new notifications locally
                 for (const notification of data.notifications) {
@@ -418,8 +418,8 @@ async function checkForNewNotifications() {
             }
         }
     } catch (error) {
-        console.error('❌ Failed to check for new notifications:', error);
+        // Failed to check for new notifications:
     }
 }
 
-console.log('🚀 Medicine-AI Notification Service Worker loaded');
+// Medicine-AI Notification Service Worker loaded

@@ -113,6 +113,18 @@ Broadcast::channel('admin', function ($user) {
     return $user->role === 'admin';
 });
 
+// Clinic staff channels (admin, hospital_admin, manager, supervisor)
+Broadcast::channel('clinic-staff', function ($user) {
+    return in_array($user->role, ['admin', 'hospital_admin', 'manager', 'supervisor']);
+});
+
+// Today's appointments channel for real-time updates
+Broadcast::channel('appointments.today', function ($user) {
+    // Allow doctors, clinic staff, and patients to subscribe to today's appointments
+    return in_array($user->role, ['doctor', 'admin', 'hospital_admin', 'manager', 'supervisor']) ||
+           $user->role === 'patient';
+});
+
 // Appointment channels
 Broadcast::channel('appointment.{appointmentId}', function ($user, $appointmentId) {
     // Allow both patient and doctor to listen to appointment updates

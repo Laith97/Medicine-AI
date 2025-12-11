@@ -108,10 +108,22 @@ Route::get('/', function () {
                 'Professional landing page',
                 'Priority email support',
                 'Export capabilities',
-                'Basic analytics'
+                'Practice analytics',
+                'Electronic Medical Records (EMR)',
+                'Telehealth & video consultations',
+                'Digital prescriptions',
+                'Automated billing & invoicing',
+                'HIPAA-compliant security',
+                'Real-time appointment scheduling',
+                'Patient testimonials & reviews',
+                'Blog management system',
+                'Sub-user management',
+                'Practice performance analytics',
+                'Kiosk check-in system',
+                'Predictive analytics & risk assessment'
             ],
             'is_featured' => true,
-            'button_text' => 'Choose Monthly or Yearly',
+            'button_text' => 'Start Free Trial',
             'button_url' => '/register?plan=professional',
             'plan_id' => 'professional'
         ]
@@ -763,6 +775,11 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
     Route::get('/appointments/{appointment}/follow-ups/create', [DoctorDashboardController::class, 'createFollowUp'])->name('follow-ups.create');
     Route::post('/appointments/{appointment}/follow-ups', [DoctorDashboardController::class, 'storeFollowUp'])->name('follow-ups.store');
 
+    // On-Deck Dashboard for real-time appointment tracking
+    Route::get('/on-deck', [DoctorDashboardController::class, 'onDeck'])->name('on-deck');
+    Route::post('/appointments/{appointment}/status', [DoctorDashboardController::class, 'updateAppointmentStatus'])->name('appointments.status');
+    Route::post('/appointments/reorder', [DoctorDashboardController::class, 'reorderAppointments'])->name('appointments.reorder');
+
     // Prescription routes for appointments
     Route::post('/prescriptions/{appointment}', [PrescriptionController::class, 'store'])->name('prescriptions.store');
 
@@ -835,6 +852,39 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
     Route::prefix('analytics')->name('analytics.')->group(function () {
         Route::get('/', [AnalyticsController::class, 'index'])->name('index');
         Route::get('/data', [AnalyticsController::class, 'getData'])->name('data');
+    });
+
+    // HEP Program Management
+    Route::prefix('hep')->name('hep.')->group(function () {
+        Route::get('/patients-list', [App\Http\Controllers\Doctor\HEPController::class, 'getPatients'])->name('patients-list');
+        Route::get('/', [App\Http\Controllers\Doctor\HEPController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Doctor\HEPController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Doctor\HEPController::class, 'store'])->name('store');
+        Route::get('/{program}', [App\Http\Controllers\Doctor\HEPController::class, 'show'])->name('show');
+        Route::get('/{program}/edit', [App\Http\Controllers\Doctor\HEPController::class, 'edit'])->name('edit');
+        Route::put('/{program}', [App\Http\Controllers\Doctor\HEPController::class, 'update'])->name('update');
+        Route::delete('/{program}', [App\Http\Controllers\Doctor\HEPController::class, 'destroy'])->name('destroy');
+        Route::post('/{program}/assign', [App\Http\Controllers\Doctor\HEPController::class, 'assign'])->name('assign');
+        Route::get('/{program}/progress', [App\Http\Controllers\Doctor\HEPController::class, 'progress'])->name('progress');
+        Route::post('/generate-ai', [App\Http\Controllers\Doctor\HEPController::class, 'generateAI'])->name('generate-ai');
+    });
+
+    // Claims Management
+    Route::resource('claims', App\Http\Controllers\Doctor\ClaimsController::class);
+    Route::post('/claims/{claim}/submit-to-clearinghouse', [App\Http\Controllers\Doctor\ClaimsController::class, 'submitToClearinghouse'])->name('claims.submit-to-clearinghouse');
+    Route::post('/claims/{claim}/approve', [App\Http\Controllers\Doctor\ClaimsController::class, 'markApproved'])->name('claims.approve');
+    Route::post('/claims/{claim}/deny', [App\Http\Controllers\Doctor\ClaimsController::class, 'markDenied'])->name('claims.deny');
+
+    // Kiosk Management
+    Route::prefix('kiosk')->name('kiosk.')->group(function () {
+        Route::get('/setup', [App\Http\Controllers\Doctor\KioskController::class, 'setup'])->name('setup');
+        Route::post('/setup', [App\Http\Controllers\Doctor\KioskController::class, 'storeSetup'])->name('setup.store');
+        Route::get('/management', [App\Http\Controllers\Doctor\KioskController::class, 'management'])->name('management');
+        Route::get('/analytics', [App\Http\Controllers\Doctor\KioskController::class, 'analytics'])->name('analytics');
+        Route::get('/access-url', [App\Http\Controllers\Doctor\KioskController::class, 'getAccessUrl'])->name('access-url');
+        Route::post('/activate', [App\Http\Controllers\Doctor\KioskController::class, 'activate'])->name('activate');
+        Route::post('/deactivate', [App\Http\Controllers\Doctor\KioskController::class, 'deactivate'])->name('deactivate');
+        Route::post('/regenerate-token', [App\Http\Controllers\Doctor\KioskController::class, 'regenerateToken'])->name('regenerate-token');
     });
 });
 
@@ -915,6 +965,21 @@ Route::middleware(['auth', 'admin.impersonation', 'hospital.admin'])->prefix('ho
         Route::get('/{claim}/edit', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'edit'])->name('edit');
         Route::put('/{claim}', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'update'])->name('update');
         Route::delete('/{claim}', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'destroy'])->name('destroy');
+
+        // Clearinghouse operations
+        Route::post('/submit-to-clearinghouse', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'submitToClearinghouse'])->name('submit-to-clearinghouse');
+        Route::get('/clearinghouse-accounts', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getClearinghouseAccounts'])->name('clearinghouse-accounts');
+        Route::get('/submissions', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getSubmissions'])->name('submissions');
+        Route::get('/submissions/{submission}/status', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getSubmissionStatus'])->name('submission-status');
+
+        // Error handling and reconciliation
+        Route::get('/failed-submissions', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getFailedSubmissions'])->name('failed-submissions');
+        Route::post('/submissions/{submission}/manual-resubmit', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'manualResubmit'])->name('manual-resubmit');
+
+        // Compliance reporting
+        Route::get('/compliance-report', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'generateComplianceReport'])->name('compliance-report');
+        Route::get('/violation-report', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'generateViolationReport'])->name('violation-report');
+        Route::get('/audit-trail/export', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'exportAuditTrail'])->name('audit-trail.export');
     });
 });
 
@@ -1039,6 +1104,124 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     // Manual reminder routes
     Route::post('/send-reminders', [AdminController::class, 'sendManualReminders'])->name('send-reminders');
     Route::get('/send-reminders', [AdminController::class, 'showSendRemindersForm'])->name('send-reminders.form');
+
+    // Kiosk Management
+    Route::prefix('kiosks')->name('kiosks.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\KioskController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\KioskController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\KioskController::class, 'store'])->name('store');
+        Route::get('/{kiosk}', [App\Http\Controllers\Admin\KioskController::class, 'show'])->name('show');
+        Route::get('/{kiosk}/edit', [App\Http\Controllers\Admin\KioskController::class, 'edit'])->name('edit');
+        Route::put('/{kiosk}', [App\Http\Controllers\Admin\KioskController::class, 'update'])->name('update');
+        Route::delete('/{kiosk}', [App\Http\Controllers\Admin\KioskController::class, 'destroy'])->name('destroy');
+        Route::get('/statistics', [App\Http\Controllers\Admin\KioskController::class, 'statistics'])->name('statistics');
+    });
+
+    // Exercise Library Management
+    Route::prefix('exercises')->name('exercises.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminExerciseController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\AdminExerciseController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\AdminExerciseController::class, 'store'])->name('store');
+        Route::get('/{exercise}', [App\Http\Controllers\Admin\AdminExerciseController::class, 'show'])->name('show');
+        Route::get('/{exercise}/edit', [App\Http\Controllers\Admin\AdminExerciseController::class, 'edit'])->name('edit');
+        Route::put('/{exercise}', [App\Http\Controllers\Admin\AdminExerciseController::class, 'update'])->name('update');
+        Route::delete('/{exercise}', [App\Http\Controllers\Admin\AdminExerciseController::class, 'destroy'])->name('destroy');
+        Route::get('/export', [App\Http\Controllers\Admin\AdminExerciseController::class, 'export'])->name('export');
+        Route::get('/import', [App\Http\Controllers\Admin\AdminExerciseController::class, 'importForm'])->name('import');
+        Route::post('/import', [App\Http\Controllers\Admin\AdminExerciseController::class, 'import'])->name('import.store');
+        Route::get('/template/download', [App\Http\Controllers\Admin\AdminExerciseController::class, 'downloadTemplate'])->name('template.download');
+    });
+
+    // HEP Program Templates Management
+    Route::prefix('hep-templates')->name('hep-templates.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminHepTemplateController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\AdminHepTemplateController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\AdminHepTemplateController::class, 'store'])->name('store');
+        Route::get('/{template}', [App\Http\Controllers\Admin\AdminHepTemplateController::class, 'show'])->name('show');
+        Route::get('/{template}/edit', [App\Http\Controllers\Admin\AdminHepTemplateController::class, 'edit'])->name('edit');
+        Route::put('/{template}', [App\Http\Controllers\Admin\AdminHepTemplateController::class, 'update'])->name('update');
+        Route::delete('/{template}', [App\Http\Controllers\Admin\AdminHepTemplateController::class, 'destroy'])->name('destroy');
+        Route::post('/{template}/toggle-active', [App\Http\Controllers\Admin\AdminHepTemplateController::class, 'toggleActive'])->name('toggle-active');
+        Route::post('/{template}/duplicate', [App\Http\Controllers\Admin\AdminHepTemplateController::class, 'duplicate'])->name('duplicate');
+    });
+
+    // Real-time Performance Monitoring Dashboard
+    Route::prefix('realtime-performance')->name('realtime-performance.')->group(function () {
+        Route::get('/', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/metrics', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getMetrics'])->name('metrics');
+        Route::get('/analytics', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getAnalytics'])->name('analytics');
+        Route::get('/load-stats', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getLoadStats'])->name('load-stats');
+        Route::get('/connection-stats', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getConnectionStats'])->name('connection-stats');
+        Route::get('/alerts', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getAlerts'])->name('alerts');
+        Route::get('/health-overview', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getHealthOverview'])->name('health-overview');
+        Route::delete('/clear-metrics', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'clearMetrics'])->name('clear-metrics');
+        Route::get('/export/{type}', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'exportData'])->name('export');
+    });
+
+    // Payer Rules Engine Management
+    Route::prefix('payers')->name('payers.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminPayerController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\AdminPayerController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\AdminPayerController::class, 'store'])->name('store');
+        Route::get('/{payer}', [App\Http\Controllers\Admin\AdminPayerController::class, 'show'])->name('show');
+        Route::get('/{payer}/edit', [App\Http\Controllers\Admin\AdminPayerController::class, 'edit'])->name('edit');
+        Route::put('/{payer}', [App\Http\Controllers\Admin\AdminPayerController::class, 'update'])->name('update');
+        Route::delete('/{payer}', [App\Http\Controllers\Admin\AdminPayerController::class, 'destroy'])->name('destroy');
+
+        // Rules management for each payer
+        Route::prefix('{payer}/rules')->name('rules.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'store'])->name('store');
+            Route::get('/{rule}', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'show'])->name('show');
+            Route::get('/{rule}/edit', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'edit'])->name('edit');
+            Route::put('/{rule}', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'update'])->name('update');
+            Route::delete('/{rule}', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'destroy'])->name('destroy');
+            Route::post('/{rule}/test', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'test'])->name('test');
+            Route::get('/export', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'export'])->name('export');
+            Route::get('/import', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'importForm'])->name('import');
+            Route::post('/import', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'import'])->name('import.store');
+        });
+    });
+
+    // Compliance Dashboard
+    Route::prefix('compliance')->name('compliance.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/metrics', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'metrics'])->name('metrics');
+        Route::get('/rule-effectiveness', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'ruleEffectiveness'])->name('rule-effectiveness');
+        Route::get('/rules-needing-attention', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'rulesNeedingAttention'])->name('rules-needing-attention');
+        Route::get('/rule-report/{ruleId}', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'ruleReport'])->name('rule-report');
+        Route::get('/hipaa-compliance', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'hipaaCompliance'])->name('hipaa-compliance');
+        Route::get('/audit-trail', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'auditTrail'])->name('audit-trail');
+        Route::get('/export', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'export'])->name('export');
+    });
+
+    // Advanced Alerts Management
+    Route::prefix('alerts')->name('alerts.')->group(function () {
+        Route::get('/', [App\Http\Controllers\AlertController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\AlertController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\AlertController::class, 'store'])->name('store');
+        Route::get('/{alert}', [App\Http\Controllers\AlertController::class, 'show'])->name('show');
+        Route::get('/{alert}/edit', [App\Http\Controllers\AlertController::class, 'edit'])->name('edit');
+        Route::put('/{alert}', [App\Http\Controllers\AlertController::class, 'update'])->name('update');
+        Route::delete('/{alert}', [App\Http\Controllers\AlertController::class, 'destroy'])->name('destroy');
+
+        // Alert lifecycle management
+        Route::post('/{alert}/acknowledge', [App\Http\Controllers\AlertController::class, 'acknowledge'])->name('acknowledge');
+        Route::post('/{alert}/resolve', [App\Http\Controllers\AlertController::class, 'resolve'])->name('resolve');
+        Route::post('/bulk-acknowledge', [App\Http\Controllers\AlertController::class, 'bulkAcknowledge'])->name('bulk-acknowledge');
+        Route::post('/bulk-resolve', [App\Http\Controllers\AlertController::class, 'bulkResolve'])->name('bulk-resolve');
+
+        // API endpoints
+        Route::get('/api/alerts', [App\Http\Controllers\AlertController::class, 'apiIndex'])->name('api.index');
+        Route::get('/api/rules', [App\Http\Controllers\AlertController::class, 'rules'])->name('api.rules');
+        Route::get('/api/statistics', [App\Http\Controllers\AlertController::class, 'statistics'])->name('api.statistics');
+    });
+
+    // System Monitoring Dashboard
+    Route::prefix('monitoring')->name('monitoring.')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\Api\MonitoringController::class, 'showDashboard'])->name('dashboard');
+    });
 });
 
 Route::middleware('auth')->group(function () {
@@ -1191,5 +1374,79 @@ Route::get('/test-session-encryption', function () {
         'timestamp' => now()->toISOString()
     ]);
 })->name('test.session.encryption');
+// Kiosk routes (public access for kiosk interface)
+Route::middleware(['kiosk.session-isolation', 'kiosk.rate-limit'])->prefix('kiosk')->name('kiosk.')->group(function () {
+    // Kiosk home/welcome screen
+    Route::get('/', [App\Http\Controllers\KioskController::class, 'welcome'])->name('welcome');
+
+    // Check-in flow
+    Route::get('/checkin', [App\Http\Controllers\KioskController::class, 'checkinStart'])->name('checkin.start');
+    Route::get('/checkin/search', [App\Http\Controllers\KioskController::class, 'checkinSearch'])->name('checkin.search');
+    Route::post('/checkin/search', [App\Http\Controllers\KioskController::class, 'checkinSearchSubmit'])->name('checkin.search.submit');
+    Route::get('/checkin/verify/{appointment}', [App\Http\Controllers\KioskController::class, 'checkinVerify'])->name('checkin.verify');
+    Route::post('/checkin/confirm/{appointment}', [App\Http\Controllers\KioskController::class, 'checkinConfirm'])->name('checkin.confirm');
+    Route::get('/checkin/success/{appointment}', [App\Http\Controllers\KioskController::class, 'checkinSuccess'])->name('checkin.success');
+
+    // Payment flow
+    Route::get('/payment/{appointment}', [App\Http\Controllers\KioskController::class, 'paymentAmount'])->name('payment.amount');
+    Route::get('/payment/{appointment}/card', [App\Http\Controllers\KioskController::class, 'paymentCard'])->name('payment.card');
+    Route::post('/payment/{appointment}/process', [App\Http\Controllers\KioskController::class, 'paymentProcess'])->name('payment.process');
+    Route::get('/payment/{appointment}/receipt', [App\Http\Controllers\KioskController::class, 'paymentReceipt'])->name('payment.receipt');
+
+    // Session management
+    Route::post('/session/start', [App\Http\Controllers\KioskController::class, 'startSession'])->name('session.start');
+    Route::post('/session/end', [App\Http\Controllers\KioskController::class, 'endSession'])->name('session.end');
+
+    // Preferences (voice, contrast)
+    Route::post('/preferences', [App\Http\Controllers\KioskController::class, 'updatePreferences'])->name('preferences.update');
+});
+
+// Patient HEP routes
+Route::middleware(['auth', 'role:patient'])->prefix('patient/hep')->name('patient.hep.')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Patient\HEPController::class, 'dashboard'])->name('dashboard');
+    Route::get('/assignment/{assignment}', [App\Http\Controllers\Patient\HEPController::class, 'show'])->name('show');
+    Route::get('/assignment/{assignment}/exercise/{exercise}', [App\Http\Controllers\Patient\HEPController::class, 'showExercise'])->name('exercise');
+    Route::post('/assignment/{assignment}/progress', [App\Http\Controllers\Patient\HEPController::class, 'logProgress'])->name('log-progress');
+    Route::get('/assignment/{assignment}/progress-data', [App\Http\Controllers\Patient\HEPController::class, 'getProgressData'])->name('progress-data');
+});
+
 // Include AI routes
 require __DIR__.'/ai.php';
+
+// Waitlist Routes
+Route::middleware(['auth', 'role:patient'])->prefix('patient/waitlist')->name('patient.waitlist.')->group(function () {
+    Route::get('/', [App\Http\Controllers\Patient\WaitlistController::class, 'dashboard'])->name('dashboard');
+    Route::get('/join', [App\Http\Controllers\Patient\WaitlistController::class, 'join'])->name('join');
+    Route::post('/join', [App\Http\Controllers\Patient\WaitlistController::class, 'store'])->name('store');
+    Route::get('/status/{waitlist}', [App\Http\Controllers\Patient\WaitlistController::class, 'show'])->name('status');
+    Route::get('/position/{waitlist}', [App\Http\Controllers\Patient\WaitlistController::class, 'getPosition'])->name('position');
+    Route::post('/accept-offer/{entry}', [App\Http\Controllers\Patient\WaitlistController::class, 'acceptOffer'])->name('accept-offer');
+    Route::post('/decline-offer/{entry}', [App\Http\Controllers\Patient\WaitlistController::class, 'declineOffer'])->name('decline-offer');
+    Route::delete('/leave/{waitlist}', [App\Http\Controllers\Patient\WaitlistController::class, 'leaveWaitlist'])->name('leave');
+    Route::get('/offer/{entry}', [App\Http\Controllers\Patient\WaitlistController::class, 'viewOffer'])->name('offer');
+    Route::get('/preferences', [App\Http\Controllers\Patient\WaitlistController::class, 'preferences'])->name('preferences');
+    Route::put('/preferences', [App\Http\Controllers\Patient\WaitlistController::class, 'updatePreferences'])->name('preferences.update');
+});
+
+Route::middleware(['auth', 'role:doctor'])->prefix('doctor/waitlist')->name('doctor.waitlist.')->group(function () {
+    Route::get('/', [App\Http\Controllers\Doctor\WaitlistController::class, 'dashboard'])->name('dashboard');
+    Route::get('/manage', [App\Http\Controllers\Doctor\WaitlistController::class, 'manage'])->name('manage');
+    Route::get('/manage/export', [App\Http\Controllers\Doctor\WaitlistController::class, 'export'])->name('export');
+    Route::get('/analytics', [App\Http\Controllers\Doctor\WaitlistController::class, 'analytics'])->name('analytics');
+    Route::get('/patient/{waitlist}', [App\Http\Controllers\Doctor\WaitlistController::class, 'showPatient'])->name('show-patient');
+    Route::post('/offer-slot', [App\Http\Controllers\Doctor\WaitlistController::class, 'offerSlot'])->name('offer-slot');
+    Route::post('/manual-offer', [App\Http\Controllers\Doctor\WaitlistController::class, 'manualOffer'])->name('manual-offer');
+    Route::post('/bulk-operations', [App\Http\Controllers\Doctor\WaitlistController::class, 'bulkOperations'])->name('bulk-operations');
+    Route::post('/update-priority/{waitlist}', [App\Http\Controllers\Doctor\WaitlistController::class, 'updatePriority'])->name('update-priority');
+    Route::post('/update-status/{waitlist}', [App\Http\Controllers\Doctor\WaitlistController::class, 'updateStatus'])->name('update-status');
+    Route::delete('/remove-patient/{waitlist}', [App\Http\Controllers\Doctor\WaitlistController::class, 'removePatient'])->name('remove-patient');
+    Route::post('/add-patient', [App\Http\Controllers\Doctor\WaitlistController::class, 'addPatient'])->name('add-patient');
+});
+
+// API Routes for Waitlist
+Route::middleware(['auth', \App\Http\Middleware\EnsureJsonResponse::class])->group(function () {
+    Route::get('/api/patient/waitlist/position/{waitlist}', [App\Http\Controllers\Patient\WaitlistController::class, 'getPosition'])->name('api.patient.waitlist.position');
+    Route::get('/api/doctor/waitlist/dashboard', [App\Http\Controllers\Doctor\WaitlistController::class, 'getDashboard'])->name('api.doctor.waitlist.dashboard');
+    Route::get('/api/doctor/waitlist/stats', [App\Http\Controllers\Doctor\WaitlistController::class, 'getStats'])->name('api.doctor.waitlist.stats');
+    Route::get('/api/doctor/waitlist/patient/{waitlist}', [App\Http\Controllers\Doctor\WaitlistController::class, 'getPatient'])->name('api.doctor.waitlist.patient');
+});

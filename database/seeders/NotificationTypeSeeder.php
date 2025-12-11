@@ -189,6 +189,58 @@ class NotificationTypeSeeder extends Seeder
                 'color' => 'info',
                 'category' => 'ai_assistant',
             ],
+
+            // Kiosk notifications
+            [
+                'type' => 'kiosk_checkin',
+                'name' => 'Kiosk Check-in',
+                'description' => 'Receive notifications when patients check in via kiosk',
+                'default_enabled' => true,
+                'default_channels' => ['database'],
+                'icon' => 'sign-in-alt',
+                'color' => 'success',
+                'category' => 'kiosk',
+            ],
+            [
+                'type' => 'kiosk_payment_received',
+                'name' => 'Kiosk Payment Received',
+                'description' => 'Receive notifications when payments are processed via kiosk',
+                'default_enabled' => true,
+                'default_channels' => ['database', 'email'],
+                'icon' => 'credit-card',
+                'color' => 'success',
+                'category' => 'kiosk',
+            ],
+            [
+                'type' => 'kiosk_payment_failed',
+                'name' => 'Kiosk Payment Failed',
+                'description' => 'Receive notifications when kiosk payments fail',
+                'default_enabled' => true,
+                'default_channels' => ['database', 'email'],
+                'icon' => 'exclamation-triangle',
+                'color' => 'danger',
+                'category' => 'kiosk',
+            ],
+            [
+                'type' => 'kiosk_session_timeout',
+                'name' => 'Kiosk Session Timeout',
+                'description' => 'Receive notifications when kiosk sessions timeout',
+                'default_enabled' => true,
+                'default_channels' => ['database'],
+                'icon' => 'clock',
+                'color' => 'warning',
+                'category' => 'kiosk',
+            ],
+            [
+                'type' => 'kiosk_offline',
+                'name' => 'Kiosk Offline',
+                'description' => 'Receive notifications when kiosks go offline',
+                'default_enabled' => true,
+                'default_channels' => ['database', 'email'],
+                'icon' => 'power-off',
+                'color' => 'danger',
+                'category' => 'kiosk',
+            ],
         ];
 
         // Insert notification types

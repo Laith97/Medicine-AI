@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Log;
 use Pusher\Pusher;
 use Exception;
+use App\Services\LoadBalancerService;
 
 class PusherConnectionPool
 {
@@ -20,6 +21,12 @@ class PusherConnectionPool
         'expired' => 0,
         'failed' => 0,
     ];
+    private LoadBalancerService $loadBalancer;
+
+    public function __construct(?LoadBalancerService $loadBalancer = null)
+    {
+        $this->loadBalancer = $loadBalancer ?? new LoadBalancerService();
+    }
 
     /**
      * Get a Pusher connection from the pool
@@ -162,26 +169,53 @@ class PusherConnectionPool
     }
 
     /**
-     * Broadcast event using pooled connection
+     * Broadcast event using pooled connection with load balancing
      */
     public function broadcast(array $channels, string $event, array $data = []): bool
     {
+        // Get optimal server for load balancing
+        $server = $this->loadBalancer->getOptimalServer($channels, $event);
+        $serverId = $server['id'] ?? 'primary';
+
         $pusher = $this->getConnection();
 
         try {
-            $result = $pusher->trigger($channels, $event, $data);
+            // Handle compressed payloads
+            $payload = $data;
+            $isCompressed = isset($data['compressed']) && $data['compressed'];
+
+            if ($isCompressed) {
+                // For compressed payloads, send the compressed data directly
+                $payload = $data['data'];
+                $originalSize = $data['original_size'] ?? 0;
+                $compressedSize = $data['compressed_size'] ?? 0;
+            } else {
+                $originalSize = strlen(json_encode($data));
+                $compressedSize = $originalSize;
+            }
+
+            $result = $pusher->trigger($channels, $event, $payload);
 
             if ($result === true) {
+                // Update load balancer with successful broadcast
+                $this->loadBalancer->updateServerLoad($serverId, count($this->connections));
+
                 Log::info('Successfully broadcast event via pooled connection', [
                     'channels' => $channels,
                     'event' => $event,
-                    'data_size' => strlen(json_encode($data))
+                    'server_id' => $serverId,
+                    'original_size' => $originalSize,
+                    'compressed_size' => $compressedSize,
+                    'compression_ratio' => $originalSize > 0 ? round($compressedSize / $originalSize, 3) : 1.0,
+                    'compressed' => $isCompressed,
+                    'active_connections' => count($this->connections)
                 ]);
                 return true;
             } else {
                 Log::warning('Failed to broadcast event via pooled connection', [
                     'channels' => $channels,
                     'event' => $event,
+                    'server_id' => $serverId,
                     'result' => $result
                 ]);
                 return false;
@@ -190,6 +224,7 @@ class PusherConnectionPool
             Log::error('Exception during broadcast via pooled connection', [
                 'channels' => $channels,
                 'event' => $event,
+                'server_id' => $serverId,
                 'error' => $e->getMessage()
             ]);
             return false;

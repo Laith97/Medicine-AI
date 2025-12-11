@@ -72,7 +72,7 @@ class EnhancedNotificationSystem {
     }
 
     waitForReady() {
-        console.log('🔍 [DEBUG] Starting waitForReady check...');
+        // Starting waitForReady check...
 
         const checkReady = () => {
             const domReady = document.readyState === 'complete' || document.readyState === 'interactive';
@@ -108,7 +108,7 @@ class EnhancedNotificationSystem {
         // Also set up a fallback initialization in case something goes wrong
         setTimeout(() => {
             if (!this.isInitialized) {
-                console.warn('⚠️ Fallback initialization triggered');
+                // Fallback initialization triggered
                 this.init();
             }
         }, 5000);
@@ -117,19 +117,19 @@ class EnhancedNotificationSystem {
     init() {
         // Check if already initialized
         if (this.isInitialized) {
-            console.log('⚠️ Enhanced notification system already initialized');
+            // Enhanced notification system already initialized
             return;
         }
 
         // Check if global instance already exists
         if (window.enhancedNotificationSystem && window.enhancedNotificationSystem !== this) {
-            console.log('⚠️ Notification system already initialized globally');
-            console.log('🔍 [DEBUG] Multiple instances detected - potential conflict');
+            // Notification system already initialized globally
+            // Multiple instances detected - potential conflict
             return;
         }
 
-        console.log('🚀 Initializing Enhanced Notification System...');
-        console.log('🔍 [DEBUG] init() called - checking for other notification scripts');
+        // Initializing Enhanced Notification System...
+        // init() called - checking for other notification scripts
 
         // Check for other notification scripts that might cause conflicts
         const conflictingScripts = [
@@ -140,7 +140,7 @@ class EnhancedNotificationSystem {
 
         conflictingScripts.forEach(scriptName => {
             if (window[scriptName]) {
-                console.log(`🔍 [DEBUG] Conflicting script found: ${scriptName}`);
+                // Conflicting script found:
             }
         });
 
@@ -160,13 +160,13 @@ class EnhancedNotificationSystem {
             }
 
             if (!this.userId) {
-                console.warn('⚠️ User ID not found, notifications disabled');
+                // User ID not found, notifications disabled
                 return;
             }
 
             // Check if user is authenticated
             if (!document.querySelector('meta[name="csrf-token"]')) {
-                console.warn('⚠️ User not authenticated, notifications disabled');
+                // User not authenticated, notifications disabled
                 return;
             }
 
@@ -174,11 +174,7 @@ class EnhancedNotificationSystem {
             this.soundEnabled = document.querySelector('meta[name="notification-sound-enabled"]')?.getAttribute('content') !== 'false';
             this.toastEnabled = document.querySelector('meta[name="notification-toast-enabled"]')?.getAttribute('content') !== 'false';
 
-            console.log('⚙️ Settings:', {
-                userId: this.userId,
-                soundEnabled: this.soundEnabled,
-                toastEnabled: this.toastEnabled
-            });
+            // Settings: userId, soundEnabled, toastEnabled
 
             // Setup Echo listener
             this.setupEchoListener();
@@ -193,14 +189,14 @@ class EnhancedNotificationSystem {
             this.preloadNotificationSound();
 
             this.isInitialized = true;
-            console.log('✅ Enhanced Notification System initialized for user:', this.userId);
+            // Enhanced Notification System initialized for user:
         } catch (error) {
-            console.error('❌ Failed to initialize notification system:', error);
+            // Failed to initialize notification system
 
             // Try again after a delay
             setTimeout(() => {
                 if (!this.isInitialized) {
-                    console.log('🔄 Retrying initialization...');
+                    // Retrying initialization...
                     this.init();
                 }
             }, 3000);
@@ -208,11 +204,11 @@ class EnhancedNotificationSystem {
     }
 
     setupEchoListener() {
-        console.log(`🚀 Setting up enhanced Echo listener for user ${this.userId}`);
-        console.log('🔍 [DEBUG] setupEchoListener called');
+        // Setting up enhanced Echo listener for user
+        // setupEchoListener called
 
         // DIAGNOSTIC: Check for conflicting scripts
-        console.log('🔍 [DIAGNOSTIC] Checking for conflicting notification scripts...');
+        // Checking for conflicting notification scripts...
         const conflictingScripts = [
             'window.laravelNotificationCatcher',
             'window.notificationDebugger',
@@ -222,51 +218,51 @@ class EnhancedNotificationSystem {
 
         conflictingScripts.forEach(scriptName => {
             if (window[scriptName]) {
-                console.log(`⚠️ CONFLICT DETECTED: ${scriptName} is already loaded`);
-                console.log(`🔍 [DEBUG] ${scriptName} type:`, typeof window[scriptName]);
+                // CONFLICT DETECTED: scriptName is already loaded
+                // scriptName type:
             } else {
-                console.log(`✅ ${scriptName} not found`);
+                // scriptName not found
             }
         });
 
         try {
             // 用户频道
             const userChannelName = `App.User.${this.userId}`;
-            console.log(`📡 Connecting to user channel: ${userChannelName}`);
+            // Connecting to user channel:
 
             // 简化频道订阅 - 直接订阅并监听事件
-            console.log('🔍 [DEBUG] Creating private channel:', userChannelName);
-            console.log('🔍 [DEBUG] Echo object:', window.Echo);
-            console.log('🔍 [DEBUG] Echo connector:', window.Echo?.connector);
-            console.log('🔍 [DEBUG] Echo connection state:', window.Echo?.connector?.connection?.state);
-            console.log('🔍 [DEBUG] Pusher config key:', window.Echo?.connector?.pusher?.config?.key);
+            // Creating private channel:
+            // Echo object:
+            // Echo connector:
+            // Echo connection state:
+            // Pusher config key:
 
             this.userChannel = window.Echo.private(userChannelName);
             this.channel = this.userChannel; // Set the main channel reference
 
-            console.log('🔍 [DEBUG] Created userChannel:', this.userChannel);
-            console.log('🔍 [DEBUG] userChannel type:', typeof this.userChannel);
-            console.log('🔍 [DEBUG] userChannel constructor:', this.userChannel?.constructor?.name);
+            // Created userChannel:
+            // userChannel type:
+            // userChannel constructor:
 
             if (this.userChannel) {
-                console.log(`✅ Connected to user channel: ${userChannelName}`);
+                // Connected to user channel:
 
                 // Verify the subscription
                 this.userChannel.subscribed(() => {
-                    console.log(`🔗 Successfully subscribed to ${userChannelName}`);
+                    // Successfully subscribed to
                     this.showSystemNotification(`Connected to ${userChannelName}`, 'success');
                 });
 
                 // Handle subscription error
                 this.userChannel.error((error) => {
-                    console.error(`❌ Error subscribing to ${userChannelName}:`, error);
+                    // Error subscribing to
                     this.showSystemNotification(`Connection error: ${error.message || 'Unknown error'}`, 'error');
                 });
 
                 // PRIMARY: Laravel's standard notification broadcasts
                 this.userChannel.notification((notification) => {
-                    console.log('🔔 [PRIMARY] Laravel notification broadcast:', notification);
-                    console.log('🔍 [DEBUG] Notification listener called, returning false');
+                    // [PRIMARY] Laravel notification broadcast:
+                    // Notification listener called, returning false
                     this.handleNewNotification(notification, 'notification');
                     this.showSystemNotification('New notification received', 'info');
                     return false; // Explicitly return false to avoid async response issues
@@ -274,7 +270,7 @@ class EnhancedNotificationSystem {
 
                 // Add a direct listener for the notification event
                 this.userChannel.listen('App\\Events\\NotificationSent', (data) => {
-                    console.log('🔔 [DIRECT] NotificationSent event:', data);
+                    // [DIRECT] NotificationSent event:
                     this.handleNewNotification(data, 'direct');
                     this.showSystemNotification('Direct notification received', 'info');
                     return false; // Explicitly return false to avoid async response issues
@@ -282,48 +278,48 @@ class EnhancedNotificationSystem {
 
                 // SECONDARY: BroadcastNotificationCreated events
                 this.userChannel.listen('Illuminate\\Notifications\\Events\\BroadcastNotificationCreated', (data) => {
-                    console.log('🔔 [SECONDARY] BroadcastNotificationCreated:', data);
+                    // [SECONDARY] BroadcastNotificationCreated:
                     this.handleNewNotification(data, 'broadcast_event');
                     return false; // Explicitly return false to avoid async response issues
                 });
 
                 // TERTIARY: Generic notification events
                 this.userChannel.listen('.notification', (data) => {
-                    console.log('🔔 [TERTIARY] Generic notification event:', data);
+                    // [TERTIARY] Generic notification event:
                     this.handleNewNotification(data, 'generic');
                     return false; // Explicitly return false to avoid async response issues
                 });
 
                 // Add a direct listener for the notification event
                 this.userChannel.listen('App\\Events\\NotificationSent', (data) => {
-                    console.log('🔔 [DIRECT] NotificationSent event:', data);
-                    console.log('🔍 [DEBUG] NotificationSent listener called, returning false');
+                    // [DIRECT] NotificationSent event:
+                    // NotificationSent listener called, returning false
                     this.handleNewNotification(data, 'direct');
                     return false; // Explicitly return false to avoid async response issues
                 });
 
                 // QUATERNARY: Listen for all events on the channel for debugging
                 // Note: This approach may not work with all Echo versions, we'll use a more specific approach
-                console.log('🔍 [DEBUG] Checking if listenAny is available on userChannel:', this.userChannel);
-                console.log('🔍 [DEBUG] userChannel methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(this.userChannel)));
+                // Checking if listenAny is available on userChannel:
+                // userChannel methods:
 
                 // Check if listenAny method exists (for newer Echo versions)
                 if (typeof this.userChannel.listenAny === 'function') {
-                    console.log('✅ Using listenAny on channel');
+                    // Using listenAny on channel
                     this.userChannel.listenAny((eventName, data) => {
-                        console.log('🔔 [QUATERNARY] Raw event received:', eventName, data);
+                        // [QUATERNARY] Raw event received:
                         if (eventName.includes('notification') || data?.type === 'notification') {
                             this.handleNewNotification(data, 'raw');
                         }
                         return false; // Explicitly return false to avoid async response issues
                     });
                 } else {
-                    console.log('⚠️ listenAny not available on channel, using alternative approach');
+                    // listenAny not available on channel, using alternative approach
                     // Alternative: Use Pusher's bind_global if available
                     if (window.Echo && window.Echo.connector && window.Echo.connector.pusher) {
                         const pusher = window.Echo.connector.pusher;
                         pusher.bind_global((eventName, data) => {
-                            console.log('🔔 [GLOBAL-ALT] Pusher event received:', eventName, data);
+                            // [GLOBAL-ALT] Pusher event received:
                             if (eventName.includes('notification') || eventName.includes('App.User.' + this.userId) || (data?.type === 'notification')) {
                                 this.handleNewNotification(data, 'global_alt');
                             }
@@ -338,14 +334,14 @@ class EnhancedNotificationSystem {
 
                     // Listen to all events on the Pusher instance
                     pusher.bind_global((eventName, data) => {
-                        console.log('🔔 [GLOBAL] Pusher event received:', eventName, data);
-                        console.log('🔍 [DEBUG] Second global bind listener called, returning false');
+                        // [GLOBAL] Pusher event received:
+                        // Second global bind listener called, returning false
 
                         // Check if this is a notification event
                         if (eventName.includes('notification') ||
                             eventName.includes('App.User.') ||
                             (data && (data.type === 'notification' || data.title || data.message))) {
-                            console.log('🔔 [GLOBAL] Processing notification event');
+                            // [GLOBAL] Processing notification event
                             this.handleNewNotification(data, 'global');
                             this.showSystemNotification('Global notification received', 'info');
                         }
@@ -354,20 +350,20 @@ class EnhancedNotificationSystem {
 
                     // Listen for connection events
                     pusher.connection.bind('connected', () => {
-                        console.log('🟢 Pusher connected');
-                        console.log('🔍 [DEBUG] Pusher connected event fired');
+                        // Pusher connected
+                        // Pusher connected event fired
                         this.showSystemNotification('Pusher connected', 'success');
                     });
 
                     pusher.connection.bind('disconnected', () => {
-                        console.log('🔴 Pusher disconnected');
-                        console.log('🔍 [DEBUG] Pusher disconnected event fired');
+                        // Pusher disconnected
+                        // Pusher disconnected event fired
                         this.showSystemNotification('Pusher disconnected', 'error');
                     });
 
                     pusher.connection.bind('error', (error) => {
-                        console.error('❌ Pusher connection error:', error);
-                        console.log('🔍 [DEBUG] Pusher error event fired:', error);
+                        // Pusher connection error:
+                        // Pusher error event fired:
                         this.showSystemNotification(`Pusher error: ${error.message || 'Unknown error'}`, 'error');
                     });
                 }
@@ -375,7 +371,7 @@ class EnhancedNotificationSystem {
                 // QUINTERNARY: Listen for all events using global listener
                 if (window.Echo.connector && window.Echo.connector.socket) {
                     window.Echo.connector.socket.on('event', (data) => {
-                        console.log('🔔 [QUINTERNARY] Socket event received:', data);
+                        // [QUINTERNARY] Socket event received:
                         if (data.channel === userChannelName && data.event && data.event.includes('notification')) {
                             this.handleNewNotification(data.event, 'socket');
                         }
@@ -385,57 +381,57 @@ class EnhancedNotificationSystem {
 
                 // 监听频道错误
                 this.userChannel.error((error) => {
-                    console.error(`❌ Error on user channel: ${userChannelName}`, error);
+                    // Error on user channel:
                 });
             } else {
-                console.error(`❌ Failed to create user channel: ${userChannelName}`);
+                // Failed to create user channel:
             }
 
             // If user is a doctor, also listen to doctor-specific channel
             if (window.userRole === 'doctor') {
                 const doctorChannelName = `doctor.${this.userId}`;
-                console.log(`👨‍⚕️ Doctor-specific channel created: ${doctorChannelName}`);
+                // Doctor-specific channel created:
 
                 // 简化医生频道订阅
                 const doctorChannel = window.Echo.private(doctorChannelName);
 
                 if (doctorChannel) {
-                    console.log(`✅ Connected to doctor channel: ${doctorChannelName}`);
+                    // Connected to doctor channel:
 
                     // Listen for notifications on the doctor channel
                     doctorChannel.notification((notification) => {
-                        console.log('🔔 [DOCTOR] Doctor notification received:', notification);
+                        // [DOCTOR] Doctor notification received:
                         this.handleNewNotification(notification, 'doctor_notification');
                     });
 
                     // Listen for appointment booked notifications
                     doctorChannel.listen('appointment-booked', (data) => {
-                        console.log('🔔 [DOCTOR] Appointment booked notification:', data);
+                        // [DOCTOR] Appointment booked notification:
                         this.handleNewNotification(data, 'doctor_appointment');
                     });
 
                     // Listen for Laravel broadcast notification events
                     doctorChannel.listen('Illuminate\\Notifications\\Events\\BroadcastNotificationCreated', (data) => {
-                        console.log('🔔 [DOCTOR] Laravel broadcast notification:', data);
+                        // [DOCTOR] Laravel broadcast notification:
                         this.handleNewNotification(data, 'doctor_laravel_notification');
                     });
 
                     // 监听频道错误
                     doctorChannel.error((error) => {
-                        console.error(`❌ Error on doctor channel: ${doctorChannelName}`, error);
+                        // Error on doctor channel:
                     });
                 } else {
-                    console.error(`❌ Failed to create doctor channel: ${doctorChannelName}`);
+                    // Failed to create doctor channel:
                 }
 
                 // 监听所有频道上的通知
                 window.Echo.channel('doctor.' + this.userId)
                     .listen('.notification', (data) => {
-                        console.log('🔔 [DOCTOR] Wildcard notification:', data);
+                        // [DOCTOR] Wildcard notification:
                         this.handleNewNotification(data, 'doctor_wildcard');
                     })
                     .error((error) => {
-                        console.error(`❌ Error on doctor wildcard channel:`, error);
+                        // Error on doctor wildcard channel:
                     });
             }
 
@@ -446,34 +442,34 @@ class EnhancedNotificationSystem {
                 if (userWildcardChannel) {
                     userWildcardChannel
                         .listen('.notification', (notification) => {
-                            console.log('🔔 [USER] User notification received:', notification);
+                            // [USER] User notification received:
                             this.handleNewNotification(notification, 'user_notification');
                         })
                         .listen('appointment-booked', (data) => {
-                            console.log('🔔 [USER] Appointment booked notification:', data);
+                            // [USER] Appointment booked notification:
                             this.handleNewNotification(data, 'user_appointment');
                         })
                         .error((error) => {
-                            console.error('❌ Error on user wildcard channel:', error);
+                            // Error on user wildcard channel:
                         });
                 } else {
-                    console.error('❌ Failed to create user wildcard channel');
+                    // Failed to create user wildcard channel
                 }
             } catch (error) {
-                console.error('❌ Error creating user wildcard channel:', error);
+                // Error creating user wildcard channel:
             }
 
             // DEBUG: Monitor all raw Pusher events for our channel
             if (window.Echo.connector && window.Echo.connector.pusher) {
                 const pusher = window.Echo.connector.pusher;
-                console.log('🔌 Pusher connection state:', pusher.connection.state);
+                // Pusher connection state:
 
                 pusher.bind_global((eventName, data) => {
                     // Use the actual user channel name instead of undefined channelName
                     const userChannelName = `App.User.${this.userId}`;
                     if (eventName.includes(`private-${userChannelName}`) || eventName.includes(userChannelName)) {
-                        console.log('🔍 [RAW] Pusher event for our channel:', eventName, data);
-                        console.log('🔍 [DEBUG] Global bind listener called, returning false');
+                        // [RAW] Pusher event for our channel:
+                        // Global bind listener called, returning false
 
                         // Try to handle raw events too
                         if (eventName.includes('notification') || eventName.includes('Notification')) {
@@ -485,23 +481,23 @@ class EnhancedNotificationSystem {
 
                 // Monitor connection state changes
                 pusher.connection.bind('state_change', (states) => {
-                    console.log('🔄 Pusher connection state changed:', states.previous, '->', states.current);
-                    console.log('🔍 [DEBUG] State change event - potential async response window');
+                    // Pusher connection state changed:
+                    // State change event - potential async response window
                 });
 
                 pusher.connection.bind('connected', () => {
-                    console.log('🟢 Pusher connected successfully');
-                    console.log('🔍 [DEBUG] Second connected event fired');
+                    // Pusher connected successfully
+                    // Second connected event fired
                 });
 
                 pusher.connection.bind('disconnected', () => {
-                    console.log('🔴 Pusher disconnected');
-                    console.log('🔍 [DEBUG] Second disconnected event fired');
+                    // Pusher disconnected
+                    // Second disconnected event fired
                 });
 
                 pusher.connection.bind('error', (error) => {
-                    console.error('❌ Pusher connection error:', error);
-                    console.log('🔍 [DEBUG] Second error event fired:', error);
+                    // Pusher connection error:
+                    // Second error event fired:
                 });
             }
 
@@ -509,37 +505,37 @@ class EnhancedNotificationSystem {
             this.channel.subscribed(() => {
                 // Use the actual user channel name instead of undefined channelName
                 const userChannelName = `App.User.${this.userId}`;
-                console.log(`✅ Successfully subscribed to channel: ${userChannelName}`);
-                console.log('🔍 [DEBUG] Channel subscribed callback called');
+                // Successfully subscribed to channel:
+                // Channel subscribed callback called
                 this.echoReady = true;
 
                 // Verify connection
                 if (window.Echo.connector && window.Echo.connector.pusher) {
                     const connectionState = window.Echo.connector.pusher.connection.state;
-                    console.log(`🏓 Final connection state: ${connectionState}`);
-                    console.log('🔍 [DEBUG] Pusher connection state check');
+                    // Final connection state:
+                    // Pusher connection state check
 
                     if (connectionState === 'connected') {
-                        console.log('🎉 Real-time notifications are fully ready!');
+                        // Real-time notifications are fully ready!
                         this.showSystemNotification('Real-time notifications enabled', 'success');
                     } else {
-                        console.warn('⚠️ Pusher connection state is not connected:', connectionState);
+                        // Pusher connection state is not connected:
                     }
                 }
             });
 
             this.channel.error((error) => {
-                console.error('❌ Echo channel error:', error);
+                // Echo channel error:
                 this.echoReady = false;
 
                 // If it's an authentication error, try to reconnect
                 if (error.type === 'AuthError' || error.status === 403) {
-                    console.log('🔄 Authentication error detected, attempting to reconnect...');
+                    // Authentication error detected, attempting to reconnect...
 
                     // Reinitialize Echo with a delay
                     setTimeout(() => {
                         if (window.Echo) {
-                            console.log('🔄 Reconnecting Echo...');
+                            // Reconnecting Echo...
                             window.Echo.connector.connect();
                         }
                     }, 2000);
@@ -547,24 +543,24 @@ class EnhancedNotificationSystem {
             });
 
         } catch (error) {
-            console.error('❌ Failed to setup enhanced Echo listener:', error);
+            // Failed to setup enhanced Echo listener:
         }
     }
 
     handleNewNotification(notification, source = 'unknown') {
-        console.log(`🔔 Processing notification from ${source}:`, notification);
-        console.log('🔍 [DEBUG] Notification handling started');
+        // Processing notification from source
+        // Notification handling started
 
         // Normalize notification data
         const normalizedNotification = this.normalizeNotification(notification);
-        console.log('📝 Normalized notification:', normalizedNotification);
+        // Normalized notification
 
         // Check if we've already processed this notification
         const notificationId = normalizedNotification.id || 'notification-' + Date.now();
         const existingNotification = document.querySelector(`[data-notification-id="${notificationId}"]`);
 
         if (existingNotification) {
-            console.log('⚠️ Notification already processed, skipping duplicate');
+            // Notification already processed, skipping duplicate
             return;
         }
 
@@ -582,18 +578,18 @@ class EnhancedNotificationSystem {
 
         // Play sound if enabled
         if (this.soundEnabled) {
-            console.log('🔍 [DEBUG] Sound is enabled, attempting to play notification sound');
+            // Sound is enabled, attempting to play notification sound
             this.playNotificationSound();
         } else {
-            console.log('🔍 [DEBUG] Sound is disabled, skipping sound playback');
+            // Sound is disabled, skipping sound playback
         }
 
         // Show toast if enabled
         if (this.toastEnabled) {
-            console.log('🔍 [DEBUG] Toast is enabled, attempting to show notification toast');
+            // Toast is enabled, attempting to show notification toast
             this.showToastNotification(normalizedNotification);
         } else {
-            console.log('🔍 [DEBUG] Toast is disabled, skipping toast display');
+            // Toast is disabled, skipping toast display
         }
 
         // Dispatch custom events for compatibility
@@ -606,7 +602,7 @@ class EnhancedNotificationSystem {
             detail: normalizedNotification
         }));
 
-        console.log('✅ Notification processed successfully');
+        // Notification processed successfully
     }
 
     normalizeNotification(notification) {

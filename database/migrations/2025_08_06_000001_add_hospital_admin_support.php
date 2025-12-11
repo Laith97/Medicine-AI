@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -36,11 +37,18 @@ return new class extends Migration
         });
 
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['patient', 'doctor', 'hospital_admin'])->default('patient')->after('password');
-            $table->unsignedBigInteger('hospital_id')->nullable()->after('primary_doctor_id');
-            
-            $table->foreign('hospital_id')->references('id')->on('hospitals')->onDelete('set null');
-            $table->index('hospital_id');
+            // Only add hospital_id column if it doesn't exist to avoid duplicates
+            if (!Schema::hasColumn('users', 'hospital_id')) {
+                $table->unsignedBigInteger('hospital_id')->nullable();
+                $table->foreign('hospital_id')->references('id')->on('hospitals')->onDelete('set null');
+                $table->index('hospital_id');
+            }
+
+            // Update the role enum to include hospital_admin if needed
+            if (!Schema::hasColumn('users', 'role') ||
+                !collect(DB::select("SHOW COLUMNS FROM users WHERE Field='role'"))->first()->Type->contains('hospital_admin')) {
+                $table->enum('role', ['patient', 'doctor', 'hospital_admin'])->default('patient');
+            }
         });
     }
 
