@@ -11,6 +11,8 @@ class KioskSession extends Model
     use HasFactory;
 
     protected $primaryKey = 'session_id';
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $fillable = [
         'session_id',
