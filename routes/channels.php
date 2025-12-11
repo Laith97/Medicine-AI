@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,9 +19,16 @@ use Illuminate\Support\Facades\Auth;
 Broadcast::channel('App.User.{id}', function ($user, $id) {
     try {
         // User can only listen to their own channel
-        return $user && (int) $user->id === (int) $id;
+        if (!$user) {
+            return false;
+        }
+        return (int) $user->id === (int) $id;
     } catch (\Exception $e) {
-        \Log::error('Broadcasting auth error for App.User.' . $id, ['error' => $e->getMessage()]);
+        Log::error('Broadcasting auth error for App.User.' . $id, [
+            'error' => $e->getMessage(),
+            'user_id' => $user ? $user->id : null,
+            'requested_id' => $id
+        ]);
         return false;
     }
 });
@@ -28,9 +36,16 @@ Broadcast::channel('App.User.{id}', function ($user, $id) {
 // Alternative user channel naming (used by notification catcher)
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     try {
-        return $user && (int) $user->id === (int) $id;
+        if (!$user) {
+            return false;
+        }
+        return (int) $user->id === (int) $id;
     } catch (\Exception $e) {
-        \Log::error('Broadcasting auth error for App.Models.User.' . $id, ['error' => $e->getMessage()]);
+        Log::error('Broadcasting auth error for App.Models.User.' . $id, [
+            'error' => $e->getMessage(),
+            'user_id' => $user ? $user->id : null,
+            'requested_id' => $id
+        ]);
         return false;
     }
 });
@@ -38,9 +53,16 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 // General user channel (alternative naming)
 Broadcast::channel('user.{id}', function ($user, $id) {
     try {
-        return $user && (int) $user->id === (int) $id;
+        if (!$user) {
+            return false;
+        }
+        return (int) $user->id === (int) $id;
     } catch (\Exception $e) {
-        \Log::error('Broadcasting auth error for user.' . $id, ['error' => $e->getMessage()]);
+        Log::error('Broadcasting auth error for user.' . $id, [
+            'error' => $e->getMessage(),
+            'user_id' => $user ? $user->id : null,
+            'requested_id' => $id
+        ]);
         return false;
     }
 });
@@ -48,17 +70,42 @@ Broadcast::channel('user.{id}', function ($user, $id) {
 // Private user channel (alternative naming)
 Broadcast::channel('private-user.{id}', function ($user, $id) {
     try {
-        return $user && (int) $user->id === (int) $id;
+        if (!$user) {
+            return false;
+        }
+        return (int) $user->id === (int) $id;
     } catch (\Exception $e) {
-        \Log::error('Broadcasting auth error for private-user.' . $id, ['error' => $e->getMessage()]);
+        Log::error('Broadcasting auth error for private-user.' . $id, [
+            'error' => $e->getMessage(),
+            'user_id' => $user ? $user->id : null,
+            'requested_id' => $id
+        ]);
         return false;
     }
 });
 
 // Doctor-specific channels
 Broadcast::channel('doctor.{doctorId}', function ($user, $doctorId) {
-    // Check if user is a doctor and matches the doctor ID
-    return $user->role === 'doctor' && (int) $user->doctor->id === (int) $doctorId;
+    try {
+        // Check if user is a doctor and matches the doctor ID
+        if (!$user || $user->role !== 'doctor') {
+            return false;
+        }
+
+        // Load doctor relationship if not already loaded
+        if (!$user->relationLoaded('doctor')) {
+            $user->load('doctor');
+        }
+
+        return $user->doctor && (int) $user->doctor->id === (int) $doctorId;
+    } catch (\Exception $e) {
+        Log::error('Broadcasting auth error for doctor.' . $doctorId, [
+            'error' => $e->getMessage(),
+            'user_id' => $user ? $user->id : null,
+            'user_role' => $user ? $user->role : null
+        ]);
+        return false;
+    }
 });
 
 // Admin channels
