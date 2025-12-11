@@ -218,6 +218,23 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Payer Rules Feedback -->
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <div id="payerRulesFeedback" style="display: none;">
+                                <div class="alert alert-info">
+                                    <h6>
+                                        <i class="fas fa-gavel me-2"></i>
+                                        Payer Rules Check
+                                    </h6>
+                                    <div id="rulesFeedbackContent">
+                                        <!-- Rules feedback will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Submit Section -->
@@ -371,6 +388,100 @@
         .catch(error => {
             console.error('Error checking denial risk:', error);
         });
+
+        // Check payer rules
+        checkPayerRules();
+    }
+
+    function checkPayerRules() {
+        const formData = new FormData(document.getElementById('claimForm'));
+
+        // Prepare claim data for rules check
+        const claimData = {
+            patient_name: formData.get('patient_name'),
+            patient_dob: formData.get('patient_dob'),
+            patient_gender: formData.get('patient_gender'),
+            patient_insurance_provider: formData.get('patient_insurance_provider'),
+            provider_name: formData.get('provider_name'),
+            provider_npi: formData.get('provider_npi'),
+            service_date: formData.get('service_date'),
+            facility_name: formData.get('facility_name'),
+            diagnosis_description: formData.get('diagnosis_description'),
+            icd10_codes: formData.get('icd10_codes') ? formData.get('icd10_codes').split('\n').map(code => code.trim()).filter(code => code) : [],
+            cpt_codes: formData.get('cpt_codes') ? formData.get('cpt_codes').split('\n').map(code => code.trim()).filter(code => code) : [],
+            total_amount: parseFloat(formData.get('total_amount')) || 0,
+            allowed_amount: parseFloat(formData.get('allowed_amount')) || null,
+            paid_amount: parseFloat(formData.get('paid_amount')) || null
+        };
+
+        // Call payer rules API
+        fetch('/api/hospital-admin/claims/check-rules', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify(claimData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayPayerRulesFeedback(data);
+        })
+        .catch(error => {
+            console.error('Error checking payer rules:', error);
+        });
+    }
+
+    function displayPayerRulesFeedback(data) {
+        const feedbackDiv = document.getElementById('payerRulesFeedback');
+        const contentDiv = document.getElementById('rulesFeedbackContent');
+
+        if (data.success && data.feedback && data.feedback.length > 0) {
+            let html = '<div class="rules-feedback-list">';
+
+            data.feedback.forEach(result => {
+                if (result.actions && result.actions.length > 0) {
+                    result.actions.forEach(action => {
+                        let alertClass = 'alert-info';
+                        let icon = 'fas fa-info-circle';
+                        let title = 'Information';
+
+                        switch (action.type) {
+                            case 'warning':
+                                alertClass = action.severity === 'high' ? 'alert-danger' : 'alert-warning';
+                                icon = 'fas fa-exclamation-triangle';
+                                title = 'Warning';
+                                break;
+                            case 'denial':
+                                alertClass = 'alert-danger';
+                                icon = 'fas fa-times-circle';
+                                title = 'Denial Risk';
+                                break;
+                            case 'auto_correction':
+                                alertClass = 'alert-success';
+                                icon = 'fas fa-magic';
+                                title = 'Auto-Correction Applied';
+                                break;
+                        }
+
+                        html += `
+                            <div class="alert ${alertClass} mt-2">
+                                <h6><i class="${icon} me-2"></i>${title}</h6>
+                                <p class="mb-1">${action.message || 'Rule violation detected'}</p>
+                                ${action.field && action.new_value ? `<small><strong>Field:</strong> ${action.field}, <strong>New Value:</strong> ${action.new_value}</small>` : ''}
+                                ${action.reason ? `<small><strong>Reason:</strong> ${action.reason}</small>` : ''}
+                            </div>
+                        `;
+                    });
+                }
+            });
+
+            html += '</div>';
+            contentDiv.innerHTML = html;
+            feedbackDiv.style.display = 'block';
+        } else {
+            feedbackDiv.style.display = 'none';
+        }
     }
 
     function displayDenialRisk(data) {

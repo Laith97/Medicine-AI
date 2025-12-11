@@ -457,4 +457,12 @@ class Doctor extends Model
         $this->appointment_type_preferences = $preferences;
         $this->save();
     }
+
+    /**
+     * Get the kiosk configuration for the doctor
+     */
+    public function kioskConfig()
+    {
+        return $this->hasOne(DoctorKioskConfig::class);
+    }
 }

@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             NotificationTypeSeeder::class,
             SpecialtySeeder::class,
             PatientCasesTestSeeder::class,
+            AnalyticsSeeder::class,
         ]);
     }
 }

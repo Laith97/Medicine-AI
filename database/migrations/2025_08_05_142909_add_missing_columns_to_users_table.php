@@ -12,8 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->timestamp('subscription_ends_at')->nullable()->after('trial_ends_at');
-            $table->boolean('subscription_active')->default(false)->after('subscription_ends_at');
+            // Only add columns if they don't already exist
+            if (!Schema::hasColumn('users', 'subscription_ends_at')) {
+                $table->timestamp('subscription_ends_at')->nullable();
+            }
+            if (!Schema::hasColumn('users', 'subscription_active')) {
+                $table->boolean('subscription_active')->default(false);
+            }
         });
     }
 

@@ -8,7 +8,7 @@ class NotificationTester {
 
     // Test toast positioning at different screen sizes
     async testResponsivePositioning() {
-        console.log('🧪 Starting mobile responsiveness tests...');
+        // Starting mobile responsiveness tests...
 
         const testSizes = [
             { width: 1920, height: 1080, name: 'Desktop' },
@@ -26,7 +26,7 @@ class NotificationTester {
     }
 
     async testScreenSize(size) {
-        console.log(`📱 Testing ${size.name} (${size.width}x${size.height})`);
+        // Testing screen size
 
         // Simulate screen size change
         Object.defineProperty(window, 'innerWidth', {
@@ -85,12 +85,12 @@ class NotificationTester {
                 };
 
                 this.testResults.push(result);
-                console.log(`✅ ${size.name} test completed:`, result);
+                // Test completed
             } else {
-                console.error(`❌ Failed to create toast for ${size.name}`);
+                // Failed to create toast for size
             }
         } else {
-            console.error('❌ Enhanced notification system not available');
+            // Enhanced notification system not available
         }
 
         // Wait before next test
@@ -112,25 +112,18 @@ class NotificationTester {
     }
 
     displayResults() {
-        console.log('📊 Test Results Summary:');
-        console.table(this.testResults.map(result => ({
-            'Screen Size': result.screenSize,
-            'Width': result.width + 'px',
-            'Visible': result.isVisible ? '✅' : '❌',
-            'Positioned Correctly': result.isProperlyPositioned ? '✅' : '❌',
-            'Toast Width': Math.round(result.toastRect.width) + 'px',
-            'Toast Height': Math.round(result.toastRect.height) + 'px'
-        })));
+        // Test Results Summary:
+        // Results table would be displayed here
 
         const passedTests = this.testResults.filter(r => r.isVisible && r.isProperlyPositioned).length;
         const totalTests = this.testResults.length;
 
-        console.log(`🎯 Test Results: ${passedTests}/${totalTests} tests passed`);
+        // Test Results: tests passed
 
         if (passedTests === totalTests) {
-            console.log('🎉 All mobile responsiveness tests passed!');
+            // All mobile responsiveness tests passed!
         } else {
-            console.warn('⚠️ Some tests failed. Check the results above for details.');
+            // Some tests failed. Check the results above for details.
         }
     }
 
@@ -163,10 +156,10 @@ window.testTabletToasts = () => window.notificationTester.testTablet();
 window.testMobileToasts = () => window.notificationTester.testMobile();
 window.testSmallMobileToasts = () => window.notificationTester.testSmallMobile();
 
-console.log('🧪 Toast Notification Tester loaded!');
-console.log('📋 Available test functions:');
-console.log('  - testToastResponsiveness() - Run all tests');
-console.log('  - testDesktopToasts() - Test desktop positioning');
-console.log('  - testTabletToasts() - Test tablet positioning');
-console.log('  - testMobileToasts() - Test mobile positioning');
-console.log('  - testSmallMobileToasts() - Test small mobile positioning');
+// Toast Notification Tester loaded!
+// Available test functions:
+//  - testToastResponsiveness() - Run all tests
+//  - testDesktopToasts() - Test desktop positioning
+//  - testTabletToasts() - Test tablet positioning
+//  - testMobileToasts() - Test mobile positioning
+//  - testSmallMobileToasts() - Test small mobile positioning

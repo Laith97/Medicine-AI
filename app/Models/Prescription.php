@@ -30,6 +30,11 @@ class Prescription extends Model
         'notes',
         'ai_suggestions',
         'ai_risk_flags',
+        'drug_interaction_warnings',
+        'drug_interaction_errors',
+        'drug_interaction_severity',
+        'drug_interaction_validated_at',
+        'force_override',
     ];
 
     protected $casts = [
@@ -37,6 +42,10 @@ class Prescription extends Model
         'generic_allowed' => 'boolean',
         'ai_suggestions' => 'array',
         'ai_risk_flags' => 'array',
+        'drug_interaction_warnings' => 'array',
+        'drug_interaction_errors' => 'array',
+        'drug_interaction_validated_at' => 'datetime',
+        'force_override' => 'boolean',
     ];
 
     public function appointment()

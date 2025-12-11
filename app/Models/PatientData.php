@@ -135,4 +135,12 @@ class PatientData extends Model
     {
         return $this->hasMany(PatientData::class, 'previous_record_id');
     }
+
+    /**
+     * Get the patient's insurance records
+     */
+    public function patientInsurances()
+    {
+        return $this->hasMany(PatientInsurance::class, 'patient_id');
+    }
 }

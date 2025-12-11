@@ -18,10 +18,10 @@ class NotificationSystem {
             const echoReady = typeof window.Echo !== 'undefined' && window.Echo.connector;
 
             if (domReady && echoReady) {
-                console.log('✅ DOM and Echo ready, initializing notifications');
+                // DOM and Echo ready, initializing notifications
                 this.init();
             } else {
-                console.log('⏳ Waiting for DOM and Echo...', { domReady, echoReady });
+                // Waiting for DOM and Echo...
                 setTimeout(checkReady, 500);
             }
         };
@@ -52,43 +52,59 @@ class NotificationSystem {
         this.loadUnreadCount();
 
         this.isInitialized = true;
-        console.log('Notification system initialized for user:', this.userId);
+        // Notification system initialized for user
     }
 
     setupEchoListener() {
-        console.log(`Setting up Echo listener for user ${this.userId}`);
+        // Setting up Echo listener for user
 
         try {
             const channel = window.Echo.private(`App.User.${this.userId}`);
 
             // Listen for Laravel's standard notification broadcasts
             channel.notification((notification) => {
-                console.log('🔔 Real-time notification received:', notification);
+                // Real-time notification received
                 this.handleNewNotification(notification);
             });
 
             // Listen for the specific Laravel broadcast notification event
             channel.listen('Illuminate\\Notifications\\Events\\BroadcastNotificationCreated', (data) => {
-                console.log('🔔 BroadcastNotificationCreated event:', data);
+                // BroadcastNotificationCreated event
                 this.handleNewNotification(data);
             });
 
             channel.subscribed(() => {
-                console.log(`✅ Successfully subscribed to private channel: App.User.${this.userId}`);
+                // Successfully subscribed to private channel
             });
 
             channel.error((error) => {
-                console.error('❌ Echo channel error:', error);
+                // Echo channel error
             });
 
         } catch (error) {
-            console.error('❌ Failed to setup Echo listener:', error);
+            // Failed to setup Echo listener
         }
     }
 
     handleNewNotification(notification) {
-        console.log('🔔 Processing new notification:', notification);
+        // Processing new notification
 
+        // Throttle rapid notifications (max 1 per second)
+        const now = Date.now();
+        if (this.lastNotificationTime && (now - this.lastNotificationTime) < 1000) {
+            // Throttling rapid notifications
+            if (this.throttleTimeout) clearTimeout(this.throttleTimeout);
+            this.throttleTimeout = setTimeout(() => {
+                this.processNotification(notification);
+            }, 1000);
+            return;
+        }
+
+        this.lastNotificationTime = now;
+        this.processNotification(notification);
+    }
+
+    processNotification(notification) {
         // Update unread count
         this.unreadCount += 1;
         this.updateUnreadCountDisplay();
@@ -118,17 +134,40 @@ class NotificationSystem {
             }
         }));
 
-        console.log('✅ Notification processed successfully');
+        // Notification processed successfully
     }
 
     async loadUnreadCount() {
+        // Debounce multiple calls
+        if (this.loadingUnreadCount) return;
+        this.loadingUnreadCount = true;
+
         try {
-            const response = await fetch('/api/notifications');
+            const response = await fetch('/api/notifications', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
+                },
+                // Add timeout
+                signal: AbortSignal.timeout(5000)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
             const data = await response.json();
             this.unreadCount = data.unread_count || 0;
             this.updateUnreadCountDisplay();
         } catch (error) {
-            console.error('Failed to load unread count:', error);
+            if (error.name === 'TimeoutError') {
+                // Unread count request timed out
+            } else {
+                // Failed to load unread count
+            }
+        } finally {
+            this.loadingUnreadCount = false;
         }
     }
 
@@ -151,11 +190,11 @@ class NotificationSystem {
     }
 
     updateNotificationDropdown(notification) {
-        console.log('🔔 Updating notification dropdown with:', notification);
+        // Updating notification dropdown with
 
         // Method 1: Update via window instance if available
         if (window.notificationDropdownInstance) {
-            console.log('📋 Using window.notificationDropdownInstance');
+            // Using window.notificationDropdownInstance
             window.notificationDropdownInstance.notifications.unshift({
                 id: notification.id,
                 type: notification.type,
@@ -221,17 +260,17 @@ class NotificationSystem {
         // Force refresh notification dropdown if it's open
         const dropdownContent = document.querySelector('[data-notification-dropdown-content]');
         if (dropdownContent) {
-            console.log('🔄 Refreshing dropdown content');
+            // Refreshing dropdown content
             try {
                 const response = await fetch('/api/notifications');
                 if (response.ok) {
                     const data = await response.json();
                     // Update the dropdown with fresh data
                     // This would need to be implemented based on your specific dropdown structure
-                    console.log('✅ Dropdown refreshed with latest notifications');
+                    // Dropdown refreshed with latest notifications
                 }
             } catch (error) {
-                console.error('❌ Failed to refresh dropdown:', error);
+                // Failed to refresh dropdown
             }
         }
     }
@@ -355,7 +394,7 @@ class NotificationSystem {
                 return true;
             }
         } catch (error) {
-            console.error('Failed to mark notification as read:', error);
+            // Failed to mark notification as read
         }
         return false;
     }
@@ -376,7 +415,7 @@ class NotificationSystem {
                 return true;
             }
         } catch (error) {
-            console.error('Failed to mark all notifications as read:', error);
+            // Failed to mark all notifications as read
         }
         return false;
     }
