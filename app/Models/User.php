@@ -9,6 +9,86 @@ use Illuminate\Notifications\Notifiable;
 use App\Notifications\ResetPasswordNotification;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * User Model
+ *
+ * Represents a user in the MedcuraAI system. This model handles authentication,
+ * authorization, billing, subscriptions, and role-based access control for
+ * doctors, patients, hospital administrators, and system administrators.
+ *
+ * Key Features:
+ * - Multi-role support (admin, hospital_admin, doctor, patient)
+ * - Sub-user functionality for doctors
+ * - Subscription and billing management
+ * - Notification preferences and delivery
+ * - Permission-based access control
+ * - Trial period management
+ * - Cost limiting and usage tracking
+ *
+ * @property int $id Unique identifier for the user
+ * @property string $name Full name of the user
+ * @property string $email Email address (unique)
+ * @property string|null $phone Phone number
+ * @property int|null $age Age of the user
+ * @property string $password Hashed password
+ * @property string $role User role (admin, hospital_admin, doctor, patient)
+ * @property \Carbon\Carbon|null $date_of_birth Date of birth
+ * @property string|null $gender Gender of the user
+ * @property string|null $address Street address
+ * @property string|null $city City
+ * @property string|null $state State/Province
+ * @property string|null $zip_code Postal/ZIP code
+ * @property string|null $emergency_contact_name Emergency contact name
+ * @property string|null $emergency_contact_phone Emergency contact phone
+ * @property \Carbon\Carbon|null $email_verified_at Email verification timestamp
+ * @property string|null $stripe_customer_id Stripe customer ID for billing
+ * @property float|null $monthly_cost_limit Monthly cost limit for AI usage
+ * @property \Carbon\Carbon|null $trial_ends_at Trial period end date
+ * @property bool $trial_used Whether trial has been used
+ * @property \Carbon\Carbon|null $subscription_ends_at Subscription end date
+ * @property bool $subscription_active Whether subscription is active
+ * @property int|null $primary_doctor_id ID of primary doctor (for patients)
+ * @property int|null $parent_user_id ID of parent user (for sub-users)
+ * @property string|null $sub_user_role Role of sub-user
+ * @property bool $is_sub_user Whether this is a sub-user account
+ * @property int|null $hospital_id Associated hospital ID
+ * @property int|null $analytics_role_id Analytics role ID
+ * @property \Carbon\Carbon $created_at Account creation timestamp
+ * @property \Carbon\Carbon $updated_at Last update timestamp
+ *
+ * Relationships:
+ * @property-read \App\Models\Setting|null $setting User settings
+ * @property-read \Illuminate\Database\Eloquent\Collection $patientAnalyses Patient analyses
+ * @property-read \App\Models\PatientData|null $patientData Latest patient data
+ * @property-read \App\Models\Doctor|null $doctor Doctor profile (if role is doctor)
+ * @property-read \App\Models\Hospital|null $hospital Associated hospital
+ * @property-read \App\Models\AnalyticsRole|null $analyticsRole Analytics permissions
+ * @property-read \Illuminate\Database\Eloquent\Collection $appointments User appointments
+ * @property-read \Illuminate\Database\Eloquent\Collection $reviews User reviews
+ * @property-read \Illuminate\Database\Eloquent\Collection $patientRiskScores Risk scores
+ * @property-read \Illuminate\Database\Eloquent\Collection $subscriptions User subscriptions
+ * @property-read \App\Models\Subscription|null $activeSubscription Current active subscription
+ * @property-read \Illuminate\Database\Eloquent\Collection $openaiUsages OpenAI API usage records
+ * @property-read \Illuminate\Database\Eloquent\Collection $stripeInvoices Billing invoices
+ * @property-read \App\Models\MonthlyInvoiceSetting|null $monthlyInvoiceSetting Billing settings
+ * @property-read \App\Models\User|null $parentUser Parent user (for sub-users)
+ * @property-read \Illuminate\Database\Eloquent\Collection $subUsers Child sub-users
+ * @property-read \Illuminate\Database\Eloquent\Collection $permissions Granted permissions
+ * @property-read \Illuminate\Database\Eloquent\Collection $userPermissions Permission records
+ * @property-read \Illuminate\Database\Eloquent\Collection $doctorNotes Notes written by doctor
+ * @property-read \Illuminate\Database\Eloquent\Collection $patientNotes Notes about patient
+ * @property-read \Illuminate\Database\Eloquent\Collection $doctorDiagnoses Diagnoses made by doctor
+ * @property-read \Illuminate\Database\Eloquent\Collection $patientDiagnoses Diagnoses received by patient
+ * @property-read \App\Models\User|null $primaryDoctor Primary doctor (for patients)
+ * @property-read \Illuminate\Database\Eloquent\Collection $assignedPatients Patients assigned to doctor
+ * @property-read \Illuminate\Database\Eloquent\Collection $diagnosisFollowUps Follow-up questions
+ * @property-read \Illuminate\Database\Eloquent\Collection $doctorAiAssistantResults AI results created by doctor
+ * @property-read \Illuminate\Database\Eloquent\Collection $patientAiAssistantResults AI results for patient
+ * @property-read \Illuminate\Database\Eloquent\Collection $notifications User notifications
+ * @property-read \Illuminate\Database\Eloquent\Collection $unreadNotifications Unread notifications
+ * @property-read \Illuminate\Database\Eloquent\Collection $readNotifications Read notifications
+ * @property-read \App\Models\NotificationPreference|null $notificationPreferences Notification settings
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -46,6 +126,7 @@ class User extends Authenticatable
         'sub_user_role',
         'is_sub_user',
         'hospital_id',
+        'analytics_role_id',
     ];
 
     /**
@@ -110,6 +191,12 @@ class User extends Authenticatable
     public function hospital()
     {
         return $this->belongsTo(Hospital::class);
+    }
+
+    // Analytics role relationship
+    public function analyticsRole()
+    {
+        return $this->belongsTo(AnalyticsRole::class, 'analytics_role_id', 'role_id');
     }
 
     // Note: Department relationship removed since we simplified doctor management
@@ -177,8 +264,9 @@ public function getFreshMonthlyInvoiceSetting()
 
     /**
      * Check if user is a doctor
+     *
+     * @return bool True if the user has the 'doctor' role
      */
-    /** Check if user is a doctor */
     public function isDoctor(): bool
     {
         return $this->role === 'doctor';
@@ -186,8 +274,9 @@ public function getFreshMonthlyInvoiceSetting()
 
     /**
      * Check if user is a patient
+     *
+     * @return bool True if the user has the 'patient' role
      */
-    /** Check if user is a patient */
     public function isPatient(): bool
     {
         return $this->role === 'patient';
@@ -195,32 +284,45 @@ public function getFreshMonthlyInvoiceSetting()
 
     /**
      * Check if user is a system admin
+     *
+     * @return bool True if the user has the 'admin' role
      */
-    public function isAdmin()
+    public function isAdmin(): bool
     {
         return $this->role === 'admin';
     }
 
     /**
      * Check if user is a hospital admin
+     *
+     * @return bool True if the user has the 'hospital_admin' role
      */
-    public function isHospitalAdmin()
+    public function isHospitalAdmin(): bool
     {
         return $this->role === 'hospital_admin';
     }
 
     /**
      * Check if user is a sub-user
+     *
+     * Sub-users are child accounts created by main users (typically doctors)
+     * with limited permissions and functionality.
+     *
+     * @return bool True if this is a sub-user account
      */
-    public function isSubUser()
+    public function isSubUser(): bool
     {
         return $this->is_sub_user;
     }
 
     /**
      * Check if user is a main user (not a sub-user)
+     *
+     * Main users have full access to all features and can create sub-users.
+     *
+     * @return bool True if this is a main user account
      */
-    public function isMainUser()
+    public function isMainUser(): bool
     {
         return !$this->is_sub_user;
     }
@@ -261,6 +363,12 @@ public function getFreshMonthlyInvoiceSetting()
 
     /**
      * Check if user has a specific permission
+     *
+     * Main users have all permissions except restricted ones (which require doctor role).
+     * Sub-users only have explicitly granted permissions.
+     *
+     * @param string $permissionName The name of the permission to check
+     * @return bool True if the user has the specified permission
      */
     public function hasPermission(string $permissionName): bool
     {
@@ -281,6 +389,13 @@ public function getFreshMonthlyInvoiceSetting()
 
     /**
      * Check if user can access a specific route
+     *
+     * Route access is determined by user role and granted permissions.
+     * Main users can access most routes, with some restrictions for non-doctors.
+     * Sub-users need explicit permission grants.
+     *
+     * @param string $routeName The route name to check access for
+     * @return bool True if the user can access the specified route
      */
     public function canAccessRoute(string $routeName): bool
     {
@@ -499,6 +614,11 @@ public function getFreshMonthlyInvoiceSetting()
 
     /**
      * Check if user has exceeded their monthly cost limit
+     *
+     * Compares the current month's AI usage costs against the user's
+     * monthly cost limit. Returns false if no limit is set.
+     *
+     * @return bool True if the user has exceeded their cost limit
      */
     public function hasExceededCostLimit(): bool
     {
@@ -512,6 +632,9 @@ public function getFreshMonthlyInvoiceSetting()
 
     /**
      * Get remaining tokens for current month (deprecated - use cost limits)
+     *
+     * @deprecated Use getRemainingCostAllowance() instead
+     * @return int Always returns -1 (unlimited) for backward compatibility
      */
     public function getRemainingTokens(): int
     {
@@ -521,6 +644,11 @@ public function getFreshMonthlyInvoiceSetting()
 
     /**
      * Get remaining cost allowance for current month
+     *
+     * Calculates how much of the monthly cost limit remains for the current month.
+     * Returns -1 if no limit is set (unlimited).
+     *
+     * @return float Remaining cost allowance, or -1 for unlimited
      */
     public function getRemainingCostAllowance(): float
     {
@@ -808,6 +936,11 @@ public function getSubscriptionEndDate(): ?\Carbon\Carbon
 
 /**
  * Check if user is in trial period
+ *
+ * Determines if the user is currently within their free trial period
+ * based on the trial_ends_at timestamp.
+ *
+ * @return bool True if the user is in an active trial period
  */
 public function isInTrialPeriod(): bool
 {
@@ -816,6 +949,8 @@ public function isInTrialPeriod(): bool
 
 /**
  * Check if user has used their trial
+ *
+ * @return bool True if the user has previously used their trial period
  */
 public function hasUsedTrial(): bool
 {
@@ -824,6 +959,11 @@ public function hasUsedTrial(): bool
 
 /**
  * Start trial for user
+ *
+ * Initiates a trial period for the user if they haven't used one before.
+ * Sets the trial end date based on the system setting for trial duration.
+ *
+ * @return void
  */
 public function startTrial(): void
 {
@@ -841,6 +981,10 @@ public function startTrial(): void
 
 /**
  * Get trial days remaining
+ *
+ * Calculates how many days are left in the current trial period.
+ *
+ * @return int Number of days remaining in trial, or 0 if not in trial
  */
 public function getTrialDaysRemaining(): int
 {
@@ -853,6 +997,10 @@ public function getTrialDaysRemaining(): int
 
 /**
  * Get trial status
+ *
+ * Returns the current status of the user's trial period.
+ *
+ * @return string Trial status: 'not_started', 'active', or 'expired'
  */
 public function getTrialStatus(): string
 {

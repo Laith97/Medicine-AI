@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('title', 'Login - AI Medical Diagnosis')
+@section('title', 'Login - MedCura Clinical Platform')
 
 @push('styles')
 <style>

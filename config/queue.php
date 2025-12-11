@@ -48,6 +48,53 @@ return [
             'driver' => 'sync', // Process immediately
         ],
 
+        // Dedicated waitlist processing queues with priority levels
+        'waitlist-urgent' => [
+            'driver' => env('QUEUE_CONNECTION', 'database'),
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'waitlist-urgent',
+            'retry_after' => (int) env('WAITLIST_QUEUE_RETRY_AFTER', 30), // Shorter retry for urgent
+            'after_commit' => false,
+        ],
+
+        'waitlist-high' => [
+            'driver' => env('QUEUE_CONNECTION', 'database'),
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'waitlist-high',
+            'retry_after' => (int) env('WAITLIST_QUEUE_RETRY_AFTER', 60),
+            'after_commit' => false,
+        ],
+
+        'waitlist-medium' => [
+            'driver' => env('QUEUE_CONNECTION', 'database'),
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'waitlist-medium',
+            'retry_after' => (int) env('WAITLIST_QUEUE_RETRY_AFTER', 120),
+            'after_commit' => false,
+        ],
+
+        'waitlist-low' => [
+            'driver' => env('QUEUE_CONNECTION', 'database'),
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'waitlist-low',
+            'retry_after' => (int) env('WAITLIST_QUEUE_RETRY_AFTER', 300),
+            'after_commit' => false,
+        ],
+
+        // Batch processing queue for waitlist maintenance
+        'waitlist-maintenance' => [
+            'driver' => env('QUEUE_CONNECTION', 'database'),
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'waitlist-maintenance',
+            'retry_after' => (int) env('WAITLIST_QUEUE_RETRY_AFTER', 600),
+            'after_commit' => false,
+        ],
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => env('BEANSTALKD_QUEUE_HOST', 'localhost'),

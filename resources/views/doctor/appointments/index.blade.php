@@ -387,7 +387,208 @@
 </div>
 
 <script>
-// Auto-approve toggle functionality
+// Real-time broadcasting setup
+let broadcastingChannel = null;
+let broadcastingConnected = false;
+let connectionAttempts = 0;
+const maxConnectionAttempts = 5;
+
+// Initialize real-time broadcasting
+function initializeBroadcasting() {
+    if (typeof Echo === 'undefined') {
+        console.warn('Laravel Echo not available, real-time updates disabled');
+        return;
+    }
+
+    try {
+        // Connect to private user channel
+        broadcastingChannel = Echo.private(`user.${{ Auth::id() }}`)
+            .listen('.appointments.updated', handleAppointmentListUpdate)
+            .listen('.appointment.created', handleAppointmentCreated)
+            .listen('.appointment.updated', handleAppointmentUpdated)
+            .listen('.appointment.deleted', handleAppointmentDeleted)
+            .error(handleBroadcastingError);
+
+        broadcastingConnected = true;
+        connectionAttempts = 0;
+        updateConnectionStatus('connected');
+
+        console.log('Real-time broadcasting initialized for appointments');
+
+    } catch (error) {
+        console.error('Failed to initialize broadcasting:', error);
+        handleBroadcastingError(error);
+    }
+}
+
+// Handle broadcasting connection errors
+function handleBroadcastingError(error) {
+    broadcastingConnected = false;
+    updateConnectionStatus('disconnected');
+
+    if (connectionAttempts < maxConnectionAttempts) {
+        connectionAttempts++;
+        console.log(`Broadcasting connection attempt ${connectionAttempts}/${maxConnectionAttempts}`);
+
+        setTimeout(() => {
+            initializeBroadcasting();
+        }, Math.min(1000 * Math.pow(2, connectionAttempts), 30000)); // Exponential backoff
+    } else {
+        showNotification('Real-time updates unavailable. Please refresh the page.', 'warning');
+    }
+}
+
+// Update connection status indicator
+function updateConnectionStatus(status) {
+    // Create or update connection status indicator
+    let statusIndicator = document.getElementById('broadcasting-status');
+    if (!statusIndicator) {
+        statusIndicator = document.createElement('div');
+        statusIndicator.id = 'broadcasting-status';
+        statusIndicator.className = 'position-fixed bottom-0 end-0 m-3';
+        statusIndicator.style.zIndex = '1000';
+        document.body.appendChild(statusIndicator);
+    }
+
+    const statusConfig = {
+        connected: { icon: 'wifi', text: 'Live', class: 'badge bg-success' },
+        connecting: { icon: 'spinner fa-spin', text: 'Connecting', class: 'badge bg-warning' },
+        disconnected: { icon: 'wifi-slash', text: 'Offline', class: 'badge bg-danger' }
+    };
+
+    const config = statusConfig[status] || statusConfig.disconnected;
+    statusIndicator.innerHTML = `
+        <span class="badge ${config.class}" title="Real-time connection status">
+            <i class="fas fa-${config.icon} me-1"></i>${config.text}
+        </span>
+    `;
+}
+
+// Handle appointment list updates
+function handleAppointmentListUpdate(event) {
+    console.log('Appointment list update received:', event);
+
+    // Show update notification
+    showNotification('Appointment list updated', 'info');
+
+    // Optionally refresh the page or update specific elements
+    if (event.refresh_required) {
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    }
+}
+
+// Handle new appointment creation
+function handleAppointmentCreated(event) {
+    console.log('New appointment created:', event);
+
+    if (event.appointment) {
+        showNotification(`New appointment scheduled for ${event.appointment.patient_name}`, 'success');
+
+        // Add to table if it matches current filters
+        if (matchesCurrentFilters(event.appointment)) {
+            addAppointmentToTable(event.appointment);
+        }
+    }
+}
+
+// Handle appointment updates
+function handleAppointmentUpdated(event) {
+    console.log('Appointment updated:', event);
+
+    if (event.appointment && event.changed_attributes) {
+        const appointmentId = event.appointment.id;
+        const changedAttributes = event.changed_attributes;
+
+        // Update the appointment row in the table
+        updateAppointmentInTable(appointmentId, event.appointment, changedAttributes);
+
+        // Show appropriate notification
+        if (changedAttributes.includes('status')) {
+            const statusText = event.appointment.status.replace('_', ' ');
+            showNotification(`Appointment status changed to ${statusText}`, 'info');
+        } else {
+            showNotification('Appointment details updated', 'info');
+        }
+    }
+}
+
+// Handle appointment deletion
+function handleAppointmentDeleted(event) {
+    console.log('Appointment deleted:', event);
+
+    if (event.appointment_id) {
+        removeAppointmentFromTable(event.appointment_id);
+        showNotification('Appointment cancelled', 'warning');
+    }
+}
+
+// Check if appointment matches current filters
+function matchesCurrentFilters(appointment) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const statusFilter = urlParams.get('status');
+
+    if (statusFilter && appointment.status !== statusFilter) {
+        return false;
+    }
+
+    // Add more filter checks as needed
+    return true;
+}
+
+// Add appointment to table
+function addAppointmentToTable(appointment) {
+    // Implementation would depend on the table structure
+    // For now, just refresh the page
+    setTimeout(() => {
+        window.location.reload();
+    }, 500);
+}
+
+// Update appointment in table
+function updateAppointmentInTable(appointmentId, appointmentData, changedAttributes) {
+    const row = document.querySelector(`tr[data-appointment-id="${appointmentId}"]`);
+    if (!row) return;
+
+    // Update status badge if status changed
+    if (changedAttributes.includes('status')) {
+        const statusCell = row.querySelector('.badge');
+        if (statusCell) {
+            const statusColors = {
+                'pending': 'bg-warning',
+                'confirmed': 'bg-success',
+                'completed': 'bg-success',
+                'cancelled': 'bg-danger',
+                'no_show': 'bg-secondary'
+            };
+
+            statusCell.className = `badge ${statusColors[appointmentData.status] || 'bg-secondary'}`;
+            statusCell.textContent = appointmentData.status.replace('_', ' ').toUpperCase();
+        }
+    }
+
+    // Add visual highlight for updated row
+    row.style.transition = 'background-color 0.3s';
+    row.style.backgroundColor = '#fff3cd';
+    setTimeout(() => {
+        row.style.backgroundColor = '';
+    }, 2000);
+}
+
+// Remove appointment from table
+function removeAppointmentFromTable(appointmentId) {
+    const row = document.querySelector(`tr[data-appointment-id="${appointmentId}"]`);
+    if (row) {
+        row.style.transition = 'opacity 0.3s';
+        row.style.opacity = '0';
+        setTimeout(() => {
+            row.remove();
+        }, 300);
+    }
+}
+
+// Auto-approve toggle functionality with error handling
 document.getElementById('auto_approve_toggle').addEventListener('change', function() {
     const isEnabled = this.checked;
     const toggleLabel = this.nextElementSibling.querySelector('.fw-medium');
@@ -397,39 +598,66 @@ document.getElementById('auto_approve_toggle').addEventListener('change', functi
     toggleLabel.textContent = 'Updating...';
     this.disabled = true;
 
-    // Make AJAX request
-    fetch('{{ route("doctor.appointments.toggle-auto-approve") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-            auto_approve: isEnabled
+    // Check if broadcasting is connected
+    if (!broadcastingConnected) {
+        showNotification('Connection lost. Changes may not be reflected in real-time.', 'warning');
+    }
+
+    // Make AJAX request with timeout and retry logic
+    const makeRequest = (retries = 3) => {
+        fetch('{{ route("doctor.appointments.toggle-auto-approve") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                auto_approve: isEnabled
+            }),
+            signal: AbortSignal.timeout(10000) // 10 second timeout
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            toggleLabel.textContent = isEnabled ? 'Auto-approve appointments' : 'Manual approval required';
-            showNotification(data.message || 'Setting updated successfully!', 'success');
-        } else {
-            // Revert toggle on error
-            this.checked = !isEnabled;
-            throw new Error(data.message || 'Failed to update setting');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        // Revert toggle on error
-        this.checked = !isEnabled;
-        showNotification('Failed to update auto-approve setting. Please try again.', 'error');
-    })
-    .finally(() => {
-        toggleLabel.textContent = originalText;
-        this.disabled = false;
-    });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                toggleLabel.textContent = isEnabled ? 'Auto-approve appointments' : 'Manual approval required';
+                showNotification(data.message || 'Setting updated successfully!', 'success');
+            } else {
+                // Revert toggle on error
+                this.checked = !isEnabled;
+                throw new Error(data.message || 'Failed to update setting');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating auto-approve setting:', error);
+
+            if (error.name === 'TimeoutError') {
+                showNotification('Request timed out. Please check your connection and try again.', 'warning');
+            } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                showNotification('Network error. Please check your connection.', 'error');
+            } else if (retries > 0) {
+                console.log(`Retrying request (${retries} attempts left)...`);
+                setTimeout(() => makeRequest(retries - 1), 1000);
+                return;
+            } else {
+                // Revert toggle on error
+                this.checked = !isEnabled;
+                showNotification('Failed to update auto-approve setting. Please try again.', 'error');
+            }
+        })
+        .finally(() => {
+            toggleLabel.textContent = originalText;
+            this.disabled = false;
+        });
+    };
+
+    makeRequest();
 });
 
 function completeAppointment(appointmentId) {
@@ -506,17 +734,171 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// Close modals when clicking outside
-document.getElementById('completeModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeCompleteModal();
+// Initialize broadcasting when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeBroadcasting();
+
+    // Set up periodic connection health checks
+    setInterval(() => {
+        if (broadcastingConnected && broadcastingChannel) {
+            // Ping the connection (Echo handles this automatically)
+            updateConnectionStatus('connected');
+        } else if (!broadcastingConnected) {
+            updateConnectionStatus('connecting');
+        }
+    }, 30000); // Check every 30 seconds
+});
+
+// Handle page visibility changes for connection management
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        // Page is hidden, reduce connection activity
+        updateConnectionStatus('disconnected');
+    } else {
+        // Page is visible again, reconnect if needed
+        if (!broadcastingConnected) {
+            initializeBroadcasting();
+        }
+        updateConnectionStatus(broadcastingConnected ? 'connected' : 'connecting');
     }
 });
 
-document.getElementById('cancelModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeCancelModal();
+// Enhanced error handling for appointment actions
+function completeAppointment(appointmentId) {
+    const form = document.getElementById('completeForm');
+    form.action = `/doctor/appointments/${appointmentId}/complete`;
+
+    // Add loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Completing...';
+
+    // Reset form state on modal close
+    const modal = new bootstrap.Modal(document.getElementById('completeModal'));
+    modal.show();
+
+    // Reset button when modal is closed
+    document.getElementById('completeModal').addEventListener('hidden.bs.modal', function() {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+}
+
+function cancelAppointment(appointmentId) {
+    const form = document.getElementById('cancelForm');
+    form.action = `/doctor/appointments/${appointmentId}/cancel`;
+
+    // Add loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cancelling...';
+
+    // Reset form state on modal close
+    const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
+    modal.show();
+
+    // Reset button when modal is closed
+    document.getElementById('cancelModal').addEventListener('hidden.bs.modal', function() {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+}
+
+function markNoShow(appointmentId) {
+    // Enhanced confirmation with better UX
+    const confirmed = confirm('Are you sure you want to mark this appointment as no show? This action cannot be undone.');
+
+    if (confirmed) {
+        // Show loading state
+        const button = event.target.closest('button');
+        const originalHTML = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/doctor/appointments/${appointmentId}/no-show`;
+
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = '_token';
+        csrfToken.value = '{{ csrf_token() }}';
+
+        form.appendChild(csrfToken);
+        document.body.appendChild(form);
+
+        // Add error handling
+        form.addEventListener('submit', function() {
+            setTimeout(() => {
+                if (!form.submitted) {
+                    button.disabled = false;
+                    button.innerHTML = originalHTML;
+                    showNotification('Request timed out. Please try again.', 'error');
+                }
+            }, 5000);
+        });
+
+        form.submitted = true;
+        form.submit();
     }
+}
+
+// Accessibility enhancements
+document.addEventListener('keydown', function(e) {
+    // Close modals with Escape key
+    if (e.key === 'Escape') {
+        const openModal = document.querySelector('.modal.show');
+        if (openModal) {
+            const modal = bootstrap.Modal.getInstance(openModal);
+            if (modal) modal.hide();
+        }
+    }
+});
+
+// Add ARIA labels and roles for better accessibility
+document.addEventListener('DOMContentLoaded', function() {
+    // Add ARIA labels to status badges
+    document.querySelectorAll('.badge').forEach(badge => {
+        const status = badge.textContent.toLowerCase().trim();
+        badge.setAttribute('aria-label', `Appointment status: ${status}`);
+        badge.setAttribute('role', 'status');
+    });
+
+    // Add ARIA labels to action buttons
+    document.querySelectorAll('button[title]').forEach(button => {
+        button.setAttribute('aria-label', button.getAttribute('title'));
+    });
+
+    // Add live region for notifications
+    const liveRegion = document.createElement('div');
+    liveRegion.id = 'live-region';
+    liveRegion.setAttribute('aria-live', 'polite');
+    liveRegion.setAttribute('aria-atomic', 'true');
+    liveRegion.className = 'visually-hidden';
+    document.body.appendChild(liveRegion);
+
+    // Update live region when showing notifications
+    const originalShowNotification = window.showNotification;
+    window.showNotification = function(message, type) {
+        originalShowNotification(message, type);
+        liveRegion.textContent = message;
+        setTimeout(() => {
+            liveRegion.textContent = '';
+        }, 1000);
+    };
+});
+
+// Error boundary for JavaScript errors
+window.addEventListener('error', function(e) {
+    console.error('JavaScript error:', e.error);
+    showNotification('An unexpected error occurred. Please refresh the page.', 'error');
+});
+
+window.addEventListener('unhandledrejection', function(e) {
+    console.error('Unhandled promise rejection:', e.reason);
+    showNotification('A background process failed. Some features may not work correctly.', 'warning');
 });
 </script>
 @endsection

@@ -196,7 +196,7 @@ class NotificationController extends Controller
      */
     public function destroy($id)
     {
-        $notification = \Illuminate\Notifications\DatabaseNotification::where('id', $id)
+        $notification = DatabaseNotification::where('id', $id)
             ->where('notifiable_id', Auth::id())
             ->where('notifiable_type', get_class(Auth::user()))
             ->first();
@@ -261,7 +261,11 @@ class NotificationController extends Controller
             ['id' => 'system', 'name' => 'System Notifications'],
         ];
 
-        return view('notifications.settings', compact('user', 'preferences', 'notificationTypes'));
+        return view('notifications.settings', [
+            'user' => $user,
+            'settings' => $preferences,
+            'notificationTypes' => $notificationTypes
+        ]);
     }
 
     /**
@@ -330,3 +334,4 @@ class NotificationController extends Controller
             ->with('success', 'Notification preferences updated successfully!');
     }
 }
+
