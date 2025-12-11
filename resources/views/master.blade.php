@@ -345,6 +345,10 @@ body .dropdown .dropdown-menu.show,
             overflow-y: auto !important;
             z-index: 9999999 !important;
             position: absolute !important;
+            top: 100% !important;
+            left: auto !important;
+            right: 0 !important;
+            transform: none !important;
         }
 
         .notifications-dropdown {
@@ -354,6 +358,11 @@ body .dropdown .dropdown-menu.show,
 
         .user-dropdown .dropdown-menu {
             min-width: 200px !important;
+            position: absolute !important;
+            top: 100% !important;
+            left: auto !important;
+            right: 0 !important;
+            transform: none !important;
         }
 
         /* Mobile responsive */
@@ -2232,6 +2241,15 @@ $(document).ready(function() {
 });
 
 function loadPageContent(url, route) {
+    // Clean up voice assistant elements if navigating away from voice-assistant page
+    if (url !== '/ai/voice-assistant') {
+        // Clean up keyboard shortcuts help
+        const helpIndicator = document.querySelector('.keyboard-shortcuts-help');
+        if (helpIndicator) {
+            helpIndicator.remove();
+        }
+    }
+
     // Show loading overlay and skeleton
     const $loadingOverlay = $('#ajax-loading-overlay');
     const $mainContent = $('#main-content');

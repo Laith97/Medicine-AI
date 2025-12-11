@@ -74,8 +74,17 @@
     <div class="container">
         <!-- Dashboard Header -->
         <div class="dashboard-header">
-            <h2>Appointments</h2>
-            <p>Manage your appointments</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>Appointments</h2>
+                    <p>Manage your appointments</p>
+                </div>
+                <div>
+                    <a href="{{ route('doctor.appointments.create') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus me-2"></i>Book Appointment
+                    </a>
+                </div>
+            </div>
         </div>
 
         <!-- Auto-Approve Settings -->

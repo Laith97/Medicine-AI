@@ -161,23 +161,27 @@
     }
 
     .nav-tabs .nav-link {
-        border: none;
+        border: 1px solid #dee2e6;
         border-radius: 10px;
         margin-right: 0.5rem;
-        color: #6c757d;
+        color: #6c757d !important;
         font-weight: 600;
         padding: 0.75rem 1.5rem;
         transition: all 0.3s ease;
+        background: #e9ecef;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .nav-tabs .nav-link:hover {
-        background-color: rgba(222, 98, 98, 0.1);
-        color: #DE6262;
+        background: rgba(222, 98, 98, 0.15);
+        color: #DE6262 !important;
+        border-color: #DE6262 !important;
+        box-shadow: 0 2px 6px rgba(222, 98, 98, 0.2) !important;
     }
 
     .nav-tabs .nav-link.active {
         background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
-        color: white;
+        color: white !important;
         box-shadow: 0 4px 15px rgba(222, 98, 98, 0.3);
     }
 
@@ -267,17 +271,39 @@
         color: #6c757d;
         font-weight: 600;
         padding: 0.4rem 0.8rem;
-        border-radius: 15px;
+        border-radius: 25px;
         transition: all 0.3s ease;
         text-decoration: none;
         font-size: 0.8rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
     .btn-custom-secondary:hover {
         border-color: #DE6262;
         color: #DE6262;
+        background: rgba(222, 98, 98, 0.05);
         transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(222, 98, 98, 0.15);
         text-decoration: none;
+    }
+
+    /* Professional styling for expand visit buttons */
+    .btn-expand-visit {
+        border-radius: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        background: white;
+        border-color: #DE6262;
+        color: #DE6262;
+        font-weight: 600;
+    }
+
+    .btn-expand-visit:hover {
+        background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(222, 98, 98, 0.3);
+        border-color: #DE6262;
     }
 
     .empty-state {
@@ -308,8 +334,11 @@
     }
 
     .visits-container {
-        padding: 0;
+        padding: 1.5rem 0;
         border-top: 1px solid #e9ecef;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%);
+        border-radius: 12px;
+        margin-top: 1rem;
     }
 
     .visits-section {
@@ -421,13 +450,88 @@
         margin-top: 1rem;
     }
 
-    /* Modal z-index fixes to ensure popups appear above sidebar */
+    /* Override any conflicting CSS and ensure highest z-index for modals */
     .modal {
-        z-index: 1055 !important;
+        z-index: 999999999 !important; /* Maximum z-index */
     }
 
     .modal-backdrop {
-        z-index: 1050 !important;
+        z-index: 999999998 !important; /* Maximum z-index for backdrop */
+    }
+
+    /* Ensure modals work properly when inside containers with overflow:visible */
+    body.modal-open .dashboard-container,
+    body.modal-open .container-fluid,
+    body.modal-open .main-content,
+    body.modal-open .content {
+        overflow: visible !important; /* Allow overflow for proper modal display */
+        position: relative !important;
+    }
+
+    /* Fix for when modal is triggered, ensure page can't scroll */
+    body.modal-open {
+        overflow: hidden !important;
+        padding-right: 0 !important; /* Override Bootstrap's padding adjustment */
+    }
+
+    /* Specific fix to ensure modals appear above sidebar elements */
+    .modal.show {
+        display: block !important;
+        z-index: 999999999 !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+    }
+
+    /* Force modal and backdrop to be absolutely positioned at the highest z-index */
+    .modal[style*="display: block"],
+    .modal.show {
+        position: fixed !important;
+        z-index: 999999999 !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+    }
+
+    .modal-backdrop[style*="display: block"],
+    .modal-backdrop.show {
+        position: fixed !important;
+        z-index: 999999998 !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+    }
+
+    /* Extra specific rules to ensure modals are always on top */
+    body .modal {
+        z-index: 999999999 !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+    }
+
+    body .modal-backdrop {
+        z-index: 999999998 !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+    }
+
+    /* Ensure modal dialog is centered within the viewport */
+    .modal.show .modal-dialog {
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        z-index: 1000000000 !important;
     }
 
     @media (max-width: 768px) {
@@ -891,15 +995,13 @@
 @endsection
 
 @push('scripts')
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
 $(document).ready(function () {
     // Tab filtering functionality
-    $('.nav-link').on('click', function() {
+    $(document).on('click', '.nav-link', function() {
         const category = $(this).attr('id').replace('-tab', '');
         filterPatientsByCategory(category);
     });
@@ -908,14 +1010,18 @@ $(document).ready(function () {
     $(document).on('click', '.btn-expand-visits', function() {
         const patientKey = $(this).data('patient-key');
         const visitsRow = $(`.visits-row[data-patient-key="${patientKey}"]`);
-        const expandIcon = $(this).find('.expand-icon');
+        const button = $(this);
+        const icon = button.find('.expand-icon');
+        const textSpan = button.find('.btn-text');
 
         if (visitsRow.is(':visible')) {
             visitsRow.slideUp(300);
-            expandIcon.removeClass('rotated');
+            icon.removeClass('fa-chevron-up').addClass('fa-chevron-down').removeClass('rotated');
+            textSpan.text('View Details');
         } else {
             visitsRow.slideDown(300);
-            expandIcon.addClass('rotated');
+            icon.removeClass('fa-chevron-down').addClass('fa-chevron-up').addClass('rotated');
+            textSpan.text('Hide Details');
         }
     });
 
@@ -928,10 +1034,12 @@ $(document).ready(function () {
         if (visitDetails.is(':visible')) {
             visitDetails.slideUp(300);
             expandIcon.removeClass('rotated');
+            $(this).attr('aria-expanded', 'false');
         } else {
             visitDetails.slideDown(300);
             expandIcon.addClass('rotated');
             loadVisitDetails(visitId, $(this).data());
+            $(this).attr('aria-expanded', 'true');
         }
     });
 
@@ -960,16 +1068,78 @@ $(document).ready(function () {
     });
 
     // Search functionality
-    $('#patient-search').on('keyup', function() {
+    $(document).on('keyup', '#patient-search', function() {
         const searchTerm = $(this).val().toLowerCase();
         filterPatients(searchTerm);
     });
 
     // Sorting functionality
-    $('.sort-link').on('click', function(e) {
+    $(document).on('click', '.sort-link', function(e) {
         e.preventDefault();
         const sortBy = $(this).data('sort');
         sortPatients(sortBy);
+    });
+
+
+    // When modal is about to show, handle scrolling without sidebar manipulation to prevent conflicts
+    $(document).on('show.bs.modal', '.modal', function() {
+        // Store original body scrollbar width to restore later
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+        // Prevent body from scrolling when modal is open
+        $('body').css({
+            'overflow': 'hidden',
+            'padding-right': scrollbarWidth + 'px'
+        });
+
+        // Also add class to prevent scroll
+        $('body').addClass('modal-open');
+    });
+
+    // When modal is completely shown, ensure it has the highest z-index and correct positioning
+    $(document).on('shown.bs.modal', '.modal', function() {
+        // Make sure modal has very high z-index and is positioned correctly
+        $(this).css({
+            'z-index': '999999999',
+            'position': 'fixed',
+            'top': '0',
+            'left': '0',
+            'right': '0',
+            'bottom': '0'
+        });
+
+        // Make sure backdrop has high z-index and covers full viewport
+        $('.modal-backdrop').css({
+            'z-index': '999999998',
+            'position': 'fixed',
+            'top': '0',
+            'left': '0',
+            'right': '0',
+            'bottom': '0'
+        });
+
+        // Ensure modal dialog is centered within viewport
+        $(this).find('.modal-dialog').css({
+            'position': 'absolute',
+            'top': '50%',
+            'left': '50%',
+            'transform': 'translate(-50%, -50%)',
+            'z-index': '1000000000'
+        });
+
+        // Note: Not moving elements in DOM as this might interfere with other components
+    });
+
+    // When modal is hidden, restore body scrolling only
+    $(document).on('hidden.bs.modal', '.modal', function() {
+        // Restore body scrolling
+        $('body').css({
+            'overflow': '',
+            'padding-right': ''
+        });
+
+        // Remove modal-open class
+        $('body').removeClass('modal-open');
     });
 });
 
