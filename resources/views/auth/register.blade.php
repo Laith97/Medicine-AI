@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('title', 'Register - AI Medical Diagnosis')
+@section('title', 'Register - MedCura Clinical Platform')
 
 @push('styles')
 <style>
@@ -150,13 +150,13 @@
                             <label for="name" class="form-label">
                                 <i class="bi bi-person me-2"></i>Full Name
                             </label>
-                            <input 
-                                id="name" 
-                                type="text" 
-                                name="name" 
-                                class="form-control auth-input @if($errors ?? false) @error('name') is-invalid @enderror @endif" 
-                                value="{{ old('name') }}" 
-                                required 
+                            <input
+                                id="name"
+                                type="text"
+                                name="name"
+                                class="form-control auth-input @if($errors ?? false) @error('name') is-invalid @enderror @endif"
+                                value="{{ old('name') }}"
+                                required
                                 autofocus
                                 placeholder="Enter your full name"
                             >
@@ -170,12 +170,12 @@
                             <label for="email" class="form-label">
                                 <i class="bi bi-envelope me-2"></i>Email Address
                             </label>
-                            <input 
-                                id="email" 
-                                type="email" 
-                                name="email" 
-                                class="form-control auth-input @error('email') is-invalid @enderror" 
-                                value="{{ old('email') }}" 
+                            <input
+                                id="email"
+                                type="email"
+                                name="email"
+                                class="form-control auth-input @error('email') is-invalid @enderror"
+                                value="{{ old('email') }}"
                                 required
                                 placeholder="Enter your email"
                             >
@@ -189,12 +189,12 @@
                             <label for="phone" class="form-label">
                                 <i class="bi bi-telephone me-2"></i>Phone Number <span class="text-danger">*</span>
                             </label>
-                            <input 
-                                id="phone" 
-                                type="tel" 
-                                name="phone" 
-                                class="form-control auth-input @error('phone') is-invalid @enderror" 
-                                value="{{ old('phone') }}" 
+                            <input
+                                id="phone"
+                                type="tel"
+                                name="phone"
+                                class="form-control auth-input @error('phone') is-invalid @enderror"
+                                value="{{ old('phone') }}"
                                 required
                                 placeholder="Enter your phone number (e.g., +1234567890)"
                                 pattern="^\+?[1-9]\d{1,14}$"
@@ -216,11 +216,11 @@
                                 <i class="bi bi-lock me-2"></i>Password
                             </label>
                             <div class="password-input-wrapper">
-                                <input 
-                                    id="password" 
-                                    type="password" 
-                                    name="password" 
-                                    class="form-control auth-input @error('password') is-invalid @enderror" 
+                                <input
+                                    id="password"
+                                    type="password"
+                                    name="password"
+                                    class="form-control auth-input @error('password') is-invalid @enderror"
                                     required
                                     placeholder="Create a strong password"
                                 >
@@ -239,11 +239,11 @@
                                 <i class="bi bi-shield-check me-2"></i>Confirm Password
                             </label>
                             <div class="password-input-wrapper">
-                                <input 
-                                    id="password_confirmation" 
-                                    type="password" 
-                                    name="password_confirmation" 
-                                    class="form-control auth-input @error('password_confirmation') is-invalid @enderror" 
+                                <input
+                                    id="password_confirmation"
+                                    type="password"
+                                    name="password_confirmation"
+                                    class="form-control auth-input @error('password_confirmation') is-invalid @enderror"
                                     required
                                     placeholder="Confirm your password"
                                 >
@@ -263,12 +263,12 @@
                             </label>
                             <select class="form-control auth-input @error('specialty') is-invalid @enderror" name="specialty_select" id="specialty_select" onchange="toggleCustomSpecialty()">
                                 <option value="">-- Select Your Specialty --</option>
-                                
+
                                 <optgroup label="🧠 General & Internal Medicine">
                                     <option value="General Practitioner">General Practitioner (GP) / Family Medicine</option>
                                     <option value="Internal Medicine">Internal Medicine (Internist)</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="🩺 Internal Medicine Subspecialties">
                                     <option value="Cardiology">Cardiology (Heart)</option>
                                     <option value="Pulmonology">Pulmonology (Lungs)</option>
@@ -283,17 +283,17 @@
                                     <option value="Allergy & Immunology">Allergy & Immunology</option>
                                     <option value="Reproductive Endocrinology">Reproductive Endocrinology (Fertility hormones)</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="🧠 Emergency & Critical Care">
                                     <option value="Emergency Medicine">Emergency Medicine</option>
                                     <option value="Critical Care">Critical Care / Intensive Care Medicine</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="💉 Anesthesia & Pain Management">
                                     <option value="Anesthesiology">Anesthesiology</option>
                                     <option value="Pain Management">Pain Management / Interventional Pain Medicine</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="🧠 Neurology & Psychiatry">
                                     <option value="Neurology">Neurology (Brain & nerves)</option>
                                     <option value="Neurosurgery">Neurosurgery (Brain & spine surgery)</option>
@@ -301,7 +301,7 @@
                                     <option value="Child & Adolescent Psychiatry">Child & Adolescent Psychiatry</option>
                                     <option value="Behavioral & Developmental Pediatrics">Behavioral & Developmental Pediatrics</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="🦴 Surgical Specialties">
                                     <option value="General Surgery">General Surgery</option>
                                     <option value="Orthopedic Surgery">Orthopedic Surgery (Bones & joints)</option>
@@ -318,7 +318,7 @@
                                     <option value="Pediatric Surgery">Pediatric Surgery</option>
                                     <option value="Hand Surgery">Hand Surgery</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="👶 Pediatrics & Women's Health">
                                     <option value="Pediatrics">Pediatrics</option>
                                     <option value="Neonatology">Neonatology (Newborn care)</option>
@@ -328,7 +328,7 @@
                                     <option value="Reproductive Endocrinology & Infertility">Reproductive Endocrinology & Infertility</option>
                                     <option value="Maternal–Fetal Medicine">Maternal–Fetal Medicine</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="🧬 Diagnostic & Support Specialties">
                                     <option value="Pathology">Pathology (Laboratory medicine)</option>
                                     <option value="Radiology">Radiology (Medical imaging)</option>
@@ -337,7 +337,7 @@
                                     <option value="Endoscopy">Endoscopy / GI Endoscopy</option>
                                     <option value="Electrodiagnostic Medicine">Electrodiagnostic Medicine (EMG, EEG)</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="🏥 Other Medical Specialties">
                                     <option value="Oncology">Oncology (Medical cancer care)</option>
                                     <option value="Hepatology">Hepatology (Liver diseases)</option>
@@ -347,18 +347,18 @@
                                     <option value="Occupational & Environmental Medicine">Occupational & Environmental Medicine</option>
                                     <option value="Sports Medicine">Sports Medicine</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="✏️ Custom">
                                     <option value="other">Other (Please specify)</option>
                                 </optgroup>
                             </select>
-                            
+
                             <!-- Custom Specialty Input (Hidden by default) -->
                             <div id="custom_specialty_container" style="display: none;" class="mt-2">
-                                <input 
-                                    type="text" 
-                                    name="custom_specialty" 
-                                    id="custom_specialty" 
+                                <input
+                                    type="text"
+                                    name="custom_specialty"
+                                    id="custom_specialty"
                                     class="form-control auth-input @if($errors ?? false) @error('custom_specialty') is-invalid @enderror @endif"
                                     placeholder="Please enter your medical specialty"
                                     value="{{ old('custom_specialty') }}"
@@ -369,10 +369,10 @@
                                     @enderror
                                 @endif
                             </div>
-                            
+
                             <!-- Hidden field to store the final specialty value -->
                             <input type="hidden" name="specialty" id="specialty" value="{{ old('specialty') }}">
-                            
+
                             @if($errors ?? false)
                                 @error('specialty')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -382,7 +382,7 @@
 
                         <!-- Plan Selection Section (Removed - users start on free trial by default) -->
                         <input type="hidden" name="selected_plan" id="selected_plan" value="free">
-                        <input type="hidden" name="selected_billing" id="selected_billing" value="monthly">>
+                        <input type="hidden" name="selected_billing" id="selected_billing" value="monthly">
 
                         <!-- Terms Agreement -->
                         <div class="form-check mb-4">
@@ -651,7 +651,7 @@ select.form-control.auth-input {
         padding: 2rem;
         margin: 1rem;
     }
-    
+
     .auth-title {
         font-size: 1.75rem;
     }
@@ -662,7 +662,7 @@ select.form-control.auth-input {
 function togglePassword(inputId) {
     const input = document.getElementById(inputId);
     const eye = document.getElementById(inputId + '-eye');
-    
+
     if (input.type === 'password') {
         input.type = 'text';
         eye.className = 'bi bi-eye-slash';
@@ -677,7 +677,7 @@ function toggleCustomSpecialty() {
     const customContainer = document.getElementById('custom_specialty_container');
     const customInput = document.getElementById('custom_specialty');
     const hiddenInput = document.getElementById('specialty');
-    
+
     if (select.value === 'other') {
         customContainer.style.display = 'block';
         customInput.required = true;
@@ -696,21 +696,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const customInput = document.getElementById('custom_specialty');
     const hiddenInput = document.getElementById('specialty');
     const select = document.getElementById('specialty_select');
-    
+
     // Handle custom input changes
     customInput.addEventListener('input', function() {
         if (select.value === 'other') {
             hiddenInput.value = this.value;
         }
     });
-    
+
     // Handle form submission to ensure proper validation
     const form = document.querySelector('.auth-form');
     form.addEventListener('submit', function(e) {
         const select = document.getElementById('specialty_select');
         const customInput = document.getElementById('custom_specialty');
         const hiddenInput = document.getElementById('specialty');
-        
+
         if (select.value === 'other') {
             if (!customInput.value.trim()) {
                 e.preventDefault();
@@ -723,11 +723,11 @@ document.addEventListener('DOMContentLoaded', function() {
             hiddenInput.value = select.value;
         }
     });
-    
+
     // Initialize on page load (for validation errors)
     const oldSpecialty = '{{ old("specialty") }}';
     const oldCustomSpecialty = '{{ old("custom_specialty") }}';
-    
+
     if (oldCustomSpecialty) {
         document.getElementById('specialty_select').value = 'other';
         toggleCustomSpecialty();
@@ -737,7 +737,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check if old specialty exists in dropdown
         const selectOptions = Array.from(document.getElementById('specialty_select').options);
         const optionExists = selectOptions.some(option => option.value === oldSpecialty);
-        
+
         if (optionExists) {
             document.getElementById('specialty_select').value = oldSpecialty;
         } else {
@@ -748,10 +748,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         document.getElementById('specialty').value = oldSpecialty;
     }
-    
+
     // Plan Selection Functions
     const selectedBilling = '{{ $selectedBilling }}';
-    
+
     // Initialize billing toggle based on URL parameter
     if (selectedBilling === 'yearly') {
         switchBilling('yearly');
@@ -766,10 +766,10 @@ function selectPlan(planKey) {
     document.querySelectorAll('.plan-card').forEach(card => {
         card.classList.remove('selected');
     });
-    
+
     // Add selected class to clicked plan
     document.querySelector(`.plan-card[data-plan="${planKey}"]`).classList.add('selected');
-    
+
     // Update hidden field
     document.getElementById('selected_plan').value = planKey;
 }
@@ -779,15 +779,15 @@ function switchBilling(period) {
     const yearlyToggle = document.getElementById('yearly-toggle');
     const monthlyPrices = document.querySelectorAll('.monthly-price-display');
     const yearlyPrices = document.querySelectorAll('.yearly-price-display');
-    
+
     document.getElementById('selected_billing').value = period;
-    
+
     if (period === 'monthly') {
         monthlyToggle.style.background = '#DE6262';
         monthlyToggle.style.color = 'white';
         yearlyToggle.style.background = 'transparent';
         yearlyToggle.style.color = '#6C757D';
-        
+
         monthlyPrices.forEach(price => price.style.display = 'inline');
         yearlyPrices.forEach(price => price.style.display = 'none');
     } else {
@@ -795,7 +795,7 @@ function switchBilling(period) {
         yearlyToggle.style.color = 'white';
         monthlyToggle.style.background = 'transparent';
         monthlyToggle.style.color = '#6C757D';
-        
+
         monthlyPrices.forEach(price => price.style.display = 'none');
         yearlyPrices.forEach(price => price.style.display = 'inline');
     }

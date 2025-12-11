@@ -107,6 +107,12 @@ class MenuHelper
                         'icon' => 'fas fa-stethoscope',
                         'permission' => 'diagnosis',
                     ],
+                    [
+                        'name' => 'HEP Programs',
+                        'route' => 'doctor.hep.index',
+                        'icon' => 'fas fa-dumbbell',
+                        'permission' => 'hep',
+                    ],
                 ]
             ],
 
@@ -254,6 +260,18 @@ class MenuHelper
                         'permission' => 'blog',
                     ],
                     [
+                        'name' => 'Claims Management',
+                        'route' => 'doctor.claims.index',
+                        'icon' => 'fas fa-file-invoice-dollar',
+                        'permission' => 'claims',
+                    ],
+                    [
+                        'name' => 'Kiosk Setup',
+                        'route' => 'doctor.kiosk.setup',
+                        'icon' => 'fas fa-desktop',
+                        'permission' => 'kiosk',
+                    ],
+                    [
                         'name' => 'Sub-Users',
                         'route' => 'sub-users.index',
                         'icon' => 'fas fa-users',
@@ -322,6 +340,11 @@ class MenuHelper
                         'name' => 'Diagnoses',
                         'route' => 'diagnosis.index',
                         'icon' => 'fas fa-stethoscope',
+                    ],
+                    [
+                        'name' => 'HEP Programs',
+                        'route' => 'doctor.hep.index',
+                        'icon' => 'fas fa-dumbbell',
                     ],
                 ]
             ],
@@ -453,6 +476,18 @@ class MenuHelper
                         'name' => 'Blog Posts',
                         'route' => 'doctor.blog.index',
                         'icon' => 'fas fa-blog',
+                    ],
+                    [
+                        'name' => 'Claims Management',
+                        'route' => 'doctor.claims.index',
+                        'icon' => 'fas fa-file-invoice-dollar',
+                        'permission' => 'claims',
+                    ],
+                    [
+                        'name' => 'Kiosk Setup',
+                        'route' => 'doctor.kiosk.setup',
+                        'icon' => 'fas fa-desktop',
+                        'permission' => 'kiosk',
                     ],
                     [
                         'name' => 'Sub-Users',

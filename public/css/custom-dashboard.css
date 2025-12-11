@@ -1,0 +1,139 @@
+/* Custom Dashboard Styles */
+
+/* Enhanced Appointment Cards */
+.appointment-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.appointment-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.time-circle {
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Enhanced Table Styles */
+.table-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+/* Card Styles */
+.table-card, .stats-card {
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
+}
+
+.table-card:hover, .stats-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* Stats Icons */
+.stats-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
+}
+
+/* Button Styles */
+.btn-primary-custom {
+    background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 0.5rem 1.2rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary-custom:hover {
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(222, 98, 98, 0.3);
+}
+
+.btn-secondary-custom {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    color: #495057;
+    padding: 0.5rem 1.2rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary-custom:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+}
+
+/* Progress Bars */
+.progress {
+    height: 8px;
+    border-radius: 4px;
+    background: #f8f9fa;
+    overflow: visible;
+}
+
+.progress-bar {
+    position: relative;
+    overflow: visible;
+}
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: 0;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* Appointment and Review Items */
+.appointment-item, .review-item {
+    transition: all 0.2s ease;
+}
+
+.appointment-item:hover, .review-item:hover {
+    transform: translateX(5px);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stats-number {
+        font-size: 2rem;
+    }
+
+    .stats-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+
+    .btn {
+        margin-bottom: 0.25rem;
+    }
+}

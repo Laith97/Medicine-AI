@@ -60,13 +60,13 @@ class UserSettingsController extends Controller
 
 
     public function about(){
-        $aboutTitle = 'About MedCura - Complete Healthcare Platform';
-        $aboutTagline = 'Revolutionizing healthcare with comprehensive diagnosis, patient management, and professional growth tools.';
+        $aboutTitle = 'About MedCura AI - Complete Healthcare Platform';
+        $aboutTagline = 'Revolutionizing healthcare with clinical decision support, patient management, and professional growth tools.';
         $features = [
             [
-                'icon' => 'fas fa-stethoscope',
-                'title' => 'Comprehensive Diagnosis',
-                'description' => 'Complete diagnostic system with manual entry, voice transcription, follow-up questions, and comprehensive patient care documentation.'
+                'icon' => 'fas fa-brain',
+                'title' => 'Clinical Decision Support',
+                'description' => 'Advanced clinical decision support with voice transcription, manual diagnosis creation, and intelligent follow-up questions for comprehensive patient care.'
             ],
             [
                 'icon' => 'fas fa-microphone',
@@ -100,11 +100,11 @@ class UserSettingsController extends Controller
             ],
         ];
         $whatWeDoTitle = 'Complete Healthcare Solution';
-        $whatWeDoDescription = 'MedCura provides a comprehensive platform that combines advanced technology, patient management, and professional growth tools to transform modern medical practices. From comprehensive diagnosis to automated patient communication, we help healthcare professionals deliver better care while growing their practice.';
+        $whatWeDoDescription = 'MedCura AI provides a comprehensive platform that combines advanced analytics, patient management, and professional growth tools to transform modern medical practices. From clinical decision support to automated patient communication, we help healthcare professionals deliver better care while growing their practice.';
         $whatWeDoFeatures = [
             [
-                'icon' => 'fas fa-stethoscope',
-                'description' => 'Comprehensive diagnosis system with manual entry, voice transcription, and intelligent follow-up questions for thorough patient care.'
+                'icon' => 'fas fa-robot',
+                'description' => 'Clinical Assistant with advanced analysis for instant diagnostic insights and clinical recommendations.'
             ],
             [
                 'icon' => 'fas fa-microphone',
@@ -115,8 +115,8 @@ class UserSettingsController extends Controller
                 'description' => 'Smart scheduling system with appointment booking, calendar integration, and automated patient reminders.'
             ],
             [
-                'icon' => 'fas fa-users',
-                'description' => 'Complete patient management with lifecycle tracking, automated notifications, and comprehensive case management.'
+                'icon' => 'fas fa-file-medical',
+                'description' => 'Manual diagnosis system with voice input, patient notifications, and intelligent follow-up questions.'
             ],
             [
                 'icon' => 'fas fa-mobile-alt',

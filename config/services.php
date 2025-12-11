@@ -52,4 +52,8 @@ return [
         'from' => env('TWILIO_FROM'),
     ],
 
+    'availity' => [
+        'npi' => env('AVAILITY_PROVIDER_NPI'),
+    ],
+
 ];

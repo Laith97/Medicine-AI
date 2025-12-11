@@ -35,10 +35,22 @@ return Application::configure(basePath: dirname(__DIR__))
             'stripe.configured' => \App\Http\Middleware\CheckStripeConfiguration::class,
             'access.restrictions' => \App\Http\Middleware\CheckAccessRestrictions::class,
             'sub.user.permissions' => \App\Http\Middleware\CheckSubUserPermissions::class,
+            'eligibility.rate' => \App\Http\Middleware\EligibilityRateLimit::class,
+            'eligibility.access' => \App\Http\Middleware\EligibilityAccessControl::class,
+            'hep.rate' => \App\Http\Middleware\HEPRateLimit::class,
+            'billing.rate' => \App\Http\Middleware\BillingRateLimit::class,
+            'kiosk.rate-limit' => \App\Http\Middleware\KioskRateLimit::class,
+            'kiosk.session-isolation' => \App\Http\Middleware\KioskSessionIsolation::class,
+            'analytics.access' => \App\Http\Middleware\AnalyticsAccess::class,
+            'metrics.collection' => \App\Http\Middleware\MetricsCollectionMiddleware::class,
         ]);
 
         // Apply access restrictions to authenticated routes
         $middleware->appendToGroup('web', \App\Http\Middleware\CheckAccessRestrictions::class);
+
+        // Apply metrics collection to all web and api routes
+        $middleware->appendToGroup('web', \App\Http\Middleware\MetricsCollectionMiddleware::class);
+        $middleware->appendToGroup('api', \App\Http\Middleware\MetricsCollectionMiddleware::class);
 
         // Handle doctor domains and subdomains
         $middleware->prependToGroup('web', \App\Http\Middleware\HandleDoctorDomains::class);
@@ -65,6 +77,24 @@ return Application::configure(basePath: dirname(__DIR__))
         // Process pending claims for denial risk scoring and underpayment detection daily at 2 AM
         $schedule->command('billing:process-pending-claims')
             ->dailyAt('02:00')
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // Check for expiring eligibility daily at 3 AM
+        $schedule->command('eligibility:check-expiring')
+            ->dailyAt('03:00')
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // Refresh eligibility for recurring appointments daily at 4 AM
+        $schedule->command('eligibility:refresh-recurring')
+            ->dailyAt('04:00')
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // Process eligibility data retention monthly on the 1st at 2 AM
+        $schedule->command('eligibility:retention-process --days=365')
+            ->monthlyOn(1, '02:00')
             ->withoutOverlapping()
             ->runInBackground();
     })

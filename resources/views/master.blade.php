@@ -758,6 +758,23 @@ body .dropdown .dropdown-menu.show,
             z-index: 1050 !important;
         }
 
+        /* Ensure alerts appear above sidebar */
+        .alert {
+            z-index: 1060 !important;
+            position: relative;
+        }
+
+        /* Ensure alert close buttons also have high z-index */
+        .alert .btn-close {
+            z-index: 1065 !important;
+        }
+
+        /* Ensure top-level alert containers have proper positioning */
+        .container-fluid > .row > .col-12 > .alert {
+            position: relative !important;
+            z-index: 1060 !important;
+        }
+
         /* Professional Skeleton Loading Animation */
         .skeleton-loader {
             animation: skeleton-loading 1.5s ease-in-out infinite;
@@ -1505,11 +1522,14 @@ body .dropdown .dropdown-menu.show,
 <body class="stretched page-transition"
     data-loader-html="<div id='css3-spinner-svg-pulse-wrapper'><svg id='css3-spinner-svg-pulse' version='1.2' height='210' width='550' xmlns='https://www.w3.org/2000/svg' viewport='0 0 60 60' xmlns:xlink='https://www.w3.org/1999/xlink'><path id='css3-spinner-pulse' stroke='#DE6262' fill='none' stroke-width='2' stroke-linejoin='round' d='M0,90L250,90Q257,60 262,87T267,95 270,88 273,92t6,35 7,-60T290,127 297,107s2,-11 10,-10 1,1 8,-10T319,95c6,4 8,-6 10,-17s2,10 9,11h210'></svg></div>">
 
+<!-- Skip to main content link for accessibility -->
+<a href="#main-content" class="sr-only sr-only-focusable btn btn-primary position-fixed" style="top: 10px; left: 10px; z-index: 9999;">Skip to main content</a>
+
     {{-- Sidebar CSS/JS --}}
     @auth
     <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
     @include('layouts.sidebar')
-    <style>#header{display:none !important;} #top-bar .top-bar-logo{display:none !important;}</style>
+    <style>#header{display:none !important;}</style>
     @endauth
 
 <!-- Prevent notification redirects after login -->
@@ -1568,7 +1588,7 @@ body .dropdown .dropdown-menu.show,
 
         <!-- Top Bar Start -->
         <div id="top-bar" class="py-2 border-bottom"
-            style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; position: fixed; top: 0; left: 0; right: 0; z-index: 1050; width: 100%;">
+            style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white;">
             <div class="container">
                 <div class="row justify-content-between align-items-center">
 
@@ -1591,9 +1611,6 @@ body .dropdown .dropdown-menu.show,
                                     style="width: 8px; height: 8px;"></div>
                                 <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
                             </div>
-                            <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
-                            <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com"
-                                    class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
                             @else
                             <a href="{{ url('/') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">Home</a>
                             <a href="{{ route('about') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">About Us</a>
@@ -1613,14 +1630,6 @@ body .dropdown .dropdown-menu.show,
                                     style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px; backdrop-filter: blur(10px);">
                                 <i class="fa-solid fa-bars" aria-hidden="true"></i>
                             </button>
-
-                            {{-- AI Ask temporarily disabled --}}
-                            {{-- AI Ask temporarily disabled --}}
-                            {{-- <!-- Quick Action Button for Emergency -->
-                            <a href="{{ route('ai.ask-ai') }}" class="btn btn-sm px-3 py-1"
-                                style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; font-size: 12px;"> --}}
-                                <i class="bi bi-lightning-charge me-1"></i> Quick Diagnosis
-                            </a>
 
                             <!-- Notifications Bell -->
                             <div class="dropdown notifications-dropdown">
@@ -1644,12 +1653,14 @@ body .dropdown .dropdown-menu.show,
                                         <div class="btn-group btn-group-sm" role="group" aria-label="Notification actions">
                                             <button type="button" class="btn btn-outline-secondary mark-all-read-btn"
                                                 title="Mark all as read"
-                                                aria-label="Mark all notifications as read">
+                                                aria-label="Mark all notifications as read"
+                                                style="min-width: 44px; min-height: 44px;">
                                                 <i class="bi bi-check-all" aria-hidden="true"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-secondary view-all-btn"
                                                 title="View all notifications"
-                                                aria-label="View all notifications">
+                                                aria-label="View all notifications"
+                                                style="min-width: 44px; min-height: 44px;">
                                                 <i class="bi bi-list-ul" aria-hidden="true"></i>
                                             </button>
                                         </div>
@@ -1783,6 +1794,24 @@ body .dropdown .dropdown-menu.show,
     </div>
 </div>
 <!-- Top Bar End -->
+
+
+        <!-- Screen Reader Announcements for Flash Messages -->
+        <div aria-live="polite" aria-atomic="true" class="sr-only">
+            @if (session('success'))
+                <div>Success: {{ session('success') }}</div>
+            @endif
+            @if (session('error'))
+                <div>Error: {{ session('error') }}</div>
+            @endif
+            @if (session('warning'))
+                <div>Warning: {{ session('warning') }}</div>
+            @endif
+            @if (session('info'))
+                <div>Information: {{ session('info') }}</div>
+            @endif
+        </div>
+
         <!-- Flash Messages -->
         @if (session('success') || session('error') || session('warning') || session('info'))
             <div class="container-fluid px-0">
@@ -1790,13 +1819,13 @@ body .dropdown .dropdown-menu.show,
                     <div class="col-12">
                         @if (session('success'))
                             <div class="alert alert-success alert-dismissible fade show m-0 rounded-0 border-0"
-                                role="alert">
+                                role="alert" aria-live="assertive">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-check-circle me-2"></i>
+                                        <i class="fas fa-check-circle me-2" aria-hidden="true"></i>
                                         <strong>Success!</strong> {{ session('success') }}
                                         <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
-                                            aria-label="Close"></button>
+                                            aria-label="Close success message"></button>
                                     </div>
                                 </div>
                             </div>
@@ -1804,13 +1833,13 @@ body .dropdown .dropdown-menu.show,
 
                         @if (session('error'))
                             <div class="alert alert-danger alert-dismissible fade show m-0 rounded-0 border-0"
-                                role="alert">
+                                role="alert" aria-live="assertive">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-exclamation-circle me-2"></i>
+                                        <i class="fas fa-exclamation-circle me-2" aria-hidden="true"></i>
                                         <strong>Error!</strong> {{ session('error') }}
                                         <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
-                                            aria-label="Close"></button>
+                                            aria-label="Close error message"></button>
                                     </div>
                                 </div>
                             </div>
@@ -1818,13 +1847,13 @@ body .dropdown .dropdown-menu.show,
 
                         @if (session('warning'))
                             <div class="alert alert-warning alert-dismissible fade show m-0 rounded-0 border-0"
-                                role="alert">
+                                role="alert" aria-live="assertive">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>
                                         <strong>Warning!</strong> {{ session('warning') }}
                                         <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
-                                            aria-label="Close"></button>
+                                            aria-label="Close warning message"></button>
                                     </div>
                                 </div>
                             </div>
@@ -1832,13 +1861,13 @@ body .dropdown .dropdown-menu.show,
 
                         @if (session('info'))
                             <div class="alert alert-info alert-dismissible fade show m-0 rounded-0 border-0"
-                                role="alert">
+                                role="alert" aria-live="assertive">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-info-circle me-2"></i>
+                                        <i class="fas fa-info-circle me-2" aria-hidden="true"></i>
                                         <strong>Info!</strong> {{ session('info') }}
                                         <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
-                                            aria-label="Close"></button>
+                                            aria-label="Close info message"></button>
                                     </div>
                                 </div>
                             </div>
@@ -1953,13 +1982,13 @@ body .dropdown .dropdown-menu.show,
         </div>
 
         <!-- Main Content -->
-        <div id="main-content" class="dashboard-container" style="padding-top: 0px; margin-top: 70px; border-top: 5px solid #DE6262; border-radius: 15px 15px 0 0; box-shadow: 0 -4px 20px rgba(222, 98, 98, 0.1); position: relative; z-index: 1;">
+        <div id="main-content" class="dashboard-container">
             <!-- Seamless connection gradient -->
             <div style="position: absolute; top: -5px; left: 0; right: 0; height: 15px; background: linear-gradient(to bottom, rgba(222, 98, 98, 0.2), transparent); pointer-events: none;"></div>
             <main class="app-main" style="padding-top: 25px;">
                 @yield('content')
-            </main>
-        </div>
+            </div>
+        </main>
 
     </div><!-- #wrapper end -->
 		<!-- Footer -->
@@ -1967,7 +1996,7 @@ body .dropdown .dropdown-menu.show,
 
     @if (!auth()->check())
         <!-- Footer -->
-        <footer id="footer" class="text-white py-5"
+        <footer id="footer" class="text-white py-5" role="contentinfo"
     style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
     <div class="container">
         <div class="row g-4">
@@ -1976,11 +2005,11 @@ body .dropdown .dropdown-menu.show,
                 <div class="footer-brand mb-4">
                     <h4 class="text-white mb-3" style="color: #DE6262 !important;">
                         <i class="bi bi-heart-pulse me-2" style="color: #DE6262;"></i>
-                        AI Medical Diagnosis
+                        Clinical Decision Support
                     </h4>
                     <p class="text-white-50 mb-4">
-                        Revolutionizing healthcare with cutting-edge artificial intelligence.
-                        Empowering medical professionals with advanced diagnostic tools for
+                        Revolutionizing healthcare with cutting-edge clinical technology.
+                        Empowering medical professionals with advanced decision support tools for
                         superior patient care and outcomes.
                     </p>
 
@@ -2085,7 +2114,7 @@ body .dropdown .dropdown-menu.show,
         <div class="row align-items-center">
             <div class="col-md-6">
                 <p class="text-white-50 mb-0">
-                    &copy; {{ date('Y') }} AI Medical Diagnosis Platform. All rights reserved.
+                    &copy; {{ date('Y') }} MedCura Clinical Platform. All rights reserved.
                 </p>
             </div>
             <div class="col-md-6 text-md-end">
@@ -2142,8 +2171,10 @@ body .dropdown .dropdown-menu.show,
     <script src="{{ asset('js/functions.bundle.js') }}"></script>
     <!-- Ensure Bootstrap JS (with Popper) is available for dropdowns/modals -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    @auth
     <!-- Sidebar JS -->
     <script src="{{ asset('js/sidebar.js') }}" defer></script>
+    @endauth
 
     <!-- Vite Assets (Laravel Echo & Pusher) -->
     @vite(['resources/js/app.js', 'resources/css/app.css'])
@@ -2508,6 +2539,55 @@ function showAjaxError(message) {
             if (notificationsDropdown) {
                 notificationsDropdown.addEventListener('shown.bs.dropdown', function() {
                     loadNotifications();
+                    // Focus first focusable element in dropdown for keyboard navigation
+                    setTimeout(() => {
+                        const firstFocusable = notificationsDropdown.querySelector('.mark-all-read-btn, .view-all-btn, .notification-item');
+                        if (firstFocusable) {
+                            firstFocusable.focus();
+                        }
+                    }, 100);
+                });
+
+                // Add keyboard navigation support
+                notificationsDropdown.addEventListener('keydown', function(e) {
+                    const dropdownMenu = notificationsDropdown.querySelector('.dropdown-menu');
+                    if (!dropdownMenu) return;
+
+                    const focusableElements = dropdownMenu.querySelectorAll(
+                        '.mark-all-read-btn, .view-all-btn, .notification-item, .dropdown-item'
+                    );
+                    const firstElement = focusableElements[0];
+                    const lastElement = focusableElements[focusableElements.length - 1];
+
+                    switch (e.key) {
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            const currentIndex = Array.from(focusableElements).indexOf(document.activeElement);
+                            const nextIndex = currentIndex < focusableElements.length - 1 ? currentIndex + 1 : 0;
+                            focusableElements[nextIndex].focus();
+                            break;
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            const currentIndexUp = Array.from(focusableElements).indexOf(document.activeElement);
+                            const prevIndex = currentIndexUp > 0 ? currentIndexUp - 1 : focusableElements.length - 1;
+                            focusableElements[prevIndex].focus();
+                            break;
+                        case 'Home':
+                            e.preventDefault();
+                            firstElement.focus();
+                            break;
+                        case 'End':
+                            e.preventDefault();
+                            lastElement.focus();
+                            break;
+                        case 'Escape':
+                            e.preventDefault();
+                            const dropdownInstance = bootstrap.Dropdown.getInstance(notificationsDropdown.querySelector('.dropdown-toggle'));
+                            if (dropdownInstance) {
+                                dropdownInstance.hide();
+                            }
+                            break;
+                    }
                 });
             }
 
@@ -2785,7 +2865,7 @@ function showAjaxError(message) {
                 return response.json();
             })
             .then(data => {
- 
+
                 if (data.notifications && data.notifications.length > 0) {
                     // Render notifications
                     let html = '';
@@ -2902,77 +2982,82 @@ function showAjaxError(message) {
 
     // Function to update notification badge
     function updateNotificationBadge() {
-        // Use a timeout to prevent hanging requests
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        return new Promise((resolve) => {
+            // Use a timeout to prevent hanging requests
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-        fetch('/api/notifications/unread-count', {
-            signal: controller.signal,
-            credentials: 'same-origin'  // Include cookies for authentication
-        })
-        .then(response => {
-            clearTimeout(timeoutId);
+            fetch('/api/notifications/unread-count', {
+                signal: controller.signal,
+                credentials: 'same-origin'  // Include cookies for authentication
+            })
+            .then(response => {
+                clearTimeout(timeoutId);
 
-            // Check if the response is a redirect
-            if (response.redirected) {
-                throw new Error('Redirect detected. User may not be authenticated.');
-            }
-
-            // Check if response is JSON or HTML (error page)
-            const contentType = response.headers.get('content-type');
-            if (!response.ok) {
-                if (contentType && contentType.includes('text/html')) {
-                    // If we get HTML back, it's likely an authentication error
-                    return response.text().then(html => {
-                        throw new Error('Authentication required. Please log in again.');
-                    });
+                // Check if the response is a redirect
+                if (response.redirected) {
+                    throw new Error('Redirect detected. User may not be authenticated.');
                 }
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
 
-            // Ensure we have JSON
-            if (!contentType || !contentType.includes('json')) {
-                throw new Error('Invalid response format. Expected JSON.');
-            }
+                // Check if response is JSON or HTML (error page)
+                const contentType = response.headers.get('content-type');
+                if (!response.ok) {
+                    if (contentType && contentType.includes('text/html')) {
+                        // If we get HTML back, it's likely an authentication error
+                        return response.text().then(html => {
+                            throw new Error('Authentication required. Please log in again.');
+                        });
+                    }
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
 
-            return response.json();
-        })
-        .then(data => {
-            const badge = document.getElementById('notification-count');
-            if (badge) {
-                // Handle both old format (data.count) and new format (data.count)
-                const count = data.count || 0;
+                // Ensure we have JSON
+                if (!contentType || !contentType.includes('json')) {
+                    throw new Error('Invalid response format. Expected JSON.');
+                }
 
-                // Check if user is authenticated
-                if (data.authenticated === false) {
-                    // User is not authenticated, hide badge
+                return response.json();
+            })
+            .then(data => {
+                const badge = document.getElementById('notification-count');
+                if (badge) {
+                    // Handle both old format (data.count) and new format (data.count)
+                    const count = data.count || 0;
+
+                    // Check if user is authenticated
+                    if (data.authenticated === false) {
+                        // User is not authenticated, hide badge
+                        badge.style.display = 'none';
+                        resolve(false);
+                        return;
+                    }
+
+                    if (count > 0) {
+                        badge.textContent = count > 99 ? '99+' : count;
+                        badge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+                resolve(true);
+            })
+            .catch(error => {
+                clearTimeout(timeoutId);
+                console.error('Error updating notification badge:', error);
+
+                // Ensure badge is hidden on error
+                const badge = document.getElementById('notification-count');
+                if (badge) {
                     badge.style.display = 'none';
-                    return;
                 }
 
-                if (count > 0) {
-                    badge.textContent = count > 99 ? '99+' : count;
-                    badge.style.display = 'block';
-                } else {
-                    badge.style.display = 'none';
+                // If it's an authentication error, we might want to redirect to login
+                if (error.message.includes('Authentication required') || error.message.includes('Redirect detected')) {
+                    // Optionally: show a message or redirect to login
+                    // window.location.href = '/login';
                 }
-            }
-        })
-        .catch(error => {
-            clearTimeout(timeoutId);
-            console.error('Error updating notification badge:', error);
-
-            // Ensure badge is hidden on error
-            const badge = document.getElementById('notification-count');
-            if (badge) {
-                badge.style.display = 'none';
-            }
-
-            // If it's an authentication error, we might want to redirect to login
-            if (error.message.includes('Authentication required') || error.message.includes('Redirect detected')) {
-                // Optionally: show a message or redirect to login
-                // window.location.href = '/login';
-            }
+                resolve(false);
+            });
         });
     }
 
@@ -2986,12 +3071,57 @@ function showAjaxError(message) {
         if (loginParam === 'success') {
             setTimeout(() => {
                 updateNotificationBadge();
+                // Start polling after login delay
+                startNotificationPolling();
             }, 5000); // Wait 5 seconds before enabling notifications
         } else {
             // Otherwise, load notifications normally with a small delay
             setTimeout(() => {
                 updateNotificationBadge();
+                // Start polling immediately
+                startNotificationPolling();
             }, 1000);
+        }
+    });
+
+    // Optimized notification polling with exponential backoff
+    let notificationPollingInterval = null;
+    let pollingDelay = 30000; // Start with 30 seconds
+    const maxPollingDelay = 300000; // Max 5 minutes
+    const minPollingDelay = 15000; // Min 15 seconds
+
+    function startNotificationPolling() {
+        if (notificationPollingInterval) {
+            clearInterval(notificationPollingInterval);
+        }
+
+        notificationPollingInterval = setInterval(() => {
+            updateNotificationBadge().then(success => {
+                if (success) {
+                    // Reset to faster polling on success
+                    pollingDelay = Math.max(minPollingDelay, pollingDelay - 5000);
+                } else {
+                    // Increase delay on failure
+                    pollingDelay = Math.min(maxPollingDelay, pollingDelay * 1.5);
+                }
+                // Restart with new delay
+                startNotificationPolling();
+            });
+        }, pollingDelay);
+    }
+
+    // Stop polling when page becomes hidden to save resources
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            if (notificationPollingInterval) {
+                clearInterval(notificationPollingInterval);
+                notificationPollingInterval = null;
+            }
+        } else {
+            // Resume polling when page becomes visible
+            if (!notificationPollingInterval) {
+                startNotificationPolling();
+            }
         }
     });
 </script>
