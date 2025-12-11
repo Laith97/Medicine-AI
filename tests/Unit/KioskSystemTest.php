@@ -94,6 +94,7 @@ class KioskSystemTest extends TestCase
         $kiosk = Kiosk::factory()->create(['status' => 'active']);
 
         $session = KioskSession::create([
+            'session_id' => 'test_session_' . time(),
             'kiosk_id' => $kiosk->id,
             'start_time' => now(),
             'session_data' => [

@@ -17,6 +17,7 @@ class KioskSessionFactory extends Factory
     public function definition(): array
     {
         return [
+            'session_id' => 'kiosk_' . bin2hex(random_bytes(16)) . '_' . time(),
             'kiosk_id' => \App\Models\Kiosk::factory(),
             'start_time' => $this->faker->dateTimeBetween('-1 day', 'now'),
             'end_time' => $this->faker->optional(0.7)->dateTimeBetween('now', '+1 day'),
