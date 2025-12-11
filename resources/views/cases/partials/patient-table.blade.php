@@ -77,7 +77,7 @@
                                         data-patient-name="{{ $patient->name }}"
                                         data-patient-age="{{ $patient->age }}"
                                         data-patient-gender="{{ $patient->gender }}">
-                                    <i class="fas fa-chevron-down me-1 expand-icon"></i>View Details
+                                    <i class="fas fa-chevron-down me-1 expand-icon"></i><span class="btn-text">View Details</span>
                                 </button>
                                 <button type="button" class="btn btn-sm btn-show-summary btn-custom-secondary"
                                         data-patient-name="{{ $patient->name }}"
@@ -127,45 +127,37 @@
                 <!-- Expandable Visits Section -->
                 <tr class="visits-row" data-patient-key="{{ $key }}" style="display: none;">
                     <td colspan="6" class="visits-container">
-                        <div class="visits-section">
-                            <div class="visits-header">
-                                <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Patient Visits</h6>
-                                <button type="button" class="btn btn-sm btn-outline-secondary btn-collapse-visits" data-patient-key="{{ $key }}">
-                                    <i class="fas fa-chevron-up"></i>
-                                </button>
-                            </div>
-                            <div class="visits-content">
-                                @foreach($group['visits'] as $visit)
-                                    <div class="visit-item" data-visit-id="{{ $visit->id }}">
-                                        <div class="visit-header">
-                                            <div class="visit-info">
-                                                <span class="visit-number">Visit #{{ $loop->iteration }}</span>
-                                                <span class="visit-date">{{ $visit->created_at->format('M d, Y H:i') }}</span>
+                        @foreach($group['visits'] as $visit)
+                            <div class="visit-item" data-visit-id="{{ $visit->id }}">
+                                <div class="visit-header">
+                                    <div class="visit-info">
+                                        <span class="visit-number">Visit #{{ $loop->iteration }}</span>
+                                        <span class="visit-date">{{ $visit->created_at->format('M d, Y H:i') }}</span>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary btn-expand-visit"
+                                            data-visit-id="{{ $visit->id }}"
+                                            data-record-id="{{ $visit->id }}"
+                                            data-patient-name="{{ $patient->name }}"
+                                            data-patient-age="{{ $patient->age }}"
+                                            data-patient-gender="{{ $patient->gender }}"
+                                            aria-expanded="false"
+                                            aria-controls="visit-details-{{ $visit->id }}">
+                                        <i class="fas fa-chevron-down me-1 visit-expand-icon"></i>Expand Details
+                                    </button>
+                                </div>
+                                <div class="visit-details" id="visit-details-{{ $visit->id }}" style="display: none;">
+                                    <div class="visit-details-content">
+                                        <!-- Visit details will be loaded here -->
+                                        <div class="text-center py-3">
+                                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
                                             </div>
-                                            <button type="button" class="btn btn-sm btn-outline-primary btn-expand-visit"
-                                                    data-visit-id="{{ $visit->id }}"
-                                                    data-record-id="{{ $visit->id }}"
-                                                    data-patient-name="{{ $patient->name }}"
-                                                    data-patient-age="{{ $patient->age }}"
-                                                    data-patient-gender="{{ $patient->gender }}">
-                                                <i class="fas fa-chevron-right me-1 visit-expand-icon"></i>Details
-                                            </button>
-                                        </div>
-                                        <div class="visit-details" style="display: none;">
-                                            <div class="visit-details-content">
-                                                <!-- Visit details will be loaded here -->
-                                                <div class="text-center py-3">
-                                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                                        <span class="visually-hidden">Loading...</span>
-                                                    </div>
-                                                    <p class="mt-2 mb-0">Loading visit details...</p>
-                                                </div>
-                                            </div>
+                                            <p class="mt-2 mb-0">Loading visit details...</p>
                                         </div>
                                     </div>
-                                @endforeach
+                                </div>
                             </div>
-                        </div>
+                        @endforeach
                     </td>
                 </tr>
                 @endif
