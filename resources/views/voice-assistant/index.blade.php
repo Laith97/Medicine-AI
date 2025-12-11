@@ -184,7 +184,7 @@
 
                     <!-- Control Buttons -->
                     <div class="d-flex gap-2 flex-wrap">
-                        <button id="startRecordingBtn" class="btn btn-success" type="button">
+                        <button id="startRecordingBtn" class="btn btn-success" type="button" disabled>
                             <i class="fas fa-microphone me-2"></i>
                             Start Recording
                         </button>
@@ -688,9 +688,6 @@
     </div>
 </div>
 
-<!-- Include jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
 <!-- Make PHP variables available to JavaScript -->
 <script>
     window.records = @json($records ?? []);
@@ -702,7 +699,88 @@
 
 <!-- Additional JavaScript for new patient form and diagnosis form -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+// Function to initialize voice assistant components
+function initializeVoiceAssistantComponents() {
+    // Check if page was loaded via AJAX navigation (when accessed through sidebar)
+    // This is determined by checking if the page is embedded in the main layout
+    const isAjaxLoaded = window.location !== window.parent.location ||
+                        document.querySelector('[data-ajax-loaded]') !== null ||
+                        window.history.state?.ajax === true;
+
+    const startRecordingBtn = document.getElementById('startRecordingBtn');
+    const stopRecordingBtn = document.getElementById('stopRecordingBtn');
+    const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
+    const patientSelect = document.getElementById('patientSelect');
+
+    // Function to enable/disable recording buttons based on patient selection
+    function updateRecordingButtons() {
+        const hasPatientSelected = patientSelect && patientSelect.value && patientSelect.value !== '';
+
+        if (hasPatientSelected) {
+            // Enable buttons when patient is selected
+            if (startRecordingBtn) {
+                startRecordingBtn.disabled = false;
+                startRecordingBtn.title = 'Start voice recording';
+            }
+            if (stopRecordingBtn) {
+                stopRecordingBtn.disabled = false;
+            }
+            if (generateAnalysisBtn) {
+                generateAnalysisBtn.disabled = false;
+            }
+
+            // Remove warning message if it exists
+            const alertContainer = document.getElementById('alertContainer');
+            if (alertContainer) {
+                const warningAlert = alertContainer.querySelector('.alert-warning');
+                if (warningAlert) {
+                    warningAlert.remove();
+                }
+            }
+        } else {
+            // Disable buttons when no patient is selected
+            if (startRecordingBtn) {
+                startRecordingBtn.disabled = true;
+                startRecordingBtn.title = isAjaxLoaded ?
+                    'Recording not available when loaded via navigation. Please select a patient first.' :
+                    'Please select a patient first';
+            }
+            if (stopRecordingBtn) {
+                stopRecordingBtn.disabled = true;
+            }
+            if (generateAnalysisBtn) {
+                generateAnalysisBtn.disabled = true;
+            }
+
+            // Show warning message for AJAX loaded pages
+            if (isAjaxLoaded) {
+                const alertContainer = document.getElementById('alertContainer');
+                if (alertContainer && !alertContainer.querySelector('.alert-warning')) {
+                    const warningAlert = document.createElement('div');
+                    warningAlert.className = 'alert alert-warning alert-dismissible fade show';
+                    warningAlert.innerHTML = `
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Recording Unavailable:</strong> Voice recording features are disabled when accessed through navigation.
+                        Please select a patient to enable recording functionality.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    alertContainer.appendChild(warningAlert);
+                }
+            }
+        }
+    }
+
+    // Initial state
+    updateRecordingButtons();
+
+    // Listen for patient selection changes
+    if (patientSelect) {
+        patientSelect.addEventListener('change', updateRecordingButtons);
+    }
+}
+
+// Function to initialize form components
+function initializeFormComponents() {
     // New Patient Form Handling
     const showNewPatientFormBtn = document.getElementById('showNewPatientFormBtn');
     const hideNewPatientFormBtn = document.getElementById('hideNewPatientFormBtn');
@@ -778,391 +856,392 @@ document.addEventListener('DOMContentLoaded', function() {
             completeConsultation();
         });
     }
+}
 
-    // Clear new patient form
-    function clearNewPatientForm() {
-        document.getElementById('newPatientName').value = '';
-        document.getElementById('newPatientEmail').value = '';
-        document.getElementById('newPatientAge').value = '';
-        document.getElementById('newPatientGender').value = '';
-        document.getElementById('newPatientPhone').value = '';
+// Clear new patient form
+function clearNewPatientForm() {
+    document.getElementById('newPatientName').value = '';
+    document.getElementById('newPatientEmail').value = '';
+    document.getElementById('newPatientAge').value = '';
+    document.getElementById('newPatientGender').value = '';
+    document.getElementById('newPatientPhone').value = '';
 
-        // Clear errors
-        document.getElementById('newPatientNameError').classList.add('d-none');
-        document.getElementById('newPatientEmailError').classList.add('d-none');
-        document.getElementById('newPatientAgeError').classList.add('d-none');
-        document.getElementById('newPatientGenderError').classList.add('d-none');
-        document.getElementById('newPatientPhoneError').classList.add('d-none');
+    // Clear errors
+    document.getElementById('newPatientNameError').classList.add('d-none');
+    document.getElementById('newPatientEmailError').classList.add('d-none');
+    document.getElementById('newPatientAgeError').classList.add('d-none');
+    document.getElementById('newPatientGenderError').classList.add('d-none');
+    document.getElementById('newPatientPhoneError').classList.add('d-none');
+}
+
+// Create new patient
+function createNewPatient() {
+    const name = document.getElementById('newPatientName').value.trim();
+    const email = document.getElementById('newPatientEmail').value.trim();
+    const age = document.getElementById('newPatientAge').value;
+    const gender = document.getElementById('newPatientGender').value;
+    const phone = document.getElementById('newPatientPhone').value.trim();
+
+    // Clear previous errors
+    document.getElementById('newPatientNameError').classList.add('d-none');
+    document.getElementById('newPatientEmailError').classList.add('d-none');
+    document.getElementById('newPatientAgeError').classList.add('d-none');
+    document.getElementById('newPatientGenderError').classList.add('d-none');
+
+    // Validation
+    let hasError = false;
+
+    if (!name) {
+        document.getElementById('newPatientNameError').textContent = 'Name is required';
+        document.getElementById('newPatientNameError').classList.remove('d-none');
+        hasError = true;
     }
 
-    // Create new patient
-    function createNewPatient() {
-        const name = document.getElementById('newPatientName').value.trim();
-        const email = document.getElementById('newPatientEmail').value.trim();
-        const age = document.getElementById('newPatientAge').value;
-        const gender = document.getElementById('newPatientGender').value;
-        const phone = document.getElementById('newPatientPhone').value.trim();
-
-        // Clear previous errors
-        document.getElementById('newPatientNameError').classList.add('d-none');
-        document.getElementById('newPatientEmailError').classList.add('d-none');
-        document.getElementById('newPatientAgeError').classList.add('d-none');
-        document.getElementById('newPatientGenderError').classList.add('d-none');
-
-        // Validation
-        let hasError = false;
-
-        if (!name) {
-            document.getElementById('newPatientNameError').textContent = 'Name is required';
-            document.getElementById('newPatientNameError').classList.remove('d-none');
-            hasError = true;
-        }
-
-        if (!email) {
-            document.getElementById('newPatientEmailError').textContent = 'Email is required';
-            document.getElementById('newPatientEmailError').classList.remove('d-none');
-            hasError = true;
-        } else if (!isValidEmail(email)) {
-            document.getElementById('newPatientEmailError').textContent = 'Please enter a valid email';
-            document.getElementById('newPatientEmailError').classList.remove('d-none');
-            hasError = true;
-        }
-
-        if (!age || age < 1 || age > 150) {
-            document.getElementById('newPatientAgeError').textContent = 'Please enter a valid age (1-150)';
-            document.getElementById('newPatientAgeError').classList.remove('d-none');
-            hasError = true;
-        }
-
-        if (!gender) {
-            document.getElementById('newPatientGenderError').textContent = 'Please select gender';
-            document.getElementById('newPatientGenderError').classList.remove('d-none');
-            hasError = true;
-        }
-
-        if (hasError) return;
-
-        // AJAX call to create new patient
-        $.ajax({
-            url: '/ai/voice-assistant/create-new-patient',
-            method: 'POST',
-            data: {
-                newPatientName: name,
-                newPatientEmail: email,
-                newPatientAge: age,
-                newPatientGender: gender,
-                newPatientPhone: phone,
-                _token: $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                if (response.success) {
-                    // Add patient to select dropdown
-                    const patientSelect = document.getElementById('patientSelect');
-                    const option = document.createElement('option');
-                    option.value = response.patient.id;
-                    option.textContent = response.patient.name + ' (' + (response.patient.age ? response.patient.age + 'y' : 'Age N/A') + ', ' + (response.patient.gender ? response.patient.gender.charAt(0).toUpperCase() + response.patient.gender.slice(1) : 'Gender N/A') + ')';
-                    patientSelect.appendChild(option);
-
-                    // Select the new patient
-                    patientSelect.value = response.patient.id;
-
-                    // Trigger change event to update the voice assistant's selectedPatient variable
-                    const changeEvent = new Event('change', { bubbles: true });
-                    patientSelect.dispatchEvent(changeEvent);
-
-                    // Also directly update the voice assistant if available
-                    if (window.voiceAssistant && window.voiceAssistant.setSelectedPatient) {
-                        window.voiceAssistant.setSelectedPatient(response.patient.id);
-                    }
-
-                    // Hide form
-                    newPatientForm.style.display = 'none';
-                    clearNewPatientForm();
-
-                    // Show success message
-                    showNotification(response.message, 'success');
-                } else {
-                    showNotification(response.message || 'Failed to create patient.', 'error');
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Create patient error:', error);
-                showNotification('Failed to create patient. Please try again.', 'error');
-            }
-        });
+    if (!email) {
+        document.getElementById('newPatientEmailError').textContent = 'Email is required';
+        document.getElementById('newPatientEmailError').classList.remove('d-none');
+        hasError = true;
+    } else if (!isValidEmail(email)) {
+        document.getElementById('newPatientEmailError').textContent = 'Please enter a valid email';
+        document.getElementById('newPatientEmailError').classList.remove('d-none');
+        hasError = true;
     }
 
-
-    // Show notification
-    function showNotification(message, type = 'info') {
-        const alertContainer = document.getElementById('alertContainer');
-        if (!alertContainer) return;
-
-        const alertClass = type === 'error' ? 'alert-danger' :
-                          type === 'success' ? 'alert-success' :
-                          type === 'warning' ? 'alert-warning' : 'alert-info';
-
-        const alertHtml = `
-            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-
-        alertContainer.innerHTML = alertHtml;
-
-        // Scroll to alert for errors and warnings
-        if (type === 'error' || type === 'warning') {
-            alertContainer.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
-        }
-
-        // Auto-dismiss success messages after 5 seconds
-        if (type === 'success') {
-            setTimeout(() => {
-                const alert = alertContainer.querySelector('.alert');
-                if (alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                }
-            }, 5000);
-        }
+    if (!age || age < 1 || age > 150) {
+        document.getElementById('newPatientAgeError').textContent = 'Please enter a valid age (1-150)';
+        document.getElementById('newPatientAgeError').classList.remove('d-none');
+        hasError = true;
     }
 
-    // Validate email
-    function isValidEmail(email) {
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return re.test(email);
+    if (!gender) {
+        document.getElementById('newPatientGenderError').textContent = 'Please select gender';
+        document.getElementById('newPatientGenderError').classList.remove('d-none');
+        hasError = true;
     }
 
-    // Complete Consultation Modal Functions
-    function showCompleteConsultationModal() {
-        const diagnosisText = document.getElementById('diagnosisText').value.trim();
-        if (!diagnosisText) {
-            showNotification('Please enter your diagnosis first.', 'error');
-            return;
-        }
+    if (hasError) return;
 
-        const selectedPatient = document.getElementById('patientSelect').value;
-        if (!selectedPatient) {
-            showNotification('Please select a patient first.', 'error');
-            return;
-        }
-
-        // Update diagnosis preview
-        document.getElementById('diagnosisPreview').textContent = diagnosisText;
-
-        // Update patient name display in modal
-        const patientSelect = document.getElementById('patientSelect');
-        const selectedOption = patientSelect.options[patientSelect.selectedIndex];
-        const patientName = selectedOption ? selectedOption.text.split(' (')[0] : 'Unknown Patient';
-        document.getElementById('modalPatientName').textContent = patientName;
-
-        // Show the modal
-        const modal = new bootstrap.Modal(document.getElementById('completeConsultationModal'));
-        modal.show();
-
-        // Load appointments for the selected patient
-        loadPatientAppointments(selectedPatient);
-
-        // Set up completion type change handler
-        setupCompletionTypeHandler();
-    }
-
-    function setupCompletionTypeHandler() {
-        // No longer needed since we removed the radio buttons
-        // Appointment selection is now always visible
-        updateCompleteButtonState();
-    }
-
-    function loadPatientAppointments(patientId) {
-        const appointmentInfoDiv = document.getElementById('appointmentInfo');
-        const appointmentInfoText = document.getElementById('appointmentInfoText');
-
-        // Debug logging
-        console.log('Loading appointments for patient:', patientId);
-        console.log('Available patient appointments:', window.patientAppointments);
-
-        // Use the pre-loaded appointments data instead of AJAX call
-        const appointments = window.patientAppointments[patientId] || [];
-
-        console.log('Found appointments for patient:', appointments);
-
-        if (appointments.length > 0) {
-            // Get the first available appointment
-            const appointment = appointments[0];
-            appointmentInfoDiv.style.display = 'block';
-            appointmentInfoText.textContent = `Found ${appointments.length} incomplete appointment(s). The first one will be automatically selected: ${appointment.appointment_date_formatted} (${appointment.appointment_type})`;
-            
-            // Store appointment ID for completion
-            window.selectedAppointmentId = appointment.id;
-            
-            // Show appointment details
-            showAppointmentPreview(appointment.id);
-        } else {
-            appointmentInfoDiv.style.display = 'block';
-            appointmentInfoText.textContent = 'No scheduled appointments available for this patient. Diagnosis will be saved without appointment completion.';
-            window.selectedAppointmentId = null;
-            showAppointmentPreview(null);
-            console.log('No appointments found for patient:', patientId);
-        }
-    }
-
-    function showAppointmentPreview(appointmentId) {
-        const previewDiv = document.getElementById('appointmentPreview');
-        const detailsDiv = document.getElementById('appointmentDetails');
-
-        if (!appointmentId) {
-            previewDiv.style.display = 'none';
-            return;
-        }
-
-        // Find appointment details
-        const appointments = window.patientAppointments[document.getElementById('patientSelect').value] || [];
-        const appointment = appointments.find(apt => apt.id == appointmentId);
-        
-        if (appointment) {
-            detailsDiv.innerHTML = `
-                <p><strong>Appointment:</strong> ${appointment.appointment_date_formatted}</p>
-                <p><strong>Type:</strong> ${appointment.appointment_type}</p>
-                <p><strong>Status:</strong> Will be marked as completed</p>
-                <p><strong>Diagnosis:</strong> Will be linked to current diagnosis</p>
-            `;
-        } else {
-            detailsDiv.innerHTML = '<p>Appointment details not found.</p>';
-        }
-
-        previewDiv.style.display = 'block';
-    }
-
-    function updateCompleteButtonState() {
-        const completeBtn = document.getElementById('modalCompleteConsultationBtn');
-        const hasAppointment = window.selectedAppointmentId !== null;
-
-        // Button is always enabled, but text changes based on appointment availability
-        completeBtn.disabled = false;
-        completeBtn.innerHTML = hasAppointment ?
-            '<i class="fas fa-check me-1"></i>Complete Appointment' :
-            '<i class="fas fa-save me-1"></i>Save Diagnosis';
-    }
-
-
-    function completeConsultation() {
-        const diagnosisText = document.getElementById('diagnosisText').value.trim();
-        const appointmentId = window.selectedAppointmentId;
-        const doctorNotes = document.getElementById('appointmentDoctorNotes').value.trim();
-        const completionType = appointmentId ? 'complete_appointment' : 'save_only';
-
-        if (!diagnosisText) {
-            showNotification('Please enter your diagnosis text.', 'error');
-            return;
-        }
-
-        const selectedPatient = document.getElementById('patientSelect').value;
-        if (!selectedPatient) {
-            showNotification('Please select a patient first.', 'error');
-            return;
-        }
-
-        // Get session data
-        const container = document.querySelector('[data-session-id]');
-        const sessionId = container ? container.getAttribute('data-session-id') : '';
-        const transcription = document.getElementById('transcriptionArea').value;
-
-        // Get AI data if available
-        const aiResultId = window.voiceAssistant ? window.voiceAssistant.getAiResultId() : null;
-        const extractedData = window.voiceAssistant ? window.voiceAssistant.getExtractedData() : {};
-
-        // Disable button and show loading
-        const completeBtn = document.getElementById('modalCompleteConsultationBtn');
-        const originalText = completeBtn.innerHTML;
-        completeBtn.disabled = true;
-        completeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Completing...';
-
-        // Prepare data for AJAX call
-        const ajaxData = {
-            diagnosisText: diagnosisText,
-            sessionId: sessionId,
-            selectedPatient: selectedPatient,
-            transcription: transcription,
-            completionType: completionType,
-            appointmentId: appointmentId || null,
-            doctorNotes: doctorNotes,
-            aiResultId: aiResultId,
-            extractedData: extractedData,
+    // AJAX call to create new patient
+    $.ajax({
+        url: '/ai/voice-assistant/create-new-patient',
+        method: 'POST',
+        data: {
+            newPatientName: name,
+            newPatientEmail: email,
+            newPatientAge: age,
+            newPatientGender: gender,
+            newPatientPhone: phone,
             _token: $('meta[name="csrf-token"]').attr('content')
-        };
+        },
+        success: function(response) {
+            if (response.success) {
+                // Add patient to select dropdown
+                const patientSelect = document.getElementById('patientSelect');
+                const option = document.createElement('option');
+                option.value = response.patient.id;
+                option.textContent = response.patient.name + ' (' + (response.patient.age ? response.patient.age + 'y' : 'Age N/A') + ', ' + (response.patient.gender ? response.patient.gender.charAt(0).toUpperCase() + response.patient.gender.slice(1) : 'Gender N/A') + ')';
+                patientSelect.appendChild(option);
 
-        // AJAX call to complete consultation
-        $.ajax({
-            url: '/ai/voice-assistant/complete-consultation',
-            method: 'POST',
-            data: ajaxData,
-            success: function(response) {
-                if (response.success) {
-                    // Close modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('completeConsultationModal'));
-                    modal.hide();
+                // Select the new patient
+                patientSelect.value = response.patient.id;
 
-                    // Hide the diagnosis form
-                    document.getElementById('diagnosisEntryForm').style.display = 'none';
-                    document.getElementById('diagnosisText').value = '';
+                // Trigger change event to update the voice assistant's selectedPatient variable
+                const changeEvent = new Event('change', { bubbles: true });
+                patientSelect.dispatchEvent(changeEvent);
 
-                    // Show appropriate success message
-                    const message = completionType === 'complete_appointment' ?
-                        'Diagnosis saved and appointment completed successfully!' :
-                        'Diagnosis saved successfully!';
-                    showNotification(message, 'success');
-
-                    // Redirect to diagnosis view
-                    if (response.redirectUrl) {
-                        setTimeout(function() {
-                            window.location.href = response.redirectUrl;
-                        }, 2000);
-                    }
-                } else {
-                    showNotification(response.message || 'Failed to complete consultation.', 'error');
+                // Also directly update the voice assistant if available
+                if (window.voiceAssistant && window.voiceAssistant.setSelectedPatient) {
+                    window.voiceAssistant.setSelectedPatient(response.patient.id);
                 }
-            },
-            error: function(xhr, status, error) {
-                console.error('Complete consultation error:', error);
-                showNotification('Failed to complete consultation. Please try again.', 'error');
-            },
-            complete: function() {
-                // Re-enable button
-                completeBtn.disabled = false;
-                completeBtn.innerHTML = originalText;
+
+                // Hide form
+                newPatientForm.style.display = 'none';
+                clearNewPatientForm();
+
+                // Show success message
+                showNotification(response.message, 'success');
+            } else {
+                showNotification(response.message || 'Failed to create patient.', 'error');
             }
+        },
+        error: function(xhr, status, error) {
+            console.error('Create patient error:', error);
+            showNotification('Failed to create patient. Please try again.', 'error');
+        }
+    });
+}
+
+
+// Show notification
+function showNotification(message, type = 'info') {
+    const alertContainer = document.getElementById('alertContainer');
+    if (!alertContainer) return;
+
+    const alertClass = type === 'error' ? 'alert-danger' :
+                      type === 'success' ? 'alert-success' :
+                      type === 'warning' ? 'alert-warning' : 'alert-info';
+
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+
+    alertContainer.innerHTML = alertHtml;
+
+    // Scroll to alert for errors and warnings
+    if (type === 'error' || type === 'warning') {
+        alertContainer.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
         });
     }
 
-    // Debug function to check patient selection
-    window.debugPatientSelection = function() {
-        const patientSelect = document.getElementById('patientSelect');
-        console.log('=== PATIENT SELECTION DEBUG ===');
-        console.log('Patient select element:', patientSelect);
-        console.log('Patient select value:', patientSelect ? patientSelect.value : 'null');
-        console.log('Voice assistant available:', !!window.voiceAssistant);
-        if (window.voiceAssistant) {
-            console.log('Voice assistant selected patient:', window.voiceAssistant.getSelectedPatient());
-        }
-        console.log('All patients in dropdown:');
-        if (patientSelect) {
-            for (let i = 0; i < patientSelect.options.length; i++) {
-                console.log(`  ${i}: value="${patientSelect.options[i].value}" text="${patientSelect.options[i].text}"`);
+    // Auto-dismiss success messages after 5 seconds
+    if (type === 'success') {
+        setTimeout(() => {
+            const alert = alertContainer.querySelector('.alert');
+            if (alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
             }
-        }
-        console.log('=== END DEBUG ===');
+        }, 5000);
+    }
+}
 
-        // Try to sync
-        if (window.voiceAssistant && window.voiceAssistant.syncPatientSelection) {
-            console.log('Attempting to sync patient selection...');
-            window.voiceAssistant.syncPatientSelection();
-            console.log('After sync - selected patient:', window.voiceAssistant.getSelectedPatient());
-        }
+// Validate email
+function isValidEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+// Complete Consultation Modal Functions
+function showCompleteConsultationModal() {
+    const diagnosisText = document.getElementById('diagnosisText').value.trim();
+    if (!diagnosisText) {
+        showNotification('Please enter your diagnosis first.', 'error');
+        return;
+    }
+
+    const selectedPatient = document.getElementById('patientSelect').value;
+    if (!selectedPatient) {
+        showNotification('Please select a patient first.', 'error');
+        return;
+    }
+
+    // Update diagnosis preview
+    document.getElementById('diagnosisPreview').textContent = diagnosisText;
+
+    // Update patient name display in modal
+    const patientSelect = document.getElementById('patientSelect');
+    const selectedOption = patientSelect.options[patientSelect.selectedIndex];
+    const patientName = selectedOption ? selectedOption.text.split(' (')[0] : 'Unknown Patient';
+    document.getElementById('modalPatientName').textContent = patientName;
+
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('completeConsultationModal'));
+    modal.show();
+
+    // Load appointments for the selected patient
+    loadPatientAppointments(selectedPatient);
+
+    // Set up completion type change handler
+    setupCompletionTypeHandler();
+}
+
+function setupCompletionTypeHandler() {
+    // No longer needed since we removed the radio buttons
+    // Appointment selection is now always visible
+    updateCompleteButtonState();
+}
+
+function loadPatientAppointments(patientId) {
+    const appointmentInfoDiv = document.getElementById('appointmentInfo');
+    const appointmentInfoText = document.getElementById('appointmentInfoText');
+
+    // Debug logging
+    console.log('Loading appointments for patient:', patientId);
+    console.log('Available patient appointments:', window.patientAppointments);
+
+    // Use the pre-loaded appointments data instead of AJAX call
+    const appointments = window.patientAppointments[patientId] || [];
+
+    console.log('Found appointments for patient:', appointments);
+
+    if (appointments.length > 0) {
+        // Get the first available appointment
+        const appointment = appointments[0];
+        appointmentInfoDiv.style.display = 'block';
+        appointmentInfoText.textContent = `Found ${appointments.length} incomplete appointment(s). The first one will be automatically selected: ${appointment.appointment_date_formatted} (${appointment.appointment_type})`;
+
+        // Store appointment ID for completion
+        window.selectedAppointmentId = appointment.id;
+
+        // Show appointment details
+        showAppointmentPreview(appointment.id);
+    } else {
+        appointmentInfoDiv.style.display = 'block';
+        appointmentInfoText.textContent = 'No scheduled appointments available for this patient. Diagnosis will be saved without appointment completion.';
+        window.selectedAppointmentId = null;
+        showAppointmentPreview(null);
+        console.log('No appointments found for patient:', patientId);
+    }
+}
+
+function showAppointmentPreview(appointmentId) {
+    const previewDiv = document.getElementById('appointmentPreview');
+    const detailsDiv = document.getElementById('appointmentDetails');
+
+    if (!appointmentId) {
+        previewDiv.style.display = 'none';
+        return;
+    }
+
+    // Find appointment details
+    const appointments = window.patientAppointments[document.getElementById('patientSelect').value] || [];
+    const appointment = appointments.find(apt => apt.id == appointmentId);
+
+    if (appointment) {
+        detailsDiv.innerHTML = `
+            <p><strong>Appointment:</strong> ${appointment.appointment_date_formatted}</p>
+            <p><strong>Type:</strong> ${appointment.appointment_type}</p>
+            <p><strong>Status:</strong> Will be marked as completed</p>
+            <p><strong>Diagnosis:</strong> Will be linked to current diagnosis</p>
+        `;
+    } else {
+        detailsDiv.innerHTML = '<p>Appointment details not found.</p>';
+    }
+
+    previewDiv.style.display = 'block';
+}
+
+function updateCompleteButtonState() {
+    const completeBtn = document.getElementById('modalCompleteConsultationBtn');
+    const hasAppointment = window.selectedAppointmentId !== null;
+
+    // Button is always enabled, but text changes based on appointment availability
+    completeBtn.disabled = false;
+    completeBtn.innerHTML = hasAppointment ?
+        '<i class="fas fa-check me-1"></i>Complete Appointment' :
+        '<i class="fas fa-save me-1"></i>Save Diagnosis';
+}
+
+
+function completeConsultation() {
+    const diagnosisText = document.getElementById('diagnosisText').value.trim();
+    const appointmentId = window.selectedAppointmentId;
+    const doctorNotes = document.getElementById('appointmentDoctorNotes').value.trim();
+    const completionType = appointmentId ? 'complete_appointment' : 'save_only';
+
+    if (!diagnosisText) {
+        showNotification('Please enter your diagnosis text.', 'error');
+        return;
+    }
+
+    const selectedPatient = document.getElementById('patientSelect').value;
+    if (!selectedPatient) {
+        showNotification('Please select a patient first.', 'error');
+        return;
+    }
+
+    // Get session data
+    const container = document.querySelector('[data-session-id]');
+    const sessionId = container ? container.getAttribute('data-session-id') : '';
+    const transcription = document.getElementById('transcriptionArea').value;
+
+    // Get AI data if available
+    const aiResultId = window.voiceAssistant ? window.voiceAssistant.getAiResultId() : null;
+    const extractedData = window.voiceAssistant ? window.voiceAssistant.getExtractedData() : {};
+
+    // Disable button and show loading
+    const completeBtn = document.getElementById('modalCompleteConsultationBtn');
+    const originalText = completeBtn.innerHTML;
+    completeBtn.disabled = true;
+    completeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Completing...';
+
+    // Prepare data for AJAX call
+    const ajaxData = {
+        diagnosisText: diagnosisText,
+        sessionId: sessionId,
+        selectedPatient: selectedPatient,
+        transcription: transcription,
+        completionType: completionType,
+        appointmentId: appointmentId || null,
+        doctorNotes: doctorNotes,
+        aiResultId: aiResultId,
+        extractedData: extractedData,
+        _token: $('meta[name="csrf-token"]').attr('content')
     };
-});
+
+    // AJAX call to complete consultation
+    $.ajax({
+        url: '/ai/voice-assistant/complete-consultation',
+        method: 'POST',
+        data: ajaxData,
+        success: function(response) {
+            if (response.success) {
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('completeConsultationModal'));
+                modal.hide();
+
+                // Hide the diagnosis form
+                document.getElementById('diagnosisEntryForm').style.display = 'none';
+                document.getElementById('diagnosisText').value = '';
+
+                // Show appropriate success message
+                const message = completionType === 'complete_appointment' ?
+                    'Diagnosis saved and appointment completed successfully!' :
+                    'Diagnosis saved successfully!';
+                showNotification(message, 'success');
+
+                // Redirect to diagnosis view
+                if (response.redirectUrl) {
+                    setTimeout(function() {
+                        window.location.href = response.redirectUrl;
+                    }, 2000);
+                }
+            } else {
+                showNotification(response.message || 'Failed to complete consultation.', 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Complete consultation error:', error);
+            showNotification('Failed to complete consultation. Please try again.', 'error');
+        },
+        complete: function() {
+            // Re-enable button
+            completeBtn.disabled = false;
+            completeBtn.innerHTML = originalText;
+        }
+    });
+}
+
+// Debug function to check patient selection
+window.debugPatientSelection = function() {
+    const patientSelect = document.getElementById('patientSelect');
+    console.log('=== PATIENT SELECTION DEBUG ===');
+    console.log('Patient select element:', patientSelect);
+    console.log('Patient select value:', patientSelect ? patientSelect.value : 'null');
+    console.log('Voice assistant available:', !!window.voiceAssistant);
+    if (window.voiceAssistant) {
+        console.log('Voice assistant selected patient:', window.voiceAssistant.getSelectedPatient());
+    }
+    console.log('All patients in dropdown:');
+    if (patientSelect) {
+        for (let i = 0; i < patientSelect.options.length; i++) {
+            console.log(`  ${i}: value="${patientSelect.options[i].value}" text="${patientSelect.options[i].text}"`);
+        }
+    }
+    console.log('=== END DEBUG ===');
+
+    // Try to sync
+    if (window.voiceAssistant && window.voiceAssistant.syncPatientSelection) {
+        console.log('Attempting to sync patient selection...');
+        window.voiceAssistant.syncPatientSelection();
+        console.log('After sync - selected patient:', window.voiceAssistant.getSelectedPatient());
+    }
+};
+</script>
 </script>
 @endsection
