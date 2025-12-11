@@ -59,7 +59,7 @@ class HEPController extends Controller
         $doctor = Auth::user()->doctor;
 
         // Get recent diagnoses for the doctor
-        $diagnoses = Diagnosis::where('doctor_id', $doctor->id)
+        $diagnoses = Diagnosis::where('doctor_id', Auth::user()->id)
             ->with('patient')
             ->orderBy('created_at', 'desc')
             ->limit(50)
@@ -77,7 +77,7 @@ class HEPController extends Controller
         $selectedDiagnosis = null;
         if ($request->has('diagnosis_id')) {
             $selectedDiagnosis = Diagnosis::where('id', $request->diagnosis_id)
-                ->where('doctor_id', $doctor->id)
+                ->where('doctor_id', Auth::user()->id)
                 ->with('patient')
                 ->first();
         }
@@ -699,5 +699,28 @@ class HEPController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+    /**
+     * Get patients for HEP assignment (AJAX)
+     */
+    public function getPatients(Request $request): JsonResponse
+    {
+        $doctor = Auth::user()->doctor;
+        $search = $request->input('search');
+
+        $patients = User::where('role', 'patient')
+            ->whereHas('appointments', function ($query) use ($doctor) {
+                $query->where('doctor_id', $doctor->id);
+            })
+            ->when($search, function ($query, $search) {
+                return $query->where('name', 'like', "%{$search}%")
+                             ->orWhere('email', 'like', "%{$search}%");
+            })
+            ->distinct()
+            ->select('id', 'name', 'email')
+            ->limit(50)
+            ->get();
+
+        return response()->json(['patients' => $patients]);
     }
 }
