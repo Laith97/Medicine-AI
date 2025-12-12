@@ -454,21 +454,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Intersection Observer for animations
     if ({{ $landingPage->enable_animations ? 'true' : 'false' }}) {
-        const observerOptions = {
+        const landingObserverOptions = {
             threshold: 0.1,
             rootMargin: '0px 0px -50px 0px'
         };
 
-        const observer = new IntersectionObserver(function(entries) {
+        const landingObserver = new IntersectionObserver(function(entries) {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('animated');
                 }
             });
-        }, observerOptions);
+        }, landingObserverOptions);
 
         document.querySelectorAll('.animate-on-scroll').forEach(el => {
-            observer.observe(el);
+            landingObserver.observe(el);
         });
     }
 
