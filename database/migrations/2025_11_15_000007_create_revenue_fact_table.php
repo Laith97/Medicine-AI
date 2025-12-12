@@ -42,12 +42,10 @@ return new class extends Migration
                 $table->index('transaction_type');
                 $table->index('status');
 
-                // Only add foreign keys in non-testing environments
-                if (app()->environment() !== 'testing') {
-                    $table->foreign('date_key')->references('date_key')->on('dim_date');
-                    $table->foreign('patient_key')->references('patient_key')->on('patient_dim');
-                    $table->foreign('doctor_key')->references('doctor_key')->on('doctor_dim');
-                }
+                // Foreign keys removed to allow partitioning
+                // $table->foreign('date_key')->references('date_key')->on('dim_date');
+                // $table->foreign('patient_key')->references('patient_key')->on('patient_dim');
+                // $table->foreign('doctor_key')->references('doctor_key')->on('doctor_dim');
             });
 
             // Only apply partitioning in non-testing environments

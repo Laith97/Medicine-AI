@@ -1,10 +1,5 @@
 <aside id="appSidebar" class="sidebar">
-  <div class="sidebar-header">
-    <a href="@auth{{ route('dashboard') }}@else{{ url('/') }}@endauth" class="sidebar-brand">
-      <i class="fa-solid fa-hospital"></i>
-      <span class="brand-text">MedAssist</span>
-    </a>
-  </div>
+
 
   <nav class="sidebar-nav">
     <ul class="nav flex-column">
@@ -20,7 +15,7 @@
                 </div>
               @elseif(isset($item['href']))
                 <a href="{{ route($item['href']) }}" class="nav-link {{ request()->routeIs($item['href']) ? 'active' : '' }}"
-                   data-route="{{ $item['href'] }}" @if($item['href'] !== 'ai.voice-assistant.index' && $item['href'] !== 'doctor.patient-management.index') data-ajax="true" @endif>
+                   data-route="{{ $item['href'] }}">
                   @if(isset($item['icon']))<i class="{{ $item['icon'] }}"></i>@endif
                   <span>{{ $item['name'] }}</span>
                 </a>
@@ -34,7 +29,7 @@
                 <a href="{{ isset($subItem['route']) ? route($subItem['route']) : '#' }}"
                    class="nav-link {{ request()->routeIs($subItem['route'] ?? '') ? 'active' : '' }}"
                    style="font-weight: 400; color: #6b7280; padding-left: 24px;"
-                   @if(isset($subItem['route'])) data-route="{{ $subItem['route'] }}" @if($subItem['route'] !== 'ai.voice-assistant.index' && $subItem['route'] !== 'doctor.patient-management.index') data-ajax="true" @endif @endif>
+                   @if(isset($subItem['route'])) data-route="{{ $subItem['route'] }}" @endif>
                   @if(isset($subItem['icon']))<i class="{{ $subItem['icon'] }}"></i>@else<i class="fa-solid fa-angle-right"></i>@endif
                   <span>{{ $subItem['name'] }}</span>
                 </a>
@@ -44,7 +39,7 @@
             <li class="nav-item">
               <a href="{{ isset($item['route']) ? route($item['route']) : '#' }}"
                  class="nav-link {{ request()->routeIs($item['route'] ?? '') ? 'active' : '' }}"
-                 @if(isset($item['route'])) data-route="{{ $item['route'] }}" @if($item['route'] !== 'ai.voice-assistant.index' && $item['route'] !== 'doctor.patient-management.index') data-ajax="true" @endif @endif>
+                 @if(isset($item['route'])) data-route="{{ $item['route'] }}" @endif>
                 @if(isset($item['icon']))<i class="{{ $item['icon'] }}"></i>@else<i class="fa-solid fa-circle"></i>@endif
                 <span>{{ $item['name'] }}</span>
               </a>
