@@ -42,6 +42,20 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->runInBackground();
 
+        // Train ML models daily at 2 AM
+        $schedule->command('models:train')
+            ->dailyAt('02:00')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->evenInMaintenanceMode();
+
+        // Generate predictions for next 7 days daily at 3 AM
+        $schedule->command('predictions:generate')
+            ->dailyAt('03:00')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->evenInMaintenanceMode();
+
         // Optional: Add other billing-related scheduled tasks here
         // For example, cleanup old alerts, generate reports, etc.
     }

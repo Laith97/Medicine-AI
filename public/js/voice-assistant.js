@@ -71,6 +71,7 @@
     let bufferTimeout;
     let interimBackupBuffer = ''; // NEW: Backup buffer for interim results
     let liveConfidence = 0; // Live transcription confidence score
+    let isInitialized = false; // Prevent double initialization
     // Regional language detection for better transcription accuracy
     function getRegionalDefaultLanguage() {
         try {
@@ -255,8 +256,152 @@
         };
     }
 
+    // Initialize form components
+    function initializeFormComponents() {
+        // New Patient Form Handling
+        const showNewPatientFormBtn = document.getElementById('showNewPatientFormBtn');
+        const hideNewPatientFormBtn = document.getElementById('hideNewPatientFormBtn');
+        const newPatientForm = document.getElementById('newPatientForm');
+        const cancelNewPatientBtn = document.getElementById('cancelNewPatientBtn');
+        const createNewPatientBtn = document.getElementById('createNewPatientBtn');
+
+        if (showNewPatientFormBtn) {
+            showNewPatientFormBtn.addEventListener('click', function() {
+                if (newPatientForm) newPatientForm.style.display = 'block';
+                clearNewPatientForm();
+            });
+        }
+
+        if (hideNewPatientFormBtn || cancelNewPatientBtn) {
+            const hideForm = function() {
+                if (newPatientForm) newPatientForm.style.display = 'none';
+                clearNewPatientForm();
+            };
+
+            if (hideNewPatientFormBtn) hideNewPatientFormBtn.addEventListener('click', hideForm);
+            if (cancelNewPatientBtn) cancelNewPatientBtn.addEventListener('click', hideForm);
+        }
+
+        if (createNewPatientBtn) {
+            createNewPatientBtn.addEventListener('click', function() {
+                createNewPatient();
+            });
+        }
+
+        // Show diagnosis entry form after recording stops
+        window.showDiagnosisEntryForm = function() {
+            const diagnosisEntryForm = document.getElementById('diagnosisEntryForm');
+            if (diagnosisEntryForm) {
+                diagnosisEntryForm.style.display = 'block';
+                const diagnosisText = document.getElementById('diagnosisText');
+                if (diagnosisText) {
+                    diagnosisText.focus();
+                }
+            }
+        };
+
+        // Diagnosis Entry Form Handling
+        const cancelDiagnosisBtn = document.getElementById('cancelDiagnosisBtn');
+        const completeConsultationBtn = document.getElementById('completeConsultationBtn');
+        const diagnosisEntryForm = document.getElementById('diagnosisEntryForm');
+        const diagnosisText = document.getElementById('diagnosisText');
+
+        if (cancelDiagnosisBtn) {
+            cancelDiagnosisBtn.addEventListener('click', function() {
+                if (diagnosisEntryForm) diagnosisEntryForm.style.display = 'none';
+                if (diagnosisText) diagnosisText.value = '';
+                if (completeConsultationBtn) completeConsultationBtn.disabled = true;
+            });
+        }
+
+        if (diagnosisText && completeConsultationBtn) {
+            diagnosisText.addEventListener('input', function() {
+                completeConsultationBtn.disabled = !this.value.trim();
+            });
+        }
+
+        if (completeConsultationBtn) {
+            completeConsultationBtn.addEventListener('click', function() {
+                showCompleteConsultationModal();
+            });
+        }
+
+        // Modal complete consultation button handler
+        const modalCompleteConsultationBtn = document.getElementById('modalCompleteConsultationBtn');
+        if (modalCompleteConsultationBtn) {
+            modalCompleteConsultationBtn.addEventListener('click', function() {
+                completeConsultation();
+            });
+        }
+    }
+
+    // Initialize voice assistant components (button states)
+    function initializeVoiceAssistantComponents() {
+        const startRecordingBtn = document.getElementById('startRecordingBtn');
+        const stopRecordingBtn = document.getElementById('stopRecordingBtn');
+        const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
+        const patientSelect = document.getElementById('patientSelect');
+
+        // Function to enable/disable recording buttons based on patient selection
+        function updateRecordingButtons() {
+            const hasPatientSelected = patientSelect && patientSelect.value && patientSelect.value !== '';
+
+            if (hasPatientSelected) {
+                // Enable buttons when patient is selected
+                if (startRecordingBtn) {
+                    startRecordingBtn.disabled = false;
+                    startRecordingBtn.title = 'Start voice recording';
+                }
+                if (stopRecordingBtn) {
+                    stopRecordingBtn.disabled = false;
+                }
+                if (generateAnalysisBtn) {
+                    generateAnalysisBtn.disabled = false;
+                }
+
+                // Remove warning message if it exists
+                const alertContainer = document.getElementById('alertContainer');
+                if (alertContainer) {
+                    const warningAlert = alertContainer.querySelector('.alert-warning');
+                    if (warningAlert) {
+                        warningAlert.remove();
+                    }
+                }
+            } else {
+                // Disable buttons when no patient is selected
+                if (startRecordingBtn) {
+                    startRecordingBtn.disabled = true;
+                    startRecordingBtn.title = 'Please select a patient first';
+                }
+                if (stopRecordingBtn) {
+                    stopRecordingBtn.disabled = true;
+                }
+                if (generateAnalysisBtn) {
+                    generateAnalysisBtn.disabled = true;
+                }
+            }
+        }
+
+        // Initial state
+        updateRecordingButtons();
+
+        // Listen for patient selection changes
+        if (patientSelect) {
+            patientSelect.addEventListener('change', updateRecordingButtons);
+        }
+    }
+
     // Initialize the voice assistant
     function initVoiceAssistant() {
+        // Prevent double initialization
+        if (isInitialized) {
+            console.log('🎙️ Voice assistant already initialized, skipping...');
+            return;
+        }
+
+        console.log('🎙️ Initializing voice assistant...');
+        isInitialized = true;
+
         // Clean up any leftover keyboard shortcuts help from previous page loads
         cleanupKeyboardShortcutsHelp();
 
@@ -298,6 +443,12 @@
         console.log('🚀 Initial UI update - selectedPatient:', selectedPatient);
         updateRecordingUI();
         updateHandsFreeStatus();
+
+        // Initialize form components
+        initializeFormComponents();
+    
+        // Initialize voice assistant components (button states)
+        initializeVoiceAssistantComponents();
 
         // Set up periodic session state saving
         setInterval(saveSessionState, 5000); // Save every 5 seconds
@@ -1080,8 +1231,13 @@
     function showKeyboardShortcutsHelp() {
         // Only show keyboard shortcuts help on the main voice-assistant page (not sub-pages)
         if (window.location.pathname !== '/ai/voice-assistant') {
+            // Clean up any existing help indicator when not on the voice-assistant page
+            cleanupKeyboardShortcutsHelp();
             return;
         }
+
+        // Clean up any existing help indicator first
+        cleanupKeyboardShortcutsHelp();
 
         // Create a small help indicator
         const helpIndicator = document.createElement('div');
@@ -1908,10 +2064,16 @@
                     updateHandsFreeStatus();
 
                     // Show the diagnosis entry form immediately after recording stops
-                    if (typeof window.showDiagnosisEntryForm === 'function') {
-                        window.showDiagnosisEntryForm();
+                    const diagnosisEntryForm = document.getElementById('diagnosisEntryForm');
+                    if (diagnosisEntryForm) {
+                        diagnosisEntryForm.style.display = 'block';
+                        const diagnosisText = document.getElementById('diagnosisText');
+                        if (diagnosisText) {
+                            diagnosisText.focus();
+                        }
+                        console.log('✅ Professional diagnosis form shown after recording stop');
                     } else {
-                        console.warn('⚠️ showDiagnosisEntryForm function not available');
+                        console.warn('⚠️ Professional diagnosis form element not found');
                     }
 
                     const stopMessage = hybridModeEnabled && audioRecordingSupported
@@ -3550,6 +3712,415 @@
         return !str || str.trim().length === 0;
     }
 
+    // Clear new patient form
+    function clearNewPatientForm() {
+        const fields = ['newPatientName', 'newPatientEmail', 'newPatientAge', 'newPatientGender', 'newPatientPhone'];
+        fields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) field.value = '';
+        });
+
+        // Clear errors
+        const errorFields = ['newPatientNameError', 'newPatientEmailError', 'newPatientAgeError', 'newPatientGenderError', 'newPatientPhoneError'];
+        errorFields.forEach(errorId => {
+            const errorField = document.getElementById(errorId);
+            if (errorField) errorField.classList.add('d-none');
+        });
+    }
+
+    // Create new patient
+    function createNewPatient() {
+        const name = document.getElementById('newPatientName').value.trim();
+        const email = document.getElementById('newPatientEmail').value.trim();
+        const age = document.getElementById('newPatientAge').value;
+        const gender = document.getElementById('newPatientGender').value;
+        const phone = document.getElementById('newPatientPhone').value.trim();
+
+        // Clear previous errors
+        ['newPatientNameError', 'newPatientEmailError', 'newPatientAgeError', 'newPatientGenderError'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('d-none');
+        });
+
+        // Validation
+        let hasError = false;
+
+        if (!name) {
+            document.getElementById('newPatientNameError').textContent = 'Name is required';
+            document.getElementById('newPatientNameError').classList.remove('d-none');
+            hasError = true;
+        }
+
+        if (!email) {
+            document.getElementById('newPatientEmailError').textContent = 'Email is required';
+            document.getElementById('newPatientEmailError').classList.remove('d-none');
+            hasError = true;
+        } else if (!isValidEmail(email)) {
+            document.getElementById('newPatientEmailError').textContent = 'Please enter a valid email';
+            document.getElementById('newPatientEmailError').classList.remove('d-none');
+            hasError = true;
+        }
+
+        if (!age || age < 1 || age > 150) {
+            document.getElementById('newPatientAgeError').textContent = 'Please enter a valid age (1-150)';
+            document.getElementById('newPatientAgeError').classList.remove('d-none');
+            hasError = true;
+        }
+
+        if (!gender) {
+            document.getElementById('newPatientGenderError').textContent = 'Please select gender';
+            document.getElementById('newPatientGenderError').classList.remove('d-none');
+            hasError = true;
+        }
+
+        if (hasError) return;
+
+        // AJAX call to create new patient
+        $.ajax({
+            url: '/ai/voice-assistant/create-new-patient',
+            method: 'POST',
+            data: {
+                newPatientName: name,
+                newPatientEmail: email,
+                newPatientAge: age,
+                newPatientGender: gender,
+                newPatientPhone: phone,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Add patient to select dropdown
+                    const patientSelect = document.getElementById('patientSelect');
+                    const option = document.createElement('option');
+                    option.value = response.patient.id;
+                    option.textContent = response.patient.name + ' (' + (response.patient.age ? response.patient.age + 'y' : 'Age N/A') + ', ' + (response.patient.gender ? response.patient.gender.charAt(0).toUpperCase() + response.patient.gender.slice(1) : 'Gender N/A') + ')';
+                    if (patientSelect) patientSelect.appendChild(option);
+
+                    // Select the new patient
+                    if (patientSelect) patientSelect.value = response.patient.id;
+
+                    // Trigger change event to update the voice assistant's selectedPatient variable
+                    const changeEvent = new Event('change', { bubbles: true });
+                    if (patientSelect) patientSelect.dispatchEvent(changeEvent);
+
+                    // Also directly update the voice assistant if available
+                    if (window.voiceAssistant && window.voiceAssistant.setSelectedPatient) {
+                        window.voiceAssistant.setSelectedPatient(response.patient.id);
+                    }
+
+                    // Hide form
+                    const newPatientForm = document.getElementById('newPatientForm');
+                    if (newPatientForm) newPatientForm.style.display = 'none';
+                    clearNewPatientForm();
+
+                    // Show success message
+                    showNotification(response.message, 'success');
+                } else {
+                    showNotification(response.message || 'Failed to create patient.', 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Create patient error:', error);
+                showNotification('Failed to create patient. Please try again.', 'error');
+            }
+        });
+    }
+
+    // Show notification
+    function showNotification(message, type = 'info') {
+        const alertContainer = document.getElementById('alertContainer');
+        if (!alertContainer) return;
+
+        const alertClass = type === 'error' ? 'alert-danger' :
+                          type === 'success' ? 'alert-success' :
+                          type === 'warning' ? 'alert-warning' : 'alert-info';
+
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+
+        alertContainer.innerHTML = alertHtml;
+
+        // Scroll to alert for errors and warnings
+        if (type === 'error' || type === 'warning') {
+            alertContainer.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+
+        // Auto-dismiss success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                const alert = alertContainer.querySelector('.alert');
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+    }
+
+    // Validate email
+    function isValidEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    // Complete Consultation Modal Functions
+    function showCompleteConsultationModal() {
+        const diagnosisText = document.getElementById('diagnosisText');
+        if (!diagnosisText || !diagnosisText.value.trim()) {
+            showNotification('Please enter your diagnosis first.', 'error');
+            return;
+        }
+
+        const selectedPatient = document.getElementById('patientSelect');
+        if (!selectedPatient || !selectedPatient.value) {
+            showNotification('Please select a patient first.', 'error');
+            return;
+        }
+
+        // Update diagnosis preview
+        const diagnosisPreview = document.getElementById('diagnosisPreview');
+        if (diagnosisPreview) diagnosisPreview.textContent = diagnosisText.value.trim();
+
+        // Update patient name display in modal
+        const modalPatientName = document.getElementById('modalPatientName');
+        if (modalPatientName && selectedPatient) {
+            const selectedOption = selectedPatient.options[selectedPatient.selectedIndex];
+            const patientName = selectedOption ? selectedOption.text.split(' (')[0] : 'Unknown Patient';
+            modalPatientName.textContent = patientName;
+        }
+
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('completeConsultationModal'));
+        modal.show();
+
+        // Load appointments for the selected patient
+        loadPatientAppointments(selectedPatient ? selectedPatient.value : null);
+
+        // Set up completion type change handler
+        setupCompletionTypeHandler();
+    }
+
+    function setupCompletionTypeHandler() {
+        // No longer needed since we removed the radio buttons
+        // Appointment selection is now always visible
+        updateCompleteButtonState();
+    }
+
+    function loadPatientAppointments(patientId) {
+        const appointmentInfoDiv = document.getElementById('appointmentInfo');
+        const appointmentInfoText = document.getElementById('appointmentInfoText');
+
+        // Debug logging
+        console.log('Loading appointments for patient:', patientId);
+        console.log('Available patient appointments:', window.patientAppointments);
+
+        // Use the pre-loaded appointments data instead of AJAX call
+        const appointments = window.patientAppointments && window.patientAppointments[patientId] ? window.patientAppointments[patientId] : [];
+
+        console.log('Found appointments for patient:', appointments);
+
+        if (appointments.length > 0) {
+            // Get the first available appointment
+            const appointment = appointments[0];
+            if (appointmentInfoDiv) appointmentInfoDiv.style.display = 'block';
+            if (appointmentInfoText) appointmentInfoText.textContent = `Found ${appointments.length} incomplete appointment(s). The first one will be automatically selected: ${appointment.appointment_date_formatted} (${appointment.appointment_type})`;
+
+            // Store appointment ID for completion
+            window.selectedAppointmentId = appointment.id;
+
+            // Show appointment details
+            showAppointmentPreview(appointment.id);
+        } else {
+            if (appointmentInfoDiv) appointmentInfoDiv.style.display = 'block';
+            if (appointmentInfoText) appointmentInfoText.textContent = 'No scheduled appointments available for this patient. Diagnosis will be saved without appointment completion.';
+            window.selectedAppointmentId = null;
+            showAppointmentPreview(null);
+            console.log('No appointments found for patient:', patientId);
+        }
+    }
+
+    function showAppointmentPreview(appointmentId) {
+        const previewDiv = document.getElementById('appointmentPreview');
+        const detailsDiv = document.getElementById('appointmentDetails');
+
+        if (!appointmentId) {
+            if (previewDiv) previewDiv.style.display = 'none';
+            return;
+        }
+
+        // Find appointment details
+        const patientSelect = document.getElementById('patientSelect');
+        const appointments = window.patientAppointments && patientSelect && window.patientAppointments[patientSelect.value] ? window.patientAppointments[patientSelect.value] : [];
+        const appointment = appointments.find(apt => apt.id == appointmentId);
+
+        if (appointment && detailsDiv) {
+            detailsDiv.innerHTML = `
+                <p><strong>Appointment:</strong> ${appointment.appointment_date_formatted}</p>
+                <p><strong>Type:</strong> ${appointment.appointment_type}</p>
+                <p><strong>Status:</strong> Will be marked as completed</p>
+                <p><strong>Diagnosis:</strong> Will be linked to current diagnosis</p>
+            `;
+        } else if (detailsDiv) {
+            detailsDiv.innerHTML = '<p>Appointment details not found.</p>';
+        }
+
+        if (previewDiv) previewDiv.style.display = 'block';
+    }
+
+    function updateCompleteButtonState() {
+        const completeBtn = document.getElementById('modalCompleteConsultationBtn');
+        const hasAppointment = window.selectedAppointmentId !== null;
+
+        // Button is always enabled, but text changes based on appointment availability
+        if (completeBtn) {
+            completeBtn.disabled = false;
+            completeBtn.innerHTML = hasAppointment ?
+                '<i class="fas fa-check me-1"></i>Complete Appointment' :
+                '<i class="fas fa-save me-1"></i>Save Diagnosis';
+        }
+    }
+
+    function completeConsultation() {
+        const diagnosisText = document.getElementById('diagnosisText');
+        const appointmentId = window.selectedAppointmentId;
+        const appointmentDoctorNotes = document.getElementById('appointmentDoctorNotes');
+        const doctorNotes = appointmentDoctorNotes ? appointmentDoctorNotes.value.trim() : '';
+        const completionType = appointmentId ? 'complete_appointment' : 'save_only';
+
+        if (!diagnosisText || !diagnosisText.value.trim()) {
+            showNotification('Please enter your diagnosis text.', 'error');
+            return;
+        }
+
+        const selectedPatient = document.getElementById('patientSelect');
+        if (!selectedPatient || !selectedPatient.value) {
+            showNotification('Please select a patient first.', 'error');
+            return;
+        }
+
+        // Get session data
+        const container = document.querySelector('[data-session-id]');
+        let sessionId = container ? container.getAttribute('data-session-id') : '';
+        const transcriptionArea = document.getElementById('transcriptionArea');
+        const transcription = transcriptionArea ? transcriptionArea.value : '';
+
+        // If no session ID found in container, try to use the global sessionId variable
+        if (!sessionId) {
+            sessionId = window.sessionId || '';
+        }
+
+        // If still no session ID, generate a new one as a fallback (though this shouldn't happen in normal flow)
+        if (!sessionId) {
+            sessionId = generateUUID();
+            // Update the container with the new session ID if possible
+            if (container) {
+                container.setAttribute('data-session-id', sessionId);
+            }
+        }
+
+        // Transcription is optional - allow consultation completion with just diagnosis
+        // Original validation prevented completion if only diagnosis was provided without transcription
+
+        // Get AI data if available
+        const aiResultId = window.voiceAssistant ? window.voiceAssistant.getAiResultId() : null;
+        const extractedData = window.voiceAssistant ? window.voiceAssistant.getExtractedData() : {};
+
+        // Disable button and show loading
+        const completeBtn = document.getElementById('modalCompleteConsultationBtn');
+        const originalText = completeBtn ? completeBtn.innerHTML : '';
+        if (completeBtn) {
+            completeBtn.disabled = true;
+            completeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Completing...';
+        }
+
+        // Prepare data for AJAX call
+        const ajaxData = {
+            diagnosisText: diagnosisText.value.trim(),
+            sessionId: sessionId,
+            selectedPatient: selectedPatient.value,
+            transcription: transcription,
+            completionType: completionType,
+            appointmentId: appointmentId || null,
+            doctorNotes: doctorNotes,
+            aiResultId: aiResultId,
+            extractedData: extractedData,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        };
+
+        // AJAX call to complete consultation
+        $.ajax({
+            url: '/ai/voice-assistant/complete-consultation',
+            method: 'POST',
+            data: ajaxData,
+            success: function(response) {
+                if (response.success) {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('completeConsultationModal'));
+                    if (modal) modal.hide();
+
+                    // Hide the diagnosis form
+                    const diagnosisEntryForm = document.getElementById('diagnosisEntryForm');
+                    if (diagnosisEntryForm) diagnosisEntryForm.style.display = 'none';
+                    if (diagnosisText) diagnosisText.value = '';
+
+                    // Show appropriate success message
+                    const message = completionType === 'complete_appointment' ?
+                        'Diagnosis saved and appointment completed successfully!' :
+                        'Diagnosis saved successfully!';
+                    showNotification(message, 'success');
+
+                    // Redirect to diagnosis view
+                    if (response.redirectUrl) {
+                        setTimeout(function() {
+                            window.location.href = response.redirectUrl;
+                        }, 2000);
+                    }
+                } else {
+                    showNotification(response.message || 'Failed to complete consultation.', 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Complete consultation error:', error);
+                console.error('Response details:', {
+                    status: xhr.status,
+                    responseText: xhr.responseText,
+                    statusText: xhr.statusText
+                });
+
+                if (xhr.status === 422) {
+                    // Validation error - try to get specific error messages
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.errors) {
+                            const allErrors = Object.values(response.errors).flat();
+                            showNotification('Validation error: ' + allErrors.join(', '), 'error');
+                        } else {
+                            showNotification('Validation failed. Please check all required fields.', 'error');
+                        }
+                    } catch (e) {
+                        showNotification('Validation failed. Please check all required fields.', 'error');
+                    }
+                } else {
+                    showNotification('Failed to complete consultation. Please try again. (' + error + ')', 'error');
+                }
+            },
+            complete: function() {
+                // Re-enable button
+                if (completeBtn) {
+                    completeBtn.disabled = false;
+                    completeBtn.innerHTML = originalText;
+                }
+            }
+        });
+    }
+
     // Initialize the voice assistant when the page loads
     initVoiceAssistant();
 
@@ -3922,15 +4493,29 @@
     // Simple interface - no complex styles needed
     console.log('🎨 Simple transcription interface loaded');
 
-    // Initialize immediately for AJAX-loaded content, or on DOMContentLoaded for direct loading
-    if (document.readyState === 'loading') {
-        // Page is still loading, wait for DOMContentLoaded
-        document.addEventListener('DOMContentLoaded', function() {
+    // Robust initialization for both direct loading and AJAX loading
+    function initializeVoiceAssistant() {
+        // Check if we're on the voice assistant page
+        const isVoiceAssistantPage = window.location.pathname === '/ai/voice-assistant' ||
+                                   document.querySelector('[data-session-id]') !== null;
+
+        if (!isVoiceAssistantPage) {
+            console.log('🎙️ Not on voice assistant page, skipping initialization');
+            return;
+        }
+
+        // Use a timeout to ensure DOM is ready
+        setTimeout(function() {
             initVoiceAssistant();
-        });
+        }, 50);
+    }
+
+    // Initialize on DOMContentLoaded for direct loads
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeVoiceAssistant);
     } else {
-        // Page is already loaded (AJAX case), initialize immediately
-        initVoiceAssistant();
+        // For already loaded pages (AJAX), initialize immediately
+        initializeVoiceAssistant();
     }
 
     // Also listen for the pageContentLoaded event from AJAX navigation
@@ -3939,16 +4524,15 @@
             // Clean up keyboard shortcuts help if not on the main voice-assistant page
             if (!route || route !== '/ai/voice-assistant') {
                 cleanupKeyboardShortcutsHelp();
+                return;
             }
 
-            // Only initialize voice assistant on the main voice-assistant page
-            if (route === '/ai/voice-assistant') {
-                setTimeout(function() {
-                    initVoiceAssistant();
-                }, 100);
-            }
+            // Initialize voice assistant for AJAX-loaded content
+            setTimeout(function() {
+                initVoiceAssistant();
+            }, 50);
         });
     } else {
-        console.warn('⚠️ jQuery not available, skipping AJAX navigation event listener');
+        console.warn('⚠️ jQuery not available, AJAX navigation events will not work');
     }
 })();
