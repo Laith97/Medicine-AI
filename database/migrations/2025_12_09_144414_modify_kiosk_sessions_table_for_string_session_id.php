@@ -11,14 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // First, let's temporarily disable foreign key checks
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        // First, drop foreign keys
+        Schema::table('kiosk_checkins', function (Blueprint $table) {
+            $table->dropForeign(['kiosk_session_id']);
+        });
+        Schema::table('kiosk_payments', function (Blueprint $table) {
+            $table->dropForeign(['kiosk_session_id']);
+        });
 
-        // Drop the primary key constraint and auto_increment property
-        DB::statement('ALTER TABLE kiosk_sessions DROP PRIMARY KEY, MODIFY session_id VARCHAR(128) NOT NULL, ADD PRIMARY KEY (session_id)');
+        // Modify the columns to VARCHAR(128)
+        DB::statement('ALTER TABLE kiosk_sessions MODIFY session_id VARCHAR(128) NOT NULL');
+        DB::statement('ALTER TABLE kiosk_checkins MODIFY kiosk_session_id VARCHAR(128) NOT NULL');
+        DB::statement('ALTER TABLE kiosk_payments MODIFY kiosk_session_id VARCHAR(128) NOT NULL');
 
-        // Re-enable foreign key checks
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        // Re-add foreign keys
+        Schema::table('kiosk_checkins', function (Blueprint $table) {
+            $table->foreign('kiosk_session_id')->references('session_id')->on('kiosk_sessions');
+        });
+        Schema::table('kiosk_payments', function (Blueprint $table) {
+            $table->foreign('kiosk_session_id')->references('session_id')->on('kiosk_sessions');
+        });
     }
 
     /**
