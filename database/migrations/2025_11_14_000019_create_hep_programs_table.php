@@ -23,7 +23,7 @@ return new class extends Migration
             $table->integer('frequency_per_week');
             $table->text('goals');
             $table->text('precautions');
-            $table->enum('status', ['active', 'completed', 'paused'])->default('active');
+            $table->enum('status', ['draft', 'active', 'completed', 'paused'])->default('active');
             $table->timestamps();
         });
     }

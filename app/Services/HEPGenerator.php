@@ -25,6 +25,7 @@ class HEPGenerator
         $this->personalizationService = $personalizationService;
     }
 
+
     /**
      * Generate a HEP program using AI based on diagnosis and clinical notes
      */
@@ -71,6 +72,34 @@ class HEPGenerator
     }
 
     /**
+     * Generate HEP program data using AI without creating the program in database
+     */
+    public function generateProgramData(
+        Diagnosis $diagnosis,
+        User $patient,
+        User $doctor,
+        array $additionalContext = []
+    ): array {
+        Log::info('Starting HEP program data generation', [
+            'diagnosis_id' => $diagnosis->id,
+            'patient_id' => $patient->id,
+            'doctor_id' => $doctor->id,
+        ]);
+
+        // Extract clinical information
+        $clinicalData = $this->extractClinicalInformation($diagnosis, $patient);
+
+        // Generate AI-powered program recommendations
+        $aiRecommendations = $this->generateAIRecommendations($clinicalData, $additionalContext);
+
+        Log::info('HEP program data generated successfully', [
+            'exercise_count' => count($aiRecommendations['exercises'] ?? []),
+        ]);
+
+        return $aiRecommendations;
+    }
+
+    /**
      * Find an appropriate appointment for HEP program creation
      */
     protected function findAppointmentForDiagnosis(Diagnosis $diagnosis, User $patient, User $doctor): ?int
@@ -82,7 +111,7 @@ class HEPGenerator
 
         // If no appointment_id on diagnosis, search for recent appointments
         $appointment = Appointment::where('patient_id', $patient->id)
-            ->where('doctor_id', $doctor->id)
+            ->where('doctor_id', $doctor->doctor->id) // Use doctor profile ID, not user ID
             ->whereBetween('appointment_date', [
                 $diagnosis->created_at->subDays(30), // 30 days before diagnosis
                 $diagnosis->created_at->addDays(30)  // 30 days after diagnosis
@@ -137,7 +166,7 @@ class HEPGenerator
             // Create a placeholder appointment
             $appointment = Appointment::create([
                 'patient_id' => $patient->id,
-                'doctor_id' => $doctor->id,
+                'doctor_id' => $doctor->doctor->id, // Use doctor profile ID, not user ID
                 'appointment_date' => $diagnosis->created_at,
                 'appointment_end' => $diagnosis->created_at->copy()->addMinutes(30), // Add 30 minutes for appointment duration
                 'status' => 'completed', // Mark as completed since it's a placeholder
@@ -227,7 +256,7 @@ class HEPGenerator
     /**
      * Generate program description from AI recommendations
      */
-    protected function generateProgramDescription(array $aiRecommendations): string
+    public function generateProgramDescription(array $aiRecommendations): string
     {
         $description = "AI-generated home exercise program designed to address ";
 
@@ -245,6 +274,17 @@ class HEPGenerator
      */
     protected function generateAIRecommendations(array $clinicalData, array $additionalContext = []): array
     {
+        // First, check if OpenAI API key is configured
+        if (empty(config('openai.api_key'))) {
+            Log::warning('OpenAI API key not configured for HEP generation', [
+                'clinical_data_keys' => array_keys($clinicalData),
+                'has_diagnosis' => !empty($clinicalData['diagnosis_text']),
+            ]);
+
+            // Return fallback recommendations when OpenAI is not configured
+            return $this->generateFallbackRecommendations($clinicalData);
+        }
+
         $prompt = $this->buildHEPGenerationPrompt($clinicalData, $additionalContext);
 
         try {
@@ -270,10 +310,21 @@ class HEPGenerator
             return $parsedResponse;
 
         } catch (\Exception $e) {
-            Log::error('AI HEP generation failed', [
-                'error' => $e->getMessage(),
-                'clinical_data' => $clinicalData,
-            ]);
+            $errorMessage = $e->getMessage();
+
+            // Check if it's an SSL certificate error
+            if (str_contains($errorMessage, 'SSL certificate problem') ||
+                str_contains($errorMessage, 'cURL error 60')) {
+                Log::warning('OpenAI SSL certificate error in development - using fallback recommendations', [
+                    'error' => $errorMessage,
+                ]);
+            } else {
+                Log::error('AI HEP generation failed', [
+                    'error' => $errorMessage,
+                    'clinical_data' => $clinicalData,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
 
             // Return fallback recommendations
             return $this->generateFallbackRecommendations($clinicalData);
@@ -608,7 +659,15 @@ class HEPGenerator
             $parsed = json_decode($content, true);
             return is_array($parsed) ? $parsed : [];
         } catch (\Exception $e) {
-            Log::error('Condition extraction failed', ['error' => $e->getMessage()]);
+            $errorMessage = $e->getMessage();
+            if (str_contains($errorMessage, 'SSL certificate problem') ||
+                str_contains($errorMessage, 'cURL error 60')) {
+                Log::warning('OpenAI SSL certificate error in condition extraction - returning empty array', [
+                    'error' => $errorMessage,
+                ]);
+            } else {
+                Log::error('Condition extraction failed', ['error' => $errorMessage]);
+            }
             return [];
         }
     }
@@ -635,7 +694,15 @@ class HEPGenerator
             $parsed = json_decode($content, true);
             return is_array($parsed) ? $parsed : [];
         } catch (\Exception $e) {
-            Log::error('Limitation extraction failed', ['error' => $e->getMessage()]);
+            $errorMessage = $e->getMessage();
+            if (str_contains($errorMessage, 'SSL certificate problem') ||
+                str_contains($errorMessage, 'cURL error 60')) {
+                Log::warning('OpenAI SSL certificate error in limitation extraction - returning empty array', [
+                    'error' => $errorMessage,
+                ]);
+            } else {
+                Log::error('Limitation extraction failed', ['error' => $errorMessage]);
+            }
             return [];
         }
     }
@@ -662,7 +729,15 @@ class HEPGenerator
             $parsed = json_decode($content, true);
             return is_array($parsed) ? $parsed : [];
         } catch (\Exception $e) {
-            Log::error('Goal extraction failed', ['error' => $e->getMessage()]);
+            $errorMessage = $e->getMessage();
+            if (str_contains($errorMessage, 'SSL certificate problem') ||
+                str_contains($errorMessage, 'cURL error 60')) {
+                Log::warning('OpenAI SSL certificate error in goal extraction - returning empty array', [
+                    'error' => $errorMessage,
+                ]);
+            } else {
+                Log::error('Goal extraction failed', ['error' => $errorMessage]);
+            }
             return [];
         }
     }

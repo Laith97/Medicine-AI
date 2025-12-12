@@ -98,9 +98,9 @@ class HEPController extends Controller
         // Handle both AJAX and regular form submissions
         $isAjax = $request->ajax() || $request->wantsJson();
 
-        $request->validate([
+        // Build validation rules based on creation method
+        $rules = [
             'creation_method' => 'required|in:manual,ai',
-            'title' => 'required_if:creation_method,manual|string|max:255',
             'diagnosis_id' => 'required|exists:diagnoses,id',
             'duration_weeks' => 'required|integer|min:1|max:52',
             'description' => 'nullable|string',
@@ -114,13 +114,44 @@ class HEPController extends Controller
             'exercises.*.rest_seconds' => 'nullable|integer|min:0',
             'exercises.*.frequency' => 'nullable|string',
             'exercises.*.notes' => 'nullable|string',
-        ]);
+        ];
+
+        // Set title validation based on creation method
+        if ($request->creation_method === 'manual') {
+            $rules['title'] = 'required|string|max:255';
+        } else {
+            $rules['title'] = 'nullable|string|max:255';
+        }
+
+        $request->validate($rules);
 
         $doctor = Auth::user()->doctor;
 
+        // If this is an AI-generated program that was already created, just redirect to it
+        if ($request->filled('generated_program_id')) {
+            $program = HepProgram::where('id', $request->generated_program_id)
+                ->where('doctor_id', $doctor->id)
+                ->first();
+
+            if ($program) {
+                if ($isAjax) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'HEP program saved successfully.',
+                        'redirect_url' => route('doctor.hep.show', $program)
+                    ]);
+                } else {
+                    return redirect()->route('doctor.hep.show', $program)
+                        ->with('success', 'HEP program saved successfully.');
+                }
+            } else {
+                // Program not found, fall through to create new one
+            }
+        }
+
         // Verify diagnosis belongs to doctor
         $diagnosis = Diagnosis::where('id', $request->diagnosis_id)
-            ->where('doctor_id', $doctor->id)
+            ->where('doctor_id', Auth::user()->id)
             ->firstOrFail();
 
         // Create or get appointment for this HEP program
@@ -170,10 +201,10 @@ class HEPController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'HEP program created successfully.',
-                    'redirect_url' => route('doctor.hep.index')
+                    'redirect_url' => route('doctor.hep.show', $program)
                 ]);
             } else {
-                return redirect()->route('doctor.hep.index')
+                return redirect()->route('doctor.hep.show', $program)
                     ->with('success', 'HEP program created successfully.');
             }
 
@@ -273,7 +304,7 @@ class HEPController extends Controller
         $patients = User::where('role', 'patient')->whereHas('appointments', function ($query) use ($doctor) {
             $query->where('doctor_id', $doctor->id);
         })->whereNotIn('id', function($query) use ($doctor) {
-            $query->select('patient_id')
+            $query->select('hep_assignments.patient_id')
                   ->from('hep_assignments')
                   ->join('hep_programs', 'hep_assignments.hep_program_id', '=', 'hep_programs.id')
                   ->where('hep_programs.doctor_id', $doctor->id);
@@ -309,13 +340,13 @@ class HEPController extends Controller
             'duration_weeks' => 'required|integer|min:1|max:52',
             'description' => 'nullable|string',
             'goals' => 'nullable|string',
-            'status' => 'required|in:active,completed,paused',
+            'status' => 'required|in:draft,active,completed,paused',
             'exercises' => 'required|array|min:1',
             'exercises.*.exercise_id' => 'required|exists:exercises,id',
             'exercises.*.week_number' => 'required|integer|min:1',
             'exercises.*.sets' => 'nullable|integer|min:1',
             'exercises.*.reps' => 'nullable|integer|min:1',
-            'exercises.*.duration_seconds' => 'nullable|min:1',
+            'exercises.*.duration_seconds' => 'nullable|integer|min:1',
             'exercises.*.rest_seconds' => 'nullable|integer|min:0',
             'exercises.*.frequency' => 'nullable|string',
             'exercises.*.notes' => 'nullable|string',
@@ -655,23 +686,62 @@ class HEPController extends Controller
      */
     public function generateAI(Request $request): JsonResponse
     {
-        $request->validate([
-            'diagnosis_id' => 'required|exists:diagnoses,id',
-            'additional_context' => 'nullable|string',
-        ]);
-
-        $doctor = Auth::user()->doctor;
-
-        // Verify diagnosis belongs to doctor
-        $diagnosis = Diagnosis::where('id', $request->diagnosis_id)
-            ->where('doctor_id', $doctor->id)
-            ->with('patient')
-            ->firstOrFail();
-
         try {
-            // Generate HEP program using AI
-            // FIXED: Pass the correct parameters to match the method signature
-            $program = $this->hepGenerator->generateProgram(
+            Log::info('GenerateAI method started', [
+                'user_id' => Auth::id(),
+                'request_data' => $request->all(),
+                'content_type' => $request->header('Content-Type'),
+                'xhr' => $request->ajax(),
+            ]);
+
+            $request->validate([
+                'diagnosis_id' => 'required|exists:diagnoses,id',
+                'additional_context' => 'nullable|string',
+            ]);
+
+            $doctor = Auth::user()->doctor;
+
+            // Verify diagnosis belongs to doctor
+            $diagnosis = Diagnosis::where('id', $request->diagnosis_id)
+                ->where('doctor_id', Auth::user()->id)
+                ->with('patient')
+                ->first();
+
+            if (!$diagnosis) {
+                Log::warning('Diagnosis not found or does not belong to doctor', [
+                    'requested_diagnosis_id' => $request->diagnosis_id,
+                    'doctor_id' => $doctor->id,
+                    'user_id' => Auth::id(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Diagnosis not found or you do not have permission to access this diagnosis.',
+                    'error' => 'Diagnosis not found',
+                ], 404);
+            }
+
+            Log::info('Diagnosis verified', [
+                'diagnosis_id' => $diagnosis->id,
+                'patient_id' => $diagnosis->patient_id,
+            ]);
+
+            // Check if OpenAI API key is configured before proceeding
+            if (empty(config('openai.api_key'))) {
+                Log::warning('OpenAI API key not configured for HEP generation', [
+                    'diagnosis_id' => $request->diagnosis_id,
+                    'doctor_id' => $doctor->id,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'AI service is not configured. Please contact administrator to set up OpenAI API key.',
+                    'error' => 'OpenAI API key not configured',
+                ], 501); // Use 501 instead of 500 for configuration issues
+            }
+
+            // Generate HEP program data using AI
+            $programData = $this->hepGenerator->generateProgramData(
                 $diagnosis,                  // Diagnosis model
                 $diagnosis->patient,         // Patient User model
                 Auth::user(),                // Doctor User model
@@ -680,17 +750,45 @@ class HEPController extends Controller
                 ]
             );
 
+            Log::info('HEP program data generated successfully', [
+                'exercise_count' => count($programData['exercises'] ?? []),
+            ]);
+
+            // Create a mock program object for the frontend
+            $mockProgram = [
+                'id' => 'temp_' . time(),
+                'title' => $programData['program_title'] ?? 'AI-Generated Home Exercise Program',
+                'description' => $this->hepGenerator->generateProgramDescription($programData),
+                'duration_weeks' => $programData['duration_weeks'] ?? 6,
+                'hep_exercises' => $this->convertExercisesToMockFormat($programData['exercises'] ?? []),
+                'patient' => $diagnosis->patient,
+                'diagnosis' => $diagnosis,
+            ];
+
             return response()->json([
                 'success' => true,
-                'program' => $program->load(['hepExercises.exercise', 'patient', 'diagnosis']),
+                'program' => $mockProgram,
                 'message' => 'HEP program generated successfully.',
             ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed for HEP generation', [
+                'errors' => $e->errors(),
+                'user_id' => Auth::id(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
 
         } catch (\Exception $e) {
             Log::error('AI HEP generation failed', [
                 'error' => $e->getMessage(),
-                'diagnosis_id' => $request->diagnosis_id,
-                'doctor_id' => $doctor->id,
+                'user_id' => Auth::id(),
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
@@ -700,6 +798,45 @@ class HEPController extends Controller
             ], 500);
         }
     }
+    /**
+     * Convert AI exercise recommendations to mock format for frontend
+     */
+    protected function convertExercisesToMockFormat(array $exercises): array
+    {
+        $mockExercises = [];
+        $order = 1;
+
+        foreach ($exercises as $exerciseData) {
+            // Find or create exercise
+            $exercise = Exercise::firstOrCreate(
+                ['name' => $exerciseData['name']],
+                [
+                    'description' => $exerciseData['rationale'] ?? 'AI-generated exercise',
+                    'category' => $exerciseData['category'] ?? 'functional',
+                    'difficulty_level' => $exerciseData['difficulty'] ?? 'intermediate',
+                    'instructions' => $exerciseData['rationale'] ?? 'Perform as described',
+                    'target_muscle_groups' => [],
+                    'duration' => $exerciseData['duration_seconds'] ?? 60,
+                ]
+            );
+
+            $mockExercises[] = [
+                'exercise_id' => $exercise->id,
+                'week_number' => 1, // Default to week 1
+                'sets' => $exerciseData['sets'] ?? 3,
+                'reps' => $exerciseData['reps'] ?? 10,
+                'duration_seconds' => $exerciseData['duration_seconds'] ?? 30,
+                'frequency' => $exerciseData['frequency'] ?? 'Daily',
+                'notes' => $exerciseData['progression'] ?? '',
+                'exercise' => $exercise,
+            ];
+
+            $order++;
+        }
+
+        return $mockExercises;
+    }
+
     /**
      * Get patients for HEP assignment (AJAX)
      */
@@ -714,7 +851,7 @@ class HEPController extends Controller
             })
             ->when($search, function ($query, $search) {
                 return $query->where('name', 'like', "%{$search}%")
-                             ->orWhere('email', 'like', "%{$search}%");
+                              ->orWhere('email', 'like', "%{$search}%");
             })
             ->distinct()
             ->select('id', 'name', 'email')
