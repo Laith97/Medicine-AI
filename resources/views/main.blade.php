@@ -1394,27 +1394,27 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Add scroll animations
-const observerOptions = {
+// Add scroll animations - Initial observer for simple fade-in effects
+const initialObserverOptions = {
     threshold: 0.1,
     rootMargin: '0px 0px -50px 0px'
 };
 
-const observer = new IntersectionObserver((entries) => {
+const initialObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             entry.target.style.opacity = '1';
             entry.target.style.transform = 'translateY(0)';
         }
     });
-}, observerOptions);
+}, initialObserverOptions);
 
-// Observe all cards and sections
+// Observe all cards and sections with simple animation
 document.querySelectorAll('.feature-card, .step-card, .testimonial-card, .pricing-card').forEach(el => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(30px)';
     el.style.transition = 'all 0.6s ease';
-    observer.observe(el);
+    initialObserver.observe(el);
 });
 
 // Pricing billing toggle for guests
@@ -1450,27 +1450,27 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ==================== SCROLL ANIMATIONS ====================
-// Intersection Observer for scroll animations
-const observerOptions = {
+// Intersection Observer for scroll animations with data-animate attribute
+const animateObserverOptions = {
     threshold: 0.1,
     rootMargin: '0px 0px -50px 0px'
 };
 
-const observer = new IntersectionObserver((entries) => {
+const animateObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             entry.target.style.opacity = '1';
             entry.target.style.animation = entry.target.dataset.animate + ' 0.8s ease-out forwards';
-            observer.unobserve(entry.target);
+            animateObserver.unobserve(entry.target);
         }
     });
-}, observerOptions);
+}, animateObserverOptions);
 
 // Observe all animated elements
 document.addEventListener('DOMContentLoaded', () => {
     // Add animations to elements
     document.querySelectorAll('[data-animate]').forEach(el => {
-        observer.observe(el);
+        animateObserver.observe(el);
     });
 
     // Feature cards animation
@@ -1478,7 +1478,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.style.opacity = '0';
         card.dataset.animate = 'fadeInUp';
         card.style.animationDelay = `${index * 0.1}s`;
-        observer.observe(card);
+        animateObserver.observe(card);
     });
 
     // Step cards animation
@@ -1486,7 +1486,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.style.opacity = '0';
         card.dataset.animate = 'fadeInUp';
         card.style.animationDelay = `${index * 0.15}s`;
-        observer.observe(card);
+        animateObserver.observe(card);
     });
 
     // Testimonial cards animation
@@ -1494,7 +1494,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.style.opacity = '0';
         card.dataset.animate = index % 2 === 0 ? 'fadeInLeft' : 'fadeInRight';
         card.style.animationDelay = `${index * 0.2}s`;
-        observer.observe(card);
+        animateObserver.observe(card);
     });
 
     // Pricing cards animation
@@ -1502,7 +1502,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.style.opacity = '0';
         card.dataset.animate = 'fadeInUp';
         card.style.animationDelay = `${index * 0.15}s`;
-        observer.observe(card);
+        animateObserver.observe(card);
     });
 
     // ==================== COUNTER ANIMATION ====================
