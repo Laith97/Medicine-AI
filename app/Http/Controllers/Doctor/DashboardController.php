@@ -390,6 +390,291 @@ class DashboardController extends Controller
     }
 
     /**
+     * Toggle auto-approve appointments setting
+     */
+    public function toggleAutoApprove(Request $request)
+    {
+        $doctor = $this->getEffectiveDoctor();
+
+        $request->validate([
+            'auto_approve' => 'required|boolean'
+        ]);
+
+        $doctor->update([
+            'auto_approve_appointments' => $request->auto_approve
+        ]);
+
+        $status = $request->auto_approve ? 'enabled' : 'disabled';
+
+        return response()->json([
+            'success' => true,
+            'message' => "Auto-approve appointments {$status} successfully!",
+            'auto_approve' => $request->auto_approve
+        ]);
+    }
+
+    /**
+     * Show form to create a new appointment
+     */
+    public function createAppointment()
+    {
+        $doctor = $this->getEffectiveDoctor();
+
+        // Log doctor info for debugging
+        Log::info('Create appointment - doctor info', [
+            'current_user_id' => Auth::id(),
+            'current_user_role' => Auth::user()->role,
+            'is_sub_user' => Auth::user()->isSubUser(),
+            'parent_user_id' => Auth::user()->parent_user_id,
+            'effective_doctor_id' => $doctor ? $doctor->id : null,
+            'user_doctor_id' => Auth::user()->doctor ? Auth::user()->doctor->id : null,
+        ]);
+
+        // Get available slots for next 30 days
+        $availableSlots = [];
+        for ($i = 0; $i < 30; $i++) {
+            $date = now()->addDays($i)->format('Y-m-d');
+            $slots = $doctor->getAvailableSlots($date);
+            if ($slots->isNotEmpty()) {
+                $availableSlots[$date] = $slots;
+            }
+        }
+
+        // Get doctor's existing patients for selection
+        $patients = $doctor->appointments()
+            ->with('patient')
+            ->whereNotNull('patient_id')
+            ->get()
+            ->pluck('patient')
+            ->unique('id')
+            ->filter()
+            ->values();
+
+        return view('doctor.appointments.create', compact('doctor', 'availableSlots', 'patients'));
+    }
+
+    /**
+     * Store a newly created appointment
+     */
+    public function storeAppointment(Request $request)
+    {
+        // Log that the method was called
+        Log::info('storeAppointment method called', [
+            'current_user_id' => Auth::id(),
+            'request_method' => $request->method(),
+            'request_data' => $request->all(),
+            'has_csrf_token' => $request->has('_token'),
+        ]);
+
+        $doctor = $this->getEffectiveDoctor();
+
+        // Prepare validation rules based on patient type
+        $rules = [
+            'appointment_date' => 'required|date|after:now',
+            'appointment_type' => 'required|in:' . implode(',', $doctor->getEnabledAppointmentTypes()),
+            'reason' => 'required|string|max:500',
+            'patient_type' => 'required|in:existing,new',
+        ];
+
+        if ($request->patient_type === 'existing') {
+            $rules['existing_patient_id'] = 'required|exists:users,id';
+        } else {
+            $rules['patient_name'] = 'required|string|max:255';
+            $rules['patient_email'] = 'required|email|unique:users,email';
+            $rules['patient_phone'] = 'required|string|max:20';
+            $rules['patient_date_of_birth'] = 'required|date|before:today';
+            $rules['patient_gender'] = 'required|in:male,female,other';
+            $rules['patient_terms'] = 'required|accepted';
+        }
+
+        try {
+            $request->validate($rules);
+            Log::info('Validation passed successfully');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all(),
+            ]);
+            throw $e;
+        }
+
+        // Validate slot availability
+        $appointmentDate = Carbon::parse($request->appointment_date);
+        $slots = $doctor->getAvailableSlots($appointmentDate->format('Y-m-d'));
+        $requestedSlot = $slots->first(fn($slot) => $slot['datetime'] === $appointmentDate->toDateTimeString());
+
+        if (!$requestedSlot) {
+            return back()->withErrors(['appointment_date' => 'Selected time slot is not available.']);
+        }
+
+        // Handle patient creation/selection
+        if ($request->patient_type === 'existing') {
+            $patient = \App\Models\User::findOrFail($request->existing_patient_id);
+        } else {
+            // Auto-generate a secure password
+            $generatedPassword = \Illuminate\Support\Str::random(12);
+
+            // Calculate age from date of birth
+            $birthDate = \Carbon\Carbon::parse($request->patient_date_of_birth);
+            $age = $birthDate->age;
+
+            $patient = \App\Models\User::create([
+                'name' => $request->patient_name,
+                'email' => $request->patient_email,
+                'phone' => $request->patient_phone,
+                'date_of_birth' => $request->patient_date_of_birth,
+                'age' => $age, // Calculate age from date of birth
+                'gender' => $request->patient_gender,
+                'password' => bcrypt($generatedPassword),
+                'role' => 'patient',
+                'email_verified_at' => now(), // Auto-verify since created by doctor
+                'primary_doctor_id' => $doctor->user_id, // Assign the doctor as primary doctor
+            ]);
+
+            // Send welcome notification with login credentials
+            try {
+                $patient->notify(new \App\Notifications\SystemAlertNotification(
+                    'Welcome to Our Medical Portal',
+                    "Your patient account has been created by Dr. {$doctor->user->name}.\n\n" .
+                    "Login Email: {$request->patient_email}\n" .
+                    "Temporary Password: {$generatedPassword}\n\n" .
+                    "Please log in and change your password. You can manage your appointments and health records.",
+                    'success',
+                    [
+                        'link' => route('login'),
+                        'link_text' => 'Sign In to Your Account'
+                    ]
+                ));
+            } catch (\Exception $e) {
+                Log::error('Failed to send welcome notification to new patient: ' . $e->getMessage());
+            }
+        }
+
+        // Create appointment
+        $appointment = Appointment::create([
+            'doctor_id' => $doctor->id,
+            'patient_id' => $patient->id,
+            'appointment_date' => $appointmentDate,
+            'appointment_end' => $appointmentDate->copy()->addMinutes($doctor->appointment_duration),
+            'status' => $doctor->auto_approve_appointments ? 'confirmed' : 'pending',
+            'appointment_type' => $request->appointment_type,
+            'reason' => $request->reason,
+            'consultation_fee' => $doctor->consultation_fee,
+        ]);
+
+        // Confirm appointment if auto-approve is enabled (same as patient booking)
+        if ($doctor->auto_approve_appointments) {
+            $appointment->confirm();
+        }
+
+        // Log appointment creation for debugging
+        Log::info('Appointment created by doctor', [
+            'appointment_id' => $appointment->id,
+            'doctor_id' => $appointment->doctor_id,
+            'patient_id' => $appointment->patient_id,
+            'appointment_date' => $appointment->appointment_date,
+            'status' => $appointment->status,
+            'auto_approve' => $doctor->auto_approve_appointments,
+            'current_user_id' => Auth::id(),
+            'effective_doctor_id' => $doctor->id,
+        ]);
+
+        // Send notifications (same as patient booking flow)
+        $this->sendAppointmentNotifications($appointment);
+
+        return redirect()->route('doctor.appointments.show', $appointment)
+            ->with('success', 'Appointment booked successfully!');
+    }
+
+    /**
+     * Send appointment notifications (same as patient booking flow)
+     */
+    private function sendAppointmentNotifications(Appointment $appointment)
+    {
+        try {
+            // Send notification to doctor about new appointment
+            if ($appointment->doctor && $appointment->doctor->user) {
+                $doctor = $appointment->doctor->user;
+
+                // Check if doctor wants appointment notifications
+                if ($doctor->wantsNotification('appointment_booked')) {
+                    // Send notification directly, not using queue
+                    $notification = new \App\Notifications\AppointmentBookedNotification($appointment);
+                    $doctor->notify($notification);
+
+                    // Broadcast event immediately, not using queue
+                    event(new \App\Events\AppointmentBookedEvent($appointment));
+                }
+            }
+
+            // Send notification to patient about appointment confirmation
+            if ($appointment->patient && $appointment->status === 'confirmed') {
+                $patient = $appointment->patient;
+
+                // Check if patient wants appointment notifications
+                if ($patient->wantsNotification('appointment_booked')) {
+                    $patient->notifyIfWants(new \App\Notifications\AppointmentBookedNotification($appointment), 'appointment_booked');
+                }
+            }
+
+            // Send notification to guest about appointment confirmation
+            if ($appointment->isGuestAppointment() && $appointment->status === 'confirmed') {
+                // For guest appointments, we'll handle notifications differently
+                // This could be handled through email notifications
+            }
+
+        } catch (\Exception $e) {
+            // Log notification errors but don't break the appointment process
+            Log::error('Failed to send appointment notifications: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Search patients for appointment booking
+     */
+    public function searchPatients(Request $request)
+    {
+        try {
+            $request->validate([
+                'query' => 'required|string|min:2|max:100'
+            ]);
+
+            $query = $request->input('query');
+
+            // Search all patients in the system (not just those with appointments with this doctor)
+            $patients = \App\Models\User::where('role', 'patient')
+                ->where(function($q) use ($query) {
+                    $q->where('name', 'like', "%{$query}%")
+                      ->orWhere('email', 'like', "%{$query}%")
+                      ->orWhere('phone', 'like', "%{$query}%");
+                })
+                ->take(10)
+                ->get()
+                ->map(function($patient) {
+                    return [
+                        'id' => $patient->id,
+                        'name' => $patient->name,
+                        'email' => $patient->email,
+                        'phone' => $patient->phone,
+                        'text' => "{$patient->name} ({$patient->email})"
+                    ];
+                })
+                ->toArray(); // Convert to array explicitly
+
+            return response()->json($patients);
+        } catch (\Exception $e) {
+            Log::error('Patient search error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'query' => $request->all()
+            ]);
+            return response()->json([
+                'error' => 'Search failed',
+                'message' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
+    }
+
+    /**
      * Display reviews
      */
     public function reviews(Request $request)
@@ -907,25 +1192,4 @@ class DashboardController extends Controller
             ->with('success', 'Follow-up appointment created successfully!');
     }
 
-    /**
-     * Toggle auto-approval of appointments for the doctor
-     */
-    public function toggleAutoApprove(Request $request)
-    {
-        $doctor = $this->getEffectiveDoctor();
-
-        // Toggle the auto_approve_appointments setting
-        $currentStatus = $doctor->auto_approve_appointments;
-        $newStatus = !$currentStatus;
-
-        $doctor->update([
-            'auto_approve_appointments' => $newStatus
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'auto_approve_appointments' => $newStatus,
-            'message' => $newStatus ? 'Auto-approval enabled successfully' : 'Auto-approval disabled successfully'
-        ]);
-    }
 }

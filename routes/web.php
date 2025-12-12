@@ -762,6 +762,8 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
 
     // Appointment management
     Route::get('/appointments', [DoctorDashboardController::class, 'appointments'])->name('appointments.index');
+    Route::get('/appointments/create', [DoctorDashboardController::class, 'createAppointment'])->name('appointments.create');
+    Route::post('/appointments', [DoctorDashboardController::class, 'storeAppointment'])->name('appointments.store');
     Route::get('/appointments/{appointment}', [DoctorDashboardController::class, 'showAppointment'])->name('appointments.show');
     Route::post('/appointments/{appointment}/confirm', [DoctorDashboardController::class, 'confirmAppointment'])->name('appointments.confirm');
     Route::post('/appointments/{appointment}/cancel', [DoctorDashboardController::class, 'cancelAppointment'])->name('appointments.cancel');
@@ -770,6 +772,7 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
     Route::get('/appointments/calendar/events', [DoctorDashboardController::class, 'getCalendarEvents'])->name('appointments.calendar.events');
     Route::get('/appointments/{appointment}/completed', [DoctorDashboardController::class, 'showCompletedAppointment'])->name('appointments.completed');
     Route::post('/appointments/toggle-auto-approve', [DoctorDashboardController::class, 'toggleAutoApprove'])->name('appointments.toggle-auto-approve');
+    Route::get('/patients/search', [DoctorDashboardController::class, 'searchPatients'])->name('patients.search');
 
     // Follow-up appointment routes
     Route::get('/appointments/{appointment}/follow-ups/create', [DoctorDashboardController::class, 'createFollowUp'])->name('follow-ups.create');
