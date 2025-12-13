@@ -49,6 +49,7 @@
 
         <form id="hepForm" method="POST" action="{{ route('doctor.hep.store') }}" enctype="multipart/form-data">
             @csrf
+            <input type="hidden" id="generated_program_id" name="generated_program_id">
 
             <!-- Step 1: Diagnosis Selection -->
             <div class="step-content active" id="step1-content">
@@ -569,8 +570,62 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function populateFormWithAIData(program) {
-        // This would populate the form with AI-generated program data
-        // For now, we'll just show a preview
+        // Set the generated program ID
+        document.getElementById('generated_program_id').value = program.id;
+
+        // Populate form fields with AI-generated data
+        document.getElementById('program_title').value = program.title || '';
+        document.getElementById('program_description').value = program.description || '';
+        document.getElementById('program_goals').value = program.goals ? program.goals.join('\n') : '';
+        document.getElementById('program_duration_manual').value = program.duration_weeks || 6;
+
+        // Clear existing exercises
+        document.getElementById('exercises-container').innerHTML = '';
+
+        // Populate exercises
+        if (program.hep_exercises && program.hep_exercises.length > 0) {
+            program.hep_exercises.forEach((exercise, index) => {
+                const exerciseHtml = `
+                    <div class="exercise-item mb-3" data-exercise-id="${exercise.exercise_id}">
+                        <div class="exercise-header d-flex justify-content-between align-items-center">
+                            <h6>${exercise.exercise ? exercise.exercise.name : 'Unknown Exercise'}</h6>
+                            <span class="badge bg-info">AI Generated</span>
+                        </div>
+                        <div class="exercise-details">
+                            <div class="mb-3">
+                                <label class="form-label">Week</label>
+                                <input type="number" name="exercises[${index}][week_number]" class="form-control" min="1" value="${exercise.week_number || 1}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Sets</label>
+                                <input type="number" name="exercises[${index}][sets]" class="form-control" min="1" value="${exercise.sets || 3}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Reps</label>
+                                <input type="number" name="exercises[${index}][reps]" class="form-control" min="1" value="${exercise.reps || 10}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Duration (seconds)</label>
+                                <input type="number" name="exercises[${index}][duration_seconds]" class="form-control" min="1" value="${exercise.duration_seconds || 30}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Frequency</label>
+                                <input type="text" name="exercises[${index}][frequency]" class="form-control" value="${exercise.frequency || 'Daily'}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea name="exercises[${index}][notes]" class="form-control" rows="2" placeholder="Exercise instructions or notes...">${exercise.notes || ''}</textarea>
+                        </div>
+                        <input type="hidden" name="exercises[${index}][exercise_id]" value="${exercise.exercise_id}">
+                        <input type="hidden" name="exercises[${index}][order]" value="${index}">
+                    </div>
+                `;
+                document.getElementById('exercises-container').insertAdjacentHTML('beforeend', exerciseHtml);
+            });
+        }
+
+        // Update program preview
         const preview = document.getElementById('program-preview');
         preview.innerHTML = `
             <h6>AI-Generated Program Preview</h6>
@@ -578,7 +633,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <strong>Program Generated Successfully!</strong><br>
                 Title: ${program.title}<br>
                 Duration: ${program.duration_weeks} weeks<br>
-                Exercises: ${program.hep_exercises_count || 'Multiple'}
+                Exercises: ${program.hep_exercises ? program.hep_exercises.length : 0}
+            </div>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                The form has been populated with the AI-generated program. You can review and modify the details before saving.
             </div>
         `;
     }
