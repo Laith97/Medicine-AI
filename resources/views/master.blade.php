@@ -1446,7 +1446,7 @@ body .dropdown .dropdown-menu.show,
 
         <!-- Top Bar Start -->
         <div id="top-bar" class="py-1 border-bottom"
-            style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white;">
+            style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important; color: white !important;">
             <div class="container">
                 <div class="row justify-content-between align-items-center">
 
