@@ -71,7 +71,3 @@
     @endauth
   </div>
 </aside>
-
-<button id="sidebarPin" class="sidebar-pin btn btn-light d-none d-lg-inline-flex" aria-label="Collapse sidebar" title="Collapse sidebar">
-  <i class="fa-solid fa-angles-left"></i>
-</button>
