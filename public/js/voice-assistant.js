@@ -1,5 +1,5 @@
 (function() {
-    // Enhanced logging system for voice assistant debugging
+    // Enhanced logging system for ambient listening debugging
     const voiceAssistantLogger = {
         logs: [],
         maxLogs: 1000,
@@ -391,15 +391,15 @@
         }
     }
 
-    // Initialize the voice assistant
+    // Initialize the ambient listening system
     function initVoiceAssistant() {
         // Prevent double initialization
         if (isInitialized) {
-            console.log('🎙️ Voice assistant already initialized, skipping...');
+            console.log('🎙️ Ambient listening system already initialized, skipping...');
             return;
         }
 
-        console.log('🎙️ Initializing voice assistant...');
+        console.log('🎙️ Initializing ambient listening system...');
         isInitialized = true;
 
         // Clean up any leftover keyboard shortcuts help from previous page loads
@@ -425,7 +425,7 @@
         syncPatientSelection();
 
         // Initialize speech recognition
-        initSpeechRecognition();
+        // initSpeechRecognition(); // REMOVED: Web Speech API replaced by Ambient Listening
 
         // Set up event listeners
         setupEventListeners();
@@ -465,7 +465,7 @@
         setupKeyboardShortcuts();
 
         // Log initialization status with enhanced logging
-        voiceAssistantLogger.info('🎙️ Voice Assistant initialized', {
+        voiceAssistantLogger.info('🎙️ Ambient Listening System initialized', {
             liveTranscription: true,
             audioRecordingSupported: audioRecordingSupported,
             serverProcessing: true,
@@ -476,7 +476,7 @@
             sessionId: sessionId
         });
 
-        console.log('🎙️ Voice Assistant initialized');
+        console.log('🎙️ Ambient Listening System initialized');
         console.log('✅ Live transcription: Active');
         console.log('✅ Audio recording: ' + (audioRecordingSupported ? 'Supported' : 'Not supported'));
         console.log('✅ Server processing: Ready');
@@ -1278,392 +1278,13 @@
         });
     }
 
-    // Initialize speech recognition
-    function initSpeechRecognition() {
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
+    // REMOVED: initSpeechRecognition function (Web Speech API)
 
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = currentLanguage;
-            recognition.maxAlternatives = 3;
+    // REMOVED: detectLanguage function (Web Speech API)
 
-            // Debug logging for language changes
-            console.log('🎙️ Speech recognition initialized with language:', currentLanguage);
-            console.log('🌐 Supported languages will be auto-detected from speech patterns');
-            console.log('🕐 Current timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
-            console.log('� Debug: Use window.voiceAssistant.forceArabicMode() or forceEnglishMode()');
+    // REMOVED: detectSpokenLanguage function (Web Speech API)
 
-            recognition.onresult = function (event) {
-                let interimTranscript = '';
-                let finalTranscripts = []; // Collect all final transcripts in this event
-
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const result = event.results[i];
-                    const transcript = result[0].transcript;
-
-                    if (result.isFinal) {
-                        finalTranscripts.push(transcript);
-                        console.log('🎤 Final transcript received:', transcript);
-
-                        // FIXED: More conservative language detection - only on substantial final results
-                        if (transcript.trim().length > 10) { // Only check substantial content
-                            const detectedLang = detectLanguage(transcript);
-                            console.log('🔍 Language detection for final result:', detectedLang, 'Current:', currentLanguage);
-
-                            if (detectedLang !== currentLanguage) {
-                                const previousLanguage = currentLanguage;
-                                currentLanguage = detectedLang;
-
-                                // Only show notification for significant language changes
-                                if (previousLanguage !== detectedLang && transcript.length > 20) {
-                                    const languageNames = {
-                                        'ar-SA': 'العربية',
-                                        'en-US': 'English',
-                                        'fr-FR': 'Français',
-                                        'es-ES': 'Español',
-                                        'de-DE': 'Deutsch'
-                                    };
-                                    showAlert(`Language switched to ${languageNames[detectedLang] || detectedLang}`, 'info');
-                                }
-
-                                // FIXED: Only restart recognition for significant changes
-                                if (isListening && transcript.length > 30) {
-                                    recognition.stop();
-                                    setTimeout(() => {
-                                        if (isListening) {
-                                            recognition.lang = currentLanguage;
-                                            recognition.start();
-                                        }
-                                    }, 300);
-                                }
-                            }
-                        }
-                    } else {
-                        interimTranscript += transcript;
-                    }
-                }
-
-                // FIXED: Process all final transcripts at once to prevent overwriting
-                if (finalTranscripts.length > 0) {
-                    const newFinalText = finalTranscripts.join(' ') + ' ';
-                    const trimmedNew = newFinalText.trim();
-
-                    console.log('🎤 Processing final transcripts:', {
-                        count: finalTranscripts.length,
-                        combinedText: trimmedNew,
-                        currentLiveLength: liveTranscription.length
-                    });
-
-                    // FIXED: Always append final transcripts - don't try to detect duplicates within the same event
-                    // The Web Speech API may return multiple final results for the same audio segment
-                    if (liveTranscription.length === 0) {
-                        // First transcription
-                        liveTranscription = newFinalText;
-                    } else {
-                        // Check if this is likely a duplicate or correction of existing text
-                        const currentWords = liveTranscription.trim().split(/\s+/);
-                        const newWords = trimmedNew.split(/\s+/);
-
-                        // If new text is much shorter than current, it might be a correction
-                        if (newWords.length < currentWords.length * 0.5) {
-                            console.log('🎤 Detected possible correction, replacing last part');
-                            // Replace the last portion with the new text
-                            const keepWords = Math.max(0, currentWords.length - newWords.length);
-                            const keepText = currentWords.slice(0, keepWords).join(' ');
-                            liveTranscription = (keepText ? keepText + ' ' : '') + newFinalText;
-                        } else {
-                            // Normal append
-                            liveTranscription += (liveTranscription.endsWith(' ') ? '' : ' ') + newFinalText;
-                        }
-                    }
-
-                    lastTranscriptTime = Date.now();
-
-                    // Update live transcription quality
-                    const liveQuality = validateTranscriptionQuality(liveTranscription, 'live');
-                    liveConfidence = liveQuality.score;
-
-                    updateLiveTranscriptionDisplay();
-                    updateTranscriptionDisplay();
-
-                    // Continuous language detection
-                    detectLanguageContinuously(trimmedNew);
-
-                    console.log('🎤 Live transcript updated:', {
-                        newText: trimmedNew,
-                        totalLength: liveTranscription.length,
-                        quality: liveConfidence + '%',
-                        currentLanguage: currentLanguage
-                    });
-                }
-
-                // FIXED: Better buffering system - only show current content
-                const currentDisplayText = liveTranscription + interimTranscript;
-                if (currentDisplayText.trim() && currentDisplayText !== transcriptBuffer) {
-                    transcriptBuffer = currentDisplayText;
-
-                    console.log('🔄 Buffer updated:', {
-                        liveLength: liveTranscription.length,
-                        interimLength: interimTranscript.length,
-                        totalLength: currentDisplayText.length
-                    });
-
-                    // Clear existing timeout
-                    if (bufferTimeout) {
-                        clearTimeout(bufferTimeout);
-                    }
-
-                    // Process with reasonable delay to avoid over-processing
-                    bufferTimeout = setTimeout(() => {
-                        if (transcriptBuffer.trim()) {
-                            console.log('⏰ Processing buffered transcript, length:', transcriptBuffer.trim().length);
-                            handleTranscription(transcriptBuffer.trim());
-                        }
-                    }, 200); // Balanced delay
-                }
-            };
-
-            recognition.onerror = function (event) {
-                ;
-
-                switch (event.error) {
-                    case 'not-allowed':
-                        showAlert('Microphone access denied. Please allow microphone access and try again.', 'error');
-                        isListening = false;
-                        updateRecordingUI();
-                        break;
-                    case 'no-speech':
-
-                        break;
-                    case 'audio-capture':
-                        showAlert('No microphone found. Please check your microphone connection.', 'error');
-                        isListening = false;
-                        updateRecordingUI();
-                        break;
-                    case 'network':
-
-                        break;
-                    case 'aborted':
-
-                        break;
-                    default:
-
-                }
-            };
-
-            recognition.onstart = function () {
-
-            };
-
-            recognition.onend = function () {
-
-
-                if (isListening) {
-                    // Auto-restart in hands-free mode with enhanced error handling
-                    if (isHandsFreeMode && !isHandsFreePaused) {
-                        if (restartAttempts < maxRestartAttempts) {
-                            const delay = Math.min(100 * Math.pow(2, restartAttempts), 5000); // Exponential backoff
-                            restartTimeout = setTimeout(() => {
-                                if (isListening && isHandsFreeMode && !isHandsFreePaused) {
-                                    try {
-                                        recognition.lang = currentLanguage;
-                                        recognition.start();
-                                        restartAttempts = 0; // Reset on successful restart
-
-                                    } catch (error) {
-                                        ;
-                                        restartAttempts++;
-
-                                        if (restartAttempts >= maxRestartAttempts) {
-                                            showAlert('Voice recognition failed multiple times. Please check your microphone and try again.', 'error');
-                                            isListening = false;
-                                            isHandsFreeMode = false;
-                                            if (handsFreeToggle) handsFreeToggle.checked = false;
-                                            updateRecordingUI();
-                                            updateHandsFreeStatus();
-                                        }
-                                    }
-                                }
-                            }, delay);
-                        } else {
-                            showAlert('Maximum restart attempts reached. Hands-free mode disabled.', 'error');
-                            isHandsFreeMode = false;
-                            if (handsFreeToggle) handsFreeToggle.checked = false;
-                            updateHandsFreeStatus();
-                        }
-                    }
-                }
-            };
-        } else {
-            showAlert('Your browser does not support speech recognition. Please use Chrome, Edge, or Safari.', 'error');
-        }
-    }
-
-    // Enhanced automatic language detection with speech pattern analysis
-    function detectLanguage(text) {
-        if (!text || text.trim().length === 0) {
-            return currentLanguage;
-        }
-
-        const cleanText = text.trim();
-
-        // Debug logging
-        console.log('🔍 Detecting language for text:', cleanText);
-        console.log('📏 Text length:', cleanText.length);
-
-        // Arabic detection (more comprehensive - includes all Arabic Unicode blocks)
-        const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g;
-        const arabicChars = (cleanText.match(arabicPattern) || []).length;
-
-        // English detection
-        const englishPattern = /[a-zA-Z]/g;
-        const englishChars = (cleanText.match(englishPattern) || []).length;
-
-        // French detection (common French characters)
-        const frenchPattern = /[àâäéèêëïîôöùûüÿçÀÂÄÉÈÊËÏÎÔÖÙÛÜŸÇ]/g;
-        const frenchChars = (cleanText.match(frenchPattern) || []).length;
-
-        // Spanish detection (common Spanish characters)
-        const spanishPattern = /[áéíóúüñ¿¡ÁÉÍÓÚÜÑ]/g;
-        const spanishChars = (cleanText.match(spanishPattern) || []).length;
-
-        // German detection (common German characters)
-        const germanPattern = /[äöüßÄÖÜẞ]/g;
-        const germanChars = (cleanText.match(germanPattern) || []).length;
-
-        // Determine dominant language based on character count
-        const totalChars = cleanText.length;
-        const arabicRatio = arabicChars / totalChars;
-        const englishRatio = englishChars / totalChars;
-        const frenchRatio = frenchChars / totalChars;
-        const spanishRatio = spanishChars / totalChars;
-        const germanRatio = germanChars / totalChars;
-
-        console.log('📊 Language ratios:', {
-            arabic: arabicRatio.toFixed(3),
-            english: englishRatio.toFixed(3),
-            french: frenchRatio.toFixed(3),
-            spanish: spanishRatio.toFixed(3),
-            german: germanRatio.toFixed(3),
-            totalChars: totalChars,
-            arabicChars: arabicChars,
-            englishChars: englishChars
-        });
-
-        // Language mapping with confidence thresholds
-        const languages = [
-            { code: 'ar-SA', ratio: arabicRatio, threshold: 0.01, name: 'العربية' }, // Very low threshold for Arabic
-            { code: 'fr-FR', ratio: frenchRatio, threshold: 0.1, name: 'Français' },
-            { code: 'es-ES', ratio: spanishRatio, threshold: 0.1, name: 'Español' },
-            { code: 'de-DE', ratio: germanRatio, threshold: 0.1, name: 'Deutsch' },
-            { code: 'en-US', ratio: englishRatio, threshold: 0.01, name: 'English' } // Very low threshold for English
-        ];
-
-        // Find the language with highest ratio above threshold
-        let detectedLang = currentLanguage;
-        let maxRatio = 0;
-
-        for (const lang of languages) {
-            if (lang.ratio > lang.threshold && lang.ratio > maxRatio) {
-                detectedLang = lang.code;
-                maxRatio = lang.ratio;
-                console.log('🎯 Detected language:', lang.name, 'with ratio:', lang.ratio.toFixed(3));
-            }
-        }
-
-        // Special handling: if we have ANY Arabic characters, prioritize Arabic
-        if (arabicChars > 0) {
-            detectedLang = 'ar-SA';
-            console.log('🇸🇦 Arabic detected! Switching to Arabic (ar-SA)');
-        }
-
-        // Update UI indicator if language changed
-        if (detectedLang !== currentLanguage) {
-            console.log('🔄 Language changed from', currentLanguage, 'to', detectedLang);
-            updateLanguageIndicator(detectedLang);
-        }
-
-        return detectedLang;
-    }
-
-    // Advanced language detection based on speech patterns (not just transcribed text)
-    function detectSpokenLanguage(audioData) {
-        // This is a placeholder for more advanced speech pattern analysis
-        // In a real implementation, this would analyze audio features like:
-        // - Phoneme patterns
-        // - Speech rhythm
-        // - Acoustic features
-        // - Language-specific sound patterns
-
-        // For now, we'll rely on text-based detection after transcription
-        // But this function could be extended with audio analysis libraries
-
-        return new Promise((resolve) => {
-            // Simulate analysis delay
-            setTimeout(() => {
-                resolve(currentLanguage);
-            }, 100);
-        });
-    }
-
-    // Enhanced language switching with quality warnings and user guidance
-    function setRecognitionLanguage(lang) {
-        const supportedLanguages = {
-            'ar': 'ar-SA',
-            'en': 'en-US',
-            'fr': 'fr-FR',
-            'es': 'es-ES',
-            'de': 'de-DE',
-        };
-
-        const languageNames = {
-            'ar-SA': 'العربية (Arabic)',
-            'en-US': 'English',
-            'fr-FR': 'Français (French)',
-            'es-ES': 'Español (Spanish)',
-            'de-DE': 'Deutsch (German)'
-        };
-
-        if (supportedLanguages[lang]) {
-            const newLanguage = supportedLanguages[lang];
-            console.log('🔄 Manually setting language to:', newLanguage);
-
-            if (newLanguage !== currentLanguage) {
-                const oldLanguage = currentLanguage;
-                currentLanguage = newLanguage;
-                updateLanguageIndicator(currentLanguage);
-
-                if (recognition && isListening) {
-                    console.log('🔄 Restarting recognition with new language:', currentLanguage);
-                    recognition.stop();
-                    setTimeout(() => {
-                        if (isListening) {
-                            recognition.lang = currentLanguage;
-                            recognition.start();
-                            console.log('✅ Recognition restarted with language:', currentLanguage);
-                        }
-                    }, 300);
-                }
-
-                // Success message with language name
-                const successMessage = `Language switched to ${languageNames[newLanguage] || newLanguage}`;
-                showAlert(successMessage, 'success');
-
-                // Log language switch for monitoring
-                console.log('🌐 Language switch completed:', {
-                    from: oldLanguage,
-                    to: newLanguage,
-                    timestamp: new Date().toISOString(),
-                    region: Intl.DateTimeFormat().resolvedOptions().timeZone
-                });
-            }
-        } else {
-            console.warn('❌ Unsupported language requested:', lang);
-            showAlert('Selected language is not supported.', 'error');
-        }
-    }
+    // REMOVED: setRecognitionLanguage function (Web Speech API)
 
     // Enhanced language indicator with quality information
     function updateLanguageIndicator(languageCode) {

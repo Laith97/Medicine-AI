@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('title', 'Voice Assistant Performance')
+@section('title', 'Ambient Listening Performance')
 
 @section('content')
 <div class="container-fluid">
@@ -10,7 +10,7 @@
                 <div class="card-header">
                     <h4 class="card-title">
                         <i class="fas fa-chart-line me-2"></i>
-                        Voice Assistant Performance Analytics
+                        Ambient Listening Performance Analytics
                     </h4>
                     <div class="card-tools">
                         <select id="timeRange" class="form-select form-select-sm" style="width: auto;">

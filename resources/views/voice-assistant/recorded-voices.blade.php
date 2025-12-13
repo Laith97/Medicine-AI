@@ -75,7 +75,7 @@
             <div class="d-flex justify-content-end">
                 <a href="{{ route('ai.voice-assistant.index') }}" class="btn btn-primary">
                     <i class="fas fa-plus me-2"></i>
-                    New Session Recording
+                    New Ambient Listening Session
                 </a>
             </div>
         </div>
@@ -181,10 +181,10 @@
                                 <i class="fas fa-microphone-slash fa-4x text-muted"></i>
                             </div>
                             <h4 class="text-muted">No Session Recordings Yet</h4>
-                            <p class="text-muted mb-4">Start recording voice sessions to see them here.</p>
+                            <p class="text-muted mb-4">Start ambient listening sessions to see them here.</p>
                             <a href="{{ route('ai.voice-assistant.index') }}" class="btn btn-primary">
                                 <i class="fas fa-microphone me-2"></i>
-                                Start Session Recording
+                                Start Ambient Listening Session
                             </a>
                         </div>
                     @endif

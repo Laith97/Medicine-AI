@@ -1453,3 +1453,9 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureJsonResponse::class])->gro
     Route::get('/api/doctor/waitlist/stats', [App\Http\Controllers\Doctor\WaitlistController::class, 'getStats'])->name('api.doctor.waitlist.stats');
     Route::get('/api/doctor/waitlist/patient/{waitlist}', [App\Http\Controllers\Doctor\WaitlistController::class, 'getPatient'])->name('api.doctor.waitlist.patient');
 });
+
+// Admin Settings Routes
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/settings/transcription', [App\Http\Controllers\Admin\SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings/transcription', [App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('settings.update');
+});

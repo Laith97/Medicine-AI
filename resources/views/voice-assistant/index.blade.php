@@ -8,8 +8,8 @@
         <div class="col-12">
             <div class="card bg-primary text-white">
                 <div class="card-body">
-                    <h1 class="card-title h3 mb-2">Voice Assistant</h1>
-                    <p class="card-text">Hands-free medical consultation with real-time AI analysis</p>
+                    <h1 class="card-title h3 mb-2">Ambient Listening</h1>
+                    <p class="card-text">Ambient listening for medical consultation with real-time AI analysis</p>
 
                     <!-- Privacy Notice -->
                     <div class="alert alert-warning mt-3 mb-0" role="alert">
@@ -17,7 +17,7 @@
                             <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
                             <div>
                                 <strong>Privacy & Security Notice</strong>
-                                <p class="mb-0 mt-1 small">Voice recordings are processed securely and stored encrypted. All transcriptions are HIPAA-compliant and only accessible to authorized medical personnel. By using this feature, you consent to voice recording for medical documentation purposes.</p>
+                                <p class="mb-0 mt-1 small">Ambient listening recordings are processed securely and stored encrypted. All transcriptions are HIPAA-compliant and only accessible to authorized medical personnel. By using this feature, you consent to ambient listening for medical documentation purposes.</p>
                             </div>
                         </div>
                     </div>
@@ -133,7 +133,7 @@
                                     <span class="badge bg-secondary me-2">
                                         <i class="fas fa-circle fa-xs"></i>
                                     </span>
-                                    <span class="text-muted">Not Recording</span>
+                                    <span class="text-muted">Not Listening</span>
                                 </div>
                             </div>
 
@@ -165,10 +165,10 @@
                                 <input class="form-check-input" type="checkbox" id="handsFreeToggle">
                                 <label class="form-check-label" for="handsFreeToggle">
                                     <i class="fas fa-robot me-1"></i>
-                                    Hands-Free Mode
+                                    Ambient Listening
                                     <i class="fas fa-info-circle text-muted ms-1"
                                        data-bs-toggle="tooltip"
-                                       title="Enhanced hands-free mode with audio monitoring, pause/resume controls, session persistence, and automatic error recovery. Use Ctrl+H to toggle quickly."></i>
+                                       title="Enhanced ambient listening mode with audio monitoring, pause/resume controls, session persistence, and automatic error recovery. Use Ctrl+H to toggle quickly."></i>
                                 </label>
                             </div>
 
@@ -184,14 +184,18 @@
 
                     <!-- Control Buttons -->
                     <div class="d-flex gap-2 flex-wrap">
-                        <button id="startRecordingBtn" class="btn btn-success" type="button" disabled>
+                        <!-- React AmbientAudioRecorder component will be mounted here -->
+                        <div id="react-audio-recorder-container" class="me-2"></div>
+
+                        <!-- Fallback buttons when React component is not active -->
+                        <button id="startRecordingBtn" class="btn btn-success" type="button" disabled style="display: none;">
                             <i class="fas fa-microphone me-2"></i>
-                            Start Recording
+                            Start Ambient Listening
                         </button>
 
-                        <button id="stopRecordingBtn" class="btn btn-danger" disabled>
+                        <button id="stopRecordingBtn" class="btn btn-danger" disabled style="display: none;">
                             <i class="fas fa-stop me-2"></i>
-                            Stop Recording
+                            Stop Ambient Listening
                         </button>
 
                         <button id="generateAnalysisBtn" class="btn btn-primary" disabled>
@@ -206,7 +210,7 @@
 
                         <a href="{{ route('ai.voice-assistant.training') }}" class="btn btn-success">
                             <i class="fas fa-graduation-cap me-2"></i>
-                            Training Guide
+                            Ambient Listening Guide
                         </a>
 
                         <a href="{{ route('ai.voice-assistant.recorded-voices') }}" class="btn btn-info">
@@ -216,7 +220,7 @@
 
                         <a href="{{ route('ai.voice-assistant.performance') }}" class="btn btn-warning">
                             <i class="fas fa-chart-line me-2"></i>
-                            Performance
+                            Listening Stats
                         </a>
                     </div>
 
@@ -427,7 +431,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-microphone-alt me-2"></i>
-                        Live Transcription
+                        Ambient Transcription
                     </h5>
                     <div id="transcriptionStatus" class="d-flex align-items-center gap-2">
                         <!-- Status indicators will be inserted here -->
@@ -436,7 +440,11 @@
                 <div class="card-body">
                     <div class="border rounded p-3" style="height: 300px; overflow-y: auto; background-color: #f8f9fa;">
                         <div id="transcriptionContainer" style="height: 100%;">
-                            <textarea id="transcriptionArea" class="form-control" style="height: 100%; border: none; background: transparent; resize: none;" placeholder="Start recording to see transcription here..."></textarea>
+                            <!-- React RealTimeTranscript component will be mounted here -->
+                            <div id="react-transcript-container"></div>
+
+                            <!-- Fallback textarea for non-React implementation -->
+                            <textarea id="transcriptionArea" class="form-control" style="height: 100%; border: none; background: transparent; resize: none; display: none;" placeholder="Start ambient listening to see transcription here..."></textarea>
                         </div>
                     </div>
                     <!-- Speaker Legend -->
@@ -537,7 +545,7 @@
                             id="diagnosisText"
                             class="form-control"
                             rows="6"
-                            placeholder="Write your professional diagnosis based on the consultation and your clinical judgment..."
+                            placeholder="Write your professional diagnosis based on the ambient listening session and your clinical judgment..."
                             required
                         ></textarea>
                         <div class="form-text">
@@ -552,7 +560,7 @@
                                 <i class="fas fa-times me-1"></i>Cancel
                             </button>
                             <button id="completeConsultationBtn" class="btn btn-success" disabled>
-                                <i class="fas fa-check me-1"></i>Complete Consultation
+                                <i class="fas fa-check me-1"></i>Complete Session
                             </button>
                         </div>
                     </div>
@@ -567,7 +575,7 @@
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title" id="completeConsultationModalLabel">
-                        <i class="fas fa-check me-2"></i>Complete Consultation
+                        <i class="fas fa-check me-2"></i>Complete Session
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -584,7 +592,7 @@
 
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
-                        <strong>Complete this voice consultation:</strong>
+                        <strong>Complete this ambient listening session:</strong>
                         <p class="mb-0 mt-2">Link this diagnosis to a scheduled appointment and mark it as completed, or save it independently if no appointment is available.</p>
                     </div>
 
@@ -639,7 +647,7 @@
                         <i class="fas fa-times me-1"></i>Cancel
                     </button>
                     <button type="button" id="modalCompleteConsultationBtn" class="btn btn-success">
-                        <i class="fas fa-check me-1"></i>Complete Consultation
+                        <i class="fas fa-check me-1"></i>Complete Session
                     </button>
                 </div>
             </div>
@@ -653,10 +661,13 @@
     window.patientAppointments = @json($patientAppointments ?? []);
 </script>
 
-<!-- Include the voice assistant JavaScript -->
+<!-- Include the ambient listening JavaScript -->
 <script src="{{ asset('js/voice-assistant.js') }}"></script>
 
-<!-- Form components are now initialized by the main voice assistant script -->
+<!-- Include React components for ambient listening -->
+@viteReactRefresh
+@vite(['resources/js/voice-assistant-main.jsx'])
+
+<!-- Form components are now initialized by the main ambient listening script -->
 <!-- This ensures proper timing and prevents conflicts -->
-</script>
 @endsection
