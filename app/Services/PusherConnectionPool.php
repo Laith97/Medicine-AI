@@ -173,6 +173,11 @@ class PusherConnectionPool
      */
     public function broadcast(array $channels, string $event, array $data = []): bool
     {
+        $driver = config('broadcasting.default');
+        if ($driver !== 'pusher') {
+            Log::info('Broadcasting skipped because driver is ' . $driver, compact('channels', 'event'));
+            return true;
+        }
         // Get optimal server for load balancing
         $server = $this->loadBalancer->getOptimalServer($channels, $event);
         $serverId = $server['id'] ?? 'primary';

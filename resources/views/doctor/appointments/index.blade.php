@@ -285,12 +285,9 @@
                                             </a>
 
                                             @if($appointment->status == 'pending')
-                                                <form method="POST" action="{{ route('doctor.appointments.confirm', $appointment) }}" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Confirm">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                </form>
+                                                <button onclick="confirmAppointment({{ $appointment->id }})" class="btn btn-sm btn-outline-success" title="Confirm">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
                                             @endif
 
                                             @if($appointment->status == 'confirmed')
@@ -777,42 +774,225 @@ function completeAppointment(appointmentId) {
     const form = document.getElementById('completeForm');
     form.action = `/doctor/appointments/${appointmentId}/complete`;
 
+    // Reset form and clear any previous values
+    form.reset();
+
     // Add loading state
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Completing...';
 
-    // Reset form state on modal close
+    // Remove any existing submit handlers to prevent duplicates
+    const newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+    const updatedForm = document.getElementById('completeForm');
+    const updatedSubmitBtn = updatedForm.querySelector('button[type="submit"]');
+
+    // Handle form submission success and errors
+    updatedForm.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+
+        // Show loading state
+        updatedSubmitBtn.disabled = true;
+        updatedSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Completing...';
+
+        // Submit form via AJAX to catch errors
+        const formData = new FormData(updatedForm);
+        fetch(updatedForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Success - reload the page to update the appointment status
+                window.location.reload(); // Or redirect to success page
+            } else {
+                // Handle errors
+                return response.json().then(data => {
+                    console.error('Error completing appointment:', data);
+                    showNotification(data.message || 'Failed to complete appointment. Please try again.', 'error');
+                    // Reset button state
+                    updatedSubmitBtn.disabled = false;
+                    updatedSubmitBtn.innerHTML = originalText;
+                    // Close modal so user can try again
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('completeModal'));
+                    if (modal) modal.hide();
+                }).catch(() => {
+                    // If response isn't JSON, show generic error
+                    showNotification('Failed to complete appointment. Please try again.', 'error');
+                    updatedSubmitBtn.disabled = false;
+                    updatedSubmitBtn.innerHTML = originalText;
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('completeModal'));
+                    if (modal) modal.hide();
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Network error completing appointment:', error);
+            showNotification('Network error. Please check your connection and try again.', 'error');
+            updatedSubmitBtn.disabled = false;
+            updatedSubmitBtn.innerHTML = originalText;
+            const modal = bootstrap.Modal.getInstance(document.getElementById('completeModal'));
+            if (modal) modal.hide();
+        });
+    });
+
+    // Show the modal
     const modal = new bootstrap.Modal(document.getElementById('completeModal'));
     modal.show();
 
     // Reset button when modal is closed
-    document.getElementById('completeModal').addEventListener('hidden.bs.modal', function() {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
+    document.getElementById('completeModal').addEventListener('hidden.bs.modal', function resetModalState() {
+        updatedSubmitBtn.disabled = false;
+        updatedSubmitBtn.innerHTML = originalText;
+        updatedForm.reset(); // Clear form data
+        // Remove this event listener to prevent duplicates
+        document.getElementById('completeModal').removeEventListener('hidden.bs.modal', resetModalState);
     });
 }
 
 function cancelAppointment(appointmentId) {
     const form = document.getElementById('cancelForm');
     form.action = `/doctor/appointments/${appointmentId}/cancel`;
+    
+    // Reset form and clear any previous values
+    form.reset();
 
     // Add loading state
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cancelling...';
 
-    // Reset form state on modal close
+    // Remove any existing submit handlers to prevent duplicates
+    const newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+    const updatedForm = document.getElementById('cancelForm');
+    const updatedSubmitBtn = updatedForm.querySelector('button[type="submit"]');
+
+    // Handle form submission success and errors
+    updatedForm.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+
+        // Show loading state
+        updatedSubmitBtn.disabled = true;
+        updatedSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+
+        // Submit form via AJAX to catch errors
+        const formData = new FormData(updatedForm);
+        fetch(updatedForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Success - redirect to appointments page
+                window.location.reload(); // Or redirect to success page
+            } else {
+                // Handle errors
+                return response.json().then(data => {
+                    console.error('Error cancelling appointment:', data);
+                    showNotification(data.message || 'Failed to cancel appointment. Please try again.', 'error');
+                    // Reset button state
+                    updatedSubmitBtn.disabled = false;
+                    updatedSubmitBtn.innerHTML = originalText;
+                    // Close modal so user can try again
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('cancelModal'));
+                    if (modal) modal.hide();
+                }).catch(() => {
+                    // If response isn't JSON, show generic error
+                    showNotification('Failed to cancel appointment. Please try again.', 'error');
+                    updatedSubmitBtn.disabled = false;
+                    updatedSubmitBtn.innerHTML = originalText;
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('cancelModal'));
+                    if (modal) modal.hide();
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Network error cancelling appointment:', error);
+            showNotification('Network error. Please check your connection and try again.', 'error');
+            updatedSubmitBtn.disabled = false;
+            updatedSubmitBtn.innerHTML = originalText;
+            const modal = bootstrap.Modal.getInstance(document.getElementById('cancelModal'));
+            if (modal) modal.hide();
+        });
+    });
+
+    // Show the modal
     const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
     modal.show();
 
     // Reset button when modal is closed
-    document.getElementById('cancelModal').addEventListener('hidden.bs.modal', function() {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
+    document.getElementById('cancelModal').addEventListener('hidden.bs.modal', function resetModalState() {
+        updatedSubmitBtn.disabled = false;
+        updatedSubmitBtn.innerHTML = originalText;
+        updatedForm.reset(); // Clear form data
+        // Remove this event listener to prevent duplicates
+        document.getElementById('cancelModal').removeEventListener('hidden.bs.modal', resetModalState);
     });
+}
+
+// Create confirm appointment function for direct button clicks
+function confirmAppointment(appointmentId) {
+    // Show confirmation dialog
+    if (confirm('Are you sure you want to confirm this appointment?')) {
+        // Create a temporary form to submit the confirmation
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/doctor/appointments/${appointmentId}/confirm`;
+
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = '_token';
+        csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        form.appendChild(csrfToken);
+        document.body.appendChild(form);
+
+        // Find and update the button that triggered the action
+        // This depends on how the button is passed to the function
+        // In the table HTML, the confirm button is dynamically created
+        // We'll need to update the appropriate button after it's clicked
+
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Success - reload the page to update the appointment status
+                window.location.reload();
+            } else {
+                // Handle errors
+                response.json().then(data => {
+                    console.error('Error confirming appointment:', data);
+                    showNotification(data.message || 'Failed to confirm appointment. Please try again.', 'error');
+                }).catch(() => {
+                    showNotification('Failed to confirm appointment. Please try again.', 'error');
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Network error confirming appointment:', error);
+            showNotification('Network error. Please check your connection and try again.', 'error');
+        })
+        .finally(() => {
+            // Remove the temporary form
+            if (document.body.contains(form)) {
+                document.body.removeChild(form);
+            }
+        });
+    }
 }
 
 function markNoShow(appointmentId) {
@@ -820,12 +1000,18 @@ function markNoShow(appointmentId) {
     const confirmed = confirm('Are you sure you want to mark this appointment as no show? This action cannot be undone.');
 
     if (confirmed) {
-        // Show loading state
-        const button = event.target.closest('button');
-        const originalHTML = button.innerHTML;
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        // Find the button that triggered this (using a different approach)
+        const buttons = document.querySelectorAll(`button[onclick="markNoShow(${appointmentId})"]`);
+        const triggerButton = buttons.length > 0 ? buttons[0] : null;
 
+        let originalHTML = null;
+        if (triggerButton) {
+            originalHTML = triggerButton.innerHTML;
+            triggerButton.disabled = true;
+            triggerButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        }
+
+        // Create a temporary form to submit the no-show action
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `/doctor/appointments/${appointmentId}/no-show`;
@@ -833,24 +1019,49 @@ function markNoShow(appointmentId) {
         const csrfToken = document.createElement('input');
         csrfToken.type = 'hidden';
         csrfToken.name = '_token';
-        csrfToken.value = '{{ csrf_token() }}';
+        csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
         form.appendChild(csrfToken);
         document.body.appendChild(form);
 
-        // Add error handling
-        form.addEventListener('submit', function() {
-            setTimeout(() => {
-                if (!form.submitted) {
-                    button.disabled = false;
-                    button.innerHTML = originalHTML;
-                    showNotification('Request timed out. Please try again.', 'error');
-                }
-            }, 5000);
+        // Submit via AJAX to properly handle errors
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Success - reload the page to update the appointment status
+                window.location.reload();
+            } else {
+                // Handle errors
+                response.json().then(data => {
+                    console.error('Error marking appointment as no-show:', data);
+                    showNotification(data.message || 'Failed to mark appointment as no-show. Please try again.', 'error');
+                }).catch(() => {
+                    showNotification('Failed to mark appointment as no-show. Please try again.', 'error');
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Network error marking appointment as no-show:', error);
+            showNotification('Network error. Please check your connection and try again.', 'error');
+        })
+        .finally(() => {
+            // Reset button state if we found it
+            if (triggerButton) {
+                triggerButton.disabled = false;
+                triggerButton.innerHTML = originalHTML;
+            }
+            // Remove the temporary form
+            if (document.body.contains(form)) {
+                document.body.removeChild(form);
+            }
         });
-
-        form.submitted = true;
-        form.submit();
     }
 }
 

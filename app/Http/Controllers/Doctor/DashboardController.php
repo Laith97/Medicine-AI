@@ -175,6 +175,20 @@ class DashboardController extends Controller
     {
         $doctor = $this->getEffectiveDoctor();
 
+        // Check if effective doctor exists
+        if (!$doctor) {
+            Log::error('No effective doctor found for user during appointment confirmation', [
+                'user_id' => Auth::id(),
+                'appointment_id' => $appointment->id,
+                'user_role' => Auth::user()->role,
+                'is_sub_user' => Auth::user()->isSubUser(),
+                'parent_user_id' => Auth::user()->parent_user_id,
+            ]);
+
+            return redirect()->route('dashboard')
+                ->with('error', 'No doctor profile found. Please contact support if you believe this is an error.');
+        }
+
         // Check if this appointment belongs to the doctor
         if ($appointment->doctor_id !== $doctor->id) {
             abort(403);
@@ -235,6 +249,20 @@ class DashboardController extends Controller
     public function cancelAppointment(Request $request, Appointment $appointment)
     {
         $doctor = $this->getEffectiveDoctor();
+
+        // Check if effective doctor exists
+        if (!$doctor) {
+            Log::error('No effective doctor found for user during appointment cancellation', [
+                'user_id' => Auth::id(),
+                'appointment_id' => $appointment->id,
+                'user_role' => Auth::user()->role,
+                'is_sub_user' => Auth::user()->isSubUser(),
+                'parent_user_id' => Auth::user()->parent_user_id,
+            ]);
+
+            return redirect()->route('dashboard')
+                ->with('error', 'No doctor profile found. Please contact support if you believe this is an error.');
+        }
 
         // Check if this appointment belongs to the doctor
         if ($appointment->doctor_id !== $doctor->id) {
@@ -419,6 +447,19 @@ class DashboardController extends Controller
     public function createAppointment()
     {
         $doctor = $this->getEffectiveDoctor();
+
+        // Check if effective doctor exists
+        if (!$doctor) {
+            Log::error('No effective doctor found for user during appointment creation', [
+                'user_id' => Auth::id(),
+                'user_role' => Auth::user()->role,
+                'is_sub_user' => Auth::user()->isSubUser(),
+                'parent_user_id' => Auth::user()->parent_user_id,
+            ]);
+
+            return redirect()->route('dashboard')
+                ->with('error', 'No doctor profile found. Please contact support if you believe this is an error.');
+        }
 
         // Log doctor info for debugging
         Log::info('Create appointment - doctor info', [

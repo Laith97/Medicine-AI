@@ -82,6 +82,12 @@ function showClinicalDataSummary(clinicalData) {
         if (clinicalData.doctor_diagnosis) {
             summaryHtml += '<div class="col-12"><strong>👨‍⚕️ Doctor Diagnosis:</strong> ' + clinicalData.doctor_diagnosis + '</div>';
         }
+        if (clinicalData.voice_diagnosis) {
+            summaryHtml += '<div class="col-12"><strong>🎤 Voice Assistant Diagnosis:</strong> ' + clinicalData.voice_diagnosis + '</div>';
+        }
+        if (clinicalData.reason_for_visit) {
+            summaryHtml += '<div class="col-12"><strong>📋 Reason for Visit:</strong> ' + clinicalData.reason_for_visit + '</div>';
+        }
 
         summaryHtml += '</div>';
         summaryHtml += '<div class="mt-2 small text-success"><i class="fas fa-check-circle me-1"></i>AI analyzed the above verified clinical data to provide medication suggestions.</div>';
@@ -111,6 +117,9 @@ $('#aiSuggestBtn').click(function(e) {
     // Include recent diagnosis data if available
     var recentDiagnosis = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->latest()->first() : null);
 
+    // Include voice assistant diagnosis if available
+    var voiceDiagnosis = @json($appointment->patient ? \App\Models\AiAssistantResult::where('patient_id', $appointment->patient->id)->where('source', 'voice_assistant')->latest()->first() : null);
+
     $.ajax({
         url: "{{ route('ai.appointments.suggest', $appointment->id) }}",
         method: 'POST',
@@ -120,8 +129,10 @@ $('#aiSuggestBtn').click(function(e) {
             allergies: JSON.stringify(allergies),
             past_meds: JSON.stringify(pastMeds),
             recent_diagnosis: JSON.stringify(recentDiagnosis),
+            voice_diagnosis: JSON.stringify(voiceDiagnosis),
             doctor_notes: @json($appointment->doctor_notes),
-            appointment_symptoms: @json($appointment->symptoms)
+            appointment_symptoms: @json($appointment->symptoms),
+            reason_for_visit: @json($appointment->reason)
         },
         success: function(response) {
             button.prop('disabled', false).html('<i class="fas fa-magic me-1"></i>Suggest with AI');
@@ -330,5 +341,190 @@ window.resetPrescriptionForm = window.resetPrescriptionForm || function() {
     $('.reject-suggestion').html('<i class="fas fa-times me-1"></i>Reject');
     showNotification('Prescription form reset. Clinical data and AI suggestions cleared.', 'info');
 };
+
+// AI Data Sources Modal Functions
+function populateDataSourcesModal() {
+    const appointment = @json($appointment);
+    const patient = @json($appointment->patient);
+    const patientData = @json($appointment->patient ? $appointment->patient->patientData : null);
+    const recentDiagnosis = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->latest()->first() : null);
+    const voiceDiagnosis = @json($appointment->patient ? \App\Models\AiAssistantResult::where('patient_id', $appointment->patient->id)->where('source', 'voice_assistant')->latest()->first() : null);
+
+    const dataSources = [
+        {
+            name: 'Patient Age',
+            status: patient && patient.age ? 'available' : 'missing',
+            example: patient && patient.age ? patient.age + ' years old' : 'Age not recorded',
+            location: 'Patient Management (Administrative)',
+            reliability: 'Administrative',
+            icon: 'fas fa-birthday-cake'
+        },
+        {
+            name: 'Patient Gender',
+            status: patient && patient.gender ? 'available' : 'missing',
+            example: patient && patient.gender ? patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : 'Gender not recorded',
+            location: 'Patient Management (Administrative)',
+            reliability: 'Administrative',
+            icon: 'fas fa-venus-mars'
+        },
+        {
+            name: 'Appointment Symptoms',
+            status: appointment.symptoms ? 'available' : 'missing',
+            example: appointment.symptoms || 'No symptoms recorded',
+            location: 'Public appointment booking (Patient-reported)',
+            reliability: 'Patient-reported',
+            icon: 'fas fa-notes-medical'
+        },
+        {
+            name: 'Doctor Notes',
+            status: appointment.doctor_notes ? 'available' : 'missing',
+            example: appointment.doctor_notes ? (appointment.doctor_notes.length > 30 ? appointment.doctor_notes.substring(0, 30) + '...' : appointment.doctor_notes) : 'No doctor notes',
+            location: 'Appointment completion modal (Doctor-verified)',
+            reliability: 'Doctor-verified',
+            icon: 'fas fa-user-md'
+        },
+        {
+            name: 'Patient Allergies',
+            status: patientData && patientData.allergies && patientData.allergies.length > 0 ? 'available' : 'missing',
+            example: patientData && patientData.allergies ? patientData.allergies.join(', ') : 'No allergies recorded',
+            location: 'Diagnosis creation form (Doctor-verified)',
+            reliability: 'Doctor-verified',
+            icon: 'fas fa-allergies'
+        },
+        {
+            name: 'Current Medications',
+            status: patientData && patientData.medications && patientData.medications.length > 0 ? 'available' : 'missing',
+            example: patientData && patientData.medications ? patientData.medications.join(', ') : 'No medications recorded',
+            location: 'Diagnosis creation form (Doctor-verified)',
+            reliability: 'Doctor-verified',
+            icon: 'fas fa-pills'
+        },
+        {
+            name: 'Complete Diagnosis History',
+            status: recentDiagnosis ? 'available' : 'missing',
+            example: recentDiagnosis ? 'Multiple diagnosis records found' : 'No diagnosis history',
+            location: 'Patient Management (Doctor-verified)',
+            reliability: 'Doctor-verified',
+            icon: 'fas fa-history'
+        },
+        {
+            name: 'Voice Assistant Diagnosis',
+            status: voiceDiagnosis ? 'available' : 'missing',
+            example: voiceDiagnosis ? (voiceDiagnosis.patient_data && voiceDiagnosis.patient_data.diagnosis ? voiceDiagnosis.patient_data.diagnosis : 'Voice diagnosis available') : 'No voice diagnosis',
+            location: 'Voice Assistant sessions (AI-assisted clinical)',
+            reliability: 'AI-assisted clinical',
+            icon: 'fas fa-microphone'
+        },
+        {
+            name: 'Reason for Visit',
+            status: appointment.reason ? 'available' : 'missing',
+            example: appointment.reason || 'No reason specified',
+            location: 'Appointment creation (Doctor/Patient - Context only)',
+            reliability: 'Patient-reported',
+            icon: 'fas fa-calendar-check'
+        }
+    ];
+
+    let tableHtml = '';
+    let availableCount = 0;
+
+    dataSources.forEach(source => {
+        const statusBadge = source.status === 'available'
+            ? '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Available</span>'
+            : '<span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i>Missing</span>';
+
+        if (source.status === 'available') availableCount++;
+
+        const reliabilityBadge = source.reliability === 'Doctor-verified'
+            ? '<span class="badge bg-success"><i class="fas fa-user-md me-1"></i>Doctor-verified</span>'
+            : source.reliability === 'AI-assisted clinical'
+            ? '<span class="badge bg-info"><i class="fas fa-brain me-1"></i>AI-assisted</span>'
+            : source.reliability === 'Administrative'
+            ? '<span class="badge bg-secondary"><i class="fas fa-cog me-1"></i>Administrative</span>'
+            : '<span class="badge bg-warning text-dark"><i class="fas fa-user me-1"></i>Patient-reported</span>';
+
+        tableHtml += `
+            <tr class="${source.status === 'missing' ? 'table-light' : ''}">
+                <td><i class="${source.icon} me-2 text-primary"></i><strong>${source.name}</strong></td>
+                <td>${statusBadge}</td>
+                <td class="small">${reliabilityBadge}</td>
+                <td class="small text-muted">${source.example}</td>
+                <td class="small">${source.location}</td>
+            </tr>
+        `;
+    });
+
+    document.getElementById('dataSourcesTableBody').innerHTML = tableHtml;
+
+    // Calculate completeness
+    const completenessPercentage = Math.round((availableCount / dataSources.length) * 100);
+    const completenessBar = document.getElementById('dataCompletenessBar');
+    const completenessText = document.getElementById('dataCompletenessText');
+
+    completenessBar.style.width = completenessPercentage + '%';
+    completenessBar.textContent = completenessPercentage + '% Complete';
+
+    if (completenessPercentage >= 80) {
+        completenessBar.className = 'progress-bar bg-success';
+        completenessText.textContent = 'Excellent data completeness! AI suggestions will be highly accurate.';
+    } else if (completenessPercentage >= 60) {
+        completenessBar.className = 'progress-bar bg-warning';
+        completenessText.textContent = 'Good data completeness. AI suggestions will be moderately accurate.';
+    } else {
+        completenessBar.className = 'progress-bar bg-danger';
+        completenessText.textContent = 'Limited data available. Consider adding more clinical information for better AI suggestions.';
+    }
+
+    // Update improvement suggestions based on missing data
+    const missingSources = dataSources.filter(s => s.status === 'missing').map(s => s.name.toLowerCase());
+    let suggestionsHtml = '';
+
+    if (missingSources.includes('patient age')) {
+        suggestionsHtml += '<li>Ensure patient age is recorded in <strong>Patient Management</strong></li>';
+    }
+    if (missingSources.includes('patient gender')) {
+        suggestionsHtml += '<li>Ensure patient gender is recorded in <strong>Patient Management</strong></li>';
+    }
+    if (missingSources.includes('patient allergies')) {
+        suggestionsHtml += '<li>Complete patient allergy information in <strong>Diagnosis Creation</strong> form</li>';
+    }
+    if (missingSources.includes('current medications')) {
+        suggestionsHtml += '<li>Update current medications in <strong>Diagnosis Creation</strong> form</li>';
+    }
+    if (missingSources.includes('appointment symptoms')) {
+        suggestionsHtml += '<li>Add detailed symptoms during <strong>public appointment booking</strong> (optional field)</li>';
+    }
+    if (missingSources.includes('doctor notes')) {
+        suggestionsHtml += '<li>Include comprehensive doctor notes during <strong>appointment completion</strong></li>';
+    }
+    if (missingSources.includes('complete diagnosis history')) {
+        suggestionsHtml += '<li>Create diagnosis records in the <strong>Diagnoses</strong> section for complete medical history</li>';
+    }
+    if (missingSources.includes('voice assistant diagnosis')) {
+        suggestionsHtml += '<li>Use <strong>Voice Assistant</strong> for detailed clinical assessments</li>';
+    }
+    if (missingSources.includes('reason for visit')) {
+        suggestionsHtml += '<li>Specify reason for visit during <strong>appointment booking</strong> (doctor or patient)</li>';
+    }
+
+    if (suggestionsHtml) {
+        document.getElementById('improvementSuggestions').innerHTML = suggestionsHtml;
+    }
+}
+
+function refreshDataSources() {
+    populateDataSourcesModal();
+    showNotification('Data sources refreshed successfully.', 'success');
+}
+
+// Initialize data sources modal when opened
+document.addEventListener('DOMContentLoaded', function() {
+    const aiDataSourcesModal = document.getElementById('aiDataSourcesModal');
+    if (aiDataSourcesModal) {
+        aiDataSourcesModal.addEventListener('show.bs.modal', function() {
+            populateDataSourcesModal();
+        });
+    }
+});
 </script>
 @endpush
