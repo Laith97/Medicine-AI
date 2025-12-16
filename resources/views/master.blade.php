@@ -30,13 +30,17 @@
             color: #333;
             /* dark gray */
             position: relative;
-            padding: 5px 8px;
-            transition: color 0.3s ease;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            display: inline-block;
         }
 
         .top-link:hover {
-            color: #007bff;
-            /* blue on hover */
+            color: #DE6262;
+            /* accent color on hover */
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
         }
 
         /* Add nice underline on hover */
@@ -45,15 +49,16 @@
             display: block;
             width: 0;
             height: 2px;
-            background: #007bff;
+            background: #DE6262;
             transition: width 0.3s;
             position: absolute;
             bottom: 0;
-            left: 0;
+            left: 12px;
+            right: 12px;
         }
 
 .top-link:hover::after {
-    width: 100%;
+    width: calc(100% - 24px);
 }
 /* Header Dropdown Styling - Match EXACTLY the .sub-menu-container style */
 .dropdown-menu {
@@ -1446,7 +1451,7 @@ body .dropdown .dropdown-menu.show,
 
         <!-- Top Bar Start -->
         <div id="top-bar" class="py-1 border-bottom"
-            style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white;">
+            style="background: white; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div class="container">
                 <div class="row justify-content-between align-items-center">
 
@@ -1455,7 +1460,7 @@ body .dropdown .dropdown-menu.show,
                         <!-- Logo in Top Bar -->
                         <div class="top-bar-logo">
                             <a href="{{ url('/') }}" class="d-flex align-items-center text-decoration-none">
-                                <img style="width: 120px; height: auto;" class="logo-default img-fluid"
+                                <img style="width: 100px; height: 75px;" class="logo-default img-fluid"
                                       src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}"
                                       alt="Medcura Logo">
                             </a>
@@ -1466,14 +1471,14 @@ body .dropdown .dropdown-menu.show,
                             @auth
                             <div class="d-flex align-items-center">
                                 <div class="status-indicator bg-success rounded-circle me-2"
-                                    style="width: 8px; height: 8px;"></div>
-                                <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
+                                    style="width: 8px; height: 8px; box-shadow: 0 0 0 2px white;"></div>
+                                <span class="text-muted"><i class="bi bi-shield-check me-1 text-success"></i> AI System Online</span>
                             </div>
                             @else
-                            <a href="{{ url('/') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">Home</a>
-                            <a href="{{ route('about') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">About Us</a>
-                            <a href="{{ route('contact') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">Contact</a>
-                            <a href="{{ route('doctors.index') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">For Patients</a>
+                            <a href="{{ url('/') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Home</a>
+                            <a href="{{ route('about') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">About Us</a>
+                            <a href="{{ route('contact') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Contact</a>
+                            <a href="{{ route('doctors.index') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">For Patients</a>
                             @endauth
                         </div>
                     </div>
@@ -1485,7 +1490,7 @@ body .dropdown .dropdown-menu.show,
                             <button id="sidebarCollapse" class="btn btn-sm btn-outline-secondary d-lg-none d-flex align-items-center justify-content-center"
                                     type="button" aria-label="Toggle navigation sidebar" aria-expanded="false"
                                     title="Open sidebar menu"
-                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px; backdrop-filter: blur(10px);">
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px;">
                                 <i class="fa-solid fa-bars" aria-hidden="true"></i>
                             </button>
 
@@ -1494,7 +1499,7 @@ body .dropdown .dropdown-menu.show,
                                 <button class="btn btn-sm position-relative notification-bell dropdown-toggle d-flex align-items-center justify-content-center" type="button"
                                     data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true"
                                     aria-label="Notifications menu" title="Notifications"
-                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px; backdrop-filter: blur(10px);">
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px;">
                                     <i class="bi bi-bell" aria-hidden="true"></i>
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count"
                                         id="notification-count" aria-label="unread notifications count"
@@ -1536,7 +1541,7 @@ body .dropdown .dropdown-menu.show,
                             <div class="dropdown">
                                 <button class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle user-dropdown-toggle" type="button"
                                     data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true"
-                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; font-weight: 500; border-radius: 25px;">
                                     <i class="bi bi-person-circle" aria-hidden="true"></i>
                                     <div class="d-flex flex-column align-items-start d-none d-sm-flex">
                                         <span class="small fw-semibold">{{ Auth::user()->name }}</span>
@@ -1619,14 +1624,14 @@ body .dropdown .dropdown-menu.show,
                             <div class="d-flex gap-2 align-items-center">
                                 <a href="{{ route('login') }}"
                                     class="btn btn-sm px-3 d-flex align-items-center justify-content-center"
-                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px); min-height: 40px;">
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; font-weight: 500; border-radius: 25px; min-height: 40px;">
                                     <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>
                                     <span class="d-none d-sm-inline">Login</span>
                                     <span class="d-sm-none">Sign In</span>
                                 </a>
                                 <a href="{{ route('register') }}"
                                     class="btn btn-sm px-3 d-flex align-items-center justify-content-center"
-                                    style="background: white; color: #DE6262; border: none; font-weight: 500; border-radius: 25px; min-height: 40px;">
+                                    style="background: #DE6262; color: white; border: 1px solid #DE6262; font-weight: 500; border-radius: 25px; min-height: 40px;">
                                     <i class="bi bi-person-plus me-1" aria-hidden="true"></i>
                                     <span class="d-none d-sm-inline">Register</span>
                                     <span class="d-sm-none">Sign Up</span>
@@ -1635,7 +1640,7 @@ body .dropdown .dropdown-menu.show,
                                 <button class="cnvs-hamburger d-lg-none d-flex align-items-center justify-content-center"
                                     type="button" aria-label="Toggle navigation menu" aria-expanded="false"
                                     title="Open navigation menu"
-                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px; backdrop-filter: blur(10px);">
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px;">
                                     <div class="cnvs-hamburger-box">
                                         <div class="cnvs-hamburger-inner"></div>
                                     </div>
@@ -1843,7 +1848,7 @@ body .dropdown .dropdown-menu.show,
         <div id="main-content" class="dashboard-container">
             <!-- Seamless connection gradient -->
             <div style="position: absolute; top: -5px; left: 0; right: 0; height: 15px; background: linear-gradient(to bottom, rgba(222, 98, 98, 0.2), transparent); pointer-events: none;"></div>
-            <main class="app-main" style="padding-top: 25px;">
+            <main class="app-main">
                 @yield('content')
             </div>
         </main>
