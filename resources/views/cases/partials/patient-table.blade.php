@@ -131,7 +131,16 @@
                             <div class="visit-item" data-visit-id="{{ $visit->id }}">
                                 <div class="visit-header">
                                     <div class="visit-info">
-                                        <span class="visit-number">Visit #{{ $loop->iteration }}</span>
+                                        @php
+                                            $recordType = $visit->source_model ?? 'Appointment';
+                                            $typeLabel = match($recordType) {
+                                                'Appointment' => 'Appointment',
+                                                'Diagnosis' => 'Diagnosis',
+                                                'PatientAnalysis' => 'Analysis',
+                                                default => 'Record'
+                                            };
+                                        @endphp
+                                        <span class="visit-number">{{ $typeLabel }} #{{ $loop->iteration }}</span>
                                         <span class="visit-date">{{ $visit->created_at->format('M d, Y H:i') }}</span>
                                     </div>
                                     <button type="button" class="btn btn-sm btn-outline-primary btn-expand-visit"
