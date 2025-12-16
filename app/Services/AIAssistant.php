@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Models\Prescription;
 use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
+use App\Services\FDADrugValidator;
 
 class AIAssistant
 {
@@ -186,6 +187,7 @@ REQUIRED JSON FORMAT:
             if (!empty($symptomsText)) $clinicalDataUsed['symptoms'] = $symptomsText;
             if (!empty($additionalData['doctor_notes'] ?? '')) $clinicalDataUsed['doctor_notes'] = $additionalData['doctor_notes'];
             if (!empty($additionalData['appointment_symptoms'] ?? '')) $clinicalDataUsed['appointment_symptoms'] = $additionalData['appointment_symptoms'];
+            if (!empty($additionalData['reason_for_visit'] ?? '')) $clinicalDataUsed['reason_for_visit'] = $additionalData['reason_for_visit'];
 
             // Only use DOCTOR-WRITTEN diagnosis text, NOT AI-generated analysis
             if (!empty($additionalData['recent_diagnosis']['diagnosis_text'] ?? '')) {
@@ -198,6 +200,11 @@ REQUIRED JSON FORMAT:
                 if (empty($aiAnalysis) || trim($diagnosisText) !== trim($aiAnalysis)) {
                     $clinicalDataUsed['doctor_diagnosis'] = $diagnosisText;
                 }
+            }
+
+            // Include voice diagnosis if available
+            if (!empty($additionalData['voice_diagnosis'] ?? '')) {
+                $clinicalDataUsed['voice_diagnosis'] = $additionalData['voice_diagnosis'];
             }
 
             $result = [
@@ -345,12 +352,15 @@ REQUIRED JSON FORMAT:
         $doctorNotes = $additionalData['doctor_notes'] ?? '';
         $appointmentSymptoms = $additionalData['appointment_symptoms'] ?? '';
         $recentDiagnosis = $additionalData['recent_diagnosis'] ?? null;
+        $voiceDiagnosis = $additionalData['voice_diagnosis'] ?? '';
+        $reasonForVisit = $additionalData['reason_for_visit'] ?? '';
 
         // Combine verified clinical data sources - ONLY DOCTOR-WRITTEN CONTENT
         $clinicalData = [];
         if (!empty($symptomsText)) $clinicalData[] = "Symptoms: " . $symptomsText;
         if (!empty($doctorNotes)) $clinicalData[] = "Doctor Notes: " . $doctorNotes;
         if (!empty($appointmentSymptoms)) $clinicalData[] = "Appointment Symptoms: " . $appointmentSymptoms;
+        if (!empty($reasonForVisit)) $clinicalData[] = "Reason for Visit: " . $reasonForVisit;
 
         // Only include DOCTOR-WRITTEN diagnosis, not AI-generated analysis
         if ($recentDiagnosis && isset($recentDiagnosis['diagnosis_text'])) {
@@ -361,6 +371,11 @@ REQUIRED JSON FORMAT:
             if (empty($aiAnalysis) || trim($diagnosisText) !== trim($aiAnalysis)) {
                 $clinicalData[] = "Doctor Diagnosis: " . $diagnosisText;
             }
+        }
+
+        // Include voice assistant diagnosis if available
+        if (!empty($voiceDiagnosis)) {
+            $clinicalData[] = "Voice Assistant Diagnosis: " . $voiceDiagnosis;
         }
 
         $verifiedClinicalText = implode("\n", $clinicalData);
@@ -378,7 +393,6 @@ REQUIRED JSON FORMAT:
         $prompt .= "===============================================\n\n";
 
         $prompt .= "PATIENT DEMOGRAPHICS:\n";
-        $prompt .= "- Patient Name: {$patientName}\n";
         $prompt .= "- Age: {$patientAge} years\n";
         $prompt .= "- Gender: {$patientGender}\n\n";
 
@@ -393,6 +407,15 @@ REQUIRED JSON FORMAT:
             $prompt .= "- Data Source: No verified clinical data available - requires professional documentation\n";
         }
         $prompt .= "\n";
+
+        $prompt .= "DATA SOURCE RELIABILITY HIERARCHY:\n";
+        $prompt .= "1. PRIMARY: Doctor clinical notes and observations\n";
+        $prompt .= "2. SECONDARY: Formal diagnosis records\n";
+        $prompt .= "3. TERTIARY: Voice assistant clinical assessments\n";
+        $prompt .= "4. CONTEXT: Patient-reported symptoms and reasons\n\n";
+
+        $prompt .= "CRITICAL: Prioritize doctor-verified clinical data over patient self-reports for medication decisions.\n";
+        $prompt .= "Only suggest medications when supported by clinical documentation, not just patient descriptions.\n\n";
 
         // Critical safety information
         $prompt .= "CRITICAL SAFETY INFORMATION:\n";
@@ -740,6 +763,115 @@ REQUIRED JSON FORMAT:
         ]);
 
         return $fallbackResult;
+    }
+
+    /**
+     * Integrate FDA validation into AI prescription suggestions
+     */
+    public function generatePrescriptionSuggestionsWithFDAValidation(Appointment $appointment, array $symptoms, array $allergies, array $pastMeds, array $additionalData = [])
+    {
+        // First generate the AI suggestions as usual
+        $aiResult = $this->generatePrescriptionSuggestions($appointment, $symptoms, $allergies, $pastMeds, $additionalData);
+
+        // If AI is disabled or there are no suggestions, return as-is
+        if (empty($aiResult['suggestions']) || ($aiResult['disabled'] ?? false)) {
+            return $aiResult;
+        }
+
+        // Get patient demographics for FDA validation
+        $patient = $appointment->patient;
+        $patientAge = $patient ? ($patient->age ?? ($patient->date_of_birth ? \Carbon\Carbon::parse($patient->date_of_birth)->age : null)) : null;
+        $patientGender = $patient ? ($patient->gender ?? null) : null;
+
+        // Initialize FDA validator
+        $fdaValidator = new FDADrugValidator();
+
+        // Validate each suggestion against FDA data
+        $enhancedSuggestions = [];
+        $fdaRiskFlags = [];
+
+        foreach ($aiResult['suggestions'] as $suggestion) {
+            $medicationName = $suggestion['med'] ?? '';
+
+            if (!empty($medicationName)) {
+                // Perform FDA validation
+                $fdaValidation = $fdaValidator->validateMedication($medicationName, $patientAge, $patientGender);
+
+                // Add FDA flags to the suggestion
+                $suggestion['fda_validation'] = $fdaValidation;
+
+                // If there are FDA flags, add them to the suggestion
+                if (!empty($fdaValidation['clinical_flags'])) {
+                    if (!isset($suggestion['warnings'])) {
+                        $suggestion['warnings'] = [];
+                    }
+                    $suggestion['warnings'] = array_merge($suggestion['warnings'], $fdaValidation['clinical_flags']);
+                }
+
+                // Track if any suggestions have high-risk flags
+                if ($fdaValidation['high_risk'] ?? false) {
+                    $suggestion['high_risk'] = true;
+                }
+            }
+
+            $enhancedSuggestions[] = $suggestion;
+        }
+
+        // Collect any global FDA risk flags
+        foreach ($aiResult['suggestions'] as $suggestion) {
+            if (isset($suggestion['fda_validation']) && !empty($suggestion['fda_validation']['flag'])) {
+                $fdaRiskFlags[] = $suggestion['fda_validation']['flag'];
+            }
+        }
+
+        // Merge FDA risk flags with existing AI risk flags
+        $allRiskFlags = array_unique(array_merge($aiResult['risk_flags'] ?? [], $fdaRiskFlags));
+
+        // Update the result with FDA-enhanced suggestions
+        $result = [
+            'suggestions' => $enhancedSuggestions,
+            'risk_flags' => $allRiskFlags,
+            'message' => $aiResult['message'] ?? 'AI suggestions with FDA validation generated',
+            'source' => 'openai_fda_enhanced', // Override source to indicate FDA validation was applied
+            'disabled' => $aiResult['disabled'] ?? false,
+            'disclaimer' => $aiResult['disclaimer'] ?? 'These are AI-generated suggestions for clinical decision support only. All medication decisions must be made by qualified healthcare professionals after considering FDA validation data.',
+            'generated_at' => now()->toISOString(),
+            'ai_model' => 'gpt-4o with FDA validation',
+            'confidence_level' => $aiResult['confidence_level'] ?? 'support_only'
+        ];
+
+        // Add a special flag if any high-risk medications were detected
+        $hasHighRiskMedications = collect($enhancedSuggestions)->contains(function($suggestion) {
+            return ($suggestion['high_risk'] ?? false) === true;
+        });
+
+        if ($hasHighRiskMedications) {
+            array_unshift($result['risk_flags'], '⚠️ HIGH-RISK MEDICATIONS DETECTED - Requires immediate clinical review');
+        }
+
+        // If FDA validation is unavailable for any medication, flag it
+        $hasUnavailableValidation = collect($enhancedSuggestions)->contains(function($suggestion) {
+            return isset($suggestion['fda_validation']) &&
+                   ($suggestion['fda_validation']['validation_status'] ?? '') === 'unavailable';
+        });
+
+        if ($hasUnavailableValidation) {
+            array_unshift($result['risk_flags'], '⚠️ FDA VALIDATION UNAVAILABLE FOR SOME MEDICATIONS - Additional clinical review required');
+        }
+
+        Log::info('AI prescriptions generated with FDA validation', [
+            'appointment_id' => $appointment->id,
+            'suggestions_count' => count($enhancedSuggestions),
+            'high_risk_count' => collect($enhancedSuggestions)->filter(function($s) {
+                return ($s['high_risk'] ?? false) === true;
+            })->count(),
+            'fda_unavailable_count' => collect($enhancedSuggestions)->filter(function($s) {
+                return isset($s['fda_validation']) &&
+                       ($s['fda_validation']['validation_status'] ?? '') === 'unavailable';
+            })->count(),
+        ]);
+
+        return $result;
     }
 
     /**

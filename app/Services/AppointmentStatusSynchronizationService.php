@@ -49,16 +49,33 @@ class AppointmentStatusSynchronizationService
             return;
         }
 
+        // Load patient data relationship if not already loaded
+        if (!$patient->relationLoaded('patientData')) {
+            $patient->load('patientData');
+        }
+
+        // Check if patient has patient data record
+        if (!$patient->patientData) {
+            Log::info("No patient data found for patient {$patient->id}, skipping claim creation");
+            return;
+        }
+
+        // Load patient insurances through patientData relationship
+        if (!$patient->patientData->relationLoaded('patientInsurances')) {
+            $patient->patientData->load('patientInsurances');
+        }
+
         // Check if patient has insurance
-        $patientInsurances = $patient->patientInsurances;
-        if ($patientInsurances->isEmpty()) {
+        $patientInsurances = $patient->patientData->patientInsurances;
+        if (!$patientInsurances || $patientInsurances->isEmpty()) {
             Log::info("No insurance found for patient {$patient->id}, skipping claim creation");
             return;
         }
 
         // Check if a claim already exists for this appointment
+        // Since claims don't have appointment_id, we check by patient and date
         $existingClaim = Claim::where('patient_id', $appointment->patient_id)
-            ->where('appointment_id', $appointment->id)
+            ->where('service_date', $appointment->appointment_date->toDateString())
             ->first();
 
         if ($existingClaim) {
@@ -94,7 +111,6 @@ class AppointmentStatusSynchronizationService
         $claimData = [
             'claim_id' => 'CLM-' . strtoupper(uniqid()),
             'patient_id' => $appointment->patient_id,
-            'appointment_id' => $appointment->id,
             'diagnosis_text' => $appointment->reason ?? 'Medical consultation',
             'procedure_text' => $appointment->appointment_type,
             'payer' => $insurance->insuranceProvider->name ?? 'Unknown',
@@ -121,15 +137,24 @@ class AppointmentStatusSynchronizationService
      */
     private function handleAppointmentCancelled(Appointment $appointment): void
     {
-        // Update any pending claims for this appointment to cancelled
-        Claim::where('appointment_id', $appointment->id)
-            ->where('claim_status', 'pending')
-            ->update([
-                'claim_status' => 'cancelled',
-                'denial_reason' => 'Appointment cancelled'
-            ]);
+        // Note: Claims table doesn't have appointment_id column
+        // Claims are linked to appointments through patient_id and service_date
+        // We'll update any pending claims for this patient on the appointment date
+        if ($appointment->patient_id && $appointment->appointment_date) {
+            $serviceDate = $appointment->appointment_date->toDateString();
+            
+            $updatedCount = Claim::where('patient_id', $appointment->patient_id)
+                ->where('service_date', $serviceDate)
+                ->where('claim_status', 'pending')
+                ->update([
+                    'claim_status' => 'cancelled',
+                    'denial_reason' => 'Appointment cancelled'
+                ]);
 
-        Log::info("Cancelled pending claims for appointment {$appointment->id}");
+            if ($updatedCount > 0) {
+                Log::info("Cancelled {$updatedCount} pending claim(s) for appointment {$appointment->id}");
+            }
+        }
     }
 
     /**
@@ -139,25 +164,56 @@ class AppointmentStatusSynchronizationService
     {
         // If appointment was previously unconfirmed, we might want to re-check eligibility
         // This is optional as eligibility is checked during booking
-        if ($appointment->patient_id) {
-            $patient = $appointment->patient;
-            if ($patient && $patient->patientInsurances->isNotEmpty()) {
-                // Trigger eligibility re-check in background
-                dispatch(function () use ($appointment) {
-                    $eligibilityService = app(EligibilityServiceFactory::class);
-                    foreach ($appointment->patient->patientInsurances as $insurance) {
-                        try {
-                            $service = $eligibilityService->getServiceForProvider($insurance->insuranceProvider);
-                            $service->checkEligibility($insurance, $this->mapAppointmentTypeToService($appointment->appointment_type));
-                        } catch (\Exception $e) {
-                            Log::warning("Failed to re-check eligibility for confirmed appointment {$appointment->id}", [
-                                'error' => $e->getMessage()
-                            ]);
-                        }
-                    }
-                })->afterCommit();
-            }
+        if (!$appointment->patient_id) {
+            return;
         }
+
+        $patient = $appointment->patient;
+        
+        // Check if patient exists
+        if (!$patient) {
+            Log::warning("Cannot re-check eligibility - patient not found for appointment {$appointment->id}");
+            return;
+        }
+
+        // Load patient data relationship if not already loaded
+        if (!$patient->relationLoaded('patientData')) {
+            $patient->load('patientData');
+        }
+
+        // Check if patient has patient data record
+        if (!$patient->patientData) {
+            Log::info("No patient data found for patient {$patient->id}, skipping eligibility re-check for appointment {$appointment->id}");
+            return;
+        }
+
+        // Load patient insurances through patientData relationship
+        if (!$patient->patientData->relationLoaded('patientInsurances')) {
+            $patient->patientData->load('patientInsurances');
+        }
+
+        if (!$patient->patientData->patientInsurances || $patient->patientData->patientInsurances->isEmpty()) {
+            Log::info("No insurance found for patient {$patient->id}, skipping eligibility re-check for appointment {$appointment->id}");
+            return;
+        }
+
+        // Trigger eligibility re-check in background
+        dispatch(function () use ($appointment) {
+            $eligibilityService = app(EligibilityServiceFactory::class);
+            // Access insurances through patientData
+            if ($appointment->patient && $appointment->patient->patientData) {
+                foreach ($appointment->patient->patientData->patientInsurances as $insurance) {
+                    try {
+                        $service = $eligibilityService->getServiceForProvider($insurance->insuranceProvider);
+                        $service->checkEligibility($insurance, $this->mapAppointmentTypeToService($appointment->appointment_type));
+                    } catch (\Exception $e) {
+                        Log::warning("Failed to re-check eligibility for confirmed appointment {$appointment->id}", [
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+            }
+        })->afterCommit();
     }
 
     /**
@@ -165,15 +221,24 @@ class AppointmentStatusSynchronizationService
      */
     private function handleAppointmentNoShow(Appointment $appointment): void
     {
-        // Mark any pending claims as denied due to no-show
-        Claim::where('appointment_id', $appointment->id)
-            ->where('claim_status', 'pending')
-            ->update([
-                'claim_status' => 'denied',
-                'denial_reason' => 'Patient did not show up for appointment'
-            ]);
+        // Note: Claims table doesn't have appointment_id column
+        // Claims are linked to appointments through patient_id and service_date
+        // We'll mark any pending claims for this patient on the appointment date as denied
+        if ($appointment->patient_id && $appointment->appointment_date) {
+            $serviceDate = $appointment->appointment_date->toDateString();
+            
+            $updatedCount = Claim::where('patient_id', $appointment->patient_id)
+                ->where('service_date', $serviceDate)
+                ->where('claim_status', 'pending')
+                ->update([
+                    'claim_status' => 'denied',
+                    'denial_reason' => 'Patient did not show up for appointment'
+                ]);
 
-        Log::info("Marked claims as denied for no-show appointment {$appointment->id}");
+            if ($updatedCount > 0) {
+                Log::info("Marked {$updatedCount} claim(s) as denied for no-show appointment {$appointment->id}");
+            }
+        }
     }
 
     /**
