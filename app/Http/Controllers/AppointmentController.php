@@ -867,6 +867,8 @@ class AppointmentController extends Controller
             'symptoms' => 'nullable|string',
             'allergies' => 'nullable|string',
             'past_meds' => 'nullable|string',
+            'voice_diagnosis' => 'nullable|string',
+            'reason_for_visit' => 'nullable|string',
         ]);
 
         // Decode JSON data
@@ -881,6 +883,22 @@ class AppointmentController extends Controller
             $symptoms = [$symptoms];
         }
 
+        // Prepare additional data for AI processing
+        $additionalData = [];
+
+        // Add voice diagnosis if available
+        if ($request->voice_diagnosis) {
+            $voiceData = json_decode($request->voice_diagnosis, true);
+            if ($voiceData && isset($voiceData['diagnosis_text'])) {
+                $additionalData['voice_diagnosis'] = $voiceData['diagnosis_text'];
+            }
+        }
+
+        // Add reason for visit if available
+        if ($request->reason_for_visit) {
+            $additionalData['reason_for_visit'] = $request->reason_for_visit;
+        }
+
         // Debug logging
         \Log::info('AI Suggestion Request Data', [
             'appointment_id' => $appointment->id,
@@ -888,10 +906,15 @@ class AppointmentController extends Controller
             'processed_symptoms' => $symptoms,
             'allergies' => $allergies,
             'past_meds' => $past_meds,
+            'voice_diagnosis' => $request->voice_diagnosis,
+            'reason_for_visit' => $request->reason_for_visit,
+            'additional_data' => $additionalData,
         ]);
 
         $aiAssistant = new AIAssistant();
-        $result = $aiAssistant->generatePrescriptionSuggestions($appointment, $symptoms, $allergies, $past_meds);
+
+        // Use the enhanced method that includes FDA validation
+        $result = $aiAssistant->generatePrescriptionSuggestionsWithFDAValidation($appointment, $symptoms, $allergies, $past_meds, $additionalData);
 
         return response()->json($result);
     }

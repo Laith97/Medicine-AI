@@ -132,7 +132,7 @@ class AppointmentBroadcastService
                 [
                     'appointment_number' => $appointment->appointment_number,
                     'broadcast_latency_ms' => round($latency, 2),
-                    'changed_by_type' => $changedBy ? get_class($changedBy) : 'system'
+                    'changed_by_type' => is_object($changedBy) ? get_class($changedBy) : (is_string($changedBy) ? $changedBy : 'system')
                 ]
             );
 
