@@ -27,12 +27,31 @@ function initializeVoiceAssistantComponents() {
         const authToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         
         const root = createRoot(recorderContainer);
-        root.render(
-            <AmbientAudioRecorder 
-                visitId={visitId} 
-                authToken={authToken} 
-            />
-        );
+        
+        // Function to render the component with current language
+        const renderRecorder = (language) => {
+            root.render(
+                <AmbientAudioRecorder 
+                    visitId={visitId} 
+                    authToken={authToken} 
+                    language={language}
+                />
+            );
+        };
+
+        // Get initial language
+        const languageSelector = document.getElementById('languageSelector');
+        const initialLanguage = languageSelector ? languageSelector.value : 'auto';
+        
+        // Initial render
+        renderRecorder(initialLanguage);
+
+        // Listen for language changes
+        if (languageSelector) {
+            languageSelector.addEventListener('change', (e) => {
+                renderRecorder(e.target.value);
+            });
+        }
     }
 }
 

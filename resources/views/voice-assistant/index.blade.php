@@ -152,6 +152,7 @@
                             <div class="d-flex align-items-center">
                                 <label class="form-label me-2 mb-0 small fw-bold">Language:</label>
                                 <select id="languageSelector" class="form-select form-select-sm" style="width: auto; min-width: 120px;">
+                                    <option value="auto" selected>✨ Auto Detect</option>
                                     <option value="ar">🇸🇦 العربية</option>
                                     <option value="en">🇺🇸 English</option>
                                     <option value="fr">🇫🇷 Français</option>

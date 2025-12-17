@@ -127,6 +127,7 @@ class User extends Authenticatable
         'is_sub_user',
         'hospital_id',
         'analytics_role_id',
+        'requires_password_reset',
     ];
 
     /**
@@ -154,6 +155,7 @@ class User extends Authenticatable
             'trial_ends_at' => 'datetime',
             'trial_used' => 'boolean',
             'is_sub_user' => 'boolean',
+            'requires_password_reset' => 'boolean',
         ];
     }
 

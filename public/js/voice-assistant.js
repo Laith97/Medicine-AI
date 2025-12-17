@@ -1,3 +1,21 @@
+/**
+ * Voice Assistant Module for Medical Transcription
+ *
+ * This module provides an enhanced voice assistant with:
+ * - Audio recording capabilities for medical consultations
+ * - Server-side processing for improved transcription accuracy
+ * - Multi-speaker identification for doctor-patient interactions
+ * - Medical terminology recognition and processing
+ * - Patient management and diagnosis support
+ *
+ * Features:
+ * - Hybrid audio recording (browser + server processing)
+ * - Real-time transcription display
+ * - Medical data extraction from speech
+ * - Hands-free recording mode
+ * - Security measures to prevent XSS attacks
+ * - Error handling and fallback mechanisms
+ */
 (function() {
     // Enhanced logging system for ambient listening debugging
     const voiceAssistantLogger = {
@@ -6,12 +24,13 @@
 
         log: function (level, message, data = null) {
             const timestamp = new Date().toISOString();
+            const sessionIdValue = typeof window.sessionId !== 'undefined' ? window.sessionId : 'unknown';
             const logEntry = {
                 timestamp: timestamp,
                 level: level,
                 message: message,
                 data: data,
-                sessionId: sessionId,
+                sessionId: sessionIdValue,
                 userAgent: navigator.userAgent
             };
 
@@ -42,8 +61,9 @@
         },
 
         exportLogs: function () {
+            const sessionIdValue = typeof window.sessionId !== 'undefined' ? window.sessionId : 'unknown';
             return {
-                sessionId: sessionId,
+                sessionId: sessionIdValue,
                 timestamp: new Date().toISOString(),
                 logs: this.logs,
                 systemInfo: {
@@ -59,6 +79,18 @@
 
     // Make logger globally available for debugging
     window.voiceAssistantLogger = voiceAssistantLogger;
+
+    // Utility function to sanitize HTML to prevent XSS
+    function sanitizeHtml(html) {
+        if (typeof html !== 'string') {
+            return '';
+        }
+
+        // Create a temporary element to escape HTML
+        const temp = document.createElement('div');
+        temp.textContent = html;
+        return temp.innerHTML;
+    }
 
     // Global variables
     let recognition;
@@ -158,25 +190,47 @@
     let continuousLanguageDetection = true;
     let languageConfidenceThreshold = 0.7;
 
-    // DOM Elements
-    const startRecordingBtn = document.getElementById('startRecordingBtn');
-    const stopRecordingBtn = document.getElementById('stopRecordingBtn');
-    const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
-    const resetSessionBtn = document.getElementById('resetSessionBtn');
-    const patientSelect = document.getElementById('patientSelect');
-    const transcriptionArea = document.getElementById('transcriptionArea');
-    const languageSelector = document.getElementById('languageSelector');
-    const handsFreeToggle = document.getElementById('handsFreeToggle');
-    const jsProgressIndicator = document.getElementById('jsProgressIndicator');
-    const jsProcessingStage = document.getElementById('jsProcessingStage');
-    const aiAnalysisArea = document.getElementById('aiAnalysisArea');
-    const symptomsField = document.getElementById('symptoms');
-    const medicalHistoryField = document.getElementById('medicalHistory');
-    const physicalFindingsField = document.getElementById('physicalFindings');
-    const medicationsField = document.getElementById('medications');
-    const vitalSignsField = document.getElementById('vitalSigns');
-    const diagnosisField = document.getElementById('diagnosis');
-    const carePlanField = document.getElementById('carePlan');
+    // DOM Elements - with null checks added during initialization
+    let startRecordingBtn = null;
+    let stopRecordingBtn = null;
+    let generateAnalysisBtn = null;
+    let resetSessionBtn = null;
+    let patientSelect = null;
+    let transcriptionArea = null;
+    let languageSelector = null;
+    let handsFreeToggle = null;
+    let jsProgressIndicator = null;
+    let jsProcessingStage = null;
+    let aiAnalysisArea = null;
+    let symptomsField = null;
+    let medicalHistoryField = null;
+    let physicalFindingsField = null;
+    let medicationsField = null;
+    let vitalSignsField = null;
+    let diagnosisField = null;
+    let carePlanField = null;
+
+    // Function to initialize DOM elements safely
+    function initializeDOMElements() {
+        startRecordingBtn = document.getElementById('startRecordingBtn');
+        stopRecordingBtn = document.getElementById('stopRecordingBtn');
+        generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
+        resetSessionBtn = document.getElementById('resetSessionBtn');
+        patientSelect = document.getElementById('patientSelect');
+        transcriptionArea = document.getElementById('transcriptionArea');
+        languageSelector = document.getElementById('languageSelector');
+        handsFreeToggle = document.getElementById('handsFreeToggle');
+        jsProgressIndicator = document.getElementById('jsProgressIndicator');
+        jsProcessingStage = document.getElementById('jsProcessingStage');
+        aiAnalysisArea = document.getElementById('aiAnalysisArea');
+        symptomsField = document.getElementById('symptoms');
+        medicalHistoryField = document.getElementById('medicalHistory');
+        physicalFindingsField = document.getElementById('physicalFindings');
+        medicationsField = document.getElementById('medications');
+        vitalSignsField = document.getElementById('vitalSigns');
+        diagnosisField = document.getElementById('diagnosis');
+        carePlanField = document.getElementById('carePlan');
+    }
 
     // Simple interface - no complex panel elements needed
 
@@ -402,6 +456,9 @@
         console.log('🎙️ Initializing ambient listening system...');
         isInitialized = true;
 
+        // Initialize DOM elements first
+        initializeDOMElements();
+
         // Clean up any leftover keyboard shortcuts help from previous page loads
         cleanupKeyboardShortcutsHelp();
 
@@ -446,7 +503,7 @@
 
         // Initialize form components
         initializeFormComponents();
-    
+
         // Initialize voice assistant components (button states)
         initializeVoiceAssistantComponents();
 
@@ -466,7 +523,7 @@
 
         // Log initialization status with enhanced logging
         voiceAssistantLogger.info('🎙️ Ambient Listening System initialized', {
-            liveTranscription: true,
+            liveTranscription: false, // Live transcription is disabled in this version
             audioRecordingSupported: audioRecordingSupported,
             serverProcessing: true,
             hybridModeEnabled: hybridModeEnabled,
@@ -477,7 +534,7 @@
         });
 
         console.log('🎙️ Ambient Listening System initialized');
-        console.log('✅ Live transcription: Active');
+        console.log('❌ Live transcription: Disabled (Web Speech API removed)');
         console.log('✅ Audio recording: ' + (audioRecordingSupported ? 'Supported' : 'Not supported'));
         console.log('✅ Server processing: Ready');
         console.log('🏥 Medical dictionary: ' + Object.keys(medicalDictionary).length + ' terms loaded');
@@ -1244,21 +1301,43 @@
         helpIndicator.className = 'position-fixed bottom-0 end-0 m-3 p-3 keyboard-shortcuts-help text-white rounded shadow-lg';
         helpIndicator.style.zIndex = '1050';
         helpIndicator.style.fontSize = '0.75rem';
-        helpIndicator.innerHTML = `
-            <div class="fw-bold mb-2">
-                <i class="fas fa-keyboard me-2"></i>
-                Keyboard Shortcuts
-            </div>
-            <div class="mb-1"><kbd>Ctrl+Space</kbd> Start/Stop Recording</div>
-            <div class="mb-1"><kbd>Ctrl+H</kbd> Toggle Hands-Free</div>
-            <div class="mb-1"><kbd>Ctrl+P</kbd> Pause/Resume</div>
-            <div class="mb-1"><kbd>Ctrl+R</kbd> Reset Session</div>
-            <div class="mb-1"><kbd>Ctrl+G</kbd> Generate Analysis</div>
-            <div class="mt-2 small text-muted">
-                <i class="fas fa-clock me-1"></i>
-                Auto-hide in 10s
-            </div>
-        `;
+
+        // Create content elements safely to avoid XSS
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'fw-bold mb-2';
+        titleDiv.innerHTML = '<i class="fas fa-keyboard me-2"></i>Keyboard Shortcuts';
+
+        const ctrlSpaceDiv = document.createElement('div');
+        ctrlSpaceDiv.className = 'mb-1';
+        ctrlSpaceDiv.innerHTML = '<kbd>Ctrl+Space</kbd> Start/Stop Recording';
+
+        const ctrlHDiv = document.createElement('div');
+        ctrlHDiv.className = 'mb-1';
+        ctrlHDiv.innerHTML = '<kbd>Ctrl+H</kbd> Toggle Hands-Free';
+
+        const ctrlPDiv = document.createElement('div');
+        ctrlPDiv.className = 'mb-1';
+        ctrlPDiv.innerHTML = '<kbd>Ctrl+P</kbd> Pause/Resume';
+
+        const ctrlRDiv = document.createElement('div');
+        ctrlRDiv.className = 'mb-1';
+        ctrlRDiv.innerHTML = '<kbd>Ctrl+R</kbd> Reset Session';
+
+        const ctrlGDiv = document.createElement('div');
+        ctrlGDiv.className = 'mb-1';
+        ctrlGDiv.innerHTML = '<kbd>Ctrl+G</kbd> Generate Analysis';
+
+        const autoHideDiv = document.createElement('div');
+        autoHideDiv.className = 'mt-2 small text-muted';
+        autoHideDiv.innerHTML = '<i class="fas fa-clock me-1"></i>Auto-hide in 10s';
+
+        helpIndicator.appendChild(titleDiv);
+        helpIndicator.appendChild(ctrlSpaceDiv);
+        helpIndicator.appendChild(ctrlHDiv);
+        helpIndicator.appendChild(ctrlPDiv);
+        helpIndicator.appendChild(ctrlRDiv);
+        helpIndicator.appendChild(ctrlGDiv);
+        helpIndicator.appendChild(autoHideDiv);
 
         document.body.appendChild(helpIndicator);
 
@@ -1284,7 +1363,16 @@
 
     // REMOVED: detectSpokenLanguage function (Web Speech API)
 
-    // REMOVED: setRecognitionLanguage function (Web Speech API)
+    // REMOVED: setRecognitionLanguage function (Web Speech API) - Adding placeholder for compatibility
+    function setRecognitionLanguage(language) {
+        console.warn('setRecognitionLanguage: Web Speech API is not available in this version. Language switching is disabled.');
+        currentLanguage = language === 'ar' ? 'ar-SA' : 'en-US';
+        updateLanguageIndicator(currentLanguage);
+        // Update UI to reflect new language
+        if (languageSelector) {
+            languageSelector.value = language;
+        }
+    }
 
     // Enhanced language indicator with quality information
     function updateLanguageIndicator(languageCode) {
@@ -1541,16 +1629,15 @@
                     if (restartTimeout) clearTimeout(restartTimeout);
 
                     try {
-                        // NEW: Start both live transcription AND audio recording in parallel
-                        console.log('🎙️ Starting live transcription...');
-                        recognition.lang = currentLanguage;
-                        recognition.start();
-
-                        // NEW: Start audio recording alongside live transcription
+                        // NEW: Start audio recording (live transcription was removed)
+                        console.log('🎵 Starting audio recording...');
                         if (hybridModeEnabled && audioRecordingSupported) {
-                            console.log('🎵 Starting audio recording...');
                             await startAudioRecording();
                         }
+
+                        // NEW: If live transcription was enabled, it would have started here
+                        // The Web Speech API functionality has been removed from this version
+                        console.log('⚠️ Live transcription disabled in this version. Only audio recording active.');
 
                         // Start enhanced features
                         startRecordingTimer();
@@ -1561,15 +1648,15 @@
                         updateRecordingUI();
                         updateHandsFreeStatus();
 
-                        // HYBRID METHOD: Enhanced success message
+                        // HYBRID METHOD: Enhanced success message (with updated text since live transcription is removed)
                         const hybridMessage = hybridModeEnabled && audioRecordingSupported
-                            ? `Hybrid session started! Live transcription + audio recording (ID: ${sessionId.substring(0, 8)}...)`
-                            : `Session started! Live transcription active (ID: ${sessionId.substring(0, 8)}...)`;
+                            ? `Hybrid session started! Audio recording active (ID: ${sessionId.substring(0, 8)}...)`
+                            : `Session started! Audio recording active (ID: ${sessionId.substring(0, 8)}...)`;
                         showAlert(hybridMessage, 'success');
 
                         console.log('🎉 Hybrid session fully initialized');
                         console.log('📊 Session components:', {
-                            liveTranscription: true,
+                            liveTranscription: false, // Live transcription is disabled in this version
                             audioRecording: audioRecordingSupported && hybridModeEnabled,
                             hybridMode: hybridModeEnabled,
                             sessionId: sessionId.substring(0, 8)
@@ -1610,9 +1697,9 @@
             mediaRecorderState: mediaRecorder ? mediaRecorder.state : 'no mediaRecorder'
         });
 
-        // Stop live transcription first
-        if (recognition && isListening) {
-            console.log('🎙️ Stopping live transcription...');
+        // Stop any ongoing processes (live transcription was removed)
+        if (isListening) {
+            console.log('🎙️ Live transcription was disabled in this version...');
             isListening = false;
 
             // Clear timeouts and enhanced features
@@ -1621,23 +1708,8 @@
             stopSilenceDetection();
             stopRecordingTimer();
 
-            try {
-                recognition.stop();
-                console.log('✅ Live transcription stopped');
-
-                // Send any remaining buffered transcript
-                if (transcriptBuffer.trim()) {
-                    handleTranscription(transcriptBuffer.trim());
-                }
-
-                // Also ensure final transcript is processed if different from buffer
-                if (finalTranscript.trim() && finalTranscript.trim() !== transcriptBuffer.trim()) {
-                    console.log('📝 Processing final accumulated transcript on stop');
-                    handleTranscription(finalTranscript.trim());
-                }
-            } catch (error) {
-                console.error('❌ Error stopping recognition:', error);
-            }
+            // Since live transcription is disabled, just log what would have happened
+            console.log('⚠️ Live transcription is disabled in this version');
         }
 
         // Stop audio recording immediately
@@ -1732,8 +1804,8 @@
             // Validate that we have valid audio data before sending
             if (!audioBlob || !validateAudioBlob(audioBlob)) {
                 console.warn('⚠️ No valid audio blob available for server processing, skipping...');
-                updateServerProcessingStatus('Audio recording failed validation, using live transcription only.');
-                showAlert('Audio recording validation failed. Using live transcription only.', 'warning');
+                updateServerProcessingStatus('Audio recording failed validation, no transcription available.');
+                showAlert('Audio recording validation failed. No transcription available.', 'warning');
 
                 // Hide server processing status for validation failures
                 setTimeout(() => {
@@ -1865,7 +1937,7 @@
                         showAlert('Server-side processing completed! Enhanced accuracy achieved.', 'success');
                         resolve(); // Resolve on success
                     } else {
-                        updateServerProcessingStatus('Server processing failed, using live transcription only.');
+                        updateServerProcessingStatus('Server processing failed, no transcription available.');
                         console.warn('⚠️ Server processing failed:', response.message);
 
                         // Hide server processing status on failure
@@ -1890,7 +1962,7 @@
                         error: error
                     });
 
-                    updateServerProcessingStatus('Server processing failed, using live transcription only.');
+                    updateServerProcessingStatus('Server processing failed, no transcription available.');
                     serverProcessingInProgress = false;
 
                     // Hide server processing status on error
@@ -1903,13 +1975,13 @@
 
                     // Provide user-friendly error messages
                     if (xhr.status === 413) {
-                        showAlert('Audio file too large for server processing. Using live transcription only.', 'warning');
+                        showAlert('Audio file too large for server processing. No transcription available.', 'warning');
                     } else if (xhr.status === 415) {
-                        showAlert('Audio format not supported by server. Using live transcription only.', 'warning');
+                        showAlert('Audio format not supported by server. No transcription available.', 'warning');
                     } else if (xhr.status >= 500) {
-                        showAlert('Server error during audio processing. Using live transcription only.', 'warning');
+                        showAlert('Server error during audio processing. No transcription available.', 'warning');
                     } else {
-                        showAlert('Failed to process audio on server. Using live transcription only.', 'warning');
+                        showAlert('Failed to process audio on server. No transcription available.', 'warning');
                     }
 
                     resolve(); // Resolve on error to continue session completion
@@ -2030,14 +2102,19 @@
                 const speakerIcon = speaker.role === 'doctor' ? 'fas fa-user-md' : 'fas fa-user';
                 const timestamp = speaker.start_time ? formatTimestamp(speaker.start_time) : '';
 
+                // XSS Prevention: Sanitize all content before inserting into HTML
+                const sanitizedSpeakerText = sanitizeHtml(speaker.text);
+                const sanitizedSpeakerName = sanitizeHtml(speakerName);
+                const sanitizedTimestamp = sanitizeHtml(timestamp || '');
+
                 speakerHtml += `
                     <div class="speaker-segment ${speakerClass} mb-2 p-2 rounded" style="border-left: 3px solid ${speaker.role === 'doctor' ? '#007bff' : '#28a745'}; background-color: ${speaker.role === 'doctor' ? '#f8f9ff' : '#f8fff9'};">
                         <div class="speaker-header d-flex align-items-center mb-1">
                             <i class="${speakerIcon} me-1"></i>
-                            <strong class="speaker-label">${speakerName}</strong>
-                            ${timestamp ? `<small class="text-muted ms-2">${timestamp}</small>` : ''}
+                            <strong class="speaker-label">${sanitizedSpeakerName}</strong>
+                            ${timestamp ? `<small class="text-muted ms-2">${sanitizedTimestamp}</small>` : ''}
                         </div>
-                        <div class="speaker-text">${speaker.text}</div>
+                        <div class="speaker-text">${sanitizedSpeakerText}</div>
                     </div>
                 `;
             });
@@ -2051,10 +2128,19 @@
             if (speakerLegend && speakerLegendText) {
                 const doctorCount = speakers.filter(s => s.role === 'doctor').length;
                 const patientCount = speakers.filter(s => s.role === 'patient').length;
-                speakerLegendText.innerHTML = `
-                    <span class="badge bg-primary me-2"><i class="fas fa-user-md"></i> Doctor: ${doctorCount}</span>
-                    <span class="badge bg-success"><i class="fas fa-user"></i> Patient: ${patientCount}</span>
-                `;
+                // XSS Prevention: Safely build the legend content
+                const doctorSpan = document.createElement('span');
+                doctorSpan.className = 'badge bg-primary me-2';
+                doctorSpan.innerHTML = '<i class="fas fa-user-md"></i> Doctor: ' + doctorCount;
+
+                const patientSpan = document.createElement('span');
+                patientSpan.className = 'badge bg-success';
+                patientSpan.innerHTML = '<i class="fas fa-user"></i> Patient: ' + patientCount;
+
+                // Clear the element and append the safe content
+                speakerLegendText.innerHTML = '';
+                speakerLegendText.appendChild(doctorSpan);
+                speakerLegendText.appendChild(patientSpan);
                 speakerLegend.classList.remove('d-none');
             }
 
@@ -2286,16 +2372,36 @@
         const alertContainer = document.getElementById('alertContainer');
         if (!alertContainer) return;
 
-        const notification = `
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-language me-2"></i>
-                <strong>Language Auto-Switched:</strong> ${languageNames[fromLang] || fromLang} → ${languageNames[toLang] || toLang}
-                <small class="text-muted ms-2">(Confidence: ${Math.round(confidence * 100)}%)</small>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
+        // XSS Prevention: Safely build the notification element
+        const notificationDiv = document.createElement('div');
+        notificationDiv.className = 'alert alert-success alert-dismissible fade show';
+        notificationDiv.setAttribute('role', 'alert');
 
-        alertContainer.innerHTML = notification;
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-language me-2';
+
+        const strong = document.createElement('strong');
+        strong.textContent = 'Language Auto-Switched: ';
+
+        const textNode = document.createTextNode((languageNames[fromLang] || fromLang) + ' → ' + (languageNames[toLang] || toLang));
+
+        const small = document.createElement('small');
+        small.className = 'text-muted ms-2';
+        small.textContent = '(Confidence: ' + Math.round(confidence * 100) + '%)';
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn-close';
+        button.setAttribute('data-bs-dismiss', 'alert');
+
+        notificationDiv.appendChild(icon);
+        notificationDiv.appendChild(strong);
+        notificationDiv.appendChild(textNode);
+        notificationDiv.appendChild(small);
+        notificationDiv.appendChild(button);
+
+        alertContainer.innerHTML = '';
+        alertContainer.appendChild(notificationDiv);
 
         // Auto-dismiss after 5 seconds
         setTimeout(() => {
@@ -2688,7 +2794,9 @@
 
                     // Update AI analysis area
                     if (aiAnalysisArea) {
-                        aiAnalysisArea.innerHTML = '<div style="white-space: pre-wrap;">' + aiAnalysis + '</div>';
+                        // XSS Prevention: Sanitize the AI analysis content before inserting into DOM
+                        const sanitizedAnalysis = sanitizeHtml(aiAnalysis);
+                        aiAnalysisArea.innerHTML = '<div style="white-space: pre-wrap;">' + sanitizedAnalysis + '</div>';
 
                         // Show the AI analysis section
                         const aiAnalysisSection = document.getElementById('aiAnalysisSection');
@@ -2707,7 +2815,12 @@
                 }
             },
             error: function (xhr, status, error) {
-                ;
+                console.error('Generate AI analysis error:', {
+                    status: status,
+                    error: error,
+                    xhrStatus: xhr.status,
+                    responseText: xhr.responseText
+                });
                 updateProcessingStage('Analysis failed. Please try again.');
                 showAlert('Failed to generate analysis. Please try again.', 'error');
                 isProcessing = false;
@@ -2758,7 +2871,12 @@
                 hideProgressIndicator();
             },
             error: function (xhr, status, error) {
-                ;
+                console.error('Create AI result error:', {
+                    status: status,
+                    error: error,
+                    xhrStatus: xhr.status,
+                    responseText: xhr.responseText
+                });
                 updateProcessingStage('Failed to create AI result record.');
                 showAlert('Failed to create AI result record. Please try again.', 'error');
                 isProcessing = false;
@@ -2821,12 +2939,11 @@
         if (!isHandsFreeMode) return;
 
         isHandsFreePaused = true;
-        if (recognition && isListening) {
-            try {
-                recognition.stop();
-            } catch (error) {
-                ;
-            }
+
+        // Since live transcription is disabled, just update state
+        if (isListening) {
+            isListening = false;
+            console.log('⚠️ Live transcription disabled in this version, only updating state.');
         }
 
         stopSilenceDetection();
@@ -2840,13 +2957,10 @@
         isHandsFreePaused = false;
         restartAttempts = 0;
 
-        if (isListening) {
-            try {
-                recognition.lang = currentLanguage;
-                recognition.start();
-            } catch (error) {
-                ;
-            }
+        // Since live transcription is disabled, just update state
+        if (!isListening) {
+            isListening = true;
+            console.log('⚠️ Live transcription disabled in this version, only updating state.');
         }
 
         startSilenceDetection();
@@ -3007,12 +3121,23 @@
         const indicator = document.createElement('div');
         indicator.id = 'audioLevelIndicator';
         indicator.className = 'd-flex align-items-center';
-        indicator.innerHTML = `
-            <small class="me-2">Audio:</small>
-            <div class="audio-level-container" style="width: 60px; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden;">
-                <div class="audio-level-bar bg-secondary" style="height: 100%; width: 0%; transition: width 0.1s;"></div>
-            </div>
-        `;
+
+        // Create elements using DOM methods for better performance and security
+        const small = document.createElement('small');
+        small.className = 'me-2';
+        small.textContent = 'Audio:';
+
+        const container = document.createElement('div');
+        container.className = 'audio-level-container';
+        container.style.cssText = 'width: 60px; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden;';
+
+        const bar = document.createElement('div');
+        bar.className = 'audio-level-bar bg-secondary';
+        bar.style.cssText = 'height: 100%; width: 0%; transition: width 0.1s;';
+
+        container.appendChild(bar);
+        indicator.appendChild(small);
+        indicator.appendChild(container);
 
         const enhancedContainer = document.getElementById('enhancedStatusContainer');
         if (enhancedContainer) {
@@ -3060,7 +3185,17 @@
         const timer = document.createElement('div');
         timer.id = 'recordingTimer';
         timer.className = 'd-flex align-items-center';
-        timer.innerHTML = '<small class="me-2">Time:</small><span class="badge bg-primary recording-timer">00:00</span>';
+
+        const small = document.createElement('small');
+        small.className = 'me-2';
+        small.textContent = 'Time:';
+
+        const span = document.createElement('span');
+        span.className = 'badge bg-primary recording-timer';
+        span.textContent = '00:00';
+
+        timer.appendChild(small);
+        timer.appendChild(span);
 
         const enhancedContainer = document.getElementById('enhancedStatusContainer');
         if (enhancedContainer) {
@@ -3173,11 +3308,11 @@
             }
             showAlert('Using server-processed transcription', 'success');
         } else if (liveTranscription && liveTranscription.trim().length > 0) {
-            // Fall back to live transcription
+            // Live transcription is disabled in this version, but keeping fallback for any existing data
             if (transcriptionArea) {
                 transcriptionArea.value = liveTranscription;
             }
-            showAlert('Using live transcription', 'info');
+            showAlert('Using cached transcription data', 'info');
         } else {
             showAlert('No transcription available', 'warning');
         }
@@ -3299,9 +3434,12 @@
             type === 'success' ? 'alert-success' :
                 type === 'warning' ? 'alert-warning' : 'alert-info';
 
+        // XSS Prevention: Sanitize the message before inserting into DOM
+        const sanitizedMessage = sanitizeHtml(message);
+
         const alertHtml = `
             <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                ${message}
+                ${sanitizedMessage}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         `;
@@ -3414,7 +3552,12 @@
                     const patientSelect = document.getElementById('patientSelect');
                     const option = document.createElement('option');
                     option.value = response.patient.id;
-                    option.textContent = response.patient.name + ' (' + (response.patient.age ? response.patient.age + 'y' : 'Age N/A') + ', ' + (response.patient.gender ? response.patient.gender.charAt(0).toUpperCase() + response.patient.gender.slice(1) : 'Gender N/A') + ')';
+                    // XSS Prevention: Sanitize patient data before adding to dropdown
+                    const sanitizedName = sanitizeHtml(response.patient.name);
+                    const sanitizedAge = response.patient.age ? parseInt(response.patient.age, 10) : null;
+                    const sanitizedGender = response.patient.gender ? sanitizeHtml(response.patient.gender.charAt(0).toUpperCase() + response.patient.gender.slice(1)) : 'Gender N/A';
+
+                    option.textContent = sanitizedName + ' (' + (sanitizedAge ? sanitizedAge + 'y' : 'Age N/A') + ', ' + sanitizedGender + ')';
                     if (patientSelect) patientSelect.appendChild(option);
 
                     // Select the new patient
@@ -3456,9 +3599,12 @@
                           type === 'success' ? 'alert-success' :
                           type === 'warning' ? 'alert-warning' : 'alert-info';
 
+        // XSS Prevention: Sanitize the message before inserting into DOM
+        const sanitizedMessage = sanitizeHtml(message);
+
         const alertHtml = `
             <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                ${message}
+                ${sanitizedMessage}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         `;
@@ -3514,7 +3660,9 @@
         if (modalPatientName && selectedPatient) {
             const selectedOption = selectedPatient.options[selectedPatient.selectedIndex];
             const patientName = selectedOption ? selectedOption.text.split(' (')[0] : 'Unknown Patient';
-            modalPatientName.textContent = patientName;
+            // XSS Prevention: Sanitize patient name before displaying
+            const sanitizedName = sanitizeHtml(patientName);
+            modalPatientName.textContent = sanitizedName;
         }
 
         // Show the modal
@@ -3551,7 +3699,12 @@
             // Get the first available appointment
             const appointment = appointments[0];
             if (appointmentInfoDiv) appointmentInfoDiv.style.display = 'block';
-            if (appointmentInfoText) appointmentInfoText.textContent = `Found ${appointments.length} incomplete appointment(s). The first one will be automatically selected: ${appointment.appointment_date_formatted} (${appointment.appointment_type})`;
+            if (appointmentInfoText) {
+                // XSS Prevention: Sanitize appointment data before displaying
+                const sanitizedDate = sanitizeHtml(appointment.appointment_date_formatted);
+                const sanitizedType = sanitizeHtml(appointment.appointment_type);
+                appointmentInfoText.textContent = `Found ${appointments.length} incomplete appointment(s). The first one will be automatically selected: ${sanitizedDate} (${sanitizedType})`;
+            }
 
             // Store appointment ID for completion
             window.selectedAppointmentId = appointment.id;
@@ -3582,12 +3735,41 @@
         const appointment = appointments.find(apt => apt.id == appointmentId);
 
         if (appointment && detailsDiv) {
-            detailsDiv.innerHTML = `
-                <p><strong>Appointment:</strong> ${appointment.appointment_date_formatted}</p>
-                <p><strong>Type:</strong> ${appointment.appointment_type}</p>
-                <p><strong>Status:</strong> Will be marked as completed</p>
-                <p><strong>Diagnosis:</strong> Will be linked to current diagnosis</p>
-            `;
+            // XSS Prevention: Safely build appointment details
+            detailsDiv.innerHTML = '';
+
+            const appointmentP = document.createElement('p');
+            const appointmentStrong = document.createElement('strong');
+            appointmentStrong.textContent = 'Appointment: ';
+            const appointmentText = document.createTextNode(sanitizeHtml(appointment.appointment_date_formatted));
+            appointmentP.appendChild(appointmentStrong);
+            appointmentP.appendChild(appointmentText);
+
+            const typeP = document.createElement('p');
+            const typeStrong = document.createElement('strong');
+            typeStrong.textContent = 'Type: ';
+            const typeText = document.createTextNode(sanitizeHtml(appointment.appointment_type));
+            typeP.appendChild(typeStrong);
+            typeP.appendChild(typeText);
+
+            const statusP = document.createElement('p');
+            const statusStrong = document.createElement('strong');
+            statusStrong.textContent = 'Status: ';
+            const statusText = document.createTextNode('Will be marked as completed');
+            statusP.appendChild(statusStrong);
+            statusP.appendChild(statusText);
+
+            const diagnosisP = document.createElement('p');
+            const diagnosisStrong = document.createElement('strong');
+            diagnosisStrong.textContent = 'Diagnosis: ';
+            const diagnosisText = document.createTextNode('Will be linked to current diagnosis');
+            diagnosisP.appendChild(diagnosisStrong);
+            diagnosisP.appendChild(diagnosisText);
+
+            detailsDiv.appendChild(appointmentP);
+            detailsDiv.appendChild(typeP);
+            detailsDiv.appendChild(statusP);
+            detailsDiv.appendChild(diagnosisP);
         } else if (detailsDiv) {
             detailsDiv.innerHTML = '<p>Appointment details not found.</p>';
         }
@@ -3978,15 +4160,10 @@
         forceStopRecording: function () {
             console.log('🚨 Force stopping all recording activities...');
 
-            // Force stop live transcription
+            // Force stop live transcription (disabled in this version)
             isListening = false;
-            if (recognition) {
-                try {
-                    recognition.stop();
-                } catch (e) {
-                    console.log('Recognition already stopped');
-                }
-            }
+            // Web Speech API recognition is not available in this version, so skip recognition.stop()
+            console.log('⚠️ Live transcription is disabled in this version.');
 
             // Force stop audio recording
             audioRecording = false;
@@ -4080,7 +4257,7 @@
     // Log system improvements summary
     voiceAssistantLogger.info('🎙️ Voice Assistant Initialized', {
         features: [
-            'Live transcription with browser speech recognition',
+            'Audio recording with browser MediaRecorder API',
             'Server-side audio processing with OpenAI Whisper',
             'Hybrid audio recording and processing',
             'Medical dictionary integration',
@@ -4100,7 +4277,7 @@
     });
 
     console.log('🎙️ Voice Assistant Initialized:');
-    console.log('✅ Live transcription: Active');
+    console.log('❌ Live transcription: Disabled (Web Speech API removed)');
     console.log('✅ Server processing: Ready');
     console.log('🎵 Audio recording: Enhanced with validation');
     console.log('🏥 Medical dictionary: ' + Object.keys(medicalDictionary).length + ' terms loaded');

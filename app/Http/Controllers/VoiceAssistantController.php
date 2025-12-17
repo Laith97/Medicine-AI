@@ -15,23 +15,39 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use OpenAI\Laravel\Facades\OpenAI;
+use App\Models\Patient;
+use Illuminate\Support\Facades\Storage;
+use App\Helpers\OpenAIHelper;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use App\Notifications\VoiceTranscriptionCompletedNotification;
+use App\Notifications\SystemAlertNotification;
+use App\Jobs\ProcessVoiceTranscriptionJob;
+use Google\Cloud\Speech\V1\SpeechClient;
+use Google\Cloud\Speech\V1\RecognitionConfig;
+use Google\Cloud\Speech\V1\AudioEncoding;
+use Google\Cloud\Speech\V1\SpeechAdaptation;
+use Google\Cloud\Speech\V1\PhraseSet;
+use Google\Cloud\Speech\V1\RecognitionAudio;
 
 class VoiceAssistantController extends Controller
 {
+    private $cachedMedicalPhraseSet = null;
+
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
             $user = Auth::user();
 
             // Handle sub-users - they inherit access from their parent doctor
-            if ($user->isSubUser()) {
+            if ($user->parent_user_id) { // Assuming sub-users have a parent_user_id
                 $parentUser = $user->parentUser;
-                if (!$parentUser || !$parentUser->isDoctor() || !$parentUser->doctor || !$parentUser->doctor->is_active) {
+                if (!$parentUser || $parentUser->role !== 'doctor' || !$parentUser->doctor || !$parentUser->doctor->is_active) {
                     abort(403, 'Access denied. Parent doctor profile required.');
                 }
             } else {
                 // Handle main users (doctors)
-                if (!$user->isDoctor() || !$user->doctor) {
+                if ($user->role !== 'doctor' || !$user->doctor) {
                     abort(403, 'Access denied. Doctor profile required.');
                 }
 
@@ -49,13 +65,21 @@ class VoiceAssistantController extends Controller
      */
     private function generatePatientKey($patient)
     {
-        // Use the same logic as Diagnosis model
-        return Diagnosis::generatePatientKey(
-            $patient->name,
-            $patient->age,
-            $patient->gender,
-            Auth::id()
-        );
+        try {
+            // Use the same logic as Diagnosis model
+            return Diagnosis::generatePatientKey(
+                $patient->name ?? null,
+                $patient->age ?? null,
+                $patient->gender ?? null,
+                Auth::id()
+            );
+        } catch (\Exception $e) {
+            \Log::error('Failed to generate patient key', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+            throw $e; // Re-throw to be handled by calling function
+        }
     }
 
     public function training()
@@ -97,40 +121,39 @@ class VoiceAssistantController extends Controller
 
         \Log::info('Voice Assistant - Starting index method', [
             'user_id' => Auth::id(),
-            'user_email' => Auth::user()->email,
-            'is_doctor' => Auth::user()->isDoctor(),
+            'is_doctor' => Auth::user()->role === 'doctor',
             'primary_doctor_id' => Auth::user()->primary_doctor_id ?? 'null'
         ]);
 
         try {
-            $basePatients = Auth::user()->getEffectiveAssignedPatients()
+            $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
+            $basePatients = User::where('role', 'patient')
+                ->where('primary_doctor_id', $effectiveDoctorId)
                 ->select('id', 'name', 'email', 'age', 'gender')
                 ->orderBy('name')
                 ->get();
-                
+
             \Log::info('Voice Assistant - Loaded patients using getEffectiveAssignedPatients', [
                 'count' => $basePatients->count(),
-                'patient_names' => $basePatients->pluck('name')->toArray()
             ]);
         } catch (\Exception $e) {
             \Log::warning('Could not load assigned patients, trying fallback: ' . $e->getMessage());
 
             // Fallback: load all patients with role 'patient' for this doctor
             try {
-                $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+                $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
                 \Log::info('Voice Assistant - Using fallback patient loading', [
                     'effective_doctor_id' => $effectiveDoctorId
                 ]);
-                
+
                 $basePatients = User::where('role', 'patient')
                     ->where('primary_doctor_id', $effectiveDoctorId)
                     ->select('id', 'name', 'email', 'age', 'gender')
                     ->orderBy('name')
                     ->get();
-                    
+
                 \Log::info('Voice Assistant - Loaded patients using fallback', [
                     'count' => $basePatients->count(),
-                    'patient_names' => $basePatients->pluck('name')->toArray()
                 ]);
             } catch (\Exception $e2) {
                 $basePatients = collect();
@@ -140,104 +163,52 @@ class VoiceAssistantController extends Controller
 
         // Load available appointments for each patient (for appointment completion)
         $patientAppointments = [];
-        $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+        $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
         $loggedInUserId = Auth::id();
-        
+
         Log::info('Voice Assistant - Doctor ID debug', [
             'effective_doctor_id' => $effectiveDoctorId,
             'logged_in_user_id' => $loggedInUserId,
-            'user_is_doctor' => Auth::user()->isDoctor(),
-            'user_email' => Auth::user()->email
+            'user_is_doctor' => Auth::user()->role === 'doctor',
         ]);
-        
+
+        // Fetch all appointments for the current user at once to avoid N+1 queries
+        $allAppointments = \App\Models\Appointment::whereIn('patient_id', $basePatients->pluck('id'))
+            ->where(function($query) use ($effectiveDoctorId, $loggedInUserId) {
+                $query->where('doctor_id', $effectiveDoctorId)
+                      ->orWhere('doctor_id', $loggedInUserId);
+            })
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->where('appointment_date', '>=', now()->startOfDay()) // Only today or future appointments
+            ->orderBy('appointment_date', 'asc')
+            ->get()
+            ->groupBy('patient_id'); // Group by patient_id for easy lookup
+
+        // Also fetch today's appointments regardless of time
+        $todaysAppointments = \App\Models\Appointment::whereIn('patient_id', $basePatients->pluck('id'))
+            ->where(function($query) use ($effectiveDoctorId, $loggedInUserId) {
+                $query->where('doctor_id', $effectiveDoctorId)
+                      ->orWhere('doctor_id', $loggedInUserId);
+            })
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->whereDate('appointment_date', today()) // Today's appointments
+            ->orderBy('appointment_date', 'asc')
+            ->get()
+            ->groupBy('patient_id'); // Group by patient_id for easy lookup
+
         foreach ($basePatients as $patient) {
             $appointments = collect(); // Start with empty collection
-            
-            // First, try to find ALL appointments for this patient to see what exists
-            $allPatientAppointments = \App\Models\Appointment::where('patient_id', $patient->id)
-                ->orderBy('appointment_date', 'desc')
-                ->get();
-            
-            Log::info('Voice Assistant - All appointments for patient (debug)', [
-                'patient_id' => $patient->id,
-                'patient_name' => $patient->name,
-                'total_appointments' => $allPatientAppointments->count(),
-                'appointments' => $allPatientAppointments->map(function($apt) {
-                    return [
-                        'id' => $apt->id,
-                        'doctor_id' => $apt->doctor_id,
-                        'status' => $apt->status,
-                        'appointment_date' => $apt->appointment_date->format('Y-m-d H:i:s')
-                    ];
-                })->toArray()
-            ]);
-            
-            // Now try multiple approaches to find appointments for completion
-            $searchAttempts = [
-                ['doctor_id' => $effectiveDoctorId, 'label' => 'effective_doctor_id'],
-                ['doctor_id' => $loggedInUserId, 'label' => 'logged_in_user_id'],
-            ];
-            
-            // If the patient belongs to this doctor, also try with patient's primary_doctor_id
-            if ($patient->primary_doctor_id && in_array($patient->primary_doctor_id, [$effectiveDoctorId, $loggedInUserId])) {
-                $searchAttempts[] = ['doctor_id' => $patient->primary_doctor_id, 'label' => 'patient_primary_doctor_id'];
-            }
-            
-            // Also try to get the doctor's ID from the Doctor model
-            try {
-                $doctor = Auth::user()->doctor;
-                if ($doctor && $doctor->id && !in_array($doctor->id, array_column($searchAttempts, 'doctor_id'))) {
-                    $searchAttempts[] = ['doctor_id' => $doctor->id, 'label' => 'auth_user_doctor_id'];
-                }
-            } catch (\Exception $e) {
-                Log::warning('Voice Assistant - Could not get doctor ID: ' . $e->getMessage());
-            }
-            
-            foreach ($searchAttempts as $attempt) {
-                // Search for ACTIVE appointments only (pending/confirmed, today or future)
-                $query = \App\Models\Appointment::where('patient_id', $patient->id)
-                    ->where('doctor_id', $attempt['doctor_id'])
-                    ->whereIn('status', ['pending', 'confirmed'])
-                    ->where('appointment_date', '>=', now()->startOfDay()) // Only today or future appointments
-                    ->orderBy('appointment_date', 'asc');
-                
-                $foundAppointments = $query->get();
-                
-                if ($foundAppointments->isNotEmpty()) {
-                    Log::info('Voice Assistant - Found active appointments with ' . $attempt['label'], [
-                        'patient_id' => $patient->id,
-                        'patient_name' => $patient->name,
-                        'search_type' => $attempt['label'],
-                        'doctor_id' => $attempt['doctor_id'],
-                        'appointment_count' => $foundAppointments->count()
-                    ]);
-                    $appointments = $foundAppointments;
-                    break;
-                }
-            }
-            
-            // If no active appointments found, also try today's appointments regardless of time
-            if ($appointments->isEmpty()) {
-                foreach ($searchAttempts as $attempt) {
-                    $query = \App\Models\Appointment::where('patient_id', $patient->id)
-                        ->where('doctor_id', $attempt['doctor_id'])
-                        ->whereIn('status', ['pending', 'confirmed'])
-                        ->whereDate('appointment_date', today()) // Today's appointments
-                        ->orderBy('appointment_date', 'asc');
-                    
-                    $foundAppointments = $query->get();
-                    
-                    if ($foundAppointments->isNotEmpty()) {
-                        Log::info('Voice Assistant - Found today appointments with ' . $attempt['label'], [
-                            'patient_id' => $patient->id,
-                            'patient_name' => $patient->name,
-                            'search_type' => $attempt['label'],
-                            'doctor_id' => $attempt['doctor_id'],
-                            'appointment_count' => $foundAppointments->count()
-                        ]);
-                        $appointments = $foundAppointments;
-                        break;
-                    }
+
+            // Get appointments for this patient from pre-fetched data
+            $activeAppointments = $allAppointments->get($patient->id, collect());
+
+            if ($activeAppointments->isNotEmpty()) {
+                $appointments = $activeAppointments;
+            } else {
+                // If no active appointments found, use today's appointments
+                $todaysPatientAppointments = $todaysAppointments->get($patient->id, collect());
+                if ($todaysPatientAppointments->isNotEmpty()) {
+                    $appointments = $todaysPatientAppointments;
                 }
             }
 
@@ -252,38 +223,38 @@ class VoiceAssistantController extends Controller
                 ];
             });
 
-            // Debug logging
+            // Debug logging without sensitive patient names
             Log::info('Voice Assistant - Final appointments for patient', [
                 'patient_id' => $patient->id,
-                'patient_name' => $patient->name,
-                'patient_primary_doctor_id' => $patient->primary_doctor_id,
                 'effective_doctor_id' => $effectiveDoctorId,
                 'logged_in_user_id' => $loggedInUserId,
                 'appointment_count' => $appointments->count(),
-                'appointments' => $appointments->toArray()
             ]);
 
             $patientAppointments[$patient->id] = $appointments;
         }
+
+        // Fetch all diagnosis records for the current doctor and their patients at once
+        $allDiagnoses = Diagnosis::whereIn('patient_id', $basePatients->pluck('id'))
+            ->where('doctor_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('patient_id'); // Group by patient_id for easy lookup
 
         // Process patients and build patient groups with visit history
         foreach ($basePatients as $patient) {
             // Generate patient key if not exists
             $patientKey = $this->generatePatientKey($patient);
 
-            // Get visit history from Diagnosis records
-            $visits = Diagnosis::where('patient_id', $patient->id)
-                ->where('doctor_id', Auth::id())
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            $visitCount = $visits->count();
-            $lastVisit = $visits->first() ? $visits->first()->created_at : null;
+            // Get visit history from pre-fetched Diagnosis records
+            $patientsDiagnoses = $allDiagnoses->get($patient->id, collect());
+            $visitCount = $patientsDiagnoses->count();
+            $lastVisit = $patientsDiagnoses->first() ? $patientsDiagnoses->first()->created_at : null;
 
             // Add to patient groups for modal compatibility
             $patientGroups[$patientKey] = [
                 'patient' => $patient,
-                'visits' => $visits->map(function($visit) {
+                'visits' => $patientsDiagnoses->map(function($visit) {
                     return (object)[
                         'id' => $visit->id,
                         'visit_number' => 1, // Diagnosis records don't have visit numbers yet
@@ -325,7 +296,7 @@ class VoiceAssistantController extends Controller
     public function history()
     {
         $transcriptions = VoiceTranscription::where('doctor_id', Auth::id())
-            ->with('patient')
+            ->with('patient:id,name,email,age,gender') // Limit patient data loaded for security
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -356,11 +327,29 @@ class VoiceAssistantController extends Controller
     {
         $selectedPatient = $request->input('selectedPatient');
 
-        if (!$selectedPatient) {
+        // Validate patient ID
+        if (!$selectedPatient || !is_numeric($selectedPatient) || $selectedPatient <= 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Please select a patient first.'
+                'message' => 'Please select a valid patient first.'
             ]);
+        }
+
+        // Verify that the patient belongs to the current authenticated doctor
+        $patient = User::find($selectedPatient);
+        if (!$patient) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Patient not found.'
+            ], 404);
+        }
+
+        $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
+        if ($patient->primary_doctor_id !== $effectiveDoctorId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to patient.'
+            ], 403);
         }
 
         $sessionId = Str::uuid()->toString();
@@ -386,17 +375,69 @@ class VoiceAssistantController extends Controller
     {
         $sessionId = $request->input('sessionId');
 
-        // Update transcription record
-        VoiceTranscription::where('session_id', $sessionId)
-            ->update([
-                'status' => 'completed',
-                'session_ended_at' => now(),
+        // Input validation
+        if (empty($sessionId) || !is_string($sessionId) || strlen($sessionId) > 255) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID provided.'
+            ], 400);
+        }
+
+        // Sanitize the session ID by removing any potential malicious characters
+        $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+
+        if (empty($sessionId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID format.'
+            ], 400);
+        }
+
+        try {
+            // Verify that the session belongs to the current authenticated doctor
+            $transcription = VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id())
+                ->first();
+
+            if (!$transcription) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Session not found or unauthorized access.'
+                ], 404);
+            }
+
+            // Update transcription record only if it's still active
+            $result = VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id())
+                ->where('status', 'active')
+                ->update([
+                    'status' => 'completed',
+                    'session_ended_at' => now(),
+                ]);
+
+            if ($result === 0) {
+                // Session might already be completed
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Session already completed or not found.'
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Session stopped successfully.'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Stop session error: ' . $e->getMessage(), [
+                'session_id' => $sessionId,
+                'doctor_id' => Auth::id()
             ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Session stopped successfully.'
-        ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while stopping the session.'
+            ], 500);
+        }
     }
 
     public function handleTranscription(Request $request)
@@ -404,6 +445,7 @@ class VoiceAssistantController extends Controller
         $text = trim($request->input('text', ''));
         $sessionId = $request->input('sessionId');
 
+        // Input validation
         if (empty($text)) {
             return response()->json([
                 'success' => false,
@@ -411,14 +453,40 @@ class VoiceAssistantController extends Controller
             ]);
         }
 
-        // Update the transcription in database
-        $transcription = VoiceTranscription::where('session_id', $sessionId)->first();
-        if ($transcription) {
-            $transcription->update([
-                'raw_transcription' => $text,
-                'updated_at' => now()
-            ]);
+        if (empty($sessionId) || !is_string($sessionId) || strlen($sessionId) > 255) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID provided.'
+            ], 400);
         }
+
+        // Sanitize the session ID by removing any potential malicious characters
+        $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+
+        if (empty($sessionId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID format.'
+            ], 400);
+        }
+
+        // Verify that the session belongs to the current authenticated doctor
+        $transcription = VoiceTranscription::where('session_id', $sessionId)
+            ->where('doctor_id', Auth::id())
+            ->first();
+
+        if (!$transcription) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Session not found or unauthorized access.'
+            ], 404);
+        }
+
+        // Update the transcription in database
+        $transcription->update([
+            'raw_transcription' => $text,
+            'updated_at' => now()
+        ]);
 
         return response()->json([
             'success' => true,
@@ -432,6 +500,24 @@ class VoiceAssistantController extends Controller
         $transcription = trim($request->input('transcription', ''));
         $sessionId = $request->input('sessionId');
 
+        // Input validation
+        if (empty($sessionId) || !is_string($sessionId) || strlen($sessionId) > 255) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID provided.'
+            ], 400);
+        }
+
+        // Sanitize the session ID by removing any potential malicious characters
+        $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+
+        if (empty($sessionId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID format.'
+            ], 400);
+        }
+
         \Log::info('Voice Assistant - processWithAI called', [
             'session_id' => $sessionId,
             'transcription_length' => strlen($transcription),
@@ -444,7 +530,7 @@ class VoiceAssistantController extends Controller
                 'session_id' => $sessionId,
                 'length' => strlen($transcription)
             ]);
-            
+
             // Return fallback data structure instead of error
             $fallbackData = [
                 'symptoms' => '',
@@ -455,7 +541,7 @@ class VoiceAssistantController extends Controller
                 'diagnosis' => '',
                 'care_plan' => ''
             ];
-            
+
             return response()->json([
                 'success' => true,
                 'extractedData' => $fallbackData,
@@ -464,6 +550,18 @@ class VoiceAssistantController extends Controller
         }
 
         try {
+            // Verify that the session belongs to the current authenticated doctor
+            $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id())
+                ->first();
+
+            if (!$transcriptionRecord) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Session not found or unauthorized access.'
+                ], 404);
+            }
+
             // OPTIMIZATION: Check cache for similar transcriptions first
             $cacheKey = 'voice_ai_extraction_' . md5($transcription);
             $cachedResult = Cache::get($cacheKey);
@@ -519,28 +617,23 @@ class VoiceAssistantController extends Controller
                 }
             }
 
-            $aiResponse = $response['choices'][0]['message']['content'] ?? '';
-            
             \Log::info('Voice Assistant - OpenAI response received', [
-                'response_length' => strlen($aiResponse),
-                'response_preview' => substr($aiResponse, 0, 300)
+                'response_length' => strlen($aiResponse ?? ''),
+                'response_preview' => substr($aiResponse ?? '', 0, 300)
             ]);
 
             // FIXED: More robust JSON extraction
-            $extractedData = $this->extractJsonFromResponse($aiResponse);
-            
+            $extractedData = $this->extractJsonFromResponse($aiResponse ?? '');
+
             if ($extractedData) {
                 // Validate and clean the extracted data
                 $extractedData = $this->validateAndCleanExtractedData($extractedData);
-                
+
                 // Update the transcription record with extracted data
-                $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)->first();
-                if ($transcriptionRecord) {
-                    $transcriptionRecord->update([
-                        'extracted_data' => $extractedData
-                    ]);
-                }
-                
+                $transcriptionRecord->update([
+                    'extracted_data' => $extractedData
+                ]);
+
                 \Log::info('Voice Assistant - Medical data extraction successful', [
                     'session_id' => $sessionId,
                     'extracted_fields' => array_keys(array_filter($extractedData))
@@ -556,10 +649,10 @@ class VoiceAssistantController extends Controller
                     'session_id' => $sessionId,
                     'ai_response' => $aiResponse
                 ]);
-                
+
                 // Return fallback data instead of error
                 $fallbackData = $this->generateFallbackData($transcription);
-                
+
                 return response()->json([
                     'success' => true,
                     'extractedData' => $fallbackData,
@@ -575,7 +668,7 @@ class VoiceAssistantController extends Controller
 
             // Return fallback data instead of error to prevent frontend failure
             $fallbackData = $this->generateFallbackData($transcription);
-            
+
             return response()->json([
                 'success' => true,
                 'extractedData' => $fallbackData,
@@ -714,6 +807,24 @@ class VoiceAssistantController extends Controller
         $extractedData = $request->input('extractedData', []);
         $selectedPatient = $request->input('selectedPatient');
 
+        // Input validation
+        if (empty($sessionId) || !is_string($sessionId) || strlen($sessionId) > 255) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID provided.'
+            ], 400);
+        }
+
+        // Sanitize the session ID by removing any potential malicious characters
+        $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+
+        if (empty($sessionId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID format.'
+            ], 400);
+        }
+
         if (empty($transcription)) {
             return response()->json([
                 'success' => false,
@@ -721,20 +832,48 @@ class VoiceAssistantController extends Controller
             ]);
         }
 
-        if (!$selectedPatient) {
+        if (!$selectedPatient || !is_numeric($selectedPatient) || $selectedPatient <= 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Please select a patient first.'
+                'message' => 'Please select a valid patient first.'
             ]);
         }
 
         try {
+            // Verify that the session belongs to the current authenticated doctor
+            $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id())
+                ->first();
+
+            if (!$transcriptionRecord) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Session not found or unauthorized access.'
+                ], 404);
+            }
+
+            // Verify that the patient belongs to the current authenticated doctor
+            $patient = User::find($selectedPatient);
+            if (!$patient) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Patient not found.'
+                ], 404);
+            }
+
+            $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
+            if ($patient->primary_doctor_id !== $effectiveDoctorId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to patient.'
+                ], 403);
+            }
+
             // Get the user's specialty and use the existing preparePrompt function logic
             $specialty = Auth::user()->setting->specialty ?? 'Internal Medicine';
             $criterion = Auth::user()->setting->criterion ?? 'CDC';
 
             // Get patient data for AI analysis
-            $patient = User::find($selectedPatient);
             $patientAge = $patient ? $patient->age : null;
             $patientGender = $patient ? $patient->gender : null;
 
@@ -783,10 +922,9 @@ class VoiceAssistantController extends Controller
                 }
             }
 
-            $aiAnalysis = $response['choices'][0]['message']['content'] ?? '';
-
-            // Update database
+            // Update database - ensure only the owner can update
             VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id()) // Ensure only the owner can update
                 ->update([
                     'ai_analysis' => $aiAnalysis,
                     'structured_chart' => [
@@ -806,7 +944,11 @@ class VoiceAssistantController extends Controller
                 'message' => 'AI analysis generated successfully.'
             ]);
         } catch (\Exception $e) {
-            \Log::error('AI analysis error: ' . $e->getMessage());
+            \Log::error('AI analysis error: ' . $e->getMessage(), [
+                'session_id' => $sessionId,
+                'user_id' => Auth::id(),
+                'selected_patient' => $selectedPatient
+            ]);
 
             return response()->json([
                 'success' => false,
@@ -823,11 +965,65 @@ class VoiceAssistantController extends Controller
         $sessionId = $request->input('sessionId');
         $extractedData = $request->input('extractedData', []);
 
-        if (!$selectedPatient || empty($aiAnalysis)) {
+        // Validate inputs
+        if (empty($sessionId) || !is_string($sessionId) || strlen($sessionId) > 255) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot create AI result without patient selection and AI analysis.'
+                'message' => 'Invalid session ID provided.'
+            ], 400);
+        }
+
+        // Sanitize the session ID by removing any potential malicious characters
+        $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+
+        if (empty($sessionId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID format.'
+            ], 400);
+        }
+
+        if (!$selectedPatient || !is_numeric($selectedPatient) || $selectedPatient <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please select a valid patient first.'
             ]);
+        }
+
+        if (empty($aiAnalysis)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot create AI result without AI analysis.'
+            ]);
+        }
+
+        // Verify that the patient belongs to the current authenticated doctor
+        $patient = User::find($selectedPatient);
+        if (!$patient) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Patient not found.'
+            ], 404);
+        }
+
+        $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
+        if ($patient->primary_doctor_id !== $effectiveDoctorId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to patient.'
+            ], 403);
+        }
+
+        // Verify that the session belongs to the current authenticated doctor
+        $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)
+            ->where('doctor_id', Auth::id())
+            ->first();
+
+        if (!$transcriptionRecord) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Session not found or unauthorized access.'
+            ], 404);
         }
 
         try {
@@ -853,6 +1049,7 @@ class VoiceAssistantController extends Controller
 
             // Update the voice transcription record
             VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id()) // Ensure only the owner can update
                 ->update([
                     'ai_assistant_result_id' => $aiResult->id,
                     'status' => 'ai_analysis_complete',
@@ -880,6 +1077,7 @@ class VoiceAssistantController extends Controller
         $sessionId = $request->input('sessionId');
         $extractedData = $request->input('extractedData', []);
 
+        // Validate inputs
         if (empty($manualDiagnosisText)) {
             return response()->json([
                 'success' => false,
@@ -887,15 +1085,59 @@ class VoiceAssistantController extends Controller
             ]);
         }
 
+        if (!empty($sessionId)) {
+            if (!is_string($sessionId) || strlen($sessionId) > 255) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid session ID provided.'
+                ], 400);
+            }
+
+            // Sanitize the session ID by removing any potential malicious characters
+            $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+
+            if (empty($sessionId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid session ID format.'
+                ], 400);
+            }
+        }
+
+        if (!$selectedPatient || !is_numeric($selectedPatient) || $selectedPatient <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please select a valid patient first.'
+            ]);
+        }
+
         try {
             // Get the AI assistant result if provided
             $aiResult = null;
             if ($aiResultId) {
-                $aiResult = AiAssistantResult::findOrFail($aiResultId);
+                $aiResult = AiAssistantResult::where('id', $aiResultId)
+                    ->where('doctor_id', Auth::id())
+                    ->first();
+
+                if (!$aiResult) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unauthorized access to AI assistant result.'
+                    ], 403);
+                }
             }
 
             // Get the patient
             $patient = User::findOrFail($selectedPatient);
+
+            // Verify that the patient belongs to the current authenticated doctor
+            $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
+            if ($patient->primary_doctor_id !== $effectiveDoctorId && $patient->primary_doctor_id !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to patient.'
+                ], 403);
+            }
 
             // Prepare patient data - use AI result data if available, otherwise use extracted data
             $patientData = $aiResult ? $aiResult->patient_data : $extractedData;
@@ -915,12 +1157,15 @@ class VoiceAssistantController extends Controller
                 $aiResult->linkToDiagnosis($diagnosis->id);
             }
 
-            // Update the voice transcription record
-            VoiceTranscription::where('session_id', $sessionId)
-                ->update([
-                    'diagnosis_id' => $diagnosis->id,
-                    'status' => 'diagnosis_created',
-                ]);
+            // Update the voice transcription record only if session ID is provided
+            if (!empty($sessionId)) {
+                VoiceTranscription::where('session_id', $sessionId)
+                    ->where('doctor_id', Auth::id()) // Ensure only the owner can update
+                    ->update([
+                        'diagnosis_id' => $diagnosis->id,
+                        'status' => 'diagnosis_created',
+                    ]);
+            }
 
             // Send voice transcription completion notifications
             $this->sendVoiceTranscriptionNotifications($diagnosis, $transcription);
@@ -957,17 +1202,21 @@ class VoiceAssistantController extends Controller
         ]);
 
         try {
+            // Generate a secure random password for the new patient
+            $temporaryPassword = Str::random(16); // Generate a 16-character random password
+
             // Create new patient user
             $patient = User::create([
                 'name' => $request->input('newPatientName'),
                 'email' => $request->input('newPatientEmail'),
-                'password' => Hash::make('patient123'), // Default password
+                'password' => Hash::make($temporaryPassword), // Secure random password
                 'role' => 'patient',
                 'age' => $request->input('newPatientAge'),
                 'gender' => $request->input('newPatientGender'),
                 'phone' => $request->input('newPatientPhone'),
                 'primary_doctor_id' => Auth::id(), // Assign current doctor as primary
                 'email_verified_at' => now(), // Auto-verify for doctor-created accounts
+                'requires_password_reset' => true, // Require password change on first login
                 'date_of_birth' => null, // Will be calculated if needed later
             ]);
 
@@ -980,7 +1229,8 @@ class VoiceAssistantController extends Controller
                     'age' => $patient->age,
                     'gender' => $patient->gender,
                 ],
-                'message' => 'New patient created successfully! Default password is "patient123" - please inform the patient to change it.'
+                'temporaryPassword' => $temporaryPassword, // Include temporary password for doctor to share
+                'message' => 'New patient created successfully! Temporary password is "' . $temporaryPassword . '" - please inform the patient to change it on first login.'
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -1212,13 +1462,26 @@ class VoiceAssistantController extends Controller
     private function sendVoiceTranscriptionNotifications(Diagnosis $diagnosis, string $transcription)
     {
         try {
+            // Verify that the diagnosis belongs to the current authenticated doctor
+            if ($diagnosis->doctor_id !== Auth::id()) {
+                \Log::warning('Unauthorized access attempt to send notifications for diagnosis', [
+                    'diagnosis_id' => $diagnosis->id,
+                    'diagnosis_doctor_id' => $diagnosis->doctor_id,
+                    'current_user_id' => Auth::id()
+                ]);
+                return; // Don't send notifications for unauthorized diagnosis
+            }
+
             // Send notification to patient about new voice diagnosis
             if ($diagnosis->patient && $diagnosis->patient->wantsNotification('voice_transcription_completed')) {
                 // Get the voice transcription record to pass to the notification
                 $voiceTranscription = VoiceTranscription::where('session_id', $diagnosis->voice_transcript ? json_decode($diagnosis->voice_transcript, true)['session_id'] ?? null : null)->first();
 
                 if ($voiceTranscription) {
-                    $diagnosis->patient->notifyIfWants(new \App\Notifications\VoiceTranscriptionCompletedNotification($voiceTranscription));
+                    // Verify that the transcription also belongs to the current doctor
+                    if ($voiceTranscription->doctor_id === Auth::id()) {
+                        $diagnosis->patient->notifyIfWants(new \App\Notifications\VoiceTranscriptionCompletedNotification($voiceTranscription));
+                    }
                 }
             }
 
@@ -1226,7 +1489,8 @@ class VoiceAssistantController extends Controller
             if ($diagnosis->doctor && $diagnosis->doctor->user) {
                 $doctor = $diagnosis->doctor->user;
 
-                if ($doctor->wantsNotification('voice_transcription_completed')) {
+                // Only send notification to the current authenticated doctor
+                if ($doctor->id === Auth::id() && $doctor->wantsNotification('voice_transcription_completed')) {
                     $doctor->notifyIfWants(new \App\Notifications\SystemAlertNotification(
                         'Voice Diagnosis Completed',
                         "Voice transcription diagnosis completed for patient {$diagnosis->patient->name}. Diagnosis ID: {$diagnosis->id}",
@@ -1267,7 +1531,7 @@ class VoiceAssistantController extends Controller
             $patient = User::findOrFail($request->selectedPatient);
 
             // Ensure the patient belongs to the authenticated doctor
-            $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+            $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
             if ($patient->primary_doctor_id !== $effectiveDoctorId) {
                 return response()->json([
                     'success' => false,
@@ -1289,13 +1553,15 @@ class VoiceAssistantController extends Controller
                 ],
             ]);
 
-            // Update the voice transcription record
+            // Update the voice transcription record - add authorization check
             VoiceTranscription::where('session_id', $request->sessionId)
+                ->where('doctor_id', Auth::id()) // Ensure only the owner can update
                 ->update([
                     'diagnosis_id' => $diagnosis->id,
                     'status' => 'diagnosis_created',
                 ]);
 
+            // Prepare success response
             $message = 'Diagnosis saved successfully!';
             $redirectUrl = route('diagnosis.show', $diagnosis);
 
@@ -1303,7 +1569,7 @@ class VoiceAssistantController extends Controller
             if ($request->completionType === 'complete_appointment' && $request->appointmentId) {
                 try {
                     $appointment = \App\Models\Appointment::findOrFail($request->appointmentId);
-                    
+
                     // Debug logging
                     Log::info('Voice Assistant - Appointment validation', [
                         'appointment_id' => $appointment->id,
@@ -1318,10 +1584,10 @@ class VoiceAssistantController extends Controller
 
                     // Ensure the appointment belongs to the authenticated doctor (more flexible)
                     $appointmentDoctorId = $appointment->doctor_id;
-                    $isAppointmentDoctor = $appointmentDoctorId === Auth::id() || 
+                    $isAppointmentDoctor = $appointmentDoctorId === Auth::id() ||
                                          $appointmentDoctorId === $effectiveDoctorId ||
                                          (Auth::user()->doctor && $appointmentDoctorId === Auth::user()->doctor->id);
-                    
+
                     if (!$isAppointmentDoctor) {
                         Log::warning('Voice Assistant - Appointment doctor authorization failed', [
                             'appointment_id' => $appointment->id,
@@ -1330,7 +1596,7 @@ class VoiceAssistantController extends Controller
                             'effective_doctor_id' => $effectiveDoctorId,
                             'user_doctor_id' => Auth::user()->doctor ? Auth::user()->doctor->id : 'null'
                         ]);
-                        
+
                         return response()->json([
                             'success' => false,
                             'message' => 'Unauthorized access to appointment.'
@@ -1344,7 +1610,7 @@ class VoiceAssistantController extends Controller
                             'appointment_patient_id' => $appointment->patient_id,
                             'diagnosis_patient_id' => $patient->id
                         ]);
-                        
+
                         return response()->json([
                             'success' => false,
                             'message' => 'Appointment and diagnosis must be for the same patient.'
@@ -1352,23 +1618,29 @@ class VoiceAssistantController extends Controller
                     }
 
                     // Update appointment status and add doctor notes
-                    $appointment->update([
+                    $updateData = [
                         'status' => 'completed',
-                        'doctor_notes' => $request->doctorNotes,
                         'completed_at' => now(),
                         'diagnosis_id' => $diagnosis->id,
-                    ]);
-                    
+                    ];
+
+                    // Only add doctor notes if provided
+                    if ($request->has('doctorNotes') && !empty($request->doctorNotes)) {
+                        $updateData['doctor_notes'] = $request->doctorNotes;
+                    }
+
+                    $appointment->update($updateData);
+
                     // Send appointment completion notifications
                     $this->sendAppointmentCompletionNotifications($appointment, $diagnosis);
-                    
+
                     $message = 'Diagnosis saved and appointment completed successfully!';
                 } catch (\Exception $appointmentException) {
                     Log::error('Voice Assistant - Appointment completion failed', [
                         'appointment_id' => $request->appointmentId,
                         'error' => $appointmentException->getMessage()
                     ]);
-                    
+
                     return response()->json([
                         'success' => false,
                         'message' => 'Failed to complete appointment: ' . $appointmentException->getMessage()
@@ -1378,13 +1650,6 @@ class VoiceAssistantController extends Controller
 
             // Send voice transcription completion notifications
             $this->sendVoiceTranscriptionNotifications($diagnosis, $request->transcription);
-
-            // If appointment was completed, redirect to completion page
-            if ($request->completionType === 'complete_appointment' && $request->appointmentId) {
-                $appointment = \App\Models\Appointment::findOrFail($request->appointmentId);
-                return redirect()->route('doctor.appointments.completed', $appointment)
-                    ->with('success', $message . ' Review the completion summary below.');
-            }
 
             // If appointment was completed, redirect to completion page
             if ($request->completionType === 'complete_appointment' && $request->appointmentId) {
@@ -1518,9 +1783,9 @@ class VoiceAssistantController extends Controller
         try {
             // Get the patient
             $patient = User::findOrFail($request->selectedPatient);
-            
+
             // Debug logging
-            $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+            $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
             Log::info('Voice Assistant - Complete consultation debug', [
                 'patient_id' => $patient->id,
                 'patient_name' => $patient->name,
@@ -1532,10 +1797,9 @@ class VoiceAssistantController extends Controller
             ]);
 
             // Ensure the patient belongs to the authenticated doctor (more flexible check)
-            $isAssignedPatient = $patient->primary_doctor_id === $effectiveDoctorId || 
-                                $patient->primary_doctor_id === Auth::id() ||
-                                Auth::user()->canAccessPatient($patient);
-            
+            $isAssignedPatient = $patient->primary_doctor_id === $effectiveDoctorId ||
+                                $patient->primary_doctor_id === Auth::id();
+
             if (!$isAssignedPatient) {
                 Log::warning('Voice Assistant - Patient assignment check failed', [
                     'patient_id' => $patient->id,
@@ -1543,7 +1807,7 @@ class VoiceAssistantController extends Controller
                     'effective_doctor_id' => $effectiveDoctorId,
                     'auth_id' => Auth::id()
                 ]);
-                
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Patient not assigned to this doctor.'
@@ -1577,13 +1841,15 @@ class VoiceAssistantController extends Controller
                 $aiResult->linkToDiagnosis($diagnosis->id);
             }
 
-            // Update the voice transcription record
+            // Update the voice transcription record - add authorization check
             VoiceTranscription::where('session_id', $request->sessionId)
+                ->where('doctor_id', Auth::id()) // Ensure only the owner can update
                 ->update([
                     'diagnosis_id' => $diagnosis->id,
                     'status' => 'diagnosis_created',
                 ]);
 
+            // Prepare success response
             $message = 'Diagnosis saved successfully!';
             $redirectUrl = route('diagnosis.show', $diagnosis);
 
@@ -1725,18 +1991,19 @@ class VoiceAssistantController extends Controller
                 ]
             ]);
     
-            } catch (\Exception $e) {
-                \Log::error('Diagnosis save failed: ' . $e->getMessage(), [
-                    'diagnosis_id' => $request->diagnosis_id,
-                    'user_id' => Auth::id()
-                ]);
+        } catch (\Exception $e) {
+            \Log::error('Diagnosis save failed: ' . $e->getMessage(), [
+                'diagnosis_id' => $request->diagnosis_id,
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
+            ]);
     
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to save diagnosis: ' . $e->getMessage()
-                ], 500);
-            }
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save diagnosis: ' . $e->getMessage()
+            ], 500);
         }
+    }
     
         /**
          * HYBRID METHOD: Process audio file on server for enhanced accuracy
@@ -1750,11 +2017,33 @@ class VoiceAssistantController extends Controller
             $hasLiveTranscription = $request->input('has_live_transcription', false);
 
             // Validate required parameters
+            if (empty($sessionId) || !is_string($sessionId) || strlen($sessionId) > 255) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid session ID provided.'
+                ], 400);
+            }
+
+            // Sanitize the session ID by removing any potential malicious characters
+            $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+
             if (empty($sessionId)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Session ID is required'
+                    'message' => 'Invalid session ID format.'
                 ], 400);
+            }
+
+            // Verify that the session belongs to the current authenticated doctor
+            $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id())
+                ->first();
+
+            if (!$transcriptionRecord) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Session not found or unauthorized access.'
+                ], 404);
             }
 
             // Initialize performance metrics
@@ -1773,15 +2062,17 @@ class VoiceAssistantController extends Controller
 
             \Log::info('HYBRID METHOD - Server audio processing started', [
                 'session_id' => $sessionId,
-                'transcription_length' => strlen($transcription),
+                'transcription_length' => isset($transcription) ? strlen($transcription) : 0,
                 'has_live_transcription' => $hasLiveTranscription,
                 'user_id' => Auth::id(),
                 'request_has_file' => $request->hasFile('audio_file')
             ]);
 
             try {
-                // Check if audio file is provided
-                $hasAudioRecording = $request->input('has_audio_recording', false);
+                // Check if audio file is provided - validate input type
+                $hasAudioRecordingInput = $request->input('has_audio_recording', false);
+                $hasAudioRecording = filter_var($hasAudioRecordingInput, FILTER_VALIDATE_BOOLEAN);
+
                 if (!$request->hasFile('audio_file')) {
                     if ($hasAudioRecording) {
                         $metrics['error_type'] = 'audio_upload';
@@ -2025,7 +2316,7 @@ class VoiceAssistantController extends Controller
                 $metrics['overall_success'] = false;
                 $metrics['total_processing_time'] = round(($endTime - $startTime) * 1000, 3);
                 $metrics['error_type'] = 'server_processing';
-                $metrics['error_message'] = $e->getMessage();
+                $metrics['error_message'] = 'Internal server error';
 
                 $this->recordPerformanceMetrics($metrics);
 
@@ -2066,7 +2357,7 @@ class VoiceAssistantController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => $fallbackMessage,
-                    'error_details' => $e->getMessage(),
+                    'error_details' => 'An internal error occurred during audio processing. Please contact support if the problem persists.',
                     'improved_transcription' => $fallbackTranscription,
                     'server_extracted_data' => $fallbackExtractedData,
                     'fallback_used' => true,
@@ -2089,7 +2380,7 @@ class VoiceAssistantController extends Controller
 
             $fileSize = $file->getSize();
 
-            // Check for empty file
+            // Validate file size constraints
             if ($fileSize === 0) {
                 $errors[] = 'Audio file is empty';
                 return ['valid' => false, 'errors' => $errors];
@@ -2108,8 +2399,8 @@ class VoiceAssistantController extends Controller
                 return ['valid' => false, 'errors' => $errors];
             }
 
-            $mimeType = $file->getMimeType();
-            $extension = strtolower($file->getClientOriginalExtension());
+            $mimeType = $file->getMimeType() ?? '';
+            $extension = strtolower($file->getClientOriginalExtension() ?? '');
 
             // Expanded list of supported audio formats
             $allowedMimeTypes = [
@@ -2164,17 +2455,64 @@ class VoiceAssistantController extends Controller
          */
         private function storeAudioFile($file, $sessionId)
         {
-            $tempDir = storage_path('app/temp/audio_processing');
-            if (!is_dir($tempDir)) {
-                mkdir($tempDir, 0755, true);
+            // Validate the file extension against an allowlist to prevent malicious file types
+            $allowedExtensions = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'mp4', 'webm', '3gp'];
+            $originalExtension = strtolower($file->getClientOriginalExtension());
+
+            if (!in_array($originalExtension, $allowedExtensions)) {
+                throw new \Exception("Invalid file extension: {$originalExtension}. Allowed extensions: " . implode(', ', $allowedExtensions));
             }
 
-            $filename = "session_{$sessionId}_" . time() . '.' . $file->getClientOriginalExtension();
-            $tempPath = $tempDir . '/' . $filename;
+            // Sanitize the filename to prevent directory traversal attacks
+            $sessionId = preg_replace('/[^a-zA-Z0-9_-]/', '', $sessionId);
+            if (empty($sessionId)) {
+                throw new \Exception('Invalid session ID provided');
+            }
 
-            $file->move($tempDir, $filename);
+            $filename = "session_{$sessionId}_" . time() . '.' . $originalExtension;
 
-            return $tempPath;
+            // Validate filename to prevent directory traversal
+            if (strpos($filename, '..') !== false || strpos($filename, '/') !== false || strpos($filename, '\\') !== false) {
+                throw new \Exception('Invalid filename detected');
+            }
+
+            // Use Laravel's Storage facade for secure file operations
+            $storagePath = 'temp/audio_processing';
+
+            // Validate storage path to prevent directory traversal
+            if (strpos($storagePath, '..') !== false || strpos($storagePath, '/') !== false || strpos($storagePath, '\\') !== false) {
+                throw new \Exception('Invalid storage path detected');
+            }
+
+            // Ensure the directory exists
+            if (!\Storage::exists($storagePath)) {
+                \Storage::makeDirectory($storagePath);
+            }
+
+            // Store the file using Laravel's Storage facade
+            try {
+                $path = \Storage::putFileAs($storagePath, $file, $filename, 'private');
+
+                if (!$path) {
+                    throw new \Exception('Failed to store audio file in temporary storage');
+                }
+
+                // Verify the file was actually stored
+                if (!\Storage::exists($path)) {
+                    throw new \Exception('Audio file storage verification failed');
+                }
+
+                // Return the full path for processing
+                return storage_path('app/' . $path);
+
+            } catch (\Exception $e) {
+                \Log::error('Audio file storage failed', [
+                    'session_id' => $sessionId,
+                    'filename' => $filename,
+                    'error' => $e->getMessage()
+                ]);
+                throw new \Exception('Failed to store audio file: ' . $e->getMessage());
+            }
         }
 
         /**
@@ -2182,23 +2520,57 @@ class VoiceAssistantController extends Controller
          */
         private function storeAudioFilePermanently($file, $sessionId)
         {
-            $permanentDir = storage_path('app/public/audio/voice_transcriptions');
-            if (!is_dir($permanentDir)) {
-                mkdir($permanentDir, 0755, true);
+            // Validate the file extension against an allowlist to prevent malicious file types
+            $allowedExtensions = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'mp4', 'webm', '3gp'];
+            $originalExtension = strtolower($file->getClientOriginalExtension());
+
+            if (!in_array($originalExtension, $allowedExtensions)) {
+                throw new \Exception("Invalid file extension: {$originalExtension}. Allowed extensions: " . implode(', ', $allowedExtensions));
             }
 
-            $filename = "session_{$sessionId}_" . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $permanentPath = $permanentDir . '/' . $filename;
+            // Sanitize the filename to prevent directory traversal attacks
+            $sessionId = preg_replace('/[^a-zA-Z0-9_-]/', '', $sessionId);
+            if (empty($sessionId)) {
+                throw new \Exception('Invalid session ID provided');
+            }
 
-            $file->move($permanentDir, $filename);
+            $filename = "session_{$sessionId}_" . time() . '_' . uniqid() . '.' . $originalExtension;
 
-            // Verify file was moved successfully
-            if (!file_exists($permanentPath)) {
-                throw new \Exception('Failed to move audio file to permanent storage');
+            // Validate filename to prevent directory traversal
+            if (strpos($filename, '..') !== false || strpos($filename, '/') !== false || strpos($filename, '\\') !== false) {
+                throw new \Exception('Invalid filename detected');
+            }
+
+            // Use Laravel's Storage facade for secure file operations
+            $storagePath = 'public/audio/voice_transcriptions';
+
+            // Validate storage path to prevent directory traversal
+            if (strpos($storagePath, '..') !== false || strpos($storagePath, '/') !== false || strpos($storagePath, '\\') !== false) {
+                throw new \Exception('Invalid storage path detected');
+            }
+
+            // Ensure the directory exists
+            if (!\Storage::exists($storagePath)) {
+                \Storage::makeDirectory($storagePath);
+            }
+
+            // Store the file using Laravel's Storage facade
+            $path = \Storage::putFileAs($storagePath, $file, $filename, 'public');
+
+            if (!$path) {
+                throw new \Exception('Failed to store audio file in permanent storage');
+            }
+
+            // Extract just the filename from the stored path for return
+            $storedFilename = basename($path);
+
+            // Verify file was stored successfully
+            if (!\Storage::exists($path)) {
+                throw new \Exception('Failed to verify audio file in permanent storage');
             }
 
             // Return the public path for database storage
-            return 'audio/voice_transcriptions/' . $filename;
+            return 'audio/voice_transcriptions/' . $storedFilename;
         }
 
         /**
@@ -2207,15 +2579,22 @@ class VoiceAssistantController extends Controller
         private function updateVoiceTranscriptionWithAudio($sessionId, $audioPath, $fileSize, $fileExtension, $estimatedDuration)
         {
             try {
+                // Validate the audio path to prevent path traversal attacks
+                $audioPath = realpath($audioPath); // Resolve any relative paths
+                $storagePath = storage_path('app'); // Base path for validation
+                if (!$audioPath || strpos($audioPath, $storagePath) !== 0) {
+                    throw new \Exception('Invalid audio file path');
+                }
+
                 $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)->first();
-    
+
                 if (!$transcriptionRecord) {
                     \Log::warning('HYBRID METHOD - Voice transcription record not found for audio update', [
                         'session_id' => $sessionId
                     ]);
                     return false;
                 }
-    
+
                 $updateData = [
                     'audio_file' => $audioPath,
                     'audio_file_size' => $fileSize,
@@ -2259,11 +2638,18 @@ class VoiceAssistantController extends Controller
         private function processAudioWithServerSTT($audioPath)
         {
             try {
+                // Validate the audio path to prevent path traversal attacks
+                $audioPath = realpath($audioPath); // Resolve any relative paths
+                $storagePath = storage_path('app'); // Base path for validation
+                if (!$audioPath || strpos($audioPath, $storagePath) !== 0) {
+                    throw new \Exception('Invalid audio file path');
+                }
+
                 // Check if audio file exists
                 if (!file_exists($audioPath)) {
                     throw new \Exception('Audio file not found');
                 }
-    
+
                 // Get file info for processing
                 $fileInfo = pathinfo($audioPath);
                 $fileSize = filesize($audioPath);
@@ -2310,55 +2696,84 @@ class VoiceAssistantController extends Controller
         private function processWithGoogleHealthcareSTT($audioPath)
         {
             try {
+                // Validate the audio path to prevent path traversal attacks
+                $audioPath = realpath($audioPath); // Resolve any relative paths
+                $storagePath = storage_path('app'); // Base path for validation
+                if (!$audioPath || strpos($audioPath, $storagePath) !== 0) {
+                    throw new \Exception('Invalid audio file path');
+                }
+
                 // Check if Google Cloud SDK is available
                 if (!class_exists('\Google\Cloud\Speech\V1\SpeechClient')) {
                     throw new \Exception('Google Cloud Speech SDK not installed');
                 }
-    
+
                 // Check if Google Cloud credentials are available
                 $credentialsPath = env('GOOGLE_CLOUD_CREDENTIALS');
                 if (!$credentialsPath || !file_exists($credentialsPath)) {
                     throw new \Exception('Google Cloud credentials not configured');
                 }
-    
-                // Initialize Google Cloud client
-                $client = new \Google\Cloud\Speech\V1\SpeechClient([
-                    'credentials' => $credentialsPath
-                ]);
-    
+
+                // Initialize Google Cloud client with error handling
+                try {
+                    $client = new \Google\Cloud\Speech\V1\SpeechClient([
+                        'credentials' => $credentialsPath
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Google Cloud Speech client initialization failed', [
+                        'error' => $e->getMessage(),
+                        'credentials_path' => $credentialsPath
+                    ]);
+                    throw new \Exception('Google Cloud Speech service unavailable: ' . $e->getMessage());
+                }
+
                 // Read audio file
                 $audioContent = file_get_contents($audioPath);
                 if (!$audioContent) {
                     throw new \Exception('Could not read audio file');
                 }
     
-                // Configure recognition with healthcare features
-                $config = new \Google\Cloud\Speech\V1\RecognitionConfig([
-                    'encoding' => \Google\Cloud\Speech\V1\AudioEncoding::LINEAR16,
-                    'sample_rate_hertz' => 16000,
-                    'language_code' => 'ar-SA', // Primary Arabic, will auto-detect
-                    'alternative_language_codes' => ['en-US'],
-                    'enable_automatic_punctuation' => true,
-                    'enable_word_time_offsets' => true,
-                    'enable_speaker_diarization' => true,
-                    'diarization_speaker_count' => 2, // Doctor and patient
-                    'min_speaker_count' => 1,
-                    'max_speaker_count' => 3,
-                    'model' => 'medical_dictation', // Healthcare model
-                    'use_enhanced' => true,
-                    // Healthcare-specific features
-                    'adaptation' => new \Google\Cloud\Speech\V1\SpeechAdaptation([
-                        'phrase_sets' => [
-                            new \Google\Cloud\Speech\V1\PhraseSet([
-                                'phrases' => $this->getMedicalPhraseSet()
-                            ])
-                        ]
-                    ])
-                ]);
-    
-                $audio = new \Google\Cloud\Speech\V1\RecognitionAudio([
-                    'content' => $audioContent
-                ]);
+                // Configure recognition with healthcare features with error handling
+                try {
+                    $config = new \Google\Cloud\Speech\V1\RecognitionConfig([
+                        'encoding' => \Google\Cloud\Speech\V1\AudioEncoding::LINEAR16,
+                        'sample_rate_hertz' => 16000,
+                        'language_code' => 'ar-SA', // Primary Arabic, will auto-detect
+                        'alternative_language_codes' => ['en-US'],
+                        'enable_automatic_punctuation' => true,
+                        'enable_word_time_offsets' => true,
+                        'enable_speaker_diarization' => true,
+                        'diarization_speaker_count' => 2, // Doctor and patient
+                        'min_speaker_count' => 1,
+                        'max_speaker_count' => 3,
+                        'model' => 'medical_dictation', // Healthcare model
+                        'use_enhanced' => true,
+                        // Healthcare-specific features
+                        'adaptation' => new \Google\Cloud\Speech\V1\SpeechAdaptation([
+                            'phrase_sets' => [
+                                new \Google\Cloud\Speech\V1\PhraseSet([
+                                    'phrases' => $this->getMedicalPhraseSet()
+                                ])
+                            ]
+                        ])
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Google Speech RecognitionConfig creation failed', [
+                        'error' => $e->getMessage()
+                    ]);
+                    throw new \Exception('Failed to configure speech recognition: ' . $e->getMessage());
+                }
+
+                try {
+                    $audio = new \Google\Cloud\Speech\V1\RecognitionAudio([
+                        'content' => $audioContent
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Google Speech RecognitionAudio creation failed', [
+                        'error' => $e->getMessage()
+                    ]);
+                    throw new \Exception('Failed to create audio object for recognition: ' . $e->getMessage());
+                }
     
                 // Perform recognition
                 $response = $client->recognize($config, $audio);
@@ -2442,16 +2857,25 @@ class VoiceAssistantController extends Controller
         private function processWithOpenAIWhisper($audioPath)
         {
             try {
+                // Validate the audio path to prevent path traversal attacks
+                $audioPath = realpath($audioPath); // Resolve any relative paths
+                $storagePath = storage_path('app'); // Base path for validation
+                if (!$audioPath || strpos($audioPath, $storagePath) !== 0) {
+                    throw new \Exception('Invalid audio file path');
+                }
+
+                // Prepare parameters for OpenAI Whisper transcription
                 $transcribeParams = [
                     'model' => 'whisper-1',
-                    'file' => fopen($audioPath, 'r'),
+                    'file' => fopen($audioPath, 'r'), // Open file for reading
                     'response_format' => 'text',
                     'language' => 'auto'
                 ];
-    
+
+                // Perform transcription using OpenAI Whisper API
                 $response = OpenAI::audio()->transcribe($transcribeParams);
                 $transcription = is_string($response) ? $response : '';
-    
+
                 return trim($transcription);
     
             } catch (\Exception $e) {
@@ -2467,28 +2891,35 @@ class VoiceAssistantController extends Controller
          */
         private function getMedicalPhraseSet()
         {
-            return [
+            // Return cached phrase set if available to improve performance
+            if ($this->cachedMedicalPhraseSet !== null) {
+                return $this->cachedMedicalPhraseSet;
+            }
+
+            $this->cachedMedicalPhraseSet = [
                 // Arabic medical terms
                 'ألم', 'صداع', 'حمى', 'سعال', 'غثيان', 'قيء', 'إسهال', 'إمساك',
                 'ضغط دم', 'سكري', 'ضغط', 'قلب', 'رئة', 'كبد', 'كلى', 'معدة',
                 'دواء', 'حقنة', 'جراحة', 'تشخيص', 'علاج', 'فحص', 'تحاليل', 'أشعة',
                 'طبيب', 'مريض', 'مستشفى', 'عيادة', 'صيدلية', 'تمريض',
-    
+
                 // English medical terms
                 'pain', 'headache', 'fever', 'cough', 'nausea', 'vomiting', 'diarrhea', 'constipation',
                 'blood pressure', 'diabetes', 'hypertension', 'heart', 'lung', 'liver', 'kidney', 'stomach',
                 'medicine', 'injection', 'surgery', 'diagnosis', 'treatment', 'examination', 'tests', 'x-ray',
                 'doctor', 'patient', 'hospital', 'clinic', 'pharmacy', 'nursing',
-    
+
                 // Medical procedures and conditions
                 'electrocardiogram', 'echocardiogram', 'endoscopy', 'colonoscopy', 'biopsy',
                 'myocardial infarction', 'cerebrovascular accident', 'chronic obstructive pulmonary disease',
                 'gastroesophageal reflux disease', 'hypertensive emergency',
-    
+
                 // Vital signs
                 'temperature', 'pulse', 'respiration', 'blood pressure', 'oxygen saturation',
                 'heart rate', 'respiratory rate', 'body mass index'
             ];
+
+            return $this->cachedMedicalPhraseSet;
         }
     
         /**
@@ -2569,24 +3000,39 @@ class VoiceAssistantController extends Controller
             $speakerText = [];
             $startTime = 0;
     
+            // Pre-compile medical keywords for performance
+            $medicalKeywords = $this->getMedicalPhraseSet(); // Use the full medical phrase set
+            $lowercaseMedicalKeywords = array_map('strtolower', $medicalKeywords);
+            $medicalKeywordsSet = array_flip($lowercaseMedicalKeywords); // For O(1) lookup
+
             foreach ($sentences as $index => $sentence) {
                 $sentence = trim($sentence);
                 if (empty($sentence)) continue;
-    
+
                 // Simple heuristic: questions and medical terms suggest doctor
                 $hasQuestion = strpos($sentence, '?') !== false;
-                $hasMedicalTerms = $this->containsMedicalTerms($sentence);
-    
+
+                // Optimized medical term check using pre-compiled keywords
+                $hasMedicalTerms = false;
+                $lowerSentence = strtolower($sentence);
+                foreach ($lowercaseMedicalKeywords as $medicalKeyword) {
+                    if (strpos($lowerSentence, $medicalKeyword) !== false) {
+                        $hasMedicalTerms = true;
+                        break;
+                    }
+                }
+
                 if ($hasQuestion || $hasMedicalTerms) {
                     // Likely doctor speaking
                     if ($currentSpeaker === 2 && !empty($speakerText)) {
-                        // Save previous speaker segment
-                        $speakers[] = [
+                        // Save previous speaker segment - build text more efficiently
+                        $speakerSegment = [
                             'speaker' => 2,
                             'text' => implode('. ', $speakerText),
                             'start_time' => $startTime,
                             'role' => 'patient'
                         ];
+                        $speakers[] = $speakerSegment;
                         $speakerText = [];
                         $startTime = $index * 5; // Rough estimate
                     }
@@ -2594,40 +3040,43 @@ class VoiceAssistantController extends Controller
                 } else {
                     // Likely patient speaking
                     if ($currentSpeaker === 1 && !empty($speakerText)) {
-                        // Save previous speaker segment
-                        $speakers[] = [
+                        // Save previous speaker segment - build text more efficiently
+                        $speakerSegment = [
                             'speaker' => 1,
                             'text' => implode('. ', $speakerText),
                             'start_time' => $startTime,
                             'role' => 'doctor'
                         ];
+                        $speakers[] = $speakerSegment;
                         $speakerText = [];
                         $startTime = $index * 5; // Rough estimate
                     }
                     $currentSpeaker = 2;
                 }
-    
+
                 $speakerText[] = $sentence;
-    
-                // Extract medical terms
-                $words = explode(' ', $sentence);
+
+                // Extract medical terms more efficiently - only check words that are in our medical dictionary
+                $words = preg_split('/\s+/', $sentence); // Split by any whitespace
                 foreach ($words as $word) {
-                    if ($this->isMedicalTerm($word)) {
-                        $medicalTerms[] = $word;
+                    $cleanWord = strtolower(trim(preg_replace('/[^\w]/', '', $word))); // Remove punctuation
+                    if (isset($medicalKeywordsSet[$cleanWord]) && !in_array($cleanWord, $medicalTerms)) {
+                        $medicalTerms[] = $cleanWord;
                     }
                 }
             }
-    
+
             // Add final speaker segment
             if (!empty($speakerText)) {
-                $speakers[] = [
+                $speakerSegment = [
                     'speaker' => $currentSpeaker,
                     'text' => implode('. ', $speakerText),
                     'start_time' => $startTime,
                     'role' => $currentSpeaker === 1 ? 'doctor' : 'patient'
                 ];
+                $speakers[] = $speakerSegment;
             }
-    
+
             return [
                 'speakers' => $speakers,
                 'medical_terms' => array_unique($medicalTerms)
@@ -2661,31 +3110,50 @@ class VoiceAssistantController extends Controller
          */
         private function selectBestTranscription($liveTranscription, $serverTranscription)
         {
+            // Log the decision-making process
+            \Log::debug('HYBRID METHOD - Selecting best transcription', [
+                'live_transcription_length' => strlen($liveTranscription ?? ''),
+                'server_transcription_length' => strlen($serverTranscription ?? ''),
+                'has_live_transcription' => !empty($liveTranscription),
+                'has_server_transcription' => !empty($serverTranscription)
+            ]);
+
             // If no server transcription, use live
             if (empty($serverTranscription)) {
+                \Log::debug('HYBRID METHOD - Using live transcription (no server available)');
                 return $liveTranscription;
             }
-    
+
             // If no live transcription, use server
             if (empty($liveTranscription)) {
+                \Log::debug('HYBRID METHOD - Using server transcription (no live available)');
                 return $serverTranscription;
             }
-    
+
             // Compare lengths and content quality
             $liveLength = strlen($liveTranscription);
             $serverLength = strlen($serverTranscription);
-            
+
+            \Log::debug('HYBRID METHOD - Transcription comparison', [
+                'live_length' => $liveLength,
+                'server_length' => $serverLength,
+                'length_ratio' => $serverLength > 0 ? $liveLength / $serverLength : 0
+            ]);
+
             // Prefer server if it's significantly longer (likely more accurate)
             if ($serverLength > $liveLength * 1.2) {
+                \Log::debug('HYBRID METHOD - Using server transcription (significantly longer)');
                 return $serverTranscription;
             }
-            
+
             // If live is longer or similar, prefer live (real-time context)
             if ($liveLength >= $serverLength) {
+                \Log::debug('HYBRID METHOD - Using live transcription (longer or similar length)');
                 return $liveTranscription;
             }
-            
+
             // Fallback to server
+            \Log::debug('HYBRID METHOD - Using server transcription (fallback)');
             return $serverTranscription;
         }
     

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MedicalAmbientRecorder } from '../utils/MedicalAmbientRecorder';
 
-const AmbientAudioRecorder = ({ visitId, authToken }) => {
+const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
     const [status, setStatus] = useState('idle'); // idle, connecting, recording, stopped, disconnected
@@ -42,7 +42,7 @@ const AmbientAudioRecorder = ({ visitId, authToken }) => {
                 recorderRef.current.stopRecording();
             }
         };
-    }, [isRecording]);
+    }, [isRecording, language]);
 
     const startRecording = async () => {
         setError(null);
@@ -51,11 +51,29 @@ const AmbientAudioRecorder = ({ visitId, authToken }) => {
 
         try {
             if (recorderRef.current) {
-                await recorderRef.current.startRecording(visitId, authToken);
+                await recorderRef.current.startRecording(visitId, authToken, language);
             }
         } catch (err) {
-            // Error handled by onError callback
-            console.error('Start recording failed', err);
+            console.warn('WebSocket recording failed, falling back to browser speech recognition', err);
+            
+            // Fallback to the existing voice-assistant.js implementation
+            if (window.voiceAssistant && window.voiceAssistant.startSession) {
+                try {
+                    await window.voiceAssistant.startSession();
+                    setStatus('recording');
+                    setIsRecording(true);
+                    setIsConnecting(false);
+                    setError(null);
+                } catch (fallbackErr) {
+                    setError('Recording failed: ' + (fallbackErr.message || err.message));
+                    setIsConnecting(false);
+                    setIsRecording(false);
+                }
+            } else {
+                setError('Recording failed: ' + (err.message || 'Unknown error'));
+                setIsConnecting(false);
+                setIsRecording(false);
+            }
         }
     };
 
