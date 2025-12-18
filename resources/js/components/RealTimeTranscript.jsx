@@ -59,6 +59,10 @@ const RealTimeTranscript = () => {
                     ? newConvo.slice(-MAX_CONVERSATION_LENGTH)
                     : newConvo;
             });
+            
+            // Announce for accessibility
+            announceTranscriptUpdate(payload.transcript, true);
+            
             // Emit event equivalent
             // onSegmentAdded(segment); // Uncomment if you have a way to handle this event
 
@@ -66,6 +70,8 @@ const RealTimeTranscript = () => {
         } else {
             setInterimTranscript(payload.transcript);
             setIsProcessing(true);
+            // Announce interim transcript for accessibility
+            announceTranscriptUpdate(payload.transcript, false);
             scrollToBottom();
         }
     };
@@ -74,16 +80,30 @@ const RealTimeTranscript = () => {
         return speakerMap[speakerTag] || `Speaker ${speakerTag}`;
     };
 
-    const getSpeakerClass = (speakerTag) => {
-        return speakerTag === 1 ? 'text-end' : 'text-start';
+    const scrollToBottom = () => {
+        if (transcriptBodyRef.current) {
+            // Smooth scroll to bottom
+            transcriptBodyRef.current.scrollTo({
+                top: transcriptBodyRef.current.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
     };
 
-    const getSpeakerBadgeClass = (speakerTag) => {
-        return speakerTag === 1 ? 'bg-primary' : 'bg-success';
-    };
-
-    const getMessageClass = (speakerTag) => {
-        return speakerTag === 1 ? 'bg-primary-subtle text-primary-emphasis' : 'bg-success-subtle text-success-emphasis';
+    // Function to announce transcript updates for screen readers
+    const announceTranscriptUpdate = (text, isFinal = false) => {
+        // Create a live region for screen readers
+        let liveRegion = document.getElementById('transcript-live-region');
+        if (!liveRegion) {
+            liveRegion = document.createElement('div');
+            liveRegion.setAttribute('id', 'transcript-live-region');
+            liveRegion.setAttribute('aria-live', 'polite');
+            liveRegion.setAttribute('aria-atomic', 'true');
+            liveRegion.className = 'visually-hidden';
+            document.body.appendChild(liveRegion);
+        }
+        
+        liveRegion.textContent = isFinal ? `New transcript: ${text}` : `Transcribing: ${text}`;
     };
 
     const formatTime = (timestamp) => {
@@ -106,23 +126,18 @@ const RealTimeTranscript = () => {
         return DOMPurify.sanitize(text.replace(regex, '<span class="fw-bold text-danger" title="Medical Entity">$1</span>'));
     }, []);
 
-    const scrollToBottom = () => {
-        if (transcriptBodyRef.current) {
-            requestAnimationFrame(() => {
-                transcriptBodyRef.current.scrollTop = transcriptBodyRef.current.scrollHeight;
-            });
-        }
-    };
-
     return (
-        <div className="transcript-container">
-            <div className="card shadow-sm h-100">
-                <div className="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h6 className="mb-0">Live Transcript</h6>
-                    {isProcessing && <div className="badge bg-info text-dark">Processing...</div>}
+        <div className="transcript-container" tabIndex="0" role="region" aria-label="Live transcript container">
+            <div className="card shadow-sm h-100 border-0">
+                <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h6 className="mb-0">
+                        <i className="fas fa-comments me-2"></i>
+                        Live Transcript
+                    </h6>
+                    {isProcessing && <div className="badge bg-warning text-dark">Processing...</div>}
                 </div>
                 <div
-                    className="card-body transcript-body overflow-auto"
+                    className="card-body transcript-body overflow-auto p-0"
                     ref={transcriptBodyRef}
                     style={{ maxHeight: '500px' }}
                     role="log"
@@ -131,36 +146,50 @@ const RealTimeTranscript = () => {
                 >
                     {conversation.length === 0 && (
                         <div className="text-center text-muted py-5">
-                            <i className="fas fa-comments fa-3x mb-3 opacity-25"></i>
-                            <p>Conversation will appear here...</p>
+                            <i className="fas fa-microphone-alt fa-3x mb-3 opacity-25"></i>
+                            <p className="mb-0">Start ambient listening to see transcription here...</p>
+                            <small className="text-muted">Transcription will appear in real-time</small>
                         </div>
                     )}
 
-                    {conversation.map((segment) => (
-                        <div 
-                            key={segment.id} 
-                            className={`message-segment mb-3 ${getSpeakerClass(segment.speaker)}`}
-                        >
-                            <div className="d-flex align-items-baseline mb-1">
-                                <span className={`speaker-label badge me-2 ${getSpeakerBadgeClass(segment.speaker)}`}>
-                                    {formatSpeaker(segment.speaker)}
-                                </span>
-                                <small className="text-muted">{formatTime(segment.timestamp)}</small>
+                    <div className="p-3">
+                        {conversation.map((segment) => (
+                            <div
+                                key={segment.id}
+                                className={`speaker-segment mb-3 p-3 rounded-2 ${
+                                    segment.speaker === 1 ? 'speaker-doctor bg-primary-subtle' :
+                                    segment.speaker === 2 ? 'speaker-patient bg-success-subtle' :
+                                    'speaker-unknown bg-light'
+                                }`}
+                            >
+                                <div className="d-flex justify-content-between align-items-start">
+                                    <div className="d-flex align-items-center">
+                                        <span className={`speaker-label me-2 ${
+                                            segment.speaker === 1 ? 'bg-primary text-white' :
+                                            segment.speaker === 2 ? 'bg-success text-white' :
+                                            'bg-secondary text-white'
+                                        }`}>
+                                            {formatSpeaker(segment.speaker)}
+                                        </span>
+                                    </div>
+                                    <small className="text-muted">{formatTime(segment.timestamp)}</small>
+                                </div>
+                                <div
+                                    className="speaker-text mt-2"
+                                    dangerouslySetInnerHTML={{ __html: highlightEntities(segment.text, segment.medical_entities) }}
+                                />
                             </div>
-                            <div 
-                                className={`message-content p-3 rounded ${getMessageClass(segment.speaker)}`}
-                                dangerouslySetInnerHTML={{ __html: highlightEntities(segment.text, segment.medical_entities) }}
-                            />
-                        </div>
-                    ))}
+                        ))}
+                    </div>
 
                     {interimTranscript && (
-                        <div className="interim-segment mb-3 opacity-75">
+                        <div className="interim-segment p-3 bg-light border-start border-warning border-3">
                             <div className="d-flex align-items-baseline mb-1">
-                                <span className="speaker-label badge bg-secondary me-2">...</span>
+                                <span className="speaker-label badge bg-warning text-dark me-2">LIVE</span>
+                                <small className="text-muted">Now speaking...</small>
                             </div>
-                            <div className="message-content p-3 rounded bg-light border border-secondary border-dashed">
-                                <p className="mb-0 fst-italic">{interimTranscript}</p>
+                            <div className="message-content p-3 bg-white rounded">
+                                <p className="mb-0 fst-italic text-muted">{interimTranscript}</p>
                             </div>
                         </div>
                     )}

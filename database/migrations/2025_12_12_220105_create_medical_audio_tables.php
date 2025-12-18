@@ -12,10 +12,10 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignId('appointment_id')->nullable()->constrained('appointments')->nullOnDelete();
             $table->foreignId('doctor_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('patient_id')->nullable()->constrained('patients')->nullOnDelete();
+            $table->foreignId('patient_id')->nullable()->constrained('users')->nullOnDelete();
             $table->text('audio_file_path')->nullable(); // NULL for real-time streaming
             $table->json('transcript_json')->nullable();
-            $table->foreignId('soap_note_draft_id')->nullable()->constrained('soap_notes')->nullOnDelete();
+            $table->foreignId('soap_note_draft_id')->nullable(); // Removed constraint as soap_notes table may not exist yet
             $table->decimal('confidence_score', 5, 2)->nullable();
             $table->timestamp('started_at')->nullable();
             $table->timestamp('ended_at')->nullable();

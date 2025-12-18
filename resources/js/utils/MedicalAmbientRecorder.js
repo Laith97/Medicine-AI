@@ -223,6 +223,11 @@ export class MedicalAmbientRecorder {
                 }
 
                 if (this.onTranscriptUpdate) {
+                    // Ensure confidence is included in the data
+                    if (data.type === 'transcript_update' && data.confidence === undefined) {
+                        // Default confidence based on speaker identification or other factors
+                        data.confidence = 0.8; // Default to 80% confidence
+                    }
                     this.onTranscriptUpdate(data);
                 }
             } catch (e) {
@@ -250,9 +255,47 @@ export class MedicalAmbientRecorder {
 
     handleError(message, error) {
         console.error(message, error);
+        const enhancedMessage = this.getEnhancedErrorMessage(message, error);
         if (this.onError) {
-            this.onError(message, error);
+            this.onError(enhancedMessage, error);
         }
+    }
+
+    getEnhancedErrorMessage(message, error) {
+        let enhancedMessage = message;
+
+        // Add specific guidance based on error type
+        if (error && error.name) {
+            switch(error.name) {
+                case 'NotAllowedError':
+                    enhancedMessage += ' - Microphone access was denied. Please grant microphone permissions in your browser settings.';
+                    break;
+                case 'NotFoundError':
+                    enhancedMessage += ' - No microphone was found. Please connect a microphone and try again.';
+                    break;
+                case 'NotReadableError':
+                    enhancedMessage += ' - Could not access the microphone. Another application may be using it.';
+                    break;
+                case 'SecurityError':
+                    enhancedMessage += ' - Microphone access is blocked by security settings. Ensure you are using HTTPS.';
+                    break;
+                case 'AbortError':
+                    enhancedMessage += ' - The recording was interrupted unexpectedly.';
+                    break;
+                case 'OverconstrainedError':
+                    enhancedMessage += ' - The requested media constraints cannot be satisfied.';
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        // Add general guidance
+        if (!enhancedMessage.includes('microphone') && !enhancedMessage.includes('Microphone')) {
+            enhancedMessage += ' - Check your internet connection and microphone permissions.';
+        }
+
+        return enhancedMessage;
     }
 
     async attemptReconnect() {

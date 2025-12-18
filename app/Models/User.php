@@ -160,6 +160,18 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the user's age calculated from date of birth
+     */
+    public function getAgeAttribute(): ?int
+    {
+        if (!$this->date_of_birth) {
+            return null;
+        }
+
+        return $this->date_of_birth->age;
+    }
+
+    /**
      * @property int $id
      * @property string|null $sub_user_role
      * @property int|null $parent_user_id

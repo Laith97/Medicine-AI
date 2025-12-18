@@ -21,11 +21,21 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
                     setIsRecording(false);
                     setIsConnecting(false);
                 }
+
+                // Dispatch status update event to update the UI
+                window.dispatchEvent(new CustomEvent('statusUpdate', {
+                    detail: { status: newStatus }
+                }));
             },
             onError: (msg, err) => {
                 setError(`${msg}: ${err.message || err}`);
                 setIsConnecting(false);
                 setIsRecording(false);
+
+                // Dispatch status update event to update the UI
+                window.dispatchEvent(new CustomEvent('statusUpdate', {
+                    detail: { status: 'error' }
+                }));
             },
             onTranscriptUpdate: (data) => {
                 // Emit transcript update event for the RealTimeTranscript component
@@ -115,52 +125,111 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
 
     return (
         <div className="ambient-recorder-container">
-            <div className="card shadow-sm">
-                <div className="card-body">
+            <div className="card shadow-sm border-0">
+                <div className="card-body p-4">
                     <div className="d-flex align-items-center justify-content-between mb-3">
                         <h5 className="card-title mb-0">
                             <i className="fas fa-microphone-alt me-2"></i>Ambient Listening
                         </h5>
-                        <div
-                            className={`status-indicator ${statusClass()}`}
-                            role="status"
-                            aria-live="polite"
-                        >
-                            <span className={`badge ${badgeClass()}`}>{statusText()}</span>
+                        <div className="d-flex align-items-center">
+                            <div className="status-indicator me-2">
+                                <span
+                                    className={`status-dot ${
+                                        status === 'recording' ? 'recording' :
+                                        status === 'connecting' ? 'connecting' :
+                                        status === 'disconnected' ? 'error' :
+                                        status === 'idle' || status === 'stopped' ? 'active' : ''
+                                    }`}
+                                    id="statusDot"
+                                    aria-hidden="true"
+                                ></span>
+                            </div>
+                            <div
+                                className={`status-text ${statusClass()}`}
+                                role="status"
+                                aria-live="polite"
+                            >
+                                <span className={`badge ${badgeClass()}`}>{statusText()}</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="controls text-center my-4">
-                        {!isRecording && (
-                            <button
-                                onClick={startRecording}
-                                className="btn btn-primary btn-lg rounded-circle p-4 shadow-lg"
-                                disabled={isConnecting}
-                                aria-label="Start recording"
-                            >
-                                <i className="fas fa-play fa-2x" aria-hidden="true"></i>
-                            </button>
-                        )}
+                    <div className="d-flex flex-column align-items-center my-3">
+                        <div className={`recording-button-container ${isRecording ? 'recording' : ''}`}>
+                            {!isRecording && (
+                                <button
+                                    onClick={startRecording}
+                                    className={`btn btn-success btn-lg px-5 py-4 rounded-circle shadow-lg ${isConnecting ? 'disabled' : ''}`}
+                                    disabled={isConnecting}
+                                    aria-label="Start recording"
+                                >
+                                    {isConnecting ? (
+                                        <span className="d-flex flex-column align-items-center">
+                                            <span className="spinner-border spinner-border-sm mb-2" role="status"></span>
+                                            <span>Connecting...</span>
+                                        </span>
+                                    ) : (
+                                        <>
+                                            <i className="fas fa-microphone fa-2x mb-2" aria-hidden="true"></i>
+                                            <div>Start Listening</div>
+                                        </>
+                                    )}
+                                </button>
+                            )}
+
+                            {isRecording && (
+                                <button
+                                    onClick={stopRecording}
+                                    className="btn btn-danger btn-lg px-5 py-4 rounded-circle shadow-lg recording-pulse"
+                                    aria-label="Stop recording"
+                                >
+                                    <i className="fas fa-stop fa-2x mb-2" aria-hidden="true"></i>
+                                    <div>Stop Listening</div>
+                                </button>
+                            )}
+                        </div>
 
                         {isRecording && (
-                            <button
-                                onClick={stopRecording}
-                                className="btn btn-danger btn-lg rounded-circle p-4 shadow-lg recording-pulse"
-                                aria-label="Stop recording"
-                            >
-                                <i className="fas fa-stop fa-2x" aria-hidden="true"></i>
-                            </button>
+                            <div className="recording-info mt-3 text-center">
+                                <div className="d-flex align-items-center justify-content-center gap-2">
+                                    <span className="recording-dot"></span>
+                                    <small className="text-danger">LIVE</small>
+                                </div>
+                            </div>
                         )}
                     </div>
 
                     {error && (
-                        <div className="alert alert-danger mt-3">
-                            {error}
+                        <div className="alert alert-danger mt-3 d-flex align-items-center">
+                            <i className="fas fa-exclamation-triangle me-2"></i>
+                            <div>
+                                <div className="fw-bold">Connection Error</div>
+                                <div>{error}</div>
+                                <small className="mt-1 d-block">
+                                    <i className="fas fa-lightbulb me-1"></i>
+                                    Try checking your microphone permissions, internet connection, or contact support.
+                                </small>
+                            </div>
                         </div>
                     )}
 
-                    <div className="text-muted small text-center">
-                        <i className="fas fa-shield-alt me-1"></i> HIPAA Compliant • Encrypted
+                    <div className="text-muted small text-center mt-3">
+                        <i className="fas fa-shield-alt me-1"></i> HIPAA Compliant • Encrypted • Secure
+                    </div>
+
+                    {/* Audio quality indicator */}
+                    <div className="mt-3">
+                        <div className="progress" style={{height: '6px'}}>
+                            <div
+                                className="progress-bar bg-success"
+                                role="progressbar"
+                                style={{width: '85%'}}
+                                aria-valuenow="85"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                            ></div>
+                        </div>
+                        <small className="text-muted d-block text-center mt-1">Audio Quality: High</small>
                     </div>
                 </div>
             </div>

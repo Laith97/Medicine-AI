@@ -14,13 +14,12 @@ return new class extends Migration
     {
         if (!Schema::hasTable('patient_satisfaction_fact')) {
             Schema::create('patient_satisfaction_fact', function (Blueprint $table) {
-                $table->bigIncrements('outcome_key');
+                $table->unsignedBigInteger('diagnosis_id');
+                $table->date('outcome_date');
                 $table->integer('date_key');
                 $table->integer('patient_key');
                 $table->integer('doctor_key');
                 $table->integer('service_key')->nullable();
-                $table->unsignedBigInteger('diagnosis_id');
-                $table->date('outcome_date');
                 $table->string('diagnosis_code', 20)->nullable();
                 $table->string('procedure_code', 20)->nullable();
                 $table->string('outcome_category', 100)->nullable(); // Successful, Complication, Readmission
@@ -34,6 +33,8 @@ return new class extends Migration
                 $table->boolean('follow_up_completed')->default(false);
                 $table->text('notes')->nullable();
                 $table->timestamp('created_at')->useCurrent();
+
+                $table->primary(['diagnosis_id', 'outcome_date']); // Composite primary key to satisfy partitioning requirement
 
                 // Indexes
                 $table->index(['date_key', 'patient_key', 'doctor_key']);

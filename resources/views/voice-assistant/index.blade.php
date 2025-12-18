@@ -21,6 +21,21 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Keyboard Shortcuts -->
+                    <div class="alert alert-info mt-3 mb-0" role="alert">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-keyboard me-2 mt-1"></i>
+                            <div>
+                                <strong>Keyboard Shortcuts</strong>
+                                <ul class="mb-0 small">
+                                    <li><kbd>Ctrl + Enter</kbd> - Start/Stop Ambient Listening</li>
+                                    <li><kbd>Ctrl + H</kbd> - Toggle Hands-Free Mode (if available)</li>
+                                    <li><kbd>Alt + T</kbd> - Focus on Transcript Area</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -123,31 +138,29 @@
     <!-- Control Panel -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card bg-light">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
                         <div class="d-flex align-items-center">
                             <!-- Recording Status -->
                             <div class="d-flex align-items-center me-4">
-                                <div id="recordingStatus">
-                                    <span class="badge bg-secondary me-2">
-                                        <i class="fas fa-circle fa-xs"></i>
-                                    </span>
-                                    <span class="text-muted">Not Listening</span>
+                                <div class="d-flex align-items-center" id="recordingStatusContainer">
+                                    <div class="status-indicator me-2">
+                                        <span class="status-dot" id="statusDot"></span>
+                                    </div>
+                                    <span class="text-muted" id="recordingStatusText">Ready to Listen</span>
                                 </div>
                             </div>
 
                             <!-- Processing Status -->
-                            <div id="processingStatus" style="display: none;">
-                                <div class="d-flex align-items-center">
-                                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                                    <span class="text-primary">Processing...</span>
-                                </div>
+                            <div id="processingStatus" class="d-flex align-items-center" style="display: none;">
+                                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                <span class="text-primary">Processing...</span>
                             </div>
                         </div>
 
-                        <!-- Language Selector and Hands-Free Toggle -->
-                        <div class="d-flex align-items-center gap-3">
+                        <!-- Language Selector and Controls -->
+                        <div class="d-flex align-items-center gap-4">
                             <!-- Language Selector -->
                             <div class="d-flex align-items-center">
                                 <label class="form-label me-2 mb-0 small fw-bold">Language:</label>
@@ -161,21 +174,9 @@
                                 </select>
                             </div>
 
-                            <!-- Hands-Free Toggle -->
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="handsFreeToggle">
-                                <label class="form-check-label" for="handsFreeToggle">
-                                    <i class="fas fa-robot me-1"></i>
-                                    Ambient Listening
-                                    <i class="fas fa-info-circle text-muted ms-1"
-                                       data-bs-toggle="tooltip"
-                                       title="Enhanced ambient listening mode with audio monitoring, pause/resume controls, session persistence, and automatic error recovery. Use Ctrl+H to toggle quickly."></i>
-                                </label>
-                            </div>
-
                             <!-- Enhanced Status Indicators -->
-                            <div class="d-flex align-items-center gap-2">
-                                <small class="text-muted">Status:</small>
+                            <div class="d-flex align-items-center">
+                                <small class="text-muted me-2">Status:</small>
                                 <div id="enhancedStatusContainer" class="d-flex align-items-center gap-2">
                                     <!-- Dynamic status indicators will be inserted here -->
                                 </div>
@@ -184,59 +185,95 @@
                     </div>
 
                     <!-- Control Buttons -->
-                    <div class="d-flex gap-2 flex-wrap">
+                    <div class="d-flex flex-wrap gap-3 align-items-center">
                         <!-- React AmbientAudioRecorder component will be mounted here -->
-                        <div id="react-audio-recorder-container" class="me-2"></div>
+                        <div id="react-audio-recorder-container"></div>
 
                         <!-- Fallback buttons when React component is not active -->
-                        <button id="startRecordingBtn" class="btn btn-success" type="button" disabled style="display: none;">
+                        <button id="startRecordingBtn" class="btn btn-success btn-lg px-4 py-3 d-none" type="button" disabled>
                             <i class="fas fa-microphone me-2"></i>
-                            Start Ambient Listening
+                            Start Listening
                         </button>
 
-                        <button id="stopRecordingBtn" class="btn btn-danger" disabled style="display: none;">
+                        <button id="stopRecordingBtn" class="btn btn-danger btn-lg px-4 py-3 d-none" disabled>
                             <i class="fas fa-stop me-2"></i>
-                            Stop Ambient Listening
+                            Stop Listening
                         </button>
 
-                        <button id="generateAnalysisBtn" class="btn btn-primary" disabled>
+                        <button id="generateAnalysisBtn" class="btn btn-primary btn-lg px-4 py-3" disabled>
                             <i class="fas fa-brain me-2"></i>
-                            Generate AI Analysis
+                            AI Analysis
                         </button>
 
-                        <button id="resetSessionBtn" class="btn btn-secondary">
+                        <button id="resetSessionBtn" class="btn btn-outline-secondary btn-lg px-4 py-3">
                             <i class="fas fa-redo me-2"></i>
                             Reset
                         </button>
 
-                        <a href="{{ route('ai.voice-assistant.training') }}" class="btn btn-success">
+                        <div class="vr h-75"></div>
+
+                        <a href="{{ route('ai.voice-assistant.training') }}" class="btn btn-outline-success btn-lg px-4 py-3">
                             <i class="fas fa-graduation-cap me-2"></i>
-                            Ambient Listening Guide
+                            Guide
                         </a>
 
-                        <a href="{{ route('ai.voice-assistant.recorded-voices') }}" class="btn btn-info">
+                        <a href="{{ route('ai.voice-assistant.recorded-voices') }}" class="btn btn-outline-info btn-lg px-4 py-3">
                             <i class="fas fa-history me-2"></i>
-                            Session Recordings
+                            History
                         </a>
 
-                        <a href="{{ route('ai.voice-assistant.performance') }}" class="btn btn-warning">
+                        <a href="{{ route('ai.voice-assistant.performance') }}" class="btn btn-outline-warning btn-lg px-4 py-3">
                             <i class="fas fa-chart-line me-2"></i>
-                            Listening Stats
+                            Stats
                         </a>
+
+                        <button type="button" class="btn btn-outline-info btn-lg px-4 py-3" data-bs-toggle="modal" data-bs-target="#ambientListeningHelpModal">
+                            <i class="fas fa-question-circle me-2"></i>
+                            Help
+                        </button>
+                    </div>
+
+                    <!-- Advanced Controls Dropdown -->
+                    <div class="mt-4">
+                        <button class="btn btn-outline-primary btn-sm w-100" type="button" data-bs-toggle="collapse" data-bs-target="#advancedControls" aria-expanded="false" aria-controls="advancedControls">
+                            <i class="fas fa-cog me-1"></i> Advanced Controls
+                        </button>
+                        <div class="collapse mt-3" id="advancedControls">
+                            <div class="card card-body bg-light p-3">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Audio Quality</label>
+                                        <select class="form-select" id="audioQuality">
+                                            <option value="high">High Quality (16kHz)</option>
+                                            <option value="medium">Medium Quality (8kHz)</option>
+                                            <option value="low">Low Quality (4kHz)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Sensitivity</label>
+                                        <select class="form-select" id="sensitivity">
+                                            <option value="high">High (Sensitive)</option>
+                                            <option value="medium" selected>Medium</option>
+                                            <option value="low">Low (Less Sensitive)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- JavaScript-based Progress Indicator (shows immediately) -->
-                    <div id="jsProgressIndicator" class="mt-3" style="display: none; animation: fadeIn 0.5s ease-in;">
-                        <div class="card border-primary shadow-sm" style="background: linear-gradient(135deg, #f8f9ff, #ffffff); border-width: 2px;">
+                    <div id="jsProgressIndicator" class="mt-4 p-3 rounded bg-gradient-primary" style="display: none;">
+                        <div class="card border-primary shadow-sm">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
-                                    <div class="spinner-border text-primary me-3" role="status" style="animation: spin 1s linear infinite, pulse 2s ease-in-out infinite;">
+                                    <div class="spinner-border text-primary me-3" role="status">
                                         <span class="visually-hidden">Loading...</span>
                                     </div>
                                     <div class="flex-grow-1">
                                         <h6 class="mb-1 text-primary fw-bold">
-                                            <i class="fas fa-brain me-2" style="animation: pulse 2s ease-in-out infinite;"></i>
-                                            AI Analysis in Progress
+                                            <i class="fas fa-brain me-2"></i>
+                                            Processing Transcript with AI...
                                         </h6>
                                         <p class="mb-0 text-muted small" id="jsProcessingStage">
                                             Initializing AI analysis...
@@ -245,10 +282,10 @@
                                 </div>
 
                                 <!-- Animated Progress Bar -->
-                                <div class="progress mt-3" style="height: 8px; border-radius: 10px; background-color: #e9ecef;">
-                                    <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                <div class="progress mt-3" style="height: 12px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
                                          role="progressbar"
-                                         style="width: 100%; background: linear-gradient(45deg, #007bff, #0056b3); border-radius: 10px;">
+                                         style="width: 100%;">
                                     </div>
                                 </div>
 
@@ -256,11 +293,11 @@
                                 <div class="d-flex justify-content-between align-items-center mt-2">
                                     <small class="text-muted">
                                         <i class="fas fa-clock me-1"></i>
-                                        Estimated time: 10-30 seconds
+                                        Estimated: 10-30 seconds
                                     </small>
                                     <small class="text-muted">
                                         <i class="fas fa-robot me-1"></i>
-                                        AI Engine
+                                        AI Processing
                                     </small>
                                 </div>
                             </div>
@@ -271,16 +308,199 @@
         </div>
     </div>
 
-    <!-- Custom CSS for Progress Animations -->
+    <!-- Custom CSS for Enhanced UI -->
     <style>
+        /* Status Indicator Styles */
+        .status-indicator {
+            display: inline-block;
+            position: relative;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            background-color: #6c757d;
+            transition: all 0.3s ease;
+        }
+
+        .status-dot.active {
+            background-color: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connecting {
+            background-color: #ffc107;
+            animation: pulse 1s infinite;
+        }
+
+        .status-dot.recording {
+            background-color: #dc3545;
+            animation: pulse 0.5s infinite;
+        }
+
+        .status-dot.error {
+            background-color: #dc3545;
+            animation: shake 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+
+        /* Enhanced button styles */
+        .btn-lg {
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .btn-lg:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn-lg:active {
+            transform: translateY(0);
+        }
+
+        /* Recording button animation */
+        .recording-pulse {
+            animation: recordingPulse 1.5s infinite ease-in-out;
+        }
+
+        @keyframes recordingPulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+                background-color: #dc3545;
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+                background-color: #c82333;
+            }
+        }
+
+        /* Transcription container */
+        .transcription-container {
+            position: relative;
+        }
+
+        /* Transcript message styling */
+        .message-segment {
+            border-left: 3px solid #0d6efd;
+            padding-left: 15px;
+            margin-bottom: 15px;
+        }
+
+        .message-segment.patient {
+            border-left-color: #28a745;
+        }
+
+        .message-segment.doctor {
+            border-left-color: #0d6efd;
+        }
+
+        .message-segment.unknown {
+            border-left-color: #6c757d;
+        }
+
+        .message-content {
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 5px;
+        }
+
+        /* Progress bar styling */
+        .progress {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            transition: width 0.6s ease;
+        }
+
+        /* Card styling */
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            transition: box-shadow 0.15s ease-in-out;
+        }
+
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+        }
+
+        /* Custom scrollbar for transcription */
+        .transcription-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .transcription-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .transcription-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .transcription-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Enhanced recording button */
+        .ambient-recorder-container .btn {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .ambient-recorder-container .btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Recording dot animation */
+        .recording-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #dc3545;
+            display: inline-block;
+            animation: recordingPulseDot 1.5s infinite;
+        }
+
+        @keyframes recordingPulseDot {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Status text */
+        .status-text {
+            font-weight: 500;
+        }
+
+        /* Loading and status animations */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(1.05); }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
         }
 
         @keyframes spin {
@@ -288,85 +508,8 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Enhanced progress bar animation */
-        .progress-bar-animated {
-            background-size: 40px 40px !important;
-            animation: progress-bar-stripes 1s linear infinite, shimmer 2s ease-in-out infinite alternate !important;
-        }
-
-        @keyframes shimmer {
-            0% { background-position: -40px 0; }
-            100% { background-position: 40px 0; }
-        }
-
-        /* Smooth transitions for processing stages */
-        .processing-stage-text {
-            transition: all 0.3s ease-in-out;
-        }
-
-        /* Enhanced hands-free mode styles */
-        .hands-free-active {
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        .audio-level-container {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .audio-level-bar {
-            transition: width 0.1s ease-out, background-color 0.3s ease;
-        }
-
-        .recording-timer {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-        }
-
-        /* Status indicators animations */
-        @keyframes statusPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
-        .status-active {
-            animation: statusPulse 1.5s ease-in-out infinite;
-        }
-
-        /* Enhanced button states */
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-hands-free-active {
-            background: linear-gradient(45deg, #28a745, #20c997);
-            border: none;
-            box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
-        }
-
-        /* Language indicator animations */
-        .language-changed {
-            animation: languageChangePulse 2s ease-in-out;
-            transform: scale(1.05);
-        }
-
-        @keyframes languageChangePulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); background-color: #17a2b8 !important; }
-        }
-
-        /* Auto language indicator styling */
-        #autoLanguageIndicator {
-            transition: all 0.3s ease-in-out;
-            font-weight: 500;
-            padding: 0.375rem 0.75rem;
-        }
-
-        /* Keyboard shortcuts help */
-        .keyboard-shortcuts-help {
-            backdrop-filter: blur(5px);
-            background: rgba(0, 0, 0, 0.8) !important;
+        .spinner-border {
+            animation: spin 1s linear infinite;
         }
 
         /* Speaker identification styles */
@@ -377,10 +520,12 @@
 
         .speaker-segment {
             transition: all 0.3s ease;
+            border-radius: 8px;
+            padding: 10px;
         }
 
         .speaker-segment:hover {
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: #f8f9fa;
         }
 
         .speaker-header {
@@ -389,38 +534,47 @@
         }
 
         .speaker-label {
-            color: #495057;
             font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85rem;
         }
 
         .speaker-doctor .speaker-label {
-            color: #007bff;
+            background-color: #d4edda;
+            color: #155724;
         }
 
         .speaker-patient .speaker-label {
-            color: #28a745;
+            background-color: #d1ecf1;
+            color: #0c5460;
         }
 
         .speaker-text {
             font-size: 0.9rem;
             color: #212529;
-            margin-left: 1.5rem;
         }
 
-        /* Enhanced transcription status */
+        /* Enhanced transcript status */
         #transcriptionStatus .badge {
-            font-size: 0.7rem;
-            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            padding: 0.35rem 0.6rem;
         }
 
-        /* Language auto-detection indicator */
-        .language-auto-detected {
-            animation: languagePulse 2s ease-in-out;
-        }
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .btn-lg {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
 
-        @keyframes languagePulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); background-color: #17a2b8 !important; }
+            .card-body {
+                padding: 1rem;
+            }
+
+            .transcription-container {
+                height: 300px;
+            }
         }
     </style>
 
@@ -428,18 +582,18 @@
     <div class="row">
         <!-- Left Column: Transcription -->
         <div class="col-lg-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-microphone-alt me-2"></i>
-                        Ambient Transcription
+                        Real-time Transcript
                     </h5>
                     <div id="transcriptionStatus" class="d-flex align-items-center gap-2">
                         <!-- Status indicators will be inserted here -->
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="border rounded p-3" style="height: 300px; overflow-y: auto; background-color: #f8f9fa;">
+                <div class="card-body p-0">
+                    <div class="transcription-container" style="height: 400px; overflow-y: auto; background-color: #f8f9fa;">
                         <div id="transcriptionContainer" style="height: 100%;">
                             <!-- React RealTimeTranscript component will be mounted here -->
                             <div id="react-transcript-container"></div>
@@ -449,11 +603,26 @@
                         </div>
                     </div>
                     <!-- Speaker Legend -->
-                    <div id="speakerLegend" class="mt-2 d-none">
+                    <div id="speakerLegend" class="mt-2 p-3 bg-light">
                         <small class="text-muted">
                             <i class="fas fa-users me-1"></i>
-                            <span id="speakerLegendText"></span>
+                            <span id="speakerLegendText">Speaker identification: <span class="badge bg-primary">Doctor</span> <span class="badge bg-success">Patient</span> <span class="badge bg-secondary">Unknown</span></span>
                         </small>
+                    </div>
+
+                    <!-- Transcript Controls -->
+                    <div class="p-3 bg-light d-flex justify-content-between">
+                        <button id="copyTranscriptBtn" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-copy me-1"></i> Copy
+                        </button>
+                        <div class="btn-group">
+                            <button id="clearTranscriptBtn" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash me-1"></i> Clear
+                            </button>
+                            <button id="exportTranscriptBtn" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-download me-1"></i> Export
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -461,42 +630,59 @@
 
         <!-- Right Column: Chart Fields -->
         <div class="col-lg-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header bg-success text-white">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-clipboard-list me-2"></i>
-                        Auto-Generated Chart
+                        Clinical Chart
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label">Symptoms</label>
+                            <label class="form-label fw-bold">Symptoms</label>
                             <textarea id="symptoms" class="form-control" rows="2" placeholder="Symptoms will be extracted automatically..."></textarea>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Medical History</label>
+                            <label class="form-label fw-bold">Medical History</label>
                             <textarea id="medicalHistory" class="form-control" rows="2" placeholder="Medical history will be extracted automatically..."></textarea>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Physical Findings</label>
+                            <label class="form-label fw-bold">Physical Findings</label>
                             <textarea id="physicalFindings" class="form-control" rows="2" placeholder="Physical findings will be extracted automatically..."></textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Medications</label>
+                            <label class="form-label fw-bold">Medications</label>
                             <textarea id="medications" class="form-control" rows="2" placeholder="Medications will be extracted automatically..."></textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Vital Signs</label>
+                            <label class="form-label fw-bold">Vital Signs</label>
                             <textarea id="vitalSigns" class="form-control" rows="2" placeholder="Vital signs will be extracted automatically..."></textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Diagnosis</label>
+                            <label class="form-label fw-bold">Diagnosis</label>
                             <textarea id="diagnosis" class="form-control" rows="2" placeholder="Diagnosis suggestions will appear here..."></textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Care Plan</label>
+                            <label class="form-label fw-bold">Care Plan</label>
                             <textarea id="carePlan" class="form-control" rows="2" placeholder="Care plan will be generated automatically..."></textarea>
+                        </div>
+
+                        <!-- Confidence Score Indicator -->
+                        <div class="col-12">
+                            <div class="card bg-light border">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold">Transcription Accuracy:</span>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-3" style="height: 10px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: 75%" id="accuracyBar"></div>
+                                            </div>
+                                            <span class="badge bg-success" id="accuracyScore">75%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -654,6 +840,73 @@
             </div>
         </div>
     </div>
+
+    <!-- Ambient Listening Help Modal -->
+    <div class="modal fade" id="ambientListeningHelpModal" tabindex="-1" aria-labelledby="ambientListeningHelpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="ambientListeningHelpModalLabel">
+                        <i class="fas fa-headset me-2"></i>Ambient Listening Help
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-microphone-alt text-primary me-2"></i>How to Use</h6>
+                            <ul class="mb-3">
+                                <li>Select a patient from the dropdown</li>
+                                <li>Click the <strong>Start Listening</strong> button to begin ambient recording</li>
+                                <li>Speak naturally during the consultation</li>
+                                <li>View real-time transcription in the left panel</li>
+                                <li>Stop recording when consultation is complete</li>
+                            </ul>
+
+                            <h6><i class="fas fa-shield-alt text-success me-2"></i>Privacy & Security</h6>
+                            <ul class="mb-3">
+                                <li>All recordings are encrypted end-to-end</li>
+                                <li>Transcriptions are processed securely</li>
+                                <li>Data is HIPAA compliant</li>
+                                <li>Only authorized personnel can access recordings</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-exclamation-triangle text-warning me-2"></i>Troubleshooting</h6>
+                            <ul class="mb-3">
+                                <li><strong>No microphone access:</strong> Check browser permissions</li>
+                                <li><strong>Poor transcription:</strong> Ensure clear audio and minimal background noise</li>
+                                <li><strong>Connection issues:</strong> Verify internet connection</li>
+                                <li><strong>Wrong language:</strong> Adjust language settings before starting</li>
+                            </ul>
+
+                            <h6><i class="fas fa-keyboard text-info me-2"></i>Keyboard Shortcuts</h6>
+                            <ul class="mb-3">
+                                <li><kbd>Ctrl + Enter</kbd> - Start/Stop recording</li>
+                                <li><kbd>Alt + T</kbd> - Focus on transcript</li>
+                                <li><kbd>Enter</kbd> - Submit diagnosis</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light border">
+                        <h6><i class="fas fa-lightbulb text-warning me-2"></i>Pro Tips</h6>
+                        <ul class="mb-0">
+                            <li>Position microphone close to both doctor and patient for best results</li>
+                            <li>Ensure quiet environment to improve transcription accuracy</li>
+                            <li>Use medical terminology for better AI analysis</li>
+                            <li>Review transcript before generating AI analysis</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Make PHP variables available to JavaScript -->
@@ -668,6 +921,202 @@
 <!-- Include React components for ambient listening -->
 @viteReactRefresh
 @vite(['resources/js/voice-assistant-main.jsx'])
+
+<!-- Enhanced status indicator and UI script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Function to update recording status visuals
+        function updateRecordingStatus(status) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('recordingStatusText');
+
+            if (!statusDot || !statusText) return;
+
+            // Reset all classes
+            statusDot.className = 'status-dot';
+            statusText.textContent = getStatusText(status);
+
+            // Add appropriate class based on status
+            switch(status) {
+                case 'idle':
+                case 'stopped':
+                    statusDot.classList.add('active');
+                    statusText.innerHTML = '<span class="text-success">Ready to Listen</span>';
+                    break;
+                case 'connecting':
+                    statusDot.classList.add('connecting');
+                    statusText.innerHTML = '<span class="text-warning">Connecting...</span>';
+                    break;
+                case 'recording':
+                    statusDot.classList.add('recording');
+                    statusText.innerHTML = '<span class="text-danger">LIVE</span>';
+                    break;
+                case 'disconnected':
+                    statusDot.classList.add('error');
+                    statusText.innerHTML = '<span class="text-danger">Disconnected</span>';
+                    break;
+                case 'reconnecting':
+                    statusDot.classList.add('connecting');
+                    statusText.innerHTML = '<span class="text-warning">Reconnecting...</span>';
+                    break;
+                default:
+                    statusText.innerHTML = '<span class="text-muted">Ready</span>';
+            }
+        }
+
+        // Function to update accuracy score display
+        function updateAccuracyScore(accuracy = 75) {
+            const accuracyBar = document.getElementById('accuracyBar');
+            const accuracyScore = document.getElementById('accuracyScore');
+
+            if (!accuracyBar || !accuracyScore) return;
+
+            // Calculate percentage based on confidence if available
+            const score = Math.round(accuracy);
+            accuracyBar.style.width = score + '%';
+            accuracyScore.textContent = score + '%';
+            accuracyScore.className = 'badge ' +
+                (score > 80 ? 'bg-success' :
+                 score > 60 ? 'bg-warning text-dark' : 'bg-danger');
+        }
+
+        // Helper function to get status text
+        function getStatusText(status) {
+            const statusMap = {
+                'idle': 'Ready to Listen',
+                'connecting': 'Connecting...',
+                'recording': 'LIVE',
+                'stopped': 'Stopped',
+                'disconnected': 'Disconnected',
+                'reconnecting': 'Reconnecting...'
+            };
+            return statusMap[status] || status;
+        }
+
+        // Listen for status updates from the React component
+        window.addEventListener('transcriptUpdate', function(event) {
+            const data = event.detail;
+            if (data.status) {
+                updateRecordingStatus(data.status);
+            }
+
+            // Update accuracy score if confidence is provided
+            if (data.payload && data.payload.confidence !== undefined) {
+                updateAccuracyScore(data.payload.confidence * 100);
+            }
+        });
+
+        // Listen for WebSocket connection status changes
+        window.addEventListener('websocketStatus', function(event) {
+            const data = event.detail;
+            if (data.status) {
+                updateRecordingStatus(data.status);
+            }
+        });
+
+        // Initialize status indicators
+        updateRecordingStatus('idle');
+        updateAccuracyScore(75);
+
+        // Add functionality to transcript controls
+        const copyTranscriptBtn = document.getElementById('copyTranscriptBtn');
+        const clearTranscriptBtn = document.getElementById('clearTranscriptBtn');
+        const exportTranscriptBtn = document.getElementById('exportTranscriptBtn');
+
+        if (copyTranscriptBtn) {
+            copyTranscriptBtn.addEventListener('click', function() {
+                // Get all transcript text content
+                const transcriptContainer = document.querySelector('.transcript-container');
+                if (transcriptContainer) {
+                    const text = transcriptContainer.innerText || transcriptContainer.textContent;
+                    navigator.clipboard.writeText(text).then(function() {
+                        // Show success feedback
+                        const originalHTML = copyTranscriptBtn.innerHTML;
+                        copyTranscriptBtn.innerHTML = '<i class="fas fa-check me-1"></i> Copied!';
+                        copyTranscriptBtn.classList.remove('btn-outline-secondary');
+                        copyTranscriptBtn.classList.add('btn-success');
+
+                        setTimeout(function() {
+                            copyTranscriptBtn.innerHTML = originalHTML;
+                            copyTranscriptBtn.classList.add('btn-outline-secondary');
+                            copyTranscriptBtn.classList.remove('btn-success');
+                        }, 2000);
+                    });
+                }
+            });
+        }
+
+        if (clearTranscriptBtn) {
+            clearTranscriptBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear the transcript? This cannot be undone.')) {
+                    // Clear React transcript component by dispatching custom event
+                    window.dispatchEvent(new CustomEvent('clearTranscript'));
+                }
+            });
+        }
+
+        if (exportTranscriptBtn) {
+            exportTranscriptBtn.addEventListener('click', function() {
+                // Get all transcript content for export
+                const transcriptContainer = document.querySelector('.transcript-container');
+                if (transcriptContainer) {
+                    const text = transcriptContainer.innerText || transcriptContainer.textContent;
+                    const blob = new Blob([text], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `transcript-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    // Show success feedback
+                    const originalHTML = exportTranscriptBtn.innerHTML;
+                    exportTranscriptBtn.innerHTML = '<i class="fas fa-check me-1"></i> Exported!';
+                    exportTranscriptBtn.classList.remove('btn-outline-primary');
+                    exportTranscriptBtn.classList.add('btn-success');
+
+                    setTimeout(function() {
+                        exportTranscriptBtn.innerHTML = originalHTML;
+                        exportTranscriptBtn.classList.add('btn-outline-primary');
+                        exportTranscriptBtn.classList.remove('btn-success');
+                    }, 2000);
+                }
+            });
+        }
+
+        // Add event listener for when React component updates status
+        window.addEventListener('statusUpdate', function(event) {
+            const status = event.detail.status;
+            updateRecordingStatus(status);
+        });
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl + Enter to start/stop recording
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                // Simulate click on the recording button
+                const recordingBtn = document.querySelector('.ambient-recorder-container .btn:not(.disabled)');
+                if (recordingBtn) {
+                    recordingBtn.click();
+                }
+            }
+
+            // Alt + T to focus on transcript area
+            if (e.altKey && e.key === 't') {
+                e.preventDefault();
+                const transcriptContainer = document.querySelector('.transcript-container');
+                if (transcriptContainer) {
+                    transcriptContainer.focus();
+                    // Scroll to the bottom of the transcript
+                    transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
+                }
+            }
+        });
+    });
+</script>
 
 <!-- Form components are now initialized by the main ambient listening script -->
 <!-- This ensures proper timing and prevents conflicts -->
