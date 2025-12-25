@@ -48,22 +48,26 @@
                             <label for="existing_patient" class="form-label">Select Existing Patient</label>
                             <select class="form-select" id="existing_patient" name="existing_patient">
                                 <option value="">-- Select from your patients or add new --</option>
-                                @foreach($patients as $patient)
+                                @foreach($allPatients as $patient)
                                     <option value="{{ $patient->id }}"
                                             data-name="{{ $patient->name }}"
                                             data-email="{{ $patient->email }}"
                                             data-phone="{{ $patient->phone }}"
                                             data-age="{{ $patient->age }}"
-                                            data-gender="{{ $patient->gender }}">
+                                            data-gender="{{ $patient->gender }}"
+                                            @if(isset($patient->is_guest) && $patient->is_guest) data-guest="true" @endif>
                                         {{ $patient->name }} ({{ $patient->email }})
+                                        @if(isset($patient->is_guest) && $patient->is_guest)
+                                            <span class="badge bg-info ms-2">Guest</span>
+                                        @endif
                                     </option>
                                 @endforeach
                             </select>
                             <div class="form-text">
-                                @if($patients->count() > 0)
-                                    You have {{ $patients->count() }} patient(s). Select one or add a new patient below.
+                                @if($allPatients->count() > 0)
+                                    You have {{ $allPatients->count() }} patient(s) with confirmed appointments. Select one or add a new patient below.
                                 @else
-                                    You don't have any patients yet. Add a new patient below.
+                                    You don't have any patients with confirmed appointments yet. Add a new patient below.
                                 @endif
                             </div>
                         </div>
@@ -379,30 +383,56 @@ document.addEventListener('DOMContentLoaded', function() {
 
     existingPatientSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
+        const isGuest = selectedOption.dataset.guest === 'true';
 
         if (this.value) {
-            // Existing patient selected - hide form and populate hidden fields
-            newPatientForm.style.display = 'none';
+            if (isGuest) {
+                // Guest patient selected - hide form and populate fields (but allow editing for diagnosis)
+                newPatientForm.style.display = 'none';
 
-            // Populate form with selected patient data
-            patientNameInput.value = selectedOption.dataset.name || '';
-            patientEmailInput.value = selectedOption.dataset.email || '';
-            patientPhoneInput.value = selectedOption.dataset.phone || '';
-            patientAgeInput.value = selectedOption.dataset.age || '';
-            patientGenderSelect.value = selectedOption.dataset.gender || '';
+                // Populate form with guest patient data
+                patientNameInput.value = selectedOption.dataset.name || '';
+                patientEmailInput.value = selectedOption.dataset.email || '';
+                patientPhoneInput.value = selectedOption.dataset.phone || '';
+                patientAgeInput.value = selectedOption.dataset.age || '';
+                patientGenderSelect.value = selectedOption.dataset.gender || '';
 
-            // Make fields readonly
-            patientNameInput.readOnly = true;
-            patientEmailInput.readOnly = true;
-            patientPhoneInput.readOnly = true;
-            patientAgeInput.readOnly = true;
-            patientGenderSelect.disabled = true;
+                // Make fields readonly for guest patients (they already have appointment data)
+                patientNameInput.readOnly = true;
+                patientEmailInput.readOnly = true;
+                patientPhoneInput.readOnly = true;
+                patientAgeInput.readOnly = true;
+                patientGenderSelect.disabled = true;
 
-            // Remove required attributes since we're using existing patient
-            patientNameInput.required = false;
-            patientEmailInput.required = false;
-            patientAgeInput.required = false;
-            patientGenderSelect.required = false;
+                // Remove required attributes since we're using guest patient data
+                patientNameInput.required = false;
+                patientEmailInput.required = false;
+                patientAgeInput.required = false;
+                patientGenderSelect.required = false;
+            } else {
+                // Existing registered patient selected - hide form and populate hidden fields
+                newPatientForm.style.display = 'none';
+
+                // Populate form with selected patient data
+                patientNameInput.value = selectedOption.dataset.name || '';
+                patientEmailInput.value = selectedOption.dataset.email || '';
+                patientPhoneInput.value = selectedOption.dataset.phone || '';
+                patientAgeInput.value = selectedOption.dataset.age || '';
+                patientGenderSelect.value = selectedOption.dataset.gender || '';
+
+                // Make fields readonly
+                patientNameInput.readOnly = true;
+                patientEmailInput.readOnly = true;
+                patientPhoneInput.readOnly = true;
+                patientAgeInput.readOnly = true;
+                patientGenderSelect.disabled = true;
+
+                // Remove required attributes since we're using existing patient
+                patientNameInput.required = false;
+                patientEmailInput.required = false;
+                patientAgeInput.required = false;
+                patientGenderSelect.required = false;
+            }
 
         } else {
             // No patient selected - show form for new patient

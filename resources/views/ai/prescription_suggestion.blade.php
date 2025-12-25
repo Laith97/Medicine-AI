@@ -76,11 +76,11 @@ function showClinicalDataSummary(clinicalData) {
         if (clinicalData.doctor_notes) {
             summaryHtml += '<div class="col-12"><strong>👨‍⚕️ Doctor Notes:</strong> ' + clinicalData.doctor_notes + '</div>';
         }
-        if (clinicalData.appointment_symptoms) {
-            summaryHtml += '<div class="col-12"><strong>📅 Appointment Symptoms:</strong> ' + clinicalData.appointment_symptoms + '</div>';
+        if (clinicalData.current_diagnosis) {
+            summaryHtml += '<div class="col-12"><strong>👨‍⚕️ Current Diagnosis:</strong> ' + clinicalData.current_diagnosis + '</div>';
         }
-        if (clinicalData.doctor_diagnosis) {
-            summaryHtml += '<div class="col-12"><strong>👨‍⚕️ Doctor Diagnosis:</strong> ' + clinicalData.doctor_diagnosis + '</div>';
+        if (clinicalData.past_diagnoses && clinicalData.past_diagnoses.length > 0) {
+            summaryHtml += '<div class="col-12"><strong>📚 Past Diagnosis History:</strong> ' + clinicalData.past_diagnoses.join('; ') + '</div>';
         }
         if (clinicalData.voice_diagnosis) {
             summaryHtml += '<div class="col-12"><strong>🎤 Voice Assistant Diagnosis:</strong> ' + clinicalData.voice_diagnosis + '</div>';
@@ -106,16 +106,17 @@ $('#aiSuggestBtn').click(function(e) {
     var button = $(this);
     button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Generating...');
 
-    // Use doctor-verified clinical data from diagnosis records and appointment notes
-    var symptoms = @json($appointment->symptoms ??
-                        data_get($appointment->patient, 'patient_data.symptoms', '') ??
-                        $appointment->doctor_notes ??
-                        '');
+    // CRITICAL SAFETY: Only use doctor-verified clinical data for AI medication suggestions
+    // Patient-reported symptoms are excluded due to unreliability
+    var symptoms = @json($appointment->doctor_notes ?? '');
     var allergies = @json(data_get($appointment->patient, 'patient_data.allergies', []));
     var pastMeds = @json(data_get($appointment->patient, 'patient_data.past_medications', []));
 
-    // Include recent diagnosis data if available
-    var recentDiagnosis = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->latest()->first() : null);
+    // Include current (most recent) diagnosis data if available
+    var currentDiagnosis = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->latest()->first() : null);
+
+    // Include past diagnosis history (all except most recent, limit to last 10)
+    var pastDiagnoses = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->orderBy('created_at', 'desc')->skip(1)->take(10)->get() : collect());
 
     // Include voice assistant diagnosis if available
     var voiceDiagnosis = @json($appointment->patient ? \App\Models\AiAssistantResult::where('patient_id', $appointment->patient->id)->where('source', 'voice_assistant')->latest()->first() : null);
@@ -128,10 +129,10 @@ $('#aiSuggestBtn').click(function(e) {
             symptoms: symptoms,
             allergies: JSON.stringify(allergies),
             past_meds: JSON.stringify(pastMeds),
-            recent_diagnosis: JSON.stringify(recentDiagnosis),
+            current_diagnosis: JSON.stringify(currentDiagnosis),
+            past_diagnoses: JSON.stringify(pastDiagnoses),
             voice_diagnosis: JSON.stringify(voiceDiagnosis),
             doctor_notes: @json($appointment->doctor_notes),
-            appointment_symptoms: @json($appointment->symptoms),
             reason_for_visit: @json($appointment->reason)
         },
         success: function(response) {
@@ -347,7 +348,8 @@ function populateDataSourcesModal() {
     const appointment = @json($appointment);
     const patient = @json($appointment->patient);
     const patientData = @json($appointment->patient ? $appointment->patient->patientData : null);
-    const recentDiagnosis = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->latest()->first() : null);
+    const currentDiagnosis = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->latest()->first() : null);
+    const pastDiagnoses = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->orderBy('created_at', 'desc')->skip(1)->take(10)->get() : collect());
     const voiceDiagnosis = @json($appointment->patient ? \App\Models\AiAssistantResult::where('patient_id', $appointment->patient->id)->where('source', 'voice_assistant')->latest()->first() : null);
 
     const dataSources = [
@@ -368,14 +370,6 @@ function populateDataSourcesModal() {
             icon: 'fas fa-venus-mars'
         },
         {
-            name: 'Appointment Symptoms',
-            status: appointment.symptoms ? 'available' : 'missing',
-            example: appointment.symptoms || 'No symptoms recorded',
-            location: 'Public appointment booking (Patient-reported)',
-            reliability: 'Patient-reported',
-            icon: 'fas fa-notes-medical'
-        },
-        {
             name: 'Doctor Notes',
             status: appointment.doctor_notes ? 'available' : 'missing',
             example: appointment.doctor_notes ? (appointment.doctor_notes.length > 30 ? appointment.doctor_notes.substring(0, 30) + '...' : appointment.doctor_notes) : 'No doctor notes',
@@ -385,25 +379,33 @@ function populateDataSourcesModal() {
         },
         {
             name: 'Patient Allergies',
-            status: patientData && patientData.allergies && patientData.allergies.length > 0 ? 'available' : 'missing',
-            example: patientData && patientData.allergies ? patientData.allergies.join(', ') : 'No allergies recorded',
+            status: patientData && patientData.allergies && (Array.isArray(patientData.allergies) ? patientData.allergies.length > 0 : patientData.allergies.toString().trim().length > 0) ? 'available' : 'missing',
+            example: patientData && patientData.allergies ? (Array.isArray(patientData.allergies) ? patientData.allergies.join(', ') : patientData.allergies.toString()) : 'No allergies recorded',
             location: 'Diagnosis creation form (Doctor-verified)',
             reliability: 'Doctor-verified',
             icon: 'fas fa-allergies'
         },
         {
             name: 'Current Medications',
-            status: patientData && patientData.medications && patientData.medications.length > 0 ? 'available' : 'missing',
-            example: patientData && patientData.medications ? patientData.medications.join(', ') : 'No medications recorded',
+            status: patientData && patientData.past_medications && (Array.isArray(patientData.past_medications) ? patientData.past_medications.length > 0 : patientData.past_medications.toString().trim().length > 0) ? 'available' : 'missing',
+            example: patientData && patientData.past_medications ? (Array.isArray(patientData.past_medications) ? patientData.past_medications.join(', ') : patientData.past_medications.toString()) : 'No medications recorded',
             location: 'Diagnosis creation form (Doctor-verified)',
             reliability: 'Doctor-verified',
             icon: 'fas fa-pills'
         },
         {
-            name: 'Complete Diagnosis History',
-            status: recentDiagnosis ? 'available' : 'missing',
-            example: recentDiagnosis ? 'Multiple diagnosis records found' : 'No diagnosis history',
-            location: 'Patient Management (Doctor-verified)',
+            name: 'Current Diagnosis',
+            status: currentDiagnosis ? 'available' : 'missing',
+            example: currentDiagnosis ? (currentDiagnosis.diagnosis_text ? currentDiagnosis.diagnosis_text.substring(0, 30) + (currentDiagnosis.diagnosis_text.length > 30 ? '...' : '') : 'Diagnosis recorded') : 'No current diagnosis',
+            location: 'Most recent diagnosis record (Doctor-verified)',
+            reliability: 'Doctor-verified',
+            icon: 'fas fa-stethoscope'
+        },
+        {
+            name: 'Past Diagnosis History',
+            status: pastDiagnoses && pastDiagnoses.length > 0 ? 'available' : 'missing',
+            example: pastDiagnoses && pastDiagnoses.length > 0 ? `${pastDiagnoses.length} past diagnosis(es) found` : 'No past diagnosis history',
+            location: 'Historical diagnosis records (Doctor-verified)',
             reliability: 'Doctor-verified',
             icon: 'fas fa-history'
         },
@@ -490,9 +492,6 @@ function populateDataSourcesModal() {
     }
     if (missingSources.includes('current medications')) {
         suggestionsHtml += '<li>Update current medications in <strong>Diagnosis Creation</strong> form</li>';
-    }
-    if (missingSources.includes('appointment symptoms')) {
-        suggestionsHtml += '<li>Add detailed symptoms during <strong>public appointment booking</strong> (optional field)</li>';
     }
     if (missingSources.includes('doctor notes')) {
         suggestionsHtml += '<li>Include comprehensive doctor notes during <strong>appointment completion</strong></li>';

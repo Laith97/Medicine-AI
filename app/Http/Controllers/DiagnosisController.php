@@ -37,13 +37,58 @@ class DiagnosisController extends Controller
             abort(403, 'Access denied. Doctor access required.');
         }
 
-        // Get doctor's assigned patients
-        $patients = $user->assignedPatients()
+        // Get doctor's assigned patients (patients where primary_doctor_id matches)
+        $assignedPatients = $user->assignedPatients()
             ->select('id', 'name', 'email', 'phone', 'age', 'gender')
-            ->orderBy('name')
             ->get();
 
-        return view('diagnosis.create', compact('patients'));
+        // Get patients who have confirmed or completed appointments with this doctor
+        // but are not already in the assigned patients list
+        $appointmentPatients = User::where('role', 'patient')
+            ->whereHas('appointments', function($query) use ($user) {
+                $query->where('doctor_id', $user->id)
+                      ->whereIn('status', ['confirmed', 'completed']);
+            })
+            ->whereNotIn('id', $assignedPatients->pluck('id'))
+            ->select('id', 'name', 'email', 'phone', 'age', 'gender')
+            ->get();
+
+        // Merge the two collections
+        $patients = $assignedPatients->merge($appointmentPatients)->unique('id')->sortBy('name')->values();
+
+        // Load guest patients from confirmed or completed appointments
+        $guestAppointments = \App\Models\Appointment::where('doctor_id', $user->id)
+            ->whereIn('status', ['confirmed', 'completed'])
+            ->whereNotNull('guest_name')
+            ->whereNotNull('guest_email')
+            ->select('guest_name', 'guest_email', 'guest_date_of_birth', 'guest_gender', 'guest_phone', 'appointment_date')
+            ->orderBy('appointment_date', 'desc')
+            ->get();
+
+        // Convert guest appointments to patient-like objects
+        $guestPatients = $guestAppointments->map(function($appointment) {
+            // Calculate age from date of birth if available
+            $age = null;
+            if ($appointment->guest_date_of_birth) {
+                $age = $appointment->guest_date_of_birth->age;
+            }
+
+            return (object)[
+                'id' => 'guest_' . md5($appointment->guest_email . $appointment->guest_name), // Create unique ID for guest
+                'name' => $appointment->guest_name,
+                'email' => $appointment->guest_email,
+                'age' => $age,
+                'gender' => $appointment->guest_gender,
+                'phone' => $appointment->guest_phone,
+                'is_guest' => true,
+                'last_appointment' => $appointment->appointment_date
+            ];
+        });
+
+        // Merge registered patients with guest patients, removing duplicates by email
+        $allPatients = $patients->concat($guestPatients)->unique('email')->values();
+
+        return view('diagnosis.create', compact('allPatients'));
     }
 
     /**
@@ -143,9 +188,69 @@ class DiagnosisController extends Controller
 
             // Get or create patient
             if ($request->existing_patient) {
-                // Use existing patient
-                $patient = $user->assignedPatients()->findOrFail($request->existing_patient);
-                $isNewPatient = false;
+                // Check if this is a guest patient (starts with 'guest_')
+                if (str_starts_with($request->existing_patient, 'guest_')) {
+                    // This is a guest patient - create a new patient account for them
+                    $guestEmail = $request->input('patient_email');
+                    $guestName = $request->input('patient_name');
+
+                    // Check if a patient with this email already exists
+                    $existingPatient = User::where('email', $guestEmail)->where('role', 'patient')->first();
+
+                    if ($existingPatient) {
+                        // Use existing patient if found
+                        $patient = $existingPatient;
+                        $isNewPatient = false;
+                    } else {
+                        // Create new patient account for the guest
+                        $tempPassword = SmsService::generateTempPassword();
+
+                        $patient = User::create([
+                            'name' => $guestName,
+                            'email' => $guestEmail,
+                            'phone' => $request->input('patient_phone'),
+                            'age' => $request->input('patient_age'),
+                            'gender' => $request->input('patient_gender'),
+                            'role' => 'patient',
+                            'primary_doctor_id' => Auth::id(),
+                            'password' => Hash::make($tempPassword),
+                        ]);
+
+                        $isNewPatient = true;
+
+                        // Send welcome email to the newly created patient
+                        try {
+                            // Create a temporary diagnosis object for the email
+                            $tempDiagnosis = (object)['id' => null];
+                            Mail::to($patient->email)->send(
+                                new PatientAccountCreated($patient, Auth::user(), $tempDiagnosis, $tempPassword)
+                            );
+                        } catch (\Exception $e) {
+                            Log::warning('Failed to send welcome email to converted guest patient: ' . $e->getMessage());
+                        }
+                    }
+                } else {
+                    // Use existing registered patient
+                    // First try to find in assigned patients
+                    $patient = $user->assignedPatients()->find($request->existing_patient);
+
+                    if (!$patient) {
+                        // Check if patient has confirmed or completed appointments with this doctor
+                        $patient = User::where('role', 'patient')
+                            ->where('id', $request->existing_patient)
+                            ->whereHas('appointments', function($query) use ($user) {
+                                $query->where('doctor_id', $user->id)
+                                      ->whereIn('status', ['confirmed', 'completed']);
+                            })
+                            ->first();
+                    }
+
+                    if (!$patient) {
+                        abort(404, 'Patient not found or you do not have access to this patient.');
+                    }
+
+                    $isNewPatient = false;
+                }
             } else {
                 // Create new patient
                 $patient = $this->findOrCreatePatient($request);
