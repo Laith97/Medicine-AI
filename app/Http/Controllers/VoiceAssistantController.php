@@ -103,32 +103,48 @@ class VoiceAssistantController extends Controller
         ]);
 
         try {
-            $basePatients = Auth::user()->getEffectiveAssignedPatients()
+            // First, get assigned patients (patients where primary_doctor_id matches)
+            $assignedPatients = Auth::user()->getEffectiveAssignedPatients()
                 ->select('id', 'name', 'email', 'age', 'gender')
-                ->orderBy('name')
                 ->get();
-                
-            \Log::info('Voice Assistant - Loaded patients using getEffectiveAssignedPatients', [
-                'count' => $basePatients->count(),
+
+            // Then, get patients who have confirmed or completed appointments with this doctor
+            // but are not already in the assigned patients list
+            $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+            $appointmentPatients = User::where('role', 'patient')
+                ->whereHas('appointments', function($query) use ($effectiveDoctorId) {
+                    $query->where('doctor_id', $effectiveDoctorId)
+                          ->whereIn('status', ['confirmed', 'completed']);
+                })
+                ->whereNotIn('id', $assignedPatients->pluck('id'))
+                ->select('id', 'name', 'email', 'age', 'gender')
+                ->get();
+
+            // Merge the two collections
+            $basePatients = $assignedPatients->merge($appointmentPatients)->unique('id')->sortBy('name');
+
+            \Log::info('Voice Assistant - Loaded patients from assigned + appointments', [
+                'assigned_count' => $assignedPatients->count(),
+                'appointment_count' => $appointmentPatients->count(),
+                'total_count' => $basePatients->count(),
                 'patient_names' => $basePatients->pluck('name')->toArray()
             ]);
         } catch (\Exception $e) {
-            \Log::warning('Could not load assigned patients, trying fallback: ' . $e->getMessage());
+            \Log::warning('Could not load patients, using minimal fallback: ' . $e->getMessage());
 
-            // Fallback: load all patients with role 'patient' for this doctor
+            // Minimal fallback: just get patients with confirmed or completed appointments
             try {
                 $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
-                \Log::info('Voice Assistant - Using fallback patient loading', [
-                    'effective_doctor_id' => $effectiveDoctorId
-                ]);
-                
                 $basePatients = User::where('role', 'patient')
-                    ->where('primary_doctor_id', $effectiveDoctorId)
+                    ->whereHas('appointments', function($query) use ($effectiveDoctorId) {
+                        $query->where('doctor_id', $effectiveDoctorId)
+                              ->whereIn('status', ['confirmed', 'completed']);
+                    })
                     ->select('id', 'name', 'email', 'age', 'gender')
                     ->orderBy('name')
                     ->get();
-                    
-                \Log::info('Voice Assistant - Loaded patients using fallback', [
+
+                \Log::info('Voice Assistant - Loaded patients using appointment fallback', [
                     'count' => $basePatients->count(),
                     'patient_names' => $basePatients->pluck('name')->toArray()
                 ]);
@@ -138,19 +154,63 @@ class VoiceAssistantController extends Controller
             }
         }
 
+        // Load guest patients from confirmed or completed appointments
+        $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+        $guestAppointments = \App\Models\Appointment::where('doctor_id', $effectiveDoctorId)
+            ->whereIn('status', ['confirmed', 'completed'])
+            ->whereNotNull('guest_name')
+            ->whereNotNull('guest_email')
+            ->select('guest_name', 'guest_email', 'guest_date_of_birth', 'guest_gender', 'guest_phone', 'appointment_date')
+            ->orderBy('appointment_date', 'desc')
+            ->get();
+
+        \Log::info('Voice Assistant - Loaded guest patients from confirmed appointments', [
+            'count' => $guestAppointments->count(),
+            'guest_names' => $guestAppointments->pluck('guest_name')->toArray()
+        ]);
+
+        // Convert guest appointments to patient-like objects
+        $guestPatients = $guestAppointments->map(function($appointment) {
+            // Calculate age from date of birth if available
+            $age = null;
+            if ($appointment->guest_date_of_birth) {
+                $age = $appointment->guest_date_of_birth->age;
+            }
+
+            return (object)[
+                'id' => 'guest_' . md5($appointment->guest_email . $appointment->guest_name), // Create unique ID for guest
+                'name' => $appointment->guest_name,
+                'email' => $appointment->guest_email,
+                'age' => $age,
+                'gender' => $appointment->guest_gender,
+                'phone' => $appointment->guest_phone,
+                'is_guest' => true,
+                'last_appointment' => $appointment->appointment_date
+            ];
+        });
+
+        // Merge registered patients with guest patients, removing duplicates by email
+        $allPatients = $basePatients->concat($guestPatients)->unique('email')->values();
+
+        \Log::info('Voice Assistant - Total patients after merging guests', [
+            'total_count' => $allPatients->count(),
+            'registered_count' => $basePatients->count(),
+            'guest_count' => $guestPatients->count()
+        ]);
+
         // Load available appointments for each patient (for appointment completion)
         $patientAppointments = [];
         $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
         $loggedInUserId = Auth::id();
-        
+
         Log::info('Voice Assistant - Doctor ID debug', [
             'effective_doctor_id' => $effectiveDoctorId,
             'logged_in_user_id' => $loggedInUserId,
             'user_is_doctor' => Auth::user()->isDoctor(),
             'user_email' => Auth::user()->email
         ]);
-        
-        foreach ($basePatients as $patient) {
+
+        foreach ($allPatients as $patient) {
             $appointments = collect(); // Start with empty collection
             
             // First, try to find ALL appointments for this patient to see what exists
@@ -267,7 +327,36 @@ class VoiceAssistantController extends Controller
         }
 
         // Process patients and build patient groups with visit history
-        foreach ($basePatients as $patient) {
+        foreach ($allPatients as $patient) {
+            // Skip guest patients for diagnosis-based processing (they don't have diagnosis records)
+            if (isset($patient->is_guest) && $patient->is_guest) {
+                // For guest patients, create minimal patient group entry
+                $patientKey = 'guest_' . $patient->id;
+                $patientGroups[$patientKey] = [
+                    'patient' => $patient,
+                    'visits' => collect(),
+                    'visit_count' => 0,
+                    'last_visit' => isset($patient->last_appointment) ? $patient->last_appointment : null,
+                    'category' => 'guest',
+                    'has_appointments' => true,
+                    'appointment_details' => null,
+                ];
+
+                // Add to patients array for dropdown
+                $patients[] = [
+                    'id' => $patient->id,
+                    'name' => $patient->name,
+                    'email' => $patient->email,
+                    'age' => $patient->age,
+                    'gender' => $patient->gender,
+                    'patient_key' => $patientKey,
+                    'visit_count' => 0,
+                    'last_visit' => isset($patient->last_appointment) ? $patient->last_appointment->format('M d, Y') : null,
+                    'is_guest' => true,
+                ];
+                continue;
+            }
+
             // Generate patient key if not exists
             $patientKey = $this->generatePatientKey($patient);
 
@@ -289,7 +378,7 @@ class VoiceAssistantController extends Controller
                         'visit_number' => 1, // Diagnosis records don't have visit numbers yet
                         'date' => $visit->created_at->format('M d, Y'),
                         'diagnosis' => substr($visit->diagnosis_text ?? 'No diagnosis available', 0, 100) .
-                                     (strlen($visit->diagnosis_text ?? '') > 100 ? '...' : ''),
+                                      (strlen($visit->diagnosis_text ?? '') > 100 ? '...' : ''),
                         'source_model' => 'Diagnosis',
                     ];
                 }),
@@ -1266,12 +1355,12 @@ class VoiceAssistantController extends Controller
             // Get the patient
             $patient = User::findOrFail($request->selectedPatient);
 
-            // Ensure the patient belongs to the authenticated doctor
-            $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
-            if ($patient->primary_doctor_id !== $effectiveDoctorId) {
+            // Ensure the patient belongs to the authenticated doctor or has confirmed appointments with them
+            $isAssignedPatient = Auth::user()->canAccessPatient($patient);
+            if (!$isAssignedPatient) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Patient not assigned to this doctor.'
+                    'message' => 'Patient not assigned to this doctor or no confirmed appointments exist.'
                 ], 403);
             }
 
@@ -1531,11 +1620,9 @@ class VoiceAssistantController extends Controller
                 'completion_type' => $request->completionType
             ]);
 
-            // Ensure the patient belongs to the authenticated doctor (more flexible check)
-            $isAssignedPatient = $patient->primary_doctor_id === $effectiveDoctorId || 
-                                $patient->primary_doctor_id === Auth::id() ||
-                                Auth::user()->canAccessPatient($patient);
-            
+            // Ensure the patient belongs to the authenticated doctor or has confirmed appointments with them
+            $isAssignedPatient = Auth::user()->canAccessPatient($patient);
+
             if (!$isAssignedPatient) {
                 Log::warning('Voice Assistant - Patient assignment check failed', [
                     'patient_id' => $patient->id,
@@ -1543,10 +1630,10 @@ class VoiceAssistantController extends Controller
                     'effective_doctor_id' => $effectiveDoctorId,
                     'auth_id' => Auth::id()
                 ]);
-                
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Patient not assigned to this doctor.'
+                    'message' => 'Patient not assigned to this doctor or no confirmed appointments exist.'
                 ], 403);
             }
 
