@@ -131,7 +131,6 @@ class PrescriptionController extends Controller
                 'patient_gender' => $patientData['gender'],
                 'patient_name' => $patientData['name'],
                 'doctor_notes' => $appointment->doctor_notes,
-                'appointment_symptoms' => $appointment->symptoms,
             ];
 
             try {

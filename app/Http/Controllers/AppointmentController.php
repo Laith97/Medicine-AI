@@ -867,6 +867,8 @@ class AppointmentController extends Controller
             'symptoms' => 'nullable|string',
             'allergies' => 'nullable|string',
             'past_meds' => 'nullable|string',
+            'current_diagnosis' => 'nullable|string',
+            'past_diagnoses' => 'nullable|string',
             'voice_diagnosis' => 'nullable|string',
             'reason_for_visit' => 'nullable|string',
         ]);
@@ -885,6 +887,22 @@ class AppointmentController extends Controller
 
         // Prepare additional data for AI processing
         $additionalData = [];
+
+        // Add current diagnosis if available
+        if ($request->current_diagnosis) {
+            $currentDiagnosisData = json_decode($request->current_diagnosis, true);
+            if ($currentDiagnosisData) {
+                $additionalData['current_diagnosis'] = $currentDiagnosisData;
+            }
+        }
+
+        // Add past diagnoses if available
+        if ($request->past_diagnoses) {
+            $pastDiagnosesData = json_decode($request->past_diagnoses, true);
+            if ($pastDiagnosesData && is_array($pastDiagnosesData)) {
+                $additionalData['past_diagnoses'] = $pastDiagnosesData;
+            }
+        }
 
         // Add voice diagnosis if available
         if ($request->voice_diagnosis) {
@@ -906,6 +924,8 @@ class AppointmentController extends Controller
             'processed_symptoms' => $symptoms,
             'allergies' => $allergies,
             'past_meds' => $past_meds,
+            'current_diagnosis' => $request->current_diagnosis,
+            'past_diagnoses_count' => is_array($additionalData['past_diagnoses'] ?? null) ? count($additionalData['past_diagnoses']) : 0,
             'voice_diagnosis' => $request->voice_diagnosis,
             'reason_for_visit' => $request->reason_for_visit,
             'additional_data' => $additionalData,

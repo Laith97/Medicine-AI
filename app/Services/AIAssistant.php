@@ -186,19 +186,38 @@ REQUIRED JSON FORMAT:
             $clinicalDataUsed = [];
             if (!empty($symptomsText)) $clinicalDataUsed['symptoms'] = $symptomsText;
             if (!empty($additionalData['doctor_notes'] ?? '')) $clinicalDataUsed['doctor_notes'] = $additionalData['doctor_notes'];
-            if (!empty($additionalData['appointment_symptoms'] ?? '')) $clinicalDataUsed['appointment_symptoms'] = $additionalData['appointment_symptoms'];
             if (!empty($additionalData['reason_for_visit'] ?? '')) $clinicalDataUsed['reason_for_visit'] = $additionalData['reason_for_visit'];
 
-            // Only use DOCTOR-WRITTEN diagnosis text, NOT AI-generated analysis
-            if (!empty($additionalData['recent_diagnosis']['diagnosis_text'] ?? '')) {
+            // Include CURRENT DIAGNOSIS in clinical data tracking
+            if (!empty($additionalData['current_diagnosis']['diagnosis_text'] ?? '')) {
                 // Check if this is doctor-written vs AI-generated
-                $diagnosisText = $additionalData['recent_diagnosis']['diagnosis_text'];
-                $aiAnalysis = $additionalData['recent_diagnosis']['ai_analysis'] ?? '';
+                $diagnosisText = $additionalData['current_diagnosis']['diagnosis_text'];
+                $aiAnalysis = $additionalData['current_diagnosis']['ai_analysis'] ?? '';
 
                 // Only include if it's different from AI analysis (meaning doctor modified it)
                 // or if there's no AI analysis (manual diagnosis)
                 if (empty($aiAnalysis) || trim($diagnosisText) !== trim($aiAnalysis)) {
-                    $clinicalDataUsed['doctor_diagnosis'] = $diagnosisText;
+                    $clinicalDataUsed['current_diagnosis'] = $diagnosisText;
+                }
+            }
+
+            // Include PAST DIAGNOSES in clinical data tracking
+            if (!empty($additionalData['past_diagnoses']) && is_array($additionalData['past_diagnoses'])) {
+                $pastDiagnosisList = [];
+                foreach ($additionalData['past_diagnoses'] as $pastDiagnosis) {
+                    if (!empty($pastDiagnosis['diagnosis_text'])) {
+                        $diagnosisText = $pastDiagnosis['diagnosis_text'];
+                        $aiAnalysis = $pastDiagnosis['ai_analysis'] ?? '';
+
+                        // Only include doctor-written diagnoses
+                        if (empty($aiAnalysis) || trim($diagnosisText) !== trim($aiAnalysis)) {
+                            $pastDiagnosisList[] = $diagnosisText;
+                        }
+                    }
+                }
+
+                if (!empty($pastDiagnosisList)) {
+                    $clinicalDataUsed['past_diagnoses'] = $pastDiagnosisList;
                 }
             }
 
@@ -350,8 +369,8 @@ REQUIRED JSON FORMAT:
 
         // Use doctor-verified clinical data from multiple sources
         $doctorNotes = $additionalData['doctor_notes'] ?? '';
-        $appointmentSymptoms = $additionalData['appointment_symptoms'] ?? '';
-        $recentDiagnosis = $additionalData['recent_diagnosis'] ?? null;
+        $currentDiagnosis = $additionalData['current_diagnosis'] ?? null;
+        $pastDiagnoses = $additionalData['past_diagnoses'] ?? [];
         $voiceDiagnosis = $additionalData['voice_diagnosis'] ?? '';
         $reasonForVisit = $additionalData['reason_for_visit'] ?? '';
 
@@ -359,17 +378,38 @@ REQUIRED JSON FORMAT:
         $clinicalData = [];
         if (!empty($symptomsText)) $clinicalData[] = "Symptoms: " . $symptomsText;
         if (!empty($doctorNotes)) $clinicalData[] = "Doctor Notes: " . $doctorNotes;
-        if (!empty($appointmentSymptoms)) $clinicalData[] = "Appointment Symptoms: " . $appointmentSymptoms;
         if (!empty($reasonForVisit)) $clinicalData[] = "Reason for Visit: " . $reasonForVisit;
 
-        // Only include DOCTOR-WRITTEN diagnosis, not AI-generated analysis
-        if ($recentDiagnosis && isset($recentDiagnosis['diagnosis_text'])) {
-            $diagnosisText = $recentDiagnosis['diagnosis_text'];
-            $aiAnalysis = $recentDiagnosis['ai_analysis'] ?? '';
+        // Include CURRENT DIAGNOSIS (primary clinical driver)
+        if ($currentDiagnosis && isset($currentDiagnosis['diagnosis_text'])) {
+            $diagnosisText = $currentDiagnosis['diagnosis_text'];
+            $aiAnalysis = $currentDiagnosis['ai_analysis'] ?? '';
 
             // Only use if doctor actually wrote/modified the diagnosis
             if (empty($aiAnalysis) || trim($diagnosisText) !== trim($aiAnalysis)) {
-                $clinicalData[] = "Doctor Diagnosis: " . $diagnosisText;
+                $clinicalData[] = "Current Diagnosis: " . $diagnosisText;
+            }
+        }
+
+        // Include PAST DIAGNOSIS HISTORY (clinical context)
+        if (!empty($pastDiagnoses) && is_array($pastDiagnoses)) {
+            $pastDiagnosisTexts = [];
+            foreach ($pastDiagnoses as $pastDiagnosis) {
+                if (isset($pastDiagnosis['diagnosis_text'])) {
+                    $diagnosisText = $pastDiagnosis['diagnosis_text'];
+                    $diagnosisDate = isset($pastDiagnosis['created_at']) ?
+                        \Carbon\Carbon::parse($pastDiagnosis['created_at'])->format('M j, Y') : 'Unknown date';
+
+                    // Only include doctor-written diagnoses
+                    $aiAnalysis = $pastDiagnosis['ai_analysis'] ?? '';
+                    if (empty($aiAnalysis) || trim($diagnosisText) !== trim($aiAnalysis)) {
+                        $pastDiagnosisTexts[] = "{$diagnosisText} ({$diagnosisDate})";
+                    }
+                }
+            }
+
+            if (!empty($pastDiagnosisTexts)) {
+                $clinicalData[] = "Past Diagnosis History: " . implode('; ', $pastDiagnosisTexts);
             }
         }
 
@@ -380,14 +420,22 @@ REQUIRED JSON FORMAT:
 
         $verifiedClinicalText = implode("\n", $clinicalData);
 
+        // CRITICAL SAFETY: Check if we have ONLY patient-reported symptoms (unreliable)
+        $hasOnlyPatientSymptoms = empty($doctorNotes) && empty($currentDiagnosis) && empty($pastDiagnoses) && empty($voiceDiagnosis) &&
+                                  !empty($reasonForVisit);
+
         // CRITICAL SAFETY: Only provide suggestions when we have verified clinical data
-        if (empty($verifiedClinicalText)) {
-            $symptomsText = 'No verified clinical data available. This Clinical Decision Support system requires doctor-documented symptoms, diagnosis, or clinical notes before providing medication suggestions.';
+        if (empty($verifiedClinicalText) || $hasOnlyPatientSymptoms) {
+            if ($hasOnlyPatientSymptoms) {
+                $symptomsText = 'PATIENT SYMPTOMS ONLY - NOT VERIFIED. This Clinical Decision Support system requires DOCTOR verification of symptoms before providing medication suggestions. Patient-reported symptoms alone are insufficient for medication recommendations.';
+            } else {
+                $symptomsText = 'No verified clinical data available. This Clinical Decision Support system requires doctor-documented symptoms, diagnosis, or clinical notes before providing medication suggestions.';
+            }
         } else {
             $symptomsText = $verifiedClinicalText;
         }
 
-        $hasVerifiedData = !empty($verifiedClinicalText);
+        $hasVerifiedData = !empty($verifiedClinicalText) && !$hasOnlyPatientSymptoms;
 
         $prompt = "CLINICAL DECISION SUPPORT - MEDICATION SUGGESTIONS\n";
         $prompt .= "===============================================\n\n";
@@ -399,6 +447,32 @@ REQUIRED JSON FORMAT:
         $prompt .= "VERIFIED CLINICAL DATA:\n";
         $prompt .= "- Clinical Presentation: {$symptomsText}\n";
         $prompt .= "- Appointment Type: {$appointment->appointment_type}\n";
+
+        // Add structured diagnosis information
+        if ($currentDiagnosis && isset($currentDiagnosis['diagnosis_text'])) {
+            $currentDiagnosisText = $currentDiagnosis['diagnosis_text'];
+            $currentDiagnosisDate = isset($currentDiagnosis['created_at']) ?
+                \Carbon\Carbon::parse($currentDiagnosis['created_at'])->format('M j, Y') : 'Recent';
+
+            $prompt .= "\nCURRENT DIAGNOSIS (Primary Clinical Driver):\n";
+            $prompt .= "- Diagnosis: {$currentDiagnosisText}\n";
+            $prompt .= "- Date: {$currentDiagnosisDate}\n";
+            $prompt .= "- Purpose: Primary driver for medication selection and treatment planning\n";
+        }
+
+        if (!empty($pastDiagnoses) && is_array($pastDiagnoses)) {
+            $prompt .= "\nPAST DIAGNOSIS HISTORY (Clinical Context):\n";
+            foreach (array_slice($pastDiagnoses, 0, 5) as $pastDiagnosis) { // Limit to 5 most recent past diagnoses
+                if (isset($pastDiagnosis['diagnosis_text'])) {
+                    $pastDiagnosisText = $pastDiagnosis['diagnosis_text'];
+                    $pastDiagnosisDate = isset($pastDiagnosis['created_at']) ?
+                        \Carbon\Carbon::parse($pastDiagnosis['created_at'])->format('M j, Y') : 'Unknown';
+
+                    $prompt .= "- {$pastDiagnosisText} ({$pastDiagnosisDate})\n";
+                }
+            }
+            $prompt .= "- Purpose: Provides context for comorbidities, treatment responses, and disease progression\n";
+        }
 
         // CRITICAL SAFETY: Only use doctor-verified clinical data
         if ($hasVerifiedData) {
@@ -412,10 +486,13 @@ REQUIRED JSON FORMAT:
         $prompt .= "1. PRIMARY: Doctor clinical notes and observations\n";
         $prompt .= "2. SECONDARY: Formal diagnosis records\n";
         $prompt .= "3. TERTIARY: Voice assistant clinical assessments\n";
-        $prompt .= "4. CONTEXT: Patient-reported symptoms and reasons\n\n";
+        $prompt .= "❌ EXCLUDED: Patient-reported symptoms (unreliable for medication decisions)\n\n";
 
-        $prompt .= "CRITICAL: Prioritize doctor-verified clinical data over patient self-reports for medication decisions.\n";
-        $prompt .= "Only suggest medications when supported by clinical documentation, not just patient descriptions.\n\n";
+        $prompt .= "CRITICAL SAFETY REQUIREMENTS:\n";
+        $prompt .= "- NEVER suggest medications based on patient-reported symptoms alone\n";
+        $prompt .= "- Require DOCTOR verification of all clinical findings\n";
+        $prompt .= "- If only patient symptoms are available, respond that doctor verification is required\n";
+        $prompt .= "- Only suggest medications when supported by doctor clinical documentation\n\n";
 
         // Critical safety information
         $prompt .= "CRITICAL SAFETY INFORMATION:\n";
@@ -712,18 +789,39 @@ REQUIRED JSON FORMAT:
         $risk_flags[] = '⚠️ No automated drug interaction checking performed';
         $risk_flags[] = '⚠️ Consider patient age, weight, and organ function';
 
+        // CRITICAL SAFETY: Check for patient-only symptoms (same logic as buildMedicationPrompt)
+        $hasOnlyPatientSymptoms = empty($additionalData['doctor_notes'] ?? '') &&
+                                  empty($additionalData['current_diagnosis'] ?? null) &&
+                                  empty($additionalData['past_diagnoses'] ?? []) &&
+                                  empty($additionalData['voice_diagnosis'] ?? '') &&
+                                  !empty($additionalData['reason_for_visit'] ?? '');
+
         // CRITICAL SAFETY: Only provide suggestions when we have verified clinical data
-        if (empty($suggestions) && empty($verifiedClinicalText)) {
-            $suggestions[] = [
-                'med' => 'Clinical Documentation Required',
-                'dosage' => 'N/A',
-                'freq' => 'N/A',
-                'dur' => 'N/A',
-                'confidence' => 0,
-                'reason' => 'No verified clinical data available. Please document symptoms, diagnosis, or clinical findings in the appointment before requesting AI medication suggestions.',
-                'warnings' => ['Clinical assessment and documentation required', 'Doctor must verify patient symptoms and medical history'],
-                'interactions' => ['Cannot provide medication suggestions without verified clinical data']
-            ];
+        if (empty($suggestions) && (empty($verifiedClinicalText) || $hasOnlyPatientSymptoms)) {
+            if ($hasOnlyPatientSymptoms) {
+                $suggestions[] = [
+                    'med' => 'Doctor Verification Required',
+                    'dosage' => 'N/A',
+                    'freq' => 'N/A',
+                    'dur' => 'N/A',
+                    'confidence' => 0,
+                    'reason' => 'Patient-reported symptoms require DOCTOR verification before medication suggestions. AI cannot make medication recommendations based on unverified patient input.',
+                    'warnings' => ['Patient symptoms not verified by healthcare professional', 'Clinical assessment required before medication decisions'],
+                    'interactions' => ['Cannot check interactions without verified clinical data']
+                ];
+                $risk_flags[] = '⚠️ PATIENT SYMPTOMS NOT VERIFIED - Doctor clinical assessment required';
+            } else {
+                $suggestions[] = [
+                    'med' => 'Clinical Documentation Required',
+                    'dosage' => 'N/A',
+                    'freq' => 'N/A',
+                    'dur' => 'N/A',
+                    'confidence' => 0,
+                    'reason' => 'No verified clinical data available. Please document symptoms, diagnosis, or clinical findings in the appointment before requesting AI medication suggestions.',
+                    'warnings' => ['Clinical assessment and documentation required', 'Doctor must verify patient symptoms and medical history'],
+                    'interactions' => ['Cannot provide medication suggestions without verified clinical data']
+                ];
+            }
         }
 
         // If still no specific suggestions, provide general guidance

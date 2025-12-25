@@ -321,7 +321,17 @@ class OpenAIController extends Controller
         // Sort all cases by creation date (newest first)
         $allCases = $allCases->sortByDesc('created_at');
 
-        \Log::info('Total cases after combining: ' . $allCases->count());
+        // Filter out cases without diagnoses
+        $allCases = $allCases->filter(function($case) {
+            // Only show cases that have actual diagnoses
+            return $case->ai_response &&
+                   $case->ai_response !== 'No diagnosis available' &&
+                   $case->ai_response !== 'Appointment completed - pending diagnosis' &&
+                   $case->ai_response !== 'Appointment scheduled' &&
+                   trim($case->ai_response) !== '';
+        });
+
+        \Log::info('Total cases after filtering: ' . $allCases->count());
 
         // Group records by patient for calculating total visits
         $patientGroups = [];

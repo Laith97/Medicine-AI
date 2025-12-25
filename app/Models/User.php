@@ -1361,6 +1361,40 @@ public function getHospitalAdminStatistics(): array
 }
 
 /**
+ * Check if user can access a specific patient
+ *
+ * For doctors: they can access patients assigned to them (primary_doctor_id matches)
+ *              OR patients that have confirmed appointments with them
+ * For sub-users: they can access patients assigned to their parent doctor
+ *                OR patients that have confirmed appointments with their parent doctor
+ * For other roles: access is denied
+ */
+public function canAccessPatient(User $patient): bool
+{
+    // Only doctors and their sub-users can access patients
+    if (!$this->isDoctor() && !$this->isSubUser()) {
+        return false;
+    }
+
+    // Get the effective doctor for the current user (handles sub-users)
+    $effectiveDoctor = $this->getEffectiveDoctorUser();
+    $effectiveDoctorId = $effectiveDoctor ? $effectiveDoctor->id : null;
+
+    // Check if patient is assigned to this doctor (primary doctor relationship)
+    if ($patient->primary_doctor_id === $effectiveDoctorId) {
+        return true;
+    }
+
+    // Check if patient has confirmed or completed appointments with this doctor
+    $hasConfirmedAppointment = $patient->appointments()
+        ->where('doctor_id', $effectiveDoctorId)
+        ->whereIn('status', ['confirmed', 'completed'])
+        ->exists();
+
+    return $hasConfirmedAppointment;
+}
+
+/**
  * Check if user is responsible for payments (hospital admin or standalone doctor)
  */
 public function isPaymentResponsible(): bool
