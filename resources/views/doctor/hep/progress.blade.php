@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('title', 'Progress - ' . $program->title)
+@section('title', 'Progress - Physical Therapy (' . $program->title . ')')
 
 @section('content')
 <div class="dashboard-container">
@@ -10,7 +10,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h2>Patient Progress</h2>
-                    <p class="mb-0">{{ $program->title }} - {{ $assignment->patient->name }}</p>
+                    <p class="mb-0">Physical Therapy ({{ $program->title }}) - {{ $assignment->patient->name }}</p>
                 </div>
                 <div class="d-flex gap-2">
                     <a href="{{ route('doctor.hep.show', $program) }}" class="btn btn-outline-secondary">
