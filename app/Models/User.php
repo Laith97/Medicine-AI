@@ -537,6 +537,17 @@ public function getFreshMonthlyInvoiceSetting()
     }
 
     /**
+     * Check if user has any of the specified roles
+     *
+     * @param array $roles List of roles to check against
+     * @return bool True if the user has one of the roles
+     */
+    public function hasAnyRole(array $roles): bool
+    {
+        return in_array($this->getEffectiveRole(), $roles);
+    }
+
+    /**
      * Get the effective doctor profile (for sub-users, returns parent's doctor profile)
      */
     public function getEffectiveDoctor()

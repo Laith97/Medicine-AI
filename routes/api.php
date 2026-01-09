@@ -309,6 +309,9 @@ Route::middleware(['auth', 'web'])->group(function () {
         
         Route::get('rules', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'getRules']);
         Route::put('rules/{id}', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'updateRule']);
+
+        Route::get('patients/{patient_id}/scores', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'getHistoricalScores']);
+        Route::get('patients/{patient_id}/insights', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'getLatestInsights']);
     });
 
     // Treatment Optimization Routes

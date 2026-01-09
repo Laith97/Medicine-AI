@@ -107,6 +107,47 @@ class ClinicalEarlyWarningService
     }
 
     /**
+     * Calculate NEWS2 Scale 2 (for patients with hypercapnic respiratory failure)
+     * 
+     * @param array $vitals
+     * @return array
+     */
+    public function calculateNEWS2Scale2(array $vitals): array
+    {
+        $result = $this->calculateNEWS2($vitals);
+        
+        // Adjust SpO2 for Scale 2 (88-92%)
+        $spo2 = $vitals['spo2'] ?? $vitals['oxygen_saturation'] ?? null;
+        if ($spo2 !== null) {
+            $spo2Score = 0;
+            if ($spo2 <= 83) $spo2Score = 3;
+            elseif ($spo2 >= 84 && $spo2 <= 85) $spo2Score = 2;
+            elseif ($spo2 >= 86 && $spo2 <= 87) $spo2Score = 1;
+            elseif ($spo2 >= 93 && $spo2 <= 94) $spo2Score = 1;
+            elseif ($spo2 >= 95 && $spo2 <= 96) $spo2Score = 2;
+            elseif ($spo2 >= 97) $spo2Score = 3;
+            
+            // Replace Scale 1 SpO2 score
+            $result['score'] = $result['score'] - ($result['breakdown']['spo2'] ?? 0) + $spo2Score;
+            $result['breakdown']['spo2_scale2'] = $spo2Score;
+            unset($result['breakdown']['spo2']);
+        }
+
+        // Recalculate risk level
+        $result['risk_level'] = $this->determineNEWS2RiskLevel($result['score']);
+        
+        return $result;
+    }
+
+    protected function determineNEWS2RiskLevel(int $score): string
+    {
+        if ($score >= 7) return 'high';
+        if ($score >= 5) return 'medium';
+        if ($score >= 1) return 'low-medium';
+        return 'low';
+    }
+
+    /**
      * Sepsis Detection (qSOFA)
      */
     public function calculateQSOFA(array $vitals): array
@@ -188,7 +229,7 @@ class ClinicalEarlyWarningService
     }
 
     /**
-     * Cardiac Event Prediction (Simple Trend Analysis)
+     * Cardiac Event Prediction (Enhanced Trend Analysis)
      */
     public function predictCardiacEvent(User $patient): array
     {
@@ -214,14 +255,74 @@ class ClinicalEarlyWarningService
 
         // Check for tachycardia trend
         $hrTrend = $recentVitals->where('name', 'pulse')->take(5);
-        if ($hrTrend->count() >= 3 && $hrTrend->avg('value') > 100) {
-            $score += 2;
-            $breakdown['tachycardia_trend'] = 2;
+        if ($hrTrend->count() >= 3) {
+            $avgHr = $hrTrend->avg('value');
+            if ($avgHr > 110) {
+                $score += 3;
+                $breakdown['severe_tachycardia_trend'] = 3;
+            } elseif ($avgHr > 100) {
+                $score += 2;
+                $breakdown['tachycardia_trend'] = 2;
+            }
+        }
+
+        // Check for BP drop trend
+        $bpTrend = $recentVitals->where('name', 'systolic_bp')->take(5);
+        if ($bpTrend->count() >= 3) {
+            $first = $bpTrend->last()->value;
+            $last = $bpTrend->first()->value;
+            if ($first - $last > 20) {
+                $score += 2;
+                $breakdown['significant_bp_drop'] = 2;
+            }
         }
 
         return [
             'score' => $score,
-            'risk_level' => $score >= 5 ? 'critical' : ($score >= 2 ? 'high' : 'low'),
+            'risk_level' => $score >= 7 ? 'critical' : ($score >= 4 ? 'high' : ($score >= 2 ? 'medium' : 'low')),
+            'breakdown' => $breakdown
+        ];
+    }
+
+    /**
+     * AKI Risk Detection (KDIGO Criteria)
+     */
+    public function calculateAKIRisk(User $patient): array
+    {
+        $recentCreatinine = ClinicalIndicator::where('patient_id', $patient->id)
+            ->where('name', 'creatinine')
+            ->where('measured_at', '>=', now()->subDays(7))
+            ->orderBy('measured_at', 'desc')
+            ->get();
+
+        if ($recentCreatinine->count() < 2) {
+            return ['score' => 0, 'risk_level' => 'low', 'breakdown' => ['insufficient_data' => 0]];
+        }
+
+        $latest = (float)$recentCreatinine->first()->value;
+        $baseline = (float)$recentCreatinine->last()->value; // Simplification: using oldest in 7 days as baseline
+
+        $score = 0;
+        $breakdown = [];
+
+        // KDIGO Stage 1: 1.5-1.9x baseline or >= 0.3 mg/dL increase in 48h
+        $increase = $latest - $baseline;
+        $ratio = $latest / ($baseline ?: 1);
+
+        if ($ratio >= 3.0) {
+            $score = 3;
+            $breakdown['kdigo_stage_3'] = 3;
+        } elseif ($ratio >= 2.0) {
+            $score = 2;
+            $breakdown['kdigo_stage_2'] = 2;
+        } elseif ($ratio >= 1.5 || $increase >= 0.3) {
+            $score = 1;
+            $breakdown['kdigo_stage_1'] = 1;
+        }
+
+        return [
+            'score' => $score,
+            'risk_level' => $score >= 3 ? 'critical' : ($score >= 2 ? 'high' : ($score >= 1 ? 'medium' : 'low')),
             'breakdown' => $breakdown
         ];
     }

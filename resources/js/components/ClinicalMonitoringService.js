@@ -36,6 +36,26 @@ class ClinicalMonitoringService {
         }
     }
 
+    async getHistoricalScores(patientId) {
+        try {
+            const response = await this.axios.get(`/api/monitoring/patients/${patientId}/scores`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching historical scores:', error);
+            return [];
+        }
+    }
+
+    async getLatestInsights(patientId) {
+        try {
+            const response = await this.axios.get(`/api/monitoring/patients/${patientId}/insights`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching clinical insights:', error);
+            return null;
+        }
+    }
+
     async acknowledgeAlert(id) {
         try {
             const response = await this.axios.post(`/api/monitoring/alerts/${id}/acknowledge`);
@@ -73,15 +93,20 @@ class ClinicalMonitoringService {
     }
 
     subscribeToPatientData(patientId, callback) {
-        if (!this.echo || !patientId) return;
+        if (!this.echo || !patientId) return null;
 
         try {
-            this.echo.private(`App.User.${patientId}`)
-                .listen('.clinical.alert.triggered', (e) => {
-                    callback(e.alert);
-                });
+            const channel = this.echo.private(`App.User.${patientId}`);
+            channel.listen('.clinical.alert.triggered', (e) => {
+                callback(e.alert);
+            });
+
+            return () => {
+                channel.stopListening('.clinical.alert.triggered');
+            };
         } catch (error) {
             console.error(`Error subscribing to patient ${patientId} data:`, error);
+            return null;
         }
     }
 
