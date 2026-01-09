@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\ClinicalIndicator;
 use App\Events\ClinicalAlertTriggered;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class ClinicalDecisionSupportService
 {
@@ -144,5 +145,65 @@ class ClinicalDecisionSupportService
             'adherence_score' => 0.95, // Placeholder
             'next_steps' => $pathway->steps[0] ?? null
         ];
+    }
+
+    /**
+     * Generate AI-powered clinical insights based on risk data
+     */
+    public function generateClinicalInsights(User $patient, array $riskData): array
+    {
+        $cacheKey = "clinical_insights_{$patient->id}_" . md5(json_encode($riskData));
+        
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($patient, $riskData) {
+            $news2 = $riskData['news2'] ?? null;
+            $qsofa = $riskData['qsofa'] ?? null;
+            $aki = $riskData['aki'] ?? null;
+            $trend = $riskData['trend'] ?? null;
+            $rapidDeterioration = $riskData['rapid_deterioration'] ?? [];
+
+            $narrative = "Patient shows ";
+            $actions = [];
+
+            if ($news2 && $news2['score'] >= 5) {
+                $narrative .= "high clinical risk (NEWS2: {$news2['score']}). ";
+                $actions[] = "Increase monitoring frequency to every 30-60 minutes.";
+                $actions[] = "Notify senior clinician/registrar immediately.";
+            }
+
+            if ($qsofa && $qsofa['score'] >= 2) {
+                $narrative .= "potential sepsis risk (qSOFA: {$qsofa['score']}). ";
+                $actions[] = "Initiate Sepsis Six bundle.";
+                $actions[] = "Check lactate levels and start fluid resuscitation if indicated.";
+            }
+
+            if ($aki && $aki['risk_level'] !== 'low') {
+                $narrative .= "risk of Acute Kidney Injury. ";
+                $actions[] = "Monitor urine output hourly.";
+                $actions[] = "Review nephrotoxic medications.";
+            }
+
+            if ($trend && $trend['trend_direction'] === 'rising') {
+                $narrative .= "The risk score is currently on a rising trajectory. ";
+                $actions[] = "Proactive clinical review recommended before further deterioration.";
+            }
+
+            foreach ($rapidDeterioration as $det) {
+                $narrative .= "{$det['message']} ";
+                if ($det['pattern'] === 'elevated_shock_index') {
+                    $actions[] = "Assess for occult bleeding or sepsis.";
+                }
+            }
+
+            if (empty($actions)) {
+                $narrative = "Patient is currently stable with low risk scores.";
+                $actions[] = "Continue routine monitoring.";
+            }
+
+            return [
+                'narrative' => $narrative,
+                'suggested_actions' => array_unique($actions),
+                'generated_at' => now()->toIso8601String()
+            ];
+        });
     }
 }
