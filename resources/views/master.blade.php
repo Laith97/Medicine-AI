@@ -2056,6 +2056,9 @@ body .dropdown .dropdown-menu.show,
 
     <!-- Remove conflicting notification scripts - now handled by Vite -->
 
+{{-- Modals --}}
+@stack('modals')
+
 {{-- Extra scripts --}}
 @stack('scripts')
 

@@ -28,6 +28,7 @@ use App\Http\Controllers\Doctor\AnalyticsController;
 use App\Http\Controllers\PublicChatController;
 use App\Http\Controllers\Admin\MonthlyInvoiceController;
 use App\Http\Controllers\Admin\SubscriptionPlanController;
+use App\Http\Controllers\Admin\AdminWaitlistController;
 use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -1225,6 +1226,21 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::prefix('monitoring')->name('monitoring.')->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\Api\MonitoringController::class, 'showDashboard'])->name('dashboard');
     });
+
+    // Clearinghouse Management
+    Route::prefix('clearinghouse')->name('clearinghouse.')->group(function () {
+        Route::get('/accounts', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getClearinghouseAccounts'])->name('accounts');
+        Route::get('/monitoring', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getSubmissions'])->name('monitoring');
+        Route::get('/errors', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getFailedSubmissions'])->name('errors');
+        Route::get('/providers', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getClearinghouseAccounts'])->name('providers');
+        Route::get('/metrics', [App\Http\Controllers\Admin\ClearinghouseMetricsController::class, 'index'])->name('metrics');
+        Route::get('/metrics/data', [App\Http\Controllers\Admin\ClearinghouseMetricsController::class, 'getData'])->name('metrics.data');
+        Route::get('/metrics/export', [App\Http\Controllers\Admin\ClearinghouseMetricsController::class, 'export'])->name('metrics.export');
+    });
+
+    // Waitlist Management
+    Route::get('/waitlist/dashboard', [AdminWaitlistController::class, 'dashboard'])->name('waitlist.dashboard');
+    Route::get('/waitlist/analytics', [AdminWaitlistController::class, 'analytics'])->name('waitlist.analytics');
 });
 
 Route::middleware('auth')->group(function () {

@@ -373,9 +373,14 @@
                             <h5 class="mb-0 text-primary fw-bold">
                                 <i class="fas fa-prescription-bottle me-2"></i>Add New Prescription
                             </h5>
-                            <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#prescriptionHelpModal">
-                                <i class="fas fa-question-circle me-1"></i>How to Use
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#prescriptionHelpModal">
+                                    <i class="fas fa-question-circle me-1"></i>How to Use
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#aiDataSourcesModal">
+                                    <i class="fas fa-database me-1"></i>What Data Does AI Use?
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Quick Workflow Selector -->
@@ -835,6 +840,75 @@
     </div>
 </div>
 
+<!-- AI Data Sources Modal -->
+<div class="modal fade" id="aiDataSourcesModal" tabindex="-1" aria-labelledby="aiDataSourcesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="aiDataSourcesModalLabel">
+                    <i class="fas fa-database me-2"></i>AI Clinical Data Sources
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Understanding AI Data Sources:</strong> The AI analyzes clinical information from multiple sources to provide medication suggestions. Here's what data is currently available and being used:
+                </div>
+
+                <!-- Data Sources Table -->
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-primary">
+                            <tr>
+                                <th><i class="fas fa-clipboard-list me-1"></i>Data Source</th>
+                                <th><i class="fas fa-check-circle me-1"></i>Status</th>
+                                <th><i class="fas fa-shield-alt me-1"></i>Reliability</th>
+                                <th><i class="fas fa-info-circle me-1"></i>Example</th>
+                                <th><i class="fas fa-map-marker-alt me-1"></i>Location</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataSourcesTableBody">
+                            <!-- Dynamic content will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Data Quality Indicators -->
+                <div class="mt-4">
+                    <h6 class="text-primary mb-3"><i class="fas fa-chart-line me-2"></i>Data Completeness</h6>
+                    <div class="progress mb-2" style="height: 25px;" id="dataCompletenessProgress">
+                        <div class="progress-bar bg-success" id="dataCompletenessBar" style="width: 0%">Calculating...</div>
+                    </div>
+                    <small class="text-muted" id="dataCompletenessText">Analyzing available clinical data...</small>
+                </div>
+
+                <!-- Action Items -->
+                <div class="mt-4">
+                    <h6 class="text-warning mb-3"><i class="fas fa-lightbulb me-2"></i>To Improve AI Suggestions:</h6>
+                    <ul class="small text-muted" id="improvementSuggestions">
+                        <li>Complete patient allergy information in Patient Management</li>
+                        <li>Update current medications regularly</li>
+                        <li>Add detailed symptoms during appointment booking</li>
+                        <li>Create diagnosis records for better clinical context</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-light border mt-4">
+                    <h6 class="text-dark mb-2"><i class="fas fa-shield-alt me-2"></i>Privacy & Security</h6>
+                    <small class="text-muted">All clinical data is encrypted and HIPAA-compliant. AI analysis occurs locally and no patient data leaves your secure environment.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="refreshDataSources()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ML Explanation Modal -->
 <div class="modal fade" id="mlExplanationModal" tabindex="-1" aria-labelledby="mlExplanationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -945,7 +1019,51 @@ function cancelAppointment(appointmentId) {
 }
 
 function submitCancellation() {
-    document.getElementById('cancelForm').submit();
+    const form = document.getElementById('cancelForm');
+    const submitBtn = document.querySelector('#cancelModal button[type="button"][onclick="submitCancellation()"]');
+    const originalText = submitBtn.textContent;
+
+    // Update button to show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Cancellation...';
+
+    // Submit via AJAX to properly handle errors
+    const formData = new FormData(form);
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            // Success - reload the page to update the appointment status
+            window.location.reload();
+        } else {
+            // Handle errors
+            return response.json().then(data => {
+                console.error('Error cancelling appointment:', data);
+                // Show error notification
+                alert(data.message || 'Failed to cancel appointment. Please try again.');
+                // Reset button state
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }).catch(() => {
+                // If response isn't JSON, show generic error
+                alert('Failed to cancel appointment. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Network error cancelling appointment:', error);
+        alert('Network error. Please check your connection and try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
 }
 
 // Prescription delete functionality
