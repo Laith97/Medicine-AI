@@ -133,6 +133,12 @@ class MenuHelper
                         'icon' => 'fas fa-stethoscope',
                         'permission' => 'diagnosis',
                     ],
+                    [
+                        'name' => 'Clinical Monitoring',
+                        'route' => 'clinical.monitoring',
+                        'icon' => 'fas fa-heartbeat',
+                        'permission' => 'diagnosis', // Reusing diagnosis permission for now
+                    ],
                 ]
             ],
 
@@ -392,6 +398,11 @@ class MenuHelper
                         'name' => 'Diagnoses',
                         'route' => 'diagnosis.index',
                         'icon' => 'fas fa-stethoscope',
+                    ],
+                    [
+                        'name' => 'Clinical Monitoring',
+                        'route' => 'clinical.monitoring',
+                        'icon' => 'fas fa-heartbeat',
                     ],
                 ]
             ],

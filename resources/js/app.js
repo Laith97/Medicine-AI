@@ -18,3 +18,9 @@ window.addEventListener('unhandledrejection', (e) => {
 });
 
 Alpine.start();
+
+// Mount Clinical Monitoring React App
+import ClinicalMonitoringApp from './components/ClinicalMonitoringApp';
+document.addEventListener('DOMContentLoaded', () => {
+    ClinicalMonitoringApp();
+});
