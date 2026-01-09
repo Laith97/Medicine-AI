@@ -21,7 +21,7 @@ abstract class TestCase extends BaseTestCase
 
     protected function setupTestEnvironment(): void
     {
-        // Use MySQL for testing as configured in phpunit.xml
+        // Use MySQL for testing as requested
         config(['database.default' => 'mysql']);
         config(['database.connections.mysql.database' => 'medicine_test']);
         config(['database.connections.mysql.foreign_key_constraints' => false]);

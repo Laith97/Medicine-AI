@@ -310,6 +310,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     // Route::get('/openai/form', [OpenAIController::class, 'showForm'])->name('openai.form');
     Route::post('/patient/summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient.summary');
     Route::get('/dashboard', [OpenAIController::class, 'dashboard'])->name('dashboard');
+    Route::get('/clinical/monitoring', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'dashboard'])->name('clinical.monitoring');
 
     // Appointment routes for patients
     Route::resource('appointments', AppointmentController::class)->except(['edit', 'update', 'create', 'store']);
