@@ -310,6 +310,14 @@ Route::middleware(['auth', 'web'])->group(function () {
         Route::get('rules', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'getRules']);
         Route::put('rules/{id}', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'updateRule']);
     });
+
+    // Treatment Optimization Routes
+    Route::prefix('treatment-optimization')->group(function () {
+        Route::get('{patient_id}/{appointment_id}', [App\Http\Controllers\Api\TreatmentOptimizationController::class, 'index']);
+        Route::post('generate', [App\Http\Controllers\Api\TreatmentOptimizationController::class, 'store']);
+        Route::post('{id}/validate', [App\Http\Controllers\Api\TreatmentOptimizationController::class, 'validateRecommendation']);
+        Route::post('{id}/reject', [App\Http\Controllers\Api\TreatmentOptimizationController::class, 'rejectRecommendation']);
+    });
 });
 
 // Public routes (for guest access with token verification)

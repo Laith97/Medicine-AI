@@ -15,6 +15,7 @@ class ClinicalAlert extends Model
     protected $fillable = [
         'patient_id',
         'rule_id',
+        'decision_rule_id',
         'severity',
         'status',
         'message',
@@ -42,6 +43,11 @@ class ClinicalAlert extends Model
     public function rule(): BelongsTo
     {
         return $this->belongsTo(ClinicalAlertRule::class, 'rule_id');
+    }
+
+    public function decisionRule(): BelongsTo
+    {
+        return $this->belongsTo(ClinicalDecisionRule::class, 'decision_rule_id');
     }
 
     public function acknowledgedBy(): BelongsTo
