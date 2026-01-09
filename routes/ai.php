@@ -45,4 +45,18 @@ Route::middleware(['auth', 'sub.user.permissions'])->prefix('ai')->name('ai.')->
     Route::post('/follow-up', [OpenAIController::class, 'followUp'])->name('follow-up');
     Route::post('/create-manual-diagnosis', [OpenAIController::class, 'createManualDiagnosis'])->name('create-manual-diagnosis');
     Route::post('/patient-summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient-summary');
+
+    // AI Documentation Intelligence routes
+    Route::prefix('documentation')->name('documentation.')->group(function () {
+        Route::post('/generate-from-transcription', [\App\Http\Controllers\AIDocumentationController::class, 'generateFromTranscription'])
+            ->name('generate.from.transcription');
+        Route::get('/appointment/{appointmentId}', [\App\Http\Controllers\AIDocumentationController::class, 'getDocumentation'])
+            ->name('for.appointment');
+        Route::post('/{docId}/validate', [\App\Http\Controllers\AIDocumentationController::class, 'validateDocumentation'])
+            ->name('validate');
+        Route::post('/codes/{codeId}/validate', [\App\Http\Controllers\AIDocumentationController::class, 'validateCode'])->name('code.validate');
+        Route::get('/pending-validation', [\App\Http\Controllers\AIDocumentationController::class, 'getPendingValidation'])
+            ->name('pending.validation');
+        Route::get('/{docId}/export', [\App\Http\Controllers\AIDocumentationController::class, 'export'])->name('export');
+    });
 });

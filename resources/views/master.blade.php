@@ -2040,6 +2040,7 @@ body .dropdown .dropdown-menu.show,
     @endauth
 
     <!-- Vite Assets (Laravel Echo & Pusher) -->
+    @viteReactRefresh
     @vite(['resources/js/app.js', 'resources/css/app.css'])
 
     <!-- Notification System Styles -->
@@ -2860,11 +2861,24 @@ function showAjaxError(message) {
         return new Promise((resolve) => {
             // Use a timeout to prevent hanging requests
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const timeoutId = setTimeout(() => {
+                // Only abort if the controller hasn't been used already
+                if (!controller.signal.aborted) {
+                    controller.abort();
+                }
+            }, 10000); // Increased timeout to 10 seconds
 
             fetch('/api/notifications/unread-count', {
                 signal: controller.signal,
-                credentials: 'same-origin'  // Include cookies for authentication
+                credentials: 'same-origin',  // Include cookies for authentication
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    // Include CSRF token if available
+                    ...(document.querySelector('meta[name="csrf-token"]') && {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    })
+                }
             })
             .then(response => {
                 clearTimeout(timeoutId);
@@ -2918,7 +2932,13 @@ function showAjaxError(message) {
             })
             .catch(error => {
                 clearTimeout(timeoutId);
-                console.error('Error updating notification badge:', error);
+
+                // Check if it's an AbortError (timeout)
+                if (error.name === 'AbortError') {
+                    console.warn('Notification badge update timed out:', error);
+                } else {
+                    console.error('Error updating notification badge:', error);
+                }
 
                 // Ensure badge is hidden on error
                 const badge = document.getElementById('notification-count');
@@ -2927,7 +2947,7 @@ function showAjaxError(message) {
                 }
 
                 // If it's an authentication error, we might want to redirect to login
-                if (error.message.includes('Authentication required') || error.message.includes('Redirect detected')) {
+                if (error.message && (error.message.includes('Authentication required') || error.message.includes('Redirect detected'))) {
                     // Optionally: show a message or redirect to login
                     // window.location.href = '/login';
                 }

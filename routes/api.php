@@ -296,7 +296,32 @@ Route::middleware(['auth', 'web'])->group(function () {
         Route::post('/compliance/webhooks/test', [App\Http\Controllers\Api\ComplianceIntegrationController::class, 'testWebhook']);
         Route::get('/compliance/webhooks', [App\Http\Controllers\Api\ComplianceIntegrationController::class, 'getWebhooks']);
         });
+
+    // Clinical Monitoring Routes
+    Route::prefix('monitoring')->group(function () {
+        Route::post('{patient_id}/vitals', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'receiveVitals']);
+        Route::post('{patient_id}/labs', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'receiveLabs']);
+        Route::post('{patient_id}/notes', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'receiveNotes']);
+        
+        Route::get('alerts', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'getAlerts']);
+        Route::post('alerts/{id}/acknowledge', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'acknowledgeAlert']);
+        Route::post('alerts/{id}/escalate', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'escalateAlert']);
+        
+        Route::get('rules', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'getRules']);
+        Route::put('rules/{id}', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'updateRule']);
+
+        Route::get('patients/{patient_id}/scores', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'getHistoricalScores']);
+        Route::get('patients/{patient_id}/insights', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'getLatestInsights']);
     });
+
+    // Treatment Optimization Routes
+    Route::prefix('treatment-optimization')->group(function () {
+        Route::get('{patient_id}/{appointment_id}', [App\Http\Controllers\Api\TreatmentOptimizationController::class, 'index']);
+        Route::post('generate', [App\Http\Controllers\Api\TreatmentOptimizationController::class, 'store']);
+        Route::post('{id}/validate', [App\Http\Controllers\Api\TreatmentOptimizationController::class, 'validateRecommendation']);
+        Route::post('{id}/reject', [App\Http\Controllers\Api\TreatmentOptimizationController::class, 'rejectRecommendation']);
+    });
+});
 
 // Public routes (for guest access with token verification)
 Route::get('/notifications/guest/{token}', [NotificationController::class, 'guestNotifications']);
