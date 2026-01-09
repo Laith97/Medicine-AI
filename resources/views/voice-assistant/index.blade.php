@@ -233,33 +233,32 @@
                         </button>
                     </div>
 
-                    <!-- Advanced Controls Dropdown -->
+                    <!-- Advanced Controls Custom Implementation -->
                     <div class="mt-4">
-                        <button class="btn btn-outline-primary btn-sm w-100" type="button" data-bs-toggle="collapse" data-bs-target="#advancedControls" aria-expanded="false" aria-controls="advancedControls">
+                        <button id="advancedControlsToggleBtn" class="btn btn-outline-primary btn-sm w-100" type="button">
                             <i class="fas fa-cog me-1"></i> Advanced Controls
                         </button>
-                        <div class="collapse mt-3" id="advancedControls">
-                            <div class="card card-body bg-light p-3">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Audio Quality</label>
-                                        <select class="form-select" id="audioQuality">
-                                            <option value="high">High Quality (16kHz)</option>
-                                            <option value="medium">Medium Quality (8kHz)</option>
-                                            <option value="low">Low Quality (4kHz)</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Sensitivity</label>
-                                        <select class="form-select" id="sensitivity">
-                                            <option value="high">High (Sensitive)</option>
-                                            <option value="medium" selected>Medium</option>
-                                            <option value="low">Low (Less Sensitive)</option>
-                                        </select>
-                                    </div>
+                        <div id="voiceAssistantAdvancedControls" class="card card-body bg-light p-3 mt-3" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">Audio Quality</label>
+                                    <select class="form-select" id="audioQuality">
+                                        <option value="high">High Quality (16kHz)</option>
+                                        <option value="medium">Medium Quality (8kHz)</option>
+                                        <option value="low">Low Quality (4kHz)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Sensitivity</label>
+                                    <select class="form-select" id="sensitivity">
+                                        <option value="high">High (Sensitive)</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="low">Low (Less Sensitive)</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
+                    </div>
                     </div>
 
                     <!-- JavaScript-based Progress Indicator (shows immediately) -->
@@ -1115,6 +1114,58 @@
                 }
             }
         });
+
+        // Custom Advanced Controls Toggle Implementation
+        function initializeAdvancedControls() {
+            console.log('Initializing Advanced Controls toggle');
+
+            const toggleBtn = document.getElementById('advancedControlsToggleBtn');
+            const advancedControlsDiv = document.getElementById('voiceAssistantAdvancedControls');
+
+            if (toggleBtn && advancedControlsDiv) {
+                console.log('Advanced controls elements found, setting up toggle');
+
+                // Track the state of the advanced controls
+                let advancedControlsVisible = false;
+
+                // Remove any existing event listeners to prevent duplicates
+                const newToggleBtn = toggleBtn.cloneNode(true);
+                toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
+
+                newToggleBtn.addEventListener('click', function() {
+                    console.log('Advanced controls toggle button clicked');
+
+                    if (advancedControlsVisible) {
+                        // Hide the controls
+                        advancedControlsDiv.style.display = 'none';
+                        newToggleBtn.innerHTML = '<i class="fas fa-cog me-1"></i> Advanced Controls';
+                        advancedControlsVisible = false;
+                        console.log('Advanced controls hidden');
+                    } else {
+                        // Show the controls
+                        advancedControlsDiv.style.display = 'block';
+                        newToggleBtn.innerHTML = '<i class="fas fa-cog me-1"></i> Advanced Controls (Hide)';
+                        advancedControlsVisible = true;
+                        console.log('Advanced controls shown');
+                    }
+                });
+
+                console.log('Advanced controls toggle initialized successfully');
+            } else {
+                console.log('Advanced controls elements not found:', {
+                    toggleBtn: !!toggleBtn,
+                    advancedControlsDiv: !!advancedControlsDiv
+                });
+            }
+        }
+
+        // Initialize when DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeAdvancedControls);
+        } else {
+            // DOM is already ready, initialize immediately
+            initializeAdvancedControls();
+        }
     });
 </script>
 

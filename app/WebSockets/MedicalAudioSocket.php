@@ -334,7 +334,7 @@ class MedicalAudioSocket extends WebSocketHandler
         }
         
         $config = $service->startRealtimeSession($config);
-        $token = $service->getTemporaryToken();
+        $token = $service->getTemporaryToken($config);
         
         $session['assembly_service'] = $service;
         $session['assembly_token'] = $token;
@@ -345,7 +345,7 @@ class MedicalAudioSocket extends WebSocketHandler
         $session['connection']->send(json_encode([
             'type' => 'config',
             'provider' => 'assemblyai',
-            'websocket_url' => $service->getWebSocketUrl($token),
+            'websocket_url' => $service->getWebSocketUrl($token, $config),
             'config' => $config
         ]));
         

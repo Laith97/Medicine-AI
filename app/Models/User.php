@@ -326,7 +326,7 @@ public function getFreshMonthlyInvoiceSetting()
      */
     public function isSubUser(): bool
     {
-        return $this->is_sub_user;
+        return (bool) $this->is_sub_user;
     }
 
     /**
@@ -338,7 +338,7 @@ public function getFreshMonthlyInvoiceSetting()
      */
     public function isMainUser(): bool
     {
-        return !$this->is_sub_user;
+        return !(bool) $this->is_sub_user;
     }
 
     /**

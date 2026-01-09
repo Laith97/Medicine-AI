@@ -128,22 +128,14 @@ const RealTimeTranscript = () => {
 
     return (
         <div className="transcript-container" tabIndex="0" role="region" aria-label="Live transcript container">
-            <div className="card shadow-sm h-100 border-0">
-                <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h6 className="mb-0">
-                        <i className="fas fa-comments me-2"></i>
-                        Live Transcript
-                    </h6>
-                    {isProcessing && <div className="badge bg-warning text-dark">Processing...</div>}
-                </div>
-                <div
-                    className="card-body transcript-body overflow-auto p-0"
-                    ref={transcriptBodyRef}
-                    style={{ maxHeight: '500px' }}
-                    role="log"
-                    aria-live="polite"
-                    aria-label="Real-time transcript"
-                >
+            <div
+                className="transcript-body overflow-auto p-0"
+                ref={transcriptBodyRef}
+                style={{ maxHeight: '500px' }}
+                role="log"
+                aria-live="polite"
+                aria-label="Real-time transcript"
+            >
                     {conversation.length === 0 && (
                         <div className="text-center text-muted py-5">
                             <i className="fas fa-microphone-alt fa-3x mb-3 opacity-25"></i>
@@ -195,7 +187,6 @@ const RealTimeTranscript = () => {
                     )}
                 </div>
             </div>
-        </div>
     );
 };
 

@@ -1072,33 +1072,53 @@
 
     // NEW: Stop audio recording
     function stopAudioRecording() {
-        if (mediaRecorder && audioRecording) {
+        console.log('🎵 Attempting to stop audio recording...', {
+            mediaRecorderExists: !!mediaRecorder,
+            audioRecordingFlag: audioRecording,
+            mediaRecorderState: mediaRecorder ? mediaRecorder.state : 'no mediaRecorder'
+        });
+
+        if (mediaRecorder && (audioRecording || mediaRecorder.state === 'recording' || mediaRecorder.state === 'paused')) {
             try {
-                // Stop the MediaRecorder
-                if (mediaRecorder.state === 'recording') {
+                // Stop the MediaRecorder if it's recording or paused
+                if (mediaRecorder.state === 'recording' || mediaRecorder.state === 'paused') {
                     mediaRecorder.stop();
+                    console.log('🎵 MediaRecorder.stop() called');
+                } else {
+                    console.log('🎵 MediaRecorder already in state:', mediaRecorder.state);
                 }
 
-                // Stop all media tracks
+                // Stop all media tracks to release microphone
                 if (mediaRecorder.stream) {
                     mediaRecorder.stream.getTracks().forEach(track => {
-                        track.stop();
+                        if (track.readyState === 'live') {
+                            track.stop();
+                            console.log('🎵 Media track stopped');
+                        }
                     });
                 }
 
+                // Ensure the audioRecording flag is set to false
                 audioRecording = false;
-                console.log('🎵 Audio recording stopped successfully');
+                console.log('✅ Audio recording stopped successfully');
 
                 // Update UI immediately
                 updateRecordingUI();
 
             } catch (error) {
                 console.error('❌ Error stopping audio recording:', error);
+                console.error('Stack trace:', error.stack);
+                // Ensure the audioRecording flag is set to false even on error
                 audioRecording = false;
                 updateRecordingUI();
             }
         } else {
             console.log('🎵 No active audio recording to stop');
+            // Ensure state is consistent
+            audioRecording = false;
+
+            // Update UI to reflect the state
+            updateRecordingUI();
         }
     }
 
@@ -1167,17 +1187,27 @@
         const languageSelector = document.getElementById('languageSelector');
         if (!languageSelector) return;
 
-        // Set initial value based on current language
-        if (currentLanguage === 'ar-SA') {
-            languageSelector.value = 'ar';
-        } else if (currentLanguage === 'en-US') {
-            languageSelector.value = 'en';
-        } else {
-            languageSelector.value = 'ar'; // Default to Arabic
+        // Preserve existing selection if auto is already selected, otherwise set based on current language
+        if (languageSelector.value !== 'auto') {
+            // Set initial value based on current language
+            if (currentLanguage === 'ar-SA') {
+                languageSelector.value = 'ar';
+            } else if (currentLanguage === 'en-US') {
+                languageSelector.value = 'en';
+            } else {
+                languageSelector.value = 'ar'; // Default to Arabic
+            }
         }
 
         // Update language options with quality indicators
         updateLanguageSelectorOptions();
+
+        // Update the language indicator based on the current selection
+        if (languageSelector.value === 'auto') {
+            updateLanguageIndicator('auto');
+        } else {
+            updateLanguageIndicator(currentLanguage);
+        }
 
         // Add change event listener
         languageSelector.addEventListener('change', function () {
@@ -1187,8 +1217,15 @@
             // Only allow language changes when not recording
             if (isListening) {
                 showAlert('Please stop recording before changing language.', 'warning');
-                // Reset selector to current language
-                this.value = currentLanguage === 'ar-SA' ? 'ar' : 'en';
+                // Reset selector to current selection or last active language
+                // If currently set to auto, keep it as auto; otherwise use the current language mapping
+                if (this.value === 'auto') {
+                    this.value = 'auto';
+                } else if (currentLanguage === 'ar-SA') {
+                    this.value = 'ar';
+                } else {
+                    this.value = 'en'; // default fallback
+                }
                 return;
             }
 
@@ -1359,15 +1396,72 @@
 
     // REMOVED: initSpeechRecognition function (Web Speech API)
 
-    // REMOVED: detectLanguage function (Web Speech API)
+    /**
+     * Detect the language of given text
+     * @param {string} text - Text to analyze
+     * @returns {string} - Detected language code ('ar-SA' or 'en-US')
+     */
+    function detectLanguage(text) {
+        if (!text || typeof text !== 'string' || text.length < 3) {
+            // Return current language if text is too short
+            return typeof currentLanguage !== 'undefined' ? currentLanguage : 'ar-SA';
+        }
+
+        // Arabic character ranges
+        const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+
+        // Count Arabic characters
+        const arabicChars = (text.match(arabicRegex) || []).length;
+        const arabicRatio = arabicChars ? arabicChars / text.length : 0;
+
+        // Language scoring
+        let arabicScore = 0;
+        let englishScore = 0;
+
+        // Basic ratio scoring
+        if (arabicRatio > 0.3) {
+            arabicScore += arabicRatio;
+        } else {
+            englishScore += (1 - arabicRatio);
+        }
+
+        // Check for language-specific words
+        const arabicWords = ['أنا', 'أنت', 'هو', 'هي', 'نحن', 'أنتم', 'هم', 'الألم', 'الصداع', 'الحمى', 'مرحبا', 'السلام', 'على', 'الEarth'];
+        const englishWords = ['I', 'you', 'he', 'she', 'we', 'they', 'pain', 'headache', 'fever', 'hello', 'world', 'the', 'and', 'or'];
+
+        arabicWords.forEach(word => {
+            if (text.includes(word)) arabicScore += 0.3;
+        });
+
+        englishWords.forEach(word => {
+            if (text.includes(word)) englishScore += 0.3;
+        });
+
+        // Check for Arabic diacritics (Tashkeel)
+        const arabicDiacriticsRegex = /[\u064B-\u065F\u0670\u06D6-\u06ED]/;
+        const diacriticsMatches = text.match(arabicDiacriticsRegex) || [];
+        if (diacriticsMatches.length > 0) {
+            arabicScore += 0.2;
+        }
+
+        return arabicScore > englishScore ? 'ar-SA' : 'en-US';
+    }
 
     // REMOVED: detectSpokenLanguage function (Web Speech API)
 
     // REMOVED: setRecognitionLanguage function (Web Speech API) - Adding placeholder for compatibility
     function setRecognitionLanguage(language) {
         console.warn('setRecognitionLanguage: Web Speech API is not available in this version. Language switching is disabled.');
-        currentLanguage = language === 'ar' ? 'ar-SA' : 'en-US';
-        updateLanguageIndicator(currentLanguage);
+
+        if (language === 'auto') {
+            // When auto is selected, determine the language based on regional settings
+            currentLanguage = getRegionalDefaultLanguage();
+            updateLanguageIndicator('auto'); // Show auto indicator instead of the detected language
+        } else {
+            currentLanguage = language === 'ar' ? 'ar-SA' : 'en-US';
+            updateLanguageIndicator(currentLanguage);
+        }
+
         // Update UI to reflect new language
         if (languageSelector) {
             languageSelector.value = language;
@@ -1391,35 +1485,44 @@
             }
         }
 
-        const languageInfo = {
-            'ar-SA': { name: 'العربية', flag: '🇸🇦' },
-            'en-US': { name: 'English', flag: '🇺🇸' },
-            'fr-FR': { name: 'Français', flag: '🇫🇷' },
-            'es-ES': { name: 'Español', flag: '🇪🇸' },
-            'de-DE': { name: 'Deutsch', flag: '🇩🇪' }
-        };
+        // If language code is "auto", display auto detection status
+        if (languageCode === 'auto') {
+            indicator.innerHTML = `
+                <i class="fas fa-sync-alt me-1"></i>
+                🌐 Auto-Detect
+            `;
+            indicator.title = 'Auto-detecting language based on your region and browser settings';
+        } else {
+            const languageInfo = {
+                'ar-SA': { name: 'العربية', flag: '🇸🇦' },
+                'en-US': { name: 'English', flag: '🇺🇸' },
+                'fr-FR': { name: 'Français', flag: '🇫🇷' },
+                'es-ES': { name: 'Español', flag: '🇪🇸' },
+                'de-DE': { name: 'Deutsch', flag: '🇩🇪' }
+            };
 
-        const info = languageInfo[languageCode] || {
-            name: 'Unknown',
-            flag: '🌐'
-        };
+            const info = languageInfo[languageCode] || {
+                name: 'Unknown',
+                flag: '🌐'
+            };
 
-        indicator.innerHTML = `
-            <i class="fas fa-brain me-1"></i>
-            ${info.flag} ${info.name}
-        `;
+            indicator.innerHTML = `
+                <i class="fas fa-brain me-1"></i>
+                ${info.flag} ${info.name}
+            `;
 
-        // Add tooltip with language description
-        indicator.title = getLanguageDescription(languageCode);
+            // Add tooltip with language description
+            indicator.title = getLanguageDescription(languageCode);
 
-        // Add visual feedback for language change
-        indicator.classList.add('language-changed');
-        setTimeout(() => {
-            indicator.classList.remove('language-changed');
-        }, 2000);
+            // Add visual feedback for language change
+            indicator.classList.add('language-changed');
+            setTimeout(() => {
+                indicator.classList.remove('language-changed');
+            }, 2000);
+        }
 
         console.log('🎯 Language indicator updated:', {
-            language: info.name,
+            language: languageCode === 'auto' ? 'Auto-Detect' : languageCode,
             code: languageCode,
             region: Intl.DateTimeFormat().resolvedOptions().timeZone
         });
@@ -1471,23 +1574,80 @@
         // Recording buttons
         if (startRecordingBtn) {
             startRecordingBtn.addEventListener('click', startSession);
+        } else {
+            // Try to find it again in case it was added dynamically
+            const button = document.getElementById('startRecordingBtn');
+            if (button) {
+                startRecordingBtn = button;
+                button.addEventListener('click', startSession);
+            }
         }
 
         if (stopRecordingBtn) {
+            // Add additional debugging for stop button
+            console.log('🎯 Setting up stop button event listener:', stopRecordingBtn);
             stopRecordingBtn.addEventListener('click', function () {
-                console.log('🛑 Stop button clicked');
+                console.log('🛑 Stop button clicked - executing stopSession');
+                console.log('📊 State when stop clicked:', {
+                    isListening: isListening,
+                    audioRecording: audioRecording,
+                    isStopping: isStopping,
+                    mediaRecorderState: mediaRecorder ? mediaRecorder.state : 'no mediaRecorder'
+                });
                 stopSession();
             });
+
+            // Add event listener for debugging purposes to see if clicks are registered
+            stopRecordingBtn.addEventListener('mousedown', function() {
+                console.log('🖱️ Stop button mousedown event detected');
+            });
+
+            stopRecordingBtn.addEventListener('mouseup', function() {
+                console.log('🖱️ Stop button mouseup event detected');
+            });
+        } else {
+            console.warn('⚠️ Stop recording button not found in DOM');
+            // Try to find it again in case it was added dynamically
+            const button = document.getElementById('stopRecordingBtn');
+            if (button) {
+                console.log('🔄 Found stopRecordingBtn dynamically');
+                // Update the global variable to ensure proper reference
+                stopRecordingBtn = button;
+                button.addEventListener('click', function () {
+                    console.log('🛑 Stop button clicked - executing stopSession');
+                    console.log('📊 State when stop clicked:', {
+                        isListening: isListening,
+                        audioRecording: audioRecording,
+                        isStopping: isStopping,
+                        mediaRecorderState: mediaRecorder ? mediaRecorder.state : 'no mediaRecorder'
+                    });
+                    stopSession();
+                });
+            }
         }
 
         // Generate analysis button
         if (generateAnalysisBtn) {
             generateAnalysisBtn.addEventListener('click', generateAnalysis);
+        } else {
+            // Try to find it again in case it was added dynamically
+            const button = document.getElementById('generateAnalysisBtn');
+            if (button) {
+                generateAnalysisBtn = button;
+                button.addEventListener('click', generateAnalysis);
+            }
         }
 
         // Reset session button
         if (resetSessionBtn) {
             resetSessionBtn.addEventListener('click', resetSession);
+        } else {
+            // Try to find it again in case it was added dynamically
+            const button = document.getElementById('resetSessionBtn');
+            if (button) {
+                resetSessionBtn = button;
+                button.addEventListener('click', resetSession);
+            }
         }
 
         // Patient selection
@@ -1509,7 +1669,12 @@
         }
 
         // Initialize language indicator
-        updateLanguageIndicator(currentLanguage);
+        // Check if the language selector has 'auto' selected, if so show auto indicator
+        if (languageSelector && languageSelector.value === 'auto') {
+            updateLanguageIndicator('auto');
+        } else {
+            updateLanguageIndicator(currentLanguage);
+        }
 
         // Hands-free toggle with enhanced functionality
         if (handsFreeToggle) {
@@ -1685,6 +1850,12 @@
         // Prevent multiple stop operations
         if (isStopping) {
             console.log('🛑 Stop operation already in progress...');
+            console.log('📊 Current state during blocked stop:', {
+                isListening: isListening,
+                audioRecording: audioRecording,
+                isStopping: isStopping,
+                mediaRecorderState: mediaRecorder ? mediaRecorder.state : 'no mediaRecorder'
+            });
             return;
         }
 
@@ -1697,50 +1868,76 @@
             mediaRecorderState: mediaRecorder ? mediaRecorder.state : 'no mediaRecorder'
         });
 
-        // Stop any ongoing processes (live transcription was removed)
-        if (isListening) {
-            console.log('🎙️ Live transcription was disabled in this version...');
-            isListening = false;
+        try {
+            // Stop any ongoing processes (live transcription was removed)
+            if (isListening) {
+                console.log('🎙️ Live transcription was disabled in this version...');
+                isListening = false;
 
-            // Clear timeouts and enhanced features
-            if (restartTimeout) clearTimeout(restartTimeout);
-            if (bufferTimeout) clearTimeout(bufferTimeout);
-            stopSilenceDetection();
-            stopRecordingTimer();
+                // Clear timeouts and enhanced features
+                if (restartTimeout) clearTimeout(restartTimeout);
+                if (bufferTimeout) clearTimeout(bufferTimeout);
+                stopSilenceDetection();
+                stopRecordingTimer();
 
-            // Since live transcription is disabled, just log what would have happened
-            console.log('⚠️ Live transcription is disabled in this version');
-        }
+                // Since live transcription is disabled, just log what would have happened
+                console.log('⚠️ Live transcription is disabled in this version');
+            }
 
-        // Stop audio recording immediately
-        if (hybridModeEnabled && audioRecording) {
-            console.log('🎵 Stopping audio recording...');
-            stopAudioRecording();
+            // Stop audio recording immediately
+            if (hybridModeEnabled && audioRecording) {
+                console.log('🎵 Stopping audio recording...');
+                stopAudioRecording();
 
-            // Complete session immediately after stopping audio recording
-            // Server processing will happen in the background
-            setTimeout(() => {
-                console.log('📝 Completing session after audio recording stop...');
+                // Complete session immediately after stopping audio recording
+                // Server processing will happen in the background
+                setTimeout(() => {
+                    console.log('📝 Completing session after audio recording stop...');
+                    completeSession();
+                }, 500); // Small delay to ensure audio recording stops
+            } else {
+                console.log('📝 No audio recording, completing session immediately...');
+                // No audio recording, complete session immediately
                 completeSession();
-            }, 500); // Small delay to ensure audio recording stops
-        } else {
-            console.log('📝 No audio recording, completing session immediately...');
-            // No audio recording, complete session immediately
-            completeSession();
+            }
+        } catch (error) {
+            console.error('❌ Error in stopSession:', error);
+            console.error('Stack trace:', error.stack);
+            // Ensure we complete the session even if there's an error
+            try {
+                completeSession();
+            } catch (completeError) {
+                console.error('❌ Error in completeSession after stopSession error:', completeError);
+            }
+        } finally {
+            // Always reset the stopping flag to allow future operations
+            // Use setTimeout to ensure this happens even if other operations fail
+            setTimeout(() => {
+                isStopping = false;
+                console.log('🔄 Stop operation flag reset');
+
+                // Force UI update to ensure states are synchronized
+                updateRecordingUI();
+            }, 100);
         }
-
-        // Reset stopping flag after a delay
-        setTimeout(() => {
-            isStopping = false;
-        }, 2000); // Allow 2 seconds for all operations to complete
-
-        // Force UI update
-        updateRecordingUI();
     }
 
     // NEW: Separate function to complete the session (mark as completed in database)
     function completeSession() {
         console.log('📝 Completing session in database...');
+
+        // Set the recording flags to false immediately to prevent further operations
+        isListening = false;
+        audioRecording = false;
+
+        // Ensure the MediaRecorder is properly stopped to avoid state inconsistencies
+        if (mediaRecorder && (mediaRecorder.state === 'recording' || mediaRecorder.state === 'paused')) {
+            try {
+                mediaRecorder.stop();
+            } catch (e) {
+                console.log('MediaRecorder already stopped or unavailable');
+            }
+        }
 
         // AJAX call to stop session (mark as completed)
         $.ajax({
@@ -1753,34 +1950,63 @@
             },
             success: function (response) {
                 if (response.success) {
-                    updateRecordingUI();
-                    updateHandsFreeStatus();
+                    console.log('✅ Session stopped successfully on server');
+                    // Ensure UI is updated with the correct state
+                    setTimeout(() => {
+                        updateRecordingUI();
+                        updateHandsFreeStatus();
 
-                    // Show the diagnosis entry form immediately after recording stops
-                    const diagnosisEntryForm = document.getElementById('diagnosisEntryForm');
-                    if (diagnosisEntryForm) {
-                        diagnosisEntryForm.style.display = 'block';
-                        const diagnosisText = document.getElementById('diagnosisText');
-                        if (diagnosisText) {
-                            diagnosisText.focus();
+                        // Show the diagnosis entry form immediately after recording stops
+                        const diagnosisEntryForm = document.getElementById('diagnosisEntryForm');
+                        if (diagnosisEntryForm) {
+                            diagnosisEntryForm.style.display = 'block';
+                            const diagnosisText = document.getElementById('diagnosisText');
+                            if (diagnosisText) {
+                                diagnosisText.focus();
+                            }
+                            console.log('✅ Professional diagnosis form shown after recording stop');
+                        } else {
+                            console.warn('⚠️ Professional diagnosis form element not found');
                         }
-                        console.log('✅ Professional diagnosis form shown after recording stop');
-                    } else {
-                        console.warn('⚠️ Professional diagnosis form element not found');
-                    }
 
-                    const stopMessage = hybridModeEnabled && audioRecordingSupported
-                        ? 'Session stopped successfully. Server-side processing completed.'
-                        : 'Session stopped successfully.';
-                    showAlert(stopMessage, 'success');
+                        const stopMessage = hybridModeEnabled && audioRecordingSupported
+                            ? 'Session stopped successfully. Server-side processing completed.'
+                            : 'Session stopped successfully.';
+                        showAlert(stopMessage, 'success');
+                    }, 100); // Small delay to ensure state changes are processed
                 } else {
-                    showAlert(response.message || 'Failed to stop session.', 'error');
+                    console.warn('⚠️ Session stop response:', response);
+                    // Even if the AJAX fails, update UI to reflect stopped state
+                    setTimeout(() => {
+                        updateRecordingUI();
+                        updateHandsFreeStatus();
+                        showAlert(response.message || 'Failed to stop session.', 'error');
+                    }, 100);
                 }
             },
             error: function (xhr, status, error) {
                 console.error('❌ Error stopping session:', error);
-                showAlert('Failed to stop session. Please try again.', 'error');
+                console.error('XHR details:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseText: xhr.responseText ? xhr.responseText.substring(0, 200) + '...' : 'No response text'
+                });
+
+                // Even if the AJAX fails, update UI to reflect stopped state
+                setTimeout(() => {
+                    updateRecordingUI();
+                    updateHandsFreeStatus();
+                    showAlert('Failed to stop session. Please try again.', 'error');
+                }, 100);
             }
+        }).fail(function() {
+            // Additional fail handler to ensure cleanup happens even if AJAX completely fails
+            console.log('🔄 Handling AJAX failure in completeSession');
+            setTimeout(() => {
+                updateRecordingUI();
+                updateHandsFreeStatus();
+                showAlert('Failed to stop session. Please try again.', 'error');
+            }, 100);
         });
     }
 
@@ -2026,14 +2252,30 @@
         };
     }
 
-    // NEW: Update server processing status in UI
+    // NEW: Update server processing status in UI - FIXED: Handle elements independently
     function updateServerProcessingStatus(status) {
+        // Get both elements but handle them independently to prevent hanging processing indicator
         const processingStatus = document.getElementById('processingStatus');
         const jsProcessingStage = document.getElementById('jsProcessingStage');
 
-        if (processingStatus && jsProcessingStage) {
-            processingStatus.style.display = 'block';
-            jsProcessingStage.textContent = status;
+        // Always handle processingStatus regardless of whether jsProcessingStage exists
+        if (processingStatus) {
+            // Show processing indicator if status text is provided and not empty
+            if (status && typeof status === 'string' && status.trim() !== '') {
+                processingStatus.style.display = 'flex';
+            } else {
+                // Hide processing indicator when no status or empty status is provided
+                processingStatus.style.display = 'none';
+            }
+        }
+
+        // Handle jsProcessingStage independently
+        if (jsProcessingStage) {
+            if (status && typeof status === 'string' && status.trim() !== '') {
+                jsProcessingStage.textContent = status;
+            } else {
+                jsProcessingStage.textContent = '';
+            }
         }
     }
 
@@ -2550,6 +2792,9 @@
                         callback();
                     } else {
                         console.log('ℹ️ No callback function provided');
+                        // Hide progress indicator when no callback is provided
+                        isProcessing = false;
+                        hideProgressIndicator();
                     }
                 } else {
                     console.error('❌ AI processing failed:', response.message);
@@ -3334,13 +3579,76 @@
         console.log('⚠️ Medical disclaimer: AI transcription is for reference only');
     }
 
+    // Re-attach event listeners to ensure they're still connected after potential DOM updates
+    function reattachEventListeners() {
+        // Check if stop button exists and needs the event listener
+        let currentStopBtn = document.getElementById('stopRecordingBtn');
+        if (currentStopBtn) {
+            if (!currentStopBtn.hasAttribute('data-stop-listener')) {
+                console.log('🔄 Reattaching stop button listener');
+                currentStopBtn.setAttribute('data-stop-listener', 'true');
+                currentStopBtn.addEventListener('click', function () {
+                    console.log('🛑 Stop button clicked - executing stopSession');
+                    console.log('📊 State when stop clicked:', {
+                        isListening: isListening,
+                        audioRecording: audioRecording,
+                        isStopping: isStopping,
+                        mediaRecorderState: mediaRecorder ? mediaRecorder.state : 'no mediaRecorder'
+                    });
+                    stopSession();
+                });
+            }
+            // Update the global reference to ensure we're using the current element
+            stopRecordingBtn = currentStopBtn;
+        }
+
+        // Similarly for other buttons
+        let currentStartBtn = document.getElementById('startRecordingBtn');
+        if (currentStartBtn) {
+            if (!currentStartBtn.hasAttribute('data-start-listener')) {
+                currentStartBtn.setAttribute('data-start-listener', 'true');
+                currentStartBtn.addEventListener('click', startSession);
+            }
+            startRecordingBtn = currentStartBtn;
+        }
+
+        let currentGenerateBtn = document.getElementById('generateAnalysisBtn');
+        if (currentGenerateBtn) {
+            if (!currentGenerateBtn.hasAttribute('data-generate-listener')) {
+                currentGenerateBtn.setAttribute('data-generate-listener', 'true');
+                currentGenerateBtn.addEventListener('click', generateAnalysis);
+            }
+            generateAnalysisBtn = currentGenerateBtn;
+        }
+
+        let currentResetBtn = document.getElementById('resetSessionBtn');
+        if (currentResetBtn) {
+            if (!currentResetBtn.hasAttribute('data-reset-listener')) {
+                currentResetBtn.setAttribute('data-reset-listener', 'true');
+                currentResetBtn.addEventListener('click', resetSession);
+            }
+            resetSessionBtn = currentResetBtn;
+        }
+    }
+
     // Update recording UI
     function updateRecordingUI() {
+        // Ensure consistent state by checking actual MediaRecorder state to sync with audioRecording flag
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            // If MediaRecorder is recording, ensure audioRecording flag is true
+            audioRecording = true;
+        } else if (mediaRecorder && (mediaRecorder.state === 'stopped' || mediaRecorder.state === 'inactive')) {
+            // If MediaRecorder has been stopped, ensure audioRecording flag is false
+            audioRecording = false;
+        }
+        // If no mediaRecorder, just use the existing audioRecording flag value
+
         console.log('🔄 Updating recording UI:', {
             isListening: isListening,
             audioRecording: audioRecording,
             selectedPatient: selectedPatient,
-            isProcessing: isProcessing
+            isProcessing: isProcessing,
+            mediaRecorderState: mediaRecorder ? mediaRecorder.state : 'no mediaRecorder'
         });
 
         // Update recording status display
@@ -3368,8 +3676,10 @@
         }
 
         if (stopRecordingBtn) {
-            stopRecordingBtn.disabled = !isListening && !audioRecording;
-            console.log('🔘 Stop button disabled:', stopRecordingBtn.disabled);
+            // Make sure the stop button is only enabled when we're actually recording
+            const shouldBeEnabled = (isListening || audioRecording) && !isStopping;
+            stopRecordingBtn.disabled = !shouldBeEnabled;
+            console.log('🔘 Stop button disabled:', !shouldBeEnabled, 'should be enabled:', shouldBeEnabled);
         }
 
         if (generateAnalysisBtn) {
@@ -3378,6 +3688,9 @@
             generateAnalysisBtn.disabled = empty(transcription) || isProcessing;
             console.log('🔘 Generate button disabled:', generateAnalysisBtn.disabled, 'transcription length:', transcription.length);
         }
+
+        // Re-attach event listeners in case DOM was updated
+        reattachEventListeners();
     }
 
     // Show progress indicator
@@ -3926,6 +4239,11 @@
 
     // Initialize the voice assistant when the page loads
     initVoiceAssistant();
+
+    // Double check that event listeners are attached (for cases where buttons might be added dynamically)
+    setTimeout(() => {
+        reattachEventListeners();
+    }, 1000); // Small delay to ensure DOM is fully ready
 
     // Make some functions globally available for debugging and external access
     window.voiceAssistant = {

@@ -8,6 +8,7 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
     const [error, setError] = useState(null);
 
     const recorderRef = useRef(null);
+    const isFallbackRef = useRef(false);
 
     // Initialize the recorder
     useEffect(() => {
@@ -60,35 +61,193 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
         setStatus('connecting');
 
         try {
+            // 1. Call start-session API to get AssemblyAI config and ensure session is active
+            const patientSelect = document.getElementById('patientSelect');
+            const selectedPatient = patientSelect ? patientSelect.value : null;
+
+            if (!selectedPatient) {
+                throw new Error('Please select a patient first');
+            }
+
+            const response = await window.axios.post('/ai/voice-assistant/start-session', {
+                selectedPatient: selectedPatient,
+            });
+
+            if (!response.data.success) {
+                throw new Error(response.data.message || 'Failed to start session');
+            }
+
+            const { sessionId, assemblyConfig } = response.data;
+
+            // 2. Start the recorder with the received config
             if (recorderRef.current) {
-                await recorderRef.current.startRecording(visitId, authToken, language);
+                await recorderRef.current.startRecording(sessionId, authToken, language, assemblyConfig);
             }
         } catch (err) {
-            console.warn('WebSocket recording failed, falling back to browser speech recognition', err);
-            
+            console.warn('Primary recording failed, falling back to browser speech recognition', err);
+
             // Fallback to the existing voice-assistant.js implementation
-            if (window.voiceAssistant && window.voiceAssistant.startSession) {
+            if (window.voiceAssistant && typeof window.voiceAssistant.startSession === 'function') {
                 try {
+                    // Wait a moment to ensure the window context is ready
+                    await new Promise(resolve => setTimeout(resolve, 100));
                     await window.voiceAssistant.startSession();
+                    isFallbackRef.current = true;
                     setStatus('recording');
                     setIsRecording(true);
                     setIsConnecting(false);
                     setError(null);
                 } catch (fallbackErr) {
+                    console.error('Fallback recording also failed:', fallbackErr);
                     setError('Recording failed: ' + (fallbackErr.message || err.message));
                     setIsConnecting(false);
                     setIsRecording(false);
                 }
             } else {
-                setError('Recording failed: ' + (err.message || 'Unknown error'));
-                setIsConnecting(false);
-                setIsRecording(false);
+                console.error('Voice assistant module not available for fallback');
+                // If voice assistant is not available, try to initialize it first
+                try {
+                    // Wait for window.voiceAssistant to be available with a timeout
+                    let attempts = 0;
+                    const maxAttempts = 20; // 20 * 100ms = 2 seconds
+
+                    while (attempts < maxAttempts && (!window.voiceAssistant || typeof window.voiceAssistant.startSession !== 'function')) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        attempts++;
+                    }
+
+                    // If voice assistant is now available, use it
+                    if (window.voiceAssistant && typeof window.voiceAssistant.startSession === 'function') {
+                        await window.voiceAssistant.startSession();
+                        isFallbackRef.current = true;
+                        setStatus('recording');
+                        setIsRecording(true);
+                        setIsConnecting(false);
+                        setError(null);
+                    } else {
+                        // Try to trigger the original recording button
+                        const startBtn = document.getElementById('startRecordingBtn');
+                        const patientSelect = document.getElementById('patientSelect');
+
+                        // Check if a patient is selected - if not, the button will be disabled
+                        if (patientSelect && patientSelect.value) {
+                            if (startBtn && startBtn.disabled) {
+                                // Button is disabled, try to enable it by ensuring proper state
+                                // The button might be disabled due to missing patient selection
+                                const selectedPatientValue = patientSelect.value;
+                                if (selectedPatientValue) {
+                                    // Patient is selected, but button may still be disabled due to other issues
+                                    // Trigger a selection change to update button state
+                                    const event = new Event('change', { bubbles: true });
+                                    patientSelect.dispatchEvent(event);
+
+                                    // Wait a bit for the update to happen
+                                    await new Promise(resolve => setTimeout(resolve, 200));
+                                }
+                            }
+
+                            // Now try to click the button
+                            if (startBtn && !startBtn.disabled) {
+                                startBtn.click();
+                                isFallbackRef.current = true; // Assume fallback if we clicked the legacy button
+                                setStatus('recording');
+                                setIsRecording(true);
+                                setIsConnecting(false);
+                                setError(null);
+                            } else {
+                                console.error('Start button not available or still disabled after patient check');
+                                // Try clicking the React container's fallback button
+                                const reactStartBtn = document.querySelector('#react-audio-recorder-container .btn-success:not(.disabled):not([disabled])');
+                                if (reactStartBtn) {
+                                    reactStartBtn.click();
+                                    // Don't set isFallbackRef here as this is likely a recursive click on the same component
+                                    setStatus('recording');
+                                    setIsRecording(true);
+                                    setIsConnecting(false);
+                                    setError(null);
+                                } else {
+                                    setError('Microphone access denied or not supported: ' + (err.message || 'Please allow microphone permissions in your browser settings'));
+                                    setIsConnecting(false);
+                                    setIsRecording(false);
+                                }
+                            }
+                        } else {
+                            setError('Please select a patient first before starting the recording.');
+                            setIsConnecting(false);
+                            setIsRecording(false);
+                        }
+                    }
+                } catch (initErr) {
+                    console.error('Failed to initialize or use voice assistant:', initErr);
+                    // As a last resort, try to trigger the recording button directly
+                    try {
+                        const startBtn = document.getElementById('startRecordingBtn');
+                        if (startBtn && !startBtn.disabled) {
+                            startBtn.click();
+                            isFallbackRef.current = true;
+                            setStatus('recording');
+                            setIsRecording(true);
+                            setIsConnecting(false);
+                            setError(null);
+                        } else {
+                            // Ensure patient is selected first
+                            const patientSelect = document.getElementById('patientSelect');
+                            if (patientSelect && patientSelect.value) {
+                                if (startBtn) {
+                                    // Make sure button is enabled by triggering the change event
+                                    const event = new Event('change', { bubbles: true });
+                                    patientSelect.dispatchEvent(event);
+                                    await new Promise(resolve => setTimeout(resolve, 200));
+
+                                    if (!startBtn.disabled) {
+                                        startBtn.click();
+                                        isFallbackRef.current = true;
+                                        setStatus('recording');
+                                        setIsRecording(true);
+                                        setIsConnecting(false);
+                                        setError(null);
+                                    } else {
+                                        setError('Microphone access denied or not supported: Please select a patient and check permissions. ' + (initErr.message || 'Please allow microphone permissions in your browser settings'));
+                                        setIsConnecting(false);
+                                        setIsRecording(false);
+                                    }
+                                } else {
+                                    setError('Microphone access denied or not supported: ' + (initErr.message || 'Please allow microphone permissions in your browser settings'));
+                                    setIsConnecting(false);
+                                    setIsRecording(false);
+                                }
+                            } else {
+                                setError('Please select a patient first before starting the recording.');
+                                setIsConnecting(false);
+                                setIsRecording(false);
+                            }
+                        }
+                    } catch (btnErr) {
+                        setError('Microphone access denied or not supported: ' + (btnErr.message || 'Please allow microphone permissions in your browser settings'));
+                        setIsConnecting(false);
+                        setIsRecording(false);
+                    }
+                }
             }
         }
     };
 
     const stopRecording = () => {
-        if (recorderRef.current) {
+        if (isFallbackRef.current) {
+            console.log('Stopping fallback recording...');
+            if (window.voiceAssistant && typeof window.voiceAssistant.stopSession === 'function') {
+                window.voiceAssistant.stopSession();
+            } else {
+                // Try to find the stop button and click it
+                const stopBtn = document.getElementById('stopRecordingBtn');
+                if (stopBtn) {
+                    stopBtn.click();
+                }
+            }
+            isFallbackRef.current = false;
+            setIsRecording(false);
+            setStatus('stopped');
+        } else if (recorderRef.current) {
             recorderRef.current.stopRecording();
         }
     };

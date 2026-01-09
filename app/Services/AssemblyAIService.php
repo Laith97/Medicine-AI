@@ -39,26 +39,26 @@ class AssemblyAIService
     /**
      * Get WebSocket URL with authentication
      */
-    public function getWebSocketUrl($sessionToken = null)
+    public function getWebSocketUrl($sessionToken = null, $params = [])
     {
-        $token = $sessionToken ?: $this->getTemporaryToken();
+        $token = $sessionToken ?: $this->getTemporaryToken($params);
         return $this->websocketUrl . '?token=' . $token;
     }
 
     /**
      * Get temporary token for WebSocket connection
      */
-    public function getTemporaryToken()
+    public function getTemporaryToken($params = [])
     {
         try {
             $response = Http::timeout(10)
                 ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Authorization' => $this->apiKey,
                     'Content-Type' => 'application/json'
                 ])
-                ->post($this->baseUrl . '/realtime/token', [
+                ->post($this->baseUrl . '/realtime/token', array_merge([
                     'expires_in' => 3600
-                ]);
+                ], $params));
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -77,6 +77,41 @@ class AssemblyAIService
             
         } catch (\Exception $e) {
             Log::error('AssemblyAI token request exception: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Upload local file to AssemblyAI
+     */
+    public function uploadFile($filePath)
+    {
+        try {
+            if (!file_exists($filePath)) {
+                throw new \Exception("File not found: {$filePath}");
+            }
+
+            $response = Http::timeout(60)
+                ->withHeaders([
+                    'Authorization' => $this->apiKey
+                ])
+                ->withBody(fopen($filePath, 'r'), 'application/octet-stream')
+                ->post($this->baseUrl . '/upload');
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return $data['upload_url'] ?? null;
+            }
+
+            Log::error('AssemblyAI file upload failed', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+            
+            throw new \Exception('Failed to upload file to AssemblyAI: HTTP ' . $response->status());
+            
+        } catch (\Exception $e) {
+            Log::error('AssemblyAI file upload exception: ' . $e->getMessage());
             throw $e;
         }
     }
@@ -102,7 +137,7 @@ class AssemblyAIService
 
             $response = Http::timeout(30)
                 ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Authorization' => $this->apiKey,
                     'Content-Type' => 'application/json'
                 ])
                 ->post($this->baseUrl . '/transcript', array_merge($transcriptConfig, $config));
@@ -133,7 +168,7 @@ class AssemblyAIService
         try {
             $response = Http::timeout(10)
                 ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->apiKey
+                    'Authorization' => $this->apiKey
                 ])
                 ->get($this->baseUrl . '/transcript/' . $transcriptId);
 

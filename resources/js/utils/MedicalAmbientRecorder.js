@@ -64,7 +64,7 @@ export class MedicalAmbientRecorder {
                (alphanumericRegex.test(authToken) && authToken.length >= 16);
     }
 
-    async startRecording(visitId, authToken, language = 'en') {
+    async startRecording(visitId, authToken, language = 'en', assemblyConfig = null) {
         if (this.isDestroyed) throw new Error('Recorder has been destroyed');
 
         // Validate inputs to prevent injection attacks
@@ -93,10 +93,24 @@ export class MedicalAmbientRecorder {
                 }
             });
 
-            // 2. Create WebSocket connection with retry logic
-            await this.connectWebSocket();
+            // 2. Setup direct AssemblyAI connection if config is provided
+            if (assemblyConfig) {
+                console.log('Using direct AssemblyAI streaming');
+                this.setupAssemblyAIConnection(assemblyConfig);
+            }
 
-            // 3. Create audio processing pipeline
+            // 3. Create WebSocket connection with retry logic (now optional)
+            try {
+                await this.connectWebSocket();
+            } catch (wsError) {
+                console.warn('Local WebSocket connection failed, continuing with direct streaming if available:', wsError);
+                // If we have AssemblyAI, we can continue
+                if (!this.sendToAssemblyAI) {
+                    throw wsError;
+                }
+            }
+
+            // 4. Create audio processing pipeline
             await this.createAudioProcessingPipeline();
 
             this.isRecording = true;
@@ -192,23 +206,37 @@ export class MedicalAmbientRecorder {
         const wsUrl = `${protocol}//${window.location.hostname}:${wsPort}/ws/medical-audio?token=${encodedToken}&visit_id=${encodedVisitId}&language=${encodedLanguage}`;
 
         return new Promise((resolve, reject) => {
-            this.websocket = new WebSocket(wsUrl);
-            this.configureWebSocketHandlers();
+            try {
+                this.websocket = new WebSocket(wsUrl);
+                this.configureWebSocketHandlers();
 
-            const timeout = setTimeout(() => {
-                reject(new Error('WebSocket connection timeout'));
-            }, 10000);
+                const timeout = setTimeout(() => {
+                    reject(new Error('WebSocket connection timeout'));
+                }, 5000); // Reduced timeout to fail faster
 
-            this.websocket.onopen = () => {
+                this.websocket.onopen = () => {
+                    clearTimeout(timeout);
+                    this.handleStatusChange('connected');
+                    resolve();
+                };
+
+                this.websocket.onerror = (error) => {
+                    clearTimeout(timeout);
+                    // Don't immediately reject, allow fallback to browser recording
+                    console.warn('WebSocket connection error:', error);
+                    reject(new Error('WebSocket connection failed - falling back to browser recording'));
+                };
+
+                this.websocket.onclose = (event) => {
+                    if (!event.wasClean) {
+                        clearTimeout(timeout);
+                        reject(new Error('WebSocket connection closed unexpectedly'));
+                    }
+                };
+            } catch (error) {
                 clearTimeout(timeout);
-                this.handleStatusChange('connected');
-                resolve();
-            };
-
-            this.websocket.onerror = (error) => {
-                clearTimeout(timeout);
-                reject(error);
-            };
+                reject(new Error('Failed to create WebSocket connection: ' + error.message));
+            }
         });
     }
 

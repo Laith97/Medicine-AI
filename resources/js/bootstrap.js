@@ -39,43 +39,19 @@ try {
     console.log('👤 User ID found:', userId);
 
     window.Echo = new Echo({
-        broadcaster: 'pusher',
-        key: import.meta.env.VITE_PUSHER_APP_KEY || 'your-pusher-key',
-        cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap2',
-        forceTLS: true, // Use TLS for Pusher cloud service
-        enabledTransports: ['ws', 'wss'], // Enable both WebSocket and Secure WebSocket
-        disabledTransports: [], // Allow all transport methods
+        broadcaster: 'reverb',
+        key: import.meta.env.VITE_REVERB_APP_KEY,
+        wsHost: import.meta.env.VITE_REVERB_HOST,
+        wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
+        wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
+        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+        enabledTransports: ['ws', 'wss'],
         authEndpoint: '/broadcasting/auth',
         auth: {
             headers: {
                 'X-CSRF-TOKEN': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json',
-            },
-            always: function (channelName, socketId) {
-                console.log('🔒 Authorizing channel:', channelName);
-                console.log('🔍 [DEBUG] Auth callback called with socketId:', socketId);
-
-                return {
-                    'socket_id': socketId,
-                    'channel_name': channelName,
-                    'user_id': userId,
-                    'info': JSON.stringify({userId: userId})
-                };
-            }
-        },
-        // Add debugging options
-        logToConsole: true,
-        disableStats: true,
-        // Add error handling
-        error: function(error) {
-            console.error('❌ Echo error:', error);
-            // If it's an authentication error, try to reconnect
-            if (error.type === 'AuthError') {
-                console.log('🔄 Attempting to reconnect after auth error...');
-                setTimeout(() => {
-                    window.Echo.connector.connect();
-                }, 1000);
             }
         }
     });

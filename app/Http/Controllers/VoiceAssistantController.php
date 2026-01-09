@@ -364,9 +364,30 @@ class VoiceAssistantController extends Controller
             'session_started_at' => now(),
         ]);
 
+        // Get AssemblyAI configuration for direct client-side streaming
+        $assemblyConfig = null;
+        try {
+            $assemblyService = new \App\Services\AssemblyAIService();
+            $token = $assemblyService->getTemporaryToken([
+                'sample_rate' => 16000,
+                'word_boost' => ['medical', 'diagnosis', 'symptoms', 'medication']
+            ]);
+            
+            if ($token) {
+                $assemblyConfig = [
+                    'token' => $token,
+                    'websocket_url' => $assemblyService->getWebSocketUrl($token),
+                    'sample_rate' => 16000
+                ];
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to generate AssemblyAI token for direct streaming: ' . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
             'sessionId' => $sessionId,
+            'assemblyConfig' => $assemblyConfig,
             'message' => 'Session started successfully.'
         ]);
     }
@@ -2013,6 +2034,13 @@ class VoiceAssistantController extends Controller
         {
             $startTime = microtime(true);
             $sessionId = $request->input('session_id');
+            
+            \Log::info("VoiceAssistant: processAudioServer called", [
+                'session_id' => $sessionId,
+                'has_file' => $request->hasFile('audio_file'),
+                'all_input' => $request->except(['audio_file', 'transcription']) // Log inputs except large fields
+            ]);
+
             $transcription = $request->input('transcription', '');
             $hasLiveTranscription = $request->input('has_live_transcription', false);
 
@@ -2074,6 +2102,7 @@ class VoiceAssistantController extends Controller
                 $hasAudioRecording = filter_var($hasAudioRecordingInput, FILTER_VALIDATE_BOOLEAN);
 
                 if (!$request->hasFile('audio_file')) {
+                    \Log::warning("VoiceAssistant: No audio file in request", ['session_id' => $sessionId]);
                     if ($hasAudioRecording) {
                         $metrics['error_type'] = 'audio_upload';
                         $metrics['error_message'] = 'Client indicated audio recording exists but no file provided';
@@ -2099,10 +2128,17 @@ class VoiceAssistantController extends Controller
                 }
 
                 $audioFile = $request->file('audio_file');
+                \Log::info("VoiceAssistant: Audio file received", [
+                    'original_name' => $audioFile->getClientOriginalName(),
+                    'mime_type' => $audioFile->getMimeType(),
+                    'size' => $audioFile->getSize(),
+                    'path' => $audioFile->getPathname()
+                ]);
 
                 // Enhanced audio file validation with detailed error reporting
                 $validationResult = $this->validateAudioFile($audioFile);
                 if (!$validationResult['valid']) {
+                    \Log::error("VoiceAssistant: Audio file validation failed", ['errors' => $validationResult['errors']]);
                     $errorMessage = implode('; ', $validationResult['errors']);
                     $metrics['error_type'] = 'audio_validation';
                     $metrics['error_message'] = $errorMessage;
@@ -2197,7 +2233,14 @@ class VoiceAssistantController extends Controller
                     }
 
                     // Process audio with server-side speech recognition if we have a stored file
-                    if ($permanentPath && file_exists(storage_path('app/public/' . $permanentPath))) {
+                    $fullAudioPath = storage_path('app/public/' . $permanentPath);
+                    \Log::info('VoiceAssistant: Checking if audio file exists for STT', [
+                        'permanent_path' => $permanentPath,
+                        'full_path' => $fullAudioPath,
+                        'exists' => file_exists($fullAudioPath)
+                    ]);
+
+                    if ($permanentPath && file_exists($fullAudioPath)) {
                         try {
                             $sttStartTime = microtime(true);
                             $serverTranscription = $this->processAudioWithServerSTT(storage_path('app/public/' . $permanentPath));
@@ -2210,7 +2253,8 @@ class VoiceAssistantController extends Controller
                             \Log::info('HYBRID METHOD - Server STT completed', [
                                 'session_id' => $sessionId,
                                 'transcription_length' => strlen($serverTranscription),
-                                'processing_time_ms' => $metrics['server_processing_time']
+                                'processing_time_ms' => $metrics['server_processing_time'],
+                                'transcription_preview' => substr($serverTranscription, 0, 100)
                             ]);
 
                         } catch (\Exception $sttException) {
@@ -2374,6 +2418,7 @@ class VoiceAssistantController extends Controller
             $errors = [];
 
             if (!$file->isValid()) {
+                \Log::error("VoiceAssistant: File upload failed or corrupted", ['error' => $file->getErrorMessage()]);
                 $errors[] = 'File upload failed or file is corrupted';
                 return ['valid' => false, 'errors' => $errors];
             }
@@ -2520,57 +2565,58 @@ class VoiceAssistantController extends Controller
          */
         private function storeAudioFilePermanently($file, $sessionId)
         {
-            // Validate the file extension against an allowlist to prevent malicious file types
-            $allowedExtensions = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'mp4', 'webm', '3gp'];
-            $originalExtension = strtolower($file->getClientOriginalExtension());
+            try {
+                \Log::info("VoiceAssistant: Attempting to store audio file", ['session_id' => $sessionId]);
+                
+                // Validate the file extension against an allowlist to prevent malicious file types
+                $allowedExtensions = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'mp4', 'webm', '3gp'];
+                $originalExtension = strtolower($file->getClientOriginalExtension());
 
-            if (!in_array($originalExtension, $allowedExtensions)) {
-                throw new \Exception("Invalid file extension: {$originalExtension}. Allowed extensions: " . implode(', ', $allowedExtensions));
+                if (!in_array($originalExtension, $allowedExtensions)) {
+                    throw new \Exception("Invalid file extension: {$originalExtension}. Allowed extensions: " . implode(', ', $allowedExtensions));
+                }
+
+                // Sanitize the filename to prevent directory traversal attacks
+                $sessionId = preg_replace('/[^a-zA-Z0-9_-]/', '', $sessionId);
+                if (empty($sessionId)) {
+                    throw new \Exception('Invalid session ID provided');
+                }
+
+                $filename = "session_{$sessionId}_" . time() . '_' . uniqid() . '.' . $originalExtension;
+
+                // Validate filename to prevent directory traversal
+                if (strpos($filename, '..') !== false || strpos($filename, '/') !== false || strpos($filename, '\\') !== false) {
+                    throw new \Exception('Invalid filename detected');
+                }
+
+                // Use Laravel's Storage facade for secure file operations
+                $storagePath = 'audio/voice_transcriptions';
+
+                // Validate storage path to prevent directory traversal
+                if (strpos($storagePath, '..') !== false) {
+                    throw new \Exception('Invalid storage path detected');
+                }
+
+                // Ensure the directory exists
+                if (!\Storage::disk('public')->exists($storagePath)) {
+                    \Storage::disk('public')->makeDirectory($storagePath);
+                }
+
+                // Store the file using Laravel's Storage facade on the public disk
+                $path = \Storage::disk('public')->putFileAs($storagePath, $file, $filename);
+
+                if (!$path) {
+                    \Log::error("VoiceAssistant: Failed to store audio file in permanent storage", ['path' => $storagePath, 'filename' => $filename]);
+                    return false;
+                }
+                
+                \Log::info("VoiceAssistant: Audio file stored successfully", ['path' => $path]);
+                return $path;
+
+            } catch (\Exception $e) {
+                \Log::error("VoiceAssistant: Exception during audio storage", ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+                return false;
             }
-
-            // Sanitize the filename to prevent directory traversal attacks
-            $sessionId = preg_replace('/[^a-zA-Z0-9_-]/', '', $sessionId);
-            if (empty($sessionId)) {
-                throw new \Exception('Invalid session ID provided');
-            }
-
-            $filename = "session_{$sessionId}_" . time() . '_' . uniqid() . '.' . $originalExtension;
-
-            // Validate filename to prevent directory traversal
-            if (strpos($filename, '..') !== false || strpos($filename, '/') !== false || strpos($filename, '\\') !== false) {
-                throw new \Exception('Invalid filename detected');
-            }
-
-            // Use Laravel's Storage facade for secure file operations
-            $storagePath = 'public/audio/voice_transcriptions';
-
-            // Validate storage path to prevent directory traversal
-            if (strpos($storagePath, '..') !== false || strpos($storagePath, '/') !== false || strpos($storagePath, '\\') !== false) {
-                throw new \Exception('Invalid storage path detected');
-            }
-
-            // Ensure the directory exists
-            if (!\Storage::exists($storagePath)) {
-                \Storage::makeDirectory($storagePath);
-            }
-
-            // Store the file using Laravel's Storage facade
-            $path = \Storage::putFileAs($storagePath, $file, $filename, 'public');
-
-            if (!$path) {
-                throw new \Exception('Failed to store audio file in permanent storage');
-            }
-
-            // Extract just the filename from the stored path for return
-            $storedFilename = basename($path);
-
-            // Verify file was stored successfully
-            if (!\Storage::exists($path)) {
-                throw new \Exception('Failed to verify audio file in permanent storage');
-            }
-
-            // Return the public path for database storage
-            return 'audio/voice_transcriptions/' . $storedFilename;
         }
 
         /**
@@ -2579,12 +2625,37 @@ class VoiceAssistantController extends Controller
         private function updateVoiceTranscriptionWithAudio($sessionId, $audioPath, $fileSize, $fileExtension, $estimatedDuration)
         {
             try {
+                if (!$audioPath || $audioPath === false) {
+                    return false;
+                }
+
+                // If it's a relative path from storage, get the absolute path
+                if (is_string($audioPath) && strpos($audioPath, 'audio/') === 0) {
+                    $audioPath = storage_path('app/public/' . $audioPath);
+                }
+
                 // Validate the audio path to prevent path traversal attacks
-                $audioPath = realpath($audioPath); // Resolve any relative paths
-                $storagePath = storage_path('app'); // Base path for validation
-                if (!$audioPath || strpos($audioPath, $storagePath) !== 0) {
+                $resolvedAudioPath = realpath($audioPath); // Resolve any relative paths
+                $storagePath = realpath(storage_path('app')); // Base path for validation
+                
+                // On Windows, realpath might return different separators, so we normalize
+                if ($resolvedAudioPath) {
+                    $resolvedAudioPath = str_replace('\\', '/', $resolvedAudioPath);
+                }
+                if ($storagePath) {
+                    $storagePath = str_replace('\\', '/', $storagePath);
+                }
+
+                if (!$resolvedAudioPath || strpos($resolvedAudioPath, $storagePath) !== 0) {
+                    \Log::error('Invalid audio file path for update', [
+                        'audio_path' => $audioPath,
+                        'resolved_path' => $resolvedAudioPath,
+                        'storage_path' => $storagePath
+                    ]);
                     throw new \Exception('Invalid audio file path');
                 }
+
+                $audioPath = $resolvedAudioPath;
 
                 $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)->first();
 
@@ -2638,12 +2709,32 @@ class VoiceAssistantController extends Controller
         private function processAudioWithServerSTT($audioPath)
         {
             try {
+                if (!$audioPath || $audioPath === false) {
+                    return '';
+                }
+
                 // Validate the audio path to prevent path traversal attacks
-                $audioPath = realpath($audioPath); // Resolve any relative paths
-                $storagePath = storage_path('app'); // Base path for validation
-                if (!$audioPath || strpos($audioPath, $storagePath) !== 0) {
+                $resolvedAudioPath = realpath($audioPath); // Resolve any relative paths
+                $storagePath = realpath(storage_path('app')); // Base path for validation
+                
+                // On Windows, realpath might return different separators, so we normalize
+                if ($resolvedAudioPath) {
+                    $resolvedAudioPath = str_replace('\\', '/', $resolvedAudioPath);
+                }
+                if ($storagePath) {
+                    $storagePath = str_replace('\\', '/', $storagePath);
+                }
+
+                if (!$resolvedAudioPath || strpos($resolvedAudioPath, $storagePath) !== 0) {
+                    \Log::error('Invalid audio file path for STT', [
+                        'audio_path' => $audioPath,
+                        'resolved_path' => $resolvedAudioPath,
+                        'storage_path' => $storagePath
+                    ]);
                     throw new \Exception('Invalid audio file path');
                 }
+
+                $audioPath = $resolvedAudioPath;
 
                 // Check if audio file exists
                 if (!file_exists($audioPath)) {
@@ -2657,14 +2748,23 @@ class VoiceAssistantController extends Controller
                 \Log::info('HYBRID METHOD - Starting advanced medical speech recognition', [
                     'audio_path' => $audioPath,
                     'file_size' => $fileSize,
-                    'extension' => $fileInfo['extension']
+                    'extension' => $fileInfo['extension'],
+                    'provider' => config('medical.transcription_provider', 'google')
                 ]);
     
-                // Try Google Cloud Speech-to-Text Healthcare API first (preferred for medical)
-                $result = $this->processWithGoogleHealthcareSTT($audioPath);
+                $transcriptionProvider = config('medical.transcription_provider', 'google');
+                $result = ['success' => false];
+
+                if ($transcriptionProvider === 'assemblyai') {
+                    $result = $this->processWithAssemblyAI($audioPath);
+                } else {
+                    // Try Google Cloud Speech-to-Text Healthcare API first (preferred for medical)
+                    $result = $this->processWithGoogleHealthcareSTT($audioPath);
+                }
     
                 if ($result['success']) {
-                    \Log::info('HYBRID METHOD - Google Healthcare STT successful', [
+                    \Log::info('HYBRID METHOD - Primary STT successful', [
+                        'provider' => $transcriptionProvider,
                         'transcription_length' => strlen($result['transcription']),
                         'speakers_detected' => count($result['speakers'] ?? []),
                         'medical_terms_found' => count($result['medical_terms'] ?? [])
@@ -2673,11 +2773,11 @@ class VoiceAssistantController extends Controller
                     return $result['transcription'];
                 }
     
-                // Fallback to OpenAI Whisper if Google fails
-                \Log::warning('HYBRID METHOD - Google Healthcare STT failed, falling back to OpenAI Whisper');
-                $transcription = $this->processWithOpenAIWhisper($audioPath);
+                // Fallback to OpenAI Whisper (good general purpose)
+                \Log::info('HYBRID METHOD - Primary STT failed, falling back to OpenAI Whisper');
+                $result = $this->processWithOpenAIWhisper($audioPath);
     
-                return trim($transcription);
+                return $result['success'] ? $result['transcription'] : '';
     
             } catch (\Exception $e) {
                 \Log::error('HYBRID METHOD - Advanced STT processing failed', [
@@ -2869,20 +2969,99 @@ class VoiceAssistantController extends Controller
                     'model' => 'whisper-1',
                     'file' => fopen($audioPath, 'r'), // Open file for reading
                     'response_format' => 'text',
-                    'language' => 'auto'
+                    'language' => null
                 ];
 
                 // Perform transcription using OpenAI Whisper API
                 $response = OpenAI::audio()->transcribe($transcribeParams);
                 $transcription = is_string($response) ? $response : '';
 
-                return trim($transcription);
+                return [
+                    'success' => true,
+                    'transcription' => trim($transcription),
+                    'speakers' => [],
+                    'medical_terms' => [],
+                    'method' => 'openai_whisper'
+                ];
     
             } catch (\Exception $e) {
                 \Log::error('OpenAI Whisper fallback failed', [
                     'error' => $e->getMessage()
                 ]);
-                return '';
+                return [
+                    'success' => false,
+                    'transcription' => '',
+                    'error' => $e->getMessage()
+                ];
+            }
+        }
+
+        /**
+         * Process audio with AssemblyAI
+         */
+        private function processWithAssemblyAI($audioPath)
+        {
+            try {
+                $assemblyAIService = new \App\Services\AssemblyAIService();
+                
+                // 1. Upload file to AssemblyAI
+                $uploadUrl = $assemblyAIService->uploadFile($audioPath);
+                
+                // 2. Submit for transcription
+                $submission = $assemblyAIService->processTranscript($uploadUrl);
+                $transcriptId = $submission['id'];
+                
+                // 3. Poll for result
+                $maxRetries = 30;
+                $retryCount = 0;
+                $transcription = '';
+                $speakers = [];
+                
+                while ($retryCount < $maxRetries) {
+                    $result = $assemblyAIService->getTranscript($transcriptId);
+                    
+                    if ($result['status'] === 'completed') {
+                        $transcription = $result['text'] ?? '';
+                        
+                        // Extract speakers if available
+                        if (isset($result['utterances'])) {
+                            foreach ($result['utterances'] as $utterance) {
+                                $speakers[] = [
+                                    'speaker' => $utterance['speaker'],
+                                    'text' => $utterance['text'],
+                                    'start_time' => $utterance['start'] / 1000,
+                                    'role' => $utterance['speaker'] === 'A' ? 'doctor' : 'patient'
+                                ];
+                            }
+                        }
+                        
+                        break;
+                    } elseif ($result['status'] === 'error') {
+                        throw new \Exception('AssemblyAI processing error: ' . ($result['error'] ?? 'Unknown error'));
+                    }
+                    
+                    $retryCount++;
+                    sleep(2); // Wait 2 seconds before polling again
+                }
+                
+                if (empty($transcription)) {
+                    throw new \Exception('AssemblyAI transcription timed out or returned empty');
+                }
+
+                return [
+                    'success' => true,
+                    'transcription' => $transcription,
+                    'speakers' => $speakers,
+                    'medical_terms' => [],
+                    'method' => 'assemblyai'
+                ];
+                
+            } catch (\Exception $e) {
+                \Log::error('AssemblyAI processing failed', [
+                    'error' => $e->getMessage(),
+                    'audio_path' => $audioPath
+                ]);
+                return ['success' => false, 'error' => $e->getMessage()];
             }
         }
     
