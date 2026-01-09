@@ -21,7 +21,7 @@ class ClinicalAlertTriggered implements ShouldBroadcast
      */
     public function __construct(ClinicalAlert $alert)
     {
-        $this->alert = $alert->load('patient', 'rule');
+        $this->alert = $alert->load('patient', 'rule', 'decisionRule');
     }
 
     /**
