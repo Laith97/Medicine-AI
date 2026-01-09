@@ -146,3 +146,8 @@ Broadcast::channel('appointment.{appointmentId}', function ($user, $appointmentI
 
     return false;
 });
+
+// Clinical Alerts channel
+Broadcast::channel('clinical-alerts', function ($user) {
+    return in_array($user->role, ['doctor', 'admin', 'hospital_admin', 'nurse', 'specialist']);
+});
