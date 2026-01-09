@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('title', 'Edit ' . $program->title . ' - HEP Program')
+@section('title', 'Edit ' . $program->title . ' - Physical Therapy HEP Program')
 
 @section('content')
 <div class="dashboard-container">
@@ -9,7 +9,7 @@
         <div class="dashboard-header py-2 border-bottom">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2>Edit HEP Program</h2>
+                    <h2>Edit Physical Therapy (HEP Program)</h2>
                     <p class="mb-0">{{ $program->title }}</p>
                 </div>
                 <div class="d-flex gap-2">
