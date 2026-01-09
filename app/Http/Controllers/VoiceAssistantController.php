@@ -455,7 +455,7 @@ class VoiceAssistantController extends Controller
         $sessionId = Str::uuid()->toString();
 
         // Create initial transcription record
-        VoiceTranscription::create([
+        $transcription = VoiceTranscription::create([
             'doctor_id' => Auth::id(),
             'patient_id' => $selectedPatient,
             'session_id' => $sessionId,
@@ -467,6 +467,7 @@ class VoiceAssistantController extends Controller
         return response()->json([
             'success' => true,
             'sessionId' => $sessionId,
+            'transcriptionId' => $transcription->id,
             'message' => 'Session started successfully.'
         ]);
     }
