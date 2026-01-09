@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('title', 'Create HEP Program')
+@section('title', 'Create Physical Therapy - HEP Program')
 
 @section('content')
 <div class="dashboard-container">
@@ -9,7 +9,7 @@
         <div class="dashboard-header py-2 border-bottom">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2>Create Home Exercise Program</h2>
+                    <h2>Create Physical Therapy (Home Exercise Program)</h2>
                     <p class="mb-0">Design a personalized exercise program for your patient</p>
                 </div>
                 <div class="d-flex gap-2">
