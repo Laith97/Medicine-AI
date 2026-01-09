@@ -158,10 +158,66 @@ class User extends Authenticatable
     }
 
     /**
+     * Automatically calculate age from date of birth when saving
+     */
+    protected function setAgeAttribute($value)
+    {
+        // If age is being explicitly set, use that value
+        if ($value !== null) {
+            $this->attributes['age'] = $value;
+        }
+        // If date of birth is set but age is not, calculate it automatically
+        elseif (!empty($this->attributes['date_of_birth']) && $value === null) {
+            $birthDate = \Carbon\Carbon::parse($this->attributes['date_of_birth']);
+            $this->attributes['age'] = $birthDate->age;
+        }
+    }
+
+    /**
+     * Get age from date of birth if not stored in database
+     */
+    protected function getAgeAttribute($value)
+    {
+        // If age is stored in the database (not null), return it
+        if ($value !== null) {
+            return $value;
+        }
+
+        // If date of birth exists but age is null, calculate it
+        if (!empty($this->attributes['date_of_birth'])) {
+            $birthDate = \Carbon\Carbon::parse($this->attributes['date_of_birth']);
+            return $birthDate->age;
+        }
+
+        return $value; // Return null if no date of birth exists
+    }
+
+    /**
      * @property int $id
      * @property string|null $sub_user_role
      * @property int|null $parent_user_id
      */
+
+    /**
+     * Boot the model and set up event listeners
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Automatically calculate age when creating/updating if date of birth changes
+        static::saving(function ($user) {
+            // If date of birth is set and age is not set (or being updated), calculate age
+            if (!empty($user->date_of_birth) && $user->age === null) {
+                $birthDate = \Carbon\Carbon::parse($user->date_of_birth);
+                $user->age = $birthDate->age;
+            } elseif (!empty($user->date_of_birth) && $user->isDirty('date_of_birth')) {
+                // If date of birth was changed, recalculate the age
+                $birthDate = \Carbon\Carbon::parse($user->date_of_birth);
+                $user->age = $birthDate->age;
+            }
+        });
+    }
 
     public function setting()
     {
@@ -312,7 +368,7 @@ public function getFreshMonthlyInvoiceSetting()
      */
     public function isSubUser(): bool
     {
-        return $this->is_sub_user;
+        return (bool) $this->is_sub_user;
     }
 
     /**
@@ -324,7 +380,7 @@ public function getFreshMonthlyInvoiceSetting()
      */
     public function isMainUser(): bool
     {
-        return !$this->is_sub_user;
+        return !(bool) $this->is_sub_user;
     }
 
     /**
@@ -1302,6 +1358,40 @@ public function getHospitalAdminStatistics(): array
     }
 
     return $this->hospital->getStatistics();
+}
+
+/**
+ * Check if user can access a specific patient
+ *
+ * For doctors: they can access patients assigned to them (primary_doctor_id matches)
+ *              OR patients that have confirmed appointments with them
+ * For sub-users: they can access patients assigned to their parent doctor
+ *                OR patients that have confirmed appointments with their parent doctor
+ * For other roles: access is denied
+ */
+public function canAccessPatient(User $patient): bool
+{
+    // Only doctors and their sub-users can access patients
+    if (!$this->isDoctor() && !$this->isSubUser()) {
+        return false;
+    }
+
+    // Get the effective doctor for the current user (handles sub-users)
+    $effectiveDoctor = $this->getEffectiveDoctorUser();
+    $effectiveDoctorId = $effectiveDoctor ? $effectiveDoctor->id : null;
+
+    // Check if patient is assigned to this doctor (primary doctor relationship)
+    if ($patient->primary_doctor_id === $effectiveDoctorId) {
+        return true;
+    }
+
+    // Check if patient has confirmed or completed appointments with this doctor
+    $hasConfirmedAppointment = $patient->appointments()
+        ->where('doctor_id', $effectiveDoctorId)
+        ->whereIn('status', ['confirmed', 'completed'])
+        ->exists();
+
+    return $hasConfirmedAppointment;
 }
 
 /**
