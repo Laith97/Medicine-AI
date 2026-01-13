@@ -925,23 +925,114 @@
                     <strong>How it works:</strong> Our machine learning model analyzes patient history, appointment patterns, and medical data to predict healthcare risks.
                 </div>
 
-                <h6 class="text-primary mb-3"><i class="fas fa-chart-line me-2"></i>Factors Analyzed:</h6>
+                <h6 class="text-primary mb-3"><i class="fas fa-chart-line me-2"></i>Features Actually Analyzed:</h6>
+                @php
+                    if ($appointment->patient) {
+                        $extractor = app(\App\Services\FeatureExtractor::class);
+                        $features = $extractor->extractFeatures($appointment->patient, $appointment);
+                        $hasHighRisk = $extractor->hasHighRiskCondition($appointment->patient);
+                    } else {
+                        $features = [0,0,0,0,0];
+                        $hasHighRisk = false;
+                    }
+                @endphp
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Feature</th>
+                                <th>Value</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>No-Show Count</strong></td>
+                                <td class="text-center"><span class="badge bg-warning">{{ $features[0] ?? 0 }}</span></td>
+                                <td>Number of previous missed appointments</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Days Since Last Visit</strong></td>
+                                <td class="text-center"><span class="badge bg-info">{{ $features[1] ?? 0 }}</span></td>
+                                <td>Days since patient's last appointment</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Patient Age</strong></td>
+                                <td class="text-center"><span class="badge bg-primary">{{ $features[2] ?? 0 }}</span></td>
+                                <td>Patient's age in years</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Gender</strong></td>
+                                <td class="text-center">
+                                    <span class="badge {{ ($features[3] ?? 0) == 1 ? 'bg-danger' : 'bg-secondary' }}">
+                                        {{ ($features[3] ?? 0) == 1 ? 'Male' : 'Female/Other' }}
+                                    </span>
+                                </td>
+                                <td>Gender encoding (1=Male, 0=Female/Other)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Chronic Conditions</strong></td>
+                                <td class="text-center">
+                                    <span class="badge {{ ($features[4] ?? 0) > 0 ? 'bg-danger' : 'bg-success' }}">
+                                        {{ $features[4] ?? 0 }}
+                                    </span>
+                                </td>
+                                <td>Count of high-risk conditions from appointment records</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info mt-3">
+                    <small><i class="fas fa-info-circle me-1"></i><strong>Note:</strong> This is the current MVP implementation using 5 basic features. Future versions will include more comprehensive analysis.</small>
+                </div>
+
+                <hr class="my-4">
+
+                <h6 class="text-primary mb-3"><i class="fas fa-cogs me-2"></i>Prediction Method Used:</h6>
+                @php
+                    $service = app(\App\Services\PredictiveAnalyticsService::class);
+                    $reflection = new ReflectionClass($service);
+                    $method = $reflection->getMethod('checkTrainingDataAdequacy');
+                    $method->setAccessible(true);
+                    $adequacy = $method->invoke($service);
+                    $usingML = $adequacy['adequate'];
+                @endphp
                 <div class="row">
                     <div class="col-md-6">
-                        <ul class="list-unstyled">
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>Appointment History:</strong> Past attendance patterns</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>Demographics:</strong> Age, gender, location</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>Medical History:</strong> Previous diagnoses and treatments</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>Scheduling Patterns:</strong> Appointment timing preferences</li>
-                        </ul>
+                        <div class="card border-{{ $usingML ? 'success' : 'warning' }} mb-3">
+                            <div class="card-body p-3">
+                                <h6 class="card-title mb-2">
+                                    <i class="fas fa-{{ $usingML ? 'brain' : 'calculator' }} me-2"></i>
+                                    {{ $usingML ? 'Machine Learning' : 'Rule-Based' }}
+                                </h6>
+                                <p class="card-text small mb-1">
+                                    {{ $usingML ? 'Using trained ML models for predictions' : 'Using rule-based calculations (ML models not adequately trained)' }}
+                                </p>
+                                <small class="text-muted">
+                                    Training Data: {{ $adequacy['total_appointments'] }} appointments
+                                    ({{ $adequacy['no_show_count'] }} no-shows, {{ $adequacy['high_risk_count'] }} high-risk)
+                                </small>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <ul class="list-unstyled">
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>No-Show History:</strong> Previous missed appointments</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>Health Indicators:</strong> Vital signs and risk factors</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>Seasonal Patterns:</strong> Time-based attendance trends</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>Appointment Type:</strong> Consultation vs. follow-up patterns</li>
-                        </ul>
+                        <div class="card border-info mb-3">
+                            <div class="card-body p-3">
+                                <h6 class="card-title mb-2">
+                                    <i class="fas fa-chart-bar me-2"></i>Model Status
+                                </h6>
+                                <p class="card-text small mb-1">
+                                    @if($usingML)
+                                        <span class="text-success">✓ ML Models Active</span>
+                                    @else
+                                        <span class="text-warning">⚠ Rule-Based Fallback</span>
+                                    @endif
+                                </p>
+                                <small class="text-muted">
+                                    Minimum required: 50 appointments, 2% no-show rate, 5% high-risk rate
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
