@@ -39,6 +39,15 @@ Route::middleware(['auth', 'sub.user.permissions'])->prefix('ai')->name('ai.')->
     Route::post('/appointments/{appointment}/suggest', [AppointmentController::class, 'aiSuggest'])->name('appointments.suggest');
     Route::post('/appointments/test-openai', [AppointmentController::class, 'testOpenAI'])->name('appointments.test-openai');
 
+    // AI Medical Copilot route for comprehensive clinical decision support
+    Route::post('/appointments/{appointment}/medical-copilot', [AppointmentController::class, 'aiMedicalCopilot'])->name('appointments.medical-copilot');
+
+    // AI Medical Copilot analysis management
+    Route::get('/patients/{patientId}/ai-analyses', [AppointmentController::class, 'getPatientAIAnalyses'])->name('patients.ai-analyses');
+    Route::get('/ai-analyses/{analysisId}', [AppointmentController::class, 'showAIAnalysis'])->name('ai-analyses.show');
+    Route::post('/appointments/{appointment}/ai-analyses/save', [AppointmentController::class, 'saveAICopilotAnalysis'])->name('appointments.ai-analyses.save');
+    Route::post('/ai-analyses/{analysisId}/review', [AppointmentController::class, 'reviewAIAnalysis'])->name('ai-analyses.review');
+
     // General AI routes that may be used for prescription suggestions
     Route::get('/progress', function () { return view('openai-progress'); })->name('progress');
     Route::post('/respond', [OpenAIController::class, 'getResponse'])->name('respond');

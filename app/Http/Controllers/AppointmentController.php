@@ -939,6 +939,158 @@ class AppointmentController extends Controller
         return response()->json($result);
     }
 
+    /**
+     * Generate AI medical copilot analysis for clinical decision support
+     */
+    public function aiMedicalCopilot(Request $request, Appointment $appointment)
+    {
+        // Validate doctor access to this appointment
+        if (!Auth::user()->isDoctor() || $appointment->doctor->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized access to AI Medical Copilot.');
+        }
+
+        // Validate required data structure
+        $request->validate([
+            'complaint' => 'required|array',
+            'vitals' => 'required|array',
+            'history' => 'required|array',
+            'labs' => 'nullable|array',
+            'previous_visits' => 'nullable|array',
+        ]);
+
+        // Create structured data array
+        $structuredData = [
+            'complaint' => $request->complaint,
+            'vitals' => $request->vitals,
+            'history' => $request->history,
+            'labs' => $request->labs ?? [],
+            'previous_visits' => $request->previous_visits ?? [],
+            'patient_age' => $appointment->patient ? ($appointment->patient->age ?? ($appointment->patient->date_of_birth ? \Carbon\Carbon::parse($appointment->patient->date_of_birth)->age : null)) : null,
+            'patient_gender' => $appointment->patient ? ($appointment->patient->gender ?? null) : null,
+        ];
+
+        // Initialize AI Medical Copilot service
+        $copilotService = new \App\Services\AIMedicalCopilotService();
+
+        // Generate medical analysis
+        $result = $copilotService->generateMedicalAnalysis($appointment, $structuredData);
+
+        // Log the response if successful
+        if (!isset($result['error']) && !isset($result['disabled'])) {
+            $copilotService->logAICopilotResponse($appointment->id, $result);
+        }
+
+        return response()->json($result);
+    }
+
+    /**
+     * Get patient's AI copilot analysis history
+     */
+    public function getPatientAIAnalyses(Request $request, $patientId)
+    {
+        // Validate doctor access
+        if (!Auth::user()->isDoctor()) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $analyses = \App\Models\AICopilotAnalysis::with(['appointment', 'doctor', 'reviewer'])
+            ->forPatient($patientId)
+            ->active()
+            ->orderBy('generated_at', 'desc')
+            ->paginate(10);
+
+        return response()->json($analyses);
+    }
+
+    /**
+     * Show individual AI analysis details
+     */
+    public function showAIAnalysis(Request $request, $analysisId)
+    {
+        // Validate doctor access
+        if (!Auth::user()->isDoctor()) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $analysis = \App\Models\AICopilotAnalysis::with(['appointment.patient', 'doctor', 'reviewer'])
+            ->findOrFail($analysisId);
+
+        // Check if doctor has access to this patient's data
+        // Doctors should be able to view analyses for patients they've treated
+        $hasAccess = $analysis->doctor_id === Auth::id() ||
+                    ($analysis->appointment && $analysis->appointment->doctor_id === Auth::user()->doctor->id);
+
+        if (!$hasAccess) {
+            abort(403, 'You do not have permission to view this analysis.');
+        }
+
+        return view('ai.analysis-detail', compact('analysis'));
+    }
+
+    /**
+     * Save AI copilot analysis to patient medical history
+     */
+    public function saveAICopilotAnalysis(Request $request, Appointment $appointment)
+    {
+        // Validate doctor access to this appointment
+        if (!Auth::user()->isDoctor() || $appointment->doctor->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized access to appointment.');
+        }
+
+        // Validate request data
+        $request->validate([
+            'analysis_data' => 'required|array',
+            'include_in_note' => 'nullable|array',
+        ]);
+
+        // Initialize AI Medical Copilot service
+        $copilotService = new \App\Services\AIMedicalCopilotService();
+
+        // Save analysis to medical history
+        $saved = $copilotService->saveAnalysisToMedicalHistory($appointment, $request->analysis_data);
+
+        if ($saved) {
+            return response()->json([
+                'success' => true,
+                'message' => 'AI Medical Copilot analysis saved successfully',
+                'saved' => true
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save AI analysis',
+                'saved' => false
+            ], 422);
+        }
+    }
+
+    /**
+     * Review and update AI copilot analysis
+     */
+    public function reviewAIAnalysis(Request $request, $analysisId)
+    {
+        $request->validate([
+            'doctor_notes' => 'nullable|string|max:1000',
+        ]);
+
+        // Find the analysis
+        $analysis = \App\Models\AICopilotAnalysis::findOrFail($analysisId);
+
+        // Validate doctor access
+        if (!Auth::user()->isDoctor()) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        // Mark as reviewed
+        $analysis->markAsReviewed(Auth::id(), $request->doctor_notes);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'AI analysis reviewed successfully',
+            'analysis' => $analysis
+        ]);
+    }
+
 
 
 
