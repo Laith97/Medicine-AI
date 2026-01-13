@@ -24,7 +24,14 @@ class AICopilotAnalysis extends Model
         'status',
         'reviewed_by_doctor',
         'reviewed_at',
-        'doctor_notes'
+        'doctor_notes',
+        // Guest patient fields
+        'guest_name',
+        'guest_email',
+        'guest_phone',
+        'guest_date_of_birth',
+        'guest_gender',
+        'guest_address'
     ];
 
     protected $casts = [
@@ -33,7 +40,8 @@ class AICopilotAnalysis extends Model
         'reviewed_at' => 'datetime',
         'considerations' => 'array',
         'questions' => 'array',
-        'red_flags' => 'array'
+        'red_flags' => 'array',
+        'guest_date_of_birth' => 'date'
     ];
 
     /**
@@ -182,5 +190,61 @@ class AICopilotAnalysis extends Model
         }
 
         return implode('; ', $this->red_flags);
+    }
+
+    /**
+     * Check if this analysis is for a guest patient
+     */
+    public function isGuestAnalysis()
+    {
+        return is_null($this->patient_id) && !empty($this->guest_email);
+    }
+
+    /**
+     * Get patient name (registered or guest)
+     */
+    public function getPatientNameAttribute()
+    {
+        return $this->patient ? $this->patient->name : $this->guest_name;
+    }
+
+    /**
+     * Get patient email (registered or guest)
+     */
+    public function getPatientEmailAttribute()
+    {
+        return $this->patient ? $this->patient->email : $this->guest_email;
+    }
+
+    /**
+     * Get patient phone (registered or guest)
+     */
+    public function getPatientPhoneAttribute()
+    {
+        return $this->patient ? $this->patient->phone : $this->guest_phone;
+    }
+
+    /**
+     * Scope for guest analyses
+     */
+    public function scopeGuest($query)
+    {
+        return $query->whereNull('patient_id')->whereNotNull('guest_email');
+    }
+
+    /**
+     * Scope for registered patient analyses
+     */
+    public function scopeRegistered($query)
+    {
+        return $query->whereNotNull('patient_id');
+    }
+
+    /**
+     * Scope for analyses by guest email
+     */
+    public function scopeByGuestEmail($query, $email)
+    {
+        return $query->where('guest_email', $email);
     }
 }

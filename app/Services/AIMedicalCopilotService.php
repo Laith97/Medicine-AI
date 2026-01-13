@@ -80,28 +80,54 @@ class AIMedicalCopilotService
     public function saveAnalysisToMedicalHistory(Appointment $appointment, array $analysisResult)
     {
         try {
-            // Create or update AI copilot analysis record
-            $analysis = \App\Models\AICopilotAnalysis::updateOrCreate(
-                [
-                    'appointment_id' => $appointment->id,
-                    'patient_id' => $appointment->patient_id
-                ],
-                [
-                    'analysis_data' => $analysisResult,
-                    'generated_at' => now(),
-                    'doctor_id' => $appointment->doctor_id,
-                    'status' => 'active',
-                    'summary' => $analysisResult['medical_case_summary'] ?? 'No summary available',
-                    'considerations' => json_encode($analysisResult['differential_considerations'] ?? []),
-                    'questions' => json_encode($analysisResult['follow_up_questions'] ?? []),
-                    'red_flags' => json_encode($analysisResult['red_flags'] ?? [])
-                ]
-            );
+            // Prepare the data array
+            $data = [
+                'analysis_data' => $analysisResult,
+                'generated_at' => now(),
+                'doctor_id' => $appointment->doctor_id,
+                'status' => 'active',
+                'summary' => $analysisResult['medical_case_summary'] ?? 'No summary available',
+                'considerations' => json_encode($analysisResult['differential_considerations'] ?? []),
+                'questions' => json_encode($analysisResult['follow_up_questions'] ?? []),
+                'red_flags' => json_encode($analysisResult['red_flags'] ?? [])
+            ];
+
+            // Handle guest vs registered patient
+            if ($appointment->isGuestAppointment()) {
+                // For guest appointments, use guest fields and null patient_id
+                $data = array_merge($data, [
+                    'patient_id' => null,
+                    'guest_name' => $appointment->guest_name,
+                    'guest_email' => $appointment->guest_email,
+                    'guest_phone' => $appointment->guest_phone,
+                    'guest_date_of_birth' => $appointment->guest_date_of_birth,
+                    'guest_gender' => $appointment->guest_gender,
+                    'guest_address' => $appointment->guest_address,
+                ]);
+
+                // Use unique constraint for guest appointments (appointment_id only since patient_id is null)
+                $analysis = \App\Models\AICopilotAnalysis::updateOrCreate(
+                    ['appointment_id' => $appointment->id],
+                    $data
+                );
+            } else {
+                // For registered patients, use patient_id in the unique constraint
+                $data['patient_id'] = $appointment->patient_id;
+
+                $analysis = \App\Models\AICopilotAnalysis::updateOrCreate(
+                    [
+                        'appointment_id' => $appointment->id,
+                        'patient_id' => $appointment->patient_id
+                    ],
+                    $data
+                );
+            }
 
             Log::info('AI Copilot analysis saved to medical history', [
                 'analysis_id' => $analysis->id,
                 'appointment_id' => $appointment->id,
-                'patient_id' => $appointment->patient_id
+                'patient_id' => $appointment->patient_id,
+                'is_guest' => $appointment->isGuestAppointment()
             ]);
 
             return true;
@@ -109,6 +135,8 @@ class AIMedicalCopilotService
         } catch (\Exception $e) {
             Log::error('Failed to save AI copilot analysis', [
                 'appointment_id' => $appointment->id,
+                'patient_id' => $appointment->patient_id,
+                'is_guest' => $appointment->isGuestAppointment(),
                 'error' => $e->getMessage()
             ]);
             return false;
