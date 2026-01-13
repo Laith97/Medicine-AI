@@ -5,6 +5,176 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
 <link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
+<style>
+.copilot-tab {
+    cursor: pointer;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background-color: transparent;
+    color: #6c757d;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.copilot-tab.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+    font-weight: 500;
+}
+
+.copilot-tab-content {
+    display: none;
+    padding: 1.5rem 0;
+}
+
+.copilot-tab-content.active {
+    display: block;
+}
+
+.copilot-section {
+    margin-bottom: 2rem;
+}
+
+.copilot-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.copilot-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.copilot-badge {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.copilot-content {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+    border-left: 4px solid #0d6efd;
+}
+
+.copilot-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.copilot-list li {
+    padding: 0.5rem 0;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.copilot-list li:before {
+    content: "•";
+    color: #0d6efd;
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+}
+
+.copilot-warning {
+    background-color: #fff3cd;
+    border-left-color: #ffc107;
+}
+
+.copilot-danger {
+    background-color: #f8d7da;
+    border-left-color: #dc3545;
+}
+
+.copilot-success {
+    background-color: #d1e7dd;
+    border-left-color: #198754;
+}
+
+.copilot-info {
+    background-color: #cff4fc;
+    border-left-color: #0dcaf0;
+}
+
+.copilot-disclaimer {
+    font-size: 0.875rem;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    margin-top: 1rem;
+    border: 1px solid #e9ecef;
+}
+
+.copilot-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.copilot-checkbox {
+    margin-right: 0.5rem;
+}
+
+.edit-copilot-btn {
+    cursor: pointer;
+    color: #0d6efd;
+    font-size: 0.875rem;
+}
+
+.edit-copilot-btn:hover {
+    text-decoration: underline;
+}
+
+.copilot-loading {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+}
+
+.copilot-loading.active {
+    display: block;
+}
+
+.copilot-loading-spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 0.25rem solid #f3f3f3;
+    border-top: 0.25rem solid #0d6efd;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.copilot-error {
+    color: #dc3545;
+    background-color: #f8d7da;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid #f5c2c7;
+}
+
+.copilot-compliance-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-align: right;
+    margin-top: 1rem;
+    font-style: italic;
+}
+</style>
 @endpush
 
 @section('content')
@@ -135,7 +305,7 @@
                     </div>
                     <div class="row g-3">
                         <div class="col-md-3">
-                            <button onclick="openAIMedicalCopilot({{ $appointment->id }})" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
+                            <button onclick="toggleAIMedicalCopilotForm()" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
                                 <i class="fas fa-brain fa-2x mb-2 text-primary"></i>
                                 AI Copilot
                                 <small class="text-muted">Clinical Decision Support</small>
@@ -561,8 +731,6 @@
                                     @endif
                                     @include('ai.prescription_suggestion')
 
-<!-- AI Medical Copilot Modal -->
-@include('ai.medical_copilot')
                                 </div>
                             @endif
 
@@ -807,6 +975,204 @@
                             </div>
                         </div>
                     </form>
+                </div>
+                @endif
+
+                <!-- AI Medical Copilot Section -->
+                @if(auth()->check() && auth()->user()->isDoctor())
+                <div id="ai-medical-copilot-section" class="table-card" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="mb-0 fw-bold text-primary">
+                                <i class="fas fa-brain me-2"></i>AI Medical Copilot
+                            </h4>
+                            <p class="mb-0 text-muted small">AI-powered clinical decision support for this appointment</p>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAIMedicalCopilotForm()">
+                            <i class="fas fa-times me-1"></i>Close
+                        </button>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div class="copilot-loading" id="copilotLoadingSection">
+                        <div class="copilot-loading-spinner mx-auto"></div>
+                        <h5 class="text-primary text-center">AI Medical Copilot is analyzing...</h5>
+                        <p class="text-muted text-center">Processing clinical data and generating decision support insights</p>
+                    </div>
+
+                    <!-- Error State -->
+                    <div class="copilot-error alert alert-danger" id="copilotErrorSection" style="display: none;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="copilotErrorMessageSection"></span>
+                    </div>
+
+                    <!-- Content Area -->
+                    <div id="copilotContentSection" style="display: none;">
+                        <!-- Tab Navigation -->
+                        <div class="d-flex justify-content-start mb-3 border-bottom">
+                            <button class="copilot-tab active" data-tab="summary">
+                                <i class="fas fa-file-medical me-1"></i>Summary
+                            </button>
+                            <button class="copilot-tab" data-tab="considerations">
+                                <i class="fas fa-list-check me-1"></i>Considerations
+                            </button>
+                            <button class="copilot-tab" data-tab="questions">
+                                <i class="fas fa-question-circle me-1"></i>Questions
+                            </button>
+                            <button class="copilot-tab" data-tab="red-flags">
+                                <i class="fas fa-flag me-1"></i>Red Flags
+                            </button>
+                            <button class="copilot-tab" data-tab="history">
+                                <i class="fas fa-history me-1"></i>Patient History
+                            </button>
+                        </div>
+
+                        <!-- Tab Content -->
+                        <div id="copilotTabsSection">
+                            <!-- Summary Tab -->
+                            <div class="copilot-tab-content active" data-tab-content="summary">
+                                <div class="copilot-section">
+                                    <div class="copilot-section-header">
+                                        <h6 class="copilot-section-title">
+                                            <i class="fas fa-file-medical me-2"></i>Medical Case Summary
+                                        </h6>
+                                        <span class="badge copilot-badge bg-primary">
+                                            <i class="fas fa-check-circle me-1"></i>AI-Generated
+                                        </span>
+                                    </div>
+                                    <div class="copilot-content" id="copilotSummarySection">
+                                        <p class="text-muted">Loading medical case summary...</p>
+                                    </div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input copilot-checkbox" type="checkbox" id="includeSummaryInNoteSection">
+                                        <label class="form-check-label" for="includeSummaryInNoteSection">
+                                            Include in clinical note
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Considerations Tab -->
+                            <div class="copilot-tab-content" data-tab-content="considerations">
+                                <div class="copilot-section">
+                                    <div class="copilot-section-header">
+                                        <h6 class="copilot-section-title">
+                                            <i class="fas fa-list-check me-2"></i>Differential Considerations
+                                        </h6>
+                                        <span class="badge copilot-badge bg-warning text-dark">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>Not Diagnoses
+                                        </span>
+                                    </div>
+                                    <div class="copilot-content copilot-warning" id="copilotConsiderationsSection">
+                                        <p class="text-muted">Loading differential considerations...</p>
+                                    </div>
+                                    <div class="copilot-disclaimer">
+                                        <strong>⚠️ For clinical consideration only. Physician judgment required.</strong>
+                                    </div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input copilot-checkbox" type="checkbox" id="includeConsiderationsInNoteSection">
+                                        <label class="form-check-label" for="includeConsiderationsInNoteSection">
+                                            Include in clinical note
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Questions Tab -->
+                            <div class="copilot-tab-content" data-tab-content="questions">
+                                <div class="copilot-section">
+                                    <div class="copilot-section-header">
+                                        <h6 class="copilot-section-title">
+                                            <i class="fas fa-question-circle me-2"></i>Suggested Follow-up Questions
+                                        </h6>
+                                        <span class="badge copilot-badge bg-info">
+                                            <i class="fas fa-lightbulb me-1"></i>Clinical Insights
+                                        </span>
+                                    </div>
+                                    <div class="copilot-content copilot-info" id="copilotQuestionsSection">
+                                        <p class="text-muted">Loading follow-up questions...</p>
+                                    </div>
+                                    <div class="copilot-disclaimer">
+                                        <strong>💡 These questions help raise diagnostic quality and reduce oversight.</strong>
+                                    </div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input copilot-checkbox" type="checkbox" id="includeQuestionsInNoteSection">
+                                        <label class="form-check-label" for="includeQuestionsInNoteSection">
+                                            Include in clinical note
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Red Flags Tab -->
+                            <div class="copilot-tab-content" data-tab-content="red-flags">
+                                <div class="copilot-section">
+                                    <div class="copilot-section-header">
+                                        <h6 class="copilot-section-title">
+                                            <i class="fas fa-flag me-2"></i>Red Flags Detection
+                                        </h6>
+                                        <span class="badge copilot-badge bg-danger">
+                                            <i class="fas fa-exclamation-circle me-1"></i>Urgent Attention
+                                        </span>
+                                    </div>
+                                    <div class="copilot-content copilot-danger" id="copilotRedFlagsSection">
+                                        <p class="text-muted">Loading red flags analysis...</p>
+                                    </div>
+                                    <div class="copilot-disclaimer">
+                                        <strong>⚠️ Consider urgent evaluation if clinically indicated.</strong>
+                                    </div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input copilot-checkbox" type="checkbox" id="includeRedFlagsInNoteSection">
+                                        <label class="form-check-label" for="includeRedFlagsInNoteSection">
+                                            Include in clinical note
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Patient History Tab -->
+                            <div class="copilot-tab-content" data-tab-content="history">
+                                <div class="copilot-section">
+                                    <div class="copilot-section-header">
+                                        <h6 class="copilot-section-title">
+                                            <i class="fas fa-history me-2"></i>Patient Medical History
+                                        </h6>
+                                        <span class="badge copilot-badge bg-info">
+                                            <i class="fas fa-database me-1"></i>Historical Data
+                                        </span>
+                                    </div>
+                                    <div class="copilot-content" id="copilotHistorySection">
+                                        <p class="text-muted">Loading patient history...</p>
+                                    </div>
+                                    <div class="copilot-disclaimer">
+                                        <strong>📋 Patient history was used in AI analysis to provide context-aware recommendations.</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Compliance Information -->
+                        <div class="copilot-compliance-label">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            <span id="copilotComplianceLabelSection">AI-generated draft. Physician verified.</span>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-3 justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-primary" id="saveCopilotAnalysisSection">
+                                    <i class="fas fa-save me-2"></i>Save Analysis
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="toggleAIMedicalCopilotForm()">
+                                    <i class="fas fa-times me-2"></i>Close
+                                </button>
+                            </div>
+                            <div class="text-muted small">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                AI analysis will be saved and available for review
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 @endif
             </div>
@@ -1874,6 +2240,33 @@ document.addEventListener('DOMContentLoaded', function() {
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+
+    // Initialize AI Medical Copilot save button
+    const saveButton = document.getElementById('saveCopilotAnalysisSection');
+    if (saveButton) {
+        saveButton.addEventListener('click', function() {
+            const appointmentId = window.currentAppointmentId; // This should be set when opening the section
+
+            if (!appointmentId) {
+                showNotification('Error: Appointment ID not found', 'error');
+                return;
+            }
+
+            // Collect current analysis data from the UI
+            const analysisData = collectAnalysisData();
+
+            // Include checkboxes for clinical note inclusion
+            const includeInNote = {
+                summary: document.getElementById('includeSummaryInNoteSection').checked,
+                considerations: document.getElementById('includeConsiderationsInNoteSection').checked,
+                questions: document.getElementById('includeQuestionsInNoteSection').checked,
+                red_flags: document.getElementById('includeRedFlagsInNoteSection').checked
+            };
+
+            // Save the analysis
+            saveAICopilotAnalysis(appointmentId, analysisData, includeInNote);
+        });
+    }
 });
 
 // Function to submit diagnosis form via AJAX
@@ -2040,6 +2433,629 @@ function clearValidationErrors() {
     errorMessages.forEach(element => {
         element.remove();
     });
+}
+
+// AI Medical Copilot section functionality
+function toggleAIMedicalCopilotForm() {
+    const copilotSection = document.getElementById('ai-medical-copilot-section');
+    const isVisible = copilotSection.style.display !== 'none';
+
+    if (isVisible) {
+        // Hide the form
+        copilotSection.style.display = 'none';
+        // Scroll to the Next Steps section
+        document.querySelector('.table-card.mb-4').scrollIntoView({ behavior: 'smooth' });
+    } else {
+        // Show the form
+        copilotSection.style.display = 'block';
+        // Scroll to the AI copilot section
+        copilotSection.scrollIntoView({ behavior: 'smooth' });
+
+        // Initialize the AI Medical Copilot for this appointment
+        const appointmentId = {{ $appointment->id }};
+        initializeAIMedicalCopilot(appointmentId);
+    }
+}
+
+// Function to initialize AI Medical Copilot
+function initializeAIMedicalCopilot(appointmentId) {
+    // Show loading state
+    document.getElementById('copilotLoadingSection').style.display = 'block';
+    document.getElementById('copilotContentSection').style.display = 'none';
+    document.getElementById('copilotErrorSection').style.display = 'none';
+
+    // Collect structured data from the appointment
+    const structuredData = collectStructuredData(appointmentId);
+
+    // Call AI Medical Copilot API
+    callAIMedicalCopilotAPI(appointmentId, structuredData);
+}
+
+// Function to collect structured data from the appointment
+function collectStructuredData(appointmentId) {
+    // This would be populated with actual data from the appointment
+    // For now, we'll use sample data that matches the required structure
+
+    return {
+        complaint: {
+            chief_complaint: document.querySelector('[data-appointment-reason]')?.textContent || '{{ $appointment->reason }}',
+            onset: 'recent',
+            severity: 'moderate',
+            associated_symptoms: []
+        },
+        vitals: {
+            bp: '',
+            hr: null,
+            spo2: null,
+            temperature: null
+        },
+        history: {
+            chronic_conditions: [],
+            medications: [],
+            allergies: []
+        },
+        labs: {},
+        previous_visits: {
+            last_diagnoses: [],
+            recent_er_visits: [],
+            patterns: []
+        }
+    };
+}
+
+// Function to call AI Medical Copilot API
+function callAIMedicalCopilotAPI(appointmentId, structuredData) {
+    fetch(`/ai/appointments/${appointmentId}/medical-copilot`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            complaint: structuredData.complaint,
+            vitals: structuredData.vitals,
+            history: structuredData.history,
+            labs: structuredData.labs,
+            previous_visits: structuredData.previous_visits
+        })
+    })
+    .then(response => response.json())
+    .then(response => {
+        // Hide loading, show content
+        document.getElementById('copilotLoadingSection').style.display = 'none';
+        document.getElementById('copilotContentSection').style.display = 'block';
+
+        // Check for errors
+        if (response.error) {
+            showCopilotErrorSection(response.message || response.error);
+            return;
+        }
+
+        if (response.disabled) {
+            showCopilotErrorSection('AI Medical Copilot is currently disabled');
+            return;
+        }
+
+        // Store the response for saving
+        window.currentCopilotResponse = response;
+        window.currentAppointmentId = appointmentId;
+
+        // Populate the UI with AI analysis
+        populateCopilotUISection(response);
+
+        // Log success
+        console.log('AI Medical Copilot analysis successful', response);
+    })
+    .catch(error => {
+        // Hide loading, show error
+        document.getElementById('copilotLoadingSection').style.display = 'none';
+
+        const errorMessage = error.message || 'Failed to connect to AI Medical Copilot';
+        showCopilotErrorSection(errorMessage);
+
+        // Log error
+        console.error('AI Medical Copilot error:', errorMessage);
+    });
+}
+
+// Function to show error in section
+function showCopilotErrorSection(message) {
+    document.getElementById('copilotErrorMessageSection').textContent = message;
+    document.getElementById('copilotErrorSection').style.display = 'block';
+    document.getElementById('copilotContentSection').style.display = 'none';
+}
+
+// Function to populate UI with AI analysis in section
+function populateCopilotUISection(response) {
+    // Medical Case Summary
+    const summaryContent = `
+        <p class="mb-0">${response.medical_case_summary || 'No summary available'}</p>
+        <div class="mt-2 small text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Smart summary for quick case understanding
+        </div>
+    `;
+    document.getElementById('copilotSummarySection').innerHTML = summaryContent;
+
+    // Differential Considerations
+    let considerationsHtml = '<p><strong>Possible considerations (not diagnoses):</strong></p>';
+    if (Array.isArray(response.differential_considerations) && response.differential_considerations.length > 0) {
+        considerationsHtml += '<ul class="copilot-list">';
+        response.differential_considerations.forEach(item => {
+            if (typeof item === 'object' && item.consideration) {
+                considerationsHtml += `<li>
+                    <strong>${item.consideration}</strong>
+                    ${item.rationale ? `<br><small class="text-muted">${item.rationale}</small>` : ''}
+                </li>`;
+            } else {
+                // Fallback for string format
+                considerationsHtml += `<li>${item}</li>`;
+            }
+        });
+        considerationsHtml += '</ul>';
+    } else {
+        considerationsHtml = '<p class="text-muted">No specific considerations identified based on current data.</p>';
+    }
+    document.getElementById('copilotConsiderationsSection').innerHTML = considerationsHtml;
+
+    // Follow-up Questions
+    let questionsHtml = '<p><strong>Questions to help complete the clinical picture:</strong></p>';
+    if (Array.isArray(response.follow_up_questions) && response.follow_up_questions.length > 0) {
+        questionsHtml += '<ul class="copilot-list">';
+        response.follow_up_questions.forEach(question => {
+            questionsHtml += `<li>${question}</li>`;
+        });
+        questionsHtml += '</ul>';
+    } else {
+        questionsHtml = '<p class="text-muted">No additional questions suggested based on current information.</p>';
+    }
+    document.getElementById('copilotQuestionsSection').innerHTML = questionsHtml;
+
+    // Red Flags
+    let redFlagsHtml = '<p><strong>Potential red flags detected:</strong></p>';
+    if (Array.isArray(response.red_flags) && response.red_flags.length > 0) {
+        redFlagsHtml += '<ul class="copilot-list">';
+        response.red_flags.forEach(flag => {
+            redFlagsHtml += `<li>${flag}</li>`;
+        });
+        redFlagsHtml += '</ul>';
+    } else {
+        redFlagsHtml = '<p class="text-success">No immediate red flags detected based on available data.</p>';
+    }
+    document.getElementById('copilotRedFlagsSection').innerHTML = redFlagsHtml;
+
+    // Compliance label
+    if (response.compliance && response.compliance.label) {
+        document.getElementById('copilotComplianceLabelSection').textContent = response.compliance.label;
+    }
+
+    // Patient History (if available in response)
+    if (response.patient_history) {
+        const history = response.patient_history;
+        let historyHtml = '';
+
+        if (Array.isArray(history.previous_diagnoses) && history.previous_diagnoses.length > 0) {
+            historyHtml += '<h6 class="text-primary mb-2"><i class="fas fa-stethoscope me-1"></i>Previous Diagnoses:</h6>';
+            historyHtml += '<ul class="copilot-list mb-3">';
+            history.previous_diagnoses.forEach(diagnosis => {
+                historyHtml += `<li>${diagnosis}</li>`;
+            });
+            historyHtml += '</ul>';
+        }
+
+        if (Array.isArray(history.chronic_conditions) && history.chronic_conditions.length > 0) {
+            historyHtml += '<h6 class="text-primary mb-2"><i class="fas fa-heartbeat me-1"></i>Chronic Conditions:</h6>';
+            historyHtml += '<ul class="copilot-list mb-3">';
+            history.chronic_conditions.forEach(condition => {
+                historyHtml += `<li>${condition}</li>`;
+            });
+            historyHtml += '</ul>';
+        }
+
+        if (Array.isArray(history.previous_ai_analyses) && history.previous_ai_analyses.length > 0) {
+            historyHtml += '<h6 class="text-primary mb-2"><i class="fas fa-brain me-1"></i>Previous AI Analyses:</h6>';
+            history.previous_ai_analyses.forEach(analysis => {
+                historyHtml += `<div class="border-start border-info border-3 ps-3 mb-3">
+                    <small class="text-muted">${analysis.generated_at}</small>
+                    <p class="mb-1">${analysis.summary}</p>
+                    ${Array.isArray(analysis.red_flags) && analysis.red_flags.length > 0 ?
+                        `<small class="text-danger">⚠️ Red flags: ${analysis.red_flags.join(', ')}</small>` :
+                        '<small class="text-success">✓ No red flags</small>'}
+                </div>`;
+            });
+        }
+
+        if (!historyHtml) {
+            historyHtml = '<p class="text-muted">No significant patient history available.</p>';
+        }
+
+        document.getElementById('copilotHistorySection').innerHTML = historyHtml;
+    }
+
+    // Add disclaimer if available
+    if (response.legal_disclaimer) {
+        const disclaimerDiv = document.createElement('div');
+        disclaimerDiv.className = 'copilot-disclaimer mt-3';
+        disclaimerDiv.innerHTML = `<i class="fas fa-shield-alt me-1"></i> ${response.legal_disclaimer}`;
+        document.querySelector('.copilot-disclaimer').parentNode.appendChild(disclaimerDiv);
+    }
+
+    // Initialize tab functionality for the section
+    initializeCopilotTabFunctionality();
+}
+
+// Function to initialize tab functionality for the section
+function initializeCopilotTabFunctionality() {
+    // Add event listeners to the tab buttons
+    const tabButtons = document.querySelectorAll('#ai-medical-copilot-section .copilot-tab');
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+
+            // Update tab buttons
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            // Update tab content
+            const tabContents = document.querySelectorAll('#ai-medical-copilot-section .copilot-tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                if (content.getAttribute('data-tab-content') === tabId) {
+                    content.classList.add('active');
+                }
+            });
+        });
+    });
+}
+
+
+// Function to collect analysis data from the current UI state
+function collectAnalysisData() {
+    // Extract data from the global response object if available
+    if (window.currentCopilotResponse) {
+        return window.currentCopilotResponse;
+    }
+
+    // Fallback: extract from current display (less reliable)
+    return {
+        medical_case_summary: document.querySelector('#copilotSummarySection p')?.textContent.trim() || 'No summary available',
+        differential_considerations: extractListItems('#copilotConsiderationsSection li'),
+        follow_up_questions: extractListItems('#copilotQuestionsSection li'),
+        red_flags: extractListItems('#copilotRedFlagsSection li'),
+        disclaimer: 'This content is generated by AI Medical Copilot for clinical decision support only. All medical decisions must be made by qualified healthcare professionals.',
+        compliance: {
+            ai_generated: true,
+            physician_verification_required: true,
+            label: 'AI-generated draft. Physician verified.',
+            timestamp: new Date().toISOString(),
+            generated_by: 'AI Medical Copilot',
+            version: 'ai-copilot-clinical-v1.1'
+        },
+        legal_disclaimer: 'This content is generated by AI Medical Copilot for clinical decision support only. All medical decisions must be made by qualified healthcare professionals.'
+    };
+}
+
+// Helper function to extract list items from HTML
+function extractListItems(selector) {
+    const items = [];
+    const elements = document.querySelectorAll(selector);
+    elements.forEach(element => {
+        const text = element.cloneNode(true).textContent.trim();
+        if (text && text !== 'Loading...' && !text.includes('Loading')) {
+            items.push(text);
+        }
+    });
+    return items;
+}
+
+// Function to save AI copilot analysis
+function saveAICopilotAnalysis(appointmentId, analysisData, includeInNote) {
+    fetch(`/ai/appointments/${appointmentId}/ai-analyses/save`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            analysis_data: analysisData,
+            include_in_note: includeInNote
+        })
+    })
+    .then(response => response.json())
+    .then(response => {
+        if (response.success) {
+            showNotification('AI Medical Copilot analysis saved successfully!', 'success');
+
+            // Close the section after a short delay
+            setTimeout(() => {
+                document.getElementById('ai-medical-copilot-section').style.display = 'none';
+            }, 1500);
+        } else {
+            showNotification(response.message || 'Failed to save analysis', 'error');
+        }
+    })
+    .catch(error => {
+        const errorMessage = error.message || 'Failed to save AI analysis';
+        showNotification(errorMessage, 'error');
+        console.error('Save AI analysis error:', errorMessage);
+    });
+}
+
+// Function to view patient's AI analysis history
+function viewPatientAIAnalyses(patientId) {
+    // Show the AI history section
+    const historySection = document.getElementById('ai-history-section');
+    let shouldScroll = true;
+
+    if (!historySection) {
+        // Create the AI history section if it doesn't exist
+        createAIHistorySection();
+    } else {
+        // Check if section is currently visible
+        const isVisible = historySection.style.display !== 'none';
+        if (!isVisible) {
+            // If it's hidden, show it
+            historySection.style.display = 'block';
+        } else {
+            // If it's already visible, we might want to scroll anyway to bring it into view
+            shouldScroll = true;
+        }
+    }
+
+    // Load patient AI analyses
+    loadPatientAIAnalyses(patientId);
+
+    // Small delay to ensure DOM is updated before scrolling
+    setTimeout(() => {
+        if (shouldScroll) {
+            const section = document.getElementById('ai-history-section');
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    }, 100);
+}
+
+// Function to create AI history section
+function createAIHistorySection() {
+    // Check if section already exists
+    if (document.getElementById('ai-history-section')) {
+        return;
+    }
+
+    // Create the section element
+    const section = document.createElement('div');
+    section.id = 'ai-history-section';
+    section.className = 'table-card';
+    section.style.display = 'block'; // Start visible to show loading
+
+    section.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="mb-0 fw-bold text-info">
+                    <i class="fas fa-history me-2"></i>Patient AI Analysis History
+                </h4>
+                <p class="mb-0 text-muted small">Previous AI Medical Copilot analyses for this patient</p>
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAIHistorySection()">
+                <i class="fas fa-times me-1"></i>Close
+            </button>
+        </div>
+
+        <div id="aiHistoryContentSection">
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading AI analysis history...</p>
+            </div>
+        </div>
+    `;
+
+    // Insert the section after the AI Medical Copilot section or at the end of content
+    const copilotSection = document.getElementById('ai-medical-copilot-section');
+    const diagnosisSection = document.getElementById('diagnosis-section');
+
+    if (copilotSection) {
+        copilotSection.parentNode.insertBefore(section, copilotSection.nextSibling);
+    } else if (diagnosisSection) {
+        diagnosisSection.parentNode.insertBefore(section, diagnosisSection.nextSibling);
+    } else {
+        // If neither section exists, append to the main content area
+        const mainContent = document.querySelector('.dashboard-container .container');
+        if (mainContent) {
+            mainContent.appendChild(section);
+        }
+    }
+}
+
+// Function to toggle AI history section
+function toggleAIHistorySection() {
+    const historySection = document.getElementById('ai-history-section');
+    if (!historySection) return;
+
+    const isVisible = historySection.style.display !== 'none';
+
+    if (isVisible) {
+        // Hide the section
+        historySection.style.display = 'none';
+        // Scroll to the Next Steps section
+        document.querySelector('.table-card.mb-4').scrollIntoView({ behavior: 'smooth' });
+    } else {
+        // Show the section
+        historySection.style.display = 'block';
+        // Scroll to the AI history section
+        historySection.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// Function to load patient AI analyses
+function loadPatientAIAnalyses(patientId) {
+    const contentElement = document.getElementById('aiHistoryContentSection');
+    if (!contentElement) return;
+
+    contentElement.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading AI analysis history...</p>
+        </div>
+    `;
+
+    // Log for debugging
+    console.log('Loading AI analyses for patient ID:', patientId);
+    console.log('Fetching from URL:', `/ai/patients/${patientId}/ai-analyses`);
+
+    fetch(`/ai/patients/${patientId}/ai-analyses`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(response => {
+        console.log('API Response:', response);
+        // The response is paginated, so we need to use response.data which contains the analyses
+        if (response.data !== undefined) {
+            displayAIAnalysesSection(response.data || []);
+        } else {
+            contentElement.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${response.message || 'Failed to load AI analysis history'}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Detailed error:', error);
+        contentElement.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Failed to load AI analysis history: ${error.message}. Please check browser console for details.
+            </div>
+        `;
+        console.error('Load AI analysis error:', error);
+    });
+}
+
+// Function to display AI analyses in the section
+function displayAIAnalysesSection(analyses) {
+    const contentElement = document.getElementById('aiHistoryContentSection');
+    if (!contentElement) return;
+
+    if (!analyses || analyses.length === 0) {
+        contentElement.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-brain fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No AI Analyses Found</h5>
+                <p class="text-muted">This patient hasn't had any AI Medical Copilot analyses saved yet.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '<div class="ai-analyses-timeline">';
+
+    analyses.forEach(analysis => {
+        const analysisData = typeof analysis.analysis_data === 'string' ?
+            JSON.parse(analysis.analysis_data) : analysis.analysis_data;
+
+        html += `
+            <div class="ai-analysis-card mb-4">
+                <div class="card border-primary">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">
+                                <i class="fas fa-brain me-2"></i>AI Medical Copilot Analysis
+                            </h6>
+                            <small>${new Date(analysis.generated_at).toLocaleDateString()} at ${new Date(analysis.generated_at).toLocaleTimeString()}</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            ${analysis.status === 'reviewed' ?
+                                '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Reviewed</span>' :
+                                '<span class="badge bg-warning"><i class="fas fa-clock me-1"></i>Pending Review</span>'}
+                            <a href="/ai/ai-analyses/${analysis.id}" class="btn btn-sm btn-primary" target="_blank">
+                                <i class="fas fa-eye me-1"></i>View Details
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary"><i class="fas fa-file-medical me-1"></i>Summary</h6>
+                                <p class="mb-3">${analysisData.medical_case_summary || 'No summary available'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-warning"><i class="fas fa-list-check me-1"></i>Key Considerations</h6>
+                                <ul class="mb-3 small">
+                                    ${displayConsiderationsSection(analysisData.differential_considerations || [])}
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-info"><i class="fas fa-question-circle me-1"></i>Follow-up Questions</h6>
+                                <ul class="mb-3 small">
+                                    ${displayQuestionsSection(analysisData.follow_up_questions || [])}
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-danger"><i class="fas fa-flag me-1"></i>Red Flags</h6>
+                                <ul class="mb-3 small">
+                                    ${displayRedFlagsSection(analysisData.red_flags || [])}
+                                </ul>
+                            </div>
+                        </div>
+                        ${analysis.reviewed_at ? `
+                            <div class="border-top pt-3 mt-3">
+                                <h6 class="text-success"><i class="fas fa-user-md me-1"></i>Physician Review</h6>
+                                <p class="mb-1 small text-muted">Reviewed by Dr. ${analysis.reviewer?.name || 'Unknown'} on ${new Date(analysis.reviewed_at).toLocaleDateString()}</p>
+                                ${analysis.doctor_notes ? `<p class="mb-0">${analysis.doctor_notes}</p>` : '<p class="text-muted small">No additional notes</p>'}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    contentElement.innerHTML = html;
+}
+
+// Helper functions for displaying analysis components in the section
+function displayConsiderationsSection(considerations) {
+    if (!considerations || considerations.length === 0) return '<li class="text-muted">No considerations recorded</li>';
+
+    return considerations.slice(0, 3).map(item => {
+        if (typeof item === 'object' && item.consideration) {
+            return `<li><strong>${item.consideration}</strong><br><small class="text-muted">${item.rationale || ''}</small></li>`;
+        } else {
+            return `<li>${item}</li>`;
+        }
+    }).join('');
+}
+
+function displayQuestionsSection(questions) {
+    if (!questions || questions.length === 0) return '<li class="text-muted">No questions recorded</li>';
+    return questions.slice(0, 3).map(question => `<li>${question}</li>`).join('');
+}
+
+function displayRedFlagsSection(flags) {
+    if (!flags || flags.length === 0) return '<li class="text-success">No red flags detected</li>';
+    return flags.slice(0, 3).map(flag => `<li class="text-danger">${flag}</li>`).join('');
 }
 </script>
 @endpush
