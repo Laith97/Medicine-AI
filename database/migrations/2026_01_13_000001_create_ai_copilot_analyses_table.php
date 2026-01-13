@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('ai_copilot_analyses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('appointment_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('patient_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('patient_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('doctor_id')->constrained('users')->cascadeOnDelete();
             $table->json('analysis_data');
             $table->timestamp('generated_at');
@@ -26,6 +26,13 @@ return new class extends Migration
             $table->foreignId('reviewed_by_doctor')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('reviewed_at')->nullable();
             $table->text('doctor_notes')->nullable();
+            // Guest patient fields for appointments without registered patients
+            $table->string('guest_name')->nullable();
+            $table->string('guest_email')->nullable();
+            $table->string('guest_phone')->nullable();
+            $table->date('guest_date_of_birth')->nullable();
+            $table->string('guest_gender')->nullable();
+            $table->text('guest_address')->nullable();
             $table->timestamps();
 
             // Indexes for performance
