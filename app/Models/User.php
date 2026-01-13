@@ -177,6 +177,27 @@ class User extends Authenticatable
      * @property int|null $parent_user_id
      */
 
+    /**
+     * Boot the model and set up event listeners
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Automatically calculate age when creating/updating if date of birth changes
+        static::saving(function ($user) {
+            // If date of birth is set and age is not set (or being updated), calculate age
+            if (!empty($user->date_of_birth) && $user->age === null) {
+                $birthDate = \Carbon\Carbon::parse($user->date_of_birth);
+                $user->age = $birthDate->age;
+            } elseif (!empty($user->date_of_birth) && $user->isDirty('date_of_birth')) {
+                // If date of birth was changed, recalculate the age
+                $birthDate = \Carbon\Carbon::parse($user->date_of_birth);
+                $user->age = $birthDate->age;
+            }
+        });
+    }
+
     public function setting()
     {
         return $this->hasOne(Setting::class);
@@ -492,6 +513,17 @@ public function getFreshMonthlyInvoiceSetting()
         }
 
         return $this->role;
+    }
+
+    /**
+     * Check if user has any of the specified roles
+     *
+     * @param array $roles List of roles to check against
+     * @return bool True if the user has one of the roles
+     */
+    public function hasAnyRole(array $roles): bool
+    {
+        return in_array($this->getEffectiveRole(), $roles);
     }
 
     /**
@@ -1316,6 +1348,40 @@ public function getHospitalAdminStatistics(): array
     }
 
     return $this->hospital->getStatistics();
+}
+
+/**
+ * Check if user can access a specific patient
+ *
+ * For doctors: they can access patients assigned to them (primary_doctor_id matches)
+ *              OR patients that have confirmed appointments with them
+ * For sub-users: they can access patients assigned to their parent doctor
+ *                OR patients that have confirmed appointments with their parent doctor
+ * For other roles: access is denied
+ */
+public function canAccessPatient(User $patient): bool
+{
+    // Only doctors and their sub-users can access patients
+    if (!$this->isDoctor() && !$this->isSubUser()) {
+        return false;
+    }
+
+    // Get the effective doctor for the current user (handles sub-users)
+    $effectiveDoctor = $this->getEffectiveDoctorUser();
+    $effectiveDoctorId = $effectiveDoctor ? $effectiveDoctor->id : null;
+
+    // Check if patient is assigned to this doctor (primary doctor relationship)
+    if ($patient->primary_doctor_id === $effectiveDoctorId) {
+        return true;
+    }
+
+    // Check if patient has confirmed or completed appointments with this doctor
+    $hasConfirmedAppointment = $patient->appointments()
+        ->where('doctor_id', $effectiveDoctorId)
+        ->whereIn('status', ['confirmed', 'completed'])
+        ->exists();
+
+    return $hasConfirmedAppointment;
 }
 
 /**

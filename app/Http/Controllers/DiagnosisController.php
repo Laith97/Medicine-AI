@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Appointment;
 use App\Models\Diagnosis;
 use App\Models\DiagnosisFollowUp;
 use App\Models\User;
@@ -37,13 +38,58 @@ class DiagnosisController extends Controller
             abort(403, 'Access denied. Doctor access required.');
         }
 
-        // Get doctor's assigned patients
-        $patients = $user->assignedPatients()
+        // Get doctor's assigned patients (patients where primary_doctor_id matches)
+        $assignedPatients = $user->assignedPatients()
             ->select('id', 'name', 'email', 'phone', 'age', 'gender')
-            ->orderBy('name')
             ->get();
 
-        return view('diagnosis.create', compact('patients'));
+        // Get patients who have confirmed or completed appointments with this doctor
+        // but are not already in the assigned patients list
+        $appointmentPatients = User::where('role', 'patient')
+            ->whereHas('appointments', function($query) use ($user) {
+                $query->where('doctor_id', $user->id)
+                      ->whereIn('status', ['confirmed', 'completed']);
+            })
+            ->whereNotIn('id', $assignedPatients->pluck('id'))
+            ->select('id', 'name', 'email', 'phone', 'age', 'gender')
+            ->get();
+
+        // Merge the two collections
+        $patients = $assignedPatients->merge($appointmentPatients)->unique('id')->sortBy('name')->values();
+
+        // Load guest patients from confirmed or completed appointments
+        $guestAppointments = \App\Models\Appointment::where('doctor_id', $user->id)
+            ->whereIn('status', ['confirmed', 'completed'])
+            ->whereNotNull('guest_name')
+            ->whereNotNull('guest_email')
+            ->select('guest_name', 'guest_email', 'guest_date_of_birth', 'guest_gender', 'guest_phone', 'appointment_date')
+            ->orderBy('appointment_date', 'desc')
+            ->get();
+
+        // Convert guest appointments to patient-like objects
+        $guestPatients = $guestAppointments->map(function($appointment) {
+            // Calculate age from date of birth if available
+            $age = null;
+            if ($appointment->guest_date_of_birth) {
+                $age = $appointment->guest_date_of_birth->age;
+            }
+
+            return (object)[
+                'id' => 'guest_' . sha1($appointment->guest_email . $appointment->guest_name . $appointment->id), // Create unique ID for guest
+                'name' => $appointment->guest_name,
+                'email' => $appointment->guest_email,
+                'age' => $age,
+                'gender' => $appointment->guest_gender,
+                'phone' => $appointment->guest_phone,
+                'is_guest' => true,
+                'last_appointment' => $appointment->appointment_date
+            ];
+        });
+
+        // Merge registered patients with guest patients, removing duplicates by email
+        $allPatients = $patients->concat($guestPatients)->unique('email')->values();
+
+        return view('diagnosis.create', compact('allPatients'));
     }
 
     /**
@@ -143,9 +189,69 @@ class DiagnosisController extends Controller
 
             // Get or create patient
             if ($request->existing_patient) {
-                // Use existing patient
-                $patient = $user->assignedPatients()->findOrFail($request->existing_patient);
-                $isNewPatient = false;
+                // Check if this is a guest patient (starts with 'guest_')
+                if (str_starts_with($request->existing_patient, 'guest_')) {
+                    // This is a guest patient - create a new patient account for them
+                    $guestEmail = $request->input('patient_email');
+                    $guestName = $request->input('patient_name');
+
+                    // Check if a patient with this email already exists
+                    $existingPatient = User::where('email', $guestEmail)->where('role', 'patient')->first();
+
+                    if ($existingPatient) {
+                        // Use existing patient if found
+                        $patient = $existingPatient;
+                        $isNewPatient = false;
+                    } else {
+                        // Create new patient account for the guest
+                        $tempPassword = SmsService::generateTempPassword();
+
+                        $patient = User::create([
+                            'name' => $guestName,
+                            'email' => $guestEmail,
+                            'phone' => $request->input('patient_phone'),
+                            'age' => $request->input('patient_age'),
+                            'gender' => $request->input('patient_gender'),
+                            'role' => 'patient',
+                            'primary_doctor_id' => Auth::id(),
+                            'password' => Hash::make($tempPassword),
+                        ]);
+
+                        $isNewPatient = true;
+
+                        // Send welcome email to the newly created patient
+                        try {
+                            // Create a temporary diagnosis object for the email
+                            $tempDiagnosis = (object)['id' => null];
+                            Mail::to($patient->email)->send(
+                                new PatientAccountCreated($patient, Auth::user(), $tempDiagnosis, $tempPassword)
+                            );
+                        } catch (\Exception $e) {
+                            Log::warning('Failed to send welcome email to converted guest patient: ' . $e->getMessage());
+                        }
+                    }
+                } else {
+                    // Use existing registered patient
+                    // First try to find in assigned patients
+                    $patient = $user->assignedPatients()->find($request->existing_patient);
+
+                    if (!$patient) {
+                        // Check if patient has confirmed or completed appointments with this doctor
+                        $patient = User::where('role', 'patient')
+                            ->where('id', $request->existing_patient)
+                            ->whereHas('appointments', function($query) use ($user) {
+                                $query->where('doctor_id', $user->id)
+                                      ->whereIn('status', ['confirmed', 'completed']);
+                            })
+                            ->first();
+                    }
+
+                    if (!$patient) {
+                        abort(404, 'Patient not found or you do not have access to this patient.');
+                    }
+
+                    $isNewPatient = false;
+                }
             } else {
                 // Create new patient
                 $patient = $this->findOrCreatePatient($request);
@@ -455,6 +561,15 @@ class DiagnosisController extends Controller
      */
     private function findOrCreatePatient(Request $request)
     {
+        // Validate required fields
+        $request->validate([
+            'patient_name' => 'required|string|max:255',
+            'patient_email' => 'required|email|max:255',
+            'patient_phone' => 'nullable|string|max:20',
+            'patient_age' => 'nullable|integer|min:0|max:150',
+            'patient_gender' => 'required|in:male,female,other',
+        ]);
+
         // First check if patient exists and is already assigned to this doctor
         /** @var User $user */
         $user = Auth::user();
@@ -602,9 +717,8 @@ class DiagnosisController extends Controller
             } elseif (strpos($e->getMessage(), 'too large') !== false) {
                 return 'The audio file is too large. Please record a shorter message (max 25MB).';
             } else {
-                // Include part of the actual error for better debugging
-                $shortError = substr($e->getMessage(), 0, 100);
-                return "Voice transcription temporarily unavailable (OpenAI Error: {$shortError}). Please type your diagnosis manually.";
+                // Avoid exposing sensitive error details to the user
+                return "Voice transcription temporarily unavailable. Please type your diagnosis manually.";
             }
         }
     }
@@ -850,6 +964,140 @@ class DiagnosisController extends Controller
         ];
 
         return response()->file($filePath, $headers);
+    }
+
+    /**
+     * Create diagnosis from appointment page
+     */
+    public function createFromAppointment(Request $request, Appointment $appointment)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        if (!$user->isDoctor()) {
+            abort(403, 'Access denied. Doctor access required.');
+        }
+
+        // Check if the appointment belongs to the doctor
+        if ($appointment->doctor_id !== $user->id) {
+            abort(403, 'Access denied. You can only create diagnoses for your own appointments.');
+        }
+
+        // Check if appointment is completed
+        if ($appointment->status !== 'completed') {
+            return back()->withErrors(['error' => 'Diagnosis can only be created for completed appointments.']);
+        }
+
+        // Prepare validation rules with conditional logic for voice files
+        $validationRules = [
+            'diagnosis_text' => 'required|string|min:10',
+            'patient_data' => 'nullable|array',
+            'patient_data.height' => 'nullable|numeric|min:50|max:250',
+            'patient_data.weight' => 'nullable|numeric|min:20|max:500',
+            'patient_data.blood_pressure' => 'nullable|string|max:20',
+            'patient_data.temperature' => 'nullable|numeric|min:30|max:45',
+        ];
+
+        // Only add voice file validation if files were actually uploaded
+        if ($request->hasFile('voice_files')) {
+            $validationRules['voice_files'] = 'nullable|array';
+            $validationRules['voice_files.*'] = 'file|mimetypes:audio/mpeg,audio/mp3,audio/wav,audio/wave,audio/x-wav,audio/m4a,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/webm,application/ogg,video/mp4|max:10240'; // 10MB max each
+        } else {
+            // If no files uploaded, just validate it's an array (which it will be from the form)
+            $validationRules['voice_files'] = 'nullable|array';
+        }
+
+        $validator = Validator::make($request->all(), $validationRules);
+
+        if ($validator->fails()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            // Handle voice input if provided
+            $voiceTranscripts = [];
+            $voiceFilePaths = [];
+            $diagnosisText = $request->diagnosis_text;
+
+            if ($request->hasFile('voice_files')) {
+                $voiceFiles = $request->file('voice_files');
+
+                foreach ($voiceFiles as $index => $voiceFile) {
+                    // Store the voice file
+                    $voiceFilePath = $voiceFile->store('diagnosis_voices', 'local');
+                    $voiceFilePaths[] = $voiceFilePath;
+
+                    // Transcribe voice to text using OpenAI Whisper
+                    $voiceTranscript = $this->transcribeVoice($voiceFile);
+                    $voiceTranscripts[] = $voiceTranscript;
+                }
+
+                // Combine transcripts with manual text if both exist
+                if (!empty($voiceTranscripts)) {
+                    $diagnosisText .= "\n\nVoice Notes:\n" . implode("\n\n", array_filter($voiceTranscripts));
+                }
+            }
+
+            // Create diagnosis linked to the appointment's patient
+            $diagnosis = Diagnosis::create([
+                'doctor_id' => Auth::id(),
+                'patient_id' => $appointment->patient_id,
+                'type' => 'appointment',
+                'diagnosis_text' => $diagnosisText,
+                'voice_transcripts' => $voiceTranscripts,
+                'voice_files' => $voiceFilePaths,
+                'patient_data' => $request->patient_data,
+            ]);
+
+            // Link diagnosis to appointment (optional - could add appointment_id to diagnosis model later)
+            // For now, we'll use the diagnosis text to maintain the relationship
+
+            // Log diagnosis creation
+            \App\Services\AuditLoggingService::logDiagnosisCreated(
+                Auth::id(),
+                $appointment->patient_id,
+                $diagnosis->id,
+                ['appointment_id' => $appointment->id]
+            );
+
+            // Send diagnosis notifications
+            $this->sendDiagnosisNotifications($diagnosis);
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Diagnosis created successfully! The page will reload to show the updated information.',
+                    'diagnosis_id' => $diagnosis->id,
+                    'view_diagnosis_url' => route('diagnosis.show', $diagnosis)
+                ]);
+            }
+
+            return redirect()->route('doctor.appointments.show', $appointment)
+                ->with('success', 'Diagnosis created successfully! <a href="' . route('diagnosis.show', $diagnosis) . '" class="alert-link">View Diagnosis</a>');
+
+        } catch (\Exception $e) {
+            Log::error('Diagnosis creation from appointment failed: ' . $e->getMessage(), [
+                'appointment_id' => $appointment->id,
+                'patient_id' => $appointment->patient_id,
+                'doctor_id' => Auth::id(),
+                'error_trace' => $e->getTraceAsString()
+            ]);
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create diagnosis: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return back()->with('error', 'Failed to create diagnosis: ' . $e->getMessage())->withInput();
+        }
     }
 
     /**

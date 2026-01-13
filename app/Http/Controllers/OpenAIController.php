@@ -321,7 +321,17 @@ class OpenAIController extends Controller
         // Sort all cases by creation date (newest first)
         $allCases = $allCases->sortByDesc('created_at');
 
-        \Log::info('Total cases after combining: ' . $allCases->count());
+        // Filter out cases without diagnoses
+        $allCases = $allCases->filter(function($case) {
+            // Only show cases that have actual diagnoses
+            return $case->ai_response &&
+                   $case->ai_response !== 'No diagnosis available' &&
+                   $case->ai_response !== 'Appointment completed - pending diagnosis' &&
+                   $case->ai_response !== 'Appointment scheduled' &&
+                   trim($case->ai_response) !== '';
+        });
+
+        \Log::info('Total cases after filtering: ' . $allCases->count());
 
         // Group records by patient for calculating total visits
         $patientGroups = [];
@@ -378,12 +388,31 @@ class OpenAIController extends Controller
             }
         }
 
+        // Handle Appointment records grouping by patient
+        foreach ($completedAppointmentsWithoutDiagnosis as $record) {
+            $patient = $record->patient;
+            if ($patient) {
+                // Create a unique key for appointment records based on patient
+                $patientKey = 'pending_' . $patient->id;
+
+                if (!isset($patientGroups[$patientKey])) {
+                    $patientGroups[$patientKey] = [];
+                }
+                $patientGroups[$patientKey][] = $record;
+            }
+        }
+
         // Update total_visits for all records in the unified collection
         foreach ($allCases as $case) {
             if ($case->source_model === 'PatientAnalysis' && $case->patient_key && isset($patientGroups[$case->patient_key])) {
                 $case->total_visits = count($patientGroups[$case->patient_key]);
             } elseif ($case->source_model === 'Diagnosis' && isset($case->patient_id)) {
                 $patientKey = 'diagnosis_' . $case->patient_id;
+                if (isset($patientGroups[$patientKey])) {
+                    $case->total_visits = count($patientGroups[$patientKey]);
+                }
+            } elseif ($case->source_model === 'Appointment' && isset($case->patient_id)) {
+                $patientKey = 'pending_' . $case->patient_id;
                 if (isset($patientGroups[$patientKey])) {
                     $case->total_visits = count($patientGroups[$patientKey]);
                 }
@@ -436,6 +465,7 @@ class OpenAIController extends Controller
         }
 
         \Log::info('Patient groups count: ' . count($patientGroups));
+
 
         // Sort by most recent visit
         uasort($patientGroups, function($a, $b) {

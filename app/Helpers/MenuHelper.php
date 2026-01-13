@@ -78,6 +78,32 @@ class MenuHelper
                 'permission' => 'dashboard',
             ],
 
+            // Physical Therapy Section - Only for doctors with relevant specialties
+            [
+                'name' => 'Physical Therapy',
+                'icon' => 'fas fa-dumbbell',
+                'dropdown' => true,
+                'header_class' => 'sidebar-header-clinical',
+                'header_style' => 'font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
+                'items' => [
+                    [
+                        'name' => 'Home Exercise Programs',
+                        'route' => 'doctor.hep.index',
+                        'icon' => 'fas fa-dumbbell',
+                        'permission' => 'hep',
+                    ],
+                ],
+                'visible' => function($user) {
+                    // Show only for doctors with specialties related to physical therapy
+                    $doctor = $user->doctor;
+                    if (!$doctor || !$doctor->specialty) {
+                        return false;
+                    }
+
+                    $relevantSpecialties = ['orthopedics', 'physical therapy', 'sports medicine', 'rehabilitation'];
+                    return in_array(strtolower($doctor->specialty->name), $relevantSpecialties);
+                }
+            ],
             // Clinical Section
             [
                 'name' => 'Clinical',
@@ -108,10 +134,10 @@ class MenuHelper
                         'permission' => 'diagnosis',
                     ],
                     [
-                        'name' => 'HEP Programs',
-                        'route' => 'doctor.hep.index',
-                        'icon' => 'fas fa-dumbbell',
-                        'permission' => 'hep',
+                        'name' => 'Clinical Monitoring',
+                        'route' => 'clinical.monitoring',
+                        'icon' => 'fas fa-heartbeat',
+                        'permission' => 'diagnosis', // Reusing diagnosis permission for now
                     ],
                 ]
             ],
@@ -284,6 +310,13 @@ class MenuHelper
 
         // Filter menu items and their dropdown items based on permissions
         return array_filter(array_map(function ($item) use ($user) {
+            // Check if the item has a visibility callback
+            if (isset($item['visible']) && is_callable($item['visible'])) {
+                if (!$item['visible']($user)) {
+                    return null;
+                }
+            }
+
             if (isset($item['dropdown']) && isset($item['items'])) {
                 // Filter dropdown items
                 $filteredItems = array_filter($item['items'], function ($subItem) use ($user) {
@@ -317,6 +350,31 @@ class MenuHelper
                 'icon' => 'fas fa-tachometer-alt',
             ],
 
+            // Physical Therapy Section - Only for doctors with relevant specialties
+            [
+                'name' => 'Physical Therapy',
+                'icon' => 'fas fa-dumbbell',
+                'dropdown' => true,
+                'header_class' => 'sidebar-header-clinical',
+                'header_style' => 'font-weight: 700; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
+                'items' => [
+                    [
+                        'name' => 'Home Exercise Programs',
+                        'route' => 'doctor.hep.index',
+                        'icon' => 'fas fa-dumbbell',
+                    ],
+                ],
+                'visible' => function($user) {
+                    // Show only for doctors with specialties related to physical therapy
+                    $doctor = $user->doctor;
+                    if (!$doctor || !$doctor->specialty) {
+                        return false;
+                    }
+
+                    $relevantSpecialties = ['orthopedics', 'physical therapy', 'sports medicine', 'rehabilitation'];
+                    return in_array(strtolower($doctor->specialty->name), $relevantSpecialties);
+                }
+            ],
             // Clinical Section - Show ALL items
             [
                 'name' => 'Clinical',
@@ -342,9 +400,9 @@ class MenuHelper
                         'icon' => 'fas fa-stethoscope',
                     ],
                     [
-                        'name' => 'HEP Programs',
-                        'route' => 'doctor.hep.index',
-                        'icon' => 'fas fa-dumbbell',
+                        'name' => 'Clinical Monitoring',
+                        'route' => 'clinical.monitoring',
+                        'icon' => 'fas fa-heartbeat',
                     ],
                 ]
             ],
@@ -498,8 +556,19 @@ class MenuHelper
             ],
         ];
 
-        // Return all menu items without any filtering
-        return $menuItems;
+        // Apply visibility callbacks but return all other items without permission filtering
+        return array_filter(array_map(function ($item) use ($user) {
+            // Check if the item has a visibility callback
+            if (isset($item['visible']) && is_callable($item['visible'])) {
+                if (!$item['visible']($user)) {
+                    return null;
+                }
+            }
+
+            return $item;
+        }, $menuItems), function ($item) {
+            return $item !== null;
+        });
     }
 
     /**

@@ -138,6 +138,8 @@
 
     let currentLanguage = getRegionalDefaultLanguage(); // Dynamic regional default
     let sessionId = '';
+    let transcriptionId = null;
+    let selectedAppointmentId = null;
     let selectedPatient = null;
     let isProcessing = false;
     let isHandsFreeMode = false;
@@ -1638,6 +1640,47 @@
             }
         }
 
+        // Generate clinical documentation button
+        const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
+        if (generateClinicalDocBtn) {
+            generateClinicalDocBtn.addEventListener('click', function() {
+                if (!transcriptionId) {
+                    Swal.fire('No Transcription', 'Please complete a voice session before generating documentation.', 'warning');
+                    return;
+                }
+
+                // Sync IDs before switching
+                if (window.setAIDocumentationIds) {
+                    window.setAIDocumentationIds(window.selectedAppointmentId || null, transcriptionId);
+                }
+
+                // Switch to documentation tab
+                const docTab = document.getElementById('documentation-tab');
+                if (docTab) {
+                    const tab = new bootstrap.Tab(docTab);
+                    tab.show();
+                    
+                    // Trigger generation after a short delay to allow tab to show
+                    setTimeout(() => {
+                        if (window.triggerAIDocumentationGeneration) {
+                            window.triggerAIDocumentationGeneration();
+                        }
+                    }, 500);
+                }
+            });
+        }
+
+        // Sync IDs when documentation tab is clicked
+        const docTab = document.getElementById('documentation-tab');
+        if (docTab) {
+            docTab.addEventListener('shown.bs.tab', function () {
+                if (window.setAIDocumentationIds) {
+                    const aptId = window.selectedAppointmentId || null;
+                    window.setAIDocumentationIds(aptId, transcriptionId);
+                }
+            });
+        }
+
         // Reset session button
         if (resetSessionBtn) {
             resetSessionBtn.addEventListener('click', resetSession);
@@ -1656,6 +1699,14 @@
                 const newValue = this.value;
                 selectedPatient = newValue && newValue !== '' ? newValue : null;
                 console.log('👤 Patient selected:', selectedPatient, 'from dropdown value:', newValue, 'dropdown options:', this.options.length);
+                
+                // Load appointments for the selected patient immediately
+                if (selectedPatient) {
+                    loadPatientAppointments(selectedPatient);
+                } else {
+                    window.selectedAppointmentId = null;
+                }
+                
                 updateRecordingUI();
             });
 
@@ -1768,7 +1819,15 @@
             success: async function (response) {
                 if (response.success) {
                     sessionId = response.sessionId;
+                    transcriptionId = response.transcriptionId;
                     isListening = true;
+
+                    // Update AI Documentation component IDs
+                    if (window.setAIDocumentationIds) {
+                        // Try to get appointment ID if already selected
+                        const aptId = window.selectedAppointmentId || null;
+                        window.setAIDocumentationIds(aptId, transcriptionId);
+                    }
 
                     // CRITICAL FIX: Complete reset of all session data
                     finalTranscript = '';
@@ -3691,6 +3750,11 @@
 
         // Re-attach event listeners in case DOM was updated
         reattachEventListeners();
+        const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
+        if (generateClinicalDocBtn) {
+            const transcription = finalTranscript || liveTranscription || (transcriptionArea ? transcriptionArea.value : '');
+            generateClinicalDocBtn.disabled = empty(transcription) || isProcessing;
+        }
     }
 
     // Show progress indicator
@@ -4022,12 +4086,23 @@
             // Store appointment ID for completion
             window.selectedAppointmentId = appointment.id;
 
+            // Update AI Documentation component IDs
+            if (window.setAIDocumentationIds) {
+                window.setAIDocumentationIds(appointment.id, transcriptionId);
+            }
+
             // Show appointment details
             showAppointmentPreview(appointment.id);
         } else {
             if (appointmentInfoDiv) appointmentInfoDiv.style.display = 'block';
             if (appointmentInfoText) appointmentInfoText.textContent = 'No scheduled appointments available for this patient. Diagnosis will be saved without appointment completion.';
             window.selectedAppointmentId = null;
+
+            // Update AI Documentation component IDs
+            if (window.setAIDocumentationIds) {
+                window.setAIDocumentationIds(null, transcriptionId);
+            }
+
             showAppointmentPreview(null);
             console.log('No appointments found for patient:', patientId);
         }

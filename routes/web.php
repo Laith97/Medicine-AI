@@ -28,6 +28,7 @@ use App\Http\Controllers\Doctor\AnalyticsController;
 use App\Http\Controllers\PublicChatController;
 use App\Http\Controllers\Admin\MonthlyInvoiceController;
 use App\Http\Controllers\Admin\SubscriptionPlanController;
+use App\Http\Controllers\Admin\AdminWaitlistController;
 use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -220,7 +221,8 @@ Route::get('/notifications/test', function () {
     ]);
 })->middleware(['auth']);
 
-// Temporary test endpoint without auth for debugging
+// Temporary test endpoint without auth for debugging - COMMENTED OUT FOR PRODUCTION
+/*
 Route::get('/notifications/test-debug', function () {
     try {
         // Use the first user from the database for testing
@@ -265,6 +267,7 @@ Route::get('/notifications/test-debug', function () {
         ], 500);
     }
 });
+*/
 
 // Public appointment booking (for guests)
 Route::get('/appointments/{doctor}/create', [AppointmentController::class, 'create'])->name('appointments.create');
@@ -309,12 +312,16 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     // Route::get('/openai/form', [OpenAIController::class, 'showForm'])->name('openai.form');
     Route::post('/patient/summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient.summary');
     Route::get('/dashboard', [OpenAIController::class, 'dashboard'])->name('dashboard');
+    Route::get('/clinical/monitoring', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'dashboard'])->name('clinical.monitoring');
 
     // Appointment routes for patients
     Route::resource('appointments', AppointmentController::class)->except(['edit', 'update', 'create', 'store']);
     Route::post('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
     Route::post('/appointments/{appointment}/reschedule', [AppointmentController::class, 'reschedule'])->name('appointments.reschedule');
     Route::get('/appointments/calendar/events', [AppointmentController::class, 'getCalendarEvents'])->name('appointments.calendar.events');
+
+    // Diagnosis creation from appointment page (for doctors) - DUPLICATE REMOVED - kept in doctor group only
+    // Route::post('/appointments/{appointment}/create-diagnosis', [DiagnosisController::class, 'createFromAppointment'])->name('appointments.create-diagnosis');
 
     // Review routes for patients
     Route::resource('reviews', ReviewController::class);
@@ -786,6 +793,9 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
     // Prescription routes for appointments
     Route::post('/prescriptions/{appointment}', [PrescriptionController::class, 'store'])->name('prescriptions.store');
 
+    // Diagnosis creation from appointment
+    Route::post('/appointments/{appointment}/create-diagnosis', [DiagnosisController::class, 'createFromAppointment'])->name('appointments.create-diagnosis');
+
     // Availability management
     Route::resource('availability', AvailabilityController::class);
     Route::post('/availability/{availabilitySlot}/toggle', [AvailabilityController::class, 'toggle'])->name('availability.toggle');
@@ -1225,6 +1235,21 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::prefix('monitoring')->name('monitoring.')->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\Api\MonitoringController::class, 'showDashboard'])->name('dashboard');
     });
+
+    // Clearinghouse Management
+    Route::prefix('clearinghouse')->name('clearinghouse.')->group(function () {
+        Route::get('/accounts', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getClearinghouseAccounts'])->name('accounts');
+        Route::get('/monitoring', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getSubmissions'])->name('monitoring');
+        Route::get('/errors', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getFailedSubmissions'])->name('errors');
+        Route::get('/providers', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getClearinghouseAccounts'])->name('providers');
+        Route::get('/metrics', [App\Http\Controllers\Admin\ClearinghouseMetricsController::class, 'index'])->name('metrics');
+        Route::get('/metrics/data', [App\Http\Controllers\Admin\ClearinghouseMetricsController::class, 'getData'])->name('metrics.data');
+        Route::get('/metrics/export', [App\Http\Controllers\Admin\ClearinghouseMetricsController::class, 'export'])->name('metrics.export');
+    });
+
+    // Waitlist Management
+    Route::get('/waitlist/dashboard', [AdminWaitlistController::class, 'dashboard'])->name('waitlist.dashboard');
+    Route::get('/waitlist/analytics', [AdminWaitlistController::class, 'analytics'])->name('waitlist.analytics');
 });
 
 Route::middleware('auth')->group(function () {
@@ -1239,7 +1264,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/return-to-admin', [AdminController::class, 'returnToAdmin'])->name('return-to-admin');
 });
 
-// Debug route to test if routes are working
+// Debug route to test if routes are working - COMMENTED OUT FOR PRODUCTION
+/*
 Route::get('/test-return-admin', function() {
     return response()->json([
         'message' => 'Route is accessible',
@@ -1255,6 +1281,7 @@ Route::get('/test-return-admin', function() {
         ]
     ]);
 });
+*/
 
 // Security dashboard routes
 Route::middleware('auth:admin')->prefix('security')->name('security.')->group(function () {

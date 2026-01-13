@@ -205,7 +205,12 @@
                             AI Analysis
                         </button>
 
-                        <button id="resetSessionBtn" class="btn btn-outline-secondary btn-lg px-4 py-3">
+                        <button id="generateClinicalDocBtn" class="btn btn-info text-white" disabled>
+                            <i class="fas fa-file-medical me-2"></i>
+                            Generate Clinical Documentation
+                        </button>
+
+                        <button id="resetSessionBtn" class="btn btn-secondary">
                             <i class="fas fa-redo me-2"></i>
                             Reset
                         </button>
@@ -577,8 +582,25 @@
         }
     </style>
 
-    <!-- Main Content Grid -->
-    <div class="row">
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4" id="voiceAssistantTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="transcription-tab" data-bs-toggle="tab" data-bs-target="#transcription-pane" type="button" role="tab" aria-controls="transcription-pane" aria-selected="true">
+                <i class="fas fa-microphone-alt me-2"></i>Live Session
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="documentation-tab" data-bs-toggle="tab" data-bs-target="#documentation-pane" type="button" role="tab" aria-controls="documentation-pane" aria-selected="false">
+                <i class="fas fa-file-medical me-2"></i>Clinical Documentation
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="voiceAssistantTabsContent">
+        <!-- Live Session Tab -->
+        <div class="tab-pane fade show active" id="transcription-pane" role="tabpanel" aria-labelledby="transcription-tab">
+            <!-- Main Content Grid -->
+            <div class="row">
         <!-- Left Column: Transcription -->
         <div class="col-lg-6 mb-4">
             <div class="card h-100 shadow-sm border-0">
@@ -690,23 +712,16 @@
     </div>
 
 
-    <!-- AI Analysis Section -->
-    <div id="aiAnalysisSection" class="row mb-4" style="display: none;">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-info text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-robot me-2"></i>
-                            AI Clinical Analysis
-                        </h5>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="border rounded p-3" style="max-height: 500px; overflow-y: auto; background-color: #f8f9fa;">
-                        <div id="aiAnalysisArea" style="white-space: pre-wrap;"></div>
-                    </div>
-                </div>
+            </div>
+        </div>
+
+        <!-- Clinical Documentation Tab -->
+        <div class="tab-pane fade" id="documentation-pane" role="tabpanel" aria-labelledby="documentation-tab">
+            <div id="ai-documentation-wrapper">
+                @include('ai.documentation-intelligence', [
+                    'appointment' => null,
+                    'transcription' => null
+                ])
             </div>
         </div>
     </div>

@@ -1339,7 +1339,7 @@ function loadPatientSummary(patientData) {
         const thead = $('<thead></thead>');
         const headerRow = $('<tr></tr>');
 
-        headerRow.append('<th>Visit #</th>');
+        headerRow.append('<th>Record #</th>');
         headerRow.append('<th>Date</th>');
         headerRow.append('<th>Diagnosis Summary</th>');
         thead.append(headerRow);
@@ -1354,11 +1354,17 @@ function loadPatientSummary(patientData) {
                 diagnosisText.substring(0, 80) + '...' :
                 diagnosisText;
 
+            // Determine record type label
+            const recordType = record.source_model || 'Appointment';
+            const typeLabel = recordType === 'Appointment' ? 'Appointment' :
+                             recordType === 'Diagnosis' ? 'Diagnosis' :
+                             recordType === 'PatientAnalysis' ? 'Analysis' : 'Record';
+
             const tr = $('<tr></tr>');
 
             // Create cells with proper text escaping
             const visitTd = $('<td></td>').append(
-                $('<span class="badge bg-light text-dark"></span>').text('Visit #' + (index + 1))
+                $('<span class="badge bg-light text-dark"></span>').text(typeLabel + ' #' + (index + 1))
             );
             const dateTd = $('<td></td>').text(visitDate.toLocaleDateString('en-US', {
                 year: 'numeric',
@@ -1374,7 +1380,7 @@ function loadPatientSummary(patientData) {
         table.append(tbody);
         tableContainer.append(table);
 
-        document.getElementById('visitSummaryContainer').innerHTML = visitHtml;
+        document.getElementById('visitSummaryContainer').innerHTML = tableContainer.html();
 
         // Generate AI-powered patient summary
         generatePatientSummary(patientRecords);

@@ -30,13 +30,17 @@
             color: #333;
             /* dark gray */
             position: relative;
-            padding: 5px 8px;
-            transition: color 0.3s ease;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            display: inline-block;
         }
 
         .top-link:hover {
-            color: #007bff;
-            /* blue on hover */
+            color: #DE6262;
+            /* accent color on hover */
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
         }
 
         /* Add nice underline on hover */
@@ -45,15 +49,16 @@
             display: block;
             width: 0;
             height: 2px;
-            background: #007bff;
+            background: #DE6262;
             transition: width 0.3s;
             position: absolute;
             bottom: 0;
-            left: 0;
+            left: 12px;
+            right: 12px;
         }
 
 .top-link:hover::after {
-    width: 100%;
+    width: calc(100% - 24px);
 }
 /* Header Dropdown Styling - Match EXACTLY the .sub-menu-container style */
 .dropdown-menu {
@@ -765,162 +770,6 @@ body .dropdown .dropdown-menu.show,
         /* Ensure top-bar appears above sidebar */
         #top-bar {
             z-index: 1050 !important;
-            background-color: white !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-            transition: all 0.3s ease !important;
-        }
-
-        #top-bar.scrolled {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-            background-color: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(10px) !important;
-        }
-
-        #top-bar .top-link {
-            color: #374151 !important;
-            padding: 8px 12px !important;
-            border-radius: 6px !important;
-            transition: all 0.3s ease !important;
-            font-weight: 500 !important;
-            text-decoration: none !important;
-        }
-
-        #top-bar .top-link:hover {
-            background-color: rgba(59, 130, 246, 0.1) !important;
-            color: #3b82f6 !important;
-            transform: translateY(-2px);
-        }
-
-        #top-bar .navbar-brand {
-            font-weight: bold !important;
-            color: #374151 !important;
-            text-decoration: none !important;
-        }
-
-        #top-bar .status-indicator {
-            width: 8px !important;
-            height: 8px !important;
-        }
-
-        #top-bar .notification-bell,
-        #top-bar .user-dropdown-toggle {
-            background: rgba(255,255,255,0.15) !important;
-            color: #374151 !important;
-            border: 1px solid rgba(55, 65, 81, 0.2) !important;
-            border-radius: 50% !important;
-            min-width: 44px !important;
-            min-height: 44px !important;
-            width: 44px !important;
-            height: 44px !important;
-        }
-
-        #top-bar .btn-outline-secondary {
-            background: rgba(255,255,255,0.15) !important;
-            color: #374151 !important;
-            border: 1px solid rgba(55, 65, 81, 0.2) !important;
-            border-radius: 50% !important;
-            min-width: 44px !important;
-            min-height: 44px !important;
-            width: 44px !important;
-            height: 44px !important;
-        }
-
-        #top-bar .notification-bell:hover,
-        #top-bar .user-dropdown-toggle:hover,
-        #top-bar .btn-outline-secondary:hover {
-            background: rgba(59, 130, 246, 0.1) !important;
-            color: #3b82f6 !important;
-            border-color: rgba(59, 130, 246, 0.3) !important;
-        }
-
-        .cnvs-hamburger {
-            background: rgba(255,255,255,0.15) !important;
-            color: #374151 !important;
-            border: 1px solid rgba(55, 65, 81, 0.2) !important;
-            border-radius: 50% !important;
-            min-width: 44px !important;
-            min-height: 44px !important;
-            width: 44px !important;
-            height: 44px !important;
-        }
-
-        .cnvs-hamburger:hover {
-            background: rgba(59, 130, 246, 0.1) !important;
-            color: #3b82f6 !important;
-            border-color: rgba(59, 130, 246, 0.3) !important;
-        }
-
-        /* Ensure mobile menu buttons are hidden on large screens */
-        @media (min-width: 992px) {
-            #sidebarCollapse,
-            .cnvs-hamburger,
-            button.cnvs-hamburger,
-            #top-bar .cnvs-hamburger,
-            #top-bar button.cnvs-hamburger,
-            #top-bar #sidebarCollapse {
-                display: none !important;
-            }
-        }
-
-        @media (max-width: 991px) {
-            #sidebarCollapse,
-            .cnvs-hamburger,
-            button.cnvs-hamburger,
-            #top-bar .cnvs-hamburger,
-            #top-bar button.cnvs-hamburger,
-            #top-bar #sidebarCollapse {
-                display: flex !important;
-            }
-
-            /* Set dark color for hamburger on mobile to make it visible against white background */
-            .cnvs-hamburger,
-            button.cnvs-hamburger {
-                color: #374151 !important; /* Dark gray color */
-            }
-
-            .cnvs-hamburger .cnvs-hamburger-inner,
-            .cnvs-hamburger .cnvs-hamburger-inner::before,
-            .cnvs-hamburger .cnvs-hamburger-inner::after {
-                background: #374151 !important; /* Dark gray lines */
-            }
-        }
-
-        /* Additional override: Force hamburger to be hidden on large screens with highest specificity */
-        @media (min-width: 992px) {
-            div#top-bar button.cnvs-hamburger,
-            div#top-bar #sidebarCollapse,
-            div#top-bar .cnvs-hamburger {
-                display: none !important;
-                visibility: hidden !important;
-                opacity: 0 !important;
-                pointer-events: none !important;
-                position: absolute !important;
-                left: -9999px !important;
-            }
-        }
-
-        /* Mobile navigation dropdown - styled to match landing page */
-        #mobile-nav-dropdown {
-            background: white !important;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
-            border: 1px solid rgba(0,0,0,0.1) !important;
-            backdrop-filter: blur(10px) !important;
-        }
-
-        #mobile-nav-dropdown a {
-            color: #374151 !important;
-            padding: 12px 20px !important;
-            border-radius: 8px !important;
-            transition: all 0.3s ease !important;
-            background: rgba(249, 250, 251, 0.8) !important;
-            border: 1px solid rgba(0,0,0,0.05) !important;
-            font-size: 16px !important;
-        }
-
-        #mobile-nav-dropdown a:hover {
-            background: rgba(59, 130, 246, 0.1) !important;
-            color: #3b82f6 !important;
-            transform: translateY(-2px) !important;
         }
 
         /* Ensure alerts appear above sidebar */
@@ -1085,8 +934,8 @@ body .dropdown .dropdown-menu.show,
         }
 
         #logo img {
-            width: 100px !important;
-            height: 80px !important;
+            max-width: 100% !important;
+            height: auto !important;
             display: block !important;
         }
 
@@ -1178,46 +1027,6 @@ body .dropdown .dropdown-menu.show,
                 border-bottom: 1px solid #eee !important;
                 min-height: 60px !important;
             }
-        }
-
-        /* Top-bar responsive styles */
-        @media (max-width: 768px) {
-            #top-bar .d-none.d-md-flex {
-                display: none !important;
-            }
-
-            #top-bar .d-md-none {
-                display: flex !important;
-            }
-
-            #top-bar {
-                padding: 0.75rem 0 !important;
-            }
-
-            #top-bar .top-bar-logo img {
-                width: 100px !important;
-            }
-
-            #top-bar .gap-3 {
-                gap: 0.75rem !important;
-            }
-        }
-
-        @media (max-width: 576px) {
-            #top-bar .top-bar-logo img {
-                width: 90px !important;
-            }
-
-            #top-bar .top-link {
-                padding: 6px 10px !important;
-                font-size: 14px !important;
-            }
-
-            .btn-sm {
-                padding: 0.25rem 0.5rem !important;
-                font-size: 14px !important;
-            }
-        }
 
             #header-wrap {
                 display: block !important;
@@ -1268,9 +1077,9 @@ body .dropdown .dropdown-menu.show,
             }
 
             #logo img {
-                width: 100px !important;
-                max-width: 100px !important;
-                height: 80px !important;
+                width: 120px !important;
+                max-width: 120px !important;
+                height: auto !important;
                 display: block !important;
             }
 
@@ -1551,10 +1360,8 @@ body .dropdown .dropdown-menu.show,
             }
 
             #logo img {
-                width: 120px !important;
-                max-width: 120px !important;
-                height: auto !important;
-                display: block !important;
+                width: 90px !important;
+                max-width: 90px !important;
             }
         }
 
@@ -1643,7 +1450,8 @@ body .dropdown .dropdown-menu.show,
     <div id="wrapper">
 
         <!-- Top Bar Start -->
-        <div id="top-bar" class="py-2 border-bottom">
+        <div id="top-bar" class="py-1 border-bottom"
+            style="background: white; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div class="container">
                 <div class="row justify-content-between align-items-center">
 
@@ -1651,8 +1459,8 @@ body .dropdown .dropdown-menu.show,
                     <div class="col-md-auto d-flex align-items-center gap-3 flex-nowrap">
                         <!-- Logo in Top Bar -->
                         <div class="top-bar-logo">
-                            <a href="{{ url('/') }}" class="d-flex align-items-center text-decoration-none navbar-brand">
-                                <img style="width: 100px; height: 80px;" class="logo-default img-fluid"
+                            <a href="{{ url('/') }}" class="d-flex align-items-center text-decoration-none">
+                                <img style="width: 100px; height: 75px;" class="logo-default img-fluid"
                                       src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}"
                                       alt="Medcura Logo">
                             </a>
@@ -1662,14 +1470,15 @@ body .dropdown .dropdown-menu.show,
                         <div class="d-none d-md-flex align-items-center gap-3 small">
                             @auth
                             <div class="d-flex align-items-center">
-                                <div class="status-indicator bg-success rounded-circle me-2"></div>
-                                <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
+                                <div class="status-indicator bg-success rounded-circle me-2"
+                                    style="width: 8px; height: 8px; box-shadow: 0 0 0 2px white;"></div>
+                                <span class="text-muted"><i class="bi bi-shield-check me-1 text-success"></i> AI System Online</span>
                             </div>
                             @else
-                            <a href="{{ url('/') }}" class="top-link">Home</a>
-                            <a href="{{ route('about') }}" class="top-link">About Us</a>
-                            <a href="{{ route('contact') }}" class="top-link">Contact</a>
-                            <a href="{{ route('doctors.index') }}" class="top-link">For Patients</a>
+                            <a href="{{ url('/') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Home</a>
+                            <a href="{{ route('about') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">About Us</a>
+                            <a href="{{ route('contact') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Contact</a>
+                            <a href="{{ route('doctors.index') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">For Patients</a>
                             @endauth
                         </div>
                     </div>
@@ -1678,9 +1487,10 @@ body .dropdown .dropdown-menu.show,
                     <div class="col-md-auto d-flex align-items-center gap-3">
                         @auth
                             <!-- Mobile Sidebar Toggle Button -->
-                            <button id="sidebarCollapse" class="btn btn-sm btn-outline-secondary align-items-center justify-content-center"
+                            <button id="sidebarCollapse" class="btn btn-sm btn-outline-secondary d-lg-none d-flex align-items-center justify-content-center"
                                     type="button" aria-label="Toggle navigation sidebar" aria-expanded="false"
-                                    title="Open sidebar menu">
+                                    title="Open sidebar menu"
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px;">
                                 <i class="fa-solid fa-bars" aria-hidden="true"></i>
                             </button>
 
@@ -1688,7 +1498,8 @@ body .dropdown .dropdown-menu.show,
                             <div class="dropdown notifications-dropdown">
                                 <button class="btn btn-sm position-relative notification-bell dropdown-toggle d-flex align-items-center justify-content-center" type="button"
                                     data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true"
-                                    aria-label="Notifications menu" title="Notifications">
+                                    aria-label="Notifications menu" title="Notifications"
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px;">
                                     <i class="bi bi-bell" aria-hidden="true"></i>
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count"
                                         id="notification-count" aria-label="unread notifications count"
@@ -1729,7 +1540,8 @@ body .dropdown .dropdown-menu.show,
                             <!-- User Dropdown -->
                             <div class="dropdown">
                                 <button class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle user-dropdown-toggle" type="button"
-                                    data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                                    data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true"
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; font-weight: 500; border-radius: 25px;">
                                     <i class="bi bi-person-circle" aria-hidden="true"></i>
                                     <div class="d-flex flex-column align-items-start d-none d-sm-flex">
                                         <span class="small fw-semibold">{{ Auth::user()->name }}</span>
@@ -1811,21 +1623,24 @@ body .dropdown .dropdown-menu.show,
                         @guest
                             <div class="d-flex gap-2 align-items-center">
                                 <a href="{{ route('login') }}"
-                                    class="btn btn-sm btn-outline-primary px-3 d-flex align-items-center justify-content-center">
+                                    class="btn btn-sm px-3 d-flex align-items-center justify-content-center"
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; font-weight: 500; border-radius: 25px; min-height: 40px;">
                                     <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>
                                     <span class="d-none d-sm-inline">Login</span>
                                     <span class="d-sm-none">Sign In</span>
                                 </a>
                                 <a href="{{ route('register') }}"
-                                    class="btn btn-sm btn-primary px-3 d-flex align-items-center justify-content-center">
+                                    class="btn btn-sm px-3 d-flex align-items-center justify-content-center"
+                                    style="background: #DE6262; color: white; border: 1px solid #DE6262; font-weight: 500; border-radius: 25px; min-height: 40px;">
                                     <i class="bi bi-person-plus me-1" aria-hidden="true"></i>
                                     <span class="d-none d-sm-inline">Register</span>
                                     <span class="d-sm-none">Sign Up</span>
                                 </a>
                                 <!-- Hamburger Button for Mobile Navigation -->
-                                <button class="cnvs-hamburger align-items-center justify-content-center"
+                                <button class="cnvs-hamburger d-lg-none d-flex align-items-center justify-content-center"
                                     type="button" aria-label="Toggle navigation menu" aria-expanded="false"
-                                    title="Open navigation menu">
+                                    title="Open navigation menu"
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px;">
                                     <div class="cnvs-hamburger-box">
                                         <div class="cnvs-hamburger-inner"></div>
                                     </div>
@@ -2225,6 +2040,7 @@ body .dropdown .dropdown-menu.show,
     @endauth
 
     <!-- Vite Assets (Laravel Echo & Pusher) -->
+    @viteReactRefresh
     @vite(['resources/js/app.js', 'resources/css/app.css'])
 
     <!-- Notification System Styles -->
@@ -2240,6 +2056,9 @@ body .dropdown .dropdown-menu.show,
     <script src="{{ asset('js/notification-accessibility-test.js?v=' . time()) }}"></script>
 
     <!-- Remove conflicting notification scripts - now handled by Vite -->
+
+{{-- Modals --}}
+@stack('modals')
 
 {{-- Extra scripts --}}
 @stack('scripts')
@@ -3042,11 +2861,24 @@ function showAjaxError(message) {
         return new Promise((resolve) => {
             // Use a timeout to prevent hanging requests
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const timeoutId = setTimeout(() => {
+                // Only abort if the controller hasn't been used already
+                if (!controller.signal.aborted) {
+                    controller.abort();
+                }
+            }, 10000); // Increased timeout to 10 seconds
 
             fetch('/api/notifications/unread-count', {
                 signal: controller.signal,
-                credentials: 'same-origin'  // Include cookies for authentication
+                credentials: 'same-origin',  // Include cookies for authentication
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    // Include CSRF token if available
+                    ...(document.querySelector('meta[name="csrf-token"]') && {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    })
+                }
             })
             .then(response => {
                 clearTimeout(timeoutId);
@@ -3100,7 +2932,13 @@ function showAjaxError(message) {
             })
             .catch(error => {
                 clearTimeout(timeoutId);
-                console.error('Error updating notification badge:', error);
+
+                // Check if it's an AbortError (timeout)
+                if (error.name === 'AbortError') {
+                    console.warn('Notification badge update timed out:', error);
+                } else {
+                    console.error('Error updating notification badge:', error);
+                }
 
                 // Ensure badge is hidden on error
                 const badge = document.getElementById('notification-count');
@@ -3109,7 +2947,7 @@ function showAjaxError(message) {
                 }
 
                 // If it's an authentication error, we might want to redirect to login
-                if (error.message.includes('Authentication required') || error.message.includes('Redirect detected')) {
+                if (error.message && (error.message.includes('Authentication required') || error.message.includes('Redirect detected'))) {
                     // Optionally: show a message or redirect to login
                     // window.location.href = '/login';
                 }
@@ -3235,87 +3073,6 @@ function showAjaxError(message) {
         };
     }
 })();
-
-// Smooth scrolling for navigation links (similar to landing page)
-document.addEventListener('DOMContentLoaded', function() {
-    // Add smooth scrolling for anchor links in the top-bar
-    const topBarLinks = document.querySelectorAll('#top-bar a[href^="#"]');
-
-    topBarLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            const href = this.getAttribute('href');
-
-            // Only apply smooth scrolling if it's an anchor link
-            if (href.startsWith('#')) {
-                e.preventDefault();
-
-                const targetElement = document.querySelector(href);
-                if (targetElement) {
-                    const offsetTop = targetElement.offsetTop - 80; // Account for fixed top bar
-
-                    window.scrollTo({
-                        top: offsetTop,
-                        behavior: 'smooth'
-                    });
-
-                    // Update active state for navigation
-                    topBarLinks.forEach(link => link.classList.remove('active'));
-                    this.classList.add('active');
-                }
-            }
-        });
-    });
-
-    // Add hover effects for top-bar navigation links
-    const topBarNavLinks = document.querySelectorAll('#top-bar .top-link');
-    topBarNavLinks.forEach(link => {
-        link.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-2px)';
-        });
-
-        link.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
-    });
-
-    // Navbar scroll effect (similar to landing page)
-    const topBar = document.getElementById('top-bar');
-    if (topBar) {
-        window.addEventListener('scroll', function() {
-            if (window.scrollY > 50) {
-                topBar.classList.add('scrolled');
-            } else {
-                topBar.classList.remove('scrolled');
-            }
-        });
-    }
-});
-
-// Active navigation highlighting (similar to landing page)
-document.addEventListener('DOMContentLoaded', function() {
-    const navLinks = document.querySelectorAll('#top-bar .top-link');
-    const sections = document.querySelectorAll('section[id]');
-
-    window.addEventListener('scroll', function() {
-        let current = '';
-
-        sections.forEach(section => {
-            const sectionTop = section.offsetTop;
-            const sectionHeight = section.clientHeight;
-
-            if (pageYOffset >= (sectionTop - 200)) {
-                current = section.getAttribute('id');
-            }
-        });
-
-        navLinks.forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('href') === `#${current}`) {
-                link.classList.add('active');
-            }
-        });
-    });
-});
 </script>
 
     </body>
