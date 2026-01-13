@@ -134,21 +134,35 @@
                         </div>
                     </div>
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <button onclick="openAIMedicalCopilot({{ $appointment->id }})" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
+                                <i class="fas fa-brain fa-2x mb-2 text-primary"></i>
+                                AI Copilot
+                                <small class="text-muted">Clinical Decision Support</small>
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button onclick="viewPatientAIAnalyses({{ $appointment->patient_id }})" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
+                                <i class="fas fa-history fa-2x mb-2 text-info"></i>
+                                View AI History
+                                <small class="text-muted">Patient's Saved Analyses</small>
+                            </button>
+                        </div>
+                        <div class="col-md-3">
                             <a href="#ai-analytics" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
                                 <i class="fas fa-brain fa-2x mb-2 text-primary"></i>
                                 <span class="fw-bold">AI Analytics</span>
                                 <small class="text-muted">View risk predictions & insights</small>
                             </a>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <a href="#prescriptions" class="btn btn-outline-success btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
                                 <i class="fas fa-prescription-bottle fa-2x mb-2 text-success"></i>
                                 <span class="fw-bold">Prescriptions</span>
                                 <small class="text-muted">Manage medications</small>
                             </a>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <a href="{{ route('doctor.follow-ups.create', $appointment) }}" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
                                 <i class="fas fa-calendar-plus fa-2x mb-2 text-info"></i>
                                 <span class="fw-bold">Follow-ups</span>
@@ -539,6 +553,9 @@
                                     </small>
                                     @endif
                                     @include('ai.prescription_suggestion')
+
+<!-- AI Medical Copilot Modal -->
+@include('ai.medical_copilot')
                                 </div>
                             @endif
 

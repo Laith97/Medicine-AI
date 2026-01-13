@@ -518,6 +518,18 @@
                                 </button>
                             @endif
 
+                            @if(auth()->check() && auth()->user()->isDoctor())
+                                <!-- AI Medical Copilot Button -->
+                                <button onclick="openAIMedicalCopilot({{ $appointment->id }})" class="btn btn-info">
+                                    <i class="fas fa-brain me-2"></i>AI Medical Copilot
+                                </button>
+
+                                <!-- View Patient AI Analyses Button -->
+                                <button onclick="viewPatientAIAnalyses({{ $patient->id }})" class="btn btn-outline-info">
+                                    <i class="fas fa-history me-2"></i>View AI History
+                                </button>
+                            @endif
+
                             @if($appointment->canBeRescheduled())
                                 <button onclick="rescheduleAppointment()" class="btn btn-warning">
                                     <i class="fas fa-calendar-alt me-2"></i>Reschedule
@@ -676,6 +688,8 @@
         </div>
     </div>
 </div>
+
+@include('ai.medical_copilot')
 
 <script>
 // Modal Functions
