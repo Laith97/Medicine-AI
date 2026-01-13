@@ -221,7 +221,8 @@ Route::get('/notifications/test', function () {
     ]);
 })->middleware(['auth']);
 
-// Temporary test endpoint without auth for debugging
+// Temporary test endpoint without auth for debugging - COMMENTED OUT FOR PRODUCTION
+/*
 Route::get('/notifications/test-debug', function () {
     try {
         // Use the first user from the database for testing
@@ -266,6 +267,7 @@ Route::get('/notifications/test-debug', function () {
         ], 500);
     }
 });
+*/
 
 // Public appointment booking (for guests)
 Route::get('/appointments/{doctor}/create', [AppointmentController::class, 'create'])->name('appointments.create');
@@ -317,6 +319,9 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     Route::post('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
     Route::post('/appointments/{appointment}/reschedule', [AppointmentController::class, 'reschedule'])->name('appointments.reschedule');
     Route::get('/appointments/calendar/events', [AppointmentController::class, 'getCalendarEvents'])->name('appointments.calendar.events');
+
+    // Diagnosis creation from appointment page (for doctors) - DUPLICATE REMOVED - kept in doctor group only
+    // Route::post('/appointments/{appointment}/create-diagnosis', [DiagnosisController::class, 'createFromAppointment'])->name('appointments.create-diagnosis');
 
     // Review routes for patients
     Route::resource('reviews', ReviewController::class);
@@ -788,6 +793,9 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
     // Prescription routes for appointments
     Route::post('/prescriptions/{appointment}', [PrescriptionController::class, 'store'])->name('prescriptions.store');
 
+    // Diagnosis creation from appointment
+    Route::post('/appointments/{appointment}/create-diagnosis', [DiagnosisController::class, 'createFromAppointment'])->name('appointments.create-diagnosis');
+
     // Availability management
     Route::resource('availability', AvailabilityController::class);
     Route::post('/availability/{availabilitySlot}/toggle', [AvailabilityController::class, 'toggle'])->name('availability.toggle');
@@ -1256,7 +1264,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/return-to-admin', [AdminController::class, 'returnToAdmin'])->name('return-to-admin');
 });
 
-// Debug route to test if routes are working
+// Debug route to test if routes are working - COMMENTED OUT FOR PRODUCTION
+/*
 Route::get('/test-return-admin', function() {
     return response()->json([
         'message' => 'Route is accessible',
@@ -1272,6 +1281,7 @@ Route::get('/test-return-admin', function() {
         ]
     ]);
 });
+*/
 
 // Security dashboard routes
 Route::middleware('auth:admin')->prefix('security')->name('security.')->group(function () {

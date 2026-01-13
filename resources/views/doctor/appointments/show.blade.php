@@ -98,20 +98,20 @@
                             <div class="col-12">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="fas fa-user text-muted me-2"></i>
-                                    <span class="fw-semibold">{{ $appointment->patient_name }}</span>
+                                    <span class="fw-semibold">{{ e($appointment->patient_name) }}</span>
                                 </div>
                             </div>
                             <div class="col-12">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="fas fa-envelope text-muted me-2"></i>
-                                    <span>{{ $appointment->patient_email }}</span>
+                                    <span>{{ e($appointment->patient_email) }}</span>
                                 </div>
                             </div>
                             @if($appointment->patient_phone)
                             <div class="col-12">
                                 <div class="d-flex align-items-center">
                                     <i class="fas fa-phone text-muted me-2"></i>
-                                    <span>{{ $appointment->patient_phone }}</span>
+                                    <span>{{ e($appointment->patient_phone) }}</span>
                                 </div>
                             </div>
                             @endif
@@ -154,6 +154,13 @@
                                 <span class="fw-bold">AI Analytics</span>
                                 <small class="text-muted">View risk predictions & insights</small>
                             </a>
+                        </div>
+                        <div class="col-md-3">
+                            <button onclick="toggleDiagnosisForm()" class="btn btn-outline-warning btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
+                                <i class="fas fa-stethoscope fa-2x mb-2 text-warning"></i>
+                                <span class="fw-bold">Diagnosis</span>
+                                <small class="text-muted">Create medical diagnosis</small>
+                            </button>
                         </div>
                         <div class="col-md-3">
                             <a href="#prescriptions" class="btn btn-outline-success btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
@@ -311,7 +318,7 @@
                             <i class="fas fa-clipboard-list me-2"></i>Reason for Visit
                         </h5>
                         <div class="bg-light p-4 rounded" style="border-left: 4px solid #007bff;">
-                            <p class="mb-0 fs-6 lh-base">{{ $appointment->reason }}</p>
+                            <p class="mb-0 fs-6 lh-base">{{ e($appointment->reason) }}</p>
                         </div>
                     </div>
                 </div>
@@ -644,6 +651,162 @@
                             </div>
                         </form>
                     </div>
+                </div>
+                @endif
+
+                <!-- Diagnosis Section -->
+                @if(auth()->check() && auth()->user()->isDoctor())
+                <div id="diagnosis-section" class="table-card" style="@if($errors->has('diagnosis_text') || $errors->has('voice_files') || $errors->any()) display: block; @else display: none; @endif">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="mb-0 fw-bold text-warning">
+                                <i class="fas fa-stethoscope me-2"></i>Create Diagnosis
+                            </h4>
+                            <p class="mb-0 text-muted small">Document medical findings and diagnosis for this appointment</p>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleDiagnosisForm()">
+                            <i class="fas fa-times me-1"></i>Close
+                        </button>
+                    </div>
+
+                    <!-- Show validation errors if any -->
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <!-- Context Information -->
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Appointment Context:</strong> {{ $appointment->patient_name }} - {{ $appointment->reason }}
+                        @if($appointment->doctor_notes)
+                        <br><small class="text-muted"><strong>Doctor Notes:</strong> {{ Str::limit($appointment->doctor_notes, 100) }}</small>
+                        @endif
+                    </div>
+
+                    <form id="diagnosisForm" method="POST" action="{{ route('doctor.appointments.create-diagnosis', $appointment) }}" enctype="multipart/form-data">
+                        @csrf
+
+                        <!-- Diagnosis Input Section -->
+                        <div class="form-section">
+                            <div class="form-section-header">
+                                <h6 class="form-section-title">
+                                    <i class="fas fa-stethoscope me-2"></i>Diagnosis Details
+                                </h6>
+                                <span class="form-section-badge bg-warning text-dark">Required</span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label for="diagnosis_text" class="form-label fw-semibold">
+                                        Diagnosis Text <span class="text-danger">*</span>
+                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Enter your medical diagnosis, findings, and treatment plan"></i>
+                                    </label>
+                                    <textarea class="form-control" id="diagnosis_text" name="diagnosis_text" rows="6" placeholder="Enter your medical diagnosis, clinical findings, and treatment recommendations..." required></textarea>
+                                    <div class="form-text">
+                                        Include symptoms assessment, clinical findings, diagnosis, and treatment recommendations.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Voice Recording Section -->
+                        <div class="form-section">
+                            <div class="form-section-header">
+                                <h6 class="form-section-title">
+                                    <i class="fas fa-microphone me-2"></i>Voice Recording (Optional)
+                                </h6>
+                                <span class="form-section-badge bg-info">Optional</span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="voice-recording-container">
+                                        <button type="button" id="startRecording" class="btn btn-outline-primary">
+                                            <i class="fas fa-microphone me-2"></i>Start Voice Recording
+                                        </button>
+                                        <button type="button" id="stopRecording" class="btn btn-outline-danger" style="display: none;">
+                                            <i class="fas fa-stop me-2"></i>Stop Recording
+                                        </button>
+                                        <button type="button" id="playRecording" class="btn btn-outline-success" style="display: none;">
+                                            <i class="fas fa-play me-2"></i>Play Back
+                                        </button>
+                                        <span id="recordingStatus" class="ms-3 text-muted"></span>
+                                        <audio id="audioPlayback" controls style="display: none; max-width: 300px;"></audio>
+                                    </div>
+                                    <input type="file" id="voice_files" name="voice_files[]" multiple accept="audio/*" style="display: none;">
+                                    <div class="form-text">
+                                        Alternatively, you can upload audio files directly.
+                                        <button type="button" class="btn btn-link btn-sm p-0 ms-2" onclick="document.getElementById('voice_files').click()">
+                                            Upload Files
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Patient Data Section -->
+                        <div class="form-section">
+                            <div class="form-section-header">
+                                <h6 class="form-section-title">
+                                    <i class="fas fa-user-md me-2"></i>Additional Patient Information
+                                </h6>
+                                <span class="form-section-badge bg-info">Optional</span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="patient_data_height" class="form-label fw-semibold">
+                                        Height (cm)
+                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Patient's height in centimeters"></i>
+                                    </label>
+                                    <input type="number" class="form-control" id="patient_data_height" name="patient_data[height]" placeholder="170">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="patient_data_weight" class="form-label fw-semibold">
+                                        Weight (kg)
+                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Patient's weight in kilograms"></i>
+                                    </label>
+                                    <input type="number" step="0.1" class="form-control" id="patient_data_weight" name="patient_data[weight]" placeholder="70.5">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="patient_data_blood_pressure" class="form-label fw-semibold">
+                                        Blood Pressure
+                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Systolic/Diastolic (e.g., 120/80)"></i>
+                                    </label>
+                                    <input type="text" class="form-control" id="patient_data_blood_pressure" name="patient_data[blood_pressure]" placeholder="120/80">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="patient_data_temperature" class="form-label fw-semibold">
+                                        Temperature (°C)
+                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Body temperature in Celsius"></i>
+                                    </label>
+                                    <input type="number" step="0.1" class="form-control" id="patient_data_temperature" name="patient_data[temperature]" placeholder="36.6">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-3 justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-warning btn-lg fw-semibold" onclick="submitDiagnosisForm()">
+                                    <i class="fas fa-save me-2"></i>Create Diagnosis
+                                </button>
+                                <button type="button" class="btn btn-secondary fw-semibold" onclick="toggleDiagnosisForm()">
+                                    <i class="fas fa-times me-2"></i>Cancel
+                                </button>
+                            </div>
+                            <div class="text-muted small">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                Diagnosis will be saved and patient will be notified
+                            </div>
+                        </div>
+                    </form>
                 </div>
                 @endif
             </div>
@@ -1179,7 +1342,9 @@ let prescriptionToDelete = null;
 
 function deletePrescription(prescriptionId, medicationName) {
     prescriptionToDelete = prescriptionId;
-    document.getElementById('deletePrescriptionName').textContent = medicationName;
+    // Sanitize the medication name to prevent XSS by using textContent instead of innerHTML
+    const cleanName = medicationName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    document.getElementById('deletePrescriptionName').textContent = cleanName;
     new bootstrap.Modal(document.getElementById('deletePrescriptionModal')).show();
 }
 
@@ -1249,14 +1414,30 @@ function showNotification(message, type = 'info') {
     // Create notification element
     const notification = document.createElement('div');
     notification.className = `alert ${alertTypes[type]} alert-dismissible fade show position-fixed`;
-    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    notification.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="${icons[type]} me-2"></i>
-            <span>${message}</span>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
+    // Position below the top navigation bar (assuming ~80px height) and to the right
+    notification.style.cssText = 'top: 100px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px; margin-top: 10px;';
+
+    // Create content safely to prevent XSS
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'd-flex align-items-center';
+
+    const icon = document.createElement('i');
+    icon.className = `${icons[type]} me-2`;
+
+    const span = document.createElement('span');
+    // Sanitize message to prevent XSS
+    span.textContent = message.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn-close';
+    button.setAttribute('data-bs-dismiss', 'alert');
+    button.setAttribute('aria-label', 'Close');
+
+    contentDiv.appendChild(icon);
+    contentDiv.appendChild(span);
+    contentDiv.appendChild(button);
+    notification.appendChild(contentDiv);
 
     document.body.appendChild(notification);
 
@@ -1538,6 +1719,121 @@ function resetFormField() {
     });
 }
 
+// Diagnosis form functionality
+function toggleDiagnosisForm() {
+    const diagnosisSection = document.getElementById('diagnosis-section');
+    const isVisible = diagnosisSection.style.display !== 'none';
+
+    if (isVisible) {
+        // Hide the form
+        diagnosisSection.style.display = 'none';
+        // Scroll to the Next Steps section
+        document.querySelector('.table-card.mb-4').scrollIntoView({ behavior: 'smooth' });
+    } else {
+        // Show the form
+        diagnosisSection.style.display = 'block';
+        // Scroll to the diagnosis section
+        diagnosisSection.scrollIntoView({ behavior: 'smooth' });
+        // Focus on the diagnosis text area
+        setTimeout(() => {
+            document.getElementById('diagnosis_text').focus();
+        }, 300);
+    }
+}
+
+// Voice recording functionality for diagnosis
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if there are validation errors and show the diagnosis form if needed
+    const hasErrors = @json($errors->any());
+    if (hasErrors) {
+        const diagnosisSection = document.getElementById('diagnosis-section');
+        diagnosisSection.style.display = 'block';
+
+        // Scroll to the diagnosis section to make errors visible
+        diagnosisSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Initialize voice recording buttons
+    const startRecordingBtn = document.getElementById('startRecording');
+    const stopRecordingBtn = document.getElementById('stopRecording');
+    const playRecordingBtn = document.getElementById('playRecording');
+    const audioPlayback = document.getElementById('audioPlayback');
+    const recordingStatus = document.getElementById('recordingStatus');
+
+    if (startRecordingBtn) {
+        startRecordingBtn.addEventListener('click', startVoiceRecording);
+    }
+    if (stopRecordingBtn) {
+        stopRecordingBtn.addEventListener('click', stopVoiceRecording);
+    }
+    if (playRecordingBtn) {
+        playRecordingBtn.addEventListener('click', function() {
+            if (audioPlayback.src) {
+                audioPlayback.play();
+            }
+        });
+    }
+
+    function startVoiceRecording() {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    audioPlayback.src = audioUrl;
+                    audioPlayback.style.display = 'block';
+                    playRecordingBtn.style.display = 'inline-block';
+
+                    // Create a file input for the recorded audio
+                    const fileInput = document.getElementById('voice_files');
+                    const file = new File([audioBlob], 'voice_recording.wav', { type: 'audio/wav' });
+
+                    // Create a DataTransfer to set the file
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    fileInput.files = dt.files;
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                startRecordingBtn.style.display = 'none';
+                stopRecordingBtn.style.display = 'inline-block';
+                recordingStatus.textContent = 'Recording... Click "Stop Recording" when finished.';
+                recordingStatus.style.color = 'red';
+            })
+            .catch(error => {
+                console.error('Error accessing microphone:', error);
+                recordingStatus.textContent = 'Error: Could not access microphone. Please check permissions.';
+                recordingStatus.style.color = 'red';
+            });
+    }
+
+    function stopVoiceRecording() {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            isRecording = false;
+
+            stopRecordingBtn.style.display = 'none';
+            startRecordingBtn.style.display = 'inline-block';
+            recordingStatus.textContent = 'Recording saved. You can play it back or upload additional files.';
+            recordingStatus.style.color = 'green';
+        }
+    }
+});
+
 // Workflow selector functionality
 document.addEventListener('DOMContentLoaded', function() {
     const workflowButtons = document.querySelectorAll('.workflow-btn');
@@ -1579,5 +1875,171 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 });
+
+// Function to submit diagnosis form via AJAX
+function submitDiagnosisForm() {
+    const form = document.getElementById('diagnosisForm');
+    const formData = new FormData(form);
+
+    // Disable the submit button to prevent multiple submissions
+    const submitButton = document.querySelector('#diagnosisForm button[type="button"][onclick="submitDiagnosisForm()"]');
+    const originalButtonText = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Diagnosis...';
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(async response => {
+        // Clone the response to handle both JSON and text cases
+        const responseClone = response.clone();
+
+        // Check if the response is OK
+        if (!response.ok) {
+            // For 422 validation errors, Laravel returns JSON with validation errors
+            if (response.status === 422) {
+                const errorData = await response.json();
+                // Return the error data in a consistent format
+                return {
+                    success: false,
+                    message: 'Validation failed',
+                    errors: errorData.errors || {}
+                };
+            } else {
+                // For other error statuses, try to get error response as JSON first
+                try {
+                    const errorData = await response.json();
+                    return {
+                        success: false,
+                        message: errorData.message || `HTTP error! status: ${response.status}`,
+                        errors: errorData.errors || {}
+                    };
+                } catch (jsonError) {
+                    // If JSON parsing fails, get response as text from the clone
+                    try {
+                        const errorText = await responseClone.text();
+                        return {
+                            success: false,
+                            message: `HTTP error! status: ${response.status}, message: ${errorText.substring(0, 200)}...`,
+                            errors: {}
+                        };
+                    } catch (textError) {
+                        // If both fail, return a generic error
+                        return {
+                            success: false,
+                            message: `HTTP error! status: ${response.status}`,
+                            errors: {}
+                        };
+                    }
+                }
+            }
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Show success toast notification
+            showNotification(data.message || 'Diagnosis created successfully!', 'success');
+
+            // Reset and hide the form
+            form.reset();
+            document.getElementById('diagnosis-section').style.display = 'none';
+
+            // Reload the page after a delay to show updated content
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            // Clear previous validation errors
+            clearValidationErrors();
+
+            // Show error notification
+            let errorMessage = data.message || 'Failed to create diagnosis. Please try again.';
+
+            // Handle Laravel's validation error format and display on form
+            if (data.errors) {
+                // Format validation errors and display on form fields
+                for (const field in data.errors) {
+                    displayValidationError(field, data.errors[field].join(', '));
+                    errorMessage += ' ' + data.errors[field].join(', ');
+                }
+            }
+
+            showNotification(errorMessage, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error creating diagnosis:', error);
+        // Extract error message from the error object
+        let errorMessage = 'An error occurred while creating the diagnosis. Please try again.';
+        if (error.message) {
+            errorMessage = error.message;
+        }
+        showNotification(errorMessage, 'error');
+    })
+    .finally(() => {
+        // Re-enable the submit button
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonText;
+    });
+}
+
+// Helper function to display validation error for a specific field
+function displayValidationError(fieldName, errorMessage) {
+    // Find the input field by name
+    let field = document.querySelector(`[name="${fieldName}"]`);
+
+    // Special handling for nested array fields like patient_data[height]
+    if (!field && fieldName.includes('[')) {
+        const normalizedFieldName = fieldName.replace(/\[/g, '\\[').replace(/\]/g, '\\]');
+        field = document.querySelector(`[name="${normalizedFieldName}"]`);
+    }
+
+    if (field) {
+        // Add error styling to the field
+        field.classList.add('is-invalid');
+
+        // Check if error feedback element already exists
+        let errorElement = field.parentNode.querySelector('.invalid-feedback');
+
+        if (!errorElement) {
+            // Create error feedback element
+            errorElement = document.createElement('div');
+            errorElement.className = 'invalid-feedback';
+            field.parentNode.appendChild(errorElement);
+        }
+
+        // Set the error message
+        errorElement.textContent = errorMessage;
+    }
+
+    // Special handling for array fields like voice_files[]
+    if (fieldName === 'voice_files') {
+        const fields = document.querySelectorAll('[name="voice_files[]"]');
+        fields.forEach(fileField => {
+            fileField.classList.add('is-invalid');
+        });
+    }
+}
+
+// Helper function to clear validation errors
+function clearValidationErrors() {
+    // Remove error styling and messages from all fields
+    const invalidFields = document.querySelectorAll('.is-invalid');
+    invalidFields.forEach(field => {
+        field.classList.remove('is-invalid');
+    });
+
+    // Remove all error message elements
+    const errorMessages = document.querySelectorAll('.invalid-feedback');
+    errorMessages.forEach(element => {
+        element.remove();
+    });
+}
 </script>
 @endpush
