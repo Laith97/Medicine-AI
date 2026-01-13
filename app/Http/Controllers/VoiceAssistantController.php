@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Diagnosis;
 use App\Models\AiAssistantResult;
 use App\Models\VoiceAssistantPerformanceMetric;
+use App\Models\Appointment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -224,6 +225,33 @@ class VoiceAssistantController extends Controller
         $patientAppointments = [];
         $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
         $loggedInUserId = Auth::id();
+
+        // Define appointment collections before using them
+        $allAppointments = collect();
+        $todaysAppointments = collect();
+
+        // Load appointments for all patients at once to avoid N+1 queries
+        $effectiveDoctorIdForAppointment = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+
+        // Get all appointments for the doctor's patients
+        $appointmentsQuery = \App\Models\Appointment::where('doctor_id', $effectiveDoctorIdForAppointment)
+            ->whereIn('patient_id', $basePatients->pluck('id'))
+            ->whereIn('status', ['confirmed', 'pending', 'completed'])
+            ->with(['patient']) // Eager load patient relationship
+            ->get();
+
+        // Group appointments by patient_id
+        $allAppointments = $appointmentsQuery->groupBy('patient_id');
+
+        // Also get today's appointments specifically
+        $todaysAppointmentsQuery = \App\Models\Appointment::where('doctor_id', $effectiveDoctorIdForAppointment)
+            ->whereIn('patient_id', $basePatients->pluck('id'))
+            ->whereDate('appointment_date', Carbon::today())
+            ->whereIn('status', ['confirmed', 'pending', 'completed'])
+            ->with(['patient'])
+            ->get();
+
+        $todaysAppointments = $todaysAppointmentsQuery->groupBy('patient_id');
 
         Log::info('Voice Assistant - Doctor ID debug', [
             'effective_doctor_id' => $effectiveDoctorId,
