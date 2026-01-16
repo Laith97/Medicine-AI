@@ -2,9 +2,8 @@
 
 namespace App\WebSockets;
 
-use BeyondCode\LaravelWebSockets\WebSockets\WebSocketHandler;
+use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
-use Ratchet\RFC6455\Messaging\MessageInterface;
 use Google\Cloud\Speech\V1\SpeechClient;
 use Google\Cloud\Speech\V1\RecognitionConfig;
 use Google\Cloud\Speech\V1\StreamingRecognitionConfig;
@@ -12,9 +11,10 @@ use Google\Cloud\Speech\V1\AudioEncoding;
 use Google\Cloud\Speech\V1\SpeakerDiarizationConfig;
 use Google\Cloud\Speech\V1\SpeechContext;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use App\Services\MedicalTranscriptionService;
 
-class MedicalAudioSocket extends WebSocketHandler
+class MedicalAudioSocket implements MessageComponentInterface
 {
     protected $activeConnections = [];
     protected $transcriptionService;
@@ -64,9 +64,9 @@ class MedicalAudioSocket extends WebSocketHandler
         Log::info("Medical Audio Socket connected: {$connection->resourceId}", $params);
     }
 
-    public function onMessage(ConnectionInterface $connection, MessageInterface $msg)
+    public function onMessage(ConnectionInterface $connection, $msg)
     {
-        $payload = json_decode($msg->getPayload(), true);
+        $payload = json_decode($msg, true);
         
         if (!isset($this->activeConnections[$connection->resourceId])) {
             return;
@@ -422,7 +422,10 @@ class MedicalAudioSocket extends WebSocketHandler
         $session['is_streaming'] = false;
     }
 
+
+
     private function getGoogleLanguageCode($shortCode)
+
     {
         $map = [
             'ar' => 'ar-SA',

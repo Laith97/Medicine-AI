@@ -153,7 +153,7 @@
                             </div>
 
                             <!-- Processing Status -->
-                            <div id="processingStatus" class="d-flex align-items-center" style="display: none;">
+                            <div id="processingStatus" style="display: none;">
                                 <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
                                 <span class="text-primary">Processing...</span>
                             </div>
@@ -184,57 +184,49 @@
                         </div>
                     </div>
 
+                    <!-- Audio Recorder - Separate Row -->
+                    <div class="mb-3">
+                        <div id="react-audio-recorder-container" style="max-width: 300px;"></div>
+                    </div>
+
                     <!-- Control Buttons -->
-                    <div class="d-flex flex-wrap gap-3 align-items-center">
-                        <!-- React AmbientAudioRecorder component will be mounted here -->
-                        <div id="react-audio-recorder-container"></div>
-
-                        <!-- Fallback buttons when React component is not active -->
-                        <button id="startRecordingBtn" class="btn btn-success btn-lg px-4 py-3 d-none" type="button" disabled>
-                            <i class="fas fa-microphone me-2"></i>
-                            Start Listening
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <button id="startRecordingBtn" class="btn btn-success d-none" type="button" disabled style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500;">
+                            <i class="fas fa-microphone me-1"></i>Start
                         </button>
 
-                        <button id="stopRecordingBtn" class="btn btn-danger btn-lg px-4 py-3 d-none" disabled>
-                            <i class="fas fa-stop me-2"></i>
-                            Stop Listening
+                        <button id="stopRecordingBtn" class="btn btn-danger d-none" disabled style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500;">
+                            <i class="fas fa-stop me-1"></i>Stop
                         </button>
 
-                        <button id="generateAnalysisBtn" class="btn btn-primary btn-lg px-4 py-3" disabled>
-                            <i class="fas fa-brain me-2"></i>
-                            AI Analysis
+                        <button id="generateAnalysisBtn" class="btn" disabled style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; background: #DE6262; color: white; border: 1px solid #DE6262;">
+                            <i class="fas fa-brain me-1"></i>AI Analysis
                         </button>
 
-                        <button id="generateClinicalDocBtn" class="btn btn-info text-white" disabled>
-                            <i class="fas fa-file-medical me-2"></i>
-                            Generate Clinical Documentation
+                        <button id="generateClinicalDocBtn" class="btn" disabled style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; background: #2c3e50; color: white; border: 1px solid #2c3e50;">
+                            <i class="fas fa-file-medical me-1"></i>Clinical Doc
                         </button>
 
-                        <button id="resetSessionBtn" class="btn btn-secondary">
-                            <i class="fas fa-redo me-2"></i>
-                            Reset
+                        <button id="resetSessionBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500;">
+                            <i class="fas fa-redo me-1"></i>Reset
                         </button>
 
-                        <div class="vr h-75"></div>
+                        <div class="vr align-self-stretch mx-1" style="opacity: 0.2;"></div>
 
-                        <a href="{{ route('ai.voice-assistant.training') }}" class="btn btn-outline-success btn-lg px-4 py-3">
-                            <i class="fas fa-graduation-cap me-2"></i>
-                            Guide
+                        <a href="{{ route('ai.voice-assistant.training') }}" class="btn btn-outline-secondary" style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500;">
+                            <i class="fas fa-graduation-cap me-1"></i>Guide
                         </a>
 
-                        <a href="{{ route('ai.voice-assistant.recorded-voices') }}" class="btn btn-outline-info btn-lg px-4 py-3">
-                            <i class="fas fa-history me-2"></i>
-                            History
+                        <a href="{{ route('ai.voice-assistant.recorded-voices') }}" class="btn btn-outline-secondary" style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500;">
+                            <i class="fas fa-history me-1"></i>History
                         </a>
 
-                        <a href="{{ route('ai.voice-assistant.performance') }}" class="btn btn-outline-warning btn-lg px-4 py-3">
-                            <i class="fas fa-chart-line me-2"></i>
-                            Stats
+                        <a href="{{ route('ai.voice-assistant.performance') }}" class="btn btn-outline-secondary" style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500;">
+                            <i class="fas fa-chart-line me-1"></i>Stats
                         </a>
 
-                        <button type="button" class="btn btn-outline-info btn-lg px-4 py-3" data-bs-toggle="modal" data-bs-target="#ambientListeningHelpModal">
-                            <i class="fas fa-question-circle me-2"></i>
-                            Help
+                        <button type="button" class="btn" data-bs-toggle="modal" data-bs-target="#ambientListeningHelpModal" style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; background: #f8f9fa; color: #333; border: 1px solid #dee2e6;">
+                            <i class="fas fa-question-circle me-1"></i>Help
                         </button>
                     </div>
 
@@ -365,15 +357,25 @@
             font-weight: 600;
             border-radius: 8px;
             transition: all 0.2s ease-in-out;
+            min-height: 56px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
         }
 
-        .btn-lg:hover {
+        .btn-lg:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
-        .btn-lg:active {
+        .btn-lg:active:not(:disabled) {
             transform: translateY(0);
+        }
+
+        .btn-lg:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         /* Recording button animation */
@@ -467,12 +469,48 @@
         }
 
         /* Enhanced recording button */
-        .ambient-recorder-container .btn {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        .ambient-recorder-container,
+        #react-audio-recorder-container {
+            max-width: 300px;
+        }
+        
+        .ambient-recorder-container .btn,
+        #react-audio-recorder-container .btn {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            min-height: 38px;
+            max-height: 42px;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
         }
 
-        .ambient-recorder-container .btn:active {
-            transform: scale(0.95);
+        .ambient-recorder-container .btn:active:not(:disabled),
+        #react-audio-recorder-container .btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .ambient-recorder-container .btn:hover:not(:disabled),
+        #react-audio-recorder-container .btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Constrain recorder component size */
+        #react-audio-recorder-container > * {
+            max-width: 100%;
+        }
+
+        /* Transcript container scrollbar */
+        #react-transcript-container {
+            height: 500px;
+            overflow-y: auto;
+            border-radius: 8px;
+            scroll-behavior: smooth;
         }
 
         /* Recording dot animation */
@@ -583,18 +621,40 @@
     </style>
 
     <!-- Tabs Navigation -->
-    <ul class="nav nav-tabs mb-4" id="voiceAssistantTabs" role="tablist">
+    <ul class="nav nav-pills mb-4 p-2 bg-light rounded-3" id="voiceAssistantTabs" role="tablist" style="box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="transcription-tab" data-bs-toggle="tab" data-bs-target="#transcription-pane" type="button" role="tab" aria-controls="transcription-pane" aria-selected="true">
+            <button class="nav-link active px-4 py-3 fw-bold" id="transcription-tab" data-bs-toggle="tab" data-bs-target="#transcription-pane" type="button" role="tab" aria-controls="transcription-pane" aria-selected="true">
                 <i class="fas fa-microphone-alt me-2"></i>Live Session
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="documentation-tab" data-bs-toggle="tab" data-bs-target="#documentation-pane" type="button" role="tab" aria-controls="documentation-pane" aria-selected="false">
+            <button class="nav-link px-4 py-3 fw-bold" id="documentation-tab" data-bs-toggle="tab" data-bs-target="#documentation-pane" type="button" role="tab" aria-controls="documentation-pane" aria-selected="false">
                 <i class="fas fa-file-medical me-2"></i>Clinical Documentation
             </button>
         </li>
     </ul>
+    
+    <style>
+        #voiceAssistantTabs .nav-link {
+            transition: all 0.3s ease;
+        }
+        #voiceAssistantTabs .nav-link:not(.active) {
+            background-color: #ffffff !important;
+            color: #333333 !important;
+            border: 1px solid #dee2e6 !important;
+            opacity: 1 !important;
+        }
+        #voiceAssistantTabs .nav-link:not(.active):hover {
+            background-color: #f8f9fa !important;
+            color: #DE6262 !important;
+            border-color: #DE6262 !important;
+        }
+        #voiceAssistantTabs .nav-link.active {
+            background-color: #DE6262 !important;
+            color: white !important;
+            border: 1px solid #DE6262 !important;
+        }
+    </style>
 
     <div class="tab-content" id="voiceAssistantTabsContent">
         <!-- Live Session Tab -->
@@ -614,21 +674,18 @@
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    <div class="transcription-container" style="height: 400px; overflow-y: auto; background-color: #f8f9fa;">
-                        <div id="transcriptionContainer" style="height: 100%;">
-                            <!-- React RealTimeTranscript component will be mounted here -->
+                    <div class="transcription-container" style="background-color: #f8f9fa;">
+                        <div id="transcriptionContainer">
                             <div id="react-transcript-container"></div>
-
-                            <!-- Fallback textarea for non-React implementation -->
                             <textarea id="transcriptionArea" class="form-control" style="height: 100%; border: none; background: transparent; resize: none; display: none;" placeholder="Start ambient listening to see transcription here..."></textarea>
                         </div>
                     </div>
-                    <!-- Speaker Legend -->
-                    <div id="speakerLegend" class="mt-2 p-3 bg-light">
-                        <small class="text-muted">
-                            <i class="fas fa-users me-1"></i>
-                            <span id="speakerLegendText">Speaker identification: <span class="badge bg-primary">Doctor</span> <span class="badge bg-success">Patient</span> <span class="badge bg-secondary">Unknown</span></span>
-                        </small>
+                    <div id="speakerLegend" class="p-3 bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-top: 3px solid #fff;">
+                        <div class="d-flex align-items-center justify-content-center gap-3 text-white">
+                            <i class="fas fa-users"></i>
+                            <span class="badge bg-white text-primary px-3 py-2">Speaker 1</span>
+                            <span class="badge bg-white text-success px-3 py-2">Speaker 2</span>
+                        </div>
                     </div>
 
                     <!-- Transcript Controls -->
@@ -928,9 +985,6 @@
     window.records = @json($records ?? []);
     window.patientAppointments = @json($patientAppointments ?? []);
 </script>
-
-<!-- Include the ambient listening JavaScript -->
-<script src="{{ asset('js/voice-assistant.js') }}"></script>
 
 <!-- Include React components for ambient listening -->
 @viteReactRefresh

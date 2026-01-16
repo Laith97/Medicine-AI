@@ -129,7 +129,7 @@ class VoiceAssistantController extends Controller
         try {
             // First, get assigned patients (patients where primary_doctor_id matches)
             $assignedPatients = Auth::user()->getEffectiveAssignedPatients()
-                ->select('id', 'name', 'email', 'age', 'gender')
+                ->select('id', 'name', 'email', 'age', 'date_of_birth', 'gender')
                 ->get();
 
             // Then, get patients who have confirmed or completed appointments with this doctor
@@ -141,7 +141,7 @@ class VoiceAssistantController extends Controller
                           ->whereIn('status', ['confirmed', 'completed']);
                 })
                 ->whereNotIn('id', $assignedPatients->pluck('id'))
-                ->select('id', 'name', 'email', 'age', 'gender')
+                ->select('id', 'name', 'email', 'age', 'date_of_birth', 'gender')
                 ->get();
 
             // Merge the two collections
@@ -164,7 +164,7 @@ class VoiceAssistantController extends Controller
                         $query->where('doctor_id', $effectiveDoctorId)
                               ->whereIn('status', ['confirmed', 'completed']);
                     })
-                    ->select('id', 'name', 'email', 'age', 'gender')
+                    ->select('id', 'name', 'email', 'age', 'date_of_birth', 'gender')
                     ->orderBy('name')
                     ->get();
 
@@ -436,8 +436,23 @@ class VoiceAssistantController extends Controller
             ], 404);
         }
 
-        $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
-        if ($patient->primary_doctor_id !== $effectiveDoctorId) {
+        $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+
+        // Check if patient belongs to doctor either by primary_doctor_id or through appointments
+        $hasAccess = false;
+
+        // Check if patient is assigned to this doctor
+        if ($patient->primary_doctor_id == $effectiveDoctorId) {
+            $hasAccess = true;
+        } else {
+            // Check if patient has appointments with this doctor
+            $hasAccess = $patient->appointments()
+                ->where('doctor_id', $effectiveDoctorId)
+                ->whereIn('status', ['confirmed', 'completed', 'pending'])
+                ->exists();
+        }
+
+        if (!$hasAccess) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized access to patient.'
@@ -457,23 +472,45 @@ class VoiceAssistantController extends Controller
         ]);
 
         // Get AssemblyAI configuration for direct client-side streaming
+        // IMPORTANT: Skip AssemblyAI for Arabic - it doesn't support Arabic script properly
         $assemblyConfig = null;
-        try {
-            $assemblyService = new \App\Services\AssemblyAIService();
-            $token = $assemblyService->getTemporaryToken([
-                'sample_rate' => 16000,
-                'word_boost' => ['medical', 'diagnosis', 'symptoms', 'medication']
-            ]);
-            
-            if ($token) {
-                $assemblyConfig = [
-                    'token' => $token,
-                    'websocket_url' => $assemblyService->getWebSocketUrl($token),
-                    'sample_rate' => 16000
-                ];
+        $lang = $request->input('language', 'en');
+        
+        // Only use AssemblyAI for English sessions
+        if ($lang === 'en') {
+            try {
+                // Check if AssemblyAI API key is configured before attempting to use the service
+                $assemblyApiKey = config('services.assemblyai.api_key');
+                if (!empty($assemblyApiKey)) {
+                    $assemblyService = new \App\Services\AssemblyAIService();
+                    
+                    $streamingParams = [
+                        'sample_rate' => 16000,
+                        'keyterms_prompt' => ['medical', 'diagnosis', 'symptoms', 'medication'],
+                        'format_turns' => true,
+                        'speech_model' => 'universal-streaming-english'
+                    ];
+                    
+                    // Get token WITHOUT extra params (v3 endpoint handles token generation)
+                    $token = $assemblyService->getTemporaryToken(600);
+
+                    if ($token) {
+                        $assemblyConfig = [
+                            'token' => $token,
+                            'websocket_url' => $assemblyService->getWebSocketUrl($token, $streamingParams),
+                            'sample_rate' => 16000
+                        ];
+                    }
+                } else {
+                    \Log::warning('AssemblyAI API key not configured, skipping WebSocket setup');
+                }
+            } catch (\Exception $e) {
+                \Log::error('Failed to generate AssemblyAI token for direct streaming: ' . $e->getMessage());
             }
-        } catch (\Exception $e) {
-            \Log::error('Failed to generate AssemblyAI token for direct streaming: ' . $e->getMessage());
+        } else {
+            \Log::info('Non-English language selected, skipping AssemblyAI (will use GPT-4o post-processing)', [
+                'language' => $lang
+            ]);
         }
 
         return response()->json([
@@ -975,8 +1012,23 @@ class VoiceAssistantController extends Controller
                 ], 404);
             }
 
-            $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
-            if ($patient->primary_doctor_id !== $effectiveDoctorId) {
+            $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+
+            // Check if patient belongs to doctor either by primary_doctor_id or through appointments
+            $hasAccess = false;
+
+            // Check if patient is assigned to this doctor
+            if ($patient->primary_doctor_id == $effectiveDoctorId) {
+                $hasAccess = true;
+            } else {
+                // Check if patient has appointments with this doctor
+                $hasAccess = $patient->appointments()
+                    ->where('doctor_id', $effectiveDoctorId)
+                    ->whereIn('status', ['confirmed', 'completed', 'pending'])
+                    ->exists();
+            }
+
+            if (!$hasAccess) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized access to patient.'
@@ -1120,8 +1172,23 @@ class VoiceAssistantController extends Controller
             ], 404);
         }
 
-        $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
-        if ($patient->primary_doctor_id !== $effectiveDoctorId) {
+        $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+
+        // Check if patient belongs to doctor either by primary_doctor_id or through appointments
+        $hasAccess = false;
+
+        // Check if patient is assigned to this doctor
+        if ($patient->primary_doctor_id == $effectiveDoctorId) {
+            $hasAccess = true;
+        } else {
+            // Check if patient has appointments with this doctor
+            $hasAccess = $patient->appointments()
+                ->where('doctor_id', $effectiveDoctorId)
+                ->whereIn('status', ['confirmed', 'completed', 'pending'])
+                ->exists();
+        }
+
+        if (!$hasAccess) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized access to patient.'
@@ -1245,8 +1312,23 @@ class VoiceAssistantController extends Controller
             $patient = User::findOrFail($selectedPatient);
 
             // Verify that the patient belongs to the current authenticated doctor
-            $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
-            if ($patient->primary_doctor_id !== $effectiveDoctorId && $patient->primary_doctor_id !== Auth::id()) {
+            $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+
+            // Check if patient belongs to doctor either by primary_doctor_id or through appointments
+            $hasAccess = false;
+
+            // Check if patient is assigned to this doctor
+            if ($patient->primary_doctor_id == $effectiveDoctorId) {
+                $hasAccess = true;
+            } else {
+                // Check if patient has appointments with this doctor
+                $hasAccess = $patient->appointments()
+                    ->where('doctor_id', $effectiveDoctorId)
+                    ->whereIn('status', ['confirmed', 'completed', 'pending'])
+                    ->exists();
+            }
+
+            if (!$hasAccess) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized access to patient.'
@@ -2134,6 +2216,7 @@ class VoiceAssistantController extends Controller
             ]);
 
             $transcription = $request->input('transcription', '');
+            $language = $request->input('language', 'en'); // Default to English
             $hasLiveTranscription = $request->input('has_live_transcription', false);
 
             // Validate required parameters
@@ -2335,7 +2418,7 @@ class VoiceAssistantController extends Controller
                     if ($permanentPath && file_exists($fullAudioPath)) {
                         try {
                             $sttStartTime = microtime(true);
-                            $serverTranscription = $this->processAudioWithServerSTT(storage_path('app/public/' . $permanentPath));
+                            $serverTranscription = $this->processAudioWithServerSTT(storage_path('app/public/' . $permanentPath), $language);
                             $sttEndTime = microtime(true);
 
                             $metrics['server_processing_success'] = !empty($serverTranscription);
@@ -2798,7 +2881,7 @@ class VoiceAssistantController extends Controller
         /**
          * Process audio with advanced medical speech recognition (Google Cloud Speech-to-Text Healthcare)
          */
-        private function processAudioWithServerSTT($audioPath)
+        private function processAudioWithServerSTT($audioPath, $language = 'en')
         {
             try {
                 if (!$audioPath || $audioPath === false) {
@@ -2806,10 +2889,9 @@ class VoiceAssistantController extends Controller
                 }
 
                 // Validate the audio path to prevent path traversal attacks
-                $resolvedAudioPath = realpath($audioPath); // Resolve any relative paths
-                $storagePath = realpath(storage_path('app')); // Base path for validation
+                $resolvedAudioPath = realpath($audioPath);
+                $storagePath = realpath(storage_path('app'));
                 
-                // On Windows, realpath might return different separators, so we normalize
                 if ($resolvedAudioPath) {
                     $resolvedAudioPath = str_replace('\\', '/', $resolvedAudioPath);
                 }
@@ -2828,57 +2910,69 @@ class VoiceAssistantController extends Controller
 
                 $audioPath = $resolvedAudioPath;
 
-                // Check if audio file exists
                 if (!file_exists($audioPath)) {
                     throw new \Exception('Audio file not found');
                 }
 
-                // Get file info for processing
+                // For Arabic: Use GPT-4o Audio for transcription + diarization
+                if (isset($language) && strpos($language, 'ar') === 0) {
+                    \Log::info('HYBRID METHOD - Arabic detected, using GPT-4o Audio');
+                    $result = $this->processWithGPT4oAudio($audioPath, $language);
+                    \Log::info('HYBRID METHOD - GPT-4o result', ['result' => $result]);
+                    if ($result['success']) {
+                        \Log::info('HYBRID METHOD - Returning GPT-4o transcription', ['length' => strlen($result['transcription'])]);
+                        return $result['transcription'];
+                    }
+                    // Fallback to Whisper if GPT-4o fails
+                    \Log::info('HYBRID METHOD - GPT-4o failed, falling back to Whisper');
+                    $result = $this->processWithOpenAIWhisper($audioPath);
+                    return $result['success'] ? $result['transcription'] : '';
+                }
+
+                // For English and other supported languages, use AssemblyAI as primary
                 $fileInfo = pathinfo($audioPath);
                 $fileSize = filesize($audioPath);
     
-                \Log::info('HYBRID METHOD - Starting advanced medical speech recognition', [
+                \Log::info('HYBRID METHOD - Starting server-side transcription', [
                     'audio_path' => $audioPath,
                     'file_size' => $fileSize,
                     'extension' => $fileInfo['extension'],
-                    'provider' => config('medical.transcription_provider', 'google')
+                    'language' => $language
                 ]);
     
-                $transcriptionProvider = config('medical.transcription_provider', 'google');
-                $result = ['success' => false];
-
-                if ($transcriptionProvider === 'assemblyai') {
-                    $result = $this->processWithAssemblyAI($audioPath);
-                } else {
-                    // Try Google Cloud Speech-to-Text Healthcare API first (preferred for medical)
-                    $result = $this->processWithGoogleHealthcareSTT($audioPath);
-                }
+                // Try AssemblyAI first for English (best quality for English medical transcription)
+                $result = $this->processWithAssemblyAI($audioPath, $language);
     
                 if ($result['success']) {
-                    \Log::info('HYBRID METHOD - Primary STT successful', [
-                        'provider' => $transcriptionProvider,
+                    \Log::info('HYBRID METHOD - AssemblyAI successful, skipping fallback', [
                         'transcription_length' => strlen($result['transcription']),
-                        'speakers_detected' => count($result['speakers'] ?? []),
-                        'medical_terms_found' => count($result['medical_terms'] ?? [])
+                        'speakers_detected' => count($result['speakers'] ?? [])
                     ]);
-    
                     return $result['transcription'];
                 }
     
-                // Fallback to OpenAI Whisper (good general purpose)
-                \Log::info('HYBRID METHOD - Primary STT failed, falling back to OpenAI Whisper');
+                // Only fallback to GPT-4o if AssemblyAI fails
+                \Log::info('HYBRID METHOD - AssemblyAI failed, falling back to GPT-4o Audio');
+                $result = $this->processWithGPT4oAudio($audioPath, $language);
+                
+                if ($result['success']) {
+                    return $result['transcription'];
+                }
+
+                // Final fallback to Whisper
+                \Log::info('HYBRID METHOD - GPT-4o failed, falling back to Whisper');
                 $result = $this->processWithOpenAIWhisper($audioPath);
-    
+     
                 return $result['success'] ? $result['transcription'] : '';
     
             } catch (\Exception $e) {
-                \Log::error('HYBRID METHOD - Advanced STT processing failed', [
+                \Log::error('HYBRID METHOD - Server STT processing failed', [
                     'error' => $e->getMessage(),
                     'audio_path' => $audioPath
                 ]);
     
-                // Final fallback to basic OpenAI Whisper
-                return $this->processWithOpenAIWhisper($audioPath);
+                $result = $this->processWithOpenAIWhisper($audioPath);
+                return $result['success'] ? $result['transcription'] : '';
             }
         }
     
@@ -3044,6 +3138,104 @@ class VoiceAssistantController extends Controller
         }
     
         /**
+         * Use GPT-4o to identify speakers from transcribed text
+         */
+        private function diarizeTranscriptWithGPT4o($transcription, $language = 'ar')
+        {
+            try {
+                $response = OpenAI::chat()->create([
+                    'model' => 'gpt-4o',
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'You are a medical conversation analyst. Analyze this medical conversation and identify different speakers (Doctor and Patient). Return ONLY a JSON array: [{"speaker_tag": 1, "text": "...", "start_time": 0}]. Speaker 1 = Doctor, Speaker 2 = Patient.'
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => "Identify speakers in this conversation:\n\n" . $transcription
+                        ]
+                    ],
+                    'temperature' => 0.1
+                ]);
+
+                $content = $response['choices'][0]['message']['content'] ?? '';
+                $segments = json_decode($content, true);
+
+                if (is_array($segments)) {
+                    $formatted = "";
+                    foreach ($segments as $seg) {
+                        $speaker = $seg['speaker_tag'] ?? 1;
+                        $text = $seg['text'] ?? '';
+                        if ($text) {
+                            $formatted .= "[Speaker $speaker]: $text\n";
+                        }
+                    }
+                    return trim($formatted);
+                }
+
+                return null;
+            } catch (\Exception $e) {
+                \Log::error('GPT-4o diarization failed', ['error' => $e->getMessage()]);
+                return null;
+            }
+        }
+
+        /**
+         * Process audio using GPT-4o Audio Preview (Transcribe + Diarize)
+         */
+        private function processWithGPT4oAudio($audioPath, $language = 'ar')
+        {
+            try {
+                $openAI = app(\App\Services\OpenAIClient::class);
+                $segments = $openAI->transcribeAndDiarizeWithGPT4o($audioPath, $language);
+
+                if (!$segments || !is_array($segments)) {
+                    throw new \Exception('GPT-4o Audio returned invalid or empty segments');
+                }
+
+                // Format the transcription with speaker tags
+                $fullTranscript = "";
+                $speakers = [];
+                
+                foreach ($segments as $segment) {
+                    // Handle if segment is a JSON string (parse it)
+                    if (is_string($segment)) {
+                        $segment = json_decode($segment, true);
+                        if (!$segment) continue;
+                    }
+                    
+                    $speakerTag = $segment['speaker_tag'] ?? 1;
+                    $text = $segment['text'] ?? '';
+                    $startTime = $segment['start_time'] ?? 0;
+                    
+                    if (empty($text)) continue;
+
+                    $fullTranscript .= "[Speaker $speakerTag]: $text\n";
+                    
+                    $speakers[] = [
+                        'speaker_tag' => $speakerTag,
+                        'text' => $text,
+                        'start_time' => $startTime
+                    ];
+                }
+
+                return [
+                    'success' => true,
+                    'transcription' => trim($fullTranscript),
+                    'speakers' => $speakers,
+                    'medical_terms' => [], // Extraction happens in next phase
+                    'method' => 'gpt-4o-audio'
+                ];
+
+            } catch (\Exception $e) {
+                \Log::error('GPT-4o Audio processing failed', [
+                    'error' => $e->getMessage()
+                ]);
+                return ['success' => false, 'error' => $e->getMessage()];
+            }
+        }
+
+        /**
          * Fallback to OpenAI Whisper
          */
         private function processWithOpenAIWhisper($audioPath)
@@ -3091,51 +3283,95 @@ class VoiceAssistantController extends Controller
         /**
          * Process audio with AssemblyAI
          */
-        private function processWithAssemblyAI($audioPath)
+        private function processWithAssemblyAI($audioPath, $language = 'en')
         {
             try {
                 $assemblyAIService = new \App\Services\AssemblyAIService();
-                
+
+                // Check if API key is configured before proceeding
+                $apiKey = config('services.assemblyai.api_key');
+                if (empty($apiKey)) {
+                    \Log::warning('AssemblyAI API key not configured, skipping AssemblyAI processing');
+                    return ['success' => false, 'error' => 'AssemblyAI API key not configured'];
+                }
+
                 // 1. Upload file to AssemblyAI
                 $uploadUrl = $assemblyAIService->uploadFile($audioPath);
+
+                if (!$uploadUrl) {
+                    throw new \Exception('Failed to upload audio file to AssemblyAI');
+                }
+
+                // 2. Submit for transcription with speaker diarization enabled
+                $config = [
+                    'speaker_labels' => true,  // Enable speaker diarization
+                    'speakers_expected' => 2   // Expect 2 speakers (doctor and patient)
+                ];
                 
-                // 2. Submit for transcription
-                $submission = $assemblyAIService->processTranscript($uploadUrl);
+                if (!empty($language) && $language !== 'auto') {
+                    $langCode = substr($language, 0, 2);
+                    $config['language_code'] = $langCode;
+                } else {
+                    $config['language_detection'] = true;
+                }
+
+                $submission = $assemblyAIService->processTranscript($uploadUrl, $config);
+                if (!$submission || !isset($submission['id'])) {
+                    throw new \Exception('Failed to submit audio for transcription');
+                }
+
                 $transcriptId = $submission['id'];
-                
+
                 // 3. Poll for result
                 $maxRetries = 30;
                 $retryCount = 0;
                 $transcription = '';
                 $speakers = [];
-                
+
                 while ($retryCount < $maxRetries) {
                     $result = $assemblyAIService->getTranscript($transcriptId);
-                    
+
+                    if (!$result) {
+                        throw new \Exception('Failed to retrieve transcript from AssemblyAI');
+                    }
+
                     if ($result['status'] === 'completed') {
                         $transcription = $result['text'] ?? '';
-                        
-                        // Extract speakers if available
-                        if (isset($result['utterances'])) {
+
+                        // Extract speaker-separated utterances
+                        if (isset($result['utterances']) && is_array($result['utterances'])) {
                             foreach ($result['utterances'] as $utterance) {
+                                $speakerLabel = $utterance['speaker'] ?? 'A';
                                 $speakers[] = [
-                                    'speaker' => $utterance['speaker'],
-                                    'text' => $utterance['text'],
-                                    'start_time' => $utterance['start'] / 1000,
-                                    'role' => $utterance['speaker'] === 'A' ? 'doctor' : 'patient'
+                                    'speaker' => $speakerLabel,
+                                    'text' => $utterance['text'] ?? '',
+                                    'start_time' => ($utterance['start'] ?? 0) / 1000,
+                                    'end_time' => ($utterance['end'] ?? 0) / 1000,
+                                    'role' => $speakerLabel === 'A' ? 'doctor' : 'patient'
                                 ];
                             }
+                            
+                            // Format transcription with speaker labels
+                            $formattedTranscription = '';
+                            foreach ($speakers as $segment) {
+                                $speakerNum = $segment['speaker'] === 'A' ? '1' : '2';
+                                $formattedTranscription .= "[Speaker {$speakerNum}]: {$segment['text']}\n";
+                            }
+                            
+                            if (!empty($formattedTranscription)) {
+                                $transcription = trim($formattedTranscription);
+                            }
                         }
-                        
+
                         break;
                     } elseif ($result['status'] === 'error') {
                         throw new \Exception('AssemblyAI processing error: ' . ($result['error'] ?? 'Unknown error'));
                     }
-                    
+
                     $retryCount++;
-                    sleep(2); // Wait 2 seconds before polling again
+                    sleep(2);
                 }
-                
+
                 if (empty($transcription)) {
                     throw new \Exception('AssemblyAI transcription timed out or returned empty');
                 }
@@ -3147,7 +3383,7 @@ class VoiceAssistantController extends Controller
                     'medical_terms' => [],
                     'method' => 'assemblyai'
                 ];
-                
+
             } catch (\Exception $e) {
                 \Log::error('AssemblyAI processing failed', [
                     'error' => $e->getMessage(),

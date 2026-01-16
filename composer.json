@@ -11,6 +11,7 @@
         "firebase/php-jwt": "^6.11",
         "google/apiclient": "^2.18",
         "google/cloud-speech": "^2.2",
+        "guzzlehttp/psr7": "^2.8",
         "laravel-notification-channels/twilio": "^4.1",
         "laravel/framework": "^12.0",
         "laravel/reverb": "^1.6",
@@ -20,6 +21,8 @@
         "livewire/livewire": "^3.6",
         "openai-php/laravel": "^0.11.0",
         "pusher/pusher-php-server": "^7.2",
+        "ratchet/pawl": "^0.4.3",
+        "ratchet/rfc6455": "^0.4.0",
         "rubix/ml": "^2.4",
         "smalot/pdfparser": "^2.12",
         "stripe/stripe-php": "^17.4"

@@ -16,7 +16,7 @@
  * - Security measures to prevent XSS attacks
  * - Error handling and fallback mechanisms
  */
-(function () {
+(function() {
     // Enhanced logging system for ambient listening debugging
     const voiceAssistantLogger = {
         logs: [],
@@ -137,10 +137,6 @@
 
     let currentLanguage = getRegionalDefaultLanguage(); // Dynamic regional default
     let sessionId = '';
-
-    // Synchronize with window for cross-component access
-    window.sessionId = sessionId;
-    window.currentLanguage = currentLanguage;
     let transcriptionId = null;
     let selectedAppointmentId = null;
     let selectedPatient = null;
@@ -154,7 +150,6 @@
     let mediaRecorder;
     let audioChunks = [];
     let audioBlob = null;
-    window.audioBlob = null; // Ensure it's available globally
     let audioRecording = false;
     let audioRecordingSupported = false;
     let serverProcessingInProgress = false;
@@ -324,14 +319,14 @@
         const createNewPatientBtn = document.getElementById('createNewPatientBtn');
 
         if (showNewPatientFormBtn) {
-            showNewPatientFormBtn.addEventListener('click', function () {
+            showNewPatientFormBtn.addEventListener('click', function() {
                 if (newPatientForm) newPatientForm.style.display = 'block';
                 clearNewPatientForm();
             });
         }
 
         if (hideNewPatientFormBtn || cancelNewPatientBtn) {
-            const hideForm = function () {
+            const hideForm = function() {
                 if (newPatientForm) newPatientForm.style.display = 'none';
                 clearNewPatientForm();
             };
@@ -341,13 +336,13 @@
         }
 
         if (createNewPatientBtn) {
-            createNewPatientBtn.addEventListener('click', function () {
+            createNewPatientBtn.addEventListener('click', function() {
                 createNewPatient();
             });
         }
 
         // Show diagnosis entry form after recording stops
-        window.showDiagnosisEntryForm = function () {
+        window.showDiagnosisEntryForm = function() {
             const diagnosisEntryForm = document.getElementById('diagnosisEntryForm');
             if (diagnosisEntryForm) {
                 diagnosisEntryForm.style.display = 'block';
@@ -365,7 +360,7 @@
         const diagnosisText = document.getElementById('diagnosisText');
 
         if (cancelDiagnosisBtn) {
-            cancelDiagnosisBtn.addEventListener('click', function () {
+            cancelDiagnosisBtn.addEventListener('click', function() {
                 if (diagnosisEntryForm) diagnosisEntryForm.style.display = 'none';
                 if (diagnosisText) diagnosisText.value = '';
                 if (completeConsultationBtn) completeConsultationBtn.disabled = true;
@@ -373,13 +368,13 @@
         }
 
         if (diagnosisText && completeConsultationBtn) {
-            diagnosisText.addEventListener('input', function () {
+            diagnosisText.addEventListener('input', function() {
                 completeConsultationBtn.disabled = !this.value.trim();
             });
         }
 
         if (completeConsultationBtn) {
-            completeConsultationBtn.addEventListener('click', function () {
+            completeConsultationBtn.addEventListener('click', function() {
                 showCompleteConsultationModal();
             });
         }
@@ -387,7 +382,7 @@
         // Modal complete consultation button handler
         const modalCompleteConsultationBtn = document.getElementById('modalCompleteConsultationBtn');
         if (modalCompleteConsultationBtn) {
-            modalCompleteConsultationBtn.addEventListener('click', function () {
+            modalCompleteConsultationBtn.addEventListener('click', function() {
                 completeConsultation();
             });
         }
@@ -1438,10 +1433,10 @@
             });
 
             // Add event listener for debugging purposes to see if clicks are registered
-            stopRecordingBtn.addEventListener('mousedown', function () {
+            stopRecordingBtn.addEventListener('mousedown', function() {
             });
 
-            stopRecordingBtn.addEventListener('mouseup', function () {
+            stopRecordingBtn.addEventListener('mouseup', function() {
             });
         } else {
             // Try to find it again in case it was added dynamically
@@ -1470,7 +1465,7 @@
         // Generate clinical documentation button
         const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
         if (generateClinicalDocBtn) {
-            generateClinicalDocBtn.addEventListener('click', function () {
+            generateClinicalDocBtn.addEventListener('click', function() {
                 if (!transcriptionId) {
                     Swal.fire('No Transcription', 'Please complete a voice session before generating documentation.', 'warning');
                     return;
@@ -1822,7 +1817,7 @@
                     showAlert('Failed to stop session. Please try again.', 'error');
                 }, 100);
             }
-        }).fail(function () {
+        }).fail(function() {
             // Additional fail handler to ensure cleanup happens even if AJAX completely fails
             setTimeout(() => {
                 updateRecordingUI();
@@ -1834,29 +1829,19 @@
 
     // NEW: Server-side audio processing for hybrid method with enhanced validation - FIXED: Returns promise for session completion timing
     function triggerServerSideProcessing() {
-        console.log('🏁 triggerServerSideProcessing called');
-        console.log('   SessionID:', sessionId);
-        console.log('   Language:', currentLanguage);
-        console.log('   AudioBlob exists:', !!(audioBlob || window.audioBlob));
-        if (audioBlob || window.audioBlob) console.log('   AudioBlob size:', (audioBlob || window.audioBlob).size);
-
         return new Promise((resolve, reject) => {
             if (!hybridModeEnabled) {
-                console.log('ℹ️ Hybrid mode disabled, skipping server processing');
-                resolve();
+                resolve(); // Resolve immediately if not enabled
                 return;
             }
 
             if (serverProcessingInProgress) {
-                console.log('⏳ Server processing already in progress, skipping...');
-                resolve();
+                resolve(); // Resolve immediately if already in progress
                 return;
             }
 
             // Validate that we have valid audio data before sending
-            const effectiveAudioBlob = audioBlob || window.audioBlob;
-            if (!effectiveAudioBlob || !validateAudioBlob(effectiveAudioBlob)) {
-                console.warn('⚠️ Audio recording failed validation or is missing');
+            if (!audioBlob || !validateAudioBlob(audioBlob)) {
                 updateServerProcessingStatus('Audio recording failed validation, no transcription available.');
                 showAlert('Audio recording validation failed. No transcription available.', 'warning');
 
@@ -1879,12 +1864,11 @@
 
             const formData = new FormData();
             formData.append('session_id', sessionId);
-            formData.append('language', currentLanguage);
             formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
 
             // Append validated audio file
             const audioFilename = `session_${sessionId}_${Date.now()}.webm`;
-            formData.append('audio_file', effectiveAudioBlob, audioFilename);
+            formData.append('audio_file', audioBlob, audioFilename);
 
             formData.append('transcription', finalTranscript || '');
             formData.append('has_live_transcription', (finalTranscript && finalTranscript.length > 0));
@@ -1901,8 +1885,8 @@
                 formData.append('audio_quality[channels]', performanceData.audioChannels || 1);
                 formData.append('audio_quality[average_level]', audioLevel || 0);
                 formData.append('audio_quality[quality_score]', audioQualityMetrics.qualityScore || 0);
-                formData.append('audio_quality[file_size]', effectiveAudioBlob.size);
-                formData.append('audio_quality[format]', effectiveAudioBlob.type);
+                formData.append('audio_quality[file_size]', audioBlob.size);
+                formData.append('audio_quality[format]', audioBlob.type);
                 formData.append('audio_quality[estimated_duration]', audioQualityMetrics.estimatedDuration || 0);
             }
 
@@ -1928,56 +1912,37 @@
                             // Update server transcription
                             serverTranscription = improvedText;
 
-                            console.log('📊 Server processing returned transcription:', improvedText.substring(0, 50) + '...');
-
-                            // Also send the transcription to the React component if it exists
-                            const reactContainer = document.getElementById('react-transcript-container');
-                            if (reactContainer && reactContainer.children.length > 0) {
-                                // If we have individual speaker segments, send them one by one
-                                if (response.speakers && response.speakers.length > 0) {
-                                    console.log(`👤 Sending ${response.speakers.length} diarized segments to React UI`);
-                                    response.speakers.forEach((s, index) => {
-                                        const transcriptEvent = new CustomEvent('transcriptUpdate', {
-                                            detail: {
-                                                type: 'transcript_update',
-                                                payload: {
-                                                    id: `server-${sessionId}-${index}-${Date.now()}`,
-                                                    transcript: s.text,
-                                                    is_final: true,
-                                                    speaker_tag: s.speaker_tag || 1,
-                                                    start_time: s.start_time ? (Date.now() - 5000 + (s.start_time * 1000)) : Date.now(),
-                                                    medical_entities: response.medical_terms || []
-                                                }
-                                            }
-                                        });
-                                        window.dispatchEvent(transcriptEvent);
-                                    });
-                                } else {
-                                    // Fallback to sending the full improved transcription as one segment
-                                    const transcriptEvent = new CustomEvent('transcriptUpdate', {
-                                        detail: {
-                                            type: 'transcript_update',
-                                            payload: {
-                                                id: `server-${sessionId}-complete-${Date.now()}`,
-                                                transcript: improvedText,
-                                                is_final: true,
-                                                speaker_tag: 1, // Default to doctor
-                                                start_time: Date.now(),
-                                                medical_entities: response.medical_terms || []
-                                            }
-                                        }
-                                    });
-                                    window.dispatchEvent(transcriptEvent);
-                                }
-                            }
-
-                            // Update speaker-separated transcription for legacy UI
+                            // Process speaker-separated transcription if available
                             if (response.speakers && response.speakers.length > 0) {
                                 speakerSeparatedTranscription = response.speakers;
                             }
 
+                            // Calculate server confidence based on improvement and medical terms
+                            const improvementRatio = originalLength > 0 ? improvedText.length / originalLength : 1;
+                            const medicalTermsBonus = response.medical_terms ? response.medical_terms.length * 2 : 0;
+                            transcriptionConfidence = Math.min(98, Math.max(60, improvementRatio * 70 + medicalTermsBonus));
+
                             // Update transcription display with speaker separation
                             updateTranscriptionWithSpeakerSeparation(improvedText, response.speakers);
+
+                            // Also send the transcription to the React component if it exists
+                            const reactContainer = document.getElementById('react-transcript-container');
+                            if (reactContainer && reactContainer.children.length > 0) {
+                                // Dispatch an event that the React component can listen to
+                                const transcriptEvent = new CustomEvent('transcriptUpdate', {
+                                    detail: {
+                                        type: 'transcript_update',
+                                        payload: {
+                                            transcript: improvedText,
+                                            is_final: true,
+                                            speaker_tag: 1, // Default to doctor
+                                            start_time: Date.now(),
+                                            medical_entities: response.medical_terms || []
+                                        }
+                                    }
+                                });
+                                window.dispatchEvent(transcriptEvent);
+                            }
 
                         }
 
@@ -3573,7 +3538,7 @@
                 newPatientPhone: phone,
                 _token: $('meta[name="csrf-token"]').attr('content')
             },
-            success: function (response) {
+            success: function(response) {
                 if (response.success) {
                     // Add patient to select dropdown
                     const patientSelect = document.getElementById('patientSelect');
@@ -3610,7 +3575,7 @@
                     showNotification(response.message || 'Failed to create patient.', 'error');
                 }
             },
-            error: function (xhr, status, error) {
+            error: function(xhr, status, error) {
                 showNotification('Failed to create patient. Please try again.', 'error');
             }
         });
@@ -3622,8 +3587,8 @@
         if (!alertContainer) return;
 
         const alertClass = type === 'error' ? 'alert-danger' :
-            type === 'success' ? 'alert-success' :
-                type === 'warning' ? 'alert-warning' : 'alert-info';
+                          type === 'success' ? 'alert-success' :
+                          type === 'warning' ? 'alert-warning' : 'alert-info';
 
         // XSS Prevention: Sanitize the message before inserting into DOM
         const sanitizedMessage = sanitizeHtml(message);
@@ -3892,7 +3857,7 @@
             url: '/ai/voice-assistant/complete-consultation',
             method: 'POST',
             data: ajaxData,
-            success: function (response) {
+            success: function(response) {
                 if (response.success) {
                     // Close modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('completeConsultationModal'));
@@ -3911,7 +3876,7 @@
 
                     // Redirect to diagnosis view
                     if (response.redirectUrl) {
-                        setTimeout(function () {
+                        setTimeout(function() {
                             window.location.href = response.redirectUrl;
                         }, 2000);
                     }
@@ -3919,7 +3884,7 @@
                     showNotification(response.message || 'Failed to complete consultation.', 'error');
                 }
             },
-            error: function (xhr, status, error) {
+            error: function(xhr, status, error) {
                 if (xhr.status === 422) {
                     // Validation error - try to get specific error messages
                     try {
@@ -3937,7 +3902,7 @@
                     showNotification('Failed to complete consultation. Please try again. (' + error + ')', 'error');
                 }
             },
-            complete: function () {
+            complete: function() {
                 // Re-enable button
                 if (completeBtn) {
                     completeBtn.disabled = false;
@@ -4251,14 +4216,14 @@
     function initializeVoiceAssistant() {
         // Check if we're on the voice assistant page
         const isVoiceAssistantPage = window.location.pathname === '/ai/voice-assistant' ||
-            document.querySelector('[data-session-id]') !== null;
+                                   document.querySelector('[data-session-id]') !== null;
 
         if (!isVoiceAssistantPage) {
             return;
         }
 
         // Use a timeout to ensure DOM is ready
-        setTimeout(function () {
+        setTimeout(function() {
             initVoiceAssistant();
         }, 50);
     }
@@ -4273,7 +4238,7 @@
 
     // Also listen for the pageContentLoaded event from AJAX navigation
     if (typeof $ !== 'undefined' && typeof $.fn !== 'undefined') {
-        $(document).on('pageContentLoaded', function (event, route) {
+        $(document).on('pageContentLoaded', function(event, route) {
             // Clean up keyboard shortcuts help if not on the main voice-assistant page
             if (!route || route !== '/ai/voice-assistant') {
                 cleanupKeyboardShortcutsHelp();
@@ -4281,18 +4246,10 @@
             }
 
             // Initialize voice assistant for AJAX-loaded content
-            setTimeout(function () {
+            setTimeout(function() {
                 initVoiceAssistant();
             }, 50);
         });
+    } else {
     }
-
-    // Final Global Exposures
-    window.triggerServerSideProcessing = triggerServerSideProcessing;
-    if (typeof window.audioBlob === 'undefined') window.audioBlob = null;
-
-    // Add setters for synchronized variables
-    window.setSessionId = (id) => { sessionId = id; window.sessionId = id; };
-    window.setCurrentLanguage = (lang) => { currentLanguage = lang; window.currentLanguage = lang; };
-
 })();

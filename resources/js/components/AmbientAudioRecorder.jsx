@@ -4,14 +4,21 @@ import { MedicalAmbientRecorder } from '../utils/MedicalAmbientRecorder';
 const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
-    const [status, setStatus] = useState('idle'); // idle, connecting, recording, stopped, disconnected
+    const [status, setStatus] = useState('idle');
     const [error, setError] = useState(null);
+    const [sessionId, setSessionId] = useState(null);
 
     const recorderRef = useRef(null);
     const isFallbackRef = useRef(false);
 
-    // Initialize the recorder
+    // Initialize the recorder ONCE
     useEffect(() => {
+        // Only create if we don't have one
+        if (recorderRef.current) {
+            console.log('⚠️ Recorder already exists, skipping creation');
+            return;
+        }
+
         const recorder = new MedicalAmbientRecorder({
             onStatusChange: (newStatus) => {
                 setStatus(newStatus);
@@ -47,13 +54,19 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
 
         recorderRef.current = recorder;
 
+        // Sync initial language if available
+        if (typeof window.setCurrentLanguage === 'function') {
+            window.setCurrentLanguage(language);
+        }
+
         // Cleanup function to stop recording if component unmounts while recording
         return () => {
             if (recorderRef.current && isRecording) {
+                console.log('🧹 Component unmounting, stopping recorder');
                 recorderRef.current.stopRecording();
             }
         };
-    }, [isRecording, language]);
+    }, []); // Empty dependency array - only run once on mount
 
     const startRecording = async () => {
         setError(null);
@@ -71,6 +84,7 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
 
             const response = await window.axios.post('/ai/voice-assistant/start-session', {
                 selectedPatient: selectedPatient,
+                language: language
             });
 
             if (!response.data.success) {
@@ -79,12 +93,20 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
 
             const { sessionId, assemblyConfig } = response.data;
 
+            // Store session ID for later use
+            setSessionId(sessionId);
+
+            // Synchronize sessionId with the legacy script
+            if (typeof window.setSessionId === 'function') {
+                window.setSessionId(sessionId);
+            }
+            window.sessionId = sessionId;
+
             // 2. Start the recorder with the received config
             if (recorderRef.current) {
                 await recorderRef.current.startRecording(sessionId, authToken, language, assemblyConfig);
             }
         } catch (err) {
-            console.warn('Primary recording failed, falling back to browser speech recognition', err);
 
             // Fallback to the existing voice-assistant.js implementation
             if (window.voiceAssistant && typeof window.voiceAssistant.startSession === 'function') {
@@ -98,13 +120,11 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
                     setIsConnecting(false);
                     setError(null);
                 } catch (fallbackErr) {
-                    console.error('Fallback recording also failed:', fallbackErr);
                     setError('Recording failed: ' + (fallbackErr.message || err.message));
                     setIsConnecting(false);
                     setIsRecording(false);
                 }
             } else {
-                console.error('Voice assistant module not available for fallback');
                 // If voice assistant is not available, try to initialize it first
                 try {
                     // Wait for window.voiceAssistant to be available with a timeout
@@ -155,7 +175,6 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
                                 setIsConnecting(false);
                                 setError(null);
                             } else {
-                                console.error('Start button not available or still disabled after patient check');
                                 // Try clicking the React container's fallback button
                                 const reactStartBtn = document.querySelector('#react-audio-recorder-container .btn-success:not(.disabled):not([disabled])');
                                 if (reactStartBtn) {
@@ -178,7 +197,6 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
                         }
                     }
                 } catch (initErr) {
-                    console.error('Failed to initialize or use voice assistant:', initErr);
                     // As a last resort, try to trigger the recording button directly
                     try {
                         const startBtn = document.getElementById('startRecordingBtn');
@@ -232,13 +250,11 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
         }
     };
 
-    const stopRecording = () => {
+    const stopRecording = async () => {
         if (isFallbackRef.current) {
-            console.log('Stopping fallback recording...');
             if (window.voiceAssistant && typeof window.voiceAssistant.stopSession === 'function') {
                 window.voiceAssistant.stopSession();
             } else {
-                // Try to find the stop button and click it
                 const stopBtn = document.getElementById('stopRecordingBtn');
                 if (stopBtn) {
                     stopBtn.click();
@@ -248,7 +264,76 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
             setIsRecording(false);
             setStatus('stopped');
         } else if (recorderRef.current) {
-            recorderRef.current.stopRecording();
+            console.log('⏹️ Stopping recording via MedicalAmbientRecorder...');
+            const audioBlob = await recorderRef.current.stopRecordingAsync();
+            console.log('✅ Recording stopped, audio blob received:', audioBlob ? audioBlob.size + ' bytes' : 'null');
+
+            // Clean up after getting the blob
+            if (recorderRef.current) {
+                recorderRef.current.cleanup();
+            }
+
+            // Trigger server-side processing
+            try {
+                if (audioBlob && audioBlob.size > 0) {
+                    console.log('🚀 Triggering server-side processing for audio blob...');
+
+                    // Show loading spinner
+                    window.dispatchEvent(new CustomEvent('showTranscriptLoading'));
+
+                    const currentSessionId = sessionId || window.sessionId || (typeof window.getSessionId === 'function' ? window.getSessionId() : null);
+                    console.log('   Using session ID:', currentSessionId);
+
+                    if (currentSessionId) {
+                        const formData = new FormData();
+                        formData.append('audio_file', audioBlob, 'recording.webm');
+                        formData.append('session_id', currentSessionId);
+                        formData.append('language', language);
+                        formData.append('has_audio_recording', 'true');
+
+                        const response = await window.axios.post('/ai/voice-assistant/process-audio-server', formData, {
+                            headers: {
+                                'Content-Type': 'multipart/form-data'
+                            }
+                        });
+
+                        if (response.data.success) {
+                            console.log('✅ Server-side processing completed successfully');
+                            console.log('📥 Server response data:', response.data);
+                            console.log('📥 Server transcript received:', response.data.improved_transcription);
+                            console.log('📥 Transcript length:', response.data.improved_transcription ? response.data.improved_transcription.length : 0);
+
+                            // Hide loading spinner
+                            window.dispatchEvent(new CustomEvent('hideTranscriptLoading'));
+
+                            if (response.data.improved_transcription) {
+                                console.log('🎯 Dispatching serverTranscriptReady event');
+                                window.dispatchEvent(new CustomEvent('serverTranscriptReady', {
+                                    detail: {
+                                        transcription: response.data.improved_transcription,
+                                        extractedData: response.data.server_extracted_data,
+                                        speakers: response.data.speakers
+                                    }
+                                }));
+                            } else {
+                                console.warn('⚠️ No improved_transcription in response');
+                            }
+                        } else {
+                            console.error('❌ Server-side processing failed:', response.data.message);
+                            // Hide loading on error
+                            window.dispatchEvent(new CustomEvent('hideTranscriptLoading'));
+                        }
+                    } else {
+                        console.warn('⚠️ No session ID available for server-side processing');
+                    }
+                } else {
+                    console.warn('⚠️ No audio blob available for server-side processing');
+                }
+            } catch (error) {
+                console.error('❌ Error during server-side processing:', error);
+                // Hide loading on error
+                window.dispatchEvent(new CustomEvent('hideTranscriptLoading'));
+            }
         }
     };
 
@@ -283,115 +368,100 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
     };
 
     return (
-        <div className="ambient-recorder-container">
-            <div className="card shadow-sm border-0">
-                <div className="card-body p-4">
-                    <div className="d-flex align-items-center justify-content-between mb-3">
-                        <h5 className="card-title mb-0">
-                            <i className="fas fa-microphone-alt me-2"></i>Ambient Listening
-                        </h5>
-                        <div className="d-flex align-items-center">
-                            <div className="status-indicator me-2">
-                                <span
-                                    className={`status-dot ${
-                                        status === 'recording' ? 'recording' :
-                                        status === 'connecting' ? 'connecting' :
-                                        status === 'disconnected' ? 'error' :
-                                        status === 'idle' || status === 'stopped' ? 'active' : ''
-                                    }`}
-                                    id="statusDot"
-                                    aria-hidden="true"
-                                ></span>
-                            </div>
+        <div className="ambient-recorder-container d-inline-block">
+            <div
+                className={`d-inline-flex align-items-center bg-white rounded-pill shadow-sm border transaction-all ${isRecording ? 'border-danger' : 'border-light'}`}
+                style={{
+                    padding: '6px 16px',
+                    transition: 'all 0.3s ease',
+                    minWidth: '200px'
+                }}
+            >
+                {/* Status Indicator Section */}
+                <div className="d-flex align-items-center pe-3 border-end">
+                    <span
+                        className="status-dot me-2"
+                        style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor: status === 'recording' ? '#dc3545' :
+                                status === 'connecting' ? '#ffc107' : '#adb5bd',
+                            boxShadow: status === 'recording' ? '0 0 0 2px rgba(220, 53, 69, 0.2)' : 'none',
+                            animation: status === 'recording' ? 'pulse 1.5s infinite' : 'none'
+                        }}
+                    ></span>
+                    <span
+                        className={`fw-bold ${status === 'recording' ? 'text-danger' : 'text-secondary'}`}
+                        style={{ fontSize: '0.85rem' }}
+                    >
+                        {status === 'idle' ? 'Ready' :
+                            status === 'recording' ? 'Listening' :
+                                status === 'connecting' ? 'Connecting...' : status}
+                    </span>
+                </div>
+
+                {/* Controls Section */}
+                <div className="ps-3">
+                    {!isRecording ? (
+                        <button
+                            onClick={startRecording}
+                            className="btn btn-link text-decoration-none p-0 text-dark fw-bold d-flex align-items-center"
+                            disabled={isConnecting}
+                            style={{ fontSize: '0.9rem' }}
+                        >
+                            {isConnecting ? (
+                                <i className="fas fa-spinner fa-spin text-secondary"></i>
+                            ) : (
+                                <>
+                                    <div
+                                        className="d-flex align-items-center justify-content-center bg-light rounded-circle me-2"
+                                        style={{ width: '28px', height: '28px' }}
+                                    >
+                                        <i className="fas fa-microphone text-primary" style={{ fontSize: '0.8rem' }}></i>
+                                    </div>
+                                    <span>Start</span>
+                                </>
+                            )}
+                        </button>
+                    ) : (
+                        <button
+                            onClick={stopRecording}
+                            className="btn btn-link text-decoration-none p-0 text-danger fw-bold d-flex align-items-center"
+                            style={{ fontSize: '0.9rem' }}
+                        >
                             <div
-                                className={`status-text ${statusClass()}`}
-                                role="status"
-                                aria-live="polite"
+                                className="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 rounded-circle me-2"
+                                style={{ width: '28px', height: '28px' }}
                             >
-                                <span className={`badge ${badgeClass()}`}>{statusText()}</span>
+                                <i className="fas fa-stop text-danger" style={{ fontSize: '0.8rem' }}></i>
                             </div>
-                        </div>
-                    </div>
-
-                    <div className="d-flex flex-column align-items-center my-3">
-                        <div className={`recording-button-container ${isRecording ? 'recording' : ''}`}>
-                            {!isRecording && (
-                                <button
-                                    onClick={startRecording}
-                                    className={`btn btn-success btn-lg px-5 py-4 rounded-circle shadow-lg ${isConnecting ? 'disabled' : ''}`}
-                                    disabled={isConnecting}
-                                    aria-label="Start recording"
-                                >
-                                    {isConnecting ? (
-                                        <span className="d-flex flex-column align-items-center">
-                                            <span className="spinner-border spinner-border-sm mb-2" role="status"></span>
-                                            <span>Connecting...</span>
-                                        </span>
-                                    ) : (
-                                        <>
-                                            <i className="fas fa-microphone fa-2x mb-2" aria-hidden="true"></i>
-                                            <div>Start Listening</div>
-                                        </>
-                                    )}
-                                </button>
-                            )}
-
-                            {isRecording && (
-                                <button
-                                    onClick={stopRecording}
-                                    className="btn btn-danger btn-lg px-5 py-4 rounded-circle shadow-lg recording-pulse"
-                                    aria-label="Stop recording"
-                                >
-                                    <i className="fas fa-stop fa-2x mb-2" aria-hidden="true"></i>
-                                    <div>Stop Listening</div>
-                                </button>
-                            )}
-                        </div>
-
-                        {isRecording && (
-                            <div className="recording-info mt-3 text-center">
-                                <div className="d-flex align-items-center justify-content-center gap-2">
-                                    <span className="recording-dot"></span>
-                                    <small className="text-danger">LIVE</small>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {error && (
-                        <div className="alert alert-danger mt-3 d-flex align-items-center">
-                            <i className="fas fa-exclamation-triangle me-2"></i>
-                            <div>
-                                <div className="fw-bold">Connection Error</div>
-                                <div>{error}</div>
-                                <small className="mt-1 d-block">
-                                    <i className="fas fa-lightbulb me-1"></i>
-                                    Try checking your microphone permissions, internet connection, or contact support.
-                                </small>
-                            </div>
-                        </div>
+                            <span>Stop</span>
+                        </button>
                     )}
-
-                    <div className="text-muted small text-center mt-3">
-                        <i className="fas fa-shield-alt me-1"></i> HIPAA Compliant • Encrypted • Secure
-                    </div>
-
-                    {/* Audio quality indicator */}
-                    <div className="mt-3">
-                        <div className="progress" style={{height: '6px'}}>
-                            <div
-                                className="progress-bar bg-success"
-                                role="progressbar"
-                                style={{width: '85%'}}
-                                aria-valuenow="85"
-                                aria-valuemin="0"
-                                aria-valuemax="100"
-                            ></div>
-                        </div>
-                        <small className="text-muted d-block text-center mt-1">Audio Quality: High</small>
-                    </div>
                 </div>
             </div>
+
+            {/* Error Message Toast-like display */}
+            {error && (
+                <div
+                    className="alert alert-danger py-1 px-3 mt-2 mb-0 rounded-3 shadow-sm"
+                    style={{ fontSize: '0.8rem', maxWidth: '300px' }}
+                >
+                    <i className="fas fa-exclamation-circle me-1"></i>{error}
+                </div>
+            )}
+
+            <style>{`
+                @keyframes pulse {
+                    0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+                    70% { box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+                }
+                .ambient-recorder-container .btn-link:hover {
+                    opacity: 0.8;
+                }
+            `}</style>
         </div>
     );
 };

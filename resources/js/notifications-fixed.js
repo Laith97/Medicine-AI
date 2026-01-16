@@ -564,7 +564,6 @@ class EnhancedNotificationSystem {
             return;
         }
 
-        console.log('🔍 [DEBUG] Notification is new, proceeding with UI updates');
 
         // Check if we're offline and store notification locally
         if (!navigator.onLine && window.offlineNotificationManager) {
@@ -764,43 +763,30 @@ class EnhancedNotificationSystem {
 
     playNotificationSound() {
         console.log('🔊 Playing notification sound');
-        console.log('🔍 [DEBUG] Sound playback started');
 
         try {
             // First try to use the preloaded sound if available
-            console.log('🔍 [DEBUG] Checking for preloaded sound...');
-            console.log('🔍 [DEBUG] window.notificationSound exists:', !!window.notificationSound);
-            console.log('🔍 [DEBUG] window.notificationSound type:', typeof window.notificationSound);
-            console.log('🔍 [DEBUG] window.notificationSound has play method:', window.notificationSound && typeof window.notificationSound.play === 'function');
 
             if (window.notificationSound && typeof window.notificationSound.play === 'function') {
                 // Reset the audio to the beginning before playing
-                console.log('🔍 [DEBUG] Resetting audio to beginning...');
                 window.notificationSound.currentTime = 0;
 
                 const playPromise = window.notificationSound.play();
-                console.log('🔍 [DEBUG] Play promise:', playPromise);
 
                 if (playPromise !== undefined) {
                     playPromise.then(() => {
-                        console.log('✅ Preloaded sound played successfully');
                     }).catch(error => {
                         console.warn('⚠️ Preloaded sound play failed:', error);
-                        console.log('🔍 [DEBUG] Error details:', error);
                         this.playFallbackSound();
                     });
                 } else {
-                    console.log('⚠️ Play promise undefined, trying fallback');
                     this.playFallbackSound();
                 }
             } else {
-                console.log('⚠️ Notification sound not available, trying fallback');
-                console.log('🔍 [DEBUG] window.notificationSound:', window.notificationSound);
                 this.playFallbackSound();
             }
         } catch (error) {
             console.error('❌ Sound error:', error);
-            console.log('🔍 [DEBUG] Error details:', error);
             this.playFallbackSound();
         }
     }
@@ -870,7 +856,6 @@ class EnhancedNotificationSystem {
 
     showToastNotification(notification) {
         console.log('📋 Creating toast notification for:', notification);
-        console.log('🔍 [DEBUG] Toast notification creation started');
 
         // Detect screen size for responsive positioning
         const isMobile = window.innerWidth <= 768;
@@ -956,7 +941,6 @@ class EnhancedNotificationSystem {
             </div>
         `;
 
-        console.log('🔍 [DEBUG] Toast element created, appending to body...');
 
         // Add toast to active toasts tracking
         this.activeToasts.add(toast);
@@ -965,18 +949,15 @@ class EnhancedNotificationSystem {
         this.preventMobileUIInterference(toast, isMobile);
 
         document.body.appendChild(toast);
-        console.log('🔍 [DEBUG] Toast element appended to body');
 
         // Animate in with responsive transform
         setTimeout(() => {
-            console.log('🔍 [DEBUG] Animating toast in...');
             toast.classList.add('show');
             toast.style.transform = 'translateX(0) translateY(0)';
         }, 100);
 
         // Auto remove after 5 seconds with responsive animation
         const removeTimeout = setTimeout(() => {
-            console.log('🔍 [DEBUG] Removing toast notification...');
             toast.classList.remove('show');
             if (isMobile) {
                 toast.style.transform = 'translateY(200px)';

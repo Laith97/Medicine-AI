@@ -1,5 +1,10 @@
+import { v4 as uuidv4 } from 'uuid';
+
 export class MedicalAmbientRecorder {
     constructor(config = {}) {
+        this.instanceId = Math.random().toString(36).substr(2, 9);
+        console.log('🎬 Creating MedicalAmbientRecorder instance:', this.instanceId);
+        
         this.audioContext = null;
         this.mediaStream = null;
         this.websocket = null;
@@ -11,16 +16,20 @@ export class MedicalAmbientRecorder {
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 1000;
         this.isDestroyed = false;
-        
+        this.localMediaRecorder = null;
+        this.recordedChunks = [];
+        this.audioBlob = null;
+
         this.config = {
             sampleRate: 16000,
             bufferSize: 4096,
             ...config
         };
 
-        this.onTranscriptUpdate = null;
-        this.onStatusChange = null;
-        this.onError = null;
+        // Extract and set callback functions from config
+        this.onTranscriptUpdate = config.onTranscriptUpdate || null;
+        this.onStatusChange = config.onStatusChange || null;
+        this.onError = config.onError || null;
         this.sendToAssemblyAI = false;
         this.assemblySocket = null;
         this.visitId = null;
@@ -60,14 +69,13 @@ export class MedicalAmbientRecorder {
         const alphanumericRegex = /^[a-zA-Z0-9+/=]+$/;
 
         return jwtRegex.test(authToken) ||
-               uuidTokenRegex.test(authToken) ||
-               (alphanumericRegex.test(authToken) && authToken.length >= 16);
+            uuidTokenRegex.test(authToken) ||
+            (alphanumericRegex.test(authToken) && authToken.length >= 16);
     }
 
     async startRecording(visitId, authToken, language = 'en', assemblyConfig = null) {
         if (this.isDestroyed) throw new Error('Recorder has been destroyed');
 
-        // Validate inputs to prevent injection attacks
         if (!this.isValidVisitId(visitId)) {
             throw new Error('Invalid visitId provided');
         }
@@ -81,7 +89,7 @@ export class MedicalAmbientRecorder {
         this.language = language;
 
         try {
-            // 1. Get microphone with MEDICAL OPTIMIZED settings
+            // 1. Get microphone
             this.mediaStream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     channelCount: 1,
@@ -93,21 +101,42 @@ export class MedicalAmbientRecorder {
                 }
             });
 
-            // 2. Setup direct AssemblyAI connection if config is provided
+            console.log('✅ Microphone access granted, mediaStream:', this.mediaStream);
+
+            // 2. Setup direct AssemblyAI connection ONLY if config is provided (English only)
             if (assemblyConfig) {
-                console.log('Using direct AssemblyAI streaming');
-                this.setupAssemblyAIConnection(assemblyConfig);
+                console.log('🔗 Connecting to AssemblyAI...', assemblyConfig);
+                try {
+                    await this.setupAssemblyAIConnection(assemblyConfig);
+                    console.log('✅ AssemblyAI streaming initialized');
+                } catch (assemblyError) {
+                    console.error('❌ AssemblyAI connection failed:', assemblyError);
+                }
+            } else {
+                console.log('ℹ️ No AssemblyAI config provided - using local recording with post-session processing');
             }
 
-            // 3. Create WebSocket connection with retry logic (now optional)
-            try {
-                await this.connectWebSocket();
-            } catch (wsError) {
-                console.warn('Local WebSocket connection failed, continuing with direct streaming if available:', wsError);
-                // If we have AssemblyAI, we can continue
-                if (!this.sendToAssemblyAI) {
-                    throw wsError;
+            // 2b. Setup local recording for high-quality fallback
+            console.log('🎥 Setting up local recording...');
+            this.setupLocalRecording();
+            console.log('✅ Local recording setup complete, localMediaRecorder:', this.localMediaRecorder);
+
+            // 3. Create WebSocket connection (skip for Arabic)
+            if (!this.language || !this.language.startsWith('ar')) {
+                try {
+                    console.log('🔗 Connecting to local WebSocket...');
+                    await this.connectWebSocket();
+                    console.log('✅ Local WebSocket connected');
+                } catch (wsError) {
+                    console.warn('⚠️ Local WebSocket connection failed:', wsError.message);
+                    if (!this.sendToAssemblyAI) {
+                        console.error('❌ No active transcription service available');
+                        throw wsError;
+                    }
+                    console.log('ℹ️ Proceeding with AssemblyAI streaming only');
                 }
+            } else {
+                console.log('ℹ️ Arabic session: Recording locally, will use GPT-4o for high-quality transcription after recording stops');
             }
 
             // 4. Create audio processing pipeline
@@ -125,11 +154,24 @@ export class MedicalAmbientRecorder {
     }
 
     stopRecording() {
-        this.isRecording = false;
-        this.cleanup();
-        this.handleStatusChange('stopped');
+        return new Promise((resolve) => {
+            if (this.localMediaRecorder && this.localMediaRecorder.state !== 'inactive') {
+                const originalOnStop = this.localMediaRecorder.onstop;
+                this.localMediaRecorder.onstop = () => {
+                    if (originalOnStop) originalOnStop();
+                    console.log('⏹️ Local MediaRecorder stopped, audio blob ready');
+                    resolve();
+                };
+                this.localMediaRecorder.stop();
+            } else {
+                resolve();
+            }
+            this.isRecording = false;
+            // DON'T call cleanup here - it will destroy the MediaRecorder
+            this.handleStatusChange('stopped');
+        });
     }
-    
+
     destroy() {
         this.isDestroyed = true;
         this.stopRecording();
@@ -137,45 +179,56 @@ export class MedicalAmbientRecorder {
 
     async createAudioProcessingPipeline() {
         try {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)({ 
-                sampleRate: this.config.sampleRate 
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: this.config.sampleRate
             });
-            
+
             if (this.audioContext.state === 'suspended') {
                 await this.audioContext.resume();
             }
-            
+
             this.source = this.audioContext.createMediaStreamSource(this.mediaStream);
             this.processor = this.audioContext.createScriptProcessor(this.config.bufferSize, 1, 1);
-            
+
             this.processor.onaudioprocess = (e) => {
                 if (!this.isRecording || this.isDestroyed) return;
-                
+
                 try {
                     const audioData = e.inputBuffer.getChannelData(0);
                     const pcmData = this.convertFloat32ToInt16(audioData);
-                    
+
+                    // Throttled logging to verify audio flow (every ~100 chunks)
+                    if (this.chunkSequence % 100 === 0) {
+                        console.log(`🎙️ Audio flow check: Chunks sent: ${this.chunkSequence}, Size: ${pcmData.length}, AssemblyAI State: ${this.assemblySocket ? this.assemblySocket.readyState : 'null'}`);
+                    }
+
                     // Send to AssemblyAI if configured
                     if (this.sendToAssemblyAI && this.assemblySocket && this.assemblySocket.readyState === WebSocket.OPEN) {
-                        const audioBuffer = new ArrayBuffer(pcmData.length * 2);
-                        const view = new DataView(audioBuffer);
-                        for (let i = 0; i < pcmData.length; i++) {
-                            view.setInt16(i * 2, pcmData[i], true);
+                        try {
+                            const audioBuffer = new ArrayBuffer(pcmData.length * 2);
+                            const view = new DataView(audioBuffer);
+                            for (let i = 0; i < pcmData.length; i++) {
+                                view.setInt16(i * 2, pcmData[i], true);
+                            }
+                            this.assemblySocket.send(audioBuffer);
+                        } catch (sendError) {
+                            console.error('❌ Error sending to AssemblyAI:', sendError);
                         }
-                        this.assemblySocket.send(audioBuffer);
                     }
-                    
+
                     // Also send to main WebSocket for processing
                     if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
                         this.websocket.send(JSON.stringify({
                             type: 'audio_chunk',
                             data: Array.from(pcmData),
                             timestamp: Date.now(),
-                            sequence: this.chunkSequence++
+                            sequence: this.chunkSequence
                         }));
                     }
+
+                    this.chunkSequence++;
                 } catch (error) {
-                    console.error('Audio processing error:', error);
+                    console.error('❌ Audio processing logic error:', error);
                 }
             };
 
@@ -223,7 +276,6 @@ export class MedicalAmbientRecorder {
                 this.websocket.onerror = (error) => {
                     clearTimeout(timeout);
                     // Don't immediately reject, allow fallback to browser recording
-                    console.warn('WebSocket connection error:', error);
                     reject(new Error('WebSocket connection failed - falling back to browser recording'));
                 };
 
@@ -294,7 +346,7 @@ export class MedicalAmbientRecorder {
 
         // Add specific guidance based on error type
         if (error && error.name) {
-            switch(error.name) {
+            switch (error.name) {
                 case 'NotAllowedError':
                     enhancedMessage += ' - Microphone access was denied. Please grant microphone permissions in your browser settings.';
                     break;
@@ -331,10 +383,10 @@ export class MedicalAmbientRecorder {
             this.handleError('Max reconnection attempts reached', new Error('Connection failed'));
             return;
         }
-        
+
         this.reconnectAttempts++;
         this.handleStatusChange('reconnecting');
-        
+
         setTimeout(async () => {
             try {
                 await this.connectWebSocket();
@@ -347,51 +399,214 @@ export class MedicalAmbientRecorder {
     }
 
     setupAssemblyAIConnection(config) {
-        this.assemblySocket = new WebSocket(config.websocket_url);
-        
-        this.assemblySocket.onopen = () => {
-            this.handleStatusChange('assemblyai_connected');
-            this.sendToAssemblyAI = true;
-        };
-        
-        this.assemblySocket.onmessage = (event) => {
+        return new Promise((resolve, reject) => {
             try {
-                const data = JSON.parse(event.data);
-                if (data.message_type === 'PartialTranscript' || data.message_type === 'FinalTranscript') {
-                    if (this.onTranscriptUpdate) {
-                        this.onTranscriptUpdate({
-                            type: 'transcript_update',
-                            text: data.text,
-                            is_final: data.message_type === 'FinalTranscript',
-                            speaker: data.speaker || 'unknown',
-                            confidence: data.confidence
-                        });
+                this.assemblySocket = new WebSocket(config.websocket_url);
+
+                const timeout = setTimeout(() => {
+                    reject(new Error('AssemblyAI WebSocket connection timeout'));
+                }, 10000); // 10 second timeout
+
+                this.assemblySocket.onopen = () => {
+                    clearTimeout(timeout);
+                    this.handleStatusChange('assemblyai_connected');
+                    this.sendToAssemblyAI = true;
+                    resolve();
+                };
+
+                this.assemblySocket.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        const messageType = data.type || data.message_type;
+
+                        // Debug log all message types from v3 
+                        console.log(`🔍 AssemblyAI Message Received (${messageType}):`, data);
+
+                        // 1. Handle v3 "Begin" or v2 "SessionBegins"
+                        if (messageType === 'Begin' || messageType === 'SessionBegins') {
+                            console.log('🎯 AssemblyAI Session Began:', data.id || data.session_id);
+                            return;
+                        }
+
+                        // 2. Handle v3 "Turn" or v2 "PartialTranscript"/"FinalTranscript"
+                        const isV3Turn = messageType === 'Turn';
+                        const isV2Transcript = messageType === 'PartialTranscript' || messageType === 'FinalTranscript';
+
+                        if (isV3Turn || isV2Transcript) {
+                            // Extract transcript text (v3 uses 'transcript', v2 uses 'text')
+                            const transcriptText = isV3Turn ? data.transcript : data.text;
+
+                            // Determine if final (v3 uses 'end_of_turn', v2 uses 'FinalTranscript' type)
+                            const isFinal = isV3Turn ? data.end_of_turn : (messageType === 'FinalTranscript');
+
+                            // Skip real-time transcript for Arabic as v3 doesn't support it (shows phonetic Latin garbage)
+                            if (this.language && this.language.startsWith('ar')) {
+                                return;
+                            }
+
+                            console.log(`📝 ${isFinal ? '✅ FINAL' : '⏳ Partial'}: ${transcriptText}`);
+
+
+
+                            if (this.onTranscriptUpdate && transcriptText) {
+                                const updateData = {
+                                    type: 'transcript_update',
+                                    payload: {
+                                        id: isV3Turn ? `turn-${data.turn_order}` : (data.transcript_id || uuidv4()),
+                                        transcript: transcriptText,
+                                        is_final: isFinal,
+                                        speaker_tag: data.speaker || 1, // Default to speaker 1 (Doctor)
+                                        confidence: data.confidence || data.end_of_turn_confidence || 0.8,
+                                        start_time: Date.now(),
+                                        medical_entities: data.medical_entities || [],
+                                        language_code: data.language_code || 'en', // v3 provides detected language
+                                        turn_order: isV3Turn ? data.turn_order : null,
+                                        is_formatted: isV3Turn ? data.turn_is_formatted : false
+                                    }
+                                };
+                                this.onTranscriptUpdate(updateData);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('❌ Error parsing AssemblyAI message:', error, event.data);
                     }
-                }
+                };
+
+                this.assemblySocket.onclose = (event) => {
+                    console.warn(`🔌 AssemblyAI WebSocket Closed: Code ${event.code}, Reason: ${event.reason || 'None provided'}`);
+                    this.sendToAssemblyAI = false;
+                    if (this.isRecording && !this.isDestroyed) {
+                        this.handleStatusChange('assemblyai_disconnected');
+                    }
+                };
+
+                this.assemblySocket.onerror = (error) => {
+                    clearTimeout(timeout);
+                    this.sendToAssemblyAI = false;
+                    this.handleError('AssemblyAI WebSocket error', error);
+                    reject(error);
+                };
             } catch (error) {
-                console.error('AssemblyAI message parsing error:', error);
+                reject(error);
             }
-        };
-        
-        this.assemblySocket.onclose = () => {
-            this.sendToAssemblyAI = false;
-            if (this.isRecording && !this.isDestroyed) {
-                this.handleStatusChange('assemblyai_disconnected');
-            }
-        };
-        
-        this.assemblySocket.onerror = (error) => {
-            this.sendToAssemblyAI = false;
-            this.handleError('AssemblyAI WebSocket error', error);
-        };
+        });
     }
-    
+
+    setupLocalRecording() {
+        try {
+            // Prevent re-initialization if already recording
+            if (this.localMediaRecorder && this.localMediaRecorder.state === 'recording') {
+                console.log('⚠️ Local recording already active, skipping setup');
+                return;
+            }
+
+            this.recordedChunks = [];
+
+            let mimeType = 'audio/webm';
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = 'audio/mp4';
+            }
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = '';
+            }
+
+            const options = mimeType ? { mimeType } : {};
+            this.localMediaRecorder = new MediaRecorder(this.mediaStream, options);
+
+            this.localMediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    this.recordedChunks.push(event.data);
+                    console.log(`💾 Chunk recorded: ${event.data.size} bytes, Total chunks: ${this.recordedChunks.length}`);
+                }
+            };
+
+            this.localMediaRecorder.onstop = () => {
+                this.audioBlob = new Blob(this.recordedChunks, {
+                    type: this.localMediaRecorder.mimeType || 'audio/webm'
+                });
+                console.log('💾 Local audio recording captured:', this.audioBlob.size, 'bytes');
+
+                if (window && !window.audioBlob) {
+                    window.audioBlob = this.audioBlob;
+                } else if (window) {
+                    window.audioBlob = this.audioBlob;
+                }
+            };
+
+            this.localMediaRecorder.start(1000);
+            console.log('🎙️ Local recording started with mimeType:', this.localMediaRecorder.mimeType);
+        } catch (error) {
+            console.warn('⚠️ Failed to setup local recording:', error);
+        }
+    }
+
+    getAudioBlob() {
+        return this.audioBlob;
+    }
+
+    async stopRecordingAsync() {
+        return new Promise((resolve) => {
+            console.log('🛑 stopRecordingAsync called on instance:', this.instanceId);
+            console.log('   this.localMediaRecorder:', this.localMediaRecorder);
+            console.log('   MediaRecorder state:', this.localMediaRecorder?.state);
+            console.log('   recordedChunks length:', this.recordedChunks?.length);
+            console.log('   recordedChunks:', this.recordedChunks);
+            
+            if (this.localMediaRecorder && this.localMediaRecorder.state !== 'inactive') {
+                this.localMediaRecorder.onstop = () => {
+                    console.log('🎬 MediaRecorder onstop fired, creating blob from', this.recordedChunks.length, 'chunks');
+                    
+                    this.audioBlob = new Blob(this.recordedChunks, {
+                        type: this.localMediaRecorder.mimeType || 'audio/webm'
+                    });
+                    
+                    console.log('💾 Audio blob created:', this.audioBlob.size, 'bytes');
+
+                    if (window) {
+                        window.audioBlob = this.audioBlob;
+                    }
+
+                    this.isRecording = false;
+                    this.handleStatusChange('stopped');
+                    resolve(this.audioBlob);
+                };
+                
+                console.log('⏹️ Calling MediaRecorder.stop()');
+                this.localMediaRecorder.stop();
+            } else {
+                console.log('⚠️ MediaRecorder already inactive or not initialized');
+                console.log('   Trying to use window.audioBlob or create from chunks...');
+                
+                // Try to create blob from existing chunks
+                if (this.recordedChunks && this.recordedChunks.length > 0) {
+                    console.log('💾 Creating blob from', this.recordedChunks.length, 'existing chunks');
+                    this.audioBlob = new Blob(this.recordedChunks, { type: 'audio/webm' });
+                    console.log('💾 Blob created:', this.audioBlob.size, 'bytes');
+                    if (window) {
+                        window.audioBlob = this.audioBlob;
+                    }
+                    this.isRecording = false;
+                    this.handleStatusChange('stopped');
+                    resolve(this.audioBlob);
+                } else {
+                    this.isRecording = false;
+                    this.handleStatusChange('stopped');
+                    resolve(null);
+                }
+            }
+        });
+    }
+
     cleanup() {
+        console.log('🧹 Cleanup called, localMediaRecorder state:', this.localMediaRecorder?.state);
+        
+        // Stop media stream tracks
         if (this.mediaStream) {
             this.mediaStream.getTracks().forEach(track => track.stop());
             this.mediaStream = null;
         }
 
+        // Disconnect audio processing
         if (this.processor) {
             this.processor.disconnect();
             this.processor = null;
@@ -407,16 +622,24 @@ export class MedicalAmbientRecorder {
             this.audioContext = null;
         }
 
+        // Close websockets
         if (this.websocket) {
             this.websocket.close();
             this.websocket = null;
         }
-        
+
         if (this.assemblySocket) {
             this.assemblySocket.close();
             this.assemblySocket = null;
         }
-        
+
+        // CRITICAL: Don't nullify localMediaRecorder - just stop it if needed
+        if (this.localMediaRecorder && this.localMediaRecorder.state === 'recording') {
+            console.log('⏹️ Stopping MediaRecorder in cleanup');
+            this.localMediaRecorder.stop();
+        }
+        // Don't set to null: this.localMediaRecorder = null;
+
         this.sendToAssemblyAI = false;
     }
 }
