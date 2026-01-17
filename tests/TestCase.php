@@ -21,6 +21,7 @@ abstract class TestCase extends BaseTestCase
 
     protected function setupTestEnvironment(): void
     {
+<<<<<<< HEAD
         // Use database configuration from phpunit.xml instead of hardcoding MySQL
         // This allows tests to run with SQLite in memory
         $dbConnection = env('DB_CONNECTION', 'sqlite');
@@ -32,6 +33,12 @@ abstract class TestCase extends BaseTestCase
         } elseif ($dbConnection === 'sqlite') {
             config(['database.connections.sqlite.database' => ':memory:']);
         }
+=======
+        // Use MySQL for testing as requested
+        config(['database.default' => 'mysql']);
+        config(['database.connections.mysql.database' => 'medicine_test']);
+        config(['database.connections.mysql.foreign_key_constraints' => false]);
+>>>>>>> origin/main
 
         // Configure mail for testing
         config(['mail.default' => 'array']);

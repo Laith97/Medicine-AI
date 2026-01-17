@@ -1479,6 +1479,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureJsonResponse::class])->gro
     Route::get('/api/doctor/waitlist/dashboard', [App\Http\Controllers\Doctor\WaitlistController::class, 'getDashboard'])->name('api.doctor.waitlist.dashboard');
     Route::get('/api/doctor/waitlist/stats', [App\Http\Controllers\Doctor\WaitlistController::class, 'getStats'])->name('api.doctor.waitlist.stats');
     Route::get('/api/doctor/waitlist/patient/{waitlist}', [App\Http\Controllers\Doctor\WaitlistController::class, 'getPatient'])->name('api.doctor.waitlist.patient');
+<<<<<<< HEAD
 });
 
 // Admin Settings Routes
@@ -1490,3 +1491,6 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 // WebSocket test routes
 Route::get('/websocket-test', [App\Http\Controllers\WebSocketController::class, 'testPage'])->name('websocket.test');
 Route::post('/send-notification', [App\Http\Controllers\WebSocketController::class, 'sendNotification'])->name('send.notification');
+=======
+});
+>>>>>>> origin/main

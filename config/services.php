@@ -40,6 +40,7 @@ return [
         ],
     ],
 
+<<<<<<< HEAD
     'assemblyai' => [
         'api_key' => env('ASSEMBLYAI_API_KEY'),
     ],
@@ -48,6 +49,9 @@ return [
         'cloud' => [
             'credentials' => env('GOOGLE_CLOUD_CREDENTIALS'),
         ],
+=======
+    'google' => [
+>>>>>>> origin/main
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect_uri' => env('GOOGLE_REDIRECT_URI'),
@@ -63,8 +67,11 @@ return [
         'npi' => env('AVAILITY_PROVIDER_NPI'),
     ],
 
+<<<<<<< HEAD
     'medical' => [
         'transcription_provider' => env('TRANSCRIPTION_PROVIDER', 'assemblyai'),
     ],
 
+=======
+>>>>>>> origin/main
 ];
