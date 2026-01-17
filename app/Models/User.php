@@ -127,10 +127,7 @@ class User extends Authenticatable
         'is_sub_user',
         'hospital_id',
         'analytics_role_id',
-<<<<<<< HEAD
         'requires_password_reset',
-=======
->>>>>>> origin/main
     ];
 
     /**
@@ -158,15 +155,11 @@ class User extends Authenticatable
             'trial_ends_at' => 'datetime',
             'trial_used' => 'boolean',
             'is_sub_user' => 'boolean',
-<<<<<<< HEAD
             'requires_password_reset' => 'boolean',
-=======
->>>>>>> origin/main
         ];
     }
 
     /**
-<<<<<<< HEAD
      * Get the user's age calculated from date of birth
      */
     public function getAgeAttribute(): ?int
@@ -176,40 +169,6 @@ class User extends Authenticatable
         }
 
         return $this->date_of_birth->age;
-=======
-     * Automatically calculate age from date of birth when saving
-     */
-    protected function setAgeAttribute($value)
-    {
-        // If age is being explicitly set, use that value
-        if ($value !== null) {
-            $this->attributes['age'] = $value;
-        }
-        // If date of birth is set but age is not, calculate it automatically
-        elseif (!empty($this->attributes['date_of_birth']) && $value === null) {
-            $birthDate = \Carbon\Carbon::parse($this->attributes['date_of_birth']);
-            $this->attributes['age'] = $birthDate->age;
-        }
-    }
-
-    /**
-     * Get age from date of birth if not stored in database
-     */
-    protected function getAgeAttribute($value)
-    {
-        // If age is stored in the database (not null), return it
-        if ($value !== null) {
-            return $value;
-        }
-
-        // If date of birth exists but age is null, calculate it
-        if (!empty($this->attributes['date_of_birth'])) {
-            $birthDate = \Carbon\Carbon::parse($this->attributes['date_of_birth']);
-            return $birthDate->age;
-        }
-
-        return $value; // Return null if no date of birth exists
->>>>>>> origin/main
     }
 
     /**
