@@ -8,12 +8,8 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
-<<<<<<< HEAD
                 'resources/js/analytics-dashboard/main.tsx',
                 'resources/js/voice-assistant-main.jsx'
-=======
-                'resources/js/analytics-dashboard/main.tsx'
->>>>>>> origin/main
             ],
             refresh: true,
         }),
