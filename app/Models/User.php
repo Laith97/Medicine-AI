@@ -127,6 +127,10 @@ class User extends Authenticatable
         'is_sub_user',
         'hospital_id',
         'analytics_role_id',
+<<<<<<< HEAD
+        'requires_password_reset',
+=======
+>>>>>>> origin/main
     ];
 
     /**
@@ -154,10 +158,25 @@ class User extends Authenticatable
             'trial_ends_at' => 'datetime',
             'trial_used' => 'boolean',
             'is_sub_user' => 'boolean',
+<<<<<<< HEAD
+            'requires_password_reset' => 'boolean',
+=======
+>>>>>>> origin/main
         ];
     }
 
     /**
+<<<<<<< HEAD
+     * Get the user's age calculated from date of birth
+     */
+    public function getAgeAttribute(): ?int
+    {
+        if (!$this->date_of_birth) {
+            return null;
+        }
+
+        return $this->date_of_birth->age;
+=======
      * Automatically calculate age from date of birth when saving
      */
     protected function setAgeAttribute($value)
@@ -190,6 +209,7 @@ class User extends Authenticatable
         }
 
         return $value; // Return null if no date of birth exists
+>>>>>>> origin/main
     }
 
     /**

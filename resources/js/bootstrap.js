@@ -39,18 +39,30 @@ try {
     console.log('👤 User ID found:', userId);
 
     window.Echo = new Echo({
+<<<<<<< HEAD
+        broadcaster: 'reverb',
+        key: import.meta.env.VITE_REVERB_APP_KEY,
+        wsHost: import.meta.env.VITE_REVERB_HOST,
+        wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
+        wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
+        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+        enabledTransports: ['ws', 'wss'],
+=======
         broadcaster: 'pusher',
         key: import.meta.env.VITE_PUSHER_APP_KEY || 'your-pusher-key',
         cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap2',
         forceTLS: true, // Use TLS for Pusher cloud service
         enabledTransports: ['ws', 'wss'], // Enable both WebSocket and Secure WebSocket
         disabledTransports: [], // Allow all transport methods
+>>>>>>> origin/main
         authEndpoint: '/broadcasting/auth',
         auth: {
             headers: {
                 'X-CSRF-TOKEN': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json',
+<<<<<<< HEAD
+=======
             },
             always: function (channelName, socketId) {
                 console.log('🔒 Authorizing channel:', channelName);
@@ -76,6 +88,7 @@ try {
                 setTimeout(() => {
                     window.Echo.connector.connect();
                 }, 1000);
+>>>>>>> origin/main
             }
         }
     });

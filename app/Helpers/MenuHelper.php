@@ -114,7 +114,7 @@ class MenuHelper
                 'items' => [
                     // AI Ask temporarily disabled - removed completely
                     [
-                        'name' => 'Voice Assistant',
+                        'name' => 'Ambient Listening',
                         'route' => 'ai.voice-assistant.index',
                         'icon' => 'fas fa-microphone',
                         'permission' => 'voice_assistant',
@@ -385,7 +385,7 @@ class MenuHelper
                 'items' => [
                     // AI Ask temporarily disabled - removed completely
                     [
-                        'name' => 'Voice Assistant',
+                        'name' => 'Ambient Listening',
                         'route' => 'ai.voice-assistant.index',
                         'icon' => 'fas fa-microphone',
                     ],
@@ -830,7 +830,7 @@ class MenuHelper
                 ['name' => 'Edit Sub-User', 'route' => null]
             ],
             // 'ai.ask-ai' => [['name' => 'AI Assistant', 'route' => null]], // Temporarily disabled
-            'ai.voice-assistant.index' => [['name' => 'Voice Assistant', 'route' => null]],
+            'ai.voice-assistant.index' => [['name' => 'Ambient Listening', 'route' => null]],
             'diagnosis.index' => [['name' => 'Diagnoses', 'route' => null]],
         ];
 

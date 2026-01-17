@@ -11,7 +11,7 @@
                         <div>
                             <h1 class="card-title h3 mb-2">
                                 <i class="fas fa-file-medical me-2"></i>
-                                Voice Consultation Details
+                                Ambient Listening Session Details
                             </h1>
                             <p class="card-text mb-0">
                                 Patient: {{ $transcription->patient ? $transcription->patient->name : 'Unknown Patient' }} |
@@ -170,7 +170,7 @@
                         <div class="text-center py-4">
                             <i class="fas fa-microphone-slash fa-3x text-muted mb-3"></i>
                             <h6 class="text-muted">No Session Audio Available</h6>
-                            <p class="text-muted mb-0">This voice session was recorded using live transcription only. Audio recording functionality may not have been available or enabled during this session.</p>
+                            <p class="text-muted mb-0">This ambient listening session was recorded using live transcription only. Audio recording functionality may not have been available or enabled during this session.</p>
                         </div>
                     @endif
                 </div>
@@ -356,7 +356,7 @@
                         </a>
                         <a href="{{ route('ai.voice-assistant.index') }}" class="btn btn-primary">
                             <i class="fas fa-microphone me-2"></i>
-                            New Voice Session
+                            New Ambient Listening Session
                         </a>
                         @if($transcription->patient)
                             <a href="#" class="btn btn-info" onclick="alert('Patient profile integration coming soon!')">

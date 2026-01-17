@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\Diagnosis;
 use App\Models\User;
-use App\Models\Doctor;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -27,13 +26,22 @@ class DiagnosisFactory extends Factory
     public function definition(): array
     {
         return [
-            'patient_id' => User::factory(),
-            'doctor_id' => Doctor::factory(),
-            'primary_diagnosis' => $this->faker->sentence(),
-            'icd10_code' => $this->faker->bothify('##.##'),
-            'description' => $this->faker->paragraph(),
-            'diagnosis_date' => $this->faker->dateTimeBetween('-1 year', 'now'),
-            'status' => $this->faker->randomElement(['active', 'resolved', 'chronic']),
+            'patient_id' => User::factory()->create()->id,
+            'doctor_id' => User::factory()->create()->id,
+            'type' => $this->faker->randomElement(['manual', 'ai']),
+            'diagnosis_text' => $this->faker->paragraph(),
+            'voice_transcript' => $this->faker->paragraph(),
+            'voice_file_path' => $this->faker->word . '.mp3',
+            'patient_data' => [
+                'name' => $this->faker->name(),
+                'age' => $this->faker->numberBetween(18, 80),
+                'gender' => $this->faker->randomElement(['male', 'female', 'other']),
+            ],
+            'ai_response' => $this->faker->sentence(),
+            'follow_up_count' => $this->faker->numberBetween(0, 5),
+            'patient_notified' => $this->faker->boolean(),
+            'patient_viewed_at' => $this->faker->optional()->dateTime(),
+            'patient_reviewed' => $this->faker->boolean(),
         ];
     }
 }

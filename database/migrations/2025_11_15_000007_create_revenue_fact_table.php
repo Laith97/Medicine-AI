@@ -14,13 +14,12 @@ return new class extends Migration
     {
         if (!Schema::hasTable('revenue_fact')) {
             Schema::create('revenue_fact', function (Blueprint $table) {
-                $table->bigIncrements('transaction_key');
+                $table->unsignedBigInteger('transaction_id');
+                $table->date('transaction_date');
                 $table->integer('date_key');
                 $table->integer('patient_key');
                 $table->integer('doctor_key')->nullable();
                 $table->integer('hospital_key')->nullable();
-                $table->unsignedBigInteger('transaction_id');
-                $table->date('transaction_date');
                 $table->string('transaction_type', 50); // Payment, Refund, Adjustment
                 $table->string('payment_method', 50)->nullable(); // Credit Card, Insurance, Cash
                 $table->decimal('amount', 10, 2);
@@ -35,6 +34,8 @@ return new class extends Migration
                 $table->string('status', 50); // Pending, Completed, Failed
                 $table->timestamp('processed_at')->nullable();
                 $table->timestamp('created_at')->useCurrent();
+
+                $table->primary(['transaction_id', 'transaction_date']); // Composite primary key to satisfy partitioning requirement
 
                 // Indexes
                 $table->index(['date_key', 'patient_key']);
