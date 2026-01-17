@@ -135,107 +135,49 @@
     <!-- Alert Container -->
     <div id="alertContainer" class="mb-3"></div>
 
-    <!-- Control Panel -->
-    <div class="row mb-4">
+    <!-- Control Panel - Compact Global Settings -->
+    <div class="row mb-3">
         <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body p-3">
+                    <!-- Language Selector and Global Controls -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <!-- Language Selector -->
                         <div class="d-flex align-items-center">
-                            <!-- Recording Status -->
-                            <div class="d-flex align-items-center me-4">
-                                <div class="d-flex align-items-center" id="recordingStatusContainer">
-                                    <div class="status-indicator me-2">
-                                        <span class="status-dot" id="statusDot"></span>
-                                    </div>
-                                    <span class="text-muted" id="recordingStatusText">Ready to Listen</span>
-                                </div>
-                            </div>
-
-                            <!-- Processing Status -->
-                            <div id="processingStatus" style="display: none;">
-                                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                                <span class="text-primary">Processing...</span>
-                            </div>
+                            <label class="form-label me-2 mb-0 small fw-bold">Language:</label>
+                            <select id="languageSelector" class="form-select form-select-sm" style="width: auto; min-width: 120px;">
+                                <option value="auto" selected>✨ Auto Detect</option>
+                                <option value="ar">🇸🇦 العربية</option>
+                                <option value="en">🇺🇸 English</option>
+                                <option value="fr">🇫🇷 Français</option>
+                                <option value="es">🇪🇸 Español</option>
+                                <option value="de">🇩🇪 Deutsch</option>
+                            </select>
                         </div>
 
-                        <!-- Language Selector and Controls -->
-                        <div class="d-flex align-items-center gap-4">
-                            <!-- Language Selector -->
-                            <div class="d-flex align-items-center">
-                                <label class="form-label me-2 mb-0 small fw-bold">Language:</label>
-                                <select id="languageSelector" class="form-select form-select-sm" style="width: auto; min-width: 120px;">
-                                    <option value="auto" selected>✨ Auto Detect</option>
-                                    <option value="ar">🇸🇦 العربية</option>
-                                    <option value="en">🇺🇸 English</option>
-                                    <option value="fr">🇫🇷 Français</option>
-                                    <option value="es">🇪🇸 Español</option>
-                                    <option value="de">🇩🇪 Deutsch</option>
-                                </select>
-                            </div>
-
-                            <!-- Enhanced Status Indicators -->
-                            <div class="d-flex align-items-center">
-                                <small class="text-muted me-2">Status:</small>
-                                <div id="enhancedStatusContainer" class="d-flex align-items-center gap-2">
-                                    <!-- Dynamic status indicators will be inserted here -->
-                                </div>
-                            </div>
+                        <!-- Global Action Buttons -->
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('ai.voice-assistant.training') }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-graduation-cap me-1"></i>Guide
+                            </a>
+                            <a href="{{ route('ai.voice-assistant.recorded-voices') }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-history me-1"></i>History
+                            </a>
+                            <a href="{{ route('ai.voice-assistant.performance') }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-chart-line me-1"></i>Stats
+                            </a>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#ambientListeningHelpModal">
+                                <i class="fas fa-question-circle me-1"></i>Help
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Audio Recorder - Separate Row -->
-                    <div class="mb-3">
-                        <div id="react-audio-recorder-container" style="max-width: 300px;"></div>
-                    </div>
-
-                    <!-- Control Buttons -->
-                    <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <button id="startRecordingBtn" class="btn btn-success d-none" type="button" disabled style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500;">
-                            <i class="fas fa-microphone me-1"></i>Start
-                        </button>
-
-                        <button id="stopRecordingBtn" class="btn btn-danger d-none" disabled style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500;">
-                            <i class="fas fa-stop me-1"></i>Stop
-                        </button>
-
-                        <button id="generateAnalysisBtn" class="btn" disabled style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; background: #DE6262; color: white; border: 1px solid #DE6262;">
-                            <i class="fas fa-brain me-1"></i>AI Analysis
-                        </button>
-
-                        <button id="generateClinicalDocBtn" class="btn" disabled style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; background: #2c3e50; color: white; border: 1px solid #2c3e50;">
-                            <i class="fas fa-file-medical me-1"></i>Clinical Doc
-                        </button>
-
-                        <button id="resetSessionBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500;">
-                            <i class="fas fa-redo me-1"></i>Reset
-                        </button>
-
-                        <div class="vr align-self-stretch mx-1" style="opacity: 0.2;"></div>
-
-                        <a href="{{ route('ai.voice-assistant.training') }}" class="btn btn-outline-secondary" style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500;">
-                            <i class="fas fa-graduation-cap me-1"></i>Guide
-                        </a>
-
-                        <a href="{{ route('ai.voice-assistant.recorded-voices') }}" class="btn btn-outline-secondary" style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500;">
-                            <i class="fas fa-history me-1"></i>History
-                        </a>
-
-                        <a href="{{ route('ai.voice-assistant.performance') }}" class="btn btn-outline-secondary" style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500;">
-                            <i class="fas fa-chart-line me-1"></i>Stats
-                        </a>
-
-                        <button type="button" class="btn" data-bs-toggle="modal" data-bs-target="#ambientListeningHelpModal" style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; background: #f8f9fa; color: #333; border: 1px solid #dee2e6;">
-                            <i class="fas fa-question-circle me-1"></i>Help
-                        </button>
-                    </div>
-
-                    <!-- Advanced Controls Custom Implementation -->
-                    <div class="mt-4">
+                    <!-- Advanced Controls Toggle -->
+                    <div class="mt-3">
                         <button id="advancedControlsToggleBtn" class="btn btn-outline-primary btn-sm w-100" type="button">
                             <i class="fas fa-cog me-1"></i> Advanced Controls
                         </button>
-                        <div id="voiceAssistantAdvancedControls" class="card card-body bg-light p-3 mt-3" style="display: none;">
+                        <div id="voiceAssistantAdvancedControls" class="card card-body bg-white p-3 mt-3 border" style="display: none;">
                             <div class="row">
                                 <div class="col-md-6">
                                     <label class="form-label">Audio Quality</label>
@@ -252,49 +194,6 @@
                                         <option value="medium" selected>Medium</option>
                                         <option value="low">Low (Less Sensitive)</option>
                                     </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    </div>
-
-                    <!-- JavaScript-based Progress Indicator (shows immediately) -->
-                    <div id="jsProgressIndicator" class="mt-4 p-3 rounded bg-gradient-primary" style="display: none;">
-                        <div class="card border-primary shadow-sm">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center">
-                                    <div class="spinner-border text-primary me-3" role="status">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1 text-primary fw-bold">
-                                            <i class="fas fa-brain me-2"></i>
-                                            Processing Transcript with AI...
-                                        </h6>
-                                        <p class="mb-0 text-muted small" id="jsProcessingStage">
-                                            Initializing AI analysis...
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <!-- Animated Progress Bar -->
-                                <div class="progress mt-3" style="height: 12px;">
-                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
-                                         role="progressbar"
-                                         style="width: 100%;">
-                                    </div>
-                                </div>
-
-                                <!-- Processing Time Indicator -->
-                                <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <small class="text-muted">
-                                        <i class="fas fa-clock me-1"></i>
-                                        Estimated: 10-30 seconds
-                                    </small>
-                                    <small class="text-muted">
-                                        <i class="fas fa-robot me-1"></i>
-                                        AI Processing
-                                    </small>
                                 </div>
                             </div>
                         </div>
@@ -332,7 +231,7 @@
         }
 
         .status-dot.recording {
-            background-color: #dc3545;
+            background-color: #DE6262;
             animation: pulse 0.5s infinite;
         }
 
@@ -411,7 +310,7 @@
         }
 
         .message-segment.doctor {
-            border-left-color: #0d6efd;
+            border-left-color: #DE6262;
         }
 
         .message-segment.unknown {
@@ -507,7 +406,8 @@
 
         /* Transcript container scrollbar */
         #react-transcript-container {
-            height: 500px;
+            min-height: 400px;
+            max-height: 60vh;
             overflow-y: auto;
             border-radius: 8px;
             scroll-behavior: smooth;
@@ -627,11 +527,7 @@
                 <i class="fas fa-microphone-alt me-2"></i>Live Session
             </button>
         </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link px-4 py-3 fw-bold" id="documentation-tab" data-bs-toggle="tab" data-bs-target="#documentation-pane" type="button" role="tab" aria-controls="documentation-pane" aria-selected="false">
-                <i class="fas fa-file-medical me-2"></i>Clinical Documentation
-            </button>
-        </li>
+
     </ul>
     
     <style>
@@ -640,7 +536,7 @@
         }
         #voiceAssistantTabs .nav-link:not(.active) {
             background-color: #ffffff !important;
-            color: #333333 !important;
+            color: #6c757d !important;
             border: 1px solid #dee2e6 !important;
             opacity: 1 !important;
         }
@@ -653,6 +549,82 @@
             background-color: #DE6262 !important;
             color: white !important;
             border: 1px solid #DE6262 !important;
+            box-shadow: 0 2px 4px rgba(222, 98, 98, 0.2) !important;
+        }
+
+        /* Enhanced tab-content connection */
+        .tab-content {
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* Recording state visual emphasis */
+        #transcriptCard.recording-active {
+            animation: recordingGlow 2s ease-in-out infinite alternate;
+            border-color: #DE6262 !important;
+            box-shadow: 0 0 20px rgba(222, 98, 98, 0.4) !important;
+        }
+
+        @keyframes recordingGlow {
+            from {
+                box-shadow: 0 0 20px rgba(222, 98, 98, 0.4);
+                border-color: #DE6262;
+            }
+            to {
+                box-shadow: 0 0 30px rgba(222, 98, 98, 0.7);
+                border-color: #c55252;
+            }
+        }
+
+        /* Enhanced status dot in header */
+        .card-header .status-dot.recording {
+            animation: recordingPulse 0.8s infinite;
+        }
+
+        @keyframes recordingPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.3); }
+        }
+
+        /* Better visual hierarchy */
+        .card-header.bg-primary {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Consistent button colors */
+        .btn-warning {
+            background-color: #ffc107 !important;
+            border-color: #ffc107 !important;
+            color: #212529 !important;
+        }
+
+        .btn-warning:hover:not(:disabled) {
+            background-color: #e0a800 !important;
+            border-color: #d39e00 !important;
+        }
+
+        .btn-info {
+            background-color: #17a2b8 !important;
+            border-color: #17a2b8 !important;
+            color: white !important;
+        }
+
+        .btn-info:hover:not(:disabled) {
+            background-color: #138496 !important;
+            border-color: #117a8b !important;
+        }
+
+        /* Improved button spacing in header */
+        .card-header .btn {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        /* Status text in header */
+        .card-header #recordingStatusText {
+            font-size: 0.9rem;
+            font-weight: 600;
         }
     </style>
 
@@ -663,14 +635,56 @@
             <div class="row">
         <!-- Left Column: Transcription -->
         <div class="col-lg-6 mb-4">
-            <div class="card h-100 shadow-sm border-0">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-microphone-alt me-2"></i>
-                        Real-time Transcript
-                    </h5>
-                    <div id="transcriptionStatus" class="d-flex align-items-center gap-2">
-                        <!-- Status indicators will be inserted here -->
+            <div class="card h-100 shadow-sm border-0" id="transcriptCard">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-microphone-alt me-2"></i>
+                            Real-time Transcript
+                        </h5>
+                        <div id="transcriptionStatus" class="d-flex align-items-center gap-2">
+                            <!-- Status indicators will be inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- Recording Controls - Now in Header -->
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <!-- Recording Status -->
+                        <div class="d-flex align-items-center me-3">
+                            <div class="status-indicator me-2">
+                                <span class="status-dot" id="statusDot"></span>
+                            </div>
+                            <span class="text-white fw-bold" id="recordingStatusText">Ready to Listen</span>
+                        </div>
+
+                        <!-- Audio Recorder -->
+                        <div id="react-audio-recorder-container" style="max-width: 200px;"></div>
+
+                        <!-- Recording Buttons -->
+                        <div class="d-flex gap-2">
+                            <button id="startRecordingBtn" class="btn btn-success btn-sm d-none" type="button" disabled>
+                                <i class="fas fa-microphone me-1"></i>Start
+                            </button>
+                            <button id="stopRecordingBtn" class="btn btn-danger btn-sm d-none" disabled>
+                                <i class="fas fa-stop me-1"></i>Stop
+                            </button>
+                        </div>
+
+                        <!-- Processing Status -->
+                        <div id="processingStatus" style="display: none;" class="ms-3">
+                            <div class="spinner-border spinner-border-sm text-light me-2" role="status"></div>
+                            <span class="text-light fw-bold">Processing...</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons Row -->
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button id="generateAnalysisBtn" class="btn btn-warning btn-sm" disabled style="background-color: #ffc107; border-color: #ffc107;">
+                            <i class="fas fa-brain me-1"></i>AI Analysis
+                        </button>
+                        <button id="resetSessionBtn" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-redo me-1"></i>Reset
+                        </button>
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -680,11 +694,11 @@
                             <textarea id="transcriptionArea" class="form-control" style="height: 100%; border: none; background: transparent; resize: none; display: none;" placeholder="Start ambient listening to see transcription here..."></textarea>
                         </div>
                     </div>
-                    <div id="speakerLegend" class="p-3 bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-top: 3px solid #fff;">
+                    <div id="speakerLegend" class="p-3 bg-gradient" style="background: linear-gradient(135deg, #DE6262 0%, #c55252 100%); border-top: 3px solid #fff;">
                         <div class="d-flex align-items-center justify-content-center gap-3 text-white">
                             <i class="fas fa-users"></i>
-                            <span class="badge bg-white text-primary px-3 py-2">Speaker 1</span>
-                            <span class="badge bg-white text-success px-3 py-2">Speaker 2</span>
+                            <span class="badge bg-white text-danger px-3 py-2">Speaker 1</span>
+                            <span class="badge bg-white text-primary px-3 py-2">Speaker 2</span>
                         </div>
                     </div>
 
@@ -772,15 +786,6 @@
             </div>
         </div>
 
-        <!-- Clinical Documentation Tab -->
-        <div class="tab-pane fade" id="documentation-pane" role="tabpanel" aria-labelledby="documentation-tab">
-            <div id="ai-documentation-wrapper">
-                @include('ai.documentation-intelligence', [
-                    'appointment' => null,
-                    'transcription' => null
-                ])
-            </div>
-        </div>
     </div>
 
     <!-- Diagnosis Entry Form -->
@@ -990,6 +995,12 @@
 @viteReactRefresh
 @vite(['resources/js/voice-assistant-main.jsx'])
 
+<!-- Button enabler fix -->
+<script src="{{ asset('js/enable-buttons-fix.js') }}"></script>
+
+<!-- Button click handlers -->
+<script src="{{ asset('js/button-click-handlers.js') }}"></script>
+
 <!-- Enhanced status indicator and UI script -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -997,6 +1008,7 @@
         function updateRecordingStatus(status) {
             const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('recordingStatusText');
+            const transcriptCard = document.getElementById('transcriptCard');
 
             if (!statusDot || !statusText) return;
 
@@ -1004,31 +1016,40 @@
             statusDot.className = 'status-dot';
             statusText.textContent = getStatusText(status);
 
+            // Remove recording emphasis
+            if (transcriptCard) {
+                transcriptCard.classList.remove('recording-active');
+            }
+
             // Add appropriate class based on status
             switch(status) {
                 case 'idle':
                 case 'stopped':
                     statusDot.classList.add('active');
-                    statusText.innerHTML = '<span class="text-success">Ready to Listen</span>';
+                    statusText.innerHTML = '<span class="text-white fw-bold">Ready to Listen</span>';
                     break;
                 case 'connecting':
                     statusDot.classList.add('connecting');
-                    statusText.innerHTML = '<span class="text-warning">Connecting...</span>';
+                    statusText.innerHTML = '<span class="text-white fw-bold" style="color: #ffc107 !important;">Connecting...</span>';
                     break;
                 case 'recording':
                     statusDot.classList.add('recording');
-                    statusText.innerHTML = '<span class="text-danger">LIVE</span>';
+                    statusText.innerHTML = '<span class="text-white fw-bold" style="color: #dc3545 !important;">🔴 LIVE</span>';
+                    // Add visual emphasis to transcript card
+                    if (transcriptCard) {
+                        transcriptCard.classList.add('recording-active');
+                    }
                     break;
                 case 'disconnected':
                     statusDot.classList.add('error');
-                    statusText.innerHTML = '<span class="text-danger">Disconnected</span>';
+                    statusText.innerHTML = '<span class="text-white fw-bold" style="color: #dc3545 !important;">Disconnected</span>';
                     break;
                 case 'reconnecting':
                     statusDot.classList.add('connecting');
-                    statusText.innerHTML = '<span class="text-warning">Reconnecting...</span>';
+                    statusText.innerHTML = '<span class="text-white fw-bold" style="color: #ffc107 !important;">Reconnecting...</span>';
                     break;
                 default:
-                    statusText.innerHTML = '<span class="text-muted">Ready</span>';
+                    statusText.innerHTML = '<span class="text-white fw-bold">Ready</span>';
             }
         }
 
@@ -1066,6 +1087,21 @@
             const data = event.detail;
             if (data.status) {
                 updateRecordingStatus(data.status);
+
+                // Enable AI Analysis and Clinical Doc buttons when recording stops
+                const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
+                const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
+
+                if (data.status === 'stopped') {
+                    if (generateAnalysisBtn) {
+                        generateAnalysisBtn.disabled = false;
+                        generateAnalysisBtn.style.opacity = '1';
+                    }
+                    if (generateClinicalDocBtn) {
+                        generateClinicalDocBtn.disabled = false;
+                        generateClinicalDocBtn.style.opacity = '1';
+                    }
+                }
             }
 
             // Update accuracy score if confidence is provided
@@ -1079,6 +1115,49 @@
             const data = event.detail;
             if (data.status) {
                 updateRecordingStatus(data.status);
+            }
+        });
+
+        // Listen for server transcript ready event
+        window.addEventListener('serverTranscriptReady', function(event) {
+            console.log('Server transcript ready - enabling buttons');
+            // Enable AI Analysis and Clinical Doc buttons when server processing completes
+            const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
+            const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
+
+            if (generateAnalysisBtn) {
+                generateAnalysisBtn.disabled = false;
+                generateAnalysisBtn.style.opacity = '1';
+                console.log('Analysis button enabled via server transcript');
+            }
+            if (generateClinicalDocBtn) {
+                generateClinicalDocBtn.disabled = false;
+                generateClinicalDocBtn.style.opacity = '1';
+                console.log('Clinical doc button enabled via server transcript');
+            }
+        });
+
+        // Fallback: Enable buttons after recording stops (with delay to ensure status is set)
+        window.addEventListener('statusUpdate', function(event) {
+            const status = event.detail.status;
+            if (status === 'stopped' || status === 'idle') {
+                // Add a small delay to ensure all processing is complete
+                setTimeout(() => {
+                    console.log('Fallback: Enabling buttons after delay');
+                    const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
+                    const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
+
+                    if (generateAnalysisBtn && generateAnalysisBtn.disabled) {
+                        generateAnalysisBtn.disabled = false;
+                        generateAnalysisBtn.style.opacity = '1';
+                        console.log('Analysis button enabled via fallback');
+                    }
+                    if (generateClinicalDocBtn && generateClinicalDocBtn.disabled) {
+                        generateClinicalDocBtn.disabled = false;
+                        generateClinicalDocBtn.style.opacity = '1';
+                        console.log('Clinical doc button enabled via fallback');
+                    }
+                }, 1000); // 1 second delay
             }
         });
 
@@ -1157,7 +1236,48 @@
         // Add event listener for when React component updates status
         window.addEventListener('statusUpdate', function(event) {
             const status = event.detail.status;
+            console.log('Status update received:', status);
             updateRecordingStatus(status);
+
+            // Enable AI Analysis and Clinical Doc buttons when recording stops
+            const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
+            const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
+
+            console.log('Button states before update:', {
+                analysisDisabled: generateAnalysisBtn?.disabled,
+                clinicalDisabled: generateClinicalDocBtn?.disabled,
+                status: status
+            });
+
+            if (status === 'stopped') {
+                console.log('Enabling buttons for stopped status');
+                if (generateAnalysisBtn) {
+                    generateAnalysisBtn.disabled = false;
+                    generateAnalysisBtn.style.opacity = '1';
+                    console.log('Analysis button enabled');
+                }
+                if (generateClinicalDocBtn) {
+                    generateClinicalDocBtn.disabled = false;
+                    generateClinicalDocBtn.style.opacity = '1';
+                    console.log('Clinical doc button enabled');
+                }
+            } else if (status === 'idle' || status === 'recording') {
+                // Disable buttons when not stopped
+                console.log('Disabling buttons for status:', status);
+                if (generateAnalysisBtn) {
+                    generateAnalysisBtn.disabled = true;
+                    generateAnalysisBtn.style.opacity = '0.6';
+                }
+                if (generateClinicalDocBtn) {
+                    generateClinicalDocBtn.disabled = true;
+                    generateClinicalDocBtn.style.opacity = '0.6';
+                }
+            }
+
+            console.log('Button states after update:', {
+                analysisDisabled: generateAnalysisBtn?.disabled,
+                clinicalDisabled: generateClinicalDocBtn?.disabled
+            });
         });
 
         // Add keyboard shortcuts
@@ -1183,6 +1303,76 @@
                 }
             }
         });
+
+        // AI Analysis functionality handled by button-click-handlers.js
+        // Removed duplicate code - using external handler
+
+        // Removed duplicate generateAIAnalysis - using button-click-handlers.js
+
+        // Removed duplicate generateClinicalDoc - button removed from UI
+
+        // Update clinical chart fields with AI results
+        function updateClinicalFields(data) {
+            if (data.symptoms) {
+                const symptomsField = document.getElementById('symptoms');
+                if (symptomsField) symptomsField.value = data.symptoms;
+            }
+
+            if (data.medical_history) {
+                const medicalHistoryField = document.getElementById('medicalHistory');
+                if (medicalHistoryField) medicalHistoryField.value = data.medical_history;
+            }
+
+            if (data.physical_findings) {
+                const physicalFindingsField = document.getElementById('physicalFindings');
+                if (physicalFindingsField) physicalFindingsField.value = data.physical_findings;
+            }
+
+            if (data.medications) {
+                const medicationsField = document.getElementById('medications');
+                if (medicationsField) medicationsField.value = data.medications;
+            }
+
+            if (data.vital_signs) {
+                const vitalSignsField = document.getElementById('vitalSigns');
+                if (vitalSignsField) vitalSignsField.value = data.vital_signs;
+            }
+
+            if (data.diagnosis) {
+                const diagnosisField = document.getElementById('diagnosis');
+                if (diagnosisField) diagnosisField.value = data.diagnosis;
+            }
+
+            if (data.care_plan) {
+                const carePlanField = document.getElementById('carePlan');
+                if (carePlanField) carePlanField.value = data.care_plan;
+            }
+        }
+
+        // Alert function for user feedback
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            if (!alertContainer) return;
+
+            const alertClass = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+            const alertHTML = `
+                <div class="${alertClass}" role="alert">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            alertContainer.innerHTML = alertHTML;
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                const alert = alertContainer.querySelector('.alert');
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
 
         // Custom Advanced Controls Toggle Implementation
         function initializeAdvancedControls() {
@@ -1230,10 +1420,136 @@
 
         // Initialize when DOM is loaded
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeAdvancedControls);
+            document.addEventListener('DOMContentLoaded', function() {
+                initializeAdvancedControls();
+            // Removed - using button-click-handlers.js
+                initializeButtonStates();
+            });
         } else {
             // DOM is already ready, initialize immediately
             initializeAdvancedControls();
+            // Removed - using button-click-handlers.js
+            initializeButtonStates();
+        }
+
+        // Initialize button states based on available content
+        function initializeButtonStates() {
+            // Check if there's any transcript content available
+            const transcriptContainer = document.querySelector('.transcript-container');
+            const transcriptionArea = document.getElementById('transcriptionArea');
+
+            let hasContent = false;
+            if (transcriptContainer && transcriptContainer.innerText.trim()) {
+                hasContent = true;
+            } else if (transcriptionArea && transcriptionArea.value.trim()) {
+                hasContent = true;
+            }
+
+            // If there's content, enable the buttons
+            if (hasContent) {
+                console.log('Content detected on page load - enabling buttons');
+                const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
+                const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
+
+                if (generateAnalysisBtn) {
+                    generateAnalysisBtn.disabled = false;
+                    generateAnalysisBtn.style.opacity = '1';
+                }
+                if (generateClinicalDocBtn) {
+                    generateClinicalDocBtn.disabled = false;
+                    generateClinicalDocBtn.style.opacity = '1';
+                }
+            }
+        }
+    });
+
+    // Enable complete button when diagnosis is filled
+    const diagnosisText = document.getElementById('diagnosisText');
+    const completeBtn = document.getElementById('completeConsultationBtn');
+    if (diagnosisText && completeBtn) {
+        diagnosisText.addEventListener('input', function() {
+            completeBtn.disabled = this.value.trim().length < 10;
+        });
+        
+        completeBtn.addEventListener('click', function() {
+            const diagnosis = diagnosisText.value.trim();
+            if (!diagnosis) {
+                alert('Please enter your diagnosis first.');
+                return;
+            }
+            
+            const patientSelect = document.getElementById('patientSelect');
+            const selectedPatient = patientSelect ? patientSelect.value : null;
+            const sessionId = window.sessionId || document.querySelector('[data-session-id]')?.getAttribute('data-session-id');
+            const transcriptContainer = document.getElementById('react-transcript-container');
+            const transcription = transcriptContainer ? (transcriptContainer.innerText || transcriptContainer.textContent || '').trim() : '';
+            
+            if (!selectedPatient) {
+                alert('Please select a patient.');
+                return;
+            }
+            
+            if (!transcription) {
+                alert('No transcript available. Please record a session first.');
+                return;
+            }
+            
+            if (confirm('Complete this consultation and save the diagnosis?')) {
+                completeBtn.disabled = true;
+                completeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+                
+                fetch('/ai/voice-assistant/complete-consultation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        diagnosisText: diagnosis,
+                        selectedPatient: selectedPatient,
+                        transcription: transcription,
+                        sessionId: sessionId,
+                        completionType: 'save_only'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Consultation completed successfully!');
+                        if (data.redirectUrl) {
+                            window.location.href = data.redirectUrl;
+                        } else {
+                            location.reload();
+                        }
+                    } else {
+                        throw new Error(data.message || 'Failed to complete consultation');
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error.message);
+                    completeBtn.disabled = false;
+                    completeBtn.innerHTML = '<i class="fas fa-check me-1"></i>Complete Session';
+                });
+            }
+        });
+    }
+
+    // Reset button functionality
+    const resetBtn = document.getElementById('resetSessionBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to reset? This will clear the current session.')) {
+                location.reload();
+            }
+        });
+    }
+
+    // Show diagnosis form after recording stops
+    window.addEventListener('serverTranscriptReady', function() {
+        const diagnosisForm = document.getElementById('diagnosisEntryForm');
+        if (diagnosisForm) {
+            diagnosisForm.style.display = 'block';
+            diagnosisForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     });
 </script>

@@ -121,8 +121,8 @@ export class MedicalAmbientRecorder {
             this.setupLocalRecording();
             console.log('✅ Local recording setup complete, localMediaRecorder:', this.localMediaRecorder);
 
-            // 3. Create WebSocket connection (skip for Arabic)
-            if (!this.language || !this.language.startsWith('ar')) {
+            // 3. Skip WebSocket for all languages - use post-processing for speaker diarization
+            if (false) { // Disabled: Always use post-processing for better speaker diarization
                 try {
                     console.log('🔗 Connecting to local WebSocket...');
                     await this.connectWebSocket();
