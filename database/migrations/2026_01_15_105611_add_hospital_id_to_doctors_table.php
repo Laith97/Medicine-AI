@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->integer('age')->nullable()->after('phone');
+        Schema::table('doctors', function (Blueprint $table) {
+            //
         });
     }
 
@@ -21,10 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            if (Schema::hasColumn('users', 'age')) {
-                $table->dropColumn('age');
-            }
+        Schema::table('doctors', function (Blueprint $table) {
+            //
         });
     }
 };

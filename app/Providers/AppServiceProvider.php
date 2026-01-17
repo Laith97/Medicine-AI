@@ -14,6 +14,8 @@ use App\Policies\BlogPostPolicy;
 use App\Channels\SmsChannel;
 use App\Http\Middleware\RoleRedirectMiddleware;
 use App\Observers\AppointmentObserver;
+use App\Observers\DoctorObserver;
+use App\Observers\HospitalObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,6 +34,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register model observers
         Appointment::observe(AppointmentObserver::class);
+        \App\Models\Doctor::observe(DoctorObserver::class);
+        \App\Models\Hospital::observe(HospitalObserver::class);
 
         // Use custom pagination view for admin pages
         Paginator::defaultView('custom.pagination');

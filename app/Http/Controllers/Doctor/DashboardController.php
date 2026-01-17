@@ -1233,4 +1233,54 @@ class DashboardController extends Controller
             ->with('success', 'Follow-up appointment created successfully!');
     }
 
+    /**
+     * Display SMS provider settings page for doctors
+     */
+    public function smsSettings()
+    {
+        $doctor = $this->getEffectiveDoctor();
+
+        // Get current doctor provider setting
+        $doctorProvider = $doctor->sms_provider;
+
+        // Get system provider
+        $systemProvider = app(\App\Services\SmsService::class)->getSystemProviderPublic();
+
+        // Get hospital information if doctor belongs to a hospital
+        $user = $this->getEffectiveDoctorUser();
+        $hospital = $user->hospital;
+
+        $hospitalProvider = $hospital ? $hospital->sms_provider : null;
+        $hospitalName = $hospital ? $hospital->name : null;
+
+        // Determine effective provider using the same logic as the API
+        if ($doctorProvider) {
+            $effectiveProvider = [
+                'provider' => $doctorProvider,
+                'source' => 'doctor',
+                'inherited_from' => null
+            ];
+        } elseif ($hospitalProvider) {
+            $effectiveProvider = [
+                'provider' => $hospitalProvider,
+                'source' => 'hospital',
+                'inherited_from' => $hospitalName
+            ];
+        } else {
+            $effectiveProvider = [
+                'provider' => $systemProvider,
+                'source' => 'system',
+                'inherited_from' => null
+            ];
+        }
+
+        return view('doctor.sms-settings', compact(
+            'doctorProvider',
+            'systemProvider',
+            'hospitalProvider',
+            'hospitalName',
+            'effectiveProvider'
+        ));
+    }
+
 }

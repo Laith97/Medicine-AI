@@ -19,11 +19,14 @@ class SmsChannel
      */
     public function send(object $notifiable, Notification $notification): void
     {
-        $message = $notification->toSms($notifiable);
+        $smsData = $notification->toSms($notifiable);
 
-        if (empty($message)) {
+        if (empty($smsData) || !is_array($smsData) || !isset($smsData['message'])) {
             return;
         }
+
+        $message = $smsData['message'];
+        $options = $smsData['options'] ?? [];
 
         // Get the phone number from the notifiable
         $phone = $notifiable->phone ?? $notifiable->routeNotificationFor('sms');
@@ -33,8 +36,8 @@ class SmsChannel
         }
 
         try {
-            // Send SMS using the SMS service
-            $result = $this->smsService->send($phone, $message);
+            // Send SMS using the SMS service with options for hierarchical provider selection
+            $result = $this->smsService->send($phone, $message, $options);
 
             if (!$result['success']) {
                 throw new \Exception($result['message']);
@@ -44,6 +47,7 @@ class SmsChannel
             \Log::error('Failed to send SMS notification: ' . $e->getMessage(), [
                 'phone' => $phone,
                 'notification_class' => get_class($notification),
+                'options' => $options,
             ]);
         }
     }

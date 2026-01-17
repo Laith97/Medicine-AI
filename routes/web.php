@@ -812,6 +812,9 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
     Route::get('/settings/appointments', [App\Http\Controllers\Doctor\AppointmentSettingsController::class, 'index'])->name('settings.appointments');
     Route::put('/settings/appointments', [App\Http\Controllers\Doctor\AppointmentSettingsController::class, 'updateAppointmentTypes'])->name('settings.appointments.update');
 
+    // SMS Provider Settings
+    Route::get('/sms-settings', [App\Http\Controllers\Doctor\DashboardController::class, 'smsSettings'])->name('sms-settings');
+
     // Google integration
     Route::prefix('google')->name('google.')->group(function () {
         Route::get('/redirect', [GoogleController::class, 'redirectToGoogle'])->name('redirect');

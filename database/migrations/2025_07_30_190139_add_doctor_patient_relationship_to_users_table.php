@@ -22,9 +22,18 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drop foreign key constraint using direct SQL statement
+        try {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE `users` DROP FOREIGN KEY `users_primary_doctor_id_foreign`");
+        } catch (\Exception $e) {
+            // Foreign key doesn't exist, continue silently
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['primary_doctor_id']);
-            $table->dropColumn('primary_doctor_id');
+            // Drop column if it exists
+            if (Schema::hasColumn('users', 'primary_doctor_id')) {
+                $table->dropColumn('primary_doctor_id');
+            }
         });
     }
 };
