@@ -13,7 +13,14 @@ class OpenAIClient
 
     public function __construct()
     {
-        $this->client = Http::timeout(30) // Increase timeout for slower connections
+        $this->client = Http::timeout(60) // Increase timeout for audio processing
+            ->connectTimeout(30) // Separate connection timeout
+            ->withOptions([
+                'curl' => [
+                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4, // Force IPv4 to avoid DNS issues
+                    CURLOPT_DNS_CACHE_TIMEOUT => 120 // Cache DNS for 2 minutes
+                ]
+            ])
             ->withHeaders([
                 'Authorization' => 'Bearer ' . config('services.openai.key'),
                 'OpenAI-Beta' => 'assistants=v2',

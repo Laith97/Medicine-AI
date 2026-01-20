@@ -2657,6 +2657,33 @@ INSTRUCTIONS:
                     'status' => $processingStatus
                 ]);
 
+                // Check if we have any transcription at all
+                if (empty($improvedTranscription)) {
+                    \Log::warning('HYBRID METHOD - No transcription available', [
+                        'session_id' => $sessionId,
+                        'live_length' => strlen($transcription),
+                        'server_length' => strlen($serverTranscription),
+                        'audio_stored' => $audioStoredSuccessfully,
+                        'audio_size' => $fileSize ?? 0
+                    ]);
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No transcription could be generated. The audio may be too short or unclear. Please try recording again.',
+                        'improved_transcription' => '',
+                        'server_extracted_data' => [],
+                        'speakers' => [],
+                        'medical_terms' => [],
+                        'error_details' => 'Both live and server transcription failed to produce results',
+                        'debug_info' => [
+                            'audio_stored' => $audioStoredSuccessfully,
+                            'audio_size' => $fileSize ?? 0,
+                            'live_attempted' => !empty($transcription),
+                            'server_attempted' => isset($metrics['server_processing_success'])
+                        ]
+                    ], 422);
+                }
+
                 // Prepare speaker data for response (enhanced with AI-based speaker detection)
                 $speakerData = $this->extractSpeakerDataFromTranscription($improvedTranscription);
 
@@ -3398,17 +3425,41 @@ INSTRUCTIONS:
                     throw new \Exception('Invalid audio file path');
                 }
 
+                if (!file_exists($audioPath)) {
+                    throw new \Exception('Audio file not found at path: ' . $audioPath);
+                }
+
+                \Log::info('HYBRID METHOD - Whisper processing started', [
+                    'audio_path' => $audioPath,
+                    'file_size' => filesize($audioPath),
+                    'file_exists' => file_exists($audioPath)
+                ]);
+
+                // Open file handle for Whisper API
+                $fileHandle = fopen($audioPath, 'r');
+                if (!$fileHandle) {
+                    throw new \Exception('Failed to open audio file for reading');
+                }
+
                 // Prepare parameters for OpenAI Whisper transcription
                 $transcribeParams = [
                     'model' => 'whisper-1',
-                    'file' => fopen($audioPath, 'r'), // Open file for reading
-                    'response_format' => 'text',
-                    'language' => null
+                    'file' => $fileHandle,
+                    'response_format' => 'text'
                 ];
 
                 // Perform transcription using OpenAI Whisper API
                 $response = OpenAI::audio()->transcribe($transcribeParams);
-                $transcription = is_string($response) ? $response : '';
+                
+                // Close file handle
+                fclose($fileHandle);
+                
+                $transcription = is_string($response) ? $response : ($response['text'] ?? '');
+
+                \Log::info('HYBRID METHOD - Whisper processing completed', [
+                    'transcription_length' => strlen($transcription),
+                    'transcription_preview' => substr($transcription, 0, 100)
+                ]);
 
                 return [
                     'success' => true,
@@ -3420,7 +3471,8 @@ INSTRUCTIONS:
     
             } catch (\Exception $e) {
                 \Log::error('OpenAI Whisper fallback failed', [
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
+                    'audio_path' => $audioPath ?? 'unknown'
                 ]);
                 return [
                     'success' => false,
@@ -3445,12 +3497,26 @@ INSTRUCTIONS:
                     return ['success' => false, 'error' => 'AssemblyAI API key not configured'];
                 }
 
+                \Log::info('HYBRID METHOD - Starting AssemblyAI processing', [
+                    'audio_path' => $audioPath,
+                    'file_exists' => file_exists($audioPath),
+                    'file_size' => file_exists($audioPath) ? filesize($audioPath) : 0,
+                    'language' => $language
+                ]);
+
                 // 1. Upload file to AssemblyAI
                 $uploadUrl = $assemblyAIService->uploadFile($audioPath);
 
                 if (!$uploadUrl) {
+                    \Log::error('HYBRID METHOD - AssemblyAI file upload failed', [
+                        'audio_path' => $audioPath
+                    ]);
                     throw new \Exception('Failed to upload audio file to AssemblyAI');
                 }
+
+                \Log::info('HYBRID METHOD - AssemblyAI file uploaded', [
+                    'upload_url' => $uploadUrl
+                ]);
 
                 // 2. Submit for transcription with speaker diarization enabled
                 $config = [
@@ -3467,10 +3533,16 @@ INSTRUCTIONS:
 
                 $submission = $assemblyAIService->processTranscript($uploadUrl, $config);
                 if (!$submission || !isset($submission['id'])) {
+                    \Log::error('HYBRID METHOD - AssemblyAI transcript submission failed', [
+                        'submission_response' => $submission
+                    ]);
                     throw new \Exception('Failed to submit audio for transcription');
                 }
 
                 $transcriptId = $submission['id'];
+                \Log::info('HYBRID METHOD - AssemblyAI transcript submitted', [
+                    'transcript_id' => $transcriptId
+                ]);
 
                 // 3. Poll for result
                 $maxRetries = 30;
@@ -3482,11 +3554,27 @@ INSTRUCTIONS:
                     $result = $assemblyAIService->getTranscript($transcriptId);
 
                     if (!$result) {
+                        \Log::error('HYBRID METHOD - Failed to retrieve transcript', [
+                            'transcript_id' => $transcriptId,
+                            'retry_count' => $retryCount
+                        ]);
                         throw new \Exception('Failed to retrieve transcript from AssemblyAI');
                     }
 
+                    \Log::debug('HYBRID METHOD - AssemblyAI status check', [
+                        'transcript_id' => $transcriptId,
+                        'status' => $result['status'] ?? 'unknown',
+                        'retry_count' => $retryCount
+                    ]);
+
                     if ($result['status'] === 'completed') {
                         $transcription = $result['text'] ?? '';
+
+                        \Log::info('HYBRID METHOD - AssemblyAI transcription completed', [
+                            'transcript_id' => $transcriptId,
+                            'transcription_length' => strlen($transcription),
+                            'has_utterances' => isset($result['utterances'])
+                        ]);
 
                         // Extract speaker-separated utterances
                         if (isset($result['utterances']) && is_array($result['utterances'])) {
@@ -3515,7 +3603,12 @@ INSTRUCTIONS:
 
                         break;
                     } elseif ($result['status'] === 'error') {
-                        throw new \Exception('AssemblyAI processing error: ' . ($result['error'] ?? 'Unknown error'));
+                        $errorMsg = $result['error'] ?? 'Unknown error';
+                        \Log::error('HYBRID METHOD - AssemblyAI processing error', [
+                            'transcript_id' => $transcriptId,
+                            'error' => $errorMsg
+                        ]);
+                        throw new \Exception('AssemblyAI processing error: ' . $errorMsg);
                     }
 
                     $retryCount++;
@@ -3523,6 +3616,11 @@ INSTRUCTIONS:
                 }
 
                 if (empty($transcription)) {
+                    \Log::warning('HYBRID METHOD - AssemblyAI returned empty transcription', [
+                        'transcript_id' => $transcriptId,
+                        'retry_count' => $retryCount,
+                        'max_retries' => $maxRetries
+                    ]);
                     throw new \Exception('AssemblyAI transcription timed out or returned empty');
                 }
 
