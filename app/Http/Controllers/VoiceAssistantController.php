@@ -3417,6 +3417,7 @@ INSTRUCTIONS:
          */
         private function processWithOpenAIWhisper($audioPath)
         {
+            $fileHandle = null;
             try {
                 // Validate the audio path to prevent path traversal attacks
                 $audioPath = realpath($audioPath); // Resolve any relative paths
@@ -3451,9 +3452,6 @@ INSTRUCTIONS:
                 // Perform transcription using OpenAI Whisper API
                 $response = OpenAI::audio()->transcribe($transcribeParams);
                 
-                // Close file handle
-                fclose($fileHandle);
-                
                 $transcription = is_string($response) ? $response : ($response['text'] ?? '');
 
                 \Log::info('HYBRID METHOD - Whisper processing completed', [
@@ -3479,6 +3477,11 @@ INSTRUCTIONS:
                     'transcription' => '',
                     'error' => $e->getMessage()
                 ];
+            } finally {
+                // Always close file handle if it's still valid
+                if ($fileHandle && is_resource($fileHandle)) {
+                    fclose($fileHandle);
+                }
             }
         }
 
