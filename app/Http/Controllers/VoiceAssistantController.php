@@ -3733,6 +3733,12 @@ INSTRUCTIONS:
          */
         private function extractSpeakerDataFromTranscription($transcription)
         {
+            // If transcription already has speaker labels, parse them directly
+            if (preg_match('/\[Speaker \d+\]:/', $transcription)) {
+                \Log::info('HYBRID METHOD - Transcription already has speaker labels, parsing directly');
+                return $this->parseSpeakerLabelsFromTranscription($transcription);
+            }
+
             try {
                 // Use AI to analyze transcription and separate speakers
                 $response = OpenAI::chat()->create([
@@ -3761,7 +3767,10 @@ INSTRUCTIONS:
                 $aiResponse = $response['choices'][0]['message']['content'] ?? '';
                 $speakerData = json_decode($aiResponse, true);
     
-                if ($speakerData && isset($speakerData['speakers'])) {
+                if ($speakerData && isset($speakerData['speakers']) && !empty($speakerData['speakers'])) {
+                    \Log::info('HYBRID METHOD - AI speaker extraction successful', [
+                        'speaker_count' => count($speakerData['speakers'])
+                    ]);
                     return [
                         'speakers' => $speakerData['speakers'],
                         'medical_terms' => $speakerData['medical_terms'] ?? []
@@ -3773,7 +3782,43 @@ INSTRUCTIONS:
             }
     
             // Fallback: basic speaker separation based on content patterns
+            \Log::info('HYBRID METHOD - Using fallback speaker separation');
             return $this->fallbackSpeakerSeparation($transcription);
+        }
+
+        /**
+         * Parse speaker labels that already exist in transcription
+         */
+        private function parseSpeakerLabelsFromTranscription($transcription)
+        {
+            $lines = explode("\n", $transcription);
+            $speakers = [];
+            $startTime = 0;
+
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if (empty($line)) continue;
+
+                if (preg_match('/\[Speaker (\d+)\]:\s*(.*)/', $line, $matches)) {
+                    $speakerNum = (int)$matches[1];
+                    $text = trim($matches[2]);
+                    
+                    if (!empty($text)) {
+                        $speakers[] = [
+                            'speaker' => $speakerNum,
+                            'text' => $text,
+                            'start_time' => $startTime,
+                            'role' => 'Speaker ' . $speakerNum
+                        ];
+                        $startTime += 5;
+                    }
+                }
+            }
+
+            return [
+                'speakers' => $speakers,
+                'medical_terms' => []
+            ];
         }
     
         /**
