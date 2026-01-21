@@ -2707,8 +2707,9 @@ INSTRUCTIONS:
                 }
 
                 // Format transcription with speaker labels for frontend display
+                // Only format if transcription doesn't already have speaker labels
                 $formattedTranscription = $improvedTranscription;
-                if (!empty($speakerData['speakers'])) {
+                if (!empty($speakerData['speakers']) && !preg_match('/\[Speaker \d+\]:/', $improvedTranscription)) {
                     $formattedLines = [];
                     foreach ($speakerData['speakers'] as $segment) {
                         $speakerNum = $segment['speaker'] ?? 1;
@@ -3126,9 +3127,12 @@ INSTRUCTIONS:
                     throw new \Exception('Audio file not found');
                 }
 
-                // For Arabic: Use GPT-4o Audio for transcription + diarization
-                if (isset($language) && strpos($language, 'ar') === 0) {
-                    \Log::info('HYBRID METHOD - Arabic detected, using GPT-4o Audio');
+                // For English or auto-detect, use AssemblyAI as primary (best for English)
+                // Only use GPT-4o for explicitly selected Arabic
+                $useArabicProcessing = ($language === 'ar' || $language === 'ar-SA');
+
+                if ($useArabicProcessing) {
+                    \Log::info('HYBRID METHOD - Arabic explicitly selected, using GPT-4o Audio');
                     $result = $this->processWithGPT4oAudio($audioPath, $language);
                     \Log::info('HYBRID METHOD - GPT-4o result', ['result' => $result]);
                     if ($result['success']) {
@@ -3141,7 +3145,7 @@ INSTRUCTIONS:
                     return $result['success'] ? $result['transcription'] : '';
                 }
 
-                // For English and other supported languages, use AssemblyAI as primary
+                // For English and auto-detect, use AssemblyAI as primary
                 $fileInfo = pathinfo($audioPath);
                 $fileSize = filesize($audioPath);
     
@@ -3163,16 +3167,8 @@ INSTRUCTIONS:
                     return $result['transcription'];
                 }
     
-                // Only fallback to GPT-4o if AssemblyAI fails
-                \Log::info('HYBRID METHOD - AssemblyAI failed, falling back to GPT-4o Audio');
-                $result = $this->processWithGPT4oAudio($audioPath, $language);
-                
-                if ($result['success']) {
-                    return $result['transcription'];
-                }
-
-                // Final fallback to Whisper
-                \Log::info('HYBRID METHOD - GPT-4o failed, falling back to Whisper');
+                // Fallback to Whisper for auto-detect and English
+                \Log::info('HYBRID METHOD - AssemblyAI failed, falling back to Whisper');
                 $result = $this->processWithOpenAIWhisper($audioPath);
      
                 return $result['success'] ? $result['transcription'] : '';
