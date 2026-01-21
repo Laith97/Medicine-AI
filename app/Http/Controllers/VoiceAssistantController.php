@@ -2687,6 +2687,25 @@ INSTRUCTIONS:
                 // Prepare speaker data for response (enhanced with AI-based speaker detection)
                 $speakerData = $this->extractSpeakerDataFromTranscription($improvedTranscription);
 
+                // If speaker extraction failed or returned empty, create basic speaker data from transcription
+                if (empty($speakerData['speakers']) && !empty($improvedTranscription)) {
+                    \Log::info('HYBRID METHOD - Creating fallback speaker data', [
+                        'transcription_length' => strlen($improvedTranscription)
+                    ]);
+                    
+                    $speakerData = [
+                        'speakers' => [
+                            [
+                                'speaker' => 1,
+                                'text' => $improvedTranscription,
+                                'start_time' => 0,
+                                'role' => 'Speaker 1'
+                            ]
+                        ],
+                        'medical_terms' => []
+                    ];
+                }
+
                 return response()->json([
                     'success' => true,
                     'message' => $successMessage,
@@ -3750,6 +3769,21 @@ INSTRUCTIONS:
          */
         private function fallbackSpeakerSeparation($transcription)
         {
+            // If transcription is too short, return as single speaker
+            if (strlen($transcription) < 20) {
+                return [
+                    'speakers' => [
+                        [
+                            'speaker' => 1,
+                            'text' => $transcription,
+                            'start_time' => 0,
+                            'role' => 'Speaker 1'
+                        ]
+                    ],
+                    'medical_terms' => []
+                ];
+            }
+
             $sentences = preg_split('/[.!?]+/', $transcription);
             $speakers = [];
             $medicalTerms = [];
@@ -3759,9 +3793,9 @@ INSTRUCTIONS:
             $startTime = 0;
     
             // Pre-compile medical keywords for performance
-            $medicalKeywords = $this->getMedicalPhraseSet(); // Use the full medical phrase set
+            $medicalKeywords = $this->getMedicalPhraseSet();
             $lowercaseMedicalKeywords = array_map('strtolower', $medicalKeywords);
-            $medicalKeywordsSet = array_flip($lowercaseMedicalKeywords); // For O(1) lookup
+            $medicalKeywordsSet = array_flip($lowercaseMedicalKeywords);
 
             foreach ($sentences as $index => $sentence) {
                 $sentence = trim($sentence);
@@ -3770,7 +3804,7 @@ INSTRUCTIONS:
                 // Simple heuristic: questions and medical terms suggest doctor
                 $hasQuestion = strpos($sentence, '?') !== false;
 
-                // Optimized medical term check using pre-compiled keywords
+                // Optimized medical term check
                 $hasMedicalTerms = false;
                 $lowerSentence = strtolower($sentence);
                 foreach ($lowercaseMedicalKeywords as $medicalKeyword) {
@@ -3781,43 +3815,37 @@ INSTRUCTIONS:
                 }
 
                 if ($hasQuestion || $hasMedicalTerms) {
-                    // Likely doctor speaking
                     if ($currentSpeaker === 2 && !empty($speakerText)) {
-                        // Save previous speaker segment - build text more efficiently
-                        $speakerSegment = [
+                        $speakers[] = [
                             'speaker' => 2,
                             'text' => implode('. ', $speakerText),
                             'start_time' => $startTime,
                             'role' => 'Speaker 2'
                         ];
-                        $speakers[] = $speakerSegment;
                         $speakerText = [];
-                        $startTime = $index * 5; // Rough estimate
+                        $startTime = $index * 5;
                     }
                     $currentSpeaker = 1;
                 } else {
-                    // Likely patient speaking
                     if ($currentSpeaker === 1 && !empty($speakerText)) {
-                        // Save previous speaker segment - build text more efficiently
-                        $speakerSegment = [
+                        $speakers[] = [
                             'speaker' => 1,
                             'text' => implode('. ', $speakerText),
                             'start_time' => $startTime,
                             'role' => 'Speaker 1'
                         ];
-                        $speakers[] = $speakerSegment;
                         $speakerText = [];
-                        $startTime = $index * 5; // Rough estimate
+                        $startTime = $index * 5;
                     }
                     $currentSpeaker = 2;
                 }
 
                 $speakerText[] = $sentence;
 
-                // Extract medical terms more efficiently - only check words that are in our medical dictionary
-                $words = preg_split('/\s+/', $sentence); // Split by any whitespace
+                // Extract medical terms
+                $words = preg_split('/\s+/', $sentence);
                 foreach ($words as $word) {
-                    $cleanWord = strtolower(trim(preg_replace('/[^\w]/', '', $word))); // Remove punctuation
+                    $cleanWord = strtolower(trim(preg_replace('/[^\w]/', '', $word)));
                     if (isset($medicalKeywordsSet[$cleanWord]) && !in_array($cleanWord, $medicalTerms)) {
                         $medicalTerms[] = $cleanWord;
                     }
@@ -3826,13 +3854,22 @@ INSTRUCTIONS:
 
             // Add final speaker segment
             if (!empty($speakerText)) {
-                $speakerSegment = [
+                $speakers[] = [
                     'speaker' => $currentSpeaker,
                     'text' => implode('. ', $speakerText),
                     'start_time' => $startTime,
                     'role' => $currentSpeaker === 1 ? 'Speaker 1' : 'Speaker 2'
                 ];
-                $speakers[] = $speakerSegment;
+            }
+
+            // If no speakers were detected, return entire transcription as single speaker
+            if (empty($speakers)) {
+                $speakers[] = [
+                    'speaker' => 1,
+                    'text' => $transcription,
+                    'start_time' => 0,
+                    'role' => 'Speaker 1'
+                ];
             }
 
             return [
