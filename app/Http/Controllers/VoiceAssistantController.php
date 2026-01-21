@@ -2687,23 +2687,61 @@ INSTRUCTIONS:
                 // Prepare speaker data for response (enhanced with AI-based speaker detection)
                 $speakerData = $this->extractSpeakerDataFromTranscription($improvedTranscription);
 
-                // If speaker extraction failed or returned empty, create basic speaker data from transcription
-                if (empty($speakerData['speakers']) && !empty($improvedTranscription)) {
-                    \Log::info('HYBRID METHOD - Creating fallback speaker data', [
-                        'transcription_length' => strlen($improvedTranscription)
+                // If speaker extraction failed or returned empty OR only 1 speaker, force AI separation
+                if (empty($speakerData['speakers']) || count($speakerData['speakers']) <= 1) {
+                    \Log::info('HYBRID METHOD - Forcing AI speaker separation', [
+                        'transcription_length' => strlen($improvedTranscription),
+                        'current_speaker_count' => count($speakerData['speakers'] ?? [])
                     ]);
                     
-                    $speakerData = [
-                        'speakers' => [
-                            [
-                                'speaker' => 1,
-                                'text' => $improvedTranscription,
-                                'start_time' => 0,
-                                'role' => 'Speaker 1'
-                            ]
-                        ],
-                        'medical_terms' => []
-                    ];
+                    // Use GPT-4o to forcefully separate speakers
+                    try {
+                        $response = OpenAI::chat()->create([
+                            'model' => 'gpt-4o',
+                            'messages' => [
+                                [
+                                    'role' => 'system',
+                                    'content' => 'You are a medical conversation analyst. This is a doctor-patient conversation. Separate it into speaker segments. Return ONLY JSON: {"speakers": [{"speaker": 1, "text": "doctor text"}, {"speaker": 2, "text": "patient text"}]}. Speaker 1 = Doctor (asks questions, medical terms). Speaker 2 = Patient (describes symptoms, answers).'
+                                ],
+                                [
+                                    'role' => 'user',
+                                    'content' => "Separate speakers in this conversation:\n\n" . $improvedTranscription
+                                ]
+                            ],
+                            'temperature' => 0.1,
+                            'max_tokens' => 1000
+                        ]);
+                        
+                        $aiResponse = $response['choices'][0]['message']['content'] ?? '';
+                        $aiData = json_decode($aiResponse, true);
+                        
+                        if ($aiData && isset($aiData['speakers']) && count($aiData['speakers']) > 1) {
+                            $speakerData = [
+                                'speakers' => $aiData['speakers'],
+                                'medical_terms' => []
+                            ];
+                            \Log::info('HYBRID METHOD - AI separation successful', [
+                                'speaker_count' => count($aiData['speakers'])
+                            ]);
+                        }
+                    } catch (\Exception $e) {
+                        \Log::error('HYBRID METHOD - AI separation failed', ['error' => $e->getMessage()]);
+                    }
+                    
+                    // Final fallback: create single speaker
+                    if (empty($speakerData['speakers'])) {
+                        $speakerData = [
+                            'speakers' => [
+                                [
+                                    'speaker' => 1,
+                                    'text' => $improvedTranscription,
+                                    'start_time' => 0,
+                                    'role' => 'Speaker 1'
+                                ]
+                            ],
+                            'medical_terms' => []
+                        ];
+                    }
                 }
 
                 // Format transcription with speaker labels for frontend display

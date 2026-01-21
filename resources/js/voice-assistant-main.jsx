@@ -30,11 +30,11 @@ function getRegionalDefaultLanguage() {
             return 'ar-SA';
         }
 
-        // Default to English for other regions
+        // Default to English for other regions and when auto-detect is selected
         return 'en-US';
     } catch (error) {
-        console.warn('Language detection failed, defaulting to Arabic:', error);
-        return 'ar-SA'; // Safe default for this region
+        console.warn('Language detection failed, defaulting to English:', error);
+        return 'en-US'; // Changed default to English
     }
 }
 
