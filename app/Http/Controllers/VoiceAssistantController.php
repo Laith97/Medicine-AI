@@ -2685,27 +2685,27 @@ INSTRUCTIONS:
                 }
 
                 // Prepare speaker data for response (enhanced with AI-based speaker detection)
-                $speakerData = $this->extractSpeakerDataFromTranscription($improvedTranscription);
-
-                // If speaker extraction failed or returned empty OR only 1 speaker, force AI separation
-                if (empty($speakerData['speakers']) || count($speakerData['speakers']) <= 1) {
-                    \Log::info('HYBRID METHOD - Forcing AI speaker separation', [
-                        'transcription_length' => strlen($improvedTranscription),
-                        'current_speaker_count' => count($speakerData['speakers'] ?? [])
-                    ]);
+                // Check if transcription came from Whisper (no proper diarization)
+                $isWhisperTranscription = !preg_match('/\[Speaker \d+\]:[^\n]+\n\[Speaker \d+\]:/', $improvedTranscription);
+                
+                if ($isWhisperTranscription) {
+                    \Log::info('HYBRID METHOD - Whisper transcription detected, forcing AI speaker separation');
                     
-                    // Use GPT-4o to forcefully separate speakers
+                    // Remove any existing speaker labels from Whisper
+                    $cleanTranscription = preg_replace('/\[Speaker \d+\]:\s*/', '', $improvedTranscription);
+                    
+                    // Force GPT-4o to separate speakers
                     try {
                         $response = OpenAI::chat()->create([
                             'model' => 'gpt-4o',
                             'messages' => [
                                 [
                                     'role' => 'system',
-                                    'content' => 'You are a medical conversation analyst. This is a doctor-patient conversation. Separate it into speaker segments. Return ONLY JSON: {"speakers": [{"speaker": 1, "text": "doctor text"}, {"speaker": 2, "text": "patient text"}]}. Speaker 1 = Doctor (asks questions, medical terms). Speaker 2 = Patient (describes symptoms, answers).'
+                                    'content' => 'Separate this conversation into doctor and patient speakers. Return ONLY JSON: {"speakers": [{"speaker": 1, "text": "..."}, {"speaker": 2, "text": "..."}]}. Speaker 1 = Doctor (asks questions). Speaker 2 = Patient (answers).'
                                 ],
                                 [
                                     'role' => 'user',
-                                    'content' => "Separate speakers in this conversation:\n\n" . $improvedTranscription
+                                    'content' => $cleanTranscription
                                 ]
                             ],
                             'temperature' => 0.1,
@@ -2715,7 +2715,7 @@ INSTRUCTIONS:
                         $aiResponse = $response['choices'][0]['message']['content'] ?? '';
                         $aiData = json_decode($aiResponse, true);
                         
-                        if ($aiData && isset($aiData['speakers']) && count($aiData['speakers']) > 1) {
+                        if ($aiData && isset($aiData['speakers']) && count($aiData['speakers']) > 0) {
                             $speakerData = [
                                 'speakers' => $aiData['speakers'],
                                 'medical_terms' => []
@@ -2723,25 +2723,17 @@ INSTRUCTIONS:
                             \Log::info('HYBRID METHOD - AI separation successful', [
                                 'speaker_count' => count($aiData['speakers'])
                             ]);
+                        } else {
+                            // Fallback to pattern-based separation
+                            $speakerData = $this->fallbackSpeakerSeparation($cleanTranscription);
                         }
                     } catch (\Exception $e) {
                         \Log::error('HYBRID METHOD - AI separation failed', ['error' => $e->getMessage()]);
+                        $speakerData = $this->fallbackSpeakerSeparation($cleanTranscription);
                     }
-                    
-                    // Final fallback: create single speaker
-                    if (empty($speakerData['speakers'])) {
-                        $speakerData = [
-                            'speakers' => [
-                                [
-                                    'speaker' => 1,
-                                    'text' => $improvedTranscription,
-                                    'start_time' => 0,
-                                    'role' => 'Speaker 1'
-                                ]
-                            ],
-                            'medical_terms' => []
-                        ];
-                    }
+                } else {
+                    // Transcription already has proper speaker labels (from AssemblyAI)
+                    $speakerData = $this->extractSpeakerDataFromTranscription($improvedTranscription);
                 }
 
                 // Format transcription with speaker labels for frontend display
