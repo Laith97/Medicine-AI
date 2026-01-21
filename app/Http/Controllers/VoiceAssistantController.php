@@ -2706,10 +2706,26 @@ INSTRUCTIONS:
                     ];
                 }
 
+                // Format transcription with speaker labels for frontend display
+                $formattedTranscription = $improvedTranscription;
+                if (!empty($speakerData['speakers'])) {
+                    $formattedLines = [];
+                    foreach ($speakerData['speakers'] as $segment) {
+                        $speakerNum = $segment['speaker'] ?? 1;
+                        $text = $segment['text'] ?? '';
+                        if (!empty($text)) {
+                            $formattedLines[] = "[Speaker {$speakerNum}]: {$text}";
+                        }
+                    }
+                    if (!empty($formattedLines)) {
+                        $formattedTranscription = implode("\n", $formattedLines);
+                    }
+                }
+
                 return response()->json([
                     'success' => true,
                     'message' => $successMessage,
-                    'improved_transcription' => $improvedTranscription,
+                    'improved_transcription' => $formattedTranscription,
                     'server_extracted_data' => $serverExtractedData,
                     'speakers' => $speakerData['speakers'],
                     'medical_terms' => $speakerData['medical_terms'],
