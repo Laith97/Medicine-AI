@@ -2735,6 +2735,11 @@ INSTRUCTIONS:
                             'response_preview' => substr($aiResponse, 0, 200)
                         ]);
                         
+                        // Remove markdown code blocks if present
+                        $aiResponse = preg_replace('/```json\s*/', '', $aiResponse);
+                        $aiResponse = preg_replace('/```\s*$/', '', $aiResponse);
+                        $aiResponse = trim($aiResponse);
+                        
                         $aiData = json_decode($aiResponse, true);
                         
                         if ($aiData && isset($aiData['speakers']) && count($aiData['speakers']) > 1) {
