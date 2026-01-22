@@ -2685,13 +2685,17 @@ INSTRUCTIONS:
                 }
 
                 // Prepare speaker data for response (enhanced with AI-based speaker detection)
-                // Check if transcription came from Whisper (no proper diarization)
-                $isWhisperTranscription = !preg_match('/\[Speaker \d+\]:[^\n]+\n\[Speaker \d+\]:/', $improvedTranscription);
+                // Check if transcription came from Whisper or has poor diarization (only 1 speaker detected)
+                $speakerCount = count($speakerData['speakers'] ?? []);
+                $hasProperDiarization = $speakerCount > 1 && preg_match('/\[Speaker \d+\]:[^\n]+\n\[Speaker \d+\]:/', $improvedTranscription);
                 
-                if ($isWhisperTranscription) {
-                    \Log::info('HYBRID METHOD - Whisper transcription detected, forcing AI speaker separation');
+                if (!$hasProperDiarization) {
+                    \Log::info('HYBRID METHOD - Poor diarization detected, forcing AI speaker separation', [
+                        'speaker_count' => $speakerCount,
+                        'has_multiple_labels' => preg_match('/\[Speaker \d+\]:[^\n]+\n\[Speaker \d+\]:/', $improvedTranscription)
+                    ]);
                     
-                    // Remove any existing speaker labels from Whisper
+                    // Remove any existing speaker labels
                     $cleanTranscription = preg_replace('/\[Speaker \d+\]:\s*/', '', $improvedTranscription);
                     
                     // Force GPT-4o to separate speakers
@@ -2701,7 +2705,7 @@ INSTRUCTIONS:
                             'messages' => [
                                 [
                                     'role' => 'system',
-                                    'content' => 'Separate this conversation into doctor and patient speakers. Return ONLY JSON: {"speakers": [{"speaker": 1, "text": "..."}, {"speaker": 2, "text": "..."}]}. Speaker 1 = Doctor (asks questions). Speaker 2 = Patient (answers).'
+                                    'content' => 'Separate this medical conversation into doctor and patient speakers. Return ONLY JSON: {"speakers": [{"speaker": 1, "text": "..."}, {"speaker": 2, "text": "..."}]}. Speaker 1 = Doctor (asks questions, gives advice). Speaker 2 = Patient (describes symptoms, answers).'
                                 ],
                                 [
                                     'role' => 'user',
@@ -2715,17 +2719,44 @@ INSTRUCTIONS:
                         $aiResponse = $response['choices'][0]['message']['content'] ?? '';
                         $aiData = json_decode($aiResponse, true);
                         
-                        if ($aiData && isset($aiData['speakers']) && count($aiData['speakers']) > 0) {
+                        if ($aiData && isset($aiData['speakers']) && count($aiData['speakers']) > 1) {
                             $speakerData = [
                                 'speakers' => $aiData['speakers'],
                                 'medical_terms' => []
                             ];
+                            
+                            // Format transcription with proper speaker labels
+                            $formattedLines = [];
+                            foreach ($aiData['speakers'] as $segment) {
+                                $speakerNum = $segment['speaker'] ?? 1;
+                                $text = $segment['text'] ?? '';
+                                if (!empty($text)) {
+                                    $formattedLines[] = "[Speaker {$speakerNum}]: {$text}";
+                                }
+                            }
+                            if (!empty($formattedLines)) {
+                                $improvedTranscription = implode("\n", $formattedLines);
+                            }
+                            
                             \Log::info('HYBRID METHOD - AI separation successful', [
                                 'speaker_count' => count($aiData['speakers'])
                             ]);
                         } else {
                             // Fallback to pattern-based separation
                             $speakerData = $this->fallbackSpeakerSeparation($cleanTranscription);
+                            
+                            // Format transcription
+                            $formattedLines = [];
+                            foreach ($speakerData['speakers'] as $segment) {
+                                $speakerNum = $segment['speaker'] ?? 1;
+                                $text = $segment['text'] ?? '';
+                                if (!empty($text)) {
+                                    $formattedLines[] = "[Speaker {$speakerNum}]: {$text}";
+                                }
+                            }
+                            if (!empty($formattedLines)) {
+                                $improvedTranscription = implode("\n", $formattedLines);
+                            }
                         }
                     } catch (\Exception $e) {
                         \Log::error('HYBRID METHOD - AI separation failed', ['error' => $e->getMessage()]);
@@ -2736,22 +2767,8 @@ INSTRUCTIONS:
                     $speakerData = $this->extractSpeakerDataFromTranscription($improvedTranscription);
                 }
 
-                // Format transcription with speaker labels for frontend display
-                // Only format if transcription doesn't already have speaker labels
+                // Format transcription with speaker labels for frontend display (only if not already formatted)
                 $formattedTranscription = $improvedTranscription;
-                if (!empty($speakerData['speakers']) && !preg_match('/\[Speaker \d+\]:/', $improvedTranscription)) {
-                    $formattedLines = [];
-                    foreach ($speakerData['speakers'] as $segment) {
-                        $speakerNum = $segment['speaker'] ?? 1;
-                        $text = $segment['text'] ?? '';
-                        if (!empty($text)) {
-                            $formattedLines[] = "[Speaker {$speakerNum}]: {$text}";
-                        }
-                    }
-                    if (!empty($formattedLines)) {
-                        $formattedTranscription = implode("\n", $formattedLines);
-                    }
-                }
 
                 return response()->json([
                     'success' => true,
@@ -3157,27 +3174,39 @@ INSTRUCTIONS:
                     throw new \Exception('Audio file not found');
                 }
 
-                // For English or auto-detect, use AssemblyAI as primary (best for English)
-                // Only use GPT-4o for explicitly selected Arabic
-                $useArabicProcessing = ($language === 'ar' || $language === 'ar-SA');
+                $fileInfo = pathinfo($audioPath);
+                $fileSize = filesize($audioPath);
 
-                if ($useArabicProcessing) {
+                // AUTO-DETECT: Use Whisper to detect the actual spoken language
+                if ($language === 'en' || $language === 'auto') {
+                    \Log::info('HYBRID METHOD - Detecting spoken language with Whisper');
+                    $detectedLang = $this->detectLanguageWithWhisper($audioPath);
+                    \Log::info('HYBRID METHOD - Language detected', ['detected' => $detectedLang, 'original' => $language]);
+                    
+                    // Use detected language for processing
+                    if ($detectedLang === 'ar' || $detectedLang === 'arabic') {
+                        \Log::info('HYBRID METHOD - Arabic detected, using GPT-4o Audio');
+                        $result = $this->processWithGPT4oAudio($audioPath, 'ar');
+                        if ($result['success']) {
+                            return $result['transcription'];
+                        }
+                        $result = $this->processWithOpenAIWhisper($audioPath);
+                        return $result['success'] ? $result['transcription'] : '';
+                    }
+                    // English detected - use AssemblyAI
+                    $language = 'en';
+                }
+
+                // Explicitly selected Arabic
+                if ($language === 'ar' || $language === 'ar-SA') {
                     \Log::info('HYBRID METHOD - Arabic explicitly selected, using GPT-4o Audio');
                     $result = $this->processWithGPT4oAudio($audioPath, $language);
-                    \Log::info('HYBRID METHOD - GPT-4o result', ['result' => $result]);
                     if ($result['success']) {
-                        \Log::info('HYBRID METHOD - Returning GPT-4o transcription', ['length' => strlen($result['transcription'])]);
                         return $result['transcription'];
                     }
-                    // Fallback to Whisper if GPT-4o fails
-                    \Log::info('HYBRID METHOD - GPT-4o failed, falling back to Whisper');
                     $result = $this->processWithOpenAIWhisper($audioPath);
                     return $result['success'] ? $result['transcription'] : '';
                 }
-
-                // For English and auto-detect, use AssemblyAI as primary
-                $fileInfo = pathinfo($audioPath);
-                $fileSize = filesize($audioPath);
     
                 \Log::info('HYBRID METHOD - Starting server-side transcription', [
                     'audio_path' => $audioPath,
@@ -3186,18 +3215,18 @@ INSTRUCTIONS:
                     'language' => $language
                 ]);
     
-                // Try AssemblyAI first for English (best quality for English medical transcription)
+                // Try AssemblyAI for English
                 $result = $this->processWithAssemblyAI($audioPath, $language);
     
                 if ($result['success']) {
-                    \Log::info('HYBRID METHOD - AssemblyAI successful, skipping fallback', [
+                    \Log::info('HYBRID METHOD - AssemblyAI successful', [
                         'transcription_length' => strlen($result['transcription']),
                         'speakers_detected' => count($result['speakers'] ?? [])
                     ]);
                     return $result['transcription'];
                 }
     
-                // Fallback to Whisper for auto-detect and English
+                // Fallback to Whisper
                 \Log::info('HYBRID METHOD - AssemblyAI failed, falling back to Whisper');
                 $result = $this->processWithOpenAIWhisper($audioPath);
      
@@ -3211,6 +3240,37 @@ INSTRUCTIONS:
     
                 $result = $this->processWithOpenAIWhisper($audioPath);
                 return $result['success'] ? $result['transcription'] : '';
+            }
+        }
+
+        /**
+         * Detect spoken language using Whisper
+         */
+        private function detectLanguageWithWhisper($audioPath)
+        {
+            $fileHandle = null;
+            try {
+                $fileHandle = fopen($audioPath, 'r');
+                if (!$fileHandle) {
+                    return 'en';
+                }
+
+                $response = OpenAI::audio()->transcribe([
+                    'model' => 'whisper-1',
+                    'file' => $fileHandle,
+                    'response_format' => 'verbose_json'
+                ]);
+
+                $detectedLang = $response['language'] ?? 'en';
+                return $detectedLang;
+
+            } catch (\Exception $e) {
+                \Log::error('Language detection failed', ['error' => $e->getMessage()]);
+                return 'en';
+            } finally {
+                if ($fileHandle && is_resource($fileHandle)) {
+                    fclose($fileHandle);
+                }
             }
         }
     

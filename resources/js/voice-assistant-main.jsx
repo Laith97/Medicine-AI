@@ -8,34 +8,9 @@ const componentRoots = {};
 
 // Helper function to get regional default language (moved to top-level for better hoisting)
 function getRegionalDefaultLanguage() {
-    try {
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const userAgent = navigator.userAgent.toLowerCase();
-
-        // Arabic-speaking regions (Middle East, North Africa)
-        const arabicRegions = [
-            'asia/amman', 'asia/riyadh', 'asia/dubai', 'asia/kuwait', 'asia/qatar',
-            'asia/bahrain', 'asia/muscat', 'asia/beirut', 'asia/damascus', 'asia/baghdad',
-            'africa/cairo', 'africa/tunis', 'africa/algiers', 'africa/casablanca'
-        ];
-
-        // Check timezone
-        if (timezone && arabicRegions.some(region => timezone.toLowerCase().includes(region))) {
-            return 'ar-SA';
-        }
-
-        // Check browser language preferences
-        const browserLang = navigator.language || navigator.userLanguage;
-        if (browserLang && browserLang.startsWith('ar')) {
-            return 'ar-SA';
-        }
-
-        // Default to English for other regions and when auto-detect is selected
-        return 'en-US';
-    } catch (error) {
-        console.warn('Language detection failed, defaulting to English:', error);
-        return 'en-US'; // Changed default to English
-    }
+    // Return 'auto' to enable automatic language detection
+    // The backend will use Whisper to detect the actual spoken language
+    return 'en-US'; // Default to English for UI, backend will auto-detect
 }
 
 // Function to initialize the React components in the voice assistant page
