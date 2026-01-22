@@ -995,12 +995,6 @@
 @viteReactRefresh
 @vite(['resources/js/voice-assistant-main.jsx'])
 
-<!-- Button enabler fix -->
-<script src="{{ asset('js/enable-buttons-fix.js') }}"></script>
-
-<!-- Button click handlers -->
-<script src="{{ asset('js/button-click-handlers.js') }}"></script>
-
 <!-- Enhanced status indicator and UI script -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
