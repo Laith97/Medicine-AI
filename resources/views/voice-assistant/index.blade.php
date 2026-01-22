@@ -895,6 +895,46 @@
                         </div>
                     </div>
 
+                    <!-- Additional Patient Data Section -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="fas fa-notes-medical me-2"></i>Additional Patient Data
+                            <span class="badge bg-warning text-dark ms-2">Important for AI Prescriptions</span>
+                        </h6>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Required for AI medication suggestions:</strong> Please fill allergies and current medications to enable safe AI prescription recommendations.
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="modal_allergies" class="form-label fw-semibold">
+                                    Patient Allergies <span class="text-danger">*</span>
+                                </label>
+                                <textarea class="form-control" id="modal_allergies" rows="2"
+                                          placeholder="e.g., Penicillin, Sulfa drugs, or type 'None'"></textarea>
+                                <div class="form-text">Separate multiple allergies with commas</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="modal_medications" class="form-label fw-semibold">
+                                    Current Medications <span class="text-danger">*</span>
+                                </label>
+                                <textarea class="form-control" id="modal_medications" rows="2"
+                                          placeholder="e.g., Metformin 500mg twice daily"></textarea>
+                                <div class="form-text">Include dosage and frequency if known</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="modal_symptoms" class="form-label fw-semibold">Symptoms</label>
+                                <textarea class="form-control" id="modal_symptoms" rows="2"
+                                          placeholder="List patient symptoms..."></textarea>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="modal_medical_history" class="form-label fw-semibold">Medical History</label>
+                                <textarea class="form-control" id="modal_medical_history" rows="2"
+                                          placeholder="Relevant medical history..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Appointment Preview -->
                     <div id="appointmentPreview" class="card bg-light" style="display: none;">
                         <div class="card-body">
@@ -1457,6 +1497,31 @@
         }
     });
 
+    // New patient form toggle
+    const showNewPatientFormBtn = document.getElementById('showNewPatientFormBtn');
+    const hideNewPatientFormBtn = document.getElementById('hideNewPatientFormBtn');
+    const cancelNewPatientBtn = document.getElementById('cancelNewPatientBtn');
+    const newPatientForm = document.getElementById('newPatientForm');
+
+    if (showNewPatientFormBtn && newPatientForm) {
+        showNewPatientFormBtn.addEventListener('click', () => {
+            newPatientForm.style.display = 'block';
+            newPatientForm.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+
+    if (hideNewPatientFormBtn && newPatientForm) {
+        hideNewPatientFormBtn.addEventListener('click', () => {
+            newPatientForm.style.display = 'none';
+        });
+    }
+
+    if (cancelNewPatientBtn && newPatientForm) {
+        cancelNewPatientBtn.addEventListener('click', () => {
+            newPatientForm.style.display = 'none';
+        });
+    }
+
     // Enable complete button when diagnosis is filled
     const diagnosisText = document.getElementById('diagnosisText');
     const completeBtn = document.getElementById('completeConsultationBtn');
@@ -1488,43 +1553,73 @@
                 return;
             }
             
-            if (confirm('Complete this consultation and save the diagnosis?')) {
-                completeBtn.disabled = true;
-                completeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
-                
-                fetch('/ai/voice-assistant/complete-consultation', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({
-                        diagnosisText: diagnosis,
-                        selectedPatient: selectedPatient,
-                        transcription: transcription,
-                        sessionId: sessionId,
-                        completionType: 'save_only'
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Consultation completed successfully!');
-                        if (data.redirectUrl) {
-                            window.location.href = data.redirectUrl;
-                        } else {
-                            location.reload();
-                        }
-                    } else {
-                        throw new Error(data.message || 'Failed to complete consultation');
+            // Show modal with additional patient data fields
+            const modal = new bootstrap.Modal(document.getElementById('completeConsultationModal'));
+            document.getElementById('diagnosisPreview').textContent = diagnosis;
+            document.getElementById('modalPatientName').textContent = patientSelect.options[patientSelect.selectedIndex].text;
+            modal.show();
+        });
+    }
+    
+    // Handle modal complete button
+    const modalCompleteBtn = document.getElementById('modalCompleteConsultationBtn');
+    if (modalCompleteBtn) {
+        modalCompleteBtn.addEventListener('click', function() {
+            const diagnosisText = document.getElementById('diagnosisText');
+            const diagnosis = diagnosisText.value.trim();
+            const patientSelect = document.getElementById('patientSelect');
+            const selectedPatient = patientSelect ? patientSelect.value : null;
+            const sessionId = window.sessionId || document.querySelector('[data-session-id]')?.getAttribute('data-session-id');
+            const transcriptContainer = document.getElementById('react-transcript-container');
+            const transcription = transcriptContainer ? (transcriptContainer.innerText || transcriptContainer.textContent || '').trim() : '';
+            
+            // Get additional patient data
+            const allergies = document.getElementById('modal_allergies').value.trim();
+            const medications = document.getElementById('modal_medications').value.trim();
+            const symptoms = document.getElementById('modal_symptoms').value.trim();
+            const medicalHistory = document.getElementById('modal_medical_history').value.trim();
+            
+            modalCompleteBtn.disabled = true;
+            modalCompleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+            
+            fetch('/ai/voice-assistant/complete-consultation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    diagnosisText: diagnosis,
+                    selectedPatient: selectedPatient,
+                    transcription: transcription,
+                    sessionId: sessionId,
+                    completionType: 'save_only',
+                    patient_data: {
+                        allergies: allergies,
+                        medications: medications,
+                        symptoms: symptoms,
+                        medical_history: medicalHistory
                     }
                 })
-                .catch(error => {
-                    alert('Error: ' + error.message);
-                    completeBtn.disabled = false;
-                    completeBtn.innerHTML = '<i class="fas fa-check me-1"></i>Complete Session';
-                });
-            }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Consultation completed successfully!');
+                    if (data.redirectUrl) {
+                        window.location.href = data.redirectUrl;
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    throw new Error(data.message || 'Failed to complete consultation');
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+                modalCompleteBtn.disabled = false;
+                modalCompleteBtn.innerHTML = '<i class="fas fa-check me-1"></i>Complete Session';
+            });
         });
     }
 

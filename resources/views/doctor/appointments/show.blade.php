@@ -1399,7 +1399,13 @@
             <div class="modal-body">
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
-                    <strong>Understanding AI Data Sources:</strong> The AI analyzes clinical information from multiple sources to provide medication suggestions. Here's what data is currently available and being used:
+                    <strong>Understanding AI Data Sources:</strong> The AI analyzes clinical information to provide medication suggestions. Data sources are prioritized by importance:
+                    <ul class="mb-0 mt-2">
+                        <li><strong class="text-danger">CRITICAL:</strong> Required for AI suggestions - AI will be BLOCKED without these</li>
+                        <li><strong class="text-warning">Important:</strong> Strongly recommended for accurate suggestions</li>
+                        <li><strong class="text-info">Helpful:</strong> Provides additional context</li>
+                        <li><strong class="text-secondary">Context:</strong> Used for background information only</li>
+                    </ul>
                 </div>
 
                 <!-- Data Sources Table -->
@@ -1407,11 +1413,11 @@
                     <table class="table table-sm table-hover">
                         <thead class="table-primary">
                             <tr>
-                                <th><i class="fas fa-clipboard-list me-1"></i>Data Source</th>
+                                <th><i class="fas fa-clipboard-list me-1"></i>Data Source & Why It's Needed</th>
                                 <th><i class="fas fa-check-circle me-1"></i>Status</th>
+                                <th><i class="fas fa-exclamation-triangle me-1"></i>Importance</th>
                                 <th><i class="fas fa-shield-alt me-1"></i>Reliability</th>
-                                <th><i class="fas fa-info-circle me-1"></i>Example</th>
-                                <th><i class="fas fa-map-marker-alt me-1"></i>Location</th>
+                                <th><i class="fas fa-info-circle me-1"></i>Current Value</th>
                             </tr>
                         </thead>
                         <tbody id="dataSourcesTableBody">

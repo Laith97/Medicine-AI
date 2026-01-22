@@ -2124,6 +2124,7 @@ INSTRUCTIONS:
             'doctorNotes' => 'nullable|string|max:5000',
             'aiResultId' => 'nullable|exists:ai_assistant_results,id',
             'extractedData' => 'nullable|array',
+            'patient_data' => 'nullable|array',
         ]);
 
         try {
@@ -2168,8 +2169,14 @@ INSTRUCTIONS:
                 }
             }
 
-            // Prepare patient data - use AI result data if available, otherwise use extracted data
-            $patientData = $aiResult ? $aiResult->patient_data : ($request->extractedData ?? []);
+            // Prepare patient data - merge modal patient_data with AI/extracted data
+            $basePatientData = $aiResult ? $aiResult->patient_data : ($request->extractedData ?? []);
+            $modalPatientData = $request->patient_data ?? [];
+            
+            // Merge with priority to modal data (user-entered allergies/medications)
+            $patientData = array_merge($basePatientData, array_filter($modalPatientData, function($value) {
+                return !empty(trim($value));
+            }));
 
             // Create the diagnosis record
             $diagnosis = Diagnosis::create([

@@ -83,8 +83,18 @@ const RealTimeTranscript = ({ language }) => {
                         const match = line.match(/\[Speaker (\d+)\]:\s*(.*)/);
                         if (match) {
                             const speaker = match[1];
-                            const text = match[2];
+                            let text = match[2];
                             const isDoctor = speaker === '1';
+                            
+                            // Try to parse if it's JSON-encoded
+                            try {
+                                const parsed = JSON.parse(text);
+                                if (parsed.text) {
+                                    text = parsed.text;
+                                }
+                            } catch (e) {
+                                // Not JSON, use as is
+                            }
                             
                             return (
                                 <div key={index} style={{ 

@@ -424,8 +424,31 @@ REQUIRED JSON FORMAT:
         $hasOnlyPatientSymptoms = empty($doctorNotes) && empty($currentDiagnosis) && empty($pastDiagnoses) && empty($voiceDiagnosis) &&
                                   !empty($reasonForVisit);
 
-        // CRITICAL SAFETY: Only provide suggestions when we have verified clinical data
-        if (empty($verifiedClinicalText) || $hasOnlyPatientSymptoms) {
+        // CRITICAL SAFETY CHECK: Verify essential data is available
+        $missingCriticalData = [];
+        if (empty($allergies)) {
+            $missingCriticalData[] = 'Patient Allergies';
+        }
+        if (empty($activeMeds) && empty($pastMeds)) {
+            $missingCriticalData[] = 'Current/Past Medications';
+        }
+        if (empty($doctorNotes) && empty($currentDiagnosis)) {
+            $missingCriticalData[] = 'Doctor Clinical Assessment (notes or diagnosis)';
+        }
+
+        // BLOCK AI suggestions if critical data is missing
+        if (!empty($missingCriticalData)) {
+            $symptomsText = '⚠️ CRITICAL DATA MISSING - CANNOT PROVIDE MEDICATION SUGGESTIONS\n\n';
+            $symptomsText .= 'The following essential clinical data is missing:\n';
+            foreach ($missingCriticalData as $missing) {
+                $symptomsText .= '- ' . $missing . '\n';
+            }
+            $symptomsText .= '\nFor patient safety, AI medication suggestions require:\n';
+            $symptomsText .= '1. Patient allergy information (to prevent allergic reactions)\n';
+            $symptomsText .= '2. Current/past medications (to check drug interactions)\n';
+            $symptomsText .= '3. Doctor clinical assessment (notes or diagnosis)\n\n';
+            $symptomsText .= 'Please complete this information before requesting AI medication suggestions.';
+        } else if (empty($verifiedClinicalText) || $hasOnlyPatientSymptoms) {
             if ($hasOnlyPatientSymptoms) {
                 $symptomsText = 'PATIENT SYMPTOMS ONLY - NOT VERIFIED. This Clinical Decision Support system requires DOCTOR verification of symptoms before providing medication suggestions. Patient-reported symptoms alone are insufficient for medication recommendations.';
             } else {
