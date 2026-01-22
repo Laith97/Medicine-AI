@@ -2689,6 +2689,13 @@ INSTRUCTIONS:
                 $speakerCount = count($speakerData['speakers'] ?? []);
                 $hasProperDiarization = $speakerCount > 1 && preg_match('/\[Speaker \d+\]:[^\n]+\n\[Speaker \d+\]:/', $improvedTranscription);
                 
+                \Log::info('HYBRID METHOD - Speaker diarization check', [
+                    'speaker_count' => $speakerCount,
+                    'has_proper_diarization' => $hasProperDiarization,
+                    'transcription_preview' => substr($improvedTranscription, 0, 200),
+                    'has_multiple_speaker_pattern' => preg_match('/\[Speaker \d+\]:[^\n]+\n\[Speaker \d+\]:/', $improvedTranscription)
+                ]);
+                
                 if (!$hasProperDiarization) {
                     \Log::info('HYBRID METHOD - Poor diarization detected, forcing AI speaker separation', [
                         'speaker_count' => $speakerCount,
@@ -2697,6 +2704,11 @@ INSTRUCTIONS:
                     
                     // Remove any existing speaker labels
                     $cleanTranscription = preg_replace('/\[Speaker \d+\]:\s*/', '', $improvedTranscription);
+                    
+                    \Log::info('HYBRID METHOD - Clean transcription for AI', [
+                        'clean_length' => strlen($cleanTranscription),
+                        'clean_preview' => substr($cleanTranscription, 0, 100)
+                    ]);
                     
                     // Force GPT-4o to separate speakers
                     try {
@@ -2717,6 +2729,11 @@ INSTRUCTIONS:
                         ]);
                         
                         $aiResponse = $response['choices'][0]['message']['content'] ?? '';
+                        \Log::info('HYBRID METHOD - AI response received', [
+                            'response_length' => strlen($aiResponse),
+                            'response_preview' => substr($aiResponse, 0, 200)
+                        ]);
+                        
                         $aiData = json_decode($aiResponse, true);
                         
                         if ($aiData && isset($aiData['speakers']) && count($aiData['speakers']) > 1) {
@@ -2739,9 +2756,15 @@ INSTRUCTIONS:
                             }
                             
                             \Log::info('HYBRID METHOD - AI separation successful', [
-                                'speaker_count' => count($aiData['speakers'])
+                                'speaker_count' => count($aiData['speakers']),
+                                'formatted_preview' => substr($improvedTranscription, 0, 200)
                             ]);
                         } else {
+                            \Log::warning('HYBRID METHOD - AI returned invalid data, using fallback', [
+                                'ai_data' => $aiData,
+                                'speaker_count' => isset($aiData['speakers']) ? count($aiData['speakers']) : 0
+                            ]);
+                            
                             // Fallback to pattern-based separation
                             $speakerData = $this->fallbackSpeakerSeparation($cleanTranscription);
                             
@@ -2759,10 +2782,14 @@ INSTRUCTIONS:
                             }
                         }
                     } catch (\Exception $e) {
-                        \Log::error('HYBRID METHOD - AI separation failed', ['error' => $e->getMessage()]);
+                        \Log::error('HYBRID METHOD - AI separation failed', [
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
+                        ]);
                         $speakerData = $this->fallbackSpeakerSeparation($cleanTranscription);
                     }
                 } else {
+                    \Log::info('HYBRID METHOD - Proper diarization detected, using existing labels');
                     // Transcription already has proper speaker labels (from AssemblyAI)
                     $speakerData = $this->extractSpeakerDataFromTranscription($improvedTranscription);
                 }
