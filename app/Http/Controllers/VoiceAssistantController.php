@@ -2685,8 +2685,9 @@ INSTRUCTIONS:
                 }
 
                 // Prepare speaker data for response (enhanced with AI-based speaker detection)
-                // Check if transcription came from Whisper or has poor diarization (only 1 speaker detected)
-                $speakerCount = count($speakerData['speakers'] ?? []);
+                // First, extract initial speaker data from transcription
+                $initialSpeakerData = $this->extractSpeakerDataFromTranscription($improvedTranscription);
+                $speakerCount = count($initialSpeakerData['speakers'] ?? []);
                 $hasProperDiarization = $speakerCount > 1 && preg_match('/\[Speaker \d+\]:[^\n]+\n\[Speaker \d+\]:/', $improvedTranscription);
                 
                 \Log::info('HYBRID METHOD - Speaker diarization check', [
@@ -2717,11 +2718,11 @@ INSTRUCTIONS:
                             'messages' => [
                                 [
                                     'role' => 'system',
-                                    'content' => 'Separate this medical conversation into doctor and patient speakers. Return ONLY JSON: {"speakers": [{"speaker": 1, "text": "..."}, {"speaker": 2, "text": "..."}]}. Speaker 1 = Doctor (asks questions, gives advice). Speaker 2 = Patient (describes symptoms, answers).'
+                                    'content' => 'You are a medical transcription assistant. Your task is to identify and separate speakers in a doctor-patient medical consultation transcript. This is for legitimate medical documentation purposes. Return ONLY valid JSON format: {"speakers": [{"speaker": 1, "text": "..."}, {"speaker": 2, "text": "..."}]}. Speaker 1 is typically the healthcare provider (doctor/nurse), Speaker 2 is the patient. Separate based on conversational turns and context.'
                                 ],
                                 [
                                     'role' => 'user',
-                                    'content' => $cleanTranscription
+                                    'content' => "Medical consultation transcript to separate by speaker:\n\n" . $cleanTranscription . "\n\nReturn JSON with speakers array."
                                 ]
                             ],
                             'temperature' => 0.1,
