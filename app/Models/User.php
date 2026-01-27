@@ -216,6 +216,14 @@ class User extends Authenticatable
         return $this->hasOne(PatientData::class, 'assigned_patient_id')->latest();
     }
 
+    /**
+     * Get patient insurances
+     */
+    public function patientInsurances()
+    {
+        return $this->hasMany(PatientInsurance::class, 'patient_id');
+    }
+
     // Doctor relationship
     public function doctor()
     {

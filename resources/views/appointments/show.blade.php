@@ -703,7 +703,8 @@ function rescheduleAppointment() {
 }
 
 function joinVideoCall() {
-    showNotification('Launching video call...', 'success');
+    const appointmentId = {{ $appointment->id }};
+    window.open(`/video/room/${appointmentId}`, '_blank');
 }
 
 // Notification System

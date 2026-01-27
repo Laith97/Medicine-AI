@@ -1026,6 +1026,29 @@ Route::get('/doctor/{username}/chat/check-new', [PublicChatController::class, 'c
 // Public Testimonials API
 Route::get('/doctor/{username}/testimonials', [TestimonialController::class, 'getPublicTestimonials'])->name('doctor.testimonials.public');
 
+// Video room route
+Route::middleware(['auth'])->get('/video/room/{appointment}', function($appointmentId) {
+    $appointment = \App\Models\Appointment::findOrFail($appointmentId);
+    
+    if (Auth::id() !== $appointment->doctor->user_id && Auth::id() !== $appointment->patient_id) {
+        abort(403);
+    }
+    
+    // Create room if not exists
+    $roomName = 'appointment-' . $appointmentId;
+    if (!$appointment->meeting_id) {
+        $dailyService = app(\App\Services\DailyService::class);
+        try {
+            $dailyService->createRoom($roomName, 120);
+            $appointment->update(['meeting_id' => $roomName]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to create video room: ' . $e->getMessage());
+        }
+    }
+    
+    return view('video.room', compact('appointment'));
+})->name('video.room');
+
 // Stripe webhook (outside auth middleware)
 Route::post('/stripe/webhook', [SubscriptionController::class, 'webhook'])->name('stripe.webhook');
 

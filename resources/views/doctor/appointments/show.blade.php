@@ -219,7 +219,12 @@
             <div class="col-lg-12">
                 <!-- Information Cards Grid -->
                 <div class="info-cards-grid">
-                    <!-- Appointment Overview Card -->
+                    <!-- Call/Video Buttons -->
+                @if($appointment->status === 'confirmed')
+                    @include('components.appointment-call-buttons', ['appointment' => $appointment])
+                @endif
+
+                <!-- Appointment Overview Card -->
                     <div class="table-card">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div>
