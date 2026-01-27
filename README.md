@@ -1,165 +1,80 @@
-# In-System Notifications Feature for MedcuraAI
+# Video Call & Phone Consultation System for MedcuraAI
 
-A comprehensive in-app notification system built for the MedcuraAI Laravel-based web application. This system provides real-time notifications to doctors, patients, and administrators based on various system events.
+A simple and practical video call and phone consultation system built for the MedcuraAI Laravel-based web application. This system uses Daily.co for video calls and manual phone calling for voice appointments.
 
 ## 🚀 Features
 
 ### Core Functionality
-- **Real-time Notifications**: Instant notifications using Laravel Echo and WebSockets
-- **Role-Based Notifications**: Different notifications for doctors, patients, and admins
-- **Notification Types**: Support for various notification types (appointment, diagnosis, review, voice assistant, system alerts)
-- **Multi-Channel Delivery**: In-app, email, and SMS notifications
-- **User Preferences**: Customizable notification settings per user
-- **Interactive UI**: Beautiful notification dropdown and dedicated notifications page
+- **Video Calls**: HD video consultations using Daily.co
+- **Manual Phone Calls**: Doctors see patient phone and call from their own device
+- **Simple Integration**: No complex setup or automated calling systems
+- **Cost-Effective**: Free tier available, cheaper than alternatives
+- **HIPAA Compliant**: Available with Daily.co paid plans
 
-### Notification Types
-1. **Appointment Notifications**
-   - New appointment booked
-   - Appointment reminders
-   - Appointment cancellations
-   - Appointment confirmations
+### Video Call Features
+- HD video and audio quality
+- Built-in screen sharing
+- Mute/unmute controls
+- Camera on/off toggle
+- Leave call button
+- Mobile responsive
+- No downloads required
+- Works in any modern browser
 
-2. **Diagnosis Notifications**
-   - New diagnosis submitted
-   - Diagnosis updates
-   - Follow-up questions
-
-3. **Review Notifications**
-   - New patient reviews
-   - Review approvals
-   - Review responses
-
-4. **Voice Assistant Notifications**
-   - Transcription completed
-   - AI analysis ready
-   - Session summaries
-
-5. **System Notifications**
-   - System alerts
-   - Maintenance notices
-   - Failed delivery warnings
-   - Balance warnings
-
-### User Features
-- **Notification Bell**: 🔔 icon in navbar with unread count badge
-- **Dropdown Menu**: Quick access to recent notifications
-- **Mark as Read**: Individual or "Mark all as read" functionality
-- **Notification Links**: Click to navigate to related content
-- **Settings Page**: Configure notification preferences
-- **Real-time Updates**: Live updates without page refresh
+### Phone Call Features
+- Display patient phone number to doctor
+- Click-to-call functionality
+- Manual calling from doctor's own phone
+- Simple and personal approach
+- No automated systems or costs
 
 ## 🛠️ Installation
 
-### 1. Database Setup
+### 1. Daily.co Setup
 
-Run the migrations to create the necessary tables:
+1. Sign up at https://dashboard.daily.co/
+2. Go to Developers → API Keys
+3. Copy your API key
 
-```bash
-php artisan migrate
-```
-
-This will create the following tables:
-- `notifications` - Main notifications storage
-- `notification_types` - Notification type definitions
-- `user_notification_preferences` - User notification settings
-- `notification_logs` - Delivery tracking
-
-### 2. Database Seeding
-
-Run the seeders to populate notification types and create test data:
-
-```bash
-php artisan db:seed --class=NotificationTypeSeeder
-php artisan db:seed --class=NotificationTestSeeder
-```
-
-### 3. Configuration
-
-Add the following to your `config/broadcasting.php`:
-
-```php
-'pusher' => [
-    'driver' => 'pusher',
-    'key' => env('PUSHER_APP_KEY'),
-    'secret' => env('PUSHER_APP_SECRET'),
-    'app_id' => env('PUSHER_APP_ID'),
-    'options' => [
-        'cluster' => env('PUSHER_APP_CLUSTER'),
-        'useTLS' => true,
-    ],
-],
-```
+### 2. Environment Configuration
 
 Add to your `.env` file:
 
 ```env
-BROADCAST_DRIVER=pusher
-PUSHER_APP_ID=your_app_id
-PUSHER_APP_KEY=your_app_key
-PUSHER_APP_SECRET=your_app_secret
-PUSHER_APP_CLUSTER=mt1
+DAILY_API_KEY=your_daily_api_key_here
+DAILY_DOMAIN=your-domain.daily.co
 ```
 
-### 4. Frontend Dependencies
-
-Install required frontend packages:
+### 3. Test the Setup
 
 ```bash
-npm install
-npm run dev
+php artisan tinker
+>>> $service = new App\Services\DailyService();
+>>> $room = $service->createRoom('test-room-123');
+>>> print_r($room);
 ```
 
 ## 📁 File Structure
 
 ```
 app/
-├── Notifications/
-│   ├── AppointmentBookedNotification.php
-│   ├── DiagnosisSubmittedNotification.php
-│   ├── ReviewSubmittedNotification.php
-│   ├── VoiceTranscriptionCompletedNotification.php
-│   └── SystemAlertNotification.php
-├── Models/
-│   ├── Notification.php
-│   └── NotificationPreference.php
+├── Services/
+│   └── DailyService.php          # Daily.co API integration
 ├── Http/Controllers/
-│   └── NotificationController.php
-├── Events/
-│   ├── NotificationRead.php
-│   └── NotificationDeleted.php
-└── Broadcasting/
-    └── Channel.php
+│   └── VideoCallController.php   # Video & phone call controller
 
-database/
-├── migrations/
-│   ├── 2025_08_05_090415_create_notifications_table.php
-│   ├── 2025_08_05_090416_create_notification_types_table.php
-│   ├── 2025_08_05_090417_create_user_notification_preferences_table.php
-│   └── 2025_08_05_090418_create_notification_logs_table.php
-└── seeders/
-    ├── NotificationTypeSeeder.php
-    └── NotificationTestSeeder.php
+config/
+└── daily.php                      # Daily.co configuration
 
-resources/
-├── views/
-│   └── notifications/
-│       ├── index.blade.php
-│       ├── dropdown.blade.php
-│       ├── item.blade.php
-│       ├── settings.blade.php
-│       ├── preferences.blade.php
-│       ├── _realtime_js.blade.php
-│       └── _styles.blade.php
-└── js/
-    └── notifications.js
+resources/views/
+├── video/
+│   └── room.blade.php            # Video call interface
+└── components/
+    └── appointment-call-buttons.blade.php  # Call/video buttons
 
 routes/
-└── web.php
-    # Add notification routes
-
-tests/
-└── Feature/
-    └── NotificationTest.php
+├── api.php                        # API routes
+└── web.php                        # Web routes
 ```
 
 ## 🔧 Usage
