@@ -55,7 +55,7 @@ class OpenAIController extends Controller
             }
 
             return $next($request);
-        })->except(['getVisitDetails', 'getPatientVisits']); // Exclude API methods from doctor middleware
+        })->except(['getVisitDetails', 'getPatientVisits', 'dashboard']); // Exclude dashboard for patients
     }
 
     public function showForm(Request $request)
@@ -754,6 +754,11 @@ class OpenAIController extends Controller
     public function dashboard()
     {
         $user = auth()->user();
+        
+        // Patients see a different dashboard
+        if ($user->isPatient()) {
+            return $this->patientDashboard($user);
+        }
 
         // Get trial/subscription info
         $trialInfo = [
@@ -1267,5 +1272,45 @@ class OpenAIController extends Controller
         }
 
         return implode("\n", $processedLines);
+    }
+    
+    /**
+     * Patient-specific dashboard
+     */
+    private function patientDashboard($user)
+    {
+        // Get patient's appointments
+        $appointments = Appointment::with(['doctor.user'])
+            ->where('patient_id', $user->id)
+            ->orderBy('appointment_date', 'desc')
+            ->get();
+            
+        // Get patient's diagnoses
+        $diagnoses = Diagnosis::with(['doctor.user'])
+            ->where('patient_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        // Get patient's reviews
+        $reviews = Review::with(['doctor.user'])
+            ->where('patient_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        // Patient statistics
+        $stats = [
+            'total_appointments' => $appointments->count(),
+            'upcoming_appointments' => $appointments->where('status', 'confirmed')
+                ->where('appointment_date', '>', now())->count(),
+            'completed_appointments' => $appointments->where('status', 'completed')->count(),
+            'total_diagnoses' => $diagnoses->count(),
+        ];
+        
+        return view('patient-dashboard', compact(
+            'appointments',
+            'diagnoses',
+            'reviews',
+            'stats'
+        ));
     }
 }

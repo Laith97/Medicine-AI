@@ -865,7 +865,7 @@
 
 @if($showPricingSection)
 <!-- Pricing Plans Section -->
-<section id="pricing" class="py-5 bg-white">
+<section id="pricing" class="py-5 bg-white" style="display: none;">
     <div class="container">
         <!-- Billing Toggle for All Users -->
         <div class="text-center mb-5">

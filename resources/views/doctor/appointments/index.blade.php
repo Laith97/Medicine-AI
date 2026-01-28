@@ -942,6 +942,13 @@ function cancelAppointment(appointmentId) {
 function confirmAppointment(appointmentId) {
     // Show confirmation dialog
     if (confirm('Are you sure you want to confirm this appointment?')) {
+        // Find and disable the button
+        const btn = event.target.closest('button');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+
         // Create a temporary form to submit the confirmation
         const form = document.createElement('form');
         form.method = 'POST';
@@ -955,11 +962,6 @@ function confirmAppointment(appointmentId) {
         form.appendChild(csrfToken);
         document.body.appendChild(form);
 
-        // Find and update the button that triggered the action
-        // This depends on how the button is passed to the function
-        // In the table HTML, the confirm button is dynamically created
-        // We'll need to update the appropriate button after it's clicked
-
         fetch(form.action, {
             method: 'POST',
             body: new FormData(form),
@@ -970,24 +972,27 @@ function confirmAppointment(appointmentId) {
         })
         .then(response => {
             if (response.ok) {
-                // Success - reload the page to update the appointment status
                 window.location.reload();
             } else {
-                // Handle errors
                 response.json().then(data => {
-                    console.error('Error confirming appointment:', data);
                     showNotification(data.message || 'Failed to confirm appointment. Please try again.', 'error');
                 }).catch(() => {
                     showNotification('Failed to confirm appointment. Please try again.', 'error');
                 });
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-check"></i>';
+                }
             }
         })
         .catch(error => {
-            console.error('Network error confirming appointment:', error);
             showNotification('Network error. Please check your connection and try again.', 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+            }
         })
         .finally(() => {
-            // Remove the temporary form
             if (document.body.contains(form)) {
                 document.body.removeChild(form);
             }

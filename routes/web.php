@@ -1039,10 +1039,18 @@ Route::middleware(['auth'])->get('/video/room/{appointment}', function($appointm
     if (!$appointment->meeting_id) {
         $dailyService = app(\App\Services\DailyService::class);
         try {
-            $dailyService->createRoom($roomName, 120);
+            $room = $dailyService->createRoom($roomName, 120);
             $appointment->update(['meeting_id' => $roomName]);
+            \Log::info('Video room created successfully', ['room' => $roomName]);
         } catch (\Exception $e) {
-            \Log::error('Failed to create video room: ' . $e->getMessage());
+            \Log::error('Failed to create video room', [
+                'room' => $roomName,
+                'error' => $e->getMessage()
+            ]);
+            return view('video.room-error', [
+                'appointment' => $appointment,
+                'error' => 'Unable to create video room. Please contact support.'
+            ]);
         }
     }
     
