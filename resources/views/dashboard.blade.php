@@ -2,6 +2,7 @@
 
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/dashboard-enhancements.css') }}">
 <link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
 <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 <link rel="stylesheet" href="{{ asset('css/custom-dashboard.css') }}">
@@ -1231,7 +1232,16 @@
                                 $currentMonth = $records->where('created_at', '>=', now()->startOfMonth())->count();
                                 $lastMonth = $records->where('created_at', '>=', now()->subMonth()->startOfMonth())
                                     ->where('created_at', '<', now()->startOfMonth())->count();
-                                $growthRate = $lastMonth > 0 ? round((($currentMonth - $lastMonth) / $lastMonth) * 100) : 0;
+                                
+                                // FIXED: Proper growth rate calculation v2
+                                if ($currentMonth == 0 && $lastMonth == 0) {
+                                    $growthRate = 0;
+                                } elseif ($lastMonth == 0) {
+                                    $growthRate = 100;
+                                } else {
+                                    $growthRate = round((($currentMonth - $lastMonth) / $lastMonth) * 100);
+                                }
+                                
                                 echo $growthRate > 0 ? '+'.$growthRate : $growthRate;
                             @endphp%
                         </h3>
@@ -1520,6 +1530,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="{{ asset('js/dashboard.js') }}"></script>
+<script src="{{ asset('js/dashboard-enhancements.js') }}"></script>
 
 <script>
 // Initialize charts when the page loads

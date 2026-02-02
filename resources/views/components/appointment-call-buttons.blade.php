@@ -13,9 +13,15 @@
 @endif
 
 @if($appointment->appointment_type === 'video_call' && $appointment->status === 'confirmed')
+    @php
+        $appointmentEnd = $appointment->getEndTime();
+        $canJoinCall = $appointmentEnd ? now()->isBefore($appointmentEnd) : now()->isBefore($appointment->appointment_date->copy()->addHour());
+    @endphp
+    @if($canJoinCall)
     <a href="{{ route('video.room', $appointment->id) }}" class="btn btn-primary" target="_blank">
         <i class="fas fa-video"></i> Start Video Call
     </a>
+    @endif
 @endif
 
 @push('scripts')

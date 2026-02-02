@@ -3,6 +3,7 @@
 @section('title', 'Doctor Dashboard')
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/dashboard-enhancements.css') }}">
 <style>
 /* Professional Dashboard Header Styling */
 .dashboard-header {
@@ -133,7 +134,10 @@
         <div class="row">
             <!-- Today's Appointments -->
             <div class="col-lg-3 col-md-6 mb-4">
-                <div class="stats-card">
+                <div class="stats-card" role="region" aria-label="Today's appointments">
+                    @if($stats['today_appointments'] > 0)
+                        <span class="notification-pulse"></span>
+                    @endif
                     <div class="stats-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
                         <i class="fas fa-calendar-day"></i>
                     </div>
@@ -144,7 +148,10 @@
 
             <!-- Pending Appointments -->
             <div class="col-lg-3 col-md-6 mb-4">
-                <div class="stats-card">
+                <div class="stats-card" role="region" aria-label="Pending appointments">
+                    @if($stats['pending_appointments'] > 0)
+                        <span class="notification-pulse"></span>
+                    @endif
                     <div class="stats-icon" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);">
                         <i class="fas fa-clock"></i>
                     </div>
@@ -274,7 +281,7 @@
 
                     @if($todayAppointments->count() > 0)
                         @foreach($todayAppointments as $appointment)
-                            <div class="d-flex align-items-center p-3 border rounded mb-3">
+                            <div class="d-flex align-items-center p-3 border rounded mb-3 appointment-card">
                                 <!-- Time -->
                                 <div class="me-3" style="min-width: 80px;">
                                     <div class="fw-medium">{{ $appointment->appointment_date->format('g:i A') }}</div>
@@ -305,9 +312,15 @@
                             </div>
                         @endforeach
                     @else
-                        <div class="empty-state">
-                            <i class="fas fa-calendar-check"></i>
-                            <p>No appointments scheduled for today</p>
+                        <div class="empty-state-enhanced">
+                            <div class="empty-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <h5>No appointments today</h5>
+                            <p>Your schedule is clear. Time to catch up on other tasks!</p>
+                            <a href="{{ route('doctor.appointments.create') }}" class="btn btn-primary-custom">
+                                <i class="fas fa-plus me-2"></i>Schedule Appointment
+                            </a>
                         </div>
                     @endif
                 </div>
@@ -318,30 +331,38 @@
                 <!-- Quick Actions -->
                 <div class="table-card mb-4">
                     <h6 class="mb-3"><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('doctor.appointments.index') }}" class="btn btn-primary-custom">
-                            <i class="fas fa-calendar me-2"></i>View All Appointments
+                    <div class="d-flex flex-column gap-2">
+                        <a href="{{ route('doctor.appointments.index') }}" class="quick-action-enhanced">
+                            <div class="action-icon"><i class="fas fa-calendar"></i></div>
+                            <div class="action-content">
+                                <h6>View Appointments</h6>
+                                <p>Manage your schedule</p>
+                            </div>
+                            <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
                         </a>
-                        <a href="{{ route('doctor.availability.index') }}" class="btn btn-success">
-                            <i class="fas fa-clock me-2"></i>Manage Availability
+                        <a href="{{ route('doctor.availability.index') }}" class="quick-action-enhanced">
+                            <div class="action-icon" style="background: linear-gradient(135deg, #28a745, #20c997);"><i class="fas fa-clock"></i></div>
+                            <div class="action-content">
+                                <h6>Manage Availability</h6>
+                                <p>Set working hours</p>
+                            </div>
+                            <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
                         </a>
-                        <a href="{{ route('doctor.settings.appointments') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-cog me-2"></i>Appointment Settings
+                        <a href="{{ route('doctor.notes.create') }}" class="quick-action-enhanced">
+                            <div class="action-icon" style="background: linear-gradient(135deg, #28a745, #20c997);"><i class="fas fa-plus"></i></div>
+                            <div class="action-content">
+                                <h6>Add Note</h6>
+                                <p>Create patient note</p>
+                            </div>
+                            <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
                         </a>
-                        <a href="{{ route('doctor.landing-page.index') }}" class="btn btn-warning">
-                            <i class="fas fa-globe me-2"></i>Landing Page
-                        </a>
-                        <a href="{{ route('doctor.reviews.index') }}" class="btn btn-info">
-                            <i class="fas fa-star me-2"></i>View Reviews
-                        </a>
-                        <a href="{{ route('doctor.notes.index') }}" class="btn btn-warning">
-                            <i class="fas fa-sticky-note me-2"></i>My Notes
-                        </a>
-                        <a href="{{ route('doctor.notes.create') }}" class="btn btn-success">
-                            <i class="fas fa-plus me-2"></i>Add Note
-                        </a>
-                        <a href="{{ route('doctor.blog.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-blog me-2"></i>Manage Blog
+                        <a href="{{ route('doctor.reviews.index') }}" class="quick-action-enhanced">
+                            <div class="action-icon" style="background: linear-gradient(135deg, #17a2b8, #138496);"><i class="fas fa-star"></i></div>
+                            <div class="action-content">
+                                <h6>View Reviews</h6>
+                                <p>Patient feedback</p>
+                            </div>
+                            <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
                         </a>
                     </div>
                 </div>
@@ -480,6 +501,7 @@ const chartLabels = @json($chartLabels ?? []);
 const chartData = @json($chartData ?? []);
 const records = @json($records ?? []);
 </script>
+<script src="{{ asset('js/dashboard-enhancements.js') }}"></script>
 @endsection
 
 @push('styles')

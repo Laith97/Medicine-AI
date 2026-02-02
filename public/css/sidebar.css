@@ -11,7 +11,7 @@
 
 /* Adjust sidebar to start below top-bar */
 .sidebar {
-    top: 74px !important;
+    top: 84px !important;
 }
 
 /* Push main content below fixed top-bar */
