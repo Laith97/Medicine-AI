@@ -1,4 +1,4 @@
-<aside id="appSidebar" class="sidebar">
+<aside id="appSidebar" class="sidebar" style="top: 84px">
   <nav class="sidebar-nav">
     <ul class="nav flex-column">
       @auth
