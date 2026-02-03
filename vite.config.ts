@@ -7,7 +7,9 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
+                'resources/css/dashboard-enhancements.css',
                 'resources/js/app.js',
+                'resources/js/dashboard-enhancements.js',
                 'resources/js/analytics-dashboard/main.tsx',
                 'resources/js/voice-assistant-main.jsx'
             ],

@@ -2,7 +2,7 @@
 
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/dashboard-enhancements.css') }}">
+@vite(['resources/css/dashboard-enhancements.css'])
 <link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
 <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 <link rel="stylesheet" href="{{ asset('css/custom-dashboard.css') }}">
@@ -1530,7 +1530,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="{{ asset('js/dashboard.js') }}"></script>
-<script src="{{ asset('js/dashboard-enhancements.js') }}"></script>
+@vite(['resources/js/dashboard-enhancements.js'])
 
 <script>
 // Initialize charts when the page loads

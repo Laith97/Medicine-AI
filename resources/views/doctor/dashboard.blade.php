@@ -3,7 +3,7 @@
 @section('title', 'Doctor Dashboard')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/dashboard-enhancements.css') }}">
+@vite(['resources/css/dashboard-enhancements.css'])
 <style>
 /* Professional Dashboard Header Styling */
 .dashboard-header {
@@ -501,7 +501,7 @@ const chartLabels = @json($chartLabels ?? []);
 const chartData = @json($chartData ?? []);
 const records = @json($records ?? []);
 </script>
-<script src="{{ asset('js/dashboard-enhancements.js') }}"></script>
+@vite(['resources/js/dashboard-enhancements.js'])
 @endsection
 
 @push('styles')
