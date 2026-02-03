@@ -694,13 +694,7 @@
                             <textarea id="transcriptionArea" class="form-control" style="height: 100%; border: none; background: transparent; resize: none; display: none;" placeholder="Start ambient listening to see transcription here..."></textarea>
                         </div>
                     </div>
-                    <div id="speakerLegend" class="p-3 bg-gradient" style="background: linear-gradient(135deg, #DE6262 0%, #c55252 100%); border-top: 3px solid #fff;">
-                        <div class="d-flex align-items-center justify-content-center gap-3 text-white">
-                            <i class="fas fa-users"></i>
-                            <span class="badge bg-white text-danger px-3 py-2">Speaker 1</span>
-                            <span class="badge bg-white text-primary px-3 py-2">Speaker 2</span>
-                        </div>
-                    </div>
+
 
                     <!-- Transcript Controls -->
                     <div class="p-3 bg-light d-flex justify-content-between">
@@ -1206,17 +1200,18 @@
 
         if (copyTranscriptBtn) {
             copyTranscriptBtn.addEventListener('click', function() {
-                // Get all transcript text content
-                const transcriptContainer = document.querySelector('.transcript-container');
+                const transcriptContainer = document.getElementById('react-transcript-container');
                 if (transcriptContainer) {
                     const text = transcriptContainer.innerText || transcriptContainer.textContent;
+                    if (!text.trim()) {
+                        alert('No transcript to copy');
+                        return;
+                    }
                     navigator.clipboard.writeText(text).then(function() {
-                        // Show success feedback
                         const originalHTML = copyTranscriptBtn.innerHTML;
                         copyTranscriptBtn.innerHTML = '<i class="fas fa-check me-1"></i> Copied!';
                         copyTranscriptBtn.classList.remove('btn-outline-secondary');
                         copyTranscriptBtn.classList.add('btn-success');
-
                         setTimeout(function() {
                             copyTranscriptBtn.innerHTML = originalHTML;
                             copyTranscriptBtn.classList.add('btn-outline-secondary');
@@ -1229,19 +1224,27 @@
 
         if (clearTranscriptBtn) {
             clearTranscriptBtn.addEventListener('click', function() {
+                const transcriptContainer = document.getElementById('react-transcript-container');
+                if (!transcriptContainer || !transcriptContainer.innerText.trim()) {
+                    alert('No transcript to clear');
+                    return;
+                }
                 if (confirm('Are you sure you want to clear the transcript? This cannot be undone.')) {
-                    // Clear React transcript component by dispatching custom event
                     window.dispatchEvent(new CustomEvent('clearTranscript'));
+                    transcriptContainer.innerHTML = '';
                 }
             });
         }
 
         if (exportTranscriptBtn) {
             exportTranscriptBtn.addEventListener('click', function() {
-                // Get all transcript content for export
-                const transcriptContainer = document.querySelector('.transcript-container');
+                const transcriptContainer = document.getElementById('react-transcript-container');
                 if (transcriptContainer) {
                     const text = transcriptContainer.innerText || transcriptContainer.textContent;
+                    if (!text.trim()) {
+                        alert('No transcript to export');
+                        return;
+                    }
                     const blob = new Blob([text], { type: 'text/plain' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -1251,13 +1254,10 @@
                     a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
-
-                    // Show success feedback
                     const originalHTML = exportTranscriptBtn.innerHTML;
                     exportTranscriptBtn.innerHTML = '<i class="fas fa-check me-1"></i> Exported!';
                     exportTranscriptBtn.classList.remove('btn-outline-primary');
                     exportTranscriptBtn.classList.add('btn-success');
-
                     setTimeout(function() {
                         exportTranscriptBtn.innerHTML = originalHTML;
                         exportTranscriptBtn.classList.add('btn-outline-primary');
@@ -1527,7 +1527,7 @@
     const completeBtn = document.getElementById('completeConsultationBtn');
     if (diagnosisText && completeBtn) {
         diagnosisText.addEventListener('input', function() {
-            completeBtn.disabled = this.value.trim().length < 10;
+            completeBtn.disabled = this.value.trim().length === 0;
         });
         
         completeBtn.addEventListener('click', function() {

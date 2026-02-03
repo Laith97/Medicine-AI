@@ -1375,11 +1375,11 @@ body .dropdown .dropdown-menu.show,
             .primary-menu .sub-menu-container .menu-item.current .menu-link {
                 border-left-color: #DE6262 !important;
             }
-        }
+        
     </style>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'Medical Demo | Canvas')</title>
+    <title>@yield('title', 'MedcuraAI')</title>
 </head>
 
 <body class="stretched page-transition"

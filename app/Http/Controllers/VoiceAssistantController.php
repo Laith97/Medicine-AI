@@ -2701,6 +2701,7 @@ INSTRUCTIONS:
                     'speaker_count' => $speakerCount,
                     'has_proper_diarization' => $hasProperDiarization,
                     'transcription_preview' => substr($improvedTranscription, 0, 200),
+                    'transcription_full' => $improvedTranscription, // LOG FULL TRANSCRIPT
                     'has_multiple_speaker_pattern' => preg_match('/\[Speaker \d+\]:[^\n]+\n\[Speaker \d+\]:/', $improvedTranscription)
                 ]);
                 
@@ -2725,14 +2726,14 @@ INSTRUCTIONS:
                             'messages' => [
                                 [
                                     'role' => 'system',
-                                    'content' => 'You are a medical transcription assistant. Your task is to identify and separate speakers in a doctor-patient medical consultation transcript. This is for legitimate medical documentation purposes. Return ONLY valid JSON format: {"speakers": [{"speaker": 1, "text": "..."}, {"speaker": 2, "text": "..."}]}. Speaker 1 is typically the healthcare provider (doctor/nurse), Speaker 2 is the patient. Separate based on conversational turns and context.'
+                                    'content' => 'You are a medical transcription assistant. Your task is to identify and separate speakers in a doctor-patient medical consultation transcript. CRITICAL: You MUST use the EXACT text provided. DO NOT generate, invent, or create any new dialogue. Only separate the existing text by speaker. Return ONLY valid JSON format: {"speakers": [{"speaker": 1, "text": "..."}, {"speaker": 2, "text": "..."}]}. If the text is too short or unclear to separate speakers, return it as a single speaker with the EXACT original text.'
                                 ],
                                 [
                                     'role' => 'user',
-                                    'content' => "Medical consultation transcript to separate by speaker:\n\n" . $cleanTranscription . "\n\nReturn JSON with speakers array."
+                                    'content' => "Separate this EXACT medical transcript by speaker. DO NOT create new dialogue. Use ONLY the text provided below:\n\n" . $cleanTranscription . "\n\nReturn JSON with speakers array using the EXACT text above."
                                 ]
                             ],
-                            'temperature' => 0.1,
+                            'temperature' => 0.0,
                             'max_tokens' => 1000
                         ]);
                         
