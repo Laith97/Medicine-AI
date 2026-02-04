@@ -31,6 +31,8 @@ use App\Http\Controllers\Admin\SubscriptionPlanController;
 use App\Http\Controllers\Admin\AdminWaitlistController;
 use App\Models\SystemSetting;
 use App\Models\User;
+use App\Models\Appointment;
+use App\Models\Review;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Auth;
@@ -95,6 +97,14 @@ Route::get('/', function () {
     $professionalMonthly = SystemSetting::get('saas_professional_monthly', 30);
     $professionalYearly = SystemSetting::get('saas_professional_yearly', 300);
 
+    // Get real statistics from database
+    $stats = [
+        'doctors' => User::where('role', 'doctor')->count(),
+        'appointments' => Appointment::count(),
+        'patients' => Appointment::distinct('patient_id')->count('patient_id'),
+        'avg_rating' => number_format(Review::avg('rating') ?? 0, 1),
+    ];
+
     // Define SaaS pricing plans (no free plan)
     $pricingPlans = [
         'professional' => [
@@ -130,7 +140,7 @@ Route::get('/', function () {
         ]
     ];
 
-    return view('main', compact('showPricingSection', 'pricingPlans'));
+    return view('main', compact('showPricingSection', 'pricingPlans', 'stats'));
 });
 
 // Registration choice page
