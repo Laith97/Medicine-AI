@@ -85,9 +85,6 @@ function showClinicalDataSummary(clinicalData) {
         if (clinicalData.voice_diagnosis) {
             summaryHtml += '<div class="col-12"><strong>🎤 Voice Assistant Diagnosis:</strong> ' + clinicalData.voice_diagnosis + '</div>';
         }
-        if (clinicalData.reason_for_visit) {
-            summaryHtml += '<div class="col-12"><strong>📋 Reason for Visit:</strong> ' + clinicalData.reason_for_visit + '</div>';
-        }
 
         summaryHtml += '</div>';
         summaryHtml += '<div class="mt-2 small text-success"><i class="fas fa-check-circle me-1"></i>AI analyzed the above verified clinical data to provide medication suggestions.</div>';
@@ -208,8 +205,7 @@ $('#aiSuggestBtn').click(function(e) {
             current_diagnosis: JSON.stringify(currentDiagnosis),
             past_diagnoses: JSON.stringify(pastDiagnoses),
             voice_diagnosis: JSON.stringify(voiceDiagnosis),
-            doctor_notes: @json($appointment->doctor_notes),
-            reason_for_visit: @json($appointment->reason)
+            doctor_notes: @json($appointment->doctor_notes)
         },
         success: function(response) {
             button.prop('disabled', false).html('<i class="fas fa-magic me-1"></i>Suggest with AI');
@@ -520,16 +516,7 @@ function populateDataSourcesModal() {
             importance: 'helpful',
             reason: 'Additional clinical context from voice sessions'
         },
-        {
-            name: 'Reason for Visit',
-            status: appointment.reason ? 'available' : 'missing',
-            example: appointment.reason || 'No reason specified',
-            location: 'Appointment creation (Doctor/Patient - Context only)',
-            reliability: 'Patient-reported',
-            icon: 'fas fa-calendar-check',
-            importance: 'context',
-            reason: 'Patient-reported symptom - used for context only, not reliable alone'
-        }
+
     ];
 
     let tableHtml = '';

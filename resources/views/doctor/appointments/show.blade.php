@@ -1509,20 +1509,30 @@
                                 <td>Number of previous missed appointments</td>
                             </tr>
                             <tr>
+                                <td><strong>Cancellation Count</strong></td>
+                                <td class="text-center"><span class="badge bg-secondary">{{ $features[1] ?? 0 }}</span></td>
+                                <td>Number of cancelled appointments</td>
+                            </tr>
+                            <tr>
                                 <td><strong>Days Since Last Visit</strong></td>
-                                <td class="text-center"><span class="badge bg-info">{{ $features[1] ?? 0 }}</span></td>
+                                <td class="text-center"><span class="badge bg-info">{{ $features[2] ?? 0 }}</span></td>
                                 <td>Days since patient's last appointment</td>
                             </tr>
                             <tr>
+                                <td><strong>Visit Frequency</strong></td>
+                                <td class="text-center"><span class="badge bg-primary">{{ number_format($features[3] ?? 0, 1) }}</span></td>
+                                <td>Average appointments per year</td>
+                            </tr>
+                            <tr>
                                 <td><strong>Patient Age</strong></td>
-                                <td class="text-center"><span class="badge bg-primary">{{ $features[2] ?? 0 }}</span></td>
+                                <td class="text-center"><span class="badge bg-primary">{{ $features[4] ?? 0 }}</span></td>
                                 <td>Patient's age in years</td>
                             </tr>
                             <tr>
                                 <td><strong>Gender</strong></td>
                                 <td class="text-center">
-                                    <span class="badge {{ ($features[3] ?? 0) == 1 ? 'bg-danger' : 'bg-secondary' }}">
-                                        {{ ($features[3] ?? 0) == 1 ? 'Male' : 'Female/Other' }}
+                                    <span class="badge {{ ($features[5] ?? 0) == 1 ? 'bg-danger' : 'bg-secondary' }}">
+                                        {{ ($features[5] ?? 0) == 1 ? 'Male' : 'Female/Other' }}
                                     </span>
                                 </td>
                                 <td>Gender encoding (1=Male, 0=Female/Other)</td>
@@ -1530,17 +1540,27 @@
                             <tr>
                                 <td><strong>Chronic Conditions</strong></td>
                                 <td class="text-center">
-                                    <span class="badge {{ ($features[4] ?? 0) > 0 ? 'bg-danger' : 'bg-success' }}">
-                                        {{ $features[4] ?? 0 }}
+                                    <span class="badge {{ ($features[6] ?? 0) > 0 ? 'bg-danger' : 'bg-success' }}">
+                                        {{ $features[6] ?? 0 }}
                                     </span>
                                 </td>
-                                <td>Count of high-risk conditions from appointment records</td>
+                                <td>Count of high-risk conditions from doctor diagnoses</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Current Medications</strong></td>
+                                <td class="text-center"><span class="badge bg-info">{{ $features[7] ?? 0 }}</span></td>
+                                <td>Number of current medications</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Appointment Lead Time</strong></td>
+                                <td class="text-center"><span class="badge bg-secondary">{{ $features[8] ?? 0 }}</span></td>
+                                <td>Days between booking and appointment</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="alert alert-info mt-3">
-                    <small><i class="fas fa-info-circle me-1"></i><strong>Note:</strong> This is the current MVP implementation using 5 basic features. Future versions will include more comprehensive analysis.</small>
+                    <small><i class="fas fa-info-circle me-1"></i><strong>Enhanced ML Features:</strong> Now using 9 features including cancellations, visit frequency, medications, and appointment lead time for improved accuracy.</small>
                 </div>
 
                 <hr class="my-4">

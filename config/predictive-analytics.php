@@ -21,16 +21,44 @@ return [
     |--------------------------------------------------------------------------
     |
     | Medical conditions considered high-risk for hospitalization prediction
+    | Includes common medical abbreviations and terminology variations
     |
     */
 
     'high_risk_conditions' => [
-        'diabetes',
-        'hypertension',
-        'heart disease',
-        'cancer',
-        'stroke',
-        'kidney disease',
+        // Diabetes
+        'diabetes', 'diabetes mellitus', 't1dm', 't2dm', 'diabetic',
+        
+        // Cardiovascular
+        'hypertension', 'high blood pressure', 'htn',
+        'heart disease', 'coronary artery disease', 'cad', 
+        'heart failure', 'chf', 'congestive heart failure',
+        'myocardial infarction', 'heart attack', 'mi',
+        'arrhythmia', 'atrial fibrillation', 'afib',
+        
+        // Cerebrovascular
+        'stroke', 'cva', 'cerebrovascular accident', 'tia',
+        
+        // Respiratory
+        'copd', 'chronic obstructive pulmonary disease',
+        'asthma', 'emphysema', 'chronic bronchitis',
+        
+        // Renal
+        'kidney disease', 'renal failure', 'ckd', 'chronic kidney disease',
+        'esrd', 'end stage renal disease', 'dialysis',
+        
+        // Oncology
+        'cancer', 'carcinoma', 'lymphoma', 'leukemia', 
+        'metastatic', 'malignancy', 'tumor',
+        
+        // Hepatic
+        'cirrhosis', 'liver disease', 'hepatic failure',
+        
+        // Immunological
+        'immunocompromised', 'hiv', 'aids',
+        
+        // Metabolic
+        'obesity', 'morbid obesity', 'bmi >40',
     ],
 
     /*

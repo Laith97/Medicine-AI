@@ -121,10 +121,14 @@ class PredictiveAnalyticsService
             'features' => $features,
             'feature_breakdown' => [
                 'no_show_count' => $features[0] ?? 'N/A',
-                'last_visit_days' => $features[1] ?? 'N/A',
-                'age' => $features[2] ?? 'N/A',
-                'gender' => $features[3] ?? 'N/A',
-                'chronic_conditions' => $features[4] ?? 'N/A'
+                'cancellation_count' => $features[1] ?? 'N/A',
+                'last_visit_days' => $features[2] ?? 'N/A',
+                'visit_frequency' => $features[3] ?? 'N/A',
+                'age' => $features[4] ?? 'N/A',
+                'gender' => $features[5] ?? 'N/A',
+                'chronic_conditions' => $features[6] ?? 'N/A',
+                'medication_count' => $features[7] ?? 'N/A',
+                'lead_time' => $features[8] ?? 'N/A',
             ]
         ]);
 
@@ -275,59 +279,74 @@ class PredictiveAnalyticsService
      */
     private function calculateRuleBasedRisks(array $features): array
     {
-        // Features: [no_show_count, last_visit_days, age, gender, chronic_conditions]
+        // Features: [no_show_count, cancellation_count, last_visit_days, visit_frequency, age, gender, chronic_conditions, medication_count, lead_time]
 
         $noShowCount = $features[0] ?? 0;
-        $lastVisitDays = $features[1] ?? 365;
-        $age = $features[2] ?? 30;
-        $gender = $features[3] ?? 0; // 1 = male, 0 = female/other
-        $chronicConditions = $features[4] ?? 0;
+        $cancellationCount = $features[1] ?? 0;
+        $lastVisitDays = $features[2] ?? 365;
+        $visitFrequency = $features[3] ?? 0;
+        $age = $features[4] ?? 30;
+        $gender = $features[5] ?? 0;
+        $chronicConditions = $features[6] ?? 0;
+        $medicationCount = $features[7] ?? 0;
+        $leadTime = $features[8] ?? 7;
 
         // No-show risk calculation
         $noShowRisk = 0.0;
 
-        // Higher risk for patients with previous no-shows
         if ($noShowCount > 0) {
-            $noShowRisk += min($noShowCount * 0.2, 0.5); // Up to 50% for multiple no-shows
+            $noShowRisk += min($noShowCount * 0.2, 0.5);
         }
 
-        // Higher risk for longer time since last visit
+        if ($cancellationCount > 0) {
+            $noShowRisk += min($cancellationCount * 0.1, 0.3);
+        }
+
         if ($lastVisitDays > 365) {
             $noShowRisk += 0.15;
         } elseif ($lastVisitDays > 180) {
             $noShowRisk += 0.08;
         }
 
-        // Age factor (slightly higher risk for very young or very old)
         if ($age < 25 || $age > 70) {
             $noShowRisk += 0.05;
+        }
+
+        if ($leadTime < 2) {
+            $noShowRisk += 0.1; // Last-minute appointments higher risk
         }
 
         // Hospitalization risk calculation
         $hospitalizationRisk = 0.0;
 
-        // Base risk from chronic conditions
         if ($chronicConditions >= 3) {
-            $hospitalizationRisk += 0.4; // High risk for multiple chronic conditions
+            $hospitalizationRisk += 0.4;
         } elseif ($chronicConditions >= 2) {
             $hospitalizationRisk += 0.25;
         } elseif ($chronicConditions >= 1) {
             $hospitalizationRisk += 0.15;
         }
 
-        // Age factor for hospitalization
+        if ($medicationCount >= 5) {
+            $hospitalizationRisk += 0.2; // Polypharmacy risk
+        } elseif ($medicationCount >= 3) {
+            $hospitalizationRisk += 0.1;
+        }
+
         if ($age > 65) {
             $hospitalizationRisk += 0.2;
         } elseif ($age > 50) {
             $hospitalizationRisk += 0.1;
         }
 
-        // Gender factor (males slightly higher risk for some conditions)
         if ($gender === 1) {
             $hospitalizationRisk += 0.05;
         }
 
-        // Ensure risks don't exceed 1.0
+        if ($visitFrequency > 12) {
+            $hospitalizationRisk += 0.15; // Frequent visits indicate health issues
+        }
+
         $noShowRisk = min($noShowRisk, 1.0);
         $hospitalizationRisk = min($hospitalizationRisk, 1.0);
 

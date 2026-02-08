@@ -186,7 +186,6 @@ REQUIRED JSON FORMAT:
             $clinicalDataUsed = [];
             if (!empty($symptomsText)) $clinicalDataUsed['symptoms'] = $symptomsText;
             if (!empty($additionalData['doctor_notes'] ?? '')) $clinicalDataUsed['doctor_notes'] = $additionalData['doctor_notes'];
-            if (!empty($additionalData['reason_for_visit'] ?? '')) $clinicalDataUsed['reason_for_visit'] = $additionalData['reason_for_visit'];
 
             // Include CURRENT DIAGNOSIS in clinical data tracking
             if (!empty($additionalData['current_diagnosis']['diagnosis_text'] ?? '')) {
@@ -372,13 +371,12 @@ REQUIRED JSON FORMAT:
         $currentDiagnosis = $additionalData['current_diagnosis'] ?? null;
         $pastDiagnoses = $additionalData['past_diagnoses'] ?? [];
         $voiceDiagnosis = $additionalData['voice_diagnosis'] ?? '';
-        $reasonForVisit = $additionalData['reason_for_visit'] ?? '';
 
         // Combine verified clinical data sources - ONLY DOCTOR-WRITTEN CONTENT
+        // NEVER use patient-reported reason_for_visit
         $clinicalData = [];
         if (!empty($symptomsText)) $clinicalData[] = "Symptoms: " . $symptomsText;
         if (!empty($doctorNotes)) $clinicalData[] = "Doctor Notes: " . $doctorNotes;
-        if (!empty($reasonForVisit)) $clinicalData[] = "Reason for Visit: " . $reasonForVisit;
 
         // Include CURRENT DIAGNOSIS (primary clinical driver)
         if ($currentDiagnosis && isset($currentDiagnosis['diagnosis_text'])) {
@@ -421,8 +419,8 @@ REQUIRED JSON FORMAT:
         $verifiedClinicalText = implode("\n", $clinicalData);
 
         // CRITICAL SAFETY: Check if we have ONLY patient-reported symptoms (unreliable)
-        $hasOnlyPatientSymptoms = empty($doctorNotes) && empty($currentDiagnosis) && empty($pastDiagnoses) && empty($voiceDiagnosis) &&
-                                  !empty($reasonForVisit);
+        // Patient-reported data should NEVER be used for medication decisions
+        $hasOnlyPatientSymptoms = empty($doctorNotes) && empty($currentDiagnosis) && empty($pastDiagnoses) && empty($voiceDiagnosis);
 
         // CRITICAL SAFETY CHECK: Verify essential data is available
         $missingCriticalData = [];
@@ -820,31 +818,18 @@ REQUIRED JSON FORMAT:
                                   !empty($additionalData['reason_for_visit'] ?? '');
 
         // CRITICAL SAFETY: Only provide suggestions when we have verified clinical data
-        if (empty($suggestions) && (empty($verifiedClinicalText) || $hasOnlyPatientSymptoms)) {
-            if ($hasOnlyPatientSymptoms) {
-                $suggestions[] = [
-                    'med' => 'Doctor Verification Required',
-                    'dosage' => 'N/A',
-                    'freq' => 'N/A',
-                    'dur' => 'N/A',
-                    'confidence' => 0,
-                    'reason' => 'Patient-reported symptoms require DOCTOR verification before medication suggestions. AI cannot make medication recommendations based on unverified patient input.',
-                    'warnings' => ['Patient symptoms not verified by healthcare professional', 'Clinical assessment required before medication decisions'],
-                    'interactions' => ['Cannot check interactions without verified clinical data']
-                ];
-                $risk_flags[] = '⚠️ PATIENT SYMPTOMS NOT VERIFIED - Doctor clinical assessment required';
-            } else {
-                $suggestions[] = [
-                    'med' => 'Clinical Documentation Required',
-                    'dosage' => 'N/A',
-                    'freq' => 'N/A',
-                    'dur' => 'N/A',
-                    'confidence' => 0,
-                    'reason' => 'No verified clinical data available. Please document symptoms, diagnosis, or clinical findings in the appointment before requesting AI medication suggestions.',
-                    'warnings' => ['Clinical assessment and documentation required', 'Doctor must verify patient symptoms and medical history'],
-                    'interactions' => ['Cannot provide medication suggestions without verified clinical data']
-                ];
-            }
+        if (empty($suggestions) && $hasOnlyPatientSymptoms) {
+            $suggestions[] = [
+                'med' => 'Doctor Clinical Assessment Required',
+                'dosage' => 'N/A',
+                'freq' => 'N/A',
+                'dur' => 'N/A',
+                'confidence' => 0,
+                'reason' => 'AI cannot provide medication suggestions without doctor clinical assessment. Patient-reported symptoms are not sufficient for medication decisions.',
+                'warnings' => ['Doctor must document clinical findings', 'Patient-reported data cannot be used for prescriptions'],
+                'interactions' => ['Cannot check interactions without verified clinical data']
+            ];
+            $risk_flags[] = '⚠️ DOCTOR CLINICAL ASSESSMENT REQUIRED - Patient-reported data insufficient';
         }
 
         // If still no specific suggestions, provide general guidance
