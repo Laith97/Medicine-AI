@@ -1659,8 +1659,8 @@
             
             console.log('Creating patient with:', {name, phone, email, age, gender});
             
-            if (!name || !phone) {
-                alert('Name and phone are required');
+            if (!name || !age || !gender) {
+                alert('Name, age, and gender are required');
                 return;
             }
             

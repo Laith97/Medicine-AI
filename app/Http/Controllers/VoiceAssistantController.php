@@ -1383,7 +1383,7 @@ class VoiceAssistantController extends Controller
     {
         $request->validate([
             'newPatientName' => 'required|string|max:255',
-            'newPatientEmail' => 'required|email|unique:users,email',
+            'newPatientEmail' => 'nullable|email|unique:users,email',
             'newPatientAge' => 'required|integer|min:1|max:150',
             'newPatientGender' => 'required|in:male,female,other',
             'newPatientPhone' => 'nullable|string|max:20',
@@ -1396,7 +1396,7 @@ class VoiceAssistantController extends Controller
             // Create new patient user
             $patient = User::create([
                 'name' => $request->input('newPatientName'),
-                'email' => $request->input('newPatientEmail'),
+                'email' => $request->input('newPatientEmail') ?: 'patient_' . time() . '@temp.local',
                 'password' => Hash::make($temporaryPassword), // Secure random password
                 'role' => 'patient',
                 'gender' => $request->input('newPatientGender'),
