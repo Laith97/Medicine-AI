@@ -1381,13 +1381,20 @@ class VoiceAssistantController extends Controller
 
     public function createNewPatient(Request $request)
     {
-        $request->validate([
-            'newPatientName' => 'required|string|max:255',
-            'newPatientEmail' => 'nullable|email|unique:users,email',
-            'newPatientAge' => 'required|integer|min:1|max:150',
-            'newPatientGender' => 'required|in:male,female,other',
-            'newPatientPhone' => 'nullable|string|max:20',
-        ]);
+        try {
+            $request->validate([
+                'newPatientName' => 'required|string|max:255',
+                'newPatientEmail' => 'nullable|email|unique:users,email',
+                'newPatientAge' => 'required|integer|min:1|max:150',
+                'newPatientGender' => 'required|in:male,female,other',
+                'newPatientPhone' => 'nullable|string|max:20',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . implode(', ', $e->validator->errors()->all())
+            ], 422);
+        }
 
         try {
             // Generate a secure random password for the new patient
