@@ -1399,13 +1399,11 @@ class VoiceAssistantController extends Controller
                 'email' => $request->input('newPatientEmail'),
                 'password' => Hash::make($temporaryPassword), // Secure random password
                 'role' => 'patient',
-                'age' => $request->input('newPatientAge'),
                 'gender' => $request->input('newPatientGender'),
                 'phone' => $request->input('newPatientPhone'),
                 'primary_doctor_id' => Auth::id(), // Assign current doctor as primary
                 'email_verified_at' => now(), // Auto-verify for doctor-created accounts
-                'requires_password_reset' => true, // Require password change on first login
-                'date_of_birth' => null, // Will be calculated if needed later
+                'date_of_birth' => now()->subYears($request->input('newPatientAge', 25)), // Calculate DOB from age
             ]);
 
             return response()->json([

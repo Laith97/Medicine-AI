@@ -119,11 +119,11 @@
                         </div>
                     </div>
                     <div class="d-flex gap-2 mt-3">
-                        <button id="createNewPatientBtn" class="btn btn-success">
+                        <button type="button" id="createNewPatientBtn" class="btn btn-success">
                             <i class="fas fa-user-plus me-2"></i>
                             Create Patient
                         </button>
-                        <button id="cancelNewPatientBtn" class="btn btn-secondary">
+                        <button type="button" id="cancelNewPatientBtn" class="btn btn-secondary">
                             <i class="fas fa-times me-2"></i>
                             Cancel
                         </button>
@@ -1156,36 +1156,100 @@
             if (generateAnalysisBtn) {
                 generateAnalysisBtn.disabled = false;
                 generateAnalysisBtn.style.opacity = '1';
+                generateAnalysisBtn.style.cursor = 'pointer';
                 console.log('Analysis button enabled via server transcript');
             }
             if (generateClinicalDocBtn) {
                 generateClinicalDocBtn.disabled = false;
                 generateClinicalDocBtn.style.opacity = '1';
+                generateClinicalDocBtn.style.cursor = 'pointer';
                 console.log('Clinical doc button enabled via server transcript');
             }
+        });
+
+        // Add click handler for AI Analysis button
+        document.getElementById('generateAnalysisBtn').addEventListener('click', function() {
+            console.log('AI Analysis button clicked');
+            const transcriptContainer = document.getElementById('react-transcript-container');
+            const transcript = transcriptContainer ? transcriptContainer.innerText.trim() : '';
+            
+            if (!transcript || transcript.length < 20) {
+                alert('Please record more audio. Transcript is too short for analysis.');
+                return;
+            }
+            
+            const patientSelect = document.getElementById('patientSelect');
+            if (!patientSelect || !patientSelect.value) {
+                alert('Please select a patient first');
+                return;
+            }
+            
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Analyzing...';
+            
+            fetch('{{ route("ai.voice-assistant.generate-ai-analysis") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: new URLSearchParams({
+                    transcription: transcript,
+                    sessionId: sessionId || '',
+                    selectedPatient: patientSelect.value,
+                    _token: '{{ csrf_token() }}'
+                })
+            })
+            .then(r => {
+                if (!r.ok) throw new Error('Server error: ' + r.status);
+                return r.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Show in modal
+                    const modalHtml = `
+                        <div class="modal fade" id="aiAnalysisModal" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-primary text-white">
+                                        <h5 class="modal-title"><i class="fas fa-brain me-2"></i>AI Medical Analysis</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div style="white-space: pre-wrap; font-family: monospace;">${data.aiAnalysis || JSON.stringify(data, null, 2)}</div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    const modal = new bootstrap.Modal(document.getElementById('aiAnalysisModal'));
+                    modal.show();
+                    document.getElementById('aiAnalysisModal').addEventListener('hidden.bs.modal', function() {
+                        this.remove();
+                    });
+                } else {
+                    alert('Error: ' + (data.message || 'Failed'));
+                }
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-brain me-1"></i>AI Analysis';
+            })
+            .catch(e => {
+                alert('Error: ' + e.message);
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-brain me-1"></i>AI Analysis';
+            });
         });
 
         // Fallback: Enable buttons after recording stops (with delay to ensure status is set)
         window.addEventListener('statusUpdate', function(event) {
             const status = event.detail.status;
             if (status === 'stopped' || status === 'idle') {
-                // Add a small delay to ensure all processing is complete
-                setTimeout(() => {
-                    console.log('Fallback: Enabling buttons after delay');
-                    const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
-                    const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
-
-                    if (generateAnalysisBtn && generateAnalysisBtn.disabled) {
-                        generateAnalysisBtn.disabled = false;
-                        generateAnalysisBtn.style.opacity = '1';
-                        console.log('Analysis button enabled via fallback');
-                    }
-                    if (generateClinicalDocBtn && generateClinicalDocBtn.disabled) {
-                        generateClinicalDocBtn.disabled = false;
-                        generateClinicalDocBtn.style.opacity = '1';
-                        console.log('Clinical doc button enabled via fallback');
-                    }
-                }, 1000); // 1 second delay
+                // Don't enable buttons here - wait for serverTranscriptReady event
+                console.log('Recording stopped, waiting for server processing...');
             }
         });
 
@@ -1519,6 +1583,90 @@
     if (cancelNewPatientBtn && newPatientForm) {
         cancelNewPatientBtn.addEventListener('click', () => {
             newPatientForm.style.display = 'none';
+        });
+    }
+
+    // Create new patient button handler
+    const createNewPatientBtn = document.getElementById('createNewPatientBtn');
+    if (createNewPatientBtn) {
+        createNewPatientBtn.addEventListener('click', function() {
+            const nameField = document.getElementById('newPatientName');
+            const phoneField = document.getElementById('newPatientPhone');
+            const emailField = document.getElementById('newPatientEmail');
+            const ageField = document.getElementById('newPatientAge');
+            const genderField = document.getElementById('newPatientGender');
+            
+            const name = nameField ? nameField.value.trim() : '';
+            const phone = phoneField ? phoneField.value.trim() : '';
+            const email = emailField ? emailField.value.trim() : '';
+            const age = ageField ? parseInt(ageField.value) || 25 : 25;
+            const gender = genderField ? genderField.value : 'male';
+            
+            console.log('Creating patient with:', {name, phone, email, age, gender});
+            
+            if (!name || !phone) {
+                alert('Name and phone are required');
+                return;
+            }
+            
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
+            
+            fetch('{{ route("ai.voice-assistant.create-new-patient") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: new URLSearchParams({
+                    newPatientName: name,
+                    newPatientPhone: phone,
+                    newPatientEmail: email,
+                    newPatientAge: age,
+                    newPatientGender: gender,
+                    _token: '{{ csrf_token() }}'
+                })
+            })
+            .then(r => {
+                console.log('Create patient response:', r.status);
+                return r.text().then(text => {
+                    console.log('Response text:', text.substring(0, 200));
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error('Not JSON, full response:', text);
+                        throw new Error('Server returned HTML instead of JSON');
+                    }
+                });
+            })
+            .then(data => {
+                console.log('Create patient response:', data);
+                if (data.success) {
+                    alert('Patient created successfully!');
+                    // Add to dropdown
+                    const select = document.getElementById('patientSelect');
+                    const patientLabel = `${data.patient.name} (${data.patient.age || '?'}y, ${data.patient.gender || 'Unknown'})`;
+                    const option = new Option(patientLabel, data.patient.id, true, true);
+                    select.add(option);
+                    // Hide form
+                    document.getElementById('newPatientForm').style.display = 'none';
+                    // Clear form
+                    if (nameField) nameField.value = '';
+                    if (phoneField) phoneField.value = '';
+                    if (emailField) emailField.value = '';
+                    if (ageField) ageField.value = '';
+                    if (genderField) genderField.value = '';
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to create patient'));
+                }
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-user-plus me-2"></i>Create Patient';
+            })
+            .catch(e => {
+                alert('Error: ' + e.message);
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-user-plus me-2"></i>Create Patient';
+            });
         });
     }
 
