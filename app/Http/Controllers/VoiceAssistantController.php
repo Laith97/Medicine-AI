@@ -1397,20 +1397,66 @@ class VoiceAssistantController extends Controller
         }
 
         try {
+            $email = $request->input('newPatientEmail');
+            
+            // Check if patient already exists by email
+            if ($email) {
+                $existingPatient = User::where('email', $email)->where('role', 'patient')->first();
+                
+                if ($existingPatient) {
+                    // Patient exists - just create appointment and link to this doctor
+                    $appointment = \App\Models\Appointment::create([
+                        'patient_id' => $existingPatient->id,
+                        'doctor_id' => Auth::id(),
+                        'appointment_date' => now(),
+                        'appointment_time' => now()->format('H:i:s'),
+                        'appointment_end' => now()->addHour()->format('H:i:s'),
+                        'status' => 'completed',
+                        'type' => 'walk-in',
+                        'notes' => 'Walk-in appointment - existing patient',
+                    ]);
+                    
+                    return response()->json([
+                        'success' => true,
+                        'patient' => [
+                            'id' => $existingPatient->id,
+                            'name' => $existingPatient->name,
+                            'email' => $existingPatient->email,
+                            'age' => $existingPatient->age,
+                            'gender' => $existingPatient->gender,
+                        ],
+                        'appointment_id' => $appointment->id,
+                        'message' => 'Existing patient linked successfully! Appointment created.'
+                    ]);
+                }
+            }
+            
             // Generate a secure random password for the new patient
-            $temporaryPassword = Str::random(16); // Generate a 16-character random password
+            $temporaryPassword = Str::random(16);
 
             // Create new patient user
             $patient = User::create([
                 'name' => $request->input('newPatientName'),
-                'email' => $request->input('newPatientEmail') ?: 'patient_' . time() . '@temp.local',
-                'password' => Hash::make($temporaryPassword), // Secure random password
+                'email' => $email ?: 'patient_' . time() . '@temp.local',
+                'password' => Hash::make($temporaryPassword),
                 'role' => 'patient',
                 'gender' => $request->input('newPatientGender'),
                 'phone' => $request->input('newPatientPhone'),
-                'primary_doctor_id' => Auth::id(), // Assign current doctor as primary
-                'email_verified_at' => now(), // Auto-verify for doctor-created accounts
-                'date_of_birth' => now()->subYears($request->input('newPatientAge', 25)), // Calculate DOB from age
+                'primary_doctor_id' => Auth::id(),
+                'email_verified_at' => now(),
+                'date_of_birth' => now()->subYears($request->input('newPatientAge', 25)),
+            ]);
+
+            // Create walk-in appointment for this patient
+            $appointment = \App\Models\Appointment::create([
+                'patient_id' => $patient->id,
+                'doctor_id' => Auth::id(),
+                'appointment_date' => now(),
+                'appointment_time' => now()->format('H:i:s'),
+                'appointment_end' => now()->addHour()->format('H:i:s'),
+                'status' => 'completed',
+                'type' => 'walk-in',
+                'notes' => 'Walk-in patient created via voice assistant',
             ]);
 
             return response()->json([
@@ -1422,6 +1468,7 @@ class VoiceAssistantController extends Controller
                     'age' => $patient->age,
                     'gender' => $patient->gender,
                 ],
+                'appointment_id' => $appointment->id,
                 'temporaryPassword' => $temporaryPassword, // Include temporary password for doctor to share
                 'message' => 'New patient created successfully! Temporary password is "' . $temporaryPassword . '" - please inform the patient to change it on first login.'
             ]);
