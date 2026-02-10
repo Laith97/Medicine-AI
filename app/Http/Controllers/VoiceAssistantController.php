@@ -1424,9 +1424,11 @@ class VoiceAssistantController extends Controller
                             'email' => $existingPatient->email,
                             'age' => $existingPatient->age,
                             'gender' => $existingPatient->gender,
+                            'phone' => $existingPatient->phone,
                         ],
                         'appointment_id' => $appointment->id,
-                        'message' => 'Existing patient linked successfully! Appointment created.'
+                        'existing' => true,
+                        'message' => 'Patient already exists! Using existing profile: ' . $existingPatient->name . ' (' . $existingPatient->age . 'y, ' . $existingPatient->gender . '). Appointment created.'
                     ]);
                 }
             }
