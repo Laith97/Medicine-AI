@@ -1392,7 +1392,7 @@ class VoiceAssistantController extends Controller
                     // Patient exists - just create appointment and link to this doctor
                     $appointment = \App\Models\Appointment::create([
                         'patient_id' => $existingPatient->id,
-                        'doctor_id' => Auth::id(),
+                        'doctor_id' => Auth::user()->doctor->id,
                         'appointment_date' => now(),
                         'appointment_time' => now()->format('H:i:s'),
                         'appointment_end' => now()->addHour()->format('H:i:s'),
@@ -1454,7 +1454,7 @@ class VoiceAssistantController extends Controller
             // Create walk-in appointment for this patient
             $appointment = \App\Models\Appointment::create([
                 'patient_id' => $patient->id,
-                'doctor_id' => Auth::id(),
+                'doctor_id' => Auth::user()->doctor->id,
                 'appointment_date' => now(),
                 'appointment_time' => now()->format('H:i:s'),
                 'appointment_end' => now()->addHour()->format('H:i:s'),
