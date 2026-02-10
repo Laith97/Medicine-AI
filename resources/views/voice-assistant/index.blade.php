@@ -1173,6 +1173,9 @@
             const transcriptContainer = document.getElementById('react-transcript-container');
             const transcript = transcriptContainer ? transcriptContainer.innerText.trim() : '';
             
+            console.log('Sending transcript to AI:', transcript);
+            console.log('Transcript length:', transcript.length);
+            
             if (!transcript || transcript.length < 20) {
                 alert('Please record more audio. Transcript is too short for analysis.');
                 return;
@@ -1206,19 +1209,23 @@
             })
             .then(data => {
                 if (data.success) {
+                    // Format the AI analysis for professional display
+                    const formattedAnalysis = formatAIAnalysis(data.aiAnalysis);
+                    
                     // Show in modal
                     const modalHtml = `
                         <div class="modal fade" id="aiAnalysisModal" tabindex="-1">
-                            <div class="modal-dialog modal-lg">
+                            <div class="modal-dialog modal-xl">
                                 <div class="modal-content">
-                                    <div class="modal-header bg-primary text-white">
+                                    <div class="modal-header bg-gradient-primary text-white">
                                         <h5 class="modal-title"><i class="fas fa-brain me-2"></i>AI Medical Analysis</h5>
                                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                     </div>
-                                    <div class="modal-body">
-                                        <div style="white-space: pre-wrap; font-family: monospace;">${data.aiAnalysis || JSON.stringify(data, null, 2)}</div>
+                                    <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                                        ${formattedAnalysis}
                                     </div>
                                     <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-primary" onclick="copyAnalysis()"><i class="fas fa-copy me-1"></i>Copy</button>
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                                     </div>
                                 </div>
@@ -1256,6 +1263,54 @@
         // Initialize status indicators
         updateRecordingStatus('idle');
         updateAccuracyScore(75);
+
+        // Format AI Analysis for professional display
+        window.formatAIAnalysis = function(text) {
+            if (!text) return '<p class="text-muted">No analysis available</p>';
+            
+            // Decode HTML entities
+            text = text.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+            
+            // Convert markdown-style formatting to HTML
+            let html = text
+                // Headers
+                .replace(/^🟢 (.+)$/gm, '<div class="alert alert-success mt-4 mb-3"><h4 class="alert-heading"><i class="fas fa-check-circle me-2"></i>$1</h4></div>')
+                .replace(/^🔵 (.+)$/gm, '<div class="alert alert-info mt-4 mb-3"><h4 class="alert-heading"><i class="fas fa-info-circle me-2"></i>$1</h4></div>')
+                .replace(/^📋 (.+)$/gm, '<h5 class="text-primary mt-3 mb-2"><i class="fas fa-clipboard me-2"></i>$1</h5>')
+                .replace(/^🔍 (.+)$/gm, '<h5 class="text-info mt-3 mb-2"><i class="fas fa-search me-2"></i>$1</h5>')
+                .replace(/^🚨 (.+)$/gm, '<h5 class="text-danger mt-3 mb-2"><i class="fas fa-exclamation-triangle me-2"></i>$1</h5>')
+                .replace(/^🧪 (.+)$/gm, '<h5 class="text-success mt-3 mb-2"><i class="fas fa-flask me-2"></i>$1</h5>')
+                .replace(/^💊 (.+)$/gm, '<h5 class="text-warning mt-3 mb-2"><i class="fas fa-pills me-2"></i>$1</h5>')
+                .replace(/^⚠️ (.+)$/gm, '<h5 class="text-danger mt-3 mb-2"><i class="fas fa-exclamation-circle me-2"></i>$1</h5>')
+                .replace(/^💡 (.+)$/gm, '<h5 class="text-info mt-3 mb-2"><i class="fas fa-lightbulb me-2"></i>$1</h5>')
+                // Bold text
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                // Bullet points
+                .replace(/^• (.+)$/gm, '<li class="mb-1">$1</li>')
+                // Numbered lists
+                .replace(/^(\d+)\. \*\*(.+?)\*\*/gm, '<div class="card mb-2"><div class="card-body py-2"><strong class="text-primary">$1. $2</strong></div></div>')
+                // Horizontal rules
+                .replace(/^---$/gm, '<hr class="my-4">')
+                // Line breaks
+                .replace(/\n\n/g, '</p><p class="mb-2">')
+                .replace(/\n/g, '<br>');
+            
+            // Wrap in paragraphs
+            html = '<div class="formatted-analysis" style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; line-height: 1.6;"><p class="mb-2">' + html + '</p></div>';
+            
+            // Wrap consecutive <li> in <ul>
+            html = html.replace(/(<li[^>]*>.*?<\/li>\s*)+/gs, '<ul class="mb-3">$&</ul>');
+            
+            return html;
+        };
+
+        // Copy analysis to clipboard
+        window.copyAnalysis = function() {
+            const analysisText = document.querySelector('#aiAnalysisModal .modal-body').innerText;
+            navigator.clipboard.writeText(analysisText).then(() => {
+                alert('Analysis copied to clipboard!');
+            });
+        };
 
         // Add functionality to transcript controls
         const copyTranscriptBtn = document.getElementById('copyTranscriptBtn');

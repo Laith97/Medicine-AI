@@ -1437,9 +1437,6 @@ class VoiceAssistantController extends Controller
         ]);
     }
 
-    /**
-     * Improved prompt that handles raw transcripts properly
-     */
     private function prepareVoicePromptFromTranscript($transcription, $patientData, $criterion)
     {
         $specialty = Auth::user()->setting->specialty ?? 'Internal Medicine';
@@ -1447,6 +1444,8 @@ class VoiceAssistantController extends Controller
         $prompt = "You are MedCuraAI, a senior {$specialty} specialist with 20+ years of clinical experience.
 
 TASK: Analyze the following medical consultation transcript and provide a comprehensive clinical analysis.
+
+IMPORTANT: This may be a partial or incomplete transcript. Analyze what is provided and clearly indicate if more information is needed.
 
 PATIENT INFORMATION:
 - Name: {$patientData['name']}
@@ -1461,72 +1460,58 @@ REQUIRED OUTPUT FORMAT:
 🟢 LEVEL 1: QUICK CLINICAL SUMMARY
 
 📋 CHIEF COMPLAINT:
-[Extract the main reason for visit from transcript]
+[Extract the main reason for visit from transcript - if incomplete, state what was captured]
 
 🔍 KEY FINDINGS:
-**Symptoms:** [List all symptoms mentioned]
-**Medical History:** [Extract relevant past medical history]
+**Symptoms:** [List all symptoms mentioned - note if transcript appears incomplete]
+**Medical History:** [Extract relevant past medical history if mentioned]
 **Physical Findings:** [Note any examination findings mentioned]
 **Current Medications:** [List medications if mentioned]
 **Vital Signs:** [Note any vital signs if mentioned]
 
-🚨 CASE URGENCY: [EMERGENCY / URGENT / ROUTINE]
-[One-line justification]
+🚨 CASE URGENCY: [EMERGENCY / URGENT / ROUTINE / INSUFFICIENT DATA]
+[One-line justification based on available information]
 
-🔍 TOP 3 DIFFERENTIAL DIAGNOSES:
-1. **[Diagnosis 1]** (Probability: X%) - [Key supporting evidence from transcript]
-2. **[Diagnosis 2]** (Probability: X%) - [Key supporting evidence from transcript]
-3. **[Diagnosis 3]** (Probability: X%) - [Key supporting evidence from transcript]
+🔍 PRELIMINARY ASSESSMENT (Based on available information):
+1. **[Assessment 1]** - [Key supporting evidence from transcript]
+2. **[Assessment 2]** - [Key supporting evidence from transcript]
+3. **[Assessment 3]** - [Key supporting evidence from transcript]
 
-🧪 RECOMMENDED TESTS:
-• [Test 1] - [Rationale based on findings]
-• [Test 2] - [Rationale based on findings]
-• [Test 3] - [Rationale based on findings]
+⚠️ NOTE: If transcript is incomplete, clearly state: This analysis is based on partial information. Complete consultation needed for definitive assessment.
 
-💊 INITIAL MANAGEMENT PLAN:
-**Immediate Actions:**
-• [Action 1]
-• [Action 2]
+💡 RECOMMENDATIONS:
+**Based on current information:**
+• [Recommendation 1]
+• [Recommendation 2]
 
-**Medications:**
-• [Drug] [dose] [route] [frequency] - [indication]
-
-**Follow-up:**
-• [Timeframe and reason]
-
-⚠️ RED FLAGS TO MONITOR:
-• [Warning sign 1] - [Action if occurs]
-• [Warning sign 2] - [Action if occurs]
+**Additional information needed (if transcript incomplete):**
+• [What else should be asked/examined]
 
 ---
 
 🔵 LEVEL 2: DETAILED CLINICAL ANALYSIS
 
 **CLINICAL REASONING:**
-[Detailed pathophysiological analysis based on the consultation]
+[Detailed analysis based on the consultation - acknowledge if information is limited]
 
-**COMPREHENSIVE DIFFERENTIAL:**
-[Extended differential with clinical reasoning for each]
+**ASSESSMENT:**
+[Extended assessment with clinical reasoning for each point]
 
-**DETAILED DIAGNOSTIC WORKUP:**
-[Comprehensive testing strategy with rationale]
+**RECOMMENDATIONS:**
+[Detailed recommendations based on available information]
 
-**EVIDENCE-BASED TREATMENT PLAN:**
-[Detailed pharmacological and non-pharmacological management]
-
-**PATIENT EDUCATION POINTS:**
-[Key points to discuss with patient]
-
-**PROGNOSIS & FOLLOW-UP:**
-[Expected course and monitoring plan]
+**NEXT STEPS:**
+[What should be done next, including gathering more information if needed]
 
 CRITICAL INSTRUCTIONS:
 1. Base ALL analysis ONLY on information in the transcript
-2. If information is missing, state \"Not mentioned in consultation\"
-3. Distinguish between doctor's observations and patient's complaints
-4. Prioritize patient safety - highlight any concerning symptoms
-5. Use {$criterion} guidelines where applicable
-6. Be specific and actionable for immediate clinical use";
+2. If transcript is incomplete or cut off, acknowledge this clearly
+3. Provide useful analysis even with limited information
+4. Distinguish between doctor's observations and patient's complaints
+5. Prioritize patient safety - highlight any concerning symptoms
+6. Use {$criterion} guidelines where applicable
+7. Be specific and actionable for immediate clinical use
+8. If more information is needed, clearly state what questions should be asked";
 
         return $prompt;
     }
