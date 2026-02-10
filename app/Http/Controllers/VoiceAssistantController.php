@@ -1382,24 +1382,9 @@ class VoiceAssistantController extends Controller
     public function createNewPatient(Request $request)
     {
         try {
-            $request->validate([
-                'newPatientName' => 'required|string|max:255',
-                'newPatientEmail' => 'nullable|email|unique:users,email',
-                'newPatientAge' => 'required|integer|min:1|max:150',
-                'newPatientGender' => 'required|in:male,female,other',
-                'newPatientPhone' => 'nullable|string|max:20',
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed: ' . implode(', ', $e->validator->errors()->all())
-            ], 422);
-        }
-
-        try {
             $email = $request->input('newPatientEmail');
             
-            // Check if patient already exists by email
+            // Check if patient already exists by email BEFORE validation
             if ($email) {
                 $existingPatient = User::where('email', $email)->where('role', 'patient')->first();
                 
@@ -1432,6 +1417,23 @@ class VoiceAssistantController extends Controller
                     ]);
                 }
             }
+            
+            // Validate only for new patients
+            $request->validate([
+                'newPatientName' => 'required|string|max:255',
+                'newPatientEmail' => 'nullable|email|unique:users,email',
+                'newPatientAge' => 'required|integer|min:1|max:150',
+                'newPatientGender' => 'required|in:male,female,other',
+                'newPatientPhone' => 'nullable|string|max:20',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . implode(', ', $e->validator->errors()->all())
+            ], 422);
+        }
+
+        try {
             
             // Generate a secure random password for the new patient
             $temporaryPassword = Str::random(16);
