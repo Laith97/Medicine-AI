@@ -1797,7 +1797,7 @@
                     selectedPatient: selectedPatient,
                     transcription: transcription,
                     sessionId: sessionId,
-                    completionType: 'save_only',
+                    completionType: 'complete_appointment',
                     patient_data: {
                         allergies: allergies,
                         medications: medications,

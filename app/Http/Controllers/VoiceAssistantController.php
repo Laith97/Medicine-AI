@@ -2221,11 +2221,17 @@ INSTRUCTIONS:
             $message = 'Diagnosis saved successfully!';
             $redirectUrl = route('diagnosis.show', $diagnosis);
 
-            // Handle appointment completion if requested
+            // Check if patient has any existing appointment with this doctor
+            $existingAppointment = \App\Models\Appointment::where('patient_id', $patient->id)
+                ->where('doctor_id', Auth::user()->doctor->id)
+                ->first();
+
+            // Handle appointment creation/completion
             if ($request->completionType === 'complete_appointment' && $request->appointmentId) {
+                // Complete existing appointment
                 try {
                     $appointment = \App\Models\Appointment::findOrFail($request->appointmentId);
-                    
+
                     // Debug logging
                     Log::info('Voice Assistant - Appointment validation', [
                         'appointment_id' => $appointment->id,
@@ -2240,10 +2246,10 @@ INSTRUCTIONS:
 
                     // Ensure the appointment belongs to the authenticated doctor (more flexible)
                     $appointmentDoctorId = $appointment->doctor_id;
-                    $isAppointmentDoctor = $appointmentDoctorId === Auth::id() || 
+                    $isAppointmentDoctor = $appointmentDoctorId === Auth::id() ||
                                          $appointmentDoctorId === $effectiveDoctorId ||
                                          (Auth::user()->doctor && $appointmentDoctorId === Auth::user()->doctor->id);
-                    
+
                     if (!$isAppointmentDoctor) {
                         Log::warning('Voice Assistant - Appointment doctor authorization failed', [
                             'appointment_id' => $appointment->id,
@@ -2252,7 +2258,7 @@ INSTRUCTIONS:
                             'effective_doctor_id' => $effectiveDoctorId,
                             'user_doctor_id' => Auth::user()->doctor ? Auth::user()->doctor->id : 'null'
                         ]);
-                        
+
                         return response()->json([
                             'success' => false,
                             'message' => 'Unauthorized access to appointment.'
@@ -2266,7 +2272,7 @@ INSTRUCTIONS:
                             'appointment_patient_id' => $appointment->patient_id,
                             'diagnosis_patient_id' => $patient->id
                         ]);
-                        
+
                         return response()->json([
                             'success' => false,
                             'message' => 'Appointment and diagnosis must be for the same patient.'
@@ -2280,22 +2286,44 @@ INSTRUCTIONS:
                         'completed_at' => now(),
                         'diagnosis_id' => $diagnosis->id,
                     ]);
-                    
+
                     // Send appointment completion notifications
                     $this->sendAppointmentCompletionNotifications($appointment, $diagnosis);
-                    
+
                     $message = 'Diagnosis saved and appointment completed successfully!';
                 } catch (\Exception $appointmentException) {
                     Log::error('Voice Assistant - Appointment completion failed', [
                         'appointment_id' => $request->appointmentId,
                         'error' => $appointmentException->getMessage()
                     ]);
-                    
+
                     return response()->json([
                         'success' => false,
                         'message' => 'Failed to complete appointment: ' . $appointmentException->getMessage()
                     ], 500);
                 }
+            } elseif (!$existingAppointment) {
+                // No existing appointment - create a walk-in completed appointment for this voice session
+                $walkInAppointment = \App\Models\Appointment::create([
+                    'patient_id' => $patient->id,
+                    'doctor_id' => Auth::user()->doctor->id,
+                    'appointment_date' => now(),
+                    'appointment_end' => now()->addMinutes(30),
+                    'status' => 'completed',
+                    'type' => 'in_person',
+                    'notes' => 'Voice assistant consultation - walk-in',
+                    'diagnosis_id' => $diagnosis->id,
+                    'doctor_notes' => $request->doctorNotes,
+                    'completed_at' => now(),
+                ]);
+
+                Log::info('Voice Assistant - Created walk-in appointment for patient', [
+                    'appointment_id' => $walkInAppointment->id,
+                    'patient_id' => $patient->id,
+                    'diagnosis_id' => $diagnosis->id,
+                ]);
+
+                $message = 'Diagnosis saved and walk-in appointment created successfully!';
             }
 
             // Send voice transcription completion notifications
