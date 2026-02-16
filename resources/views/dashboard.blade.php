@@ -511,9 +511,9 @@
                     </a>
                 @endif
 
-                @if(auth()->user()->canAccessRoute('doctor.patient-management.index'))
-                    <a href="{{ route('doctor.patient-management.index') }}" class="btn-custom-secondary">
-                        <i class="fas fa-list me-2"></i> View All Patient Management
+                @if(auth()->user()->canAccessRoute('doctor.cases.overview'))
+                    <a href="{{ route('doctor.cases.overview') }}" class="btn-custom-secondary">
+                        <i class="fas fa-list me-2"></i> View All Patient Cases
                     </a>
                 @endif
 
@@ -1082,7 +1082,7 @@
             <div class="col-lg-8 mb-4">
                 <div class="table-card">
                     <h6 class="table-title mb-0">
-                        <i class="fas fa-chart-line me-2"></i>Patient Management Over Time
+                        <i class="fas fa-chart-line me-2"></i>Diagnosed Cases Over Time
                     </h6>
                     <div id="patientManagementChart" style="height: 300px; padding: 1rem 0;"></div>
                 </div>
@@ -1093,7 +1093,7 @@
                         <i class="fas fa-calendar-week"></i>
                     </div>
                     <p class="stats-number">{{ $weeklyCount }}</p>
-                    <p class="stats-label">Patient Management This Week</p>
+                    <p class="stats-label">Diagnosed Cases This Week</p>
                     <div class="progress mt-2" style="height: 6px;">
                         <div class="progress-bar bg-info" role="progressbar"
                              style="width: {{ $weeklyCount > 20 ? 100 : ($weeklyCount * 5) }}%">
@@ -1255,7 +1255,7 @@
         <div class="table-card mb-5">
             <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
                 <h6 class="table-title mb-0">
-                    <i class="fas fa-user-injured me-2"></i>Patient Management
+                    <i class="fas fa-user-injured me-2"></i>Cases Overview
                 </h6>
                 <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
                     <div class="input-group input-group-sm me-2" style="min-width: 200px;">
@@ -1264,8 +1264,8 @@
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
-                    <a href="{{ route('doctor.patient-management.index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-4">
-                        <i class="fas fa-external-link-alt me-1"></i> View All
+                    <a href="{{ route('doctor.cases.overview') }}" class="btn btn-outline-primary btn-sm rounded-pill px-4">
+                        <i class="fas fa-external-link-alt me-1"></i> View All Patient Cases
                     </a>
                 </div>
             </div>
@@ -1551,7 +1551,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             },
             series: [{
-                name: 'Patient Management',
+                name: 'Diagnosed Cases',
                 data: window.chartData
             }],
             xaxis: {

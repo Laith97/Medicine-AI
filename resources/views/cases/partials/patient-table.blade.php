@@ -54,9 +54,9 @@
                     data-category="{{ $group['category'] }}"
                     class="patient-row {{ $categoryClass }}">
                     <td>
-                        <div class="d-flex flex-column">
+                        <div class="d-flex align-items-center gap-2">
                             <span>{{ $patient->name ?? 'N/A' }}</span>
-                            <div class="mt-1">{!! $statusBadge !!}</div>
+                            {!! $statusBadge !!}
                         </div>
                     </td>
                     <td>{{ $patient->age ?? 'N/A' }}</td>

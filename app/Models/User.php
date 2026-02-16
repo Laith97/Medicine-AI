@@ -598,6 +598,31 @@ public function getFreshMonthlyInvoiceSetting()
     }
 
     /**
+     * Get all patients for this doctor (assigned OR have appointments with this doctor)
+     * This is the unified method for patient queries across the system
+     *
+     * @param int|null $doctorId Override the doctor ID (useful for sub-users)
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getDoctorPatients($doctorId = null)
+    {
+        $effectiveDoctorId = $doctorId ?? $this->id;
+
+        return User::where('role', 'patient')
+            ->where(function($q) use ($effectiveDoctorId) {
+                $q->where('primary_doctor_id', $effectiveDoctorId)
+                  ->orWhereHas('appointments', function($q2) use ($effectiveDoctorId) {
+                      $q2->where('doctor_id', $effectiveDoctorId);
+                  });
+            })
+            ->with(['appointments' => function($q) use ($effectiveDoctorId) {
+                $q->where('doctor_id', $effectiveDoctorId)->latest()->limit(1);
+            }])
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
      * Get full address
      */
     public function getFullAddressAttribute()

@@ -105,7 +105,7 @@
                                                         @php
                                                             $routeMapping = [
                                                                 'ai.ask-ai' => ['ai.ask-ai', 'openai.respond', 'openai.follow-up', 'patient.summary'],
-                                                                'doctor.patient-management.index' => ['doctor.patient-management.index'],
+                                                                'doctor.cases.overview' => ['doctor.cases.overview'],
                                                                 'dashboard' => ['dashboard'],
                                                                 'appointments' => ['appointments.index', 'appointments.show', 'appointments.cancel', 'appointments.reschedule', 'appointments.calendar.events'],
                                                                 'reviews' => ['reviews.index', 'reviews.show', 'reviews.create', 'reviews.store', 'reviews.edit', 'reviews.update', 'reviews.destroy', 'appointments.review'],

@@ -56,7 +56,7 @@
                     <select id="patientSelect" class="form-select">
                         <option value="">Select a patient...</option>
                         @foreach($patients as $patient)
-                            <option value="{{ $patient['id'] }}">{{ $patient['name'] }} ({{ $patient['age'] ? $patient['age'] . 'y' : 'Age N/A' }}, {{ $patient['gender'] ? ucfirst($patient['gender']) : 'Gender N/A' }})</option>
+                            <option value="{{ $patient['id'] }}" {{ request('patient') == $patient['id'] ? 'selected' : '' }}>{{ $patient['name'] }} ({{ $patient['age'] ? $patient['age'] . 'y' : 'Age N/A' }}, {{ $patient['gender'] ? ucfirst($patient['gender']) : 'Gender N/A' }})</option>
                         @endforeach
                     </select>
                 </div>

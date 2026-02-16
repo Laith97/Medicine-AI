@@ -1,11 +1,11 @@
 @extends('master')
 
-@section('title', 'Patient Management')
+@section('title', 'Cases Overview')
 
 @section('content')
 <div class="dashboard-header">
-    <h2>Patient Management</h2>
-    <p>Manage patient records and appointments</p>
+    <h2>Cases Overview</h2>
+    <p>All patient cases including diagnoses, legacy records, and pending cases</p>
 </div>
 
 @push('styles')
@@ -752,8 +752,8 @@
                 <div class="page-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h1><i class="fas fa-user-injured me-2"></i>Patient Management</h1>
-                            <p class="text-muted mb-0">Manage and view all patient medical records</p>
+                            <h1><i class="fas fa-user-injured me-2"></i>Cases Overview</h1>
+                            <p class="text-muted mb-0">All patient cases including diagnoses, legacy records, and pending cases</p>
                         </div>
                         <div class="d-flex gap-2">
                             <button class="btn-custom-secondary" data-bs-toggle="collapse" data-bs-target="#filterCollapse">

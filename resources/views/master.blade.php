@@ -1906,7 +1906,7 @@ body .dropdown .dropdown-menu.show,
                         <li class="mb-2"><a href="{{ route('dashboard') }}" class="text-muted text-decoration-none hover-link">Dashboard</a></li>
                         {{-- AI Ask temporarily disabled --}}
                         {{-- <li class="mb-2"><a href="{{ route('ai.ask-ai') }}" class="text-muted text-decoration-none hover-link">AI Assistant</a></li> --}}
-                        <li class="mb-2"><a href="{{ route('doctor.patient-management.index') }}" class="text-muted text-decoration-none hover-link">Patient Management</a></li>
+                        <li class="mb-2"><a href="{{ route('doctor.cases.overview') }}" class="text-muted text-decoration-none hover-link">Cases Overview</a></li>
                         <li class="mb-2"><a href="{{ route('settings') }}" class="text-muted text-decoration-none hover-link">Settings</a></li>
                     @else
                         <li class="mb-2"><a href="{{ url('/') }}" class="text-muted text-decoration-none hover-link">Home</a></li>

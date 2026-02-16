@@ -78,6 +78,45 @@ class OpenAIController extends Controller
 
         \Log::info('getCases called for user: ' . $user->id . ' (' . $user->name . ')');
 
+        // Get Diagnosis records (current system)
+        if ($user->isDoctor()) {
+            $diagnosisRecords = Diagnosis::with(['patient', 'doctor', 'aiAssistantResults'])
+                ->where('doctor_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            \Log::info('Found ' . $diagnosisRecords->count() . ' Diagnosis records');
+
+            // Transform Diagnosis records
+            foreach ($diagnosisRecords as $diagnosis) {
+                $patient = $diagnosis->patient;
+                if (!$patient) continue;
+
+                $patientData = $diagnosis->patient_data ?? [];
+
+                $allCases->push((object)[
+                    'id' => $diagnosis->id,
+                    'name' => $patient->name,
+                    'age' => $patient->age ?? 'N/A',
+                    'gender' => $patient->gender ?? 'N/A',
+                    'height' => 'N/A',
+                    'weight' => 'N/A',
+                    'symptoms' => $patientData['symptoms'] ?? 'N/A',
+                    'type' => 'diagnosis',
+                    'ai_response' => $diagnosis->diagnosis_text ?? 'No diagnosis available',
+                    'created_at' => $diagnosis->created_at,
+                    'updated_at' => $diagnosis->updated_at,
+                    'visit_number' => 1,
+                    'total_visits' => 1,
+                    'patient_key' => 'diagnosis_' . $diagnosis->id,
+                    'source_model' => 'Diagnosis',
+                    'source_id' => $diagnosis->id,
+                    'patient_id' => $patient->id,
+                    'category' => 'diagnosed',
+                ]);
+            }
+        }
+
         // Get PatientAnalysis records (legacy format)
         $patientAnalysisRecords = PatientAnalysis::with('user')
             ->where('user_id', $user->id)
@@ -85,29 +124,6 @@ class OpenAIController extends Controller
             ->get();
 
         \Log::info('Found ' . $patientAnalysisRecords->count() . ' PatientAnalysis records');
-
-        // Get completed appointments without diagnosis for this doctor
-        $completedAppointmentsWithoutDiagnosis = [];
-        if ($user->isDoctor() && $user->doctor) {
-            $completedAppointments = Appointment::with(['patient'])
-                ->where('doctor_id', $user->doctor->id)
-                ->where('status', 'completed')
-                ->orderBy('appointment_date', 'desc')
-                ->get();
-
-            \Log::info('Found ' . $completedAppointments->count() . ' completed appointments');
-
-            // Filter out appointments that already have diagnoses
-            $diagnosedPatientIds = Diagnosis::where('doctor_id', $user->id)
-                ->pluck('patient_id')
-                ->toArray();
-
-            $completedAppointmentsWithoutDiagnosis = $completedAppointments->filter(function($appointment) use ($diagnosedPatientIds) {
-                return !in_array($appointment->patient_id, $diagnosedPatientIds);
-            });
-
-            \Log::info('Found ' . $completedAppointmentsWithoutDiagnosis->count() . ' completed appointments without diagnosis');
-        }
 
         // Transform PatientAnalysis records to unified format
         foreach ($patientAnalysisRecords as $record) {
@@ -132,23 +148,46 @@ class OpenAIController extends Controller
 
             $allCases->push((object)[
                 'id' => $record->id,
-                'name' => $record->name, // Keep original property name for view compatibility
+                'name' => $record->name,
                 'age' => $record->age,
                 'gender' => $record->gender,
                 'height' => $record->height,
                 'weight' => $record->weight,
-                'symptoms' => $symptomsString, // Standardized symptoms format
-                'type' => 'legacy', // PatientAnalysis records
+                'symptoms' => $symptomsString,
+                'type' => 'legacy',
                 'ai_response' => $record->ai_response ?? 'No diagnosis available',
                 'created_at' => $record->created_at,
                 'updated_at' => $record->updated_at,
                 'visit_number' => $record->visit_number ?? 1,
-                'total_visits' => 1, // Will be calculated later
+                'total_visits' => 1,
                 'patient_key' => $record->patient_key,
                 'source_model' => 'PatientAnalysis',
                 'source_id' => $record->id,
                 'category' => 'diagnosed',
             ]);
+        }
+
+        // Get completed appointments without diagnosis
+        $completedAppointmentsWithoutDiagnosis = [];
+        if ($user->isDoctor() && $user->doctor) {
+            $completedAppointments = Appointment::with(['patient'])
+                ->where('doctor_id', $user->doctor->id)
+                ->where('status', 'completed')
+                ->orderBy('appointment_date', 'desc')
+                ->get();
+
+            \Log::info('Found ' . $completedAppointments->count() . ' completed appointments');
+
+            // Filter out appointments that already have diagnoses
+            $diagnosedPatientIds = Diagnosis::where('doctor_id', $user->id)
+                ->pluck('patient_id')
+                ->toArray();
+
+            $completedAppointmentsWithoutDiagnosis = $completedAppointments->filter(function($appointment) use ($diagnosedPatientIds) {
+                return !in_array($appointment->patient_id, $diagnosedPatientIds);
+            });
+
+            \Log::info('Found ' . $completedAppointmentsWithoutDiagnosis->count() . ' completed appointments without diagnosis');
         }
 
         // Transform completed appointments without diagnosis to unified format
@@ -190,145 +229,22 @@ class OpenAIController extends Controller
             ]);
         }
 
-        // Get Diagnosis records (new format) - doctor's manual diagnoses
-        if ($user->isDoctor()) {
-            $diagnosisRecords = Diagnosis::with(['patient', 'doctor', 'aiAssistantResults'])
-                ->where('doctor_id', $user->id)
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            \Log::info('Found ' . $diagnosisRecords->count() . ' Diagnosis records');
-
-            // Transform Diagnosis records to unified format
-            foreach ($diagnosisRecords as $record) {
-                $patientData = is_array($record->patient_data) ? $record->patient_data : [];
-
-                \Log::info('Processing Diagnosis record ID: ' . $record->id . ', patient: ' . ($record->patient->name ?? 'Unknown'));
-
-                // Ensure symptoms are in string format for consistency
-                $symptomsString = '';
-                if (isset($patientData['symptoms'])) {
-                    if (is_array($patientData['symptoms'])) {
-                        // Convert array to comma-separated string
-                        $symptomsString = implode(', ', $patientData['symptoms']);
-                    } else {
-                        // Already a string
-                        $symptomsString = $patientData['symptoms'];
-                    }
-                }
-
-                // Generate patient_key for Diagnosis records if not set
-                $patientKey = $record->patient_key;
-                if (!$patientKey && $record->patient) {
-                    $patientKey = Diagnosis::generatePatientKey(
-                        $record->patient->name,
-                        $record->patient->age,
-                        $record->patient->gender,
-                        $record->doctor_id
-                    );
-                    // Update the record with the generated patient_key
-                    $record->update(['patient_key' => $patientKey]);
-                }
-
-                $allCases->push((object)[
-                    'id' => $record->id,
-                    'name' => $record->patient->name ?? 'Unknown Patient', // Keep original property name for view compatibility
-                    'age' => $patientData['patient_age'] ?? $record->patient->age ?? 'N/A',
-                    'gender' => $patientData['patient_gender'] ?? $record->patient->gender ?? 'N/A',
-                    'height' => $patientData['height'] ?? 'N/A',
-                    'weight' => $patientData['weight'] ?? 'N/A',
-                    'symptoms' => $symptomsString, // Standardized symptoms format
-                    'type' => 'manual', // Doctor's manual diagnoses
-                    'ai_response' => $record->diagnosis_text ?? 'No diagnosis available', // Map diagnosis_text to ai_response for view compatibility
-                    'ai_assistant_results' => $record->aiAssistantResults, // Include AI assistant results if available
-                    'created_at' => $record->created_at,
-                    'updated_at' => $record->updated_at,
-                    'visit_number' => 1, // Diagnosis records don't have visit numbers yet
-                    'total_visits' => 1, // Will be calculated later if needed
-                    'patient_key' => $patientKey, // Now includes generated patient_key
-                    'source_model' => 'Diagnosis',
-                    'source_id' => $record->id,
-                    'patient_id' => $record->patient_id,
-                    'patient_data' => $record->patient_data, // Include patient_data field for JavaScript access
-                    'category' => 'diagnosed',
-                ]);
-            }
-        } else {
-            \Log::info('User is not a doctor, skipping Diagnosis records');
-        }
-
-        // Get scheduled appointments (upcoming)
-        if ($user->isDoctor() && $user->doctor) {
-            $scheduledAppointments = Appointment::with(['patient'])
-                ->where('doctor_id', $user->doctor->id)
-                ->where('status', 'confirmed')
-                ->where('appointment_date', '>', now())
-                ->orderBy('appointment_date', 'asc')
-                ->get();
-
-            \Log::info('Found ' . $scheduledAppointments->count() . ' scheduled appointments');
-
-            // Transform scheduled appointments to unified format
-            foreach ($scheduledAppointments as $appointment) {
-                $patient = $appointment->patient;
-
-                // Skip if this patient already has a diagnosis or completed appointment in the list
-                $existingPatientKey = null;
-                if ($patient) {
-                    $existingPatientKey = 'diagnosis_' . $patient->id;
-                }
-
-                $alreadyExists = $allCases->contains(function($case) use ($existingPatientKey, $appointment) {
-                    return ($case->patient_key ?? null) === $existingPatientKey ||
-                           ($case->source_model === 'Appointment' && $case->source_id === $appointment->id);
-                });
-
-                if (!$alreadyExists) {
-                    $patientKey = 'scheduled_' . $appointment->id;
-
-                    $allCases->push((object)[
-                        'id' => $appointment->id,
-                        'name' => $patient ? $patient->name : $appointment->guest_name,
-                        'age' => $patient ? $patient->age : (isset($appointment->guest_date_of_birth) ? \Carbon\Carbon::parse($appointment->guest_date_of_birth)->age : 'N/A'),
-                        'gender' => $patient ? $patient->gender : $appointment->guest_gender,
-                        'height' => 'N/A',
-                        'weight' => 'N/A',
-                        'symptoms' => $appointment->symptoms ?? 'N/A',
-                        'type' => 'appointment_scheduled',
-                        'ai_response' => 'Appointment scheduled',
-                        'appointment_details' => [
-                            'appointment_date' => $appointment->appointment_date,
-                            'appointment_type' => $appointment->appointment_type,
-                            'duration' => $appointment->duration,
-                            'fee' => $appointment->fee,
-                            'notes' => $appointment->notes,
-                            'reason' => $appointment->reason,
-                        ],
-                        'created_at' => $appointment->appointment_date,
-                        'updated_at' => $appointment->updated_at,
-                        'visit_number' => 1,
-                        'total_visits' => 1,
-                        'patient_key' => $patientKey,
-                        'source_model' => 'Appointment',
-                        'source_id' => $appointment->id,
-                        'patient_id' => $appointment->patient_id,
-                        'category' => 'scheduled',
-                    ]);
-                }
-            }
-        }
 
         // Sort all cases by creation date (newest first)
         $allCases = $allCases->sortByDesc('created_at');
 
-        // Filter out cases without diagnoses
+        // Filter out cases without diagnoses (only keep those with actual diagnosis text)
         $allCases = $allCases->filter(function($case) {
-            // Only show cases that have actual diagnoses
-            return $case->ai_response &&
-                   $case->ai_response !== 'No diagnosis available' &&
-                   $case->ai_response !== 'Appointment completed - pending diagnosis' &&
-                   $case->ai_response !== 'Appointment scheduled' &&
-                   trim($case->ai_response) !== '';
+            // For Appointment records, only show completed ones with actual responses
+            if ($case->source_model === 'Appointment') {
+                return $case->ai_response &&
+                       $case->ai_response !== 'Appointment completed - pending diagnosis' &&
+                       $case->ai_response !== 'Appointment scheduled' &&
+                       trim($case->ai_response) !== '';
+            }
+            // For Diagnosis and PatientAnalysis records, always include them
+            // (even if ai_response is "No diagnosis available", they're still valid records)
+            return true;
         });
 
         \Log::info('Total cases after filtering: ' . $allCases->count());
@@ -336,45 +252,12 @@ class OpenAIController extends Controller
         // Group records by patient for calculating total visits
         $patientGroups = [];
 
-        // Handle PatientAnalysis records grouping
-        foreach ($patientAnalysisRecords as $record) {
-            // If patient_key is not set, generate it and update the record
-            if (!$record->patient_key) {
-                $patientKey = PatientAnalysis::generatePatientKey(
-                    $record->name,
-                    $record->age,
-                    $record->gender,
-                    $record->user_id
-                );
-
-                // Find all records for this patient
-                $patientRecords = PatientAnalysis::where('name', $record->name)
-                    ->where('age', $record->age)
-                    ->where('gender', $record->gender)
-                    ->where('user_id', $record->user_id)
-                    ->orderBy('created_at', 'asc')
-                    ->get();
-
-                // Update all records with patient_key and visit_number
-                foreach ($patientRecords as $index => $patientRecord) {
-                    $patientRecord->update([
-                        'patient_key' => $patientKey,
-                        'visit_number' => $index + 1
-                    ]);
-                }
-
-                // Update the current record in memory
-                $record->patient_key = $patientKey;
-            }
-
-            // Group by patient_key
-            if (!isset($patientGroups[$record->patient_key])) {
-                $patientGroups[$record->patient_key] = [];
-            }
-            $patientGroups[$record->patient_key][] = $record;
-        }
-
         // Handle Diagnosis records grouping by patient
+        $diagnosisRecords = Diagnosis::with(['patient'])
+            ->where('doctor_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         foreach ($diagnosisRecords as $record) {
             $patient = $record->patient;
             if ($patient) {
@@ -404,9 +287,7 @@ class OpenAIController extends Controller
 
         // Update total_visits for all records in the unified collection
         foreach ($allCases as $case) {
-            if ($case->source_model === 'PatientAnalysis' && $case->patient_key && isset($patientGroups[$case->patient_key])) {
-                $case->total_visits = count($patientGroups[$case->patient_key]);
-            } elseif ($case->source_model === 'Diagnosis' && isset($case->patient_id)) {
+            if ($case->source_model === 'Diagnosis' && isset($case->patient_id)) {
                 $patientKey = 'diagnosis_' . $case->patient_id;
                 if (isset($patientGroups[$patientKey])) {
                     $case->total_visits = count($patientGroups[$patientKey]);

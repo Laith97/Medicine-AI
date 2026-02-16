@@ -151,6 +151,12 @@ class MenuHelper
                 'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => [
                     [
+                        'name' => 'My Patients',
+                        'route' => 'doctor.patients.index',
+                        'icon' => 'fas fa-users',
+                        'permission' => 'cases',
+                    ],
+                    [
                         'name' => 'Doctor Notes',
                         'route' => 'doctor.notes.index',
                         'icon' => 'fas fa-sticky-note',
@@ -163,8 +169,8 @@ class MenuHelper
                         'permission' => 'chat',
                     ],
                     [
-                        'name' => 'Patient Management',
-                        'route' => 'doctor.patient-management.index',
+                        'name' => 'Cases Overview',
+                        'route' => 'doctor.cases.overview',
                         'icon' => 'fas fa-folder',
                         'permission' => 'cases',
                     ],
@@ -426,8 +432,8 @@ class MenuHelper
                         'icon' => 'fas fa-comments',
                     ],
                     [
-                        'name' => 'Patient Management',
-                        'route' => 'doctor.patient-management.index',
+                        'name' => 'Cases Overview',
+                        'route' => 'doctor.cases.overview',
                         'icon' => 'fas fa-folder',
                     ],
                 ]

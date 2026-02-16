@@ -127,36 +127,28 @@ class VoiceAssistantController extends Controller
         ]);
 
         try {
-            // First, get assigned patients (patients where primary_doctor_id matches)
-            $assignedPatients = Auth::user()->getEffectiveAssignedPatients()
-                ->select('id', 'name', 'email', 'age', 'date_of_birth', 'gender')
-                ->get();
+            // Use unified method to get all patients (assigned + appointments)
+            $basePatients = Auth::user()->getDoctorPatients();
 
-            // Then, get patients who have confirmed or completed appointments with this doctor
-            // but are not already in the assigned patients list
-            $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
-            $appointmentPatients = User::where('role', 'patient')
-                ->whereHas('appointments', function($query) use ($effectiveDoctorId) {
-                    $query->where('doctor_id', $effectiveDoctorId)
-                          ->whereIn('status', ['confirmed', 'completed']);
-                })
-                ->whereNotIn('id', $assignedPatients->pluck('id'))
-                ->select('id', 'name', 'email', 'age', 'date_of_birth', 'gender')
-                ->get();
+            // Extract only needed fields for dropdown
+            $basePatients = $basePatients->map(function($patient) {
+                return (object)[
+                    'id' => $patient->id,
+                    'name' => $patient->name,
+                    'email' => $patient->email,
+                    'age' => $patient->age ?? ($patient->date_of_birth ? \Carbon\Carbon::parse($patient->date_of_birth)->age : null),
+                    'gender' => $patient->gender,
+                ];
+            })->sortBy('name');
 
-            // Merge the two collections
-            $basePatients = $assignedPatients->merge($appointmentPatients)->unique('id')->sortBy('name');
-
-            \Log::info('Voice Assistant - Loaded patients from assigned + appointments', [
-                'assigned_count' => $assignedPatients->count(),
-                'appointment_count' => $appointmentPatients->count(),
+            \Log::info('Voice Assistant - Loaded patients using unified method', [
                 'total_count' => $basePatients->count(),
                 'patient_names' => $basePatients->pluck('name')->toArray()
             ]);
         } catch (\Exception $e) {
-            \Log::warning('Could not load patients, using minimal fallback: ' . $e->getMessage());
+            \Log::warning('Could not load patients using unified method, using fallback: ' . $e->getMessage());
 
-            // Minimal fallback: just get patients with confirmed or completed appointments
+            // Fallback: just get patients with confirmed or completed appointments
             try {
                 $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
                 $basePatients = User::where('role', 'patient')
@@ -166,7 +158,16 @@ class VoiceAssistantController extends Controller
                     })
                     ->select('id', 'name', 'email', 'age', 'date_of_birth', 'gender')
                     ->orderBy('name')
-                    ->get();
+                    ->get()
+                    ->map(function($patient) {
+                        return (object)[
+                            'id' => $patient->id,
+                            'name' => $patient->name,
+                            'email' => $patient->email,
+                            'age' => $patient->age ?? ($patient->date_of_birth ? \Carbon\Carbon::parse($patient->date_of_birth)->age : null),
+                            'gender' => $patient->gender,
+                        ];
+                    });
 
                 \Log::info('Voice Assistant - Loaded patients using appointment fallback', [
                     'count' => $basePatients->count(),
@@ -1389,18 +1390,6 @@ class VoiceAssistantController extends Controller
                 $existingPatient = User::where('email', $email)->where('role', 'patient')->first();
                 
                 if ($existingPatient) {
-                    // Patient exists - just create appointment and link to this doctor
-                    $appointment = \App\Models\Appointment::create([
-                        'patient_id' => $existingPatient->id,
-                        'doctor_id' => Auth::user()->doctor->id,
-                        'appointment_date' => now(),
-                        'appointment_time' => now()->format('H:i:s'),
-                        'appointment_end' => now()->addHour()->format('H:i:s'),
-                        'status' => 'completed',
-                        'type' => 'walk-in',
-                        'notes' => 'Walk-in appointment - existing patient',
-                    ]);
-                    
                     return response()->json([
                         'success' => true,
                         'patient' => [
@@ -1411,9 +1400,8 @@ class VoiceAssistantController extends Controller
                             'gender' => $existingPatient->gender,
                             'phone' => $existingPatient->phone,
                         ],
-                        'appointment_id' => $appointment->id,
                         'existing' => true,
-                        'message' => 'Patient already exists! Using existing profile: ' . $existingPatient->name . ' (' . $existingPatient->age . 'y, ' . $existingPatient->gender . '). Appointment created.'
+                        'message' => 'Patient already exists: ' . $existingPatient->name . ' (' . $existingPatient->age . 'y, ' . $existingPatient->gender . '). You can now start a voice session.'
                     ]);
                 }
             }
@@ -1451,18 +1439,6 @@ class VoiceAssistantController extends Controller
                 'date_of_birth' => now()->subYears($request->input('newPatientAge', 25)),
             ]);
 
-            // Create walk-in appointment for this patient
-            $appointment = \App\Models\Appointment::create([
-                'patient_id' => $patient->id,
-                'doctor_id' => Auth::user()->doctor->id,
-                'appointment_date' => now(),
-                'appointment_time' => now()->format('H:i:s'),
-                'appointment_end' => now()->addHour()->format('H:i:s'),
-                'status' => 'completed',
-                'type' => 'walk-in',
-                'notes' => 'Walk-in patient created via voice assistant',
-            ]);
-
             return response()->json([
                 'success' => true,
                 'patient' => [
@@ -1472,9 +1448,8 @@ class VoiceAssistantController extends Controller
                     'age' => $patient->age,
                     'gender' => $patient->gender,
                 ],
-                'appointment_id' => $appointment->id,
                 'temporaryPassword' => $temporaryPassword, // Include temporary password for doctor to share
-                'message' => 'New patient created successfully! Temporary password is "' . $temporaryPassword . '" - please inform the patient to change it on first login.'
+                'message' => 'New patient created successfully! Temporary password is "' . $temporaryPassword . '" - please inform the patient to change it on first login. Start a voice session to create an appointment.'
             ]);
         } catch (\Exception $e) {
             return response()->json([
