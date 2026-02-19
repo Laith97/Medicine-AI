@@ -45,7 +45,7 @@ class AppointmentObserver
         $this->cacheService->invalidateAppointmentCache($appointment);
 
         // Broadcast appointment creation
-        $this->broadcastService->broadcastAppointmentCreated($appointment);
+        $this->broadcastService->broadcastStatusChange($appointment, 'pending', $appointment->status);
     }
 
     /**
@@ -85,7 +85,7 @@ class AppointmentObserver
 
         // Handle other attribute changes that might affect real-time data
         if ($this->hasRealtimeRelevantChanges($appointment, $changedAttributes)) {
-            $this->broadcastService->broadcastAppointmentUpdated($appointment, $changedAttributes);
+            $this->broadcastService->broadcastStatusChange($appointment, $oldStatus, $newStatus);
             $this->cacheService->invalidateAppointmentCache($appointment);
         }
     }
@@ -105,7 +105,7 @@ class AppointmentObserver
         $this->cacheService->removeAppointmentFromCache($appointment);
 
         // Broadcast appointment deletion
-        $this->broadcastService->broadcastAppointmentDeleted($appointment);
+        $this->broadcastService->broadcastStatusChange($appointment, $appointment->status, 'deleted');
     }
 
     /**

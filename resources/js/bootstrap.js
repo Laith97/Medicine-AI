@@ -14,63 +14,33 @@ import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 
-// Debug environment variables
-console.log('🔑 VITE_PUSHER_APP_KEY:', import.meta.env.VITE_PUSHER_APP_KEY);
-console.log('🌍 VITE_PUSHER_APP_CLUSTER:', import.meta.env.VITE_PUSHER_APP_CLUSTER);
-
-// Get CSRF token for authentication
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-// Get user ID for authentication
-const userId = document.querySelector('meta[name="user-id"]')?.getAttribute('content') || window.userId;
-
-// Proper Echo configuration with authentication
+// Echo configuration
 try {
-    // 确保CSRF令牌存在
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const userId = document.querySelector('meta[name="user-id"]')?.getAttribute('content') || window.userId;
+
     if (!csrfToken) {
         console.error('❌ CSRF token is missing');
-        // Don't return here, just log the error and continue
-        console.log('⚠️ Continuing without Echo initialization due to missing CSRF token');
-    } else {
-        console.log('🔒 CSRF token found:', csrfToken.substring(0, 10) + '...');
     }
-
-    console.log('🔒 CSRF token found:', csrfToken.substring(0, 10) + '...');
-    console.log('👤 User ID found:', userId);
 
     window.Echo = new Echo({
         broadcaster: 'pusher',
         key: import.meta.env.VITE_PUSHER_APP_KEY || 'your-pusher-key',
         cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap2',
-        forceTLS: true, // Use TLS for Pusher cloud service
-        enabledTransports: ['ws', 'wss'], // Enable both WebSocket and Secure WebSocket
-        disabledTransports: [], // Allow all transport methods
+        forceTLS: true,
+        enabledTransports: ['ws', 'wss'],
         authEndpoint: '/broadcasting/auth',
         auth: {
             headers: {
                 'X-CSRF-TOKEN': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json',
-            },
-            always: function (channelName, socketId) {
-                console.log('🔒 Authorizing channel:', channelName);
-                console.log('🔍 [DEBUG] Auth callback called with socketId:', socketId);
-
-                return {
-                    'socket_id': socketId,
-                    'channel_name': channelName,
-                    'user_id': userId,
-                    'info': JSON.stringify({userId: userId})
-                };
             }
         },
-        // Add debugging options
         logToConsole: true,
         disableStats: true,
-        // Add error handling
         error: function(error) {
             console.error('❌ Echo error:', error);
-            // If it's an authentication error, try to reconnect
             if (error.type === 'AuthError') {
                 console.log('🔄 Attempting to reconnect after auth error...');
                 setTimeout(() => {
@@ -81,19 +51,6 @@ try {
     });
 
     console.log('✅ Echo initialized successfully');
-    console.log('📡 Echo object:', window.Echo);
-    console.log('🔒 CSRF token:', csrfToken ? 'Found' : 'Missing');
-    console.log('👤 User ID:', userId ? 'Found' : 'Missing');
-    console.log('🌐 Environment - Key:', import.meta.env.VITE_PUSHER_APP_KEY, 'Cluster:', import.meta.env.VITE_PUSHER_APP_CLUSTER);
-
-    // Log connector details
-    if (window.Echo.connector) {
-        console.log('🔌 Echo connector:', window.Echo.connector);
-        console.log('📡 Pusher object:', window.Echo.connector.pusher);
-        console.log('🔗 Connection state:', window.Echo.connector.pusher?.connection?.state);
-    } else {
-        console.error('❌ Echo connector is missing');
-    }
 } catch (error) {
     console.error('❌ Echo initialization failed:', error);
 }

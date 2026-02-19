@@ -61,28 +61,36 @@ class NotificationSystem {
         try {
             const channel = window.Echo.private(`App.User.${this.userId}`);
 
+            // Listen for notification.received event (our custom event)
+            channel.listen('notification.received', (data) => {
+                this.handleNewNotification(data);
+            });
+
+            // Listen for appointment.status-changed event
+            channel.listen('appointment.status-changed', (data) => {
+                this.handleNewNotification(data);
+            });
+
             // Listen for Laravel's standard notification broadcasts
             channel.notification((notification) => {
-                // Real-time notification received
                 this.handleNewNotification(notification);
             });
 
             // Listen for the specific Laravel broadcast notification event
             channel.listen('Illuminate\\Notifications\\Events\\BroadcastNotificationCreated', (data) => {
-                // BroadcastNotificationCreated event
                 this.handleNewNotification(data);
             });
 
             channel.subscribed(() => {
-                // Successfully subscribed to private channel
+                console.log('✅ Subscribed to notification channel');
             });
 
             channel.error((error) => {
-                // Echo channel error
+                console.error('❌ Channel error:', error);
             });
 
         } catch (error) {
-            // Failed to setup Echo listener
+            console.error('❌ Failed to setup Echo listener:', error);
         }
     }
 

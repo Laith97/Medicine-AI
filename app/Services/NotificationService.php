@@ -242,6 +242,9 @@ class NotificationService
             $notification = $this->createNotification($user, $data);
             $preferences = $this->getNotificationPreferences($user);
 
+            // Broadcast notification via Pusher for real-time delivery
+            $this->broadcastNotification($user, $data);
+
             // Send via different channels based on data and user preferences
             if (isset($data['send_email']) && $data['send_email'] && $preferences['email_notifications']) {
                 $this->sendEmailNotification($user, $notification);
@@ -258,6 +261,23 @@ class NotificationService
             return true;
         } catch (\Exception $e) {
             Log::error('Failed to send notification', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Broadcast notification via Pusher for real-time delivery
+     */
+    public function broadcastNotification(User $user, array $notificationData): bool
+    {
+        try {
+            event(new \App\Events\NotificationBroadcast($user->id, $notificationData));
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast notification', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);
