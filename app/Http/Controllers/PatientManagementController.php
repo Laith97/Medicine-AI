@@ -36,7 +36,29 @@ class PatientManagementController extends Controller
             ['path' => url()->current()]
         );
 
-        return view('doctor.patients.index', compact('patients'));
+        // Calculate stats
+        $totalPatients = $query->count();
+        $totalVisits = 0;
+        $activePatients = 0;
+
+        foreach ($query as $patient) {
+            $visitCount = $patient->appointments ? $patient->appointments->count() : 0;
+            $totalVisits += $visitCount;
+            $lastVisit = $patient->appointments && $patient->appointments->first()
+                ? $patient->appointments->first()->appointment_date
+                : null;
+            if ($lastVisit && $lastVisit->isCurrentMonth()) {
+                $activePatients++;
+            }
+        }
+
+        $stats = [
+            'total_patients' => $totalPatients,
+            'total_visits' => $totalVisits,
+            'active_patients' => $activePatients,
+        ];
+
+        return view('doctor.patients.index', compact('patients', 'stats'));
     }
     
     public function show($id)

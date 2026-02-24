@@ -44,37 +44,15 @@
 
 @push('scripts')
 <script>
-function toggleMedicalSpecialty() {
-    const userType = document.getElementById('role').value;
-    const specialtyField = document.getElementById('specialty-field');
-    const specialtySelect = document.getElementById('specialty_select');
+function toggleSubscriptionPricing() {
+    const subscriptionPricing = document.getElementById('subscription-pricing');
+    if (!subscriptionPricing) return;
 
-    if (userType === 'doctor') {
-        specialtyField.style.display = 'block';
-        specialtySelect.required = true;
+    const userRole = '{{ $user->role }}';
+    if (userRole === 'doctor') {
+        subscriptionPricing.style.display = 'block';
     } else {
-        specialtyField.style.display = 'none';
-        specialtySelect.required = false;
-        specialtySelect.value = '';
-        document.getElementById('custom-specialty-field').style.display = 'none';
-    }
-}
-
-function toggleCustomSpecialty() {
-    const specialtySelect = document.getElementById('specialty_select');
-    const customField = document.getElementById('custom-specialty-field');
-    const customInput = document.getElementById('custom_specialty');
-    const hiddenSpecialty = document.getElementById('specialty');
-
-    if (specialtySelect.value === 'custom') {
-        customField.style.display = 'block';
-        customInput.required = true;
-        customInput.value = hiddenSpecialty.value;
-    } else {
-        customField.style.display = 'none';
-        customInput.required = false;
-        customInput.value = '';
-        hiddenSpecialty.value = specialtySelect.value;
+        subscriptionPricing.style.display = 'none';
     }
 }
 
@@ -116,6 +94,14 @@ function updatePlanDetailsEdit() {
 document.addEventListener('DOMContentLoaded', function() {
     toggleMedicalSpecialty();
     updatePlanDetailsEdit();
+    toggleSubscriptionPricing();
+
+    // Set role dropdown if it exists (for edit form)
+    const roleElement = document.getElementById('role');
+    if (roleElement) {
+        roleElement.addEventListener('change', toggleSubscriptionPricing);
+    }
+});
 
     // Set initial values
     const currentSpecialty = document.getElementById('specialty').value;
@@ -229,13 +215,38 @@ document.addEventListener('DOMContentLoaded', function() {
                             @enderror
                         </div>
 
-                        <!-- Medical Specialty -->
+                        <!-- Date of Birth -->
                         <div class="mb-4">
-                            <label for="specialty_select" class="form-label fw-bold">Medical Specialty <span class="text-danger">*</span></label>
+                            <label for="date_of_birth" class="form-label fw-bold">Date of Birth</label>
+                            <input id="date_of_birth" type="date" name="date_of_birth" value="{{ old('date_of_birth', $user->date_of_birth ? $user->date_of_birth->format('Y-m-d') : '') }}"
+                                   max="{{ date('Y-m-d') }}"
+                                   class="form-control @error('date_of_birth') is-invalid @enderror">
+                            @error('date_of_birth')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Gender -->
+                        <div class="mb-4">
+                            <label for="gender" class="form-label fw-bold">Gender</label>
+                            <select id="gender" name="gender" class="form-control @error('gender') is-invalid @enderror">
+                                <option value="">-- Select Gender --</option>
+                                <option value="male" {{ old('gender', $user->gender) == 'male' ? 'selected' : '' }}>Male</option>
+                                <option value="female" {{ old('gender', $user->gender) == 'female' ? 'selected' : '' }}>Female</option>
+                                <option value="other" {{ old('gender', $user->gender) == 'other' ? 'selected' : '' }}>Other</option>
+                            </select>
+                            @error('gender')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Medical Specialty -->
+                        <div class="mb-4" id="specialty-field">
+                            <label for="specialty_select" class="form-label fw-bold">Medical Specialty</label>
                             @php
                                 $currentSpecialty = old('specialty', $user->setting->specialty ?? '');
                             @endphp
-                            <select class="form-control @error('specialty') is-invalid @enderror" name="specialty_select" id="specialty_select" onchange="toggleCustomSpecialtyAdminEdit()" required>
+                            <select class="form-control @error('specialty') is-invalid @enderror" name="specialty_select" id="specialty_select" onchange="toggleCustomSpecialtyAdminEdit()">
                                 <option value="" {{ $currentSpecialty == '' ? 'selected' : '' }}>-- Select Specialty --</option>
                                 
                                 <optgroup label="🧠 General & Internal Medicine">
@@ -358,8 +369,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             @enderror
                         </div>
 
-                        <!-- Subscription Pricing Settings -->
-                        <div class="card mb-4" style="border: 2px solid #e9ecef; border-radius: 10px;">
+                        <!-- Subscription Pricing Settings - Only for Doctors -->
+                        <div class="card mb-4" id="subscription-pricing" style="border: 2px solid #e9ecef; border-radius: 10px;">
                             <div class="card-header bg-light">
                                 <h6 class="mb-0 fw-bold">
                                     <i class="bi bi-credit-card me-2"></i>Subscription Pricing
@@ -458,22 +469,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
 
-                        <!-- Note: Admin privileges are managed through the separate Admin system -->
-                        <div class="mb-4">
-                            <div class="form-check">
-                                <input class="form-check-input @error('is_verified') is-invalid @enderror"
-                                       type="checkbox" name="is_verified" value="1" id="is_verified"
-                                       {{ old('is_verified', $user->email_verified_at ? true : false) ? 'checked' : '' }}>
-                                <label class="form-check-label fw-bold" for="is_verified">
-                                    Mark user as verified
-                                </label>
-                            </div>
-                            <small class="text-muted">Verified users have confirmed their identity and credentials.</small>
-                            @error('is_verified')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-
                         <!-- Monthly Cost Limit -->
                         <div class="mb-4">
                             <label for="monthly_cost_limit" class="form-label fw-bold">Monthly Cost Limit (USD)</label>
@@ -513,77 +508,97 @@ document.addEventListener('DOMContentLoaded', function() {
 
 @push('scripts')
 <script>
+function toggleSubscriptionPricing() {
+    const subscriptionPricing = document.getElementById('subscription-pricing');
+    if (!subscriptionPricing) return;
+
+    const userRole = '{{ $user->role }}';
+    if (userRole === 'doctor') {
+        subscriptionPricing.style.display = 'block';
+    } else {
+        subscriptionPricing.style.display = 'none';
+    }
+}
+
 function toggleCustomSpecialtyAdminEdit() {
     const select = document.getElementById('specialty_select');
     const customContainer = document.getElementById('custom_specialty_container_admin_edit');
     const customInput = document.getElementById('custom_specialty_admin_edit');
     const hiddenInput = document.getElementById('specialty_admin_edit');
-    
+
+    if (!select || !customContainer) return;
+
     if (select.value === 'other') {
         customContainer.style.display = 'block';
-        customInput.required = true;
-        customInput.focus();
-        hiddenInput.value = ''; // Clear hidden field when showing custom input
+        if (customInput) {
+            customInput.required = true;
+            customInput.focus();
+        }
+        if (hiddenInput) hiddenInput.value = '';
     } else {
         customContainer.style.display = 'none';
-        customInput.required = false;
-        customInput.value = '';
-        hiddenInput.value = select.value; // Set hidden field to selected value
+        if (customInput) {
+            customInput.required = false;
+            customInput.value = '';
+        }
+        if (hiddenInput) hiddenInput.value = select.value;
     }
 }
 
 // Initialize admin edit page functionality
 document.addEventListener('DOMContentLoaded', function() {
+    // Toggle fields based on user role
+    toggleSubscriptionPricing();
+
     const customInput = document.getElementById('custom_specialty_admin_edit');
     const hiddenInput = document.getElementById('specialty_admin_edit');
     const select = document.getElementById('specialty_select');
-    
-    // Handle custom input changes
-    customInput.addEventListener('input', function() {
-        if (select.value === 'other') {
-            hiddenInput.value = this.value;
+
+    if (select) {
+        // Handle custom input changes
+        if (customInput) {
+            customInput.addEventListener('input', function() {
+                if (select.value === 'other' && hiddenInput) {
+                    hiddenInput.value = this.value;
+                }
+            });
         }
-    });
-    
-    // Handle form submission
-    const form = document.querySelector('form');
-    form.addEventListener('submit', function(e) {
-        const select = document.getElementById('specialty_select');
-        const customInput = document.getElementById('custom_specialty_admin_edit');
-        const hiddenInput = document.getElementById('specialty_admin_edit');
-        
-        if (select.value === 'other') {
-            if (!customInput.value.trim()) {
-                e.preventDefault();
-                customInput.focus();
-                customInput.style.borderColor = '#dc3545';
-                return false;
+
+        // Handle form submission
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (select.value === 'other' && customInput) {
+                    if (!customInput.value.trim()) {
+                        e.preventDefault();
+                        customInput.focus();
+                        customInput.style.borderColor = '#dc3545';
+                        return false;
+                    }
+                    if (hiddenInput) hiddenInput.value = customInput.value.trim();
+                } else if (hiddenInput) {
+                    hiddenInput.value = select.value;
+                    if (customInput) customInput.value = '';
+                }
+            });
+        }
+
+        // Initialize on page load - check if current specialty exists in dropdown
+        const currentSpecialty = '{{ $user->setting->specialty ?? "" }}';
+
+        if (currentSpecialty) {
+            const selectOptions = Array.from(select.options);
+            const optionExists = selectOptions.some(option => option.value === currentSpecialty);
+
+            if (optionExists) {
+                select.value = currentSpecialty;
+            } else {
+                select.value = 'other';
+                toggleCustomSpecialtyAdminEdit();
+                if (customInput) customInput.value = currentSpecialty;
             }
-            hiddenInput.value = customInput.value.trim();
-        } else {
-            hiddenInput.value = select.value;
-            // Clear custom specialty when not using "other"
-            customInput.value = '';
+            if (hiddenInput) hiddenInput.value = currentSpecialty;
         }
-    });
-    
-    // Initialize on page load - check if current specialty exists in dropdown
-    const currentSpecialty = '{{ $user->setting->specialty ?? "" }}';
-    
-    if (currentSpecialty) {
-        // Check if current specialty exists in dropdown options
-        const selectOptions = Array.from(document.getElementById('specialty_select').options);
-        const optionExists = selectOptions.some(option => option.value === currentSpecialty);
-        
-        if (optionExists) {
-            document.getElementById('specialty_select').value = currentSpecialty;
-        } else {
-            // If specialty doesn't exist in dropdown, treat as custom
-            document.getElementById('specialty_select').value = 'other';
-            toggleCustomSpecialtyAdminEdit();
-            document.getElementById('custom_specialty_admin_edit').value = currentSpecialty;
-        }
-        document.getElementById('specialty_admin_edit').value = currentSpecialty;
     }
 });
 </script>

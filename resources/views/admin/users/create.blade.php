@@ -54,26 +54,30 @@
 <script>
 function toggleMedicalSpecialty() {
     const roleElement = document.getElementById('role');
-    const specialtyField = document.getElementById('specialty-field');
-    const specialtySelect = document.getElementById('specialty_select');
-    const customSpecialtyField = document.getElementById('custom_specialty_container_admin');
+    const subscriptionSettings = document.getElementById('subscription-settings');
+    const dobField = document.getElementById('date-of-birth-field');
+    const genderField = document.getElementById('gender-field');
 
-    if (!roleElement || !specialtyField || !specialtySelect) {
-        return; // Elements don't exist, skip
-    }
+    if (!roleElement) return;
 
     const userType = roleElement.value;
 
-    if (userType === 'doctor') {
-        specialtyField.style.display = 'block';
-        specialtySelect.required = true;
-    } else {
-        specialtyField.style.display = 'none';
-        specialtySelect.required = false;
-        specialtySelect.value = '';
-        if (customSpecialtyField) {
-            customSpecialtyField.style.display = 'none';
+    // Toggle subscription settings (only for doctors)
+    if (subscriptionSettings) {
+        if (userType === 'doctor') {
+            subscriptionSettings.style.display = 'block';
+        } else {
+            subscriptionSettings.style.display = 'none';
         }
+    }
+
+    // Toggle patient fields (DOB, Gender)
+    if (userType === 'patient') {
+        if (dobField) dobField.style.display = 'block';
+        if (genderField) genderField.style.display = 'block';
+    } else {
+        if (dobField) dobField.style.display = 'none';
+        if (genderField) genderField.style.display = 'none';
     }
 }
 
@@ -94,84 +98,88 @@ function toggleHospitalField() {
     }
 }
 
-// Initialize fields on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize fields based on current values
-    toggleMedicalSpecialty();
-    toggleHospitalField();
-});
-
-function toggleCustomSpecialty() {
-    const specialtySelect = document.getElementById('specialty_select');
-    const customField = document.getElementById('custom_specialty_container_admin');
+function toggleCustomSpecialtyAdmin() {
+    const select = document.getElementById('specialty_select');
+    const customContainer = document.getElementById('custom_specialty_container_admin');
     const customInput = document.getElementById('custom_specialty_admin');
-    const hiddenSpecialty = document.getElementById('specialty_admin');
+    const hiddenInput = document.getElementById('specialty_admin');
 
-    if (!specialtySelect || !customField || !customInput || !hiddenSpecialty) {
-        return; // Elements don't exist, skip
-    }
+    if (!select || !customContainer) return;
 
-    if (specialtySelect.value === 'other') {
-        customField.style.display = 'block';
-        customInput.required = true;
-        customInput.value = hiddenSpecialty.value;
+    if (select.value === 'other') {
+        customContainer.style.display = 'block';
+        if (customInput) {
+            customInput.required = true;
+            customInput.focus();
+        }
+        if (hiddenInput) hiddenInput.value = '';
     } else {
-        customField.style.display = 'none';
-        customInput.required = false;
-        customInput.value = '';
-        hiddenSpecialty.value = specialtySelect.value;
-    }
-}
-
-function updateSpecialtyValue() {
-    const specialtySelect = document.getElementById('specialty_select');
-    const customInput = document.getElementById('custom_specialty_admin');
-    const hiddenSpecialty = document.getElementById('specialty_admin');
-
-    if (!specialtySelect || !customInput || !hiddenSpecialty) {
-        return; // Elements don't exist, skip
-    }
-
-    if (specialtySelect.value === 'other') {
-        hiddenSpecialty.value = customInput.value;
-    } else {
-        hiddenSpecialty.value = specialtySelect.value;
-    }
-}
-
-function updatePlanDetails() {
-    const select = document.getElementById('subscription_plan_id');
-    const planDetails = document.getElementById('plan-details');
-    const planInfo = document.getElementById('plan-info');
-    
-    if (select.value) {
-        const option = select.options[select.selectedIndex];
-        const price = option.getAttribute('data-price');
-        const period = option.getAttribute('data-period');
-        const cycle = option.getAttribute('data-cycle');
-        
-        planInfo.innerHTML = `
-            <div><strong>Price:</strong> $${parseFloat(price).toFixed(2)}</div>
-            <div><strong>Billing:</strong> ${cycle === 'monthly' ? 'Monthly' : 'Yearly'}</div>
-            <div><strong>Period:</strong> ${period} month${period != 1 ? 's' : ''}</div>
-        `;
-        planDetails.style.display = 'block';
-    } else {
-        planDetails.style.display = 'none';
+        customContainer.style.display = 'none';
+        if (customInput) {
+            customInput.required = false;
+            customInput.value = '';
+        }
+        if (hiddenInput) hiddenInput.value = select.value;
     }
 }
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     toggleMedicalSpecialty();
-    updatePlanDetails();
+    toggleHospitalField();
 
-    // Add event listeners
-    const customInput = document.getElementById('custom_specialty');
-    const specialtySelect = document.getElementById('specialty_select');
+    // Also call it immediately in case no role is selected yet
+    const roleElement = document.getElementById('role');
+    if (roleElement && roleElement.value) {
+        toggleMedicalSpecialty();
+    }
 
-    customInput.addEventListener('input', updateSpecialtyValue);
-    specialtySelect.addEventListener('change', updateSpecialtyValue);
+    const customInput = document.getElementById('custom_specialty_admin');
+    const hiddenInput = document.getElementById('specialty_admin');
+    const select = document.getElementById('specialty_select');
+
+    if (select) {
+        // Handle custom input changes
+        if (customInput) {
+            customInput.addEventListener('input', function() {
+                if (select.value === 'other' && hiddenInput) {
+                    hiddenInput.value = this.value;
+                }
+            });
+        }
+
+        select.addEventListener('change', function() {
+            toggleCustomSpecialtyAdmin();
+        });
+
+        // Handle form submission
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (select.value === 'other' && customInput) {
+                    if (!customInput.value.trim()) {
+                        e.preventDefault();
+                        customInput.focus();
+                        customInput.style.borderColor = '#dc3545';
+                        return false;
+                    }
+                    if (hiddenInput) hiddenInput.value = customInput.value.trim();
+                } else if (hiddenInput) {
+                    hiddenInput.value = select.value;
+                    if (customInput) customInput.value = '';
+                }
+            });
+        }
+    }
+
+    // Add event listener to role dropdown
+    const roleElement = document.getElementById('role');
+    if (roleElement) {
+        roleElement.addEventListener('change', function() {
+            toggleMedicalSpecialty();
+            toggleHospitalField();
+        });
+    }
 });
 </script>
 @endpush
@@ -288,20 +296,20 @@ document.addEventListener('DOMContentLoaded', function() {
                             @enderror
                         </div>
 
-                        <!-- Date of Birth -->
-                        <div class="mb-4">
+                        <!-- Date of Birth - Only for Patients -->
+                        <div class="mb-4" id="date-of-birth-field" style="display: {{ old('role') == 'patient' ? 'block' : 'none' }}">
                             <label for="date_of_birth" class="form-label fw-bold">Date of Birth</label>
                             <input id="date_of_birth" type="date" name="date_of_birth" value="{{ old('date_of_birth') }}"
                                    max="{{ date('Y-m-d') }}"
                                    class="form-control @error('date_of_birth') is-invalid @enderror">
-                            <small class="text-muted">Required for AI analysis and patient identification</small>
+                            <small class="text-muted">Required for patient identification</small>
                             @error('date_of_birth')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
-                        <!-- Gender -->
-                        <div class="mb-4">
+                        <!-- Gender - Only for Patients -->
+                        <div class="mb-4" id="gender-field" style="display: {{ old('role') == 'patient' ? 'block' : 'none' }}">
                             <label for="gender" class="form-label fw-bold">Gender</label>
                             <select id="gender" name="gender" class="form-control @error('gender') is-invalid @enderror">
                                 <option value="">-- Select Gender --</option>
@@ -309,16 +317,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
                                 <option value="other" {{ old('gender') == 'other' ? 'selected' : '' }}>Other</option>
                             </select>
-                            <small class="text-muted">Required for AI analysis and patient identification</small>
+                            <small class="text-muted">Required for patient identification</small>
                             @error('gender')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
                         <!-- Medical Specialty -->
-                        <div class="mb-4" id="specialty-field" style="display: {{ old('role') == 'doctor' ? 'block' : 'none' }}">
-                            <label for="specialty_select" class="form-label fw-bold">Medical Specialty <span class="text-danger">*</span></label>
-                            <select class="form-control @error('specialty') is-invalid @enderror" name="specialty_select" id="specialty_select" onchange="toggleCustomSpecialty()" required>
+                        <div class="mb-4" id="specialty-field">
+                            <label for="specialty_select" class="form-label fw-bold">Medical Specialty</label>
+                            <select class="form-control @error('specialty') is-invalid @enderror" name="specialty_select" id="specialty_select" onchange="toggleCustomSpecialtyAdmin()">
                                 <option value="" {{ old('specialty_select') == '' ? 'selected' : '' }}>-- Select Specialty --</option>
                                 
                                 <optgroup label="🧠 General & Internal Medicine">
@@ -440,45 +448,65 @@ document.addEventListener('DOMContentLoaded', function() {
                             @enderror
                         </div>
 
-                        <!-- Subscription Settings -->
-                        <div class="card mb-4" style="border: 2px solid #e9ecef; border-radius: 10px;">
+                        <!-- Subscription Pricing - Only for Doctors -->
+                        <div class="card mb-4" id="subscription-settings" style="display: {{ old('role') == 'doctor' ? 'block' : 'none' }}; border: 2px solid #e9ecef; border-radius: 10px;">
                             <div class="card-header bg-light">
                                 <h6 class="mb-0 fw-bold">
-                                    <i class="bi bi-credit-card me-2"></i>Subscription Settings
+                                    <i class="bi bi-credit-card me-2"></i>Subscription Pricing
                                 </h6>
-                                <small class="text-muted">Configure subscription billing periods and policies</small>
+                                <small class="text-muted">Update monthly and yearly subscription prices</small>
                             </div>
                             <div class="card-body">
-                                <div class="alert alert-info mb-4">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    <strong>Pricing:</strong> All users now use the global SaaS pricing plans configured in System Settings.
-                                    Monthly and yearly prices are standardized across all users.
-                                </div>
-                                
                                 <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="monthly_price" class="form-label fw-bold">Monthly Price ($)</label>
+                                        <input id="monthly_price" type="number" name="monthly_price"
+                                               value="{{ old('monthly_price', 99.00) }}"
+                                               step="0.01" min="0" max="99999.99"
+                                               class="form-control @error('monthly_price') is-invalid @enderror"
+                                               placeholder="99.00">
+                                        <small class="text-muted">Default: $99.00</small>
+                                        @error('monthly_price')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="yearly_price" class="form-label fw-bold">Yearly Price ($)</label>
+                                        <input id="yearly_price" type="number" name="yearly_price"
+                                               value="{{ old('yearly_price', 950.00) }}"
+                                               step="0.01" min="0" max="99999.99"
+                                               class="form-control @error('yearly_price') is-invalid @enderror"
+                                               placeholder="950.00">
+                                        <small class="text-muted">Default: $950.00</small>
+                                        @error('yearly_price')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="alert alert-info">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            <strong>Note:</strong> These prices are specific to this user only and will not affect other users.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
                                     <div class="col-md-4">
                                         <label for="grace_period_days" class="form-label fw-bold">Grace Period (Days)</label>
-                                        <input id="grace_period_days" type="number" name="grace_period_days" 
+                                        <input id="grace_period_days" type="number" name="grace_period_days"
                                                value="{{ old('grace_period_days', 7) }}" min="1" max="30"
                                                class="form-control @error('grace_period_days') is-invalid @enderror">
-                                        <small class="text-muted">Days after expiration with full access</small>
+                                        <small class="text-muted">Days after due date before restrictions</small>
                                         @error('grace_period_days')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                     <div class="col-md-4">
-                                        <label for="warning_period_days" class="form-label fw-bold">Warning Period (Days)</label>
-                                        <input id="warning_period_days" type="number" name="warning_period_days" 
-                                               value="{{ old('warning_period_days', 3) }}" min="1" max="14"
-                                               class="form-control @error('warning_period_days') is-invalid @enderror">
-                                        <small class="text-muted">Final warning days before restriction</small>
-                                        @error('warning_period_days')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                    <div class="col-md-4">
                                         <label for="reminder_frequency_days" class="form-label fw-bold">Reminder Frequency (Days)</label>
-                                        <input id="reminder_frequency_days" type="number" name="reminder_frequency_days" 
+                                        <input id="reminder_frequency_days" type="number" name="reminder_frequency_days"
                                                value="{{ old('reminder_frequency_days', 3) }}" min="1" max="30"
                                                class="form-control @error('reminder_frequency_days') is-invalid @enderror">
                                         <small class="text-muted">Days between reminder notifications</small>
@@ -488,22 +516,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Note: Admin privileges are managed through the separate Admin system -->
-                        <div class="mb-4">
-                            <div class="form-check">
-                                <input class="form-check-input @error('is_verified') is-invalid @enderror"
-                                       type="checkbox" name="is_verified" value="1" id="is_verified"
-                                       {{ old('is_verified') ? 'checked' : '' }}>
-                                <label class="form-check-label fw-bold" for="is_verified">
-                                    Mark user as verified
-                                </label>
-                            </div>
-                            <small class="text-muted">Verified users have confirmed their identity and credentials.</small>
-                            @error('is_verified')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
                         </div>
 
                         <!-- Monthly Cost Limit -->
@@ -543,71 +555,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 @endsection
 
-@push('scripts')
-<script>
-function toggleCustomSpecialtyAdmin() {
-    const select = document.getElementById('specialty_select');
-    const customContainer = document.getElementById('custom_specialty_container_admin');
-    const customInput = document.getElementById('custom_specialty_admin');
-    const hiddenInput = document.getElementById('specialty_admin');
-    
-    if (select.value === 'other') {
-        customContainer.style.display = 'block';
-        customInput.required = true;
-        customInput.focus();
-        hiddenInput.value = ''; // Clear hidden field when showing custom input
-    } else {
-        customContainer.style.display = 'none';
-        customInput.required = false;
-        customInput.value = '';
-        hiddenInput.value = select.value; // Set hidden field to selected value
-    }
-}
-
-// Initialize admin create page functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const customInput = document.getElementById('custom_specialty_admin');
-    const hiddenInput = document.getElementById('specialty_admin');
-    const select = document.getElementById('specialty_select');
-    
-    // Handle custom input changes
-    customInput.addEventListener('input', function() {
-        if (select.value === 'other') {
-            hiddenInput.value = this.value;
-        }
-    });
-    
-    // Handle form submission
-    const form = document.querySelector('form');
-    form.addEventListener('submit', function(e) {
-        const select = document.getElementById('specialty_select');
-        const customInput = document.getElementById('custom_specialty_admin');
-        const hiddenInput = document.getElementById('specialty_admin');
-        
-        if (select.value === 'other') {
-            if (!customInput.value.trim()) {
-                e.preventDefault();
-                customInput.focus();
-                customInput.style.borderColor = '#dc3545';
-                return false;
-            }
-            hiddenInput.value = customInput.value.trim();
-        } else {
-            hiddenInput.value = select.value;
-            // Clear custom specialty when not using "other"
-            customInput.value = '';
-        }
-    });
-    
-    // Initialize on page load - set hidden field value if dropdown has selection
-    if (select.value && select.value !== 'other') {
-        hiddenInput.value = select.value;
-    }
-});
-
-// Removed obsolete updateAmountLabel function - now using separate monthly/yearly pricing fields
-</script>
-
+@push('styles')
 <style>
 /* Custom specialty input styling for admin create page */
 #custom_specialty_container_admin {
