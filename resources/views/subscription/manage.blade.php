@@ -76,10 +76,7 @@
         background: linear-gradient(135deg, #DE6262 0%, #c44d4d 100%); 
         color: white; 
     }
-    .plan-enterprise { 
-        background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%); 
-        color: white; 
-    }
+
 
     .usage-progress {
         background-color: #e9ecef;
@@ -436,15 +433,15 @@
             padding: 1.5rem;
             margin-bottom: 1.5rem;
         }
-        
+
         .stats-card {
             padding: 1rem;
         }
-        
+
         .stat-number {
             font-size: 1.5rem;
         }
-        
+
         .btn-custom-primary,
         .btn-custom-secondary,
         .btn-custom-success,
@@ -457,10 +454,74 @@
             justify-content: center;
         }
     }
+
+/* Professional Dashboard Header Styling */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+}
+
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header h2::before {
+    content: '💳';
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+}
 </style>
 @endpush
 
 @section('content')
+<div class="dashboard-header">
+    <h2>Subscription</h2>
+    <p>Manage your subscription</p>
+</div>
 <div class="dashboard-container">
     <div class="container-fluid">
         <div class="row justify-content-center">
@@ -543,6 +604,29 @@
                 <div class="col-md-8">
                     <div class="subscription-card">
                         
+                        @if(isset($trialInfo) && $trialInfo['is_in_trial'])
+                            <!-- Trial Active Banner -->
+                            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert" style="border-radius: 20px; border: none; box-shadow: 0 8px 25px rgba(13, 202, 240, 0.2);">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-gift fa-2x text-info"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h5 class="alert-heading mb-2">
+                                            <i class="fas fa-clock me-2"></i>Free Trial Active - {{ $trialInfo['trial_days_remaining'] }} Days Remaining
+                                        </h5>
+                                        <p class="mb-2">
+                                            You're currently enjoying full access to all features! Choose a plan below to continue after your trial ends.
+                                        </p>
+                                        <a href="{{ route('subscription.pricing') }}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-credit-card me-1"></i>View Pricing Plans
+                                        </a>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+                        
                         @if($status === 'setup_pending')
                             <!-- Account Setup Pending -->
                             <div class="text-center py-5">
@@ -556,36 +640,119 @@
                                 </a>
                             </div>
 
-                        @elseif($status === 'ready_to_subscribe')
-                            <!-- First Time User - Ready to Subscribe -->
-                            <div class="text-center py-4">
-                                <div class="mb-4">
-                                    <i class="fas fa-rocket fa-3x text-success mb-3"></i>
-                                    <h4>Welcome! Your Plan is Ready</h4>
-                                    <div class="plan-highlight p-4 rounded mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #28a745;">
-                                        <div class="row text-center">
-                                            <div class="col-md-4">
-                                                <h3 class="text-success mb-1">{{ $setting->getAmountWithPeriod() }}</h3>
-                                                <small class="text-muted">Your Rate</small>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <h5 class="text-primary mb-1">{{ $setting->getSubscriptionPeriodText() }}</h5>
-                                                <small class="text-muted">Billing Period</small>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <h5 class="text-info mb-1"><i class="fas fa-infinity"></i></h5>
-                                                <small class="text-muted">Unlimited Usage</small>
-                                            </div>
+                        @elseif($status === 'ready_to_subscribe' || (isset($trialInfo) && $trialInfo['is_in_trial']))
+                            <!-- First Time User or Trial User with Future Subscription - Choose Plan -->
+                            <div class="py-4">
+                                @if(isset($trialInfo) && $trialInfo['is_in_trial'] && isset($trialInfo['has_future_subscription']) && $trialInfo['has_future_subscription'])
+                                    <div class="text-center mb-4">
+                                        <i class="fas fa-calendar-check fa-3x text-info mb-3"></i>
+                                        <h4>Your Subscription is Scheduled</h4>
+                                        <p class="text-muted">Your paid plan will automatically start when your trial ends. You can also change your plan below if needed.</p>
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>Current Plan:</strong> Will start {{ Auth::user()->monthlyInvoiceSetting->subscription_starts_at->format('M j, Y') }} and run until {{ Auth::user()->monthlyInvoiceSetting->subscription_ends_at->format('M j, Y') }}
                                         </div>
                                     </div>
-                                    <p class="text-muted mb-4">Click below to start your subscription and unlock full access to our AI medical assistant.</p>
-                                </div>
-                                <button type="button" class="btn-custom-primary btn-lg" onclick="startPersonalizedCheckout()">
-                                    <i class="fas fa-credit-card me-2"></i>Start My Subscription
-                                </button>
-                                <div class="mt-3">
-                                    <small class="text-muted">Secure payment powered by Stripe</small>
-                                </div>
+                                @elseif(isset($trialInfo) && $trialInfo['is_in_trial'])
+                                    <div class="text-center mb-4">
+                                        <i class="fas fa-rocket fa-3x text-success mb-3"></i>
+                                        <h4>Choose Your Subscription Plan</h4>
+                                        <p class="text-muted">You're currently in your free trial. Select a plan to continue after your trial ends.</p>
+                                    </div>
+                                @endif
+                                
+                                @if(count($userPlans) > 0)
+                                    @if(!isset($trialInfo) || !$trialInfo['is_in_trial'])
+                                        <div class="text-center mb-4">
+                                            <i class="fas fa-rocket fa-3x text-success mb-3"></i>
+                                            <h4>Choose Your Subscription Plan</h4>
+                                            <p class="text-muted">Select the plan that best fits your needs and start your subscription.</p>
+                                        </div>
+                                    @endif
+                                    
+                                    <div class="text-center mb-4">
+                                        
+                                        <!-- Billing Toggle -->
+                                        <div class="d-inline-flex align-items-center p-2 rounded-pill mt-3" style="background: #f8f9fa; border: 1px solid #e9ecef;">
+                                            <span class="px-3 py-2 billing-period-label" id="monthly-label" style="border-radius: 20px; cursor: pointer; transition: all 0.3s ease; background: #DE6262; color: white;">Monthly</span>
+                                            <span class="px-3 py-2 billing-period-label" id="yearly-label" style="border-radius: 20px; cursor: pointer; transition: all 0.3s ease; margin-left: 5px;">Yearly <small class="text-success">(Save up to 17%)</small></span>
+                                        </div>
+                                    </div>
+                                    <div class="row" id="pricing-plans">
+                                        @foreach($userPlans as $planKey => $plan)
+                                            <div class="col-md-6 mb-4 plan-card" data-plan="{{ $planKey }}">
+                                                <div class="plan-card h-100 {{ $planKey === 'yearly' ? 'featured-plan' : '' }}" 
+                                                     style="border: 2px solid {{ $planKey === 'yearly' ? '#28a745' : '#dee2e6' }}; border-radius: 15px; padding: 2rem; position: relative; background: white;">
+                                                    
+                                                    @if($planKey === 'yearly')
+                                                        <div class="featured-badge" style="position: absolute; top: -10px; right: 20px; background: #28a745; color: white; padding: 5px 15px; border-radius: 15px; font-size: 0.8rem; font-weight: 600;">
+                                                            POPULAR
+                                                        </div>
+                                                    @endif
+
+                                                    <div class="text-center mb-3">
+                                                        <h5 class="fw-bold">{{ $plan['name'] }}</h5>
+                                                        <div class="price-display mb-2">
+                                                            <span class="h3 text-primary">${{ number_format($plan['price'], 0) }}</span>
+                                                            <span class="text-muted">{{ $plan['billing_cycle'] === 'monthly' ? '/month' : '/year' }}</span>
+                                                        </div>
+                                                        @if($plan['billing_cycle'] === 'yearly' && isset($userPlans['monthly']))
+                                                            @php
+                                                                $monthlyPrice = $userPlans['monthly']['price'];
+                                                                $yearlyPrice = $plan['price'];
+                                                                $yearlyEquivalent = $monthlyPrice * 12;
+                                                                $savings = $yearlyEquivalent > 0 ? round((($yearlyEquivalent - $yearlyPrice) / $yearlyEquivalent) * 100) : 0;
+                                                            @endphp
+                                                            @if($savings > 0)
+                                                                <div class="savings-badge text-success fw-bold">
+                                                                    Save {{ $savings }}%
+                                                                </div>
+                                                            @endif
+                                                        @endif
+                                                    </div>
+
+                                                    <div class="features-list mb-4">
+                                                        <div class="feature-item d-flex align-items-center mb-2">
+                                                            <i class="fas fa-check text-success me-2"></i>
+                                                            <span class="text-muted">Unlimited AI consultations</span>
+                                                        </div>
+                                                        <div class="feature-item d-flex align-items-center mb-2">
+                                                            <i class="fas fa-check text-success me-2"></i>
+                                                            <span class="text-muted">Patient case management</span>
+                                                        </div>
+                                                        <div class="feature-item d-flex align-items-center mb-2">
+                                                            <i class="fas fa-check text-success me-2"></i>
+                                                            <span class="text-muted">Advanced medical analysis</span>
+                                                        </div>
+                                                        <div class="feature-item d-flex align-items-center mb-2">
+                                                            <i class="fas fa-check text-success me-2"></i>
+                                                            <span class="text-muted">24/7 platform access</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="text-center">
+                                                        <button type="button" 
+                                                                class="btn {{ $planKey === 'yearly' ? 'btn-custom-primary' : 'btn-custom-secondary' }} w-100" 
+                                                                onclick="selectPlan('{{ $planKey }}')">
+                                                            <i class="fas fa-credit-card me-2"></i>
+                                                            Choose {{ $plan['name'] }}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div class="text-center py-4">
+                                        <p class="text-muted">No subscription plans are currently available. Please contact support.</p>
+                                        
+
+                                        
+                                        <a href="{{ route('contact') }}" class="btn-custom-primary">
+                                            <i class="fas fa-phone me-2"></i>Contact Support
+                                        </a>
+                                    </div>
+                                @endif
                             </div>
 
                         @elseif($status === 'active')
@@ -620,7 +787,7 @@
                                             </small>
                                             @if($setting->isUnlimitedSubscription())
                                                 <strong class="text-success"><i class="fas fa-infinity me-1"></i>Unlimited</strong>
-                                            @else
+                                            @elseif($setting->subscription_ends_at)
                                                 <strong class="text-primary">{{ $setting->subscription_ends_at->format('M d, Y') }}</strong>
                                                 @if($setting->subscription_ends_at->isBefore(now()->addDays(30)))
                                                     <div class="mt-1">
@@ -629,6 +796,8 @@
                                                         </small>
                                                     </div>
                                                 @endif
+                                            @else
+                                                <strong class="text-muted">Not Set</strong>
                                             @endif
                                         </div>
                                     </div>
@@ -704,7 +873,7 @@
                                     <i class="fas fa-clock fa-3x text-warning mb-3"></i>
                                     <h4>Subscription Expired - Grace Period</h4>
                                     <div class="alert alert-warning">
-                                        <strong>Your subscription expired on {{ $setting->subscription_ends_at->format('M d, Y') }}</strong>
+                                        <strong>Your subscription expired on {{ $setting->subscription_ends_at ? $setting->subscription_ends_at->format('M d, Y') : 'Unknown Date' }}</strong>
                                         <br>
                                         <small>You have {{ $setting->getDaysRemainingInCurrentPeriod() }} days remaining in your grace period</small>
                                     </div>
@@ -741,7 +910,7 @@
                                     <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
                                     <h4>Final Warning - Account Will Be Restricted</h4>
                                     <div class="alert alert-danger">
-                                        <strong>Grace period ended on {{ $setting->getGracePeriodEndDate()->format('M d, Y') }}</strong>
+                                        <strong>Grace period ended on {{ $setting->getGracePeriodEndDate() ? $setting->getGracePeriodEndDate()->format('M d, Y') : 'Unknown Date' }}</strong>
                                         <br>
                                         <small>Your account will be restricted in {{ $setting->getDaysRemainingInCurrentPeriod() }} days if not renewed</small>
                                     </div>
@@ -876,23 +1045,25 @@
                                 </h6>
                                 <div class="d-grid gap-2">
                                     @if($status === 'active')
-                                        <a href="{{ route('ask-ai') }}" class="btn btn-sm btn-success">
+                                        {{-- AI Ask temporarily disabled --}}
+                                        {{-- <a href="{{ route('ai.ask-ai') }}" class="btn btn-sm btn-success">
                                             <i class="fas fa-robot me-1"></i>Ask AI
-                                        </a>
-                                        <a href="{{ route('cases') }}" class="btn btn-sm btn-info">
-                                            <i class="fas fa-folder me-1"></i>My Cases
+                                        </a> --}}
+                                        <a href="{{ route('doctor.cases.overview') }}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-folder me-1"></i>Cases Overview
                                         </a>
                                     @elseif($status === 'ready_to_subscribe')
-                                        <button class="btn btn-sm btn-primary" onclick="startPersonalizedCheckout()">
-                                            <i class="fas fa-play me-1"></i>Start Now
-                                        </button>
+                                        <div class="text-muted">
+                                            <i class="fas fa-arrow-up me-1"></i>Choose a plan above
+                                        </div>
                                     @elseif(in_array($status, ['grace_period', 'warning_period']))
                                         <button class="btn btn-sm btn-warning" onclick="startPersonalizedCheckout()">
                                             <i class="fas fa-refresh me-1"></i>Renew
                                         </button>
-                                        <a href="{{ route('ask-ai') }}" class="btn btn-sm btn-outline-success">
+                                        {{-- AI Ask temporarily disabled --}}
+                                        {{-- <a href="{{ route('ai.ask-ai') }}" class="btn btn-sm btn-outline-success">
                                             <i class="fas fa-robot me-1"></i>Ask AI (Limited Time)
-                                        </a>
+                                        </a> --}}
                                     @endif
                                     <a href="{{ route('invoices.index') }}" class="btn btn-sm btn-outline-secondary">
                                         <i class="fas fa-file-invoice me-1"></i>Invoices
@@ -921,10 +1092,11 @@
                                     <thead>
                                         <tr>
                                             <th>Invoice #</th>
-                                            <th>Date</th>
-                                            <th>Description</th>
+                                            <th>Service Period</th>
                                             <th>Amount</th>
-                                            <th>Status</th>
+                                            <th>Payment Status</th>
+                                            <th>Payment Date</th>
+                                            <th>Next Renewal</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -932,35 +1104,77 @@
                                         @foreach($invoices as $invoice)
                                             <tr>
                                                 <td>
-                                                    <code>{{ substr($invoice->stripe_invoice_id, -8) }}</code>
+                                                    <code class="text-primary">#{{ substr($invoice->stripe_invoice_id, -8) }}</code>
+                                                    <br><small class="text-muted">{{ $invoice->created_at ? $invoice->created_at->format('M j, Y') : 'Unknown' }}</small>
                                                 </td>
                                                 <td>
-                                                    {{ $invoice->created_at->format('M j, Y') }}
-                                                </td>
-                                                <td>
-                                                    {{ $invoice->description }}
                                                     @if($invoice->line_items && count($invoice->line_items) > 0)
-                                                        <br>
-                                                        <small class="text-muted">
+                                                        <strong class="text-primary">
                                                             @if(isset($invoice->line_items[0]['period_start']) && isset($invoice->line_items[0]['period_end']))
                                                                 {{ \Carbon\Carbon::parse($invoice->line_items[0]['period_start'])->format('M j') }} - 
                                                                 {{ \Carbon\Carbon::parse($invoice->line_items[0]['period_end'])->format('M j, Y') }}
+                                                            @else
+                                                                {{ $invoice->created_at ? $invoice->created_at->format('M Y') : 'Current Period' }}
                                                             @endif
-                                                        </small>
+                                                        </strong>
+                                                    @else
+                                                        <strong class="text-primary">{{ $invoice->created_at ? $invoice->created_at->format('M Y') : 'Current Period' }}</strong>
+                                                    @endif
+                                                    <br>
+                                                    <small class="badge bg-light text-dark">
+                                                        {{ $invoice->invoice_type ? ucfirst($invoice->invoice_type) : 'Subscription' }}
+                                                    </small>
+                                                    @if($invoice->description && $invoice->description !== 'Subscription payment')
+                                                        <br><small class="text-muted">{{ $invoice->description }}</small>
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    <strong>${{ number_format($invoice->amount_due, 2) }}</strong>
+                                                    <strong class="text-success">${{ number_format($invoice->amount_due, 2) }}</strong>
                                                     @if($invoice->amount_paid > 0 && $invoice->amount_paid != $invoice->amount_due)
-                                                        <br><small class="text-success">Paid: ${{ number_format($invoice->amount_paid, 2) }}</small>
+                                                        <br><small class="text-warning">Paid: ${{ number_format($invoice->amount_paid, 2) }}</small>
+                                                    @endif
+                                                    @if($invoice->currency && strtoupper($invoice->currency) !== 'USD')
+                                                        <br><small class="text-muted">{{ strtoupper($invoice->currency) }}</small>
                                                     @endif
                                                 </td>
                                                 <td>
                                                     <span class="{{ $invoice->getStatusBadgeClass() }}">
+                                                        <i class="fas fa-{{ $invoice->status === 'paid' ? 'check-circle' : ($invoice->status === 'open' ? 'clock' : 'times-circle') }} me-1"></i>
                                                         {{ $invoice->getHumanStatus() }}
                                                     </span>
                                                     @if($invoice->paid_at)
-                                                        <br><small class="text-muted">{{ $invoice->paid_at->format('M j, Y') }}</small>
+                                                        <br><small class="text-success">Paid: {{ $invoice->paid_at->format('M j, Y') }}</small>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if($invoice->paid_at)
+                                                        <strong class="text-success">{{ $invoice->paid_at->format('M j, Y') }}</strong>
+                                                        <br><small class="text-muted">{{ $invoice->paid_at->format('g:i A') }}</small>
+                                                    @elseif($invoice->due_date)
+                                                        <strong class="text-warning">Due: {{ $invoice->due_date->format('M j, Y') }}</strong>
+                                                    @else
+                                                        <span class="text-warning">
+                                                            <i class="fas fa-clock me-1"></i>Payment Required
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if(auth()->user()->monthlyInvoiceSetting && auth()->user()->monthlyInvoiceSetting->next_billing_date)
+                                                        <strong class="text-primary">{{ auth()->user()->monthlyInvoiceSetting->next_billing_date->format('M j, Y') }}</strong>
+                                                        <br><small class="text-muted">Next charge</small>
+                                                    @elseif(auth()->user()->monthlyInvoiceSetting && auth()->user()->monthlyInvoiceSetting->subscription_ends_at)
+                                                        @php
+                                                            $endDate = auth()->user()->monthlyInvoiceSetting->subscription_ends_at;
+                                                            $isExpired = $endDate->isPast();
+                                                        @endphp
+                                                        <strong class="{{ $isExpired ? 'text-danger' : 'text-success' }}">
+                                                            {{ $endDate->format('M j, Y') }}
+                                                        </strong>
+                                                        <br><small class="text-muted">{{ $isExpired ? 'Expired' : 'Expires' }}</small>
+                                                    @else
+                                                        <span class="text-muted">
+                                                            <i class="fas fa-question-circle me-1"></i>Not Set
+                                                        </span>
                                                     @endif
                                                 </td>
                                                 <td>
@@ -999,27 +1213,74 @@
                             <!-- Invoice Summary -->
                             <div class="row mt-4">
                                 <div class="col-md-3 mb-2">
-                                    <div class="stats-card" style="padding: 1rem;">
-                                        <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Total Paid</div>
-                                        <div style="font-size: 1.25rem; font-weight: 600; color: #28a745;">${{ number_format($user->getTotalPaidAmount(), 2) }}</div>
+                                    <div class="stats-card" style="padding: 1rem; border-left: 4px solid #28a745;">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            <div>
+                                                <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Total Paid</div>
+                                                <div style="font-size: 1.25rem; font-weight: 600; color: #28a745;">${{ number_format($invoices->where('status', 'paid')->sum('amount_paid'), 2) }}</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-3 mb-2">
-                                    <div class="stats-card" style="padding: 1rem;">
-                                        <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Outstanding</div>
-                                        <div style="font-size: 1.25rem; font-weight: 600; color: #DE6262;">${{ number_format($user->getTotalUnpaidAmount(), 2) }}</div>
+                                    <div class="stats-card" style="padding: 1rem; border-left: 4px solid #DE6262;">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-exclamation-circle text-danger me-2"></i>
+                                            <div>
+                                                <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Outstanding</div>
+                                                <div style="font-size: 1.25rem; font-weight: 600; color: #DE6262;">${{ number_format($invoices->whereIn('status', ['open', 'draft'])->sum('amount_due'), 2) }}</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-3 mb-2">
-                                    <div class="stats-card" style="padding: 1rem;">
-                                        <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Total Invoices</div>
-                                        <div style="font-size: 1.25rem; font-weight: 600; color: #2c3e50;">{{ $user->stripeInvoices()->count() }}</div>
+                                    <div class="stats-card" style="padding: 1rem; border-left: 4px solid #2c3e50;">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-file-invoice text-primary me-2"></i>
+                                            <div>
+                                                <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Total Invoices</div>
+                                                <div style="font-size: 1.25rem; font-weight: 600; color: #2c3e50;">{{ $invoices->count() }}</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-3 mb-2">
-                                    <div class="stats-card" style="padding: 1rem;">
-                                        <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Last Payment</div>
-                                        <div style="font-size: 1.1rem; font-weight: 600; color: #2c3e50;">{{ $lastInvoice ? $lastInvoice->paid_at->format('M j, Y') : 'N/A' }}</div>
+                                    <div class="stats-card" style="padding: 1rem; border-left: 4px solid #17a2b8;">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-calendar-check text-info me-2"></i>
+                                            <div>
+                                                <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 0.25rem;">Last Payment</div>
+                                                @php $lastPaidInvoice = $invoices->where('status', 'paid')->sortByDesc('paid_at')->first(); @endphp
+                                                <div style="font-size: 1.1rem; font-weight: 600; color: #17a2b8;">
+                                                    {{ $lastPaidInvoice && $lastPaidInvoice->paid_at ? $lastPaidInvoice->paid_at->format('M j, Y') : 'N/A' }}
+                                                </div>
+                                                @if($lastPaidInvoice && $lastPaidInvoice->paid_at)
+                                                    <small class="text-muted">${{ number_format($lastPaidInvoice->amount_paid, 2) }}</small>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Quick Actions for Invoices -->
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="d-flex gap-2 justify-content-center">
+                                        <a href="{{ route('invoices.index') }}" class="btn-custom-primary">
+                                            <i class="fas fa-list me-2"></i>View All Invoices
+                                        </a>
+                                        @if($invoices->whereIn('status', ['open', 'draft'])->count() > 0)
+                                            <a href="{{ route('invoices.index') }}?filter=unpaid" class="btn-custom-danger">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>Pay Outstanding ({{ $invoices->whereIn('status', ['open', 'draft'])->count() }})
+                                            </a>
+                                        @endif
+                                        @if($setting && $setting->subscription_starts_at)
+                                            <a href="{{ route('subscription.portal') }}" class="btn-custom-secondary">
+                                                <i class="fas fa-cog me-2"></i>Billing Portal
+                                            </a>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -1028,8 +1289,8 @@
                                 <i class="fas fa-file-invoice text-muted" style="font-size: 3rem;"></i>
                                 <h5 class="mt-3 text-muted">No Invoices Yet</h5>
                                 <p class="text-muted">Your invoices will appear here once you have an active subscription.</p>
-                                @if(!$user->subscription_active)
-                                    <a href="/#pricing" class="btn-custom-primary mt-3">
+                                @if(!$user->hasActiveSubscription())
+                                    <a href="{{ route('subscription.pricing') }}" class="btn-custom-primary mt-3">
                                         <i class="fas fa-rocket"></i>Choose a Plan
                                     </a>
                                 @endif
@@ -1075,8 +1336,8 @@ function confirmCancellation() {
     modal.show();
 }
 
-function startPersonalizedCheckout() {
-    const button = document.querySelector('.btn-custom-primary');
+function selectPlan(planId) {
+    const button = event.target;
     const originalText = button.innerHTML;
     
     button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
@@ -1086,13 +1347,25 @@ function startPersonalizedCheckout() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
         },
         body: JSON.stringify({
-            // No plan needed - using personalized pricing
+            plan_type: planId // Should be 'monthly' or 'yearly'
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Server returned non-JSON response');
+        }
+        
+        return response.json();
+    })
     .then(data => {
         if (data.checkout_url) {
             window.location.href = data.checkout_url;
@@ -1104,7 +1377,70 @@ function startPersonalizedCheckout() {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while starting checkout');
+        
+        let errorMessage = 'An error occurred while starting checkout';
+        if (error.message.includes('non-JSON response')) {
+            errorMessage = 'Server configuration error. Please contact support.';
+        } else if (error.message.includes('HTTP error')) {
+            errorMessage = 'Network error. Please check your connection and try again.';
+        }
+        
+        alert(errorMessage);
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function startPersonalizedCheckout() {
+    const button = document.querySelector('.btn-custom-primary');
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+    button.disabled = true;
+
+    fetch('{{ route("subscription.checkout") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            plan_type: 'monthly' // Default to monthly for personalized pricing
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Server returned non-JSON response');
+        }
+        
+        return response.json();
+    })
+    .then(data => {
+        if (data.checkout_url) {
+            window.location.href = data.checkout_url;
+        } else {
+            alert(data.error || 'Failed to create checkout session');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        
+        let errorMessage = 'An error occurred while starting checkout';
+        if (error.message.includes('non-JSON response')) {
+            errorMessage = 'Server configuration error. Please contact support.';
+        } else if (error.message.includes('HTTP error')) {
+            errorMessage = 'Network error. Please check your connection and try again.';
+        }
+        
+        alert(errorMessage);
         button.innerHTML = originalText;
         button.disabled = false;
     });
@@ -1141,5 +1477,70 @@ function cancelSubscription() {
         button.disabled = false;
     });
 }
+
+// Billing Toggle Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const monthlyLabel = document.getElementById('monthly-label');
+    const yearlyLabel = document.getElementById('yearly-label');
+    const planCards = document.querySelectorAll('.plan-card');
+    
+    // Only initialize if toggle exists (when plans are shown)
+    if (!monthlyLabel || !yearlyLabel) return;
+    
+    // Set default to show monthly plans
+    showPlansForPeriod('monthly');
+    
+    monthlyLabel.addEventListener('click', function() {
+        setActiveLabel('monthly');
+        showPlansForPeriod('monthly');
+    });
+    
+    yearlyLabel.addEventListener('click', function() {
+        setActiveLabel('yearly');
+        showPlansForPeriod('yearly');
+    });
+    
+    function setActiveLabel(period) {
+        // Reset both labels
+        monthlyLabel.style.background = 'transparent';
+        monthlyLabel.style.color = '#6c757d';
+        yearlyLabel.style.background = 'transparent';
+        yearlyLabel.style.color = '#6c757d';
+        
+        // Set active label
+        if (period === 'monthly') {
+            monthlyLabel.style.background = '#DE6262';
+            monthlyLabel.style.color = 'white';
+        } else {
+            yearlyLabel.style.background = '#DE6262';
+            yearlyLabel.style.color = 'white';
+        }
+    }
+    
+    function showPlansForPeriod(period) {
+        planCards.forEach(card => {
+            const planType = card.getAttribute('data-plan');
+            // Always show both plans at full opacity
+            card.style.display = 'block';
+            card.style.opacity = '1';
+            card.style.transform = 'scale(1)';
+            
+            // Remove any previous selection styling
+            card.classList.remove('selected-plan');
+            
+            // Add subtle border highlight to the selected period
+            if (planType === period) {
+                card.style.borderColor = '#DE6262';
+                card.style.borderWidth = '3px';
+                card.classList.add('selected-plan');
+            } else {
+                // Reset to default border
+                const isYearly = planType === 'yearly';
+                card.style.borderColor = isYearly ? '#28a745' : '#dee2e6';
+                card.style.borderWidth = '2px';
+            }
+        });
+    }
+});
 </script>
 @endpush

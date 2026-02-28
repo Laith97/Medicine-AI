@@ -19,7 +19,7 @@ class MonthlyInvoiceService
     ) {}
 
     /**
-     * Generate monthly invoices for all active users
+     * Generate invoices for all active users based on their billing cycle
      */
     public function generateMonthlyInvoices(Carbon $date = null): array
     {
@@ -33,15 +33,28 @@ class MonthlyInvoiceService
             'errors' => [],
         ];
 
-        // Get all users with active monthly invoice settings
+        // Get all users with active subscription settings
         $users = User::whereHas('monthlyInvoiceSetting', function ($query) {
             $query->where('is_active', true)
-                  ->where('billing_amount', '>', 0);
+                  ->where(function ($q) {
+                      $q->where('monthly_price', '>', 0)
+                        ->orWhere('yearly_price', '>', 0);
+                  });
         })->with('monthlyInvoiceSetting')->get();
 
         foreach ($users as $user) {
             try {
-                // Check if invoice already exists for this month
+                $setting = $user->monthlyInvoiceSetting;
+                
+                // Determine if user should get an invoice this period
+                $shouldCreateInvoice = $this->shouldCreateInvoiceForUser($user, $date);
+                
+                if (!$shouldCreateInvoice) {
+                    $results['skipped']++;
+                    continue;
+                }
+
+                // Check if invoice already exists for this period
                 $existingInvoice = $user->getMonthlyInvoices($month, $year)->first();
                 
                 if ($existingInvoice) {
@@ -49,12 +62,12 @@ class MonthlyInvoiceService
                     continue;
                 }
 
-                $this->createMonthlyInvoice($user, $month, $year);
+                $this->createInvoiceForUser($user, $month, $year);
                 $results['created']++;
                 
             } catch (\Exception $e) {
                 $results['errors'][] = "User {$user->id}: " . $e->getMessage();
-                Log::error('Failed to create monthly invoice', [
+                Log::error('Failed to create invoice', [
                     'user_id' => $user->id,
                     'month' => $month,
                     'year' => $year,
@@ -67,29 +80,75 @@ class MonthlyInvoiceService
     }
 
     /**
-     * Create a monthly invoice for a specific user
+     * Determine if a user should get an invoice for the given period
      */
-    public function createMonthlyInvoice(User $user, int $month, int $year): StripeInvoice
+    private function shouldCreateInvoiceForUser(User $user, Carbon $date): bool
+    {
+        $setting = $user->monthlyInvoiceSetting;
+        
+        if (!$setting || !$setting->is_active) {
+            return false;
+        }
+
+        // For now, we'll create invoices based on the billing_amount field
+        // This represents the current active billing cycle the user chose
+        // TODO: In the future, we could add a 'billing_cycle' field to track monthly vs yearly
+        
+        return $setting->billing_amount > 0;
+    }
+
+    /**
+     * Create an invoice for a user based on their current billing cycle
+     */
+    private function createInvoiceForUser(User $user, int $month, int $year): StripeInvoice
+    {
+        $setting = $user->monthlyInvoiceSetting;
+        
+        // Determine billing cycle based on billing_amount
+        // If billing_amount matches monthly_price, it's monthly
+        // If billing_amount matches yearly_price, it's yearly
+        $isYearly = $setting->billing_amount == $setting->yearly_price;
+        $billingCycle = $isYearly ? 'yearly' : 'monthly';
+        
+        return $this->createMonthlyInvoice($user, $month, $year, $billingCycle);
+    }
+
+    /**
+     * Create an invoice for a specific user
+     */
+    public function createMonthlyInvoice(User $user, int $month, int $year, string $billingCycle = 'monthly'): StripeInvoice
     {
         $setting = $user->monthlyInvoiceSetting;
         
         if (!$setting || !$setting->is_active || $setting->billing_amount <= 0) {
-            throw new \Exception('User does not have active monthly invoicing configured');
+            throw new \Exception('User does not have active subscription configured');
         }
 
         // Check if invoice already exists
         $existingInvoice = $user->getMonthlyInvoices($month, $year)->first();
         if ($existingInvoice) {
-            throw new \Exception('Monthly invoice already exists for this period');
+            throw new \Exception('Invoice already exists for this period');
         }
 
-        $dueDate = Carbon::createFromDate($year, $month, 1)->addMonth()->startOfMonth();
+        // Calculate due date based on billing cycle
+        if ($billingCycle === 'yearly') {
+            $dueDate = Carbon::createFromDate($year, $month, 1)->addYear()->startOfMonth();
+        } else {
+            $dueDate = Carbon::createFromDate($year, $month, 1)->addMonth()->startOfMonth();
+        }
+        
         $gracePeriodEndsAt = $dueDate->copy()->addDays($setting->grace_period_days);
+
+        // Generate appropriate invoice ID and description
+        $invoicePrefix = $billingCycle === 'yearly' ? 'yearly' : 'monthly';
+        $periodDescription = $billingCycle === 'yearly' 
+            ? 'Annual service fee for ' . Carbon::createFromDate($year, $month, 1)->format('Y')
+            : 'Monthly service fee for ' . Carbon::createFromDate($year, $month, 1)->format('F Y');
 
         $invoice = StripeInvoice::create([
             'user_id' => $user->id,
-            'stripe_invoice_id' => 'monthly_' . $user->id . '_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '_' . Str::random(8),
-            'invoice_type' => 'monthly',
+            'stripe_invoice_id' => $invoicePrefix . '_' . $user->id . '_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '_' . Str::random(8),
+            'invoice_type' => $billingCycle,
             'invoice_month' => $month,
             'invoice_year' => $year,
             'amount_due' => $setting->billing_amount,
@@ -98,11 +157,11 @@ class MonthlyInvoiceService
             'due_date' => $dueDate,
             'grace_period_ends_at' => $gracePeriodEndsAt,
             'currency' => 'usd',
-            'description' => 'Monthly service fee for ' . Carbon::createFromDate($year, $month, 1)->format('F Y'),
+            'description' => $periodDescription,
             'auto_generated' => true,
             'line_items' => [
                 [
-                    'description' => 'Monthly service fee',
+                    'description' => $billingCycle === 'yearly' ? 'Annual service fee' : 'Monthly service fee',
                     'amount' => $setting->billing_amount,
                     'quantity' => 1,
                 ]
@@ -251,15 +310,41 @@ class MonthlyInvoiceService
      */
     public function updateUserMonthlySettings(User $user, array $data): MonthlyInvoiceSetting
     {
+        // Safety check: ensure user exists and is not deleted
+        if (!$user || !$user->exists) {
+            throw new \Exception('User not found or has been deleted');
+        }
+
+        // Safety check: validate restricted pages if provided
+        if (isset($data['restricted_pages']) && $data['restricted_pages']) {
+            $availablePages = array_keys(MonthlyInvoiceSetting::getAvailablePages());
+            $invalidPages = array_diff($data['restricted_pages'], $availablePages);
+            if (!empty($invalidPages)) {
+                throw new \Exception('Invalid pages selected: ' . implode(', ', $invalidPages));
+            }
+        }
+
         $setting = $user->getOrCreateMonthlyInvoiceSetting();
         
-        $setting->update([
+        $updateData = [
             'billing_amount' => $data['billing_amount'] ?? $setting->billing_amount,
             'grace_period_days' => $data['grace_period_days'] ?? $setting->grace_period_days,
             'reminder_frequency_days' => $data['reminder_frequency_days'] ?? $setting->reminder_frequency_days,
             'restricted_pages' => $data['restricted_pages'] ?? $setting->restricted_pages,
             'restriction_message' => $data['restriction_message'] ?? $setting->restriction_message,
             'is_active' => $data['is_active'] ?? $setting->is_active,
+        ];
+
+        // If restricted_pages are being set, also set is_restricted to true
+        if (isset($data['restricted_pages']) && !empty($data['restricted_pages'])) {
+            $updateData['is_restricted'] = true;
+        }
+
+        $setting->update($updateData);
+
+        Log::info("Monthly invoice settings updated for user {$user->id} ({$user->name})", [
+            'updated_data' => $updateData,
+            'admin_user' => auth()->id(),
         ]);
 
         return $setting;
@@ -270,12 +355,37 @@ class MonthlyInvoiceService
      */
     public function restrictUser(User $user, array $pages = null, string $message = null): void
     {
+        // Safety check: ensure user exists and is not deleted
+        if (!$user || !$user->exists) {
+            throw new \Exception('User not found or has been deleted');
+        }
+
+        // Safety check: prevent restricting admin users
+        if ($user->role === 'admin') {
+            throw new \Exception('Cannot restrict admin users');
+        }
+
         $setting = $user->getOrCreateMonthlyInvoiceSetting();
+        
+        // Validate pages if provided
+        if ($pages) {
+            $availablePages = array_keys(MonthlyInvoiceSetting::getAvailablePages());
+            $invalidPages = array_diff($pages, $availablePages);
+            if (!empty($invalidPages)) {
+                throw new \Exception('Invalid pages selected: ' . implode(', ', $invalidPages));
+            }
+        }
         
         $setting->update([
             'is_restricted' => true,
             'restricted_pages' => $pages ?: MonthlyInvoiceSetting::getDefaultRestrictedPages(),
             'restriction_message' => $message,
+        ]);
+
+        Log::info("User {$user->id} ({$user->name}) has been restricted", [
+            'restricted_pages' => $pages ?: MonthlyInvoiceSetting::getDefaultRestrictedPages(),
+            'message' => $message,
+            'admin_user' => auth()->id(),
         ]);
     }
 
@@ -284,10 +394,21 @@ class MonthlyInvoiceService
      */
     public function unrestrictUser(User $user): void
     {
+        // Safety check: ensure user exists and is not deleted
+        if (!$user || !$user->exists) {
+            throw new \Exception('User not found or has been deleted');
+        }
+
         $setting = $user->monthlyInvoiceSetting;
         
         if ($setting) {
             $setting->unrestrictAccess();
+            
+            Log::info("User {$user->id} ({$user->name}) has been unrestricted", [
+                'admin_user' => auth()->id(),
+            ]);
+        } else {
+            Log::warning("Attempted to unrestrict user {$user->id} ({$user->name}) but no monthly invoice setting found");
         }
     }
 }

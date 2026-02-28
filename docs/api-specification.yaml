@@ -1,0 +1,1524 @@
+openapi: 3.0.3
+info:
+  title: MedcuraAI API
+  description: |
+    Comprehensive API for the MedcuraAI medical practice management system.
+    This API provides endpoints for managing appointments, diagnoses, notifications,
+    billing, eligibility verification, HEP programs, analytics, and more.
+  version: 1.0.0
+  contact:
+    name: MedcuraAI Support
+    email: support@medcura.ai
+  license:
+    name: MIT
+
+servers:
+  - url: https://api.medcura.ai
+    description: Production server
+  - url: https://staging-api.medcura.ai
+    description: Staging server
+  - url: http://localhost:8000
+    description: Local development server
+
+security:
+  - bearerAuth: []
+  - apiKeyAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Dr. John Smith"
+        email:
+          type: string
+          format: email
+          example: "john.smith@medcura.ai"
+        role:
+          type: string
+          enum: [admin, hospital_admin, doctor, patient]
+          example: "doctor"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          example: "appointment_booked"
+        title:
+          type: string
+          example: "New Appointment Booked"
+        message:
+          type: string
+          example: "You have a new appointment scheduled"
+        data:
+          type: object
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: integer
+        doctor_id:
+          type: integer
+        patient_id:
+          type: integer
+        appointment_date:
+          type: string
+          format: date
+        appointment_time:
+          type: string
+          format: time
+        status:
+          type: string
+          enum: [scheduled, confirmed, completed, cancelled, no_show]
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Diagnosis:
+      type: object
+      properties:
+        id:
+          type: integer
+        appointment_id:
+          type: integer
+        patient_id:
+          type: integer
+        doctor_id:
+          type: integer
+        diagnosis_text:
+          type: string
+        icd_codes:
+          type: array
+          items:
+            type: string
+        prescriptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Prescription'
+        created_at:
+          type: string
+          format: date-time
+
+    Prescription:
+      type: object
+      properties:
+        id:
+          type: integer
+        diagnosis_id:
+          type: integer
+        medication_name:
+          type: string
+        dosage:
+          type: string
+        frequency:
+          type: string
+        duration:
+          type: string
+        instructions:
+          type: string
+
+    HEPProgram:
+      type: object
+      properties:
+        id:
+          type: integer
+        patient_id:
+          type: integer
+        doctor_id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        exercises:
+          type: array
+          items:
+            $ref: '#/components/schemas/HEPExercise'
+        assignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/HEPAssignment'
+        created_at:
+          type: string
+          format: date-time
+
+    HEPExercise:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        instructions:
+          type: string
+        sets:
+          type: integer
+        reps:
+          type: integer
+        duration:
+          type: integer
+        frequency:
+          type: string
+
+    HEPAssignment:
+      type: object
+      properties:
+        id:
+          type: integer
+        hep_program_id:
+          type: integer
+        patient_id:
+          type: integer
+        assigned_date:
+          type: string
+          format: date
+        due_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [assigned, in_progress, completed, cancelled]
+        progress:
+          type: array
+          items:
+            $ref: '#/components/schemas/HEPProgress'
+
+    HEPProgress:
+      type: object
+      properties:
+        id:
+          type: integer
+        hep_assignment_id:
+          type: integer
+        exercise_id:
+          type: integer
+        completed_date:
+          type: string
+          format: date
+        sets_completed:
+          type: integer
+        reps_completed:
+          type: integer
+        duration_completed:
+          type: integer
+        notes:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+paths:
+  /api/user:
+    get:
+      summary: Get authenticated user information
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+
+  # Notification API Routes
+  /api/notifications:
+    get:
+      summary: Get user notifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      per_page:
+                        type: integer
+                      total:
+                        type: integer
+
+    post:
+      summary: Create a test notification
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                message:
+                  type: string
+                type:
+                  type: string
+                  default: "test"
+      responses:
+        '201':
+          description: Notification created successfully
+
+  /api/notifications/unread:
+    get:
+      summary: Get unread notifications
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Unread notifications retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+
+  /api/notifications/unread-count:
+    get:
+      summary: Get unread notification count
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Unread count retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /api/notifications/{id}/read:
+    post:
+      summary: Mark notification as read
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Notification marked as read
+
+  /api/notifications/mark-all-read:
+    post:
+      summary: Mark all notifications as read
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All notifications marked as read
+
+  /api/notifications/{id}:
+    delete:
+      summary: Delete notification
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Notification deleted
+
+  # Billing API Routes
+  /api/billing/suggest_codes:
+    post:
+      summary: Suggest billing codes for a claim
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                diagnosis_codes:
+                  type: array
+                  items:
+                    type: string
+                procedure_description:
+                  type: string
+                insurance_type:
+                  type: string
+      responses:
+        '200':
+          description: Billing codes suggested
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggested_codes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                        description:
+                          type: string
+                        confidence:
+                          type: number
+
+  /api/billing/predict_denial:
+    post:
+      summary: Predict claim denial probability
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                claim_data:
+                  type: object
+                  properties:
+                    provider_id:
+                      type: string
+                    patient_id:
+                      type: string
+                    diagnosis_codes:
+                      type: array
+                      items:
+                        type: string
+                    procedure_codes:
+                      type: array
+                      items:
+                        type: string
+                    insurance_type:
+                      type: string
+                    claim_amount:
+                      type: number
+      responses:
+        '200':
+          description: Denial prediction completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  denial_probability:
+                    type: number
+                    minimum: 0
+                    maximum: 1
+                  risk_factors:
+                    type: array
+                    items:
+                      type: string
+                  recommendations:
+                    type: array
+                    items:
+                      type: string
+
+  # Eligibility API Routes
+  /api/eligibility/check:
+    post:
+      summary: Check patient insurance eligibility
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                patient_id:
+                  type: string
+                service_type:
+                  type: string
+                service_date:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: Eligibility check completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  eligible:
+                    type: boolean
+                  coverage_details:
+                    type: object
+                  limitations:
+                    type: array
+                    items:
+                      type: string
+
+  /api/eligibility/{patientId}/status:
+    get:
+      summary: Get patient eligibility status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Eligibility status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  patient_id:
+                    type: string
+                  eligibility_status:
+                    type: string
+                  last_checked:
+                    type: string
+                    format: date-time
+                  valid_until:
+                    type: string
+                    format: date-time
+
+  # HEP (Home Exercise Program) API Routes
+  /api/hep/generate:
+    post:
+      summary: Generate HEP program using AI
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                patient_id:
+                  type: integer
+                diagnosis:
+                  type: string
+                condition_details:
+                  type: string
+                goals:
+                  type: array
+                  items:
+                    type: string
+                duration_weeks:
+                  type: integer
+                session_frequency:
+                  type: string
+      responses:
+        '201':
+          description: HEP program generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HEPProgram'
+
+  /api/hep/programs:
+    get:
+      summary: Get user's HEP programs
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: HEP programs retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HEPProgram'
+
+  /api/hep/programs/{program}:
+    get:
+      summary: Get specific HEP program
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: program
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: HEP program retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HEPProgram'
+
+    put:
+      summary: Update HEP program
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: program
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                exercises:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/HEPExercise'
+      responses:
+        '200':
+          description: HEP program updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HEPProgram'
+
+    delete:
+      summary: Delete HEP program
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: program
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: HEP program deleted
+
+  # HEP Analytics API Routes
+  /api/hep/analytics/clinical-effectiveness:
+    get:
+      summary: Get clinical effectiveness analytics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Clinical effectiveness data retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  patient_outcomes:
+                    type: object
+                  adherence_rates:
+                    type: object
+                  program_effectiveness:
+                    type: object
+
+  /api/hep/analytics/adherence-patterns:
+    get:
+      summary: Get adherence patterns analytics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Adherence patterns data retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  daily_adherence:
+                    type: array
+                    items:
+                      type: object
+                  weekly_patterns:
+                    type: object
+                  completion_rates:
+                    type: object
+
+  # Advanced Analytics API Routes
+  /api/analytics/dashboard/executive:
+    get:
+      summary: Get executive dashboard data
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Executive dashboard data retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  revenue_metrics:
+                    type: object
+                  patient_metrics:
+                    type: object
+                  operational_efficiency:
+                    type: object
+                  key_performance_indicators:
+                    type: object
+
+  /api/analytics/revenue/overview:
+    get:
+      summary: Get revenue analytics overview
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Revenue analytics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_revenue:
+                    type: number
+                  revenue_by_service:
+                    type: object
+                  revenue_trends:
+                    type: object
+                  payer_mix:
+                    type: object
+
+  /api/analytics/patients/satisfaction:
+    get:
+      summary: Get patient satisfaction analytics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Patient satisfaction data retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  overall_satisfaction:
+                    type: number
+                  satisfaction_by_department:
+                    type: object
+                  satisfaction_trends:
+                    type: object
+                  feedback_themes:
+                    type: array
+                    items:
+                      type: string
+
+  # Document Workflow API Routes
+  /api/documents/create:
+    post:
+      summary: Create a new document
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                template_id:
+                  type: integer
+                patient_id:
+                  type: integer
+                appointment_id:
+                  type: integer
+                document_data:
+                  type: object
+      responses:
+        '201':
+          description: Document created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document_id:
+                    type: integer
+                  status:
+                    type: string
+                  workflow_steps:
+                    type: array
+                    items:
+                      type: object
+
+  /api/documents/{document}/submit:
+    post:
+      summary: Submit document for workflow processing
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: document
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Document submitted for processing
+
+  /api/documents/{document}/status:
+    get:
+      summary: Get document workflow status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: document
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Document status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document_id:
+                    type: integer
+                  current_status:
+                    type: string
+                  workflow_history:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        step:
+                          type: string
+                        status:
+                          type: string
+                        completed_at:
+                          type: string
+                          format: date-time
+                        completed_by:
+                          type: string
+
+  # Document Acceleration API Routes
+  /api/documents/generate-ai:
+    post:
+      summary: Generate document content using AI
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                document_type:
+                  type: string
+                patient_context:
+                  type: object
+                clinical_data:
+                  type: object
+                requirements:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: AI-generated content created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  generated_content:
+                    type: string
+                  confidence_score:
+                    type: number
+                  suggestions:
+                    type: array
+                    items:
+                      type: string
+
+  /api/documents/{document}/enhance-ai:
+    post:
+      summary: Enhance existing document with AI
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: document
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enhancement_type:
+                  type: string
+                  enum: [expand, clarify, professionalize, compliance_check]
+                specific_sections:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Document enhanced with AI
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enhanced_content:
+                    type: string
+                  changes_made:
+                    type: array
+                    items:
+                      type: string
+                  compliance_score:
+                    type: number
+
+  # Compliance Integration API Routes
+  /api/compliance/export-audit-trail:
+    post:
+      summary: Export audit trail for compliance
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date_range:
+                  type: object
+                  properties:
+                    start_date:
+                      type: string
+                      format: date
+                    end_date:
+                      type: string
+                      format: date
+                entity_types:
+                  type: array
+                  items:
+                    type: string
+                export_format:
+                  type: string
+                  enum: [json, csv, pdf]
+      responses:
+        '200':
+          description: Audit trail exported
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  export_id:
+                    type: string
+                  download_url:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date-time
+
+  /api/compliance/analytics:
+    get:
+      summary: Get compliance analytics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Compliance analytics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hipaa_compliance_score:
+                    type: number
+                  audit_trail_completeness:
+                    type: number
+                  data_encryption_status:
+                    type: string
+                  access_control_effectiveness:
+                    type: number
+                  recent_violations:
+                    type: array
+                    items:
+                      type: object
+
+  # Kiosk API Routes
+  /api/kiosks/register:
+    post:
+      summary: Register a new kiosk device
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kiosk_identifier:
+                  type: string
+                location:
+                  type: string
+                device_info:
+                  type: object
+      responses:
+        '201':
+          description: Kiosk registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kiosk_id:
+                    type: integer
+                  api_key:
+                    type: string
+                  configuration:
+                    type: object
+
+  /api/kiosks/{kiosk}/ping:
+    post:
+      summary: Kiosk heartbeat ping
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: kiosk
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                last_activity:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Ping acknowledged
+
+  /api/kiosks/{kiosk}/status:
+    get:
+      summary: Get kiosk status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: kiosk
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Kiosk status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kiosk_id:
+                    type: integer
+                  status:
+                    type: string
+                  last_ping:
+                    type: string
+                    format: date-time
+                  current_session:
+                    type: object
+                    nullable: true
+
+  # Kiosk Session API Routes
+  /api/kiosk-sessions/start/{kiosk}:
+    post:
+      summary: Start a kiosk session
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: kiosk
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Session started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id:
+                    type: string
+                  kiosk_id:
+                    type: integer
+                  started_at:
+                    type: string
+                    format: date-time
+
+  /api/kiosk-sessions/{session}/end:
+    post:
+      summary: End a kiosk session
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: session
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session ended
+
+  # Kiosk Check-in API Routes
+  /api/appointments/search:
+    get:
+      summary: Search appointments for check-in
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: patient_name
+          in: query
+          schema:
+            type: string
+        - name: appointment_time
+          in: query
+          schema:
+            type: string
+            format: time
+      responses:
+        '200':
+          description: Appointments found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Appointment'
+
+  /api/appointments/{appointment}/checkin:
+    post:
+      summary: Check in patient for appointment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: appointment
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                checkin_method:
+                  type: string
+                  enum: [kiosk, manual]
+                patient_verification:
+                  type: object
+      responses:
+        '200':
+          description: Patient checked in successfully
+
+  # Kiosk Payment API Routes
+  /api/appointments/{appointment}/payments/create-intent:
+    post:
+      summary: Create payment intent for appointment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: appointment
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                currency:
+                  type: string
+                  default: "usd"
+                payment_method_types:
+                  type: array
+                  items:
+                    type: string
+                  default: ["card"]
+      responses:
+        '200':
+          description: Payment intent created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  client_secret:
+                    type: string
+                  payment_intent_id:
+                    type: string
+                  amount:
+                    type: number
+                  currency:
+                    type: string
+
+  /api/payments/{payment}/confirm:
+    post:
+      summary: Confirm payment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: payment
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payment_method_id:
+                  type: string
+      responses:
+        '200':
+          description: Payment confirmed successfully
+
+  # Waitlist API Routes
+  /api/waitlist/preferences:
+    get:
+      summary: Get user waitlist preferences
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Waitlist preferences retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    doctor_id:
+                      type: integer
+                    specialty:
+                      type: string
+                    max_wait_time:
+                      type: integer
+                    preferred_times:
+                      type: array
+                      items:
+                        type: string
+
+    post:
+      summary: Create waitlist preference
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                doctor_id:
+                  type: integer
+                specialty:
+                  type: string
+                max_wait_time:
+                  type: integer
+                preferred_times:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Waitlist preference created
+
+  # Voice Assistant API Routes
+  /api/ai/voice-assistant/start-session:
+    post:
+      summary: Start voice assistant session
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Voice session started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id:
+                    type: string
+                  status:
+                    type: string
+
+  /api/ai/voice-assistant/process-with-ai:
+    post:
+      summary: Process transcription with AI
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                transcription:
+                  type: string
+                session_id:
+                  type: string
+                context:
+                  type: object
+      responses:
+        '200':
+          description: AI processing completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analysis:
+                    type: string
+                  suggestions:
+                    type: array
+                    items:
+                      type: string
+                  confidence_score:
+                    type: number
+
+  # Real-time Appointment API Routes
+  /api/appointments/today:
+    get:
+      summary: Get today's appointments
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Today's appointments retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Appointment'
+
+  /api/appointments/subscribe:
+    post:
+      summary: Subscribe to appointment updates
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                appointment_ids:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        '200':
+          description: Subscribed to appointment updates
+
+  # Public API Routes
+  /api/notifications/guest/{token}:
+    get:
+      summary: Get guest notifications
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Guest notifications retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+
+  # Compliance Webhook
+  /api/compliance/webhooks/incoming:
+    post:
+      summary: Receive compliance webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event_type:
+                  type: string
+                data:
+                  type: object
+                timestamp:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Webhook processed successfully
+
+  # Error responses
+  '400':
+    description: Bad Request
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
+
+  '401':
+    description: Unauthorized
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
+
+  '403':
+    description: Forbidden
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
+
+  '404':
+    description: Not Found
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
+
+  '422':
+    description: Unprocessable Entity
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
+
+  '500':
+    description: Internal Server Error
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'

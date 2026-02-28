@@ -1,8 +1,76 @@
 @extends('master')
 
-@section('title', 'Contact Us - AI Medical Diagnosis')
+@section('title', 'Contact Us - MedCura Clinical Platform')
+
+@push('styles')
+<style>
+/* Professional Dashboard Header Styling */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+}
+
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header h2::before {
+    content: '📞';
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+}
+</style>
+@endpush
 
 @section('content')
+<div class="dashboard-header">
+    <h2>Contact</h2>
+    <p>Get in touch with us</p>
+</div>
 <!-- Page Title -->
 <section class="page-title page-title-parallax parallax scroll-detect dark page-title-center" style="padding: 140px 0;">
     <img src="demos/medical/images/contact/page-title.jpg" class="parallax-bg">
@@ -14,7 +82,7 @@
                     <h2 class="fw-bold ls-0 text-white">Contact Us</h2>
                 </div>
                 <span class="fw-semibold ls-1 text-uppercase" style="color: #EEE;">
-                    We're here to help with your medical AI needs
+                    Get support for our complete AI healthcare platform
                 </span>
             </div>
         </div>
@@ -28,8 +96,8 @@
             <div class="row">
                 <!-- Contact Form -->
                 <div class="col-lg-8">
-                    <h3 class="mb-4">Get in Touch with Our Team</h3>
-                    <p class="text-muted mb-4">Have questions about our AI diagnosis system? Need technical support? Our team of medical AI experts is here to help.</p>
+                    <h3 class="mb-4">Get in Touch with Our Healthcare AI Experts</h3>
+                    <p class="text-muted mb-4">Questions about our comprehensive AI healthcare platform? Need support with diagnosis tools, voice assistant, patient management, or practice growth features? Our team of medical AI specialists and healthcare technology experts is here to help you maximize your practice potential.</p>
 
                     @if(session('success'))
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -84,10 +152,15 @@
                                 <select id="service" name="service" class="form-select">
                                     <option value="">-- Select One --</option>
                                     <option value="General Inquiry" {{ old('service') == 'General Inquiry' ? 'selected' : '' }}>General Inquiry</option>
+                                    <option value="AI Diagnosis Support" {{ old('service') == 'AI Diagnosis Support' ? 'selected' : '' }}>AI Diagnosis Support</option>
+                                    <option value="Voice Assistant Help" {{ old('service') == 'Voice Assistant Help' ? 'selected' : '' }}>Voice Assistant Help</option>
+                                    <option value="Patient Management" {{ old('service') == 'Patient Management' ? 'selected' : '' }}>Patient Management</option>
+                                    <option value="Landing Page Setup" {{ old('service') == 'Landing Page Setup' ? 'selected' : '' }}>Landing Page Setup</option>
                                     <option value="Technical Support" {{ old('service') == 'Technical Support' ? 'selected' : '' }}>Technical Support</option>
+                                    <option value="Billing & Subscription" {{ old('service') == 'Billing & Subscription' ? 'selected' : '' }}>Billing & Subscription</option>
                                     <option value="Partnership" {{ old('service') == 'Partnership' ? 'selected' : '' }}>Partnership Opportunities</option>
-                                    <option value="Demo Request" {{ old('service') == 'Demo Request' ? 'selected' : '' }}>Demo Request</option>
-                                    <option value="Billing" {{ old('service') == 'Billing' ? 'selected' : '' }}>Billing & Pricing</option>
+                                    <option value="Demo Request" {{ old('service') == 'Demo Request' ? 'selected' : '' }}>Platform Demo Request</option>
+                                    <option value="Integration Support" {{ old('service') == 'Integration Support' ? 'selected' : '' }}>Integration Support</option>
                                 </select>
                                 @error('service')
                                     <div class="text-danger mt-1">{{ $message }}</div>
@@ -104,7 +177,7 @@
 
                             <div class="col-12 form-group">
                                 <label for="message">Message <small>*</small></label>
-                                <textarea class="form-control required" id="message" name="message" rows="6" cols="30" placeholder="Tell us about your needs or questions regarding our AI diagnosis system..." required>{{ old('message') }}</textarea>
+                                <textarea class="form-control required" id="message" name="message" rows="6" cols="30" placeholder="Tell us about your needs or questions regarding our AI healthcare platform - diagnosis tools, voice assistant, patient management, landing pages, or any other features..." required>{{ old('message') }}</textarea>
                                 @error('message')
                                     <div class="text-danger mt-1">{{ $message }}</div>
                                 @enderror
@@ -124,36 +197,47 @@
 
                 <!-- Contact Information -->
                 <div class="col-lg-4">
-                    <div style="background-color: #f5f5f5; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
-                        <div style="text-align: center; margin-bottom: 20px;">
-                            <div style="width: 50px; height: 50px; background-color: #DE6262; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-bottom: 15px;">
+                    <div class="bg-light p-4 rounded mb-4">
+                        <div class="text-center">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #DE6262; color: white; font-size: 20px;">
                                 <i class="fas fa-headset"></i>
                             </div>
-                            <h5>24/7 Support</h5>
-                            <p class="text-muted">Our AI system is available around the clock, and our support team is here to help.</p>
-                            <p><strong>Response Time:</strong> Within 2 hours</p>
+                            <h5 class="fw-bold">24/7 Platform Support</h5>
+                            <p class="text-muted">Our AI healthcare platform is available around the clock with dedicated support for all features.</p>
+                            <p class="mb-0"><strong>Response Time:</strong> Within 2 hours</p>
                         </div>
                     </div>
 
-                    <div style="background-color: #f5f5f5; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
-                        <div style="text-align: center; margin-bottom: 20px;">
-                            <div style="width: 50px; height: 50px; background-color: #DE6262; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-bottom: 15px;">
+                    <div class="bg-light p-4 rounded mb-4">
+                        <div class="text-center">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #DE6262; color: white; font-size: 20px;">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <h5 class="fw-bold">AI Expertise</h5>
+                            <p class="text-muted">Specialized support for AI diagnosis, voice assistant, and automated patient management features.</p>
+                            <p class="mb-0"><strong>Specialization:</strong> Healthcare AI Technology</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-light p-4 rounded mb-4">
+                        <div class="text-center">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #DE6262; color: white; font-size: 20px;">
                                 <i class="fas fa-shield-alt"></i>
                             </div>
-                            <h5>HIPAA Compliance</h5>
-                            <p class="text-muted">All communications and data are encrypted and HIPAA compliant.</p>
-                            <p><strong>Security Level:</strong> Enterprise Grade</p>
+                            <h5 class="fw-bold">HIPAA Compliance</h5>
+                            <p class="text-muted">All communications and data are encrypted and HIPAA compliant with enterprise-grade security.</p>
+                            <p class="mb-0"><strong>Security Level:</strong> Enterprise Grade</p>
                         </div>
                     </div>
 
-                    <div style="background-color: #f5f5f5; padding: 30px; border-radius: 10px;">
-                        <div style="text-align: center; margin-bottom: 20px;">
-                            <div style="width: 50px; height: 50px; background-color: #DE6262; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-bottom: 15px;">
+                    <div class="bg-light p-4 rounded">
+                        <div class="text-center">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #DE6262; color: white; font-size: 20px;">
                                 <i class="fas fa-users"></i>
                             </div>
-                            <h5>Expert Team</h5>
-                            <p class="text-muted">Our team includes medical professionals and AI specialists.</p>
-                            <p><strong>Expertise:</strong> Medical AI & Healthcare</p>
+                            <h5 class="fw-bold">Healthcare Technology Experts</h5>
+                            <p class="text-muted">Our team includes medical professionals, AI specialists, and healthcare technology experts.</p>
+                            <p class="mb-0"><strong>Expertise:</strong> Complete Healthcare Solutions</p>
                         </div>
                     </div>
                 </div>
@@ -173,29 +257,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitText = document.getElementById('submit-text');
     const submitLoading = document.getElementById('submit-loading');
     const formResult = document.querySelector('.form-result');
-    
+
     // Check if elements exist
     if (!form || !submitBtn || !submitText || !submitLoading || !formResult) {
         console.error('Contact form elements not found');
         return;
     }
-    
+
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         // Show loading state
         submitBtn.disabled = true;
         submitText.style.display = 'none';
         submitLoading.style.display = 'inline';
-        
+
         // Clear previous results
         formResult.innerHTML = '';
-        
+
         // Gather form data
         const formData = new FormData(form);
-        
+
         // Form data ready to submit
-        
+
         // Make AJAX request
         fetch(form.action, {
             method: 'POST',
@@ -288,7 +372,7 @@ document.addEventListener('DOMContentLoaded', function() {
             submitLoading.style.display = 'none';
         });
     });
-    
+
     // Add fallback for direct form submission if JavaScript fails
     form.addEventListener('submit', function(e) {
         // If AJAX is not supported or fails, allow normal form submission
@@ -410,27 +494,85 @@ document.addEventListener('DOMContentLoaded', function() {
         background: linear-gradient(135deg, #0369A1, #0284C7);
         box-shadow: 0 4px 12px rgba(3, 105, 161, 0.3);
     }
-    
+
     .contact-error-notification {
         background: linear-gradient(135deg, #DC2626, #B91C1C);
         box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
     }
 }
+</style>
+<style>
+/* Professional Dashboard Header Styling */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    position: relative;
+    overflow: hidden;
+}
 
-/* Responsive design */
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+}
+
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header h2::before {
+    content: '📞';
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+
     .notification-content {
         padding: 15px;
     }
-    
+
     .notification-message h5 {
         font-size: 16px;
     }
-    
+
     .notification-message p {
         font-size: 13px;
     }
-    
+
     .notification-icon {
         margin-right: 12px;
     }

@@ -5,6 +5,68 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
 <link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+
+<style>
+/* Professional Dashboard Header Styling */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+}
+
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header h2::before {
+    content: '📅';
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+}
+</style>
 @endpush
 
 @section('content')
@@ -12,20 +74,8 @@
     <div class="container">
         <!-- Dashboard Header -->
         <div class="dashboard-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2>Manage Availability</h2>
-                    <p>Set your weekly schedule and appointment slots</p>
-                </div>
-                <div class="d-flex gap-3">
-                    <a href="{{ route('dashboard') }}" class="btn btn-secondary-custom">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
-                    </a>
-                    <a href="{{ route('doctor.availability.create') }}" class="btn btn-primary-custom">
-                        <i class="fas fa-plus me-2"></i>Add Time Slot
-                    </a>
-                </div>
-            </div>
+            <h2>Availability</h2>
+            <p>Set your availability</p>
         </div>
 
         <!-- Session Messages -->
@@ -183,64 +233,85 @@
     </div>
 </div>
 
-<!-- Bulk Add Modal -->
-<div class="modal fade" id="bulkModal" tabindex="-1" aria-labelledby="bulkModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="bulkModalLabel">Quick Add Time Slot</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="POST" action="{{ route('doctor.availability.store') }}">
-                @csrf
-                <div class="modal-body">
-                    <input type="hidden" name="day_of_week" id="bulkDay">
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <label class="form-label">Start Time</label>
-                            <input type="time" name="start_time" required class="form-control">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label">End Time</label>
-                            <input type="time" name="end_time" required class="form-control">
-                        </div>
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <label class="form-label">Slot Duration (minutes)</label>
-                            <select name="slot_duration" required class="form-select">
-                                <option value="15">15 minutes</option>
-                                <option value="30" selected>30 minutes</option>
-                                <option value="45">45 minutes</option>
-                                <option value="60">60 minutes</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label">Max Bookings per Slot</label>
-                            <select name="max_bookings_per_slot" required class="form-select">
-                                <option value="1" selected>1 patient</option>
-                                <option value="2">2 patients</option>
-                                <option value="3">3 patients</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary-custom">Add Time Slot</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <script>
 function showBulkModal(day) {
     document.getElementById('bulkDay').value = day;
-    const modal = new bootstrap.Modal(document.getElementById('bulkModal'));
-    modal.show();
+    document.getElementById('bulkModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
 }
+
+function closeBulkModal() {
+    document.getElementById('bulkModal').style.display = 'none';
+    document.body.style.overflow = 'auto'; // Restore scrolling
+}
+
+// Close modal when clicking outside
+document.getElementById('bulkModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeBulkModal();
+    }
+});
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('bulkModal').style.display === 'flex') {
+        closeBulkModal();
+    }
+});
 </script>
+@push('modals')
+<!-- Bulk Add Modal -->
+<div id="bulkModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999999; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 15px; padding: 2rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
+            <h5 style="margin: 0; color: #2c3e50; font-weight: 600;">Quick Add Time Slot</h5>
+            <button type="button" onclick="closeBulkModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6c757d; padding: 0;">&times;</button>
+        </div>
+        <form method="POST" action="{{ route('doctor.availability.store') }}">
+            @csrf
+            <input type="hidden" name="day_of_week" id="bulkDay">
+
+            <div style="margin-bottom: 1.5rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Start Time</label>
+                        <input type="time" name="start_time" required style="width: 100%; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 5px; font-size: 1rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">End Time</label>
+                        <input type="time" name="end_time" required style="width: 100%; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 5px; font-size: 1rem;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Slot Duration (minutes)</label>
+                        <select name="slot_duration" required style="width: 100%; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 5px; font-size: 1rem; background: white;">
+                            <option value="15">15 minutes</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60">60 minutes</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Max Bookings per Slot</label>
+                        <select name="max_bookings_per_slot" required style="width: 100%; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 5px; font-size: 1rem; background: white;">
+                            <option value="1" selected>1 patient</option>
+                            <option value="2">2 patients</option>
+                            <option value="3">3 patients</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                <button type="button" onclick="closeBulkModal()" style="padding: 0.5rem 1.5rem; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem;">Cancel</button>
+                <button type="submit" style="padding: 0.5rem 1.5rem; background: linear-gradient(135deg, #DE6262 0%, #c55252 100%); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; font-weight: 500;">Add Time Slot</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endpush
+
 @endsection

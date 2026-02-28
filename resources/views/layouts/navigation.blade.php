@@ -1,3 +1,14 @@
+<style>
+@media (min-width: 768px) {
+    .hamburger-button {
+        display: none !important;
+    }
+    .responsive-nav-menu {
+        display: none !important;
+    }
+}
+</style>
+
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -6,7 +17,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ url('/') }}">
-                        <img style="width: 140px" class="logo-default" srcset="{{ asset('demos/medical/images/logo-medical.jpeg') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x" src="{{ asset('demos/medical/images/logo-medical.jpeg') }}" alt="Canvas Logo">
+                        <img style="width: 140px" class="logo-default" src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}" alt="Canvas Logo">
                     </a>
                 </div>
 
@@ -18,30 +29,16 @@
                             <x-nav-link :href="route('doctor.dashboard')" :active="request()->routeIs('doctor.dashboard')">
                                 <i class="fas fa-tachometer-alt mr-2"></i>{{ __('Dashboard') }}
                             </x-nav-link>
-                            <x-nav-link :href="route('ask-ai')" :active="request()->routeIs('ask-ai')">
-                                <i class="fas fa-user-plus mr-2"></i>{{ __('Add-patients') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('cases')" :active="request()->routeIs('cases')">
-                                <i class="fas fa-folder-open mr-2"></i>{{ __('Cases') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('doctor.appointments.index')" :active="request()->routeIs('doctor.appointments.*')">
-                                <i class="fas fa-calendar mr-2"></i>{{ __('Appointments') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('doctor.availability.index')" :active="request()->routeIs('doctor.availability.*')">
-                                <i class="fas fa-clock mr-2"></i>{{ __('Availability') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('doctor.landing-page.index')" :active="request()->routeIs('doctor.landing-page.*')">
-                                <i class="fas fa-globe mr-2"></i>{{ __('Landing Page') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('doctor.reviews.index')" :active="request()->routeIs('doctor.reviews.*')">
-                                <i class="fas fa-star mr-2"></i>{{ __('Reviews') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('doctor.notes.index')" :active="request()->routeIs('doctor.notes.*')">
-                                <i class="fas fa-sticky-note mr-2"></i>{{ __('Notes') }}
-                            </x-nav-link>
-                            <x-nav-link :href="route('diagnosis.index')" :active="request()->routeIs('diagnosis.*')">
-                                <i class="fas fa-clipboard-check mr-2"></i>{{ __('Diagnoses') }}
-                            </x-nav-link>
+
+                            <!-- Render dropdown menus from MenuHelper -->
+                            @php
+                                $menuItems = App\Helpers\MenuHelper::getMenuItems(auth()->user());
+                                foreach ($menuItems as $menuItem) {
+                                    if ($menuItem['name'] !== 'Dashboard') { // Skip dashboard as it's already rendered above
+                                        echo '<x-nav-dropdown :item="$menuItem" />';
+                                    }
+                                }
+                            @endphp
                         @elseif(auth()->user()->role === 'admin')
                             <!-- Admin Navigation -->
                             <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
@@ -82,6 +79,8 @@
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 @auth
+                    <!-- Notification Dropdown -->
+                    <x-notification-dropdown class="mr-4" />
                     <x-dropdown align="right" width="48">
                         <x-slot name="trigger">
                             <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
@@ -124,7 +123,7 @@
                 @else
                     <!-- Guest Actions -->
                     <div class="flex items-center space-x-4">
-                        <a href="{{ route('patient.register') }}" class="text-sm font-medium text-primary-600 hover:text-primary-500">
+                        <a href="{{ route('register') }}" class="text-sm font-medium text-primary-600 hover:text-primary-500">
                             Create Account
                         </a>
                         <a href="{{ route('login') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
@@ -135,8 +134,8 @@
             </div>
 
             <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
+            <div class="-me-2 flex items-center hamburger-container">
+                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out hamburger-button">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -147,7 +146,7 @@
     </div>
 
     <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
+    <div :class="{'block': open, 'hidden': ! open}" class="hidden responsive-nav-menu">
         <div class="pt-2 pb-3 space-y-1">
             @auth
                 @if(auth()->user()->role === 'doctor')
@@ -155,30 +154,16 @@
                     <x-responsive-nav-link :href="route('doctor.dashboard')" :active="request()->routeIs('doctor.dashboard')">
                         <i class="fas fa-tachometer-alt mr-2"></i>{{ __('Dashboard') }}
                     </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('ask-ai')" :active="request()->routeIs('ask-ai')">
-                        <i class="fas fa-user-plus mr-2"></i>{{ __('Add-patients') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('cases')" :active="request()->routeIs('cases')">
-                        <i class="fas fa-folder-open mr-2"></i>{{ __('Cases') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('doctor.appointments.index')" :active="request()->routeIs('doctor.appointments.*')">
-                        <i class="fas fa-calendar mr-2"></i>{{ __('Appointments') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('doctor.availability.index')" :active="request()->routeIs('doctor.availability.*')">
-                        <i class="fas fa-clock mr-2"></i>{{ __('Availability') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('doctor.landing-page.index')" :active="request()->routeIs('doctor.landing-page.*')">
-                        <i class="fas fa-globe mr-2"></i>{{ __('Landing Page') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('doctor.reviews.index')" :active="request()->routeIs('doctor.reviews.*')">
-                        <i class="fas fa-star mr-2"></i>{{ __('Reviews') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('doctor.notes.index')" :active="request()->routeIs('doctor.notes.*')">
-                        <i class="fas fa-sticky-note mr-2"></i>{{ __('Notes') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('diagnosis.index')" :active="request()->routeIs('diagnosis.*')">
-                        <i class="fas fa-clipboard-check mr-2"></i>{{ __('Diagnoses') }}
-                    </x-responsive-nav-link>
+
+                    <!-- Render mobile dropdown menus from MenuHelper -->
+                    @php
+                        $menuItems = App\Helpers\MenuHelper::getMenuItems(auth()->user());
+                        foreach ($menuItems as $menuItem) {
+                            if ($menuItem['name'] !== 'Dashboard') { // Skip dashboard as it's already rendered above
+                                echo '<x-responsive-nav-dropdown :item="$menuItem" />';
+                            }
+                        }
+                    @endphp
                 @elseif(auth()->user()->role === 'admin')
                     <!-- Admin Mobile Navigation -->
                     <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
@@ -254,7 +239,7 @@
             <!-- Guest Options in Mobile -->
             <div class="pt-4 pb-1 border-t border-gray-200">
                 <div class="mt-3 space-y-1">
-                    <x-responsive-nav-link :href="route('patient.register')">
+                    <x-responsive-nav-link :href="route('register')">
                         <i class="fas fa-user-plus mr-2"></i>{{ __('Create Account') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('login')">

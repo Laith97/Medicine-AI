@@ -4,35 +4,6 @@
 
 @push('styles')
 <style>
-    .billing-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        border: 1px solid #e9ecef;
-        margin-bottom: 1.5rem;
-    }
-
-    .stat-card {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        color: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        text-align: center;
-        margin-bottom: 1rem;
-    }
-
-    .stat-card h3 {
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-    }
-
-    .stat-card p {
-        margin: 0;
-        opacity: 0.9;
-    }
-
     .usage-bar {
         background-color: #e9ecef;
         border-radius: 10px;
@@ -48,50 +19,6 @@
 
     .usage-fill.low { background-color: #28a745; }
     .usage-fill.medium { background-color: #ffc107; }
-
-    /* Compact table styles */
-    .table th {
-        padding: 0.5rem 0.4rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        white-space: nowrap;
-        border-bottom: 2px solid #dee2e6;
-    }
-
-    .table td {
-        padding: 0.4rem 0.4rem;
-        font-size: 0.8rem;
-        vertical-align: middle;
-        border-bottom: 1px solid #f1f3f4;
-    }
-
-    .table td strong {
-        font-size: 0.85rem;
-    }
-
-    .table td small {
-        font-size: 0.7rem;
-    }
-
-    .table .badge {
-        font-size: 0.65rem;
-        padding: 0.2rem 0.4rem;
-    }
-
-    .table .btn {
-        padding: 0.2rem 0.4rem;
-        font-size: 0.7rem;
-    }
-
-    /* Column widths for billing table */
-    .table th:nth-child(1), .table td:nth-child(1) { width: 20%; }
-    .table th:nth-child(2), .table td:nth-child(2) { width: 15%; }
-    .table th:nth-child(3), .table td:nth-child(3) { width: 15%; }
-    .table th:nth-child(4), .table td:nth-child(4) { width: 15%; }
-    .table th:nth-child(5), .table td:nth-child(5) { width: 15%; }
-    .table th:nth-child(6), .table td:nth-child(6) { width: 10%; }
-    .table th:nth-child(7), .table td:nth-child(7) { width: 10%; }
     .usage-fill.high { background-color: #dc3545; }
 
     .plan-badge {
@@ -105,59 +32,29 @@
     .plan-free { background-color: #6c757d; color: white; }
     .plan-basic { background-color: #17a2b8; color: white; }
     .plan-pro { background-color: #DE6262; color: white; }
-    .plan-enterprise { background-color: #6f42c1; color: white; }
 
-    .table-responsive {
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-
-    .table th {
-        background-color: #f8f9fa;
-        border: none;
-        font-weight: 600;
-        color: #495057;
-        padding: 1rem 0.75rem;
-    }
-
-    .table td {
-        border: none;
-        padding: 1rem 0.75rem;
-        vertical-align: middle;
-    }
-
-    .table tbody tr {
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .table tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    .filter-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        border: 1px solid #e9ecef;
-        margin-bottom: 1.5rem;
-    }
 </style>
 @endpush
 
 @section('content')
-<div class="container-fluid px-2 px-md-4">
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <!-- Page Header -->
-            <div class="page-header text-center text-md-start mb-4">
-                <h2><i class="fas fa-credit-card me-2"></i>Billing Dashboard</h2>
-                <p>Monitor user subscriptions, token usage, and revenue</p>
+<div class="admin-page">
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h1 class="text-white"><i class="fas fa-credit-card me-2"></i>Billing Dashboard</h1>
+                    <p class="mb-0">Monitor user subscriptions, token usage, and revenue</p>
+                </div>
             </div>
+        </div>
 
-            <!-- Filters -->
-            <div class="filter-card">
+        <!-- Filters -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5 class="mb-0">Filters</h5>
+            </div>
+            <div class="admin-card-body" style="padding: 1rem 1.5rem;">
                 <form method="GET" action="{{ route('admin.billing') }}" class="row g-3 align-items-end">
                     <div class="col-md-4">
                         <label for="date_range" class="form-label">Date Range</label>
@@ -175,101 +72,139 @@
                     </div>
                     <div class="col-md-4 text-end">
                         <a href="{{ route('admin.billing.export', ['date_range' => $dateRange]) }}" 
-                           class="btn btn-outline-primary">
-                            <i class="fas fa-download me-2"></i>Export CSV
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-download me-1"></i>Export CSV
                         </a>
                     </div>
                 </form>
             </div>
+        </div>
 
-            <!-- Statistics Cards -->
-            <div class="row mb-4">
-                <div class="col-md-2">
-                    <div class="stat-card">
-                        <h3>{{ number_format($totals['total_users']) }}</h3>
-                        <p>Total Users</p>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="stat-card">
-                        <h3>{{ number_format($totals['active_subscribers']) }}</h3>
-                        <p>Active Subscribers</p>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="stat-card">
-                        <h3>{{ number_format($totals['total_requests']) }}</h3>
-                        <p>Total Requests</p>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="stat-card">
-                        <h3>{{ number_format($totals['total_tokens']) }}</h3>
-                        <p>Total Tokens</p>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="stat-card">
-                        <h3>${{ number_format($totals['total_cost'], 2) }}</h3>
-                        <p>Token Costs</p>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="stat-card">
-                        <h3>${{ number_format($totals['total_revenue'], 2) }}</h3>
-                        <p>Revenue</p>
-                    </div>
-                </div>
+        <!-- Statistics Cards -->
+        <div class="admin-stats">
+            <div class="admin-stat-card">
+                <i class="fas fa-users"></i>
+                <h3>{{ number_format($totals['total_users']) }}</h3>
+                <p>Total Users</p>
             </div>
+            <div class="admin-stat-card">
+                <i class="fas fa-user-check"></i>
+                <h3>{{ number_format($totals['active_subscribers']) }}</h3>
+                <p>Active Subscribers</p>
+            </div>
+            <div class="admin-stat-card">
+                <i class="fas fa-user-lock"></i>
+                <h3>{{ number_format($totals['restricted_users']) }}</h3>
+                <p>Restricted Users</p>
+            </div>
+            <div class="admin-stat-card">
+                <i class="fas fa-paper-plane"></i>
+                <h3>{{ number_format($totals['total_requests']) }}</h3>
+                <p>Total Requests</p>
+            </div>
+            <div class="admin-stat-card">
+                <i class="fas fa-coins"></i>
+                <h3>{{ number_format($totals['total_tokens']) }}</h3>
+                <p>Total Tokens</p>
+            </div>
+            <div class="admin-stat-card">
+                <i class="fas fa-dollar-sign"></i>
+                <h3>${{ number_format($totals['total_cost'], 2) }}</h3>
+                <p>Token Costs</p>
+            </div>
+            <div class="admin-stat-card">
+                <i class="fas fa-chart-line"></i>
+                <h3>${{ number_format($totals['total_revenue'], 2) }}</h3>
+                <p>Revenue</p>
+            </div>
+        </div>
 
-            <!-- Users Table -->
-            <div class="billing-card">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">User Billing Details</h5>
-                    <small class="text-muted">{{ $users->count() }} users</small>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-hover">
+        <!-- Users Table -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5 class="mb-0">User Billing Details</h5>
+                <small class="text-muted">{{ $users->count() }} users</small>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-table-container">
+                    <table class="admin-table billing-table">
                         <thead>
                             <tr>
                                 <th>User</th>
-                                <th>Plan</th>
+                                <th>Pricing (M/Y)</th>
+                                <th>Status</th>
                                 <th>Subscription</th>
                                 <th>Usage</th>
                                 <th>Tokens</th>
                                 <th>Cost</th>
-                                <th>Stripe ID</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($users as $user)
                             <tr>
                                 <td>
-                                    <div>
-                                        <strong>{{ $user['name'] }}</strong>
-                                        <br>
+                                    <div class="user-info">
+                                        <h6>{{ $user['name'] }}</h6>
                                         <small class="text-muted">{{ $user['email'] }}</small>
+                                        @if($user['phone'])
+                                            <br><small class="text-muted">{{ $user['phone'] }}</small>
+                                        @endif
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="plan-badge plan-{{ $user['current_plan'] }}">
-                                        {{ ucfirst($user['current_plan']) }}
-                                    </span>
+                                    <div class="d-flex flex-column">
+                                        <span class="admin-badge {{ $user['monthly_price'] > 0 ? 'success' : 'secondary' }} mb-1">
+                                            <i class="bi bi-calendar-month"></i>${{ number_format($user['monthly_price'], 0) }}/mo
+                                        </span>
+                                        <span class="admin-badge {{ $user['yearly_price'] > 0 ? 'info' : 'secondary' }}">
+                                            <i class="bi bi-calendar-year"></i>${{ number_format($user['yearly_price'], 0) }}/yr
+                                        </span>
+                                    </div>
                                 </td>
                                 <td>
-                                    @if($user['subscription_active'])
-                                        <span class="badge bg-success">Active</span>
+                                    @php
+                                        $status = $user['subscription_status'];
+                                        $badgeClass = match($status) {
+                                            'active' => 'success',
+                                            'unlimited' => 'primary',
+                                            'grace_period' => 'warning',
+                                            'warning_period' => 'warning',
+                                            'restricted' => 'danger',
+                                            'setup_pending' => 'secondary',
+                                            default => 'secondary'
+                                        };
+                                        $statusText = match($status) {
+                                            'active' => 'Active',
+                                            'unlimited' => 'Unlimited',
+                                            'grace_period' => 'Grace Period',
+                                            'warning_period' => 'Warning',
+                                            'restricted' => 'Restricted',
+                                            'setup_pending' => 'Setup Pending',
+                                            default => 'Unknown'
+                                        };
+                                    @endphp
+                                    <span class="admin-badge {{ $badgeClass }}">{{ $statusText }}</span>
+                                    @if($user['is_restricted'])
+                                        <br><small class="admin-badge danger mt-1">Access Restricted</small>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($user['subscription_starts_at'])
+                                        <small class="text-muted">Started: {{ \Carbon\Carbon::parse($user['subscription_starts_at'])->format('M j, Y') }}</small>
                                         @if($user['subscription_ends_at'])
-                                            <br><small class="text-muted">Until {{ $user['subscription_ends_at']->format('M j, Y') }}</small>
+                                            <br><small class="text-muted">Ends: {{ \Carbon\Carbon::parse($user['subscription_ends_at'])->format('M j, Y') }}</small>
+                                            @if($user['days_remaining'] !== null)
+                                                <br><small class="text-{{ $user['days_remaining'] <= 7 ? 'danger' : 'muted' }}">{{ $user['days_remaining'] }} days left</small>
+                                            @endif
                                         @endif
                                     @else
-                                        <span class="badge bg-secondary">Inactive</span>
+                                        <span class="text-muted">Not started</span>
                                     @endif
                                 </td>
                                 <td>
                                     @php
-                                        $percentage = $user['usage_percentage'];
+                                        $percentage = $user['cost_usage_percentage'];
                                         $barClass = $percentage >= 90 ? 'high' : ($percentage >= 70 ? 'medium' : 'low');
                                     @endphp
                                     <div class="usage-bar mb-1">
@@ -277,30 +212,41 @@
                                     </div>
                                     <small class="text-muted">
                                         {{ number_format($percentage, 1) }}% 
-                                        ({{ number_format($user['monthly_usage']) }}/{{ $user['token_limit'] === -1 ? '∞' : number_format($user['token_limit']) }})
+                                        ({{ $user['monthly_cost_limit'] > 0 ? '$' . number_format($user['monthly_cost_limit'], 2) : 'No limit' }})
                                     </small>
                                 </td>
                                 <td>
-                                    <strong>{{ number_format($user['total_tokens']) }}</strong>
-                                    <br>
-                                    <small class="text-muted">{{ number_format($user['total_requests']) }} requests</small>
+                                    <div class="user-info">
+                                        <h6>{{ number_format($user['total_tokens']) }}</h6>
+                                        <small class="text-muted">{{ number_format($user['total_requests']) }} requests</small>
+                                    </div>
                                 </td>
                                 <td>
-                                    <strong>${{ number_format($user['total_cost'], 4) }}</strong>
-                                </td>
-                                <td>
-                                    @if($user['stripe_customer_id'])
-                                        <code class="small">{{ substr($user['stripe_customer_id'], 0, 12) }}...</code>
-                                    @else
-                                        <span class="text-muted">-</span>
+                                    <span class="admin-badge info">${{ number_format($user['total_cost'], 4) }}</span>
+                                    @if($user['billing_amount'] > 0)
+                                        <br><small class="text-muted">Billing: ${{ number_format($user['billing_amount'], 2) }}</small>
                                     @endif
+                                </td>
+                                <td>
+                                    <div class="btn-group-vertical btn-group-sm">
+                                        <a href="{{ route('admin.users.edit', $user['id']) }}" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                        @if($user['stripe_customer_id'])
+                                            <button class="btn btn-outline-info btn-sm" title="Stripe ID: {{ $user['stripe_customer_id'] }}">
+                                                <i class="fab fa-stripe"></i> Stripe
+                                            </button>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="text-center py-4">
-                                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                                    <p class="text-muted">No users found for the selected period.</p>
+                                <td colspan="8">
+                                    <div class="admin-empty-state">
+                                        <i class="fas fa-users"></i>
+                                        <p>No users found for the selected period.</p>
+                                    </div>
                                 </td>
                             </tr>
                             @endforelse

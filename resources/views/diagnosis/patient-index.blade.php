@@ -2,15 +2,82 @@
 
 @section('title', 'My Diagnoses')
 
+@push('styles')
+<style>
+/* Professional Dashboard Header Styling */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+}
+
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header h2::before {
+    content: '📋';
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+}
+</style>
+@endpush
+
 @section('content')
-<div class="container-fluid px-2 px-md-4">
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <!-- Page Header -->
-            <div class="page-header text-center text-md-start mb-4">
-                <h2><i class="fas fa-file-medical me-2"></i>My Diagnoses</h2>
-                <p class="text-muted">View all diagnoses you've received from doctors</p>
-            </div>
+<div class="dashboard-container">
+    <div class="container">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <h2>My Diagnoses</h2>
+            <p>View your diagnoses</p>
+        </div>
+
+        <div class="container-fluid px-2 px-md-4">
+            <div class="row justify-content-center">
+                <div class="col-12">
 
             @if (session('success'))
                 <div class="alert alert-success alert-dismissible fade show">
@@ -51,10 +118,16 @@
                                                         {{ Str::limit($diagnosis->diagnosis_text, 100) }}
                                                     </p>
                                                     <div class="d-flex gap-2 mb-2">
-                                                        <span class="badge bg-{{ $diagnosis->type === 'ai' ? 'info' : 'success' }}">
-                                                            <i class="fas fa-{{ $diagnosis->type === 'ai' ? 'robot' : 'user-md' }} me-1"></i>
-                                                            {{ ucfirst($diagnosis->type) }}
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-user-md me-1"></i>
+                                                            Doctor's Diagnosis
                                                         </span>
+                                                        @if($diagnosis->aiAssistantResults && $diagnosis->aiAssistantResults->count() > 0)
+                                                            <span class="badge bg-info">
+                                                                <i class="fas fa-robot me-1"></i>
+                                                                AI Assisted
+                                                            </span>
+                                                        @endif
                                                         @if($diagnosis->follow_up_count > 0)
                                                             <span class="badge bg-secondary">
                                                                 {{ $diagnosis->follow_up_count }} follow-ups

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class UserSettingsController extends Controller
 {
@@ -11,9 +12,9 @@ class UserSettingsController extends Controller
     public function index()
     {
         $setting = auth()->user()->setting;
-        return view('settings', compact('setting'));    
+        return view('settings', compact('setting'));
     }
-    
+
 
 
     public function update(Request $request)
@@ -22,11 +23,12 @@ class UserSettingsController extends Controller
             'criterion' => ['required', Rule::in(['NICE', 'CDC', 'Mayo Clinic'])],
             'specialty' => ['nullable', 'string', 'max:255'],
             'custom_specialty' => ['nullable', 'string', 'max:255'],
+            'notification_volume' => ['nullable', 'numeric', 'min:0', 'max:1'],
         ]);
 
         // Determine the final specialty value
         $specialty = $request->specialty;
-        
+
         // If specialty is empty but custom_specialty is provided, use custom_specialty
         if (empty($specialty) && !empty($request->custom_specialty)) {
             $specialty = trim($request->custom_specialty);
@@ -36,51 +38,101 @@ class UserSettingsController extends Controller
             ['user_id' => auth()->id()],
             [
                 'criterion' => $request->criterion,
-                'specialty' => $specialty
+                'specialty' => $specialty,
+                'notification_volume' => $request->notification_volume ?? 0.3
             ]
         );
 
         return back()->with('status', 'Settings updated!');
     }
 
+    public function getSettings()
+    {
+        $setting = auth()->user()->setting;
+
+        return response()->json([
+            'criterion' => $setting->criterion ?? 'CDC',
+            'specialty' => $setting->specialty ?? null,
+            'notification_volume' => $setting->notification_volume ?? 0.3
+        ]);
+    }
+
 
 
     public function about(){
-        $aboutTitle = 'About MedCura AI for Doctors';
-        $aboutTagline = 'Empowering doctors to make evidence-based decisions.';
+        $aboutTitle = 'About MedCura AI - Complete Healthcare Platform';
+        $aboutTagline = 'Revolutionizing healthcare with clinical decision support, patient management, and professional growth tools.';
         $features = [
             [
-                'icon' => 'fas fa-heartbeat',
-                'title' => 'Evidence-Based Guidance',
-                'description' => 'Access up-to-date, peer-reviewed recommendations for clinical decisions.'
+                'icon' => 'fas fa-brain',
+                'title' => 'Clinical Decision Support',
+                'description' => 'Advanced clinical decision support with voice transcription, manual diagnosis creation, and intelligent follow-up questions for comprehensive patient care.'
             ],
             [
-                'icon' => 'fas fa-user-md',
-                'title' => 'Patient-Centered',
-                'description' => 'Focus on what matters most for patient outcomes and safety.',
+                'icon' => 'fas fa-microphone',
+                'title' => 'Voice Assistant',
+                'description' => 'Hands-free consultation documentation with real-time speech-to-text, automatic chart filling, and clinical note generation.',
                 'delay' => '200'
             ],
             [
-                'icon' => 'fas fa-brain',
-                'title' => 'Reduce Unnecessary Care',
-                'description' => 'Identify and avoid low-value or unnecessary interventions.',
+                'icon' => 'fas fa-users',
+                'title' => 'Patient Management',
+                'description' => 'Complete patient lifecycle management with appointment booking, case tracking, automated notifications, and review systems.',
                 'delay' => '400'
             ],
+            [
+                'icon' => 'fas fa-globe',
+                'title' => 'Online Presence',
+                'description' => 'Professional landing pages, blog management, live chat widgets, and patient testimonials to grow your practice online.',
+                'delay' => '600'
+            ],
+            [
+                'icon' => 'fas fa-shield-alt',
+                'title' => 'HIPAA Compliant',
+                'description' => 'Enterprise-grade encryption, secure data handling, role-based access control, and comprehensive audit trails.',
+                'delay' => '800'
+            ],
+            [
+                'icon' => 'fas fa-mobile-alt',
+                'title' => 'Multi-Channel Communication',
+                'description' => 'Automated email and SMS notifications, real-time chat, appointment reminders, and subscription management.',
+                'delay' => '1000'
+            ],
         ];
-        $whatWeDoTitle = 'What We Do';
-        $whatWeDoDescription = 'MedCura AI for Doctors provides a platform for clinicians to access, share, and discuss best practices, reducing unnecessary procedures and improving patient care.';
+        $whatWeDoTitle = 'Complete Healthcare Solution';
+        $whatWeDoDescription = 'MedCura AI provides a comprehensive platform that combines advanced analytics, patient management, and professional growth tools to transform modern medical practices. From clinical decision support to automated patient communication, we help healthcare professionals deliver better care while growing their practice.';
         $whatWeDoFeatures = [
             [
-                'icon' => 'fas fa-list-ul',
-                'description' => 'Curated lists of recommendations for various specialties.'
+                'icon' => 'fas fa-robot',
+                'description' => 'Clinical Assistant with advanced analysis for instant diagnostic insights and clinical recommendations.'
             ],
             [
-                'icon' => 'fas fa-stethoscope',
-                'description' => 'Tools to help you make wise choices at the point of care.'
+                'icon' => 'fas fa-microphone',
+                'description' => 'Voice Assistant for hands-free consultation documentation with real-time speech-to-text and clinical note generation.'
             ],
             [
-                'icon' => 'fas fa-comments',
-                'description' => 'Community-driven updates and discussion.'
+                'icon' => 'fas fa-calendar-alt',
+                'description' => 'Smart scheduling system with appointment booking, calendar integration, and automated patient reminders.'
+            ],
+            [
+                'icon' => 'fas fa-file-medical',
+                'description' => 'Manual diagnosis system with voice input, patient notifications, and intelligent follow-up questions.'
+            ],
+            [
+                'icon' => 'fas fa-mobile-alt',
+                'description' => 'Multi-channel communication through SMS, email campaigns, live chat, and automated appointment reminders.'
+            ],
+            [
+                'icon' => 'fas fa-chart-line',
+                'description' => 'Practice analytics dashboard with patient demographics, revenue tracking, and performance insights for data-driven decisions.'
+            ],
+            [
+                'icon' => 'fas fa-users-cog',
+                'description' => 'Staff management with role-based permissions, sub-user accounts, and collaborative practice management tools.'
+            ],
+            [
+                'icon' => 'fas fa-globe',
+                'description' => 'Professional online presence with customizable landing pages, blog management, and patient testimonial systems.'
             ],
         ];
         $team = [

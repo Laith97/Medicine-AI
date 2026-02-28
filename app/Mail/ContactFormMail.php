@@ -33,6 +33,17 @@ class ContactFormMail extends Mailable
             subject: 'Contact Message - ' . $this->contactData['subject'],
             from: new Address(env('MAIL_FROM_ADDRESS', 'info@medcuraai.com'), 'MedCura AI Contact'),
             replyTo: [new Address($this->contactData['email'], $this->contactData['name'])],
+            using: [
+                function ($message) {
+                    $message->getHeaders()
+                        ->addTextHeader('X-Mailer', 'MedCura AI Contact System')
+                        ->addTextHeader('X-Priority', '3')
+                        ->addTextHeader('X-Entity-ID', 'MedCura-Contact-' . uniqid());
+                    
+                    // Set return path properly
+                    $message->returnPath(env('MAIL_FROM_ADDRESS', 'info@medcuraai.com'));
+                },
+            ],
         );
     }
 

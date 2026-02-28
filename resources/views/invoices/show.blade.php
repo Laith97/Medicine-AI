@@ -111,7 +111,7 @@
                         <div class="col-md-6">
                             <h5><i class="fas fa-info-circle me-2"></i>Invoice Information</h5>
                             <div class="mt-3">
-                                <p><strong>Created:</strong> {{ $invoice->created_at->format('M d, Y') }}</p>
+                                <p><strong>Created:</strong> {{ $invoice->created_at ? $invoice->created_at->format('M d, Y') : 'Unknown' }}</p>
                                 @if($invoice->due_date)
                                     <span class="opacity-75">
                                         <i class="fas fa-clock me-1"></i>
@@ -174,7 +174,7 @@
                                 <div class="col-md-6 text-md-end">
                                     <h6>Invoice Information:</h6>
                                     <p class="mb-1"><strong>Invoice #:</strong> {{ $invoice->id }}</p>
-                                    <p class="mb-1"><strong>Date:</strong> {{ $invoice->created_at->format('M d, Y') }}</p>
+                                    <p class="mb-1"><strong>Date:</strong> {{ $invoice->created_at ? $invoice->created_at->format('M d, Y') : 'Unknown' }}</p>
                                     @if($invoice->due_date)
                                         <p class="mb-1"><strong>Due Date:</strong> {{ $invoice->due_date->format('M d, Y') }}</p>
                                     @endif
@@ -239,21 +239,21 @@
                                 <div class="alert alert-success">
                                     <i class="fas fa-check-circle"></i>
                                     <strong>Payment Received!</strong>
-                                    This invoice was paid on {{ $invoice->paid_at->format('M d, Y \a\t g:i A') }}.
+                                    This invoice was paid on {{ $invoice->paid_at ? $invoice->paid_at->format('M d, Y \a\t g:i A') : 'Unknown Date' }}.
                                 </div>
                             @elseif($invoice->isOverdue())
                                 <div class="alert alert-danger">
                                     <i class="fas fa-exclamation-triangle"></i>
                                     <strong>Overdue!</strong>
-                                    This invoice was due on {{ $invoice->due_date->format('M d, Y') }} 
-                                    ({{ $invoice->due_date->diffForHumans() }}).
+                                    This invoice was due on {{ $invoice->due_date ? $invoice->due_date->format('M d, Y') : 'Unknown Date' }} 
+                                    @if($invoice->due_date)({{ $invoice->due_date->diffForHumans() }})@endif.
                                     Please pay immediately to avoid service interruption.
                                 </div>
                             @elseif($invoice->isDueSoon())
                                 <div class="alert alert-warning">
                                     <i class="fas fa-clock"></i>
                                     <strong>Due Soon!</strong>
-                                    This invoice is due {{ $invoice->due_date->diffForHumans() }}.
+                                    This invoice is due {{ $invoice->due_date ? $invoice->due_date->diffForHumans() : 'soon' }}.
                                 </div>
                             @endif
                         </div>

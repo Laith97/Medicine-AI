@@ -2,16 +2,84 @@
 
 @section('title', 'My Diagnoses')
 
+@push('styles')
+<style>
+/* Professional Dashboard Header Styling */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+}
+
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header h2::before {
+    content: '🩺';
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+}
+</style>
+@endpush
+
 @section('content')
+<div class="dashboard-header">
+    <h2>Diagnosis</h2>
+    <p>View and manage diagnoses</p>
+</div>
 <div class="container-fluid px-2 px-md-4">
     <div class="row justify-content-center">
         <div class="col-12">
             <!-- Page Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2><i class="fas fa-clipboard-list me-2"></i>My Diagnoses</h2>
-                    <p class="text-muted">Manage and view all diagnoses you've created</p>
-                </div>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2><i class="fas fa-clipboard-list me-2"></i>Diagnoses</h2>
+                        <p class="text-muted">Manage and view all diagnoses you've created</p>
+                    </div>
                 <a href="{{ route('diagnosis.create') }}" class="btn btn-primary">
                     <i class="fas fa-plus me-2"></i>Create New Diagnosis
                 </a>
@@ -158,9 +226,46 @@
 
 <script>
 function playVoice(diagnosisId) {
-    // This would need to be implemented to play voice files
-    // For now, show a placeholder message
-    alert('Voice playback feature would be implemented here for diagnosis ID: ' + diagnosisId);
+    // Create audio element
+    const audio = new Audio();
+    const voiceUrl = `/diagnosis/${diagnosisId}/voice`;
+
+    // Set audio source
+    audio.src = voiceUrl;
+
+    // Add loading state
+    const playButton = document.querySelector(`button[onclick="playVoice('${diagnosisId}')"]`);
+    if (playButton) {
+        const originalContent = playButton.innerHTML;
+        playButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        playButton.disabled = true;
+
+        // Reset button after audio ends or on error
+        const resetButton = () => {
+            playButton.innerHTML = originalContent;
+            playButton.disabled = false;
+        };
+
+        audio.addEventListener('ended', resetButton);
+        audio.addEventListener('error', () => {
+            resetButton();
+            alert('Error playing voice file. Please try again.');
+        });
+
+        audio.addEventListener('loadeddata', () => {
+            resetButton();
+        });
+    }
+
+    // Play the audio
+    audio.play().catch(error => {
+        console.error('Error playing audio:', error);
+        if (playButton) {
+            playButton.innerHTML = '<i class="fas fa-volume-up"></i>';
+            playButton.disabled = false;
+        }
+        alert('Could not play voice file. Please check if the file exists.');
+    });
 }
 </script>
 @endsection

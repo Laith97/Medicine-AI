@@ -16,41 +16,104 @@ class EnsureUserIsDoctor
     public function handle(Request $request, Closure $next): Response
     {
         if (!auth()->check()) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required.',
+                    'redirect' => route('login')
+                ], 401);
+            }
             return redirect()->route('login');
         }
 
         $user = auth()->user();
+        
+        // Allow access if admin is impersonating
+        if (session()->has('impersonating_admin_id')) {
+            return $next($request);
+        }
         
         // Log middleware execution for debugging
         \Log::info('Doctor middleware check', [
             'user_id' => $user->id,
             'user_email' => $user->email,
             'user_role' => $user->role,
-            'is_doctor' => $user->isDoctor(),
+            'is_sub_user_field' => $user->is_sub_user,
+            'parent_user_id' => $user->parent_user_id,
+            'sub_user_role' => $user->sub_user_role,
+            'isSubUser_method' => $user->isSubUser(),
+            'isDoctor_method' => $user->isDoctor(),
             'has_doctor_profile' => $user->doctor ? true : false,
             'doctor_is_active' => $user->doctor ? $user->doctor->is_active : null,
+            'parent_user_exists' => $user->parentUser ? true : false,
+            'parent_user_email' => $user->parentUser ? $user->parentUser->email : null,
+            'parent_has_doctor_profile' => ($user->parentUser && $user->parentUser->doctor) ? true : false,
             'request_url' => $request->url()
         ]);
 
-        if (!$user->isDoctor() || !$user->doctor) {
-            abort(403, 'Access denied. Doctor profile required.');
-        }
+        // Handle sub-users - they inherit access from their parent doctor
+        if ($user->isSubUser()) {
+            $parentUser = $user->parentUser;
+            if (!$parentUser || !$parentUser->isDoctor() || !$parentUser->doctor) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Access denied. Parent doctor profile required.',
+                        'error' => 'Insufficient permissions'
+                    ], 403);
+                }
+                abort(403, 'Access denied. Parent doctor profile required.');
+            }
+            
+            // Check if parent doctor account is active
+            if (!$parentUser->doctor->is_active) {
+                \Log::warning('Sub-user attempted access with inactive parent doctor', [
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'parent_user_id' => $parentUser->id,
+                    'parent_email' => $parentUser->email,
+                    'parent_doctor_id' => $parentUser->doctor->id,
+                    'parent_is_active' => $parentUser->doctor->is_active
+                ]);
+                
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Access denied. The parent doctor account has been deactivated. Please contact support.',
+                        'error' => 'Account deactivated'
+                    ], 403);
+                }
+                abort(403, 'Access denied. The parent doctor account has been deactivated. Please contact support.');
+            }
+        } else {
+            // Handle main users (doctors)
+            if (!$user->isDoctor() || !$user->doctor) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Access denied. Doctor profile required.',
+                        'error' => 'Insufficient permissions'
+                    ], 403);
+                }
+                abort(403, 'Access denied. Doctor profile required.');
+            }
 
-        // Check if doctor account is active
-        if (!$user->doctor->is_active) {
-            \Log::warning('Inactive doctor attempted access', [
-                'user_id' => $user->id,
-                'user_email' => $user->email,
-                'doctor_id' => $user->doctor->id,
-                'is_active' => $user->doctor->is_active
-            ]);
-            
-            // Log out the user to prevent session caching issues
-            auth()->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-            
-            abort(403, 'Access denied. Your doctor account has been deactivated. Please contact support.');
+            // Check if doctor account is active
+            if (!$user->doctor->is_active) {
+                \Log::warning('Inactive doctor attempted access', [
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'doctor_id' => $user->doctor->id,
+                    'is_active' => $user->doctor->is_active
+                ]);
+                
+                // Log out the user to prevent session caching issues
+                auth()->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                
+                abort(403, 'Access denied. Your doctor account has been deactivated. Please contact support.');
+            }
         }
 
         return $next($request);

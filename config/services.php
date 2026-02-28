@@ -40,7 +40,14 @@ return [
         ],
     ],
 
+    'assemblyai' => [
+        'api_key' => env('ASSEMBLYAI_API_KEY'),
+    ],
+
     'google' => [
+        'cloud' => [
+            'credentials' => env('GOOGLE_CLOUD_CREDENTIALS'),
+        ],
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect_uri' => env('GOOGLE_REDIRECT_URI'),
@@ -50,6 +57,14 @@ return [
         'sid' => env('TWILIO_SID'),
         'token' => env('TWILIO_TOKEN'),
         'from' => env('TWILIO_FROM'),
+    ],
+
+    'availity' => [
+        'npi' => env('AVAILITY_PROVIDER_NPI'),
+    ],
+
+    'medical' => [
+        'transcription_provider' => env('TRANSCRIPTION_PROVIDER', 'assemblyai'),
     ],
 
 ];

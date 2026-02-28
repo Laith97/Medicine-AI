@@ -695,7 +695,7 @@ if( typeof jQuery !== 'undefined' ) {
 						}, 333);
 					}
 				}).catch( function(error) {
-					console.log('Function does not exist: ' + fn);
+					
 				});
 			},
 
@@ -2675,7 +2675,7 @@ if( typeof jQuery !== 'undefined' ) {
 
 						document.getElementById(portPostId).classList.add('portfolio-active');
 					}).catch( function(error) {
-						console.warn('Something went wrong.', error);
+						;
 					});
 				}
 			};
@@ -5061,7 +5061,7 @@ if( typeof jQuery !== 'undefined' ) {
 					}
 
 					if( !__core.getOptions.gmapAPI ) {
-						console.warn( 'No API Key defined for Google Maps! Please set an API Key in js/functions.js File!' );
+						;
 						return true;
 					}
 
@@ -5103,7 +5103,7 @@ if( typeof jQuery !== 'undefined' ) {
 								elLat = elLon = false;
 							} else {
 								if( !elLat && !elLon ) {
-									console.log( 'Google Map co-ordinates not entered.' );
+									
 									return true;
 								}
 							}
@@ -5430,7 +5430,7 @@ if( typeof jQuery !== 'undefined' ) {
 								}, 1000);
 							}
 						}).catch( function(err) {
-							console.log(err);
+							
 							alert.classList.remove( 'alert-warning' );
 							alert.classList.add( 'alert-danger' );
 							alert.innerHTML = 'Could not fetch Tweets from Twitter API. Please try again later.';
@@ -5545,7 +5545,7 @@ if( typeof jQuery !== 'undefined' ) {
 						__modules.lightbox();
 					});
 				}).catch( function(err) {
-					console.log(err);
+					
 					alert.classList.remove( 'alert-warning' );
 					alert.classList.add( 'alert-danger' );
 					alert.innerHTML = 'Could not fetch Photos from Instagram API. Please try again later.';
@@ -7316,7 +7316,7 @@ if( typeof jQuery !== 'undefined' ) {
 
 									element?.insertAdjacentHTML('beforeend', parsedHTML.body.innerHTML);
 								}).catch( function(err) {
-									console.log(err);
+									
 								});
 							} else {
 								if( elContent ) {
@@ -7428,7 +7428,7 @@ if( typeof jQuery !== 'undefined' ) {
 					return 'rgba('+[(c>>16)&255, (c>>8)&255, c&255].join(',')+','+op+')';
 				}
 
-				console.log('Bad Hex');
+				
 			};
 
 			return {

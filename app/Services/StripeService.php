@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\Subscription;
 use App\Models\StripeInvoice;
+use App\Models\SystemSetting;
 use App\Mail\SubscriptionConfirmation;
 use Stripe\Stripe;
 use Stripe\Customer;
@@ -13,6 +14,7 @@ use Stripe\Subscription as StripeSubscription;
 use Stripe\WebhookEndpoint;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
 
 class StripeService
 {
@@ -28,21 +30,32 @@ class StripeService
     {
         if ($user->stripe_customer_id) {
             try {
-                return Customer::retrieve($user->stripe_customer_id);
+                // Use cache to avoid repeated API calls for same customer
+                return Cache::remember("stripe_customer_{$user->stripe_customer_id}", 3600, function() use ($user) {
+                    return Customer::retrieve($user->stripe_customer_id);
+                });
             } catch (\Exception $e) {
                 Log::warning("Failed to retrieve Stripe customer {$user->stripe_customer_id}: " . $e->getMessage());
+                // Clear invalid customer ID
+                $user->update(['stripe_customer_id' => null]);
             }
         }
 
+        // Create new customer with optimized payload
         $customer = Customer::create([
             'email' => $user->email,
             'name' => $user->name,
             'metadata' => [
-                'user_id' => $user->id,
+                'user_id' => (string)$user->id,
+                'role' => $user->role,
             ],
         ]);
 
+        // Update user with new customer ID
         $user->update(['stripe_customer_id' => $customer->id]);
+        
+        // Cache the new customer
+        Cache::put("stripe_customer_{$customer->id}", $customer, 3600);
 
         return $customer;
     }
@@ -91,16 +104,31 @@ class StripeService
     /**
      * Create a personalized checkout session based on admin-configured amount
      */
-    public function createPersonalizedCheckoutSession(User $user, float $monthlyAmount): Session
+    public function createPersonalizedCheckoutSession(User $user, float $amount, string $billingCycle = 'monthly'): Session
     {
-        // Validate Stripe configuration
+        // Validate Stripe configuration once at start
         $this->validateStripeConfiguration();
         
+        // Get or create customer (with caching to reduce API calls)
         $customer = $this->createOrGetCustomer($user);
         
         // Convert amount to cents for Stripe
-        $amountInCents = (int) ($monthlyAmount * 100);
+        $amountInCents = (int) ($amount * 100);
         
+        // Determine Stripe interval and plan name
+        $stripeInterval = $billingCycle === 'yearly' ? 'year' : 'month';
+        $planDisplayName = $billingCycle === 'yearly' ? 'Annual Plan' : 'Monthly Plan';
+        $intervalText = $billingCycle === 'yearly' ? 'year' : 'month';
+        
+        // Determine success and cancel URLs based on user type
+        if ($user->isHospitalAdmin()) {
+            $successUrl = route('hospital-admin.subscription.success') . '?session_id={CHECKOUT_SESSION_ID}';
+            $cancelUrl = route('hospital-admin.subscription.manage');
+        } else {
+            $successUrl = route('subscription.success') . '?session_id={CHECKOUT_SESSION_ID}';
+            $cancelUrl = route('subscription.manage');
+        }
+
         return Session::create([
             'customer' => $customer->id,
             'payment_method_types' => ['card'],
@@ -108,24 +136,24 @@ class StripeService
                 'price_data' => [
                     'currency' => 'usd',
                     'product_data' => [
-                        'name' => 'Medical AI Assistant - Personal Plan',
-                        'description' => 'Personalized medical diagnosis assistance for ' . $user->name,
+                        'name' => "Medical AI Assistant - {$planDisplayName}",
+                        'description' => "Personalized medical diagnosis assistance for {$user->name} - billed {$intervalText}ly",
                     ],
                     'unit_amount' => $amountInCents,
                     'recurring' => [
-                        'interval' => 'month',
+                        'interval' => $stripeInterval,
                     ],
                 ],
                 'quantity' => 1,
             ]],
             'mode' => 'subscription',
-            'success_url' => route('subscription.success') . '?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => route('subscription.manage'),
+            'success_url' => $successUrl,
+            'cancel_url' => $cancelUrl,
             'metadata' => [
                 'user_id' => $user->id,
                 'plan_name' => 'personal',
-                'billing_cycle' => 'monthly',
-                'billing_amount' => $monthlyAmount,
+                'billing_cycle' => $billingCycle,
+                'billing_amount' => $amount,
                 'custom_pricing' => 'true',
             ],
         ]);
@@ -187,12 +215,62 @@ class StripeService
             ]
         );
 
-        // Update user subscription status
-        $user->update([
-            'current_plan' => $planName,
-            'subscription_active' => true,
-            'subscription_ends_at' => $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_end'),
-        ]);
+        // Update user subscription status via MonthlyInvoiceSetting
+        if ($user->monthlyInvoiceSetting) {
+            $subscriptionPeriodMonths = $billingCycle === 'yearly' ? 12 : 1;
+            
+            // If user is in trial, implement trial-to-subscription transition with proration
+            if ($user->isInTrialPeriod() && $user->trial_ends_at) {
+                $remainingTrialDays = $user->getTrialDaysRemaining();
+                $totalTrialDays = SystemSetting::get('trial_days', 14);
+                
+                // Calculate subscription start and end dates with trial proration
+                $subscriptionStartDate = $user->trial_ends_at; // Start when trial ends
+                $subscriptionEndDate = $user->trial_ends_at->copy()->addMonths($subscriptionPeriodMonths);
+                
+                // Log the transition details
+                Log::info("User {$user->id} subscribed during trial. Implementing trial proration.", [
+                    'trial_ends_at' => $user->trial_ends_at,
+                    'remaining_trial_days' => $remainingTrialDays,
+                    'total_trial_days' => $totalTrialDays,
+                    'subscription_starts_at' => $subscriptionStartDate,
+                    'subscription_ends_at' => $subscriptionEndDate,
+                    'billing_cycle' => $billingCycle,
+                    'subscription_period_months' => $subscriptionPeriodMonths
+                ]);
+                
+                // Update user's trial status to indicate transition
+                $user->update([
+                    'trial_ends_at' => null, // Clear trial end date as subscription is starting
+                    'trial_used' => true,
+                ]);
+                
+                // Log the successful transition
+                Log::info("Trial-to-subscription transition completed for user {$user->id}", [
+                    'remaining_trial_days_credited' => $remainingTrialDays,
+                    'subscription_period_extended_by_days' => $remainingTrialDays,
+                    'new_subscription_ends_at' => $subscriptionEndDate
+                ]);
+            } else {
+                // User not in trial, use Stripe's dates
+                $subscriptionStartDate = $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_start');
+                $subscriptionEndDate = $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_end');
+                
+                Log::info("User {$user->id} subscribed without active trial period.", [
+                    'subscription_starts_at' => $subscriptionStartDate,
+                    'subscription_ends_at' => $subscriptionEndDate,
+                    'billing_cycle' => $billingCycle
+                ]);
+            }
+            
+            $user->monthlyInvoiceSetting->update([
+                'subscription_starts_at' => $subscriptionStartDate,
+                'subscription_ends_at' => $subscriptionEndDate,
+                'subscription_period_months' => $subscriptionPeriodMonths,
+                'billing_amount' => $stripeSubscription->items->data[0]->price->unit_amount / 100,
+                'is_active' => true,
+            ]);
+        }
 
         // Send confirmation email
         $subscription = Subscription::where('stripe_subscription_id', $stripeSubscription->id)->first();
@@ -229,11 +307,13 @@ class StripeService
             'canceled_at' => $stripeSubscription->canceled_at ? \Carbon\Carbon::createFromTimestamp($stripeSubscription->canceled_at) : null,
         ]);
 
-        // Update user status
-        $subscription->user->update([
-            'subscription_active' => $stripeSubscription->status === 'active',
-            'subscription_ends_at' => $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_end'),
-        ]);
+        // Update user status via MonthlyInvoiceSetting
+        if ($subscription->user->monthlyInvoiceSetting) {
+            $subscription->user->monthlyInvoiceSetting->update([
+                'is_active' => $stripeSubscription->status === 'active',
+                'subscription_ends_at' => $this->getTimestampFromSubscription($stripeSubscription, $subscriptionData, 'current_period_end'),
+            ]);
+        }
 
         Log::info("Subscription updated: {$subscriptionData['id']}");
     }
@@ -255,11 +335,13 @@ class StripeService
             'canceled_at' => now(),
         ]);
 
-        // Update user to free plan
-        $subscription->user->update([
-            'current_plan' => 'free',
-            'subscription_active' => false,
-        ]);
+        // Update user subscription status via MonthlyInvoiceSetting
+        if ($subscription->user->monthlyInvoiceSetting) {
+            $subscription->user->monthlyInvoiceSetting->update([
+                'is_active' => false,
+                'subscription_ends_at' => now(),
+            ]);
+        }
 
         Log::info("Subscription canceled: {$subscriptionData['id']}");
     }
@@ -302,9 +384,12 @@ class StripeService
             'canceled_at' => now(),
         ]);
 
-        $subscription->user->update([
-            'subscription_active' => false,
-        ]);
+        // Update user subscription status via MonthlyInvoiceSetting
+        if ($subscription->user->monthlyInvoiceSetting) {
+            $subscription->user->monthlyInvoiceSetting->update([
+                'is_active' => false,
+            ]);
+        }
     }
 
     /**
@@ -425,17 +510,21 @@ class StripeService
     public function getSubscriptionUsage(User $user): array
     {
         $monthlyUsage = $user->getMonthlyTokenUsage();
-        $planConfig = $user->getPlanConfig();
-        $tokenLimit = $planConfig['token_limit'] ?? 0;
+        $monthlyCost = $user->getMonthlyCost();
+        $setting = $user->monthlyInvoiceSetting;
         
         return [
             'monthly_usage' => $monthlyUsage,
-            'token_limit' => $tokenLimit,
-            'remaining_tokens' => $user->getRemainingTokens(),
-            'usage_percentage' => $tokenLimit > 0 ? ($monthlyUsage / $tokenLimit) * 100 : 0,
-            'plan_name' => $user->current_plan,
-            'subscription_active' => $user->subscription_active,
-            'subscription_ends_at' => $user->subscription_ends_at,
+            'monthly_cost' => $monthlyCost,
+            'cost_limit' => $user->monthly_cost_limit ?? 0,
+            'remaining_cost_allowance' => $user->getRemainingCostAllowance(),
+            'cost_usage_percentage' => $user->getCostUsagePercentage(),
+            'subscription_status' => $setting ? $setting->getSubscriptionStatus() : 'setup_pending',
+            'subscription_active' => $user->hasActiveSubscription(),
+            'subscription_ends_at' => $user->getSubscriptionEndDate(),
+            'monthly_price' => $setting->monthly_price ?? 0,
+            'yearly_price' => $setting->yearly_price ?? 0,
+            'billing_amount' => $setting->billing_amount ?? 0,
         ];
     }
 

@@ -12,20 +12,21 @@ class Diagnosis extends Model
     protected $fillable = [
         'doctor_id',
         'patient_id',
-        'type',
         'diagnosis_text',
-        'voice_transcript',
-        'voice_file_path',
+        'voice_transcripts',
+        'voice_files',
         'patient_data',
-        'ai_response',
         'follow_up_count',
         'patient_notified',
         'patient_viewed_at',
         'patient_reviewed',
+        'patient_key',
     ];
 
     protected $casts = [
         'patient_data' => 'array',
+        'voice_files' => 'array',
+        'voice_transcripts' => 'array',
         'patient_notified' => 'boolean',
         'patient_reviewed' => 'boolean',
         'patient_viewed_at' => 'datetime',
@@ -53,6 +54,14 @@ class Diagnosis extends Model
     public function followUps()
     {
         return $this->hasMany(DiagnosisFollowUp::class);
+    }
+
+    /**
+     * Get the AI assistant results linked to this diagnosis
+     */
+    public function aiAssistantResults()
+    {
+        return $this->hasMany(AiAssistantResult::class);
     }
 
     /**
@@ -90,18 +99,18 @@ class Diagnosis extends Model
     }
 
     /**
-     * Check if this is an AI diagnosis
+     * Check if this diagnosis has AI assistant results
      */
-    public function isAiDiagnosis()
+    public function hasAiAssistantResults()
     {
-        return $this->type === 'ai';
+        return $this->aiAssistantResults()->exists();
     }
 
     /**
-     * Check if this is a manual diagnosis
+     * Generate a unique patient key based on patient name, age, gender and doctor_id
      */
-    public function isManualDiagnosis()
+    public static function generatePatientKey($name, $age, $gender, $doctorId)
     {
-        return $this->type === 'manual';
+        return md5($name . '-' . $age . '-' . $gender . '-' . $doctorId);
     }
 }

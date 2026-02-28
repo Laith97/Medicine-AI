@@ -39,7 +39,59 @@ return [
             'connection' => env('DB_QUEUE_CONNECTION'),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
-            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),
+            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 10), // Reduced from 90 to 10 seconds
+            'after_commit' => false,
+        ],
+
+        // High-priority sync queue for real-time notifications
+        'realtime' => [
+            'driver' => 'sync', // Process immediately
+        ],
+
+        // Dedicated waitlist processing queues with priority levels
+        'waitlist-urgent' => [
+            'driver' => env('QUEUE_CONNECTION', 'database'),
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'waitlist-urgent',
+            'retry_after' => (int) env('WAITLIST_QUEUE_RETRY_AFTER', 30), // Shorter retry for urgent
+            'after_commit' => false,
+        ],
+
+        'waitlist-high' => [
+            'driver' => env('QUEUE_CONNECTION', 'database'),
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'waitlist-high',
+            'retry_after' => (int) env('WAITLIST_QUEUE_RETRY_AFTER', 60),
+            'after_commit' => false,
+        ],
+
+        'waitlist-medium' => [
+            'driver' => env('QUEUE_CONNECTION', 'database'),
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'waitlist-medium',
+            'retry_after' => (int) env('WAITLIST_QUEUE_RETRY_AFTER', 120),
+            'after_commit' => false,
+        ],
+
+        'waitlist-low' => [
+            'driver' => env('QUEUE_CONNECTION', 'database'),
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'waitlist-low',
+            'retry_after' => (int) env('WAITLIST_QUEUE_RETRY_AFTER', 300),
+            'after_commit' => false,
+        ],
+
+        // Batch processing queue for waitlist maintenance
+        'waitlist-maintenance' => [
+            'driver' => env('QUEUE_CONNECTION', 'database'),
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'waitlist-maintenance',
+            'retry_after' => (int) env('WAITLIST_QUEUE_RETRY_AFTER', 600),
             'after_commit' => false,
         ],
 

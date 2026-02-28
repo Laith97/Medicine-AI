@@ -429,6 +429,92 @@
                         </div>
                     </div>
 
+                    <!-- Insurance Information (Optional) -->
+                    <div class="section-card" id="insuranceInfo">
+                        <h2 class="section-title">Insurance Information <span class="text-muted">(Optional)</span></h2>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Providing insurance information helps us verify eligibility and may reduce your out-of-pocket costs.
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="insurance_provider" class="form-label fw-medium">
+                                    Insurance Provider
+                                </label>
+                                <select name="insurance_provider_id" id="insurance_provider" class="form-select">
+                                    <option value="">Select insurance provider</option>
+                                    @foreach(\App\Models\InsuranceProvider::all() as $provider)
+                                        <option value="{{ $provider->id }}" {{ old('insurance_provider_id') == $provider->id ? 'selected' : '' }}>
+                                            {{ $provider->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('insurance_provider_id')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="policy_number" class="form-label fw-medium">
+                                    Policy/Member ID
+                                </label>
+                                <input type="text" name="policy_number" id="policy_number"
+                                       class="form-control"
+                                       placeholder="Enter policy or member ID" value="{{ old('policy_number') }}">
+                                @error('policy_number')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="group_number" class="form-label fw-medium">
+                                    Group Number <span class="text-muted">(Optional)</span>
+                                </label>
+                                <input type="text" name="group_number" id="group_number"
+                                       class="form-control"
+                                       placeholder="Enter group number" value="{{ old('group_number') }}">
+                                @error('group_number')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="subscriber_id" class="form-label fw-medium">
+                                    Subscriber ID <span class="text-muted">(Optional)</span>
+                                </label>
+                                <input type="text" name="subscriber_id" id="subscriber_id"
+                                       class="form-control"
+                                       placeholder="Enter subscriber ID" value="{{ old('subscriber_id') }}">
+                                @error('subscriber_id')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="relationship_to_subscriber" class="form-label fw-medium">
+                                    Relationship to Subscriber <span class="text-muted">(Optional)</span>
+                                </label>
+                                <select name="relationship_to_subscriber" id="relationship_to_subscriber" class="form-select">
+                                    <option value="">Select relationship</option>
+                                    <option value="self" {{ old('relationship_to_subscriber') == 'self' ? 'selected' : '' }}>Self</option>
+                                    <option value="spouse" {{ old('relationship_to_subscriber') == 'spouse' ? 'selected' : '' }}>Spouse</option>
+                                    <option value="child" {{ old('relationship_to_subscriber') == 'child' ? 'selected' : '' }}>Child</option>
+                                    <option value="parent" {{ old('relationship_to_subscriber') == 'parent' ? 'selected' : '' }}>Parent</option>
+                                    <option value="other" {{ old('relationship_to_subscriber') == 'other' ? 'selected' : '' }}>Other</option>
+                                </select>
+                                @error('relationship_to_subscriber')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="effective_date" class="form-label fw-medium">
+                                    Effective Date <span class="text-muted">(Optional)</span>
+                                </label>
+                                <input type="date" name="effective_date" id="effective_date"
+                                       class="form-control" value="{{ old('effective_date') }}">
+                                @error('effective_date')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Registration Form (Hidden by default) -->
                     <div class="section-card" id="registrationInfo" style="display: none;">
                         <h2 class="section-title">Create Your Account</h2>
@@ -440,6 +526,9 @@
                                 <input type="text" name="reg_name" id="reg_name"
                                        class="form-control"
                                        placeholder="Enter your full name">
+                                @error('reg_name')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label for="reg_email" class="form-label fw-medium">
@@ -448,6 +537,9 @@
                                 <input type="email" name="reg_email" id="reg_email"
                                        class="form-control"
                                        placeholder="Enter your email">
+                                @error('reg_email')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label for="reg_password" class="form-label fw-medium">
@@ -456,6 +548,9 @@
                                 <input type="password" name="reg_password" id="reg_password"
                                        class="form-control"
                                        placeholder="Create a strong password">
+                                @error('reg_password')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label for="reg_password_confirmation" class="form-label fw-medium">
@@ -508,6 +603,9 @@
                                 <!-- Time slots populated by JavaScript -->
                             </div>
                             <input type="hidden" name="appointment_date" id="selectedDateTime">
+                            @error('appointment_date')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
 
@@ -553,6 +651,9 @@
                                 </div>
                             @endforeach
                         </div>
+                        @error('appointment_type')
+                            <div class="text-danger small mt-1">{{ $message }}</div>
+                        @enderror
 
                         @if(count($enabledTypes) === 0)
                             <div class="alert alert-warning">
@@ -851,11 +952,11 @@ document.addEventListener('DOMContentLoaded', function() {
             button.addEventListener('click', function() {
                 // Remove previous selection
                 document.querySelectorAll('.time-slot').forEach(btn => {
-                    btn.classList.remove('active');
+                    btn.classList.remove('selected');
                 });
 
                 // Add selection to current
-                this.classList.add('active');
+                this.classList.add('selected');
 
                 selectedTime = this.dataset.time;
                 selectedDateTimeInput.value = this.dataset.datetime;

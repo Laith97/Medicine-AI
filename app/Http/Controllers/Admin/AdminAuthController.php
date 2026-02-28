@@ -31,7 +31,14 @@ class AdminAuthController extends Controller
 
         if (Auth::guard('admin')->attempt($request->only('email', 'password'), $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended(route('admin.dashboard'));
+
+            // Clear any intended URL to prevent unwanted redirects
+            $request->session()->forget('url.intended');
+
+            // Force session save before redirect
+            $request->session()->save();
+
+            return redirect('/admin/dashboard');
         }
 
         throw ValidationException::withMessages([
@@ -47,7 +54,7 @@ class AdminAuthController extends Controller
         Auth::guard('admin')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
+
         return redirect()->route('admin.login');
     }
 }

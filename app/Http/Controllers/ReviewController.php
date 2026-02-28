@@ -6,8 +6,11 @@ use App\Models\Review;
 use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Jobs\PostReviewToGoogle;
+use App\Mail\ReviewVerificationMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class ReviewController extends Controller
 {
@@ -214,7 +217,13 @@ class ReviewController extends Controller
                 $this->updateDoctorReviewStats($appointment->doctor_id);
             }
 
-            // TODO: Send verification email
+            // Send verification email
+            try {
+                Mail::to($request->guest_email)->send(new ReviewVerificationMail($review));
+            } catch (\Exception $e) {
+                Log::error('Failed to send review verification email: ' . $e->getMessage());
+                // Continue with the process even if email fails
+            }
 
             return redirect()->route('reviews.guest.verify', [
                 'review' => $review->id,
@@ -547,7 +556,12 @@ class ReviewController extends Controller
         $review->generateVerificationToken();
 
         // Send verification email
-        // TODO: Implement email sending
+        try {
+            Mail::to($request->guest_email)->send(new ReviewVerificationMail($review));
+        } catch (\Exception $e) {
+            Log::error('Failed to send guest review verification email: ' . $e->getMessage());
+            // Continue with the process even if email fails
+        }
 
         // Dispatch job to post review to Google if consent is given
         if ($request->boolean('consent_google_posting')) {

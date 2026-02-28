@@ -1,9 +1,9 @@
 @extends('master')
 
-@section('title', 'Set New Password - AI Medical Diagnosis')
+@section('title', 'Set New Password - MedCura Clinical Platform')
 
 @section('content')
-<div class="auth-wrapper hero-section d-flex align-items-center" style="background: linear-gradient(135deg, #fbfdff00 0%, #34495e 100%); min-height: 100vh; padding: 2rem 0;">
+<div class="auth-wrapper hero-section d-flex align-items-center" style="background: linear-gradient(135deg, #fbfdff00 0%, #34495e 100%); min-height: 100vh; padding: 2rem 0; margin-top: 80px;">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-12 col-md-6 col-lg-5">

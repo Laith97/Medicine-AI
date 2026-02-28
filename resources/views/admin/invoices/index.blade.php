@@ -7,46 +7,25 @@
     .dashboard-container {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         min-height: 100vh;
-        padding: 2rem 0;
+        padding: 1rem 0;
     }
     
     .invoice-card {
         background: white;
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
         border: none;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
     
     .stats-card {
         background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
         border: none;
         height: 100%;
-    }
-
-    /* Compact table styles */
-    .table th {
-        padding: 0.5rem 0.4rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        white-space: nowrap;
-        border-bottom: 2px solid #dee2e6;
-    }
-
-    .table td {
-        padding: 0.4rem 0.4rem;
-        font-size: 0.8rem;
-        vertical-align: middle;
-        border-bottom: 1px solid #f1f3f4;
-    }
-
-    .table td strong {
-        font-size: 0.85rem;
     }
 
     .table td small {
@@ -241,11 +220,11 @@
             </div>
 
             <!-- Invoices Table -->
-            <div class="invoice-card">
+            <div class="invoice-card invoices-table">
                 <div class="card-body">
                     @if($invoices->count() > 0)
                         <div class="table-responsive">
-                            <table class="table table-hover">
+                            <table class="table custom-table">
                                 <thead>
                                     <tr>
                                         <th>Invoice #</th>
@@ -337,9 +316,14 @@
                         </div>
 
                         <!-- Pagination -->
-                        <div class="d-flex justify-content-center">
-                            {{ $invoices->appends(request()->query())->links() }}
-                        </div>
+                        @if($invoices->hasPages())
+                            <div class="pagination-wrapper">
+                                {{ $invoices->appends(request()->query())->links() }}
+                                <div class="pagination-info">
+                                    Showing {{ $invoices->firstItem() }} to {{ $invoices->lastItem() }} of {{ $invoices->total() }} invoices
+                                </div>
+                            </div>
+                        @endif
                     @else
                         <div class="text-center py-5">
                             <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>

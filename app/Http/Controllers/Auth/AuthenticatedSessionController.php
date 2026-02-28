@@ -30,15 +30,26 @@ class AuthenticatedSessionController extends Controller
 
         // Redirect based on user role
         $user = Auth::user();
-
+        
+        // Clear any existing intended URL to prevent redirects
+        session()->forget('url.intended');
+        
+        // Build the redirect URL directly without using route() to avoid any middleware interference
+        $redirectUrl = null;
+        
         if ($user->role === 'doctor') {
-            return redirect()->intended(route('dashboard', absolute: false));
+            $redirectUrl = '/dashboard';
         } elseif ($user->role === 'admin') {
-            return redirect()->intended(route('admin.dashboard', absolute: false));
+            $redirectUrl = '/admin/dashboard';
+        } elseif ($user->role === 'hospital_admin') {
+            $redirectUrl = '/hospital-admin/dashboard';
         } else {
             // For patients, redirect to doctors search page
-            return redirect()->intended(route('doctors.index', absolute: false));
+            $redirectUrl = '/doctors';
         }
+        
+        // Use a plain redirect to avoid any route middleware
+        return redirect($redirectUrl);
     }
 
     /**

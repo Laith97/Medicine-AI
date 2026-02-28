@@ -16,7 +16,7 @@ class ChatController extends Controller
 
     public function index()
     {
-        $chatSessions = auth()->user()->doctor->chatSessions()
+        $chatSessions = $this->getEffectiveDoctor()->chatSessions()
                            ->with(['latestMessage', 'unreadMessages'])
                            ->orderBy('last_activity_at', 'desc')
                            ->paginate(20);
@@ -27,7 +27,7 @@ class ChatController extends Controller
     public function show(Request $request, $sessionId)
     {
         $session = ChatSession::where('id', $sessionId)
-                             ->where('doctor_id', auth()->user()->doctor->id)
+                             ->where('doctor_id', $this->getEffectiveDoctor()->id)
                              ->firstOrFail();
 
         $messages = $session->messages()
@@ -65,7 +65,7 @@ class ChatController extends Controller
         ]);
 
         $session = ChatSession::where('id', $sessionId)
-                             ->where('doctor_id', auth()->user()->doctor->id)
+                             ->where('doctor_id', $this->getEffectiveDoctor()->id)
                              ->firstOrFail();
 
         $message = ChatMessage::createDoctorMessage(
@@ -91,7 +91,7 @@ class ChatController extends Controller
     public function getUnreadCount()
     {
         $count = ChatMessage::whereHas('chatSession', function ($query) {
-                    $query->where('doctor_id', auth()->user()->doctor->id);
+                    $query->where('doctor_id', $this->getEffectiveDoctor()->id);
                 })
                 ->where('sender_type', 'visitor')
                 ->where('is_read', false)
@@ -106,7 +106,7 @@ class ChatController extends Controller
     public function markAllAsRead()
     {
         ChatMessage::whereHas('chatSession', function ($query) {
-                $query->where('doctor_id', auth()->user()->doctor->id);
+                $query->where('doctor_id', $this->getEffectiveDoctor()->id);
             })
             ->where('sender_type', 'visitor')
             ->where('is_read', false)
@@ -121,7 +121,7 @@ class ChatController extends Controller
     public function settings()
     {
 
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         return view('doctor.chat.settings', compact('doctor'));
     }
@@ -134,7 +134,7 @@ class ChatController extends Controller
             'ai_fallback_message' => 'nullable|string|max:500',
         ]);
 
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         $aiSettings = $doctor->ai_chat_settings ?? [];
         $aiSettings['welcome_message'] = $request->ai_welcome_message;

@@ -27,7 +27,7 @@ class DoctorNotesController extends Controller
      */
     public function index(Request $request)
     {
-        $doctor = Auth::user();
+        $doctor = $this->getEffectiveDoctor();
 
         $query = DoctorNote::byDoctor($doctor->id)
             ->with(['patient', 'appointment'])
@@ -64,7 +64,7 @@ class DoctorNotesController extends Controller
         // Get patients for filter dropdown
         $patients = User::where('role', 'patient')
             ->whereHas('appointments', function($q) use ($doctor) {
-                $q->where('doctor_id', $doctor->doctor->id ?? null);
+                $q->where('doctor_id', $doctor->id);
             })
             ->orderBy('name')
             ->get();
@@ -77,12 +77,12 @@ class DoctorNotesController extends Controller
      */
     public function create()
     {
-        $doctor = Auth::user();
+        $doctor = $this->getEffectiveDoctor();
 
         // Get patients who have appointments with this doctor
         $patients = User::where('role', 'patient')
             ->whereHas('appointments', function($q) use ($doctor) {
-                $q->where('doctor_id', $doctor->doctor->id ?? null);
+                $q->where('doctor_id', $doctor->id);
             })
             ->orderBy('name')
             ->get();
@@ -131,7 +131,7 @@ class DoctorNotesController extends Controller
             ], 422);
         }
 
-        $doctor = Auth::user();
+        $doctor = $this->getEffectiveDoctor();
         $audioFilePath = null;
 
         // Handle audio file if provided
@@ -223,12 +223,12 @@ class DoctorNotesController extends Controller
     {
         $this->authorize('update', $note);
 
-        $doctor = Auth::user();
+        $doctor = $this->getEffectiveDoctor();
 
         // Get patients who have appointments with this doctor
         $patients = User::where('role', 'patient')
             ->whereHas('appointments', function($q) use ($doctor) {
-                $q->where('doctor_id', $doctor->doctor->id ?? null);
+                $q->where('doctor_id', $doctor->id);
             })
             ->orderBy('name')
             ->get();
@@ -498,11 +498,11 @@ class DoctorNotesController extends Controller
      */
     public function getPatients(Request $request)
     {
-        $doctor = Auth::user();
+        $doctor = $this->getEffectiveDoctor();
 
         $query = User::where('role', 'patient')
             ->whereHas('appointments', function($q) use ($doctor) {
-                $q->where('doctor_id', $doctor->doctor->id ?? null);
+                $q->where('doctor_id', $doctor->id);
             });
 
         if ($request->filled('search')) {
@@ -569,7 +569,7 @@ class DoctorNotesController extends Controller
             // Use OpenAI to format and organize the medical transcript
             $response = Http::withToken(config('services.openai.key'))
                 ->post('https://api.openai.com/v1/chat/completions', [
-                    'model' => 'gpt-4',
+                    'model' => 'gpt-4o',
                     'messages' => [
                         [
                             'role' => 'system',

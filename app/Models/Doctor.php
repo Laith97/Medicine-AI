@@ -10,6 +10,38 @@ class Doctor extends Model
 {
     use HasFactory;
 
+    /**
+     * @property int $id
+     * @property int $user_id
+     * @property int|null $specialty_id
+     * @property string|null $license_number
+     * @property string|null $phone
+     * @property string|null $bio
+     * @property string|null $profile_image
+     * @property array|null $languages
+     * @property string|null $address
+     * @property string|null $city
+     * @property string|null $state
+     * @property string|null $zip_code
+     * @property string|null $country
+     * @property string|null $latitude
+     * @property string|null $longitude
+     * @property int $consultation_fee
+     * @property int $appointment_duration
+     * @property bool $auto_approve_appointments
+     * @property bool $allow_cancellation
+     * @property bool $allow_rescheduling
+     * @property int $cancellation_hours
+     * @property float $average_rating
+     * @property int $total_reviews
+     * @property bool $is_active
+     * @property bool $is_verified
+     * @property \Carbon\Carbon|null $verified_at
+     * @property array|null $appointment_type_preferences
+     * @property bool $ai_chat_enabled
+     * @property array|null $ai_chat_settings
+     */
+
     protected $fillable = [
         'user_id',
         'specialty_id',
@@ -59,6 +91,13 @@ class Doctor extends Model
         'appointment_type_preferences' => 'array',
         'ai_chat_enabled' => 'boolean',
         'ai_chat_settings' => 'array',
+    ];
+
+    /**
+     * The model's default values for attributes.
+     */
+    protected $attributes = [
+        'appointment_type_preferences' => '{"in_person": true, "video_call": false, "phone_call": false}',
     ];
 
     /**
@@ -265,13 +304,12 @@ class Doctor extends Model
                 $slotEnd = $startTime->copy()->addMinutes($slot->slot_duration);
 
                 if ($slotEnd->lte($endTime)) {
-                    // Check if slot is already booked
-                    $existingAppointments = $this->appointments()
-                        ->where('appointment_date', $startTime)
-                        ->whereIn('status', ['pending', 'confirmed'])
-                        ->count();
+                    // Check if slot conflicts with existing appointments
+                    // For slot availability checking, we don't have patient context yet
+                    // so we only check this doctor's appointments
+                    $hasConflict = $this->hasAppointmentConflict($startTime, $slotEnd);
 
-                    if ($existingAppointments < $slot->max_bookings_per_slot) {
+                    if (!$hasConflict) {
                         $slots[] = [
                             'start_time' => $startTime->format('H:i'),
                             'end_time' => $slotEnd->format('H:i'),
@@ -286,6 +324,65 @@ class Doctor extends Model
         }
 
         return collect($slots)->sortBy('start_time')->values();
+    }
+
+    /**
+     * Check if a time slot conflicts with existing appointments
+     */
+    public function hasAppointmentConflict(Carbon $startTime, Carbon $endTime, $patientId = null)
+    {
+        // If patient ID is provided, check for conflicts across ALL doctors for this patient
+        if ($patientId) {
+            return $this->hasPatientAppointmentConflict($startTime, $endTime, $patientId);
+        }
+
+        // Otherwise, check only this doctor's appointments (legacy behavior)
+        $conflictingAppointments = $this->appointments()
+            ->whereNotIn('status', ['cancelled', 'completed', 'no_show'])
+            ->where(function ($query) use ($startTime, $endTime) {
+                // Case 1: Existing appointment starts within the new slot
+                $query->whereBetween('appointment_date', [$startTime, $endTime->copy()->subSecond()])
+                      // Case 2: Existing appointment ends within the new slot
+                      ->orWhere(function ($subQuery) use ($startTime, $endTime) {
+                          $subQuery->where('appointment_end', '>', $startTime)
+                                   ->where('appointment_end', '<=', $endTime);
+                      })
+                      // Case 3: Existing appointment completely encompasses the new slot
+                      ->orWhere(function ($subQuery) use ($startTime, $endTime) {
+                          $subQuery->where('appointment_date', '<=', $startTime)
+                                   ->where('appointment_end', '>=', $endTime);
+                      });
+            })
+            ->exists();
+
+        return $conflictingAppointments;
+    }
+
+    /**
+     * Check if a patient has any conflicting appointments across all doctors
+     */
+    public function hasPatientAppointmentConflict(Carbon $startTime, Carbon $endTime, $patientId)
+    {
+        // Check for any overlapping appointments for this patient across ALL doctors
+        $conflictingAppointments = \App\Models\Appointment::where('patient_id', $patientId)
+            ->whereNotIn('status', ['cancelled', 'completed', 'no_show'])
+            ->where(function ($query) use ($startTime, $endTime) {
+                // Case 1: Existing appointment starts within the new slot
+                $query->whereBetween('appointment_date', [$startTime, $endTime->copy()->subSecond()])
+                      // Case 2: Existing appointment ends within the new slot
+                      ->orWhere(function ($subQuery) use ($startTime, $endTime) {
+                          $subQuery->where('appointment_end', '>', $startTime)
+                                   ->where('appointment_end', '<=', $endTime);
+                      })
+                      // Case 3: Existing appointment completely encompasses the new slot
+                      ->orWhere(function ($subQuery) use ($startTime, $endTime) {
+                          $subQuery->where('appointment_date', '<=', $startTime)
+                                   ->where('appointment_end', '>=', $endTime);
+                      });
+            })
+            ->exists();
+
+        return $conflictingAppointments;
     }
 
     /**
@@ -359,5 +456,13 @@ class Doctor extends Model
     {
         $this->appointment_type_preferences = $preferences;
         $this->save();
+    }
+
+    /**
+     * Get the kiosk configuration for the doctor
+     */
+    public function kioskConfig()
+    {
+        return $this->hasOne(DoctorKioskConfig::class);
     }
 }

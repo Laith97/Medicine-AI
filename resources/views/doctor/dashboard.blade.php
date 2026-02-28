@@ -2,9 +2,126 @@
 
 @section('title', 'Doctor Dashboard')
 
+@push('styles')
+@vite(['resources/css/dashboard-enhancements.css'])
+<style>
+/* Professional Dashboard Header Styling */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+}
+
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header h2::before {
+    content: '🏥';
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 <div class="dashboard-container">
     <div class="container">
+        <!-- Chain Impersonation Notice -->
+        @if(session('impersonating_admin_id') && session('impersonating_hospital_admin_id') && session('hospital_admin_impersonation_started_at') && !empty(session('hospital_admin_impersonation_started_at')))
+            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-users fa-lg mr-3"></i>
+                        <div>
+                            <strong>Chain Impersonation Mode</strong>
+                            <p class="mb-0 small">
+                                <strong>{{ session('impersonating_admin_name', 'Admin') }}</strong> →
+                                <strong>{{ session('impersonating_hospital_admin_name') }}</strong> →
+                                <strong>Dr. {{ auth()->user()->name }}</strong>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <form method="POST" action="{{ route('return-to-hospital-admin') }}" style="display: inline;">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-arrow-left mr-1"></i>Return to Hospital Admin
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ route('return-to-admin') }}" style="display: inline;">
+                            @csrf
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-arrow-up mr-1"></i>Return to Admin
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @elseif(session('impersonating_hospital_admin_id') && empty(session('impersonating_admin_id')))
+            <!-- Direct Hospital Admin Impersonation -->
+            <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-user-shield fa-lg mr-3"></i>
+                        <div>
+                            <strong>Hospital Admin Mode</strong>
+                            <p class="mb-0 small">You are viewing this dashboard as <strong>{{ session('impersonating_hospital_admin_name') }}</strong> (Hospital Admin)</p>
+                        </div>
+                    </div>
+                    <form method="POST" action="{{ route('return-to-hospital-admin') }}" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-arrow-left mr-1"></i>Return to Hospital Admin
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @endif
+
         <!-- Dashboard Header -->
         <div class="dashboard-header">
             <div>
@@ -17,7 +134,10 @@
         <div class="row">
             <!-- Today's Appointments -->
             <div class="col-lg-3 col-md-6 mb-4">
-                <div class="stats-card">
+                <div class="stats-card" role="region" aria-label="Today's appointments">
+                    @if($stats['today_appointments'] > 0)
+                        <span class="notification-pulse"></span>
+                    @endif
                     <div class="stats-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
                         <i class="fas fa-calendar-day"></i>
                     </div>
@@ -28,7 +148,10 @@
 
             <!-- Pending Appointments -->
             <div class="col-lg-3 col-md-6 mb-4">
-                <div class="stats-card">
+                <div class="stats-card" role="region" aria-label="Pending appointments">
+                    @if($stats['pending_appointments'] > 0)
+                        <span class="notification-pulse"></span>
+                    @endif
                     <div class="stats-icon" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);">
                         <i class="fas fa-clock"></i>
                     </div>
@@ -107,6 +230,46 @@
             </div>
         </div>
 
+        <!-- Recently Completed Appointments -->
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="table-card">
+                    <h6 class="mb-3"><i class="fas fa-check-circle me-2"></i>Recently Completed Appointments</h6>
+                    @if(isset($recentCompletedAppointments) && $recentCompletedAppointments->count() > 0)
+                        @foreach($recentCompletedAppointments->take(5) as $appointment)
+                            <div class="d-flex align-items-center p-3 border rounded mb-3 bg-light-success">
+                                <!-- Completion Info -->
+                                <div class="me-3" style="min-width: 100px;">
+                                    <div class="fw-medium text-success">{{ $appointment->completed_at ? $appointment->completed_at->format('M j, g:i A') : $appointment->appointment_end->format('M j, g:i A') }}</div>
+                                    <small class="text-muted">Completed</small>
+                                </div>
+                                <!-- Patient Info -->
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ $appointment->patient_name }}</h6>
+                                    <p class="text-muted small mb-1">{{ $appointment->reason }}</p>
+                                    <small class="text-muted">{{ $appointment->appointment_date->format('M j, Y') }}</small>
+                                </div>
+                                <!-- Actions -->
+                                <div class="d-flex gap-2">
+                                    <a href="{{ route('doctor.appointments.show', $appointment) }}#analytics" class="btn btn-sm btn-success">
+                                        <i class="fas fa-brain me-1"></i>AI Analytics
+                                    </a>
+                                    <a href="{{ route('doctor.appointments.show', $appointment) }}#prescription" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-prescription me-1"></i>Prescription
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="empty-state">
+                            <i class="fas fa-check-circle"></i>
+                            <p>No completed appointments yet</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <!-- Today's Schedule -->
             <div class="col-lg-8 mb-4">
@@ -118,7 +281,7 @@
 
                     @if($todayAppointments->count() > 0)
                         @foreach($todayAppointments as $appointment)
-                            <div class="d-flex align-items-center p-3 border rounded mb-3">
+                            <div class="d-flex align-items-center p-3 border rounded mb-3 appointment-card">
                                 <!-- Time -->
                                 <div class="me-3" style="min-width: 80px;">
                                     <div class="fw-medium">{{ $appointment->appointment_date->format('g:i A') }}</div>
@@ -142,16 +305,22 @@
 
                                 <!-- Actions -->
                                 <div>
-                                    <a href="{{ route('doctor.appointments.show', $appointment) }}" class="btn btn-smbtn-primary-custom">
+                                    <a href="{{ route('doctor.appointments.show', $appointment) }}" class="btn btn-sm btn-primary-custom">
                                         View Details
                                     </a>
                                 </div>
                             </div>
                         @endforeach
                     @else
-                        <div class="empty-state">
-                            <i class="fas fa-calendar-check"></i>
-                            <p>No appointments scheduled for today</p>
+                        <div class="empty-state-enhanced">
+                            <div class="empty-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <h5>No appointments today</h5>
+                            <p>Your schedule is clear. Time to catch up on other tasks!</p>
+                            <a href="{{ route('doctor.appointments.create') }}" class="btn btn-primary-custom">
+                                <i class="fas fa-plus me-2"></i>Schedule Appointment
+                            </a>
                         </div>
                     @endif
                 </div>
@@ -162,29 +331,38 @@
                 <!-- Quick Actions -->
                 <div class="table-card mb-4">
                     <h6 class="mb-3"><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('doctor.appointments.index') }}" class="btn btn-primary-custom">
-                            <i class="fas fa-calendar me-2"></i>View All Appointments
+                    <div class="d-flex flex-column gap-2">
+                        <a href="{{ route('doctor.appointments.index') }}" class="quick-action-enhanced">
+                            <div class="action-icon"><i class="fas fa-calendar"></i></div>
+                            <div class="action-content">
+                                <h6>View Appointments</h6>
+                                <p>Manage your schedule</p>
+                            </div>
+                            <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
                         </a>
-                        <a href="{{ route('doctor.availability.index') }}" class="btn btn-success">
-                            <i class="fas fa-clock me-2"></i>Manage Availability
+                        <a href="{{ route('doctor.availability.index') }}" class="quick-action-enhanced">
+                            <div class="action-icon" style="background: linear-gradient(135deg, #28a745, #20c997);"><i class="fas fa-clock"></i></div>
+                            <div class="action-content">
+                                <h6>Manage Availability</h6>
+                                <p>Set working hours</p>
+                            </div>
+                            <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
                         </a>
-                        <a href="{{ route('doctor.settings.appointments') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-cog me-2"></i>Appointment Settings
+                        <a href="{{ route('doctor.notes.create') }}" class="quick-action-enhanced">
+                            <div class="action-icon" style="background: linear-gradient(135deg, #28a745, #20c997);"><i class="fas fa-plus"></i></div>
+                            <div class="action-content">
+                                <h6>Add Note</h6>
+                                <p>Create patient note</p>
+                            </div>
+                            <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
                         </a>
-                        <a href="{{ route('doctor.landing-page.index') }}" class="btn btn-warning">
-                            <i class="fas fa-globe me-2"></i>Landing Page
-                        </a>
-                        <a href="{{ route('doctor.reviews.index') }}" class="btn btn-info">
-                            <i class="fas fa-star me-2"></i>View Reviews
-                        </a>
-                        <a href="{{ route('doctor.notes.index') }}" class="btn btn-warning">
-                            <i class="fas fa-sticky-note me-2"></i>My Notes
-                        </a>
-                        <a href="{{ route('doctor.notes.create') }}" class="btn btn-success">
-                            <i class="fas fa-plus me-2"></i>Add Note
-                        <a href="{{ route('doctor.blog.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-blog me-2"></i>Manage Blog
+                        <a href="{{ route('doctor.reviews.index') }}" class="quick-action-enhanced">
+                            <div class="action-icon" style="background: linear-gradient(135deg, #17a2b8, #138496);"><i class="fas fa-star"></i></div>
+                            <div class="action-content">
+                                <h6>View Reviews</h6>
+                                <p>Patient feedback</p>
+                            </div>
+                            <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
                         </a>
                     </div>
                 </div>
@@ -207,7 +385,7 @@
                                                 <i class="fas fa-check"></i>
                                             </button>
                                         </form>
-                                        <a href="{{ route('doctor.appointments.show', $appointment) }}" class="btn btn-smbtn-primary-custom" title="View">
+                                        <a href="{{ route('doctor.appointments.show', $appointment) }}" class="btn btn-sm btn-primary-custom" title="View">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     </div>
@@ -215,7 +393,7 @@
                             </div>
                         @endforeach
                         <div class="text-center">
-                            <a href="{{ route('doctor.appointments.index', ['status' => 'pending']) }}" class="btn btn-smbtn-primary-custom">
+                            <a href="{{ route('doctor.appointments.index', ['status' => 'pending']) }}" class="btn btn-sm btn-primary-custom">
                                 View all pending →
                             </a>
                         </div>
@@ -249,7 +427,7 @@
                             </div>
                         @endforeach
                         <div class="text-center">
-                            <a href="{{ route('doctor.reviews.index') }}" class="btn btn-smbtn-primary-custom">
+                            <a href="{{ route('doctor.reviews.index') }}" class="btn btn-sm btn-primary-custom">
                                 View all reviews →
                             </a>
                         </div>
@@ -318,6 +496,12 @@
         </div>
     </div>
 </div>
+<script>
+const chartLabels = @json($chartLabels ?? []);
+const chartData = @json($chartData ?? []);
+const records = @json($records ?? []);
+</script>
+@vite(['resources/js/dashboard-enhancements.js'])
 @endsection
 
 @push('styles')
@@ -334,6 +518,11 @@
 
 .badge {
     font-size: 0.7rem;
+}
+
+.bg-light-success {
+    background-color: rgba(40, 167, 69, 0.1) !important;
+    border-left: 4px solid #28a745 !important;
 }
 </style>
 @endpush

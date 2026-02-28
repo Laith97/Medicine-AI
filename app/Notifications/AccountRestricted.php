@@ -3,12 +3,12 @@
 namespace App\Notifications;
 
 use App\Models\MonthlyInvoiceSetting;
+use App\Services\SmsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use NotificationChannels\Twilio\TwilioChannel;
-use NotificationChannels\Twilio\TwilioSmsMessage;
+use Illuminate\Support\Facades\Log;
 
 class AccountRestricted extends Notification implements ShouldQueue
 {
@@ -24,7 +24,7 @@ class AccountRestricted extends Notification implements ShouldQueue
         
         // Add SMS if user has phone number
         if ($notifiable->phone) {
-            $channels[] = TwilioChannel::class;
+            $channels[] = 'sms';
         }
         
         return $channels;
@@ -58,11 +58,35 @@ class AccountRestricted extends Notification implements ShouldQueue
             ->line('We\'re here to help you restore your access quickly!');
     }
 
-    public function toTwilio($notifiable): TwilioSmsMessage
+    public function toSms($notifiable): array
     {
         $renewalUrl = route('subscription.manage');
+        $message = "❌ MedCura AI: Your account has been RESTRICTED due to expired subscription. Pay now to restore access: {$renewalUrl}";
 
-        return (new TwilioSmsMessage())
-            ->content("❌ MedCura AI: Your account has been RESTRICTED due to expired subscription. Pay now to restore access: {$renewalUrl}");
+        try {
+            $smsService = new SmsService();
+            $result = $smsService->send($notifiable->phone, $message);
+            
+            Log::info('Account restricted SMS sent via notification', [
+                'user_id' => $notifiable->id,
+                'phone' => $notifiable->phone,
+                'success' => $result['success'],
+                'provider' => $result['data']['provider'] ?? 'unknown'
+            ]);
+            
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('Failed to send account restricted SMS via notification', [
+                'user_id' => $notifiable->id,
+                'phone' => $notifiable->phone,
+                'error' => $e->getMessage()
+            ]);
+            
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => []
+            ];
+        }
     }
 }

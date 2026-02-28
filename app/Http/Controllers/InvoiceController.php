@@ -8,9 +8,11 @@ use App\Jobs\SyncStripeInvoices;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Traits\HandlesEffectiveDoctor;
 
 class InvoiceController extends Controller
 {
+    use HandlesEffectiveDoctor;
     public function __construct(
         private StripeInvoiceService $invoiceService
     ) {}
@@ -20,7 +22,15 @@ class InvoiceController extends Controller
      */
     public function index(Request $request)
     {
-        $user = Auth::user();
+        $currentUser = auth()->user();
+        
+        // For hospital admins, use the hospital admin user directly
+        // For doctors, use the effective doctor user (handles sub-users)
+        if ($currentUser->isHospitalAdmin()) {
+            $user = $currentUser;
+        } else {
+            $user = $this->getEffectiveDoctorUser();
+        }
         
         $query = $user->stripeInvoices()->with('user');
 
@@ -61,16 +71,30 @@ class InvoiceController extends Controller
         $overdueCount = $user->getOverdueInvoicesCount();
         $isRestricted = $user->isRestricted();
 
-        return view('invoices.index', compact(
-            'invoices',
-            'totalUnpaid',
-            'totalPaid',
-            'totalUnpaidMonthly',
-            'lastPaidInvoice',
-            'nextDueInvoice',
-            'overdueCount',
-            'isRestricted'
-        ));
+        // Use different views for hospital admins vs doctors
+        if ($currentUser->isHospitalAdmin()) {
+            return view('hospital-admin.invoices.index', compact(
+                'invoices',
+                'totalUnpaid',
+                'totalPaid',
+                'totalUnpaidMonthly',
+                'lastPaidInvoice',
+                'nextDueInvoice',
+                'overdueCount',
+                'isRestricted'
+            ));
+        } else {
+            return view('invoices.index', compact(
+                'invoices',
+                'totalUnpaid',
+                'totalPaid',
+                'totalUnpaidMonthly',
+                'lastPaidInvoice',
+                'nextDueInvoice',
+                'overdueCount',
+                'isRestricted'
+            ));
+        }
     }
 
     /**

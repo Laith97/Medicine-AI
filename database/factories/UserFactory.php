@@ -40,7 +40,6 @@ class UserFactory extends Factory
             'emergency_contact_name' => fake()->name(),
             'emergency_contact_phone' => fake()->phoneNumber(),
             'stripe_customer_id' => 'cus_' . Str::random(14),
-            'current_plan' => fake()->randomElement(['basic', 'premium', 'pro']),
             'monthly_cost_limit' => fake()->randomFloat(2, 50, 500),
             'subscription_ends_at' => fake()->dateTimeBetween('now', '+1 year'),
             'subscription_active' => fake()->boolean(80), // 80% chance of being active

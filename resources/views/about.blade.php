@@ -2,7 +2,75 @@
 
 @section('title', 'About Us')
 
+@push('styles')
+<style>
+/* Professional Dashboard Header Styling */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+}
+
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header h2::before {
+    content: 'ℹ️';
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+}
+</style>
+@endpush
+
 @section('content')
+<div class="dashboard-header">
+    <h2>About</h2>
+    <p>Learn more about us</p>
+</div>
 
 <!-- Hero Section with Image Slider -->
 <section class="page-title dark page-title-center p-0 position-relative" style="min-height: 350px; overflow: hidden;">
@@ -65,30 +133,30 @@
         <div class="row text-center g-4">
             <div class="col-md-3">
                 <div class="p-4 rounded shadow-sm bg-white">
-                    <i class="fas fa-procedures fa-3x mb-2" style="color: #DE6262;"></i>
-                    <h2 class="fw-bold mb-0">42,762+</h2>
-                    <p class="mb-0 text-muted">Treatments Made</p>
+                    <i class="fas fa-stethoscope fa-3x mb-2" style="color: #DE6262;"></i>
+                    <h2 class="fw-bold mb-0">15,000+</h2>
+                    <p class="mb-0 text-muted">Consultations Completed</p>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="p-4 rounded shadow-sm bg-white">
-                    <i class="fas fa-lungs fa-3x mb-2" style="color: #DE6262;"></i>
-                    <h2 class="fw-bold mb-0">21,500+</h2>
-                    <p class="mb-0 text-muted">Cured Patients</p>
+                    <i class="fas fa-user-md fa-3x mb-2" style="color: #DE6262;"></i>
+                    <h2 class="fw-bold mb-0">1,200+</h2>
+                    <p class="mb-0 text-muted">Healthcare Professionals</p>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="p-4 rounded shadow-sm bg-white">
-                    <i class="fas fa-users fa-3x mb-2" style="color: #DE6262;"></i>
-                    <h2 class="fw-bold mb-0">408K</h2>
-                    <p class="mb-0 text-muted">Satisfied Customers</p>
+                    <i class="fas fa-calendar-check fa-3x mb-2" style="color: #DE6262;"></i>
+                    <h2 class="fw-bold mb-0">75,000+</h2>
+                    <p class="mb-0 text-muted">Patient Appointments</p>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="p-4 rounded shadow-sm bg-white">
-                    <i class="fas fa-ambulance fa-3x mb-2" style="color: #DE6262;"></i>
-                    <h2 class="fw-bold mb-0">140</h2>
-                    <p class="mb-0 text-muted">Ambulance Available</p>
+                    <i class="fas fa-microphone fa-3x mb-2" style="color: #DE6262;"></i>
+                    <h2 class="fw-bold mb-0">4.8★</h2>
+                    <p class="mb-0 text-muted">Patient Satisfaction</p>
                 </div>
             </div>
         </div>
@@ -120,47 +188,56 @@
                 <div class="how-it-works p-4 rounded shadow-sm bg-white mb-4">
                     <div class="heading-block mb-3 border-bottom-0 text-center">
                         <h4 class="fw-bold mb-2" style="color: #DE6262;"><i class="fas fa-clipboard-list me-2"></i>How It Works</h4>
-                        <span class="text-muted">A simple, guided process for doctors</span>
+                        <span class="text-muted">Complete healthcare platform workflow</span>
                     </div>
                     <div class="row text-center align-items-center justify-content-center g-0 mb-3">
-                        <div class="col-3 col-md-3">
-                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="fas fa-user"></i></div>
-                            <div class="fw-semibold">Login</div>
-                            <div class="small text-muted">Access your account</div>
+                        <div class="col-6 col-md-2">
+                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="fas fa-user-plus"></i></div>
+                            <div class="fw-semibold small">Register</div>
+                            <div class="small text-muted">Create account</div>
                         </div>
                         <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
-                        <div class="col-3 col-md-3">
-                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="fas fa-edit"></i></div>
-                            <div class="fw-semibold">Fill Form</div>
-                            <div class="small text-muted">Enter patient data</div>
+                        <div class="col-6 col-md-2">
+                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="fas fa-cog"></i></div>
+                            <div class="fw-semibold small">Setup</div>
+                            <div class="small text-muted">Configure profile</div>
                         </div>
                         <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
-                        <div class="col-3 col-md-3">
-                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="fas fa-paper-plane"></i></div>
-                            <div class="fw-semibold">Submit</div>
-                            <div class="small text-muted">Send for AI analysis</div>
+                        <div class="col-6 col-md-2">
+                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="fas fa-stethoscope"></i></div>
+                            <div class="fw-semibold small">Patient Care</div>
+                            <div class="small text-muted">Provide treatment</div>
                         </div>
                         <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
-                        <div class="col-3 col-md-3">
-                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;"><i class="fas fa-chart-bar"></i></div>
-                            <div class="fw-semibold">Get Results</div>
-                            <div class="small text-muted">View instant diagnosis</div>
+                        <div class="col-6 col-md-2">
+                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="fas fa-users"></i></div>
+                            <div class="fw-semibold small">Manage</div>
+                            <div class="small text-muted">Handle patients</div>
+                        </div>
+                        <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
+                        <div class="col-6 col-md-2">
+                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="fas fa-chart-line"></i></div>
+                            <div class="fw-semibold small">Grow</div>
+                            <div class="small text-muted">Expand practice</div>
                         </div>
                     </div>
                     <div class="mt-4 text-center">
-                        <a href="/login" class="btn btn-lg rounded-pill px-4 shadow" style="background:#DE6262;color:#fff;border:none;">Start Diagnosis</a>
+                        <a href="/login" class="btn btn-lg rounded-pill px-4 shadow" style="background:#DE6262;color:#fff;border:none;">Get Started Today</a>
                     </div>
                 </div>
                 <!-- Core Principles Section -->
                 <div class="core-principles p-4 rounded shadow-sm bg-white mt-4">
                     <div class="heading-block mb-3 border-bottom-0">
                         <h4 class="fw-bold mb-2"><i class="fas fa-heart me-2" style="color: #DE6262;"></i>Core Principles</h4>
-                        <span class="text-muted">What drives MedCura AI for Doctors</span>
+                        <span class="text-muted">What drives MedCura AI Platform</span>
                     </div>
                     <ul class="list-unstyled mb-0">
-                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Evidence-based practice</li>
-                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Patient-centered care</li>
-                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Reducing unnecessary interventions</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Evidence-based medical practice</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Comprehensive patient management</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> HIPAA-compliant security standards</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Professional practice growth tools</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Multi-channel patient communication</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Automated workflow optimization</li>
                     </ul>
                 </div>
             </div>

@@ -1,21 +1,145 @@
 @extends('master')
 
-@section('title', 'Register - AI Medical Diagnosis')
+@section('title', 'Register - MedCura Clinical Platform')
+
+@push('styles')
+<style>
+/* Professional Dashboard Header Styling */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    margin-top: 90px; /* Add space from fixed top-bar */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+}
+
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header h2::before {
+    content: '👤';
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+}
+
+/* Responsive adjustments for auth layout */
+@media (max-width: 991px) {
+    .auth-form-section {
+        padding: 1rem;
+    }
+
+    .auth-card {
+        padding: 1.5rem;
+    }
+
+    .auth-info-content .display-5 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .auth-card {
+        padding: 1rem;
+        margin: 0.5rem;
+    }
+
+    .auth-form-container {
+        max-width: 100%;
+    }
+}
+</style>
+@endpush
 
 @section('content')
-<div class="auth-wrapper hero-section d-flex align-items-center" style="background: linear-gradient(135deg, #fbfdff00 0%, #34495e 100%); min-height: 100vh; padding: 2rem 0;">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-12 col-md-6 col-lg-5">
-                <div class="auth-card">
-                    <!-- Header -->
-                    <div class="auth-header text-center mb-4">
-                        <div class="auth-logo mb-3">
-                            <i class="bi bi-heart-pulse" style="font-size: 3rem; color: #DE6262;"></i>
+<div class="auth-page">
+    <div class="container-fluid">
+        <div class="row min-vh-100">
+            <!-- Left side - Information -->
+            <div class="col-lg-6 auth-info-section d-none d-lg-flex">
+                <div class="auth-info-content">
+                    <i class="bi bi-heart-pulse display-1 text-primary mb-4"></i>
+                    <h1 class="display-5 fw-bold text-white mb-3">Join Our AI Healthcare Platform</h1>
+                    <p class="lead text-white-50 mb-4">Create your account and start revolutionizing patient care with advanced AI diagnosis tools.</p>
+                    <div class="auth-features">
+                        <div class="feature-item mb-3">
+                            <i class="bi bi-check-circle text-success me-3"></i>
+                            <span class="text-white">AI-Powered Diagnosis</span>
                         </div>
-                        <h2 class="auth-title">Create Account</h2>
-                        <p class="auth-subtitle">Join AI Medical Diagnosis platform today</p>
+                        <div class="feature-item mb-3">
+                            <i class="bi bi-check-circle text-success me-3"></i>
+                            <span class="text-white">Voice Assistant Technology</span>
+                        </div>
+                        <div class="feature-item mb-3">
+                            <i class="bi bi-check-circle text-success me-3"></i>
+                            <span class="text-white">Patient Management</span>
+                        </div>
+                        <div class="feature-item mb-3">
+                            <i class="bi bi-check-circle text-success me-3"></i>
+                            <span class="text-white">Professional Landing Pages</span>
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Right side - Form -->
+            <div class="col-lg-6 col-12 auth-form-section">
+                <div class="auth-form-container">
+                    <!-- Compact header for mobile -->
+                    <div class="text-center mb-4 d-lg-none">
+                        <i class="bi bi-heart-pulse text-primary mb-3" style="font-size: 2.5rem;"></i>
+                        <h2 class="h5 text-muted">Welcome to AI Medical Diagnosis</h2>
+                    </div>
+
+                    <!-- Main form card -->
+                    <div class="auth-card">
+                        <!-- Header -->
+                        <div class="auth-header text-center mb-4">
+                            <h2 class="auth-title">Create Account</h2>
+                            <p class="auth-subtitle">Join our healthcare platform today</p>
+                        </div>
 
                     <!-- Register Form -->
                     <form method="POST" action="{{ route('register') }}" class="auth-form">
@@ -26,13 +150,13 @@
                             <label for="name" class="form-label">
                                 <i class="bi bi-person me-2"></i>Full Name
                             </label>
-                            <input 
-                                id="name" 
-                                type="text" 
-                                name="name" 
-                                class="form-control auth-input @if($errors ?? false) @error('name') is-invalid @enderror @endif" 
-                                value="{{ old('name') }}" 
-                                required 
+                            <input
+                                id="name"
+                                type="text"
+                                name="name"
+                                class="form-control auth-input @if($errors ?? false) @error('name') is-invalid @enderror @endif"
+                                value="{{ old('name') }}"
+                                required
                                 autofocus
                                 placeholder="Enter your full name"
                             >
@@ -46,12 +170,12 @@
                             <label for="email" class="form-label">
                                 <i class="bi bi-envelope me-2"></i>Email Address
                             </label>
-                            <input 
-                                id="email" 
-                                type="email" 
-                                name="email" 
-                                class="form-control auth-input @error('email') is-invalid @enderror" 
-                                value="{{ old('email') }}" 
+                            <input
+                                id="email"
+                                type="email"
+                                name="email"
+                                class="form-control auth-input @error('email') is-invalid @enderror"
+                                value="{{ old('email') }}"
                                 required
                                 placeholder="Enter your email"
                             >
@@ -65,12 +189,12 @@
                             <label for="phone" class="form-label">
                                 <i class="bi bi-telephone me-2"></i>Phone Number <span class="text-danger">*</span>
                             </label>
-                            <input 
-                                id="phone" 
-                                type="tel" 
-                                name="phone" 
-                                class="form-control auth-input @error('phone') is-invalid @enderror" 
-                                value="{{ old('phone') }}" 
+                            <input
+                                id="phone"
+                                type="tel"
+                                name="phone"
+                                class="form-control auth-input @error('phone') is-invalid @enderror"
+                                value="{{ old('phone') }}"
                                 required
                                 placeholder="Enter your phone number (e.g., +1234567890)"
                                 pattern="^\+?[1-9]\d{1,14}$"
@@ -92,11 +216,11 @@
                                 <i class="bi bi-lock me-2"></i>Password
                             </label>
                             <div class="password-input-wrapper">
-                                <input 
-                                    id="password" 
-                                    type="password" 
-                                    name="password" 
-                                    class="form-control auth-input @error('password') is-invalid @enderror" 
+                                <input
+                                    id="password"
+                                    type="password"
+                                    name="password"
+                                    class="form-control auth-input @error('password') is-invalid @enderror"
                                     required
                                     placeholder="Create a strong password"
                                 >
@@ -115,11 +239,11 @@
                                 <i class="bi bi-shield-check me-2"></i>Confirm Password
                             </label>
                             <div class="password-input-wrapper">
-                                <input 
-                                    id="password_confirmation" 
-                                    type="password" 
-                                    name="password_confirmation" 
-                                    class="form-control auth-input @error('password_confirmation') is-invalid @enderror" 
+                                <input
+                                    id="password_confirmation"
+                                    type="password"
+                                    name="password_confirmation"
+                                    class="form-control auth-input @error('password_confirmation') is-invalid @enderror"
                                     required
                                     placeholder="Confirm your password"
                                 >
@@ -139,12 +263,12 @@
                             </label>
                             <select class="form-control auth-input @error('specialty') is-invalid @enderror" name="specialty_select" id="specialty_select" onchange="toggleCustomSpecialty()">
                                 <option value="">-- Select Your Specialty --</option>
-                                
+
                                 <optgroup label="🧠 General & Internal Medicine">
                                     <option value="General Practitioner">General Practitioner (GP) / Family Medicine</option>
                                     <option value="Internal Medicine">Internal Medicine (Internist)</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="🩺 Internal Medicine Subspecialties">
                                     <option value="Cardiology">Cardiology (Heart)</option>
                                     <option value="Pulmonology">Pulmonology (Lungs)</option>
@@ -159,17 +283,17 @@
                                     <option value="Allergy & Immunology">Allergy & Immunology</option>
                                     <option value="Reproductive Endocrinology">Reproductive Endocrinology (Fertility hormones)</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="🧠 Emergency & Critical Care">
                                     <option value="Emergency Medicine">Emergency Medicine</option>
                                     <option value="Critical Care">Critical Care / Intensive Care Medicine</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="💉 Anesthesia & Pain Management">
                                     <option value="Anesthesiology">Anesthesiology</option>
                                     <option value="Pain Management">Pain Management / Interventional Pain Medicine</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="🧠 Neurology & Psychiatry">
                                     <option value="Neurology">Neurology (Brain & nerves)</option>
                                     <option value="Neurosurgery">Neurosurgery (Brain & spine surgery)</option>
@@ -177,7 +301,7 @@
                                     <option value="Child & Adolescent Psychiatry">Child & Adolescent Psychiatry</option>
                                     <option value="Behavioral & Developmental Pediatrics">Behavioral & Developmental Pediatrics</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="🦴 Surgical Specialties">
                                     <option value="General Surgery">General Surgery</option>
                                     <option value="Orthopedic Surgery">Orthopedic Surgery (Bones & joints)</option>
@@ -194,7 +318,7 @@
                                     <option value="Pediatric Surgery">Pediatric Surgery</option>
                                     <option value="Hand Surgery">Hand Surgery</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="👶 Pediatrics & Women's Health">
                                     <option value="Pediatrics">Pediatrics</option>
                                     <option value="Neonatology">Neonatology (Newborn care)</option>
@@ -204,7 +328,7 @@
                                     <option value="Reproductive Endocrinology & Infertility">Reproductive Endocrinology & Infertility</option>
                                     <option value="Maternal–Fetal Medicine">Maternal–Fetal Medicine</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="🧬 Diagnostic & Support Specialties">
                                     <option value="Pathology">Pathology (Laboratory medicine)</option>
                                     <option value="Radiology">Radiology (Medical imaging)</option>
@@ -213,7 +337,7 @@
                                     <option value="Endoscopy">Endoscopy / GI Endoscopy</option>
                                     <option value="Electrodiagnostic Medicine">Electrodiagnostic Medicine (EMG, EEG)</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="🏥 Other Medical Specialties">
                                     <option value="Oncology">Oncology (Medical cancer care)</option>
                                     <option value="Hepatology">Hepatology (Liver diseases)</option>
@@ -223,18 +347,18 @@
                                     <option value="Occupational & Environmental Medicine">Occupational & Environmental Medicine</option>
                                     <option value="Sports Medicine">Sports Medicine</option>
                                 </optgroup>
-                                
+
                                 <optgroup label="✏️ Custom">
                                     <option value="other">Other (Please specify)</option>
                                 </optgroup>
                             </select>
-                            
+
                             <!-- Custom Specialty Input (Hidden by default) -->
                             <div id="custom_specialty_container" style="display: none;" class="mt-2">
-                                <input 
-                                    type="text" 
-                                    name="custom_specialty" 
-                                    id="custom_specialty" 
+                                <input
+                                    type="text"
+                                    name="custom_specialty"
+                                    id="custom_specialty"
                                     class="form-control auth-input @if($errors ?? false) @error('custom_specialty') is-invalid @enderror @endif"
                                     placeholder="Please enter your medical specialty"
                                     value="{{ old('custom_specialty') }}"
@@ -245,16 +369,20 @@
                                     @enderror
                                 @endif
                             </div>
-                            
+
                             <!-- Hidden field to store the final specialty value -->
                             <input type="hidden" name="specialty" id="specialty" value="{{ old('specialty') }}">
-                            
+
                             @if($errors ?? false)
                                 @error('specialty')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
                             @endif
                         </div>
+
+                        <!-- Plan Selection Section (Removed - users start on free trial by default) -->
+                        <input type="hidden" name="selected_plan" id="selected_plan" value="free">
+                        <input type="hidden" name="selected_billing" id="selected_billing" value="monthly">
 
                         <!-- Terms Agreement -->
                         <div class="form-check mb-4">
@@ -282,7 +410,13 @@
                                 Sign in here <i class="bi bi-arrow-right ms-1"></i>
                             </a>
                         </div>
-                    </form>
+                        </form>
+                    </div>
+
+                    <!-- Footer links -->
+                    <div class="text-center mt-4">
+                        <small class="text-muted">Need help? <a href="{{ route('contact') }}" class="text-decoration-none">Contact Support</a></small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -290,31 +424,63 @@
 </div>
 
 <style>
-.auth-wrapper {
+.auth-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
     position: relative;
     overflow: hidden;
 }
 
-.auth-wrapper::before {
+.auth-info-section {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    position: relative;
+}
+
+.auth-info-section::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="a" cx="50%" cy="50%"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.1"/><stop offset="100%" stop-color="%23ffffff" stop-opacity="0"/></radialGradient></defs><circle cx="200" cy="200" r="100" fill="url(%23a)"/><circle cx="800" cy="300" r="150" fill="url(%23a)"/><circle cx="400" cy="700" r="120" fill="url(%23a)"/></svg>');
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="a" cx="50%" cy="50%"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.05"/><stop offset="100%" stop-color="%23ffffff" stop-opacity="0"/></radialGradient></defs><circle cx="200" cy="200" r="100" fill="url(%23a)"/><circle cx="800" cy="300" r="150" fill="url(%23a)"/><circle cx="400" cy="700" r="120" fill="url(%23a)"/></svg>');
     opacity: 0.3;
 }
 
-.auth-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    border-radius: 20px;
-    padding: 3rem;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+.auth-info-content {
     position: relative;
-    z-index: 1;
+    z-index: 2;
+    max-width: 500px;
+    text-align: center;
+}
+
+.auth-form-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    min-height: 100vh;
+}
+
+.auth-form-container {
+    width: 100%;
+    max-width: 450px;
+}
+
+.auth-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    z-index: 2;
 }
 
 .auth-title {
@@ -485,7 +651,7 @@ select.form-control.auth-input {
         padding: 2rem;
         margin: 1rem;
     }
-    
+
     .auth-title {
         font-size: 1.75rem;
     }
@@ -496,7 +662,7 @@ select.form-control.auth-input {
 function togglePassword(inputId) {
     const input = document.getElementById(inputId);
     const eye = document.getElementById(inputId + '-eye');
-    
+
     if (input.type === 'password') {
         input.type = 'text';
         eye.className = 'bi bi-eye-slash';
@@ -511,7 +677,7 @@ function toggleCustomSpecialty() {
     const customContainer = document.getElementById('custom_specialty_container');
     const customInput = document.getElementById('custom_specialty');
     const hiddenInput = document.getElementById('specialty');
-    
+
     if (select.value === 'other') {
         customContainer.style.display = 'block';
         customInput.required = true;
@@ -530,21 +696,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const customInput = document.getElementById('custom_specialty');
     const hiddenInput = document.getElementById('specialty');
     const select = document.getElementById('specialty_select');
-    
+
     // Handle custom input changes
     customInput.addEventListener('input', function() {
         if (select.value === 'other') {
             hiddenInput.value = this.value;
         }
     });
-    
+
     // Handle form submission to ensure proper validation
     const form = document.querySelector('.auth-form');
     form.addEventListener('submit', function(e) {
         const select = document.getElementById('specialty_select');
         const customInput = document.getElementById('custom_specialty');
         const hiddenInput = document.getElementById('specialty');
-        
+
         if (select.value === 'other') {
             if (!customInput.value.trim()) {
                 e.preventDefault();
@@ -557,11 +723,11 @@ document.addEventListener('DOMContentLoaded', function() {
             hiddenInput.value = select.value;
         }
     });
-    
+
     // Initialize on page load (for validation errors)
     const oldSpecialty = '{{ old("specialty") }}';
     const oldCustomSpecialty = '{{ old("custom_specialty") }}';
-    
+
     if (oldCustomSpecialty) {
         document.getElementById('specialty_select').value = 'other';
         toggleCustomSpecialty();
@@ -571,7 +737,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check if old specialty exists in dropdown
         const selectOptions = Array.from(document.getElementById('specialty_select').options);
         const optionExists = selectOptions.some(option => option.value === oldSpecialty);
-        
+
         if (optionExists) {
             document.getElementById('specialty_select').value = oldSpecialty;
         } else {
@@ -582,6 +748,126 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         document.getElementById('specialty').value = oldSpecialty;
     }
+
+    // Plan Selection Functions
+    const selectedBilling = '{{ $selectedBilling }}';
+
+    // Initialize billing toggle based on URL parameter
+    if (selectedBilling === 'yearly') {
+        switchBilling('yearly');
+    } else {
+        switchBilling('monthly');
+    }
 });
+
+// Plan Selection Functions
+function selectPlan(planKey) {
+    // Remove selected class from all plans
+    document.querySelectorAll('.plan-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+
+    // Add selected class to clicked plan
+    document.querySelector(`.plan-card[data-plan="${planKey}"]`).classList.add('selected');
+
+    // Update hidden field
+    document.getElementById('selected_plan').value = planKey;
+}
+
+function switchBilling(period) {
+    const monthlyToggle = document.getElementById('monthly-toggle');
+    const yearlyToggle = document.getElementById('yearly-toggle');
+    const monthlyPrices = document.querySelectorAll('.monthly-price-display');
+    const yearlyPrices = document.querySelectorAll('.yearly-price-display');
+
+    document.getElementById('selected_billing').value = period;
+
+    if (period === 'monthly') {
+        monthlyToggle.style.background = '#DE6262';
+        monthlyToggle.style.color = 'white';
+        yearlyToggle.style.background = 'transparent';
+        yearlyToggle.style.color = '#6C757D';
+
+        monthlyPrices.forEach(price => price.style.display = 'inline');
+        yearlyPrices.forEach(price => price.style.display = 'none');
+    } else {
+        yearlyToggle.style.background = '#DE6262';
+        yearlyToggle.style.color = 'white';
+        monthlyToggle.style.background = 'transparent';
+        monthlyToggle.style.color = '#6C757D';
+
+        monthlyPrices.forEach(price => price.style.display = 'none');
+        yearlyPrices.forEach(price => price.style.display = 'inline');
+    }
+}
 </script>
+
+<!-- Plan Selection Styles -->
+<style>
+.plan-card {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+    height: 100%;
+}
+
+.plan-card:hover {
+    border-color: #DE6262;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15);
+}
+
+.plan-card.selected {
+    border-color: #DE6262;
+    background: linear-gradient(135deg, rgba(222, 98, 98, 0.05), rgba(222, 98, 98, 0.02));
+    box-shadow: 0 4px 12px rgba(222, 98, 98, 0.2);
+}
+
+.plan-header {
+    text-align: center;
+    margin-bottom: 0.75rem;
+}
+
+.plan-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+}
+
+.plan-price .price {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #DE6262;
+}
+
+.plan-price .period {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.plan-features li {
+    padding: 0.2rem 0;
+    color: #6c757d;
+}
+
+.billing-toggle {
+    font-weight: 500;
+}
+
+.billing-toggle:hover {
+    background: #f8f9fa !important;
+}
+</style>
+
 @endsection

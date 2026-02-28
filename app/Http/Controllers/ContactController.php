@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\ContactSubmission;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ContactFormMail;
+use App\Services\EmailService;
 
 class ContactController extends Controller
 {
@@ -61,12 +62,25 @@ class ContactController extends Controller
                 'submitted_at' => now(),
             ]);
 
-            // Send email to specified recipients
+            // Send email to specified recipients using EmailService for better reliability
             $recipients = ['malikqattom@gmail.com', 'laythfares99@gmail.com'];
-            
+            $emailService = new EmailService();
+             
             foreach ($recipients as $recipient) {
                 try {
-                    Mail::to($recipient)->send(new ContactFormMail($data));
+                    $emailService->sendEmail(
+                        $recipient,
+                        'Contact Message - ' . $data['subject'],
+                        'emails.contact',
+                        [
+                            'contactName' => $data['name'],
+                            'contactEmail' => $data['email'],
+                            'contactPhone' => $data['phone'],
+                            'contactService' => $data['service'],
+                            'contactSubject' => $data['subject'],
+                            'messageContent' => $data['message'],
+                        ]
+                    );
                 } catch (\Exception $e) {
                     \Log::error("Failed to send email to $recipient: " . $e->getMessage());
                 }

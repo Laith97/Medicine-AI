@@ -4,10 +4,16 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Notification;
 use App\Models\StripeInvoice;
 use App\Models\DoctorBlogPost;
+use App\Models\Appointment;
 use App\Policies\BlogPostPolicy;
+use App\Channels\SmsChannel;
+use App\Http\Middleware\RoleRedirectMiddleware;
+use App\Observers\AppointmentObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,14 +30,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register model observers
+        Appointment::observe(AppointmentObserver::class);
+
+        // Use custom pagination view for admin pages
+        Paginator::defaultView('custom.pagination');
+        Paginator::defaultSimpleView('custom.pagination');
+
         // Custom route model binding for StripeInvoice to ensure URLs are strings
         Route::bind('invoice', function ($value) {
             $invoice = StripeInvoice::findOrFail($value);
-            
+
             // Force access to URL attributes to trigger accessors
             $invoice->invoice_url;
             $invoice->invoice_pdf;
-            
+
             return $invoice;
         });
 
@@ -40,7 +53,15 @@ class AppServiceProvider extends ServiceProvider
             return DoctorBlogPost::where('slug', $value)->orWhere('id', $value)->firstOrFail();
         });
 
+        // Register role.redirect middleware
+        Route::aliasMiddleware('role.redirect', RoleRedirectMiddleware::class);
+
         // Register BlogPost policy
         Gate::policy(DoctorBlogPost::class, BlogPostPolicy::class);
+
+        // Register custom SMS notification channel
+        Notification::extend('sms', function ($app) {
+            return new SmsChannel($app->make(\App\Services\SmsService::class));
+        });
     }
 }

@@ -80,19 +80,28 @@
                         </div>
                     </div>
 
-                    @if($diagnosis->voice_transcript && $diagnosis->voice_transcript !== $diagnosis->diagnosis_text)
-                        <div class="voice-transcript mb-4">
-                            <h6><i class="fas fa-microphone me-2"></i>Voice Transcript:</h6>
-                            <div class="bg-info bg-opacity-10 p-3 rounded">
-                                {!! nl2br(e($diagnosis->voice_transcript)) !!}
-                            </div>
-                            @if($diagnosis->voice_file_path)
-                                <div class="mt-2">
-                                    <button class="btn btn-sm btn-outline-info" onclick="playVoiceFile()">
-                                        <i class="fas fa-play me-1"></i>Play Original Recording
-                                    </button>
-                                </div>
-                            @endif
+                    @if($diagnosis->voice_transcripts && count($diagnosis->voice_transcripts) > 0)
+                        <div class="voice-transcripts mb-4">
+                            <h6><i class="fas fa-microphone me-2"></i>Voice Notes:</h6>
+                            @foreach($diagnosis->voice_transcripts as $index => $transcript)
+                                @if($transcript && $transcript !== $diagnosis->diagnosis_text)
+                                    <div class="voice-transcript-item mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="mb-0">Voice Note {{ $index + 1 }}</h6>
+                                            @if(isset($diagnosis->voice_files[$index]) && (!empty(trim($diagnosis->voice_files[$index])) || $diagnosis->voice_transcripts[$index]))
+                                                <button class="btn btn-sm btn-outline-info" onclick="playVoiceFile({{ $index }})">
+                                                    <i class="fas fa-play me-1"></i>Play Voice Note {{ $index + 1 }}
+                                                </button>
+                                            @else
+                                                <span class="text-muted small"><i class="fas fa-exclamation-triangle me-1"></i>Audio file not available</span>
+                                            @endif
+                                        </div>
+                                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                                            {!! nl2br(e($transcript)) !!}
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
                         </div>
                     @endif
 
@@ -102,6 +111,27 @@
                             <div class="bg-warning bg-opacity-10 p-3 rounded">
                                 {!! nl2br(e($diagnosis->ai_response)) !!}
                             </div>
+                        </div>
+                    @endif
+
+                    @if($diagnosis->aiAssistantResults && $diagnosis->aiAssistantResults->count() > 0)
+                        <hr>
+                        <div class="ai-assistant-results">
+                            <h6><i class="fas fa-robot me-2"></i>AI Assistant Analysis</h6>
+                            @foreach($diagnosis->aiAssistantResults as $index => $result)
+                                <div class="ai-assistant-result mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0 text-info">
+                                            <i class="fas fa-robot me-1"></i>
+                                            AI Analysis {{ $index + 1 }}
+                                        </h6>
+                                        <small class="text-muted">{{ $result->created_at->format('M d, Y H:i A') }}</small>
+                                    </div>
+                                    <div class="bg-info bg-opacity-10 p-3 rounded">
+                                        {!! nl2br($result->ai_analysis) !!}
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
                     @endif
                 </div>
@@ -117,12 +147,95 @@
                         <div class="row">
                             @foreach($diagnosis->patient_data as $key => $value)
                                 @if($value)
-                                    <div class="col-md-6 mb-3">
-                                        <h6 class="text-capitalize">{{ str_replace('_', ' ', $key) }}</h6>
-                                        <div class="bg-light p-2 rounded">
-                                            {{ $value }}
-                                        </div>
-                                    </div>
+                            <div class="col-md-6 mb-3">
+                                <h6 class="text-capitalize">{{ str_replace('_', ' ', $key) }}</h6>
+                                <div class="bg-light p-2 rounded">
+                                    @if(is_array($value))
+                                        @php
+                                            // Check if this is the symptoms field and contains IDs
+                                            $isSymptomsField = ($key === 'symptoms');
+                                            $symptomNames = [];
+                                        @endphp
+                                        @foreach($value as $subKey => $subValue)
+                                            @php
+                                                // If this is the symptoms field and the value is a numeric ID, look up the symptom name
+                                                if ($isSymptomsField && is_numeric($subValue)) {
+                                                    $symptom = \App\Models\Symptom::find($subValue);
+                                                    if ($symptom) {
+                                                        $subValue = $symptom->name;
+                                                    } else {
+                                                        // Debug: Show that symptom was not found
+                                                        $subValue = "[ID:{$subValue} - Not Found]";
+                                                    }
+                                                }
+                                            @endphp
+                                            <div class="mb-1">
+                                                <strong>{{ is_string($subKey) ? str_replace('_', ' ', ucfirst($subKey)) : 'Item ' . ($subKey + 1) }}:</strong>
+                                                @if(is_array($subValue))
+                                                    <div class="ms-3">
+                                                        @foreach($subValue as $nestedKey => $nestedValue)
+                                                            @php
+                                                                // Also check for symptom IDs in nested arrays
+                                                                if ($isSymptomsField && is_numeric($nestedValue)) {
+                                                                    $symptom = \App\Models\Symptom::find($nestedValue);
+                                                                    if ($symptom) {
+                                                                        $nestedValue = $symptom->name;
+                                                                    } else {
+                                                                        // Debug: Show that symptom was not found
+                                                                        $nestedValue = "[ID:{$nestedValue} - Not Found]";
+                                                                    }
+                                                                }
+                                                            @endphp
+                                                            <div>
+                                                                <strong>{{ is_string($nestedKey) ? str_replace('_', ' ', ucfirst($nestedKey)) : 'Item ' . ($nestedKey + 1) }}:</strong>
+                                                                {{ is_array($nestedValue) ? json_encode($nestedValue) : $nestedValue }}
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @else
+                                                    {{ $subValue }}
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    @elseif($key === 'symptoms' && is_string($value))
+                                        @php
+                                            // Handle symptoms that might be stored as a JSON string
+                                            $symptomsArray = json_decode($value, true);
+                                            if (is_array($symptomsArray)) {
+                                                // Process each symptom ID to get the text value
+                                                $processedSymptoms = [];
+                                                foreach ($symptomsArray as $symptomId) {
+                                                    if (is_numeric($symptomId)) {
+                                                        $symptom = \App\Models\Symptom::find($symptomId);
+                                                        if ($symptom) {
+                                                            $processedSymptoms[] = $symptom->name;
+                                                        } else {
+                                                            // Debug: Show that symptom was not found
+                                                            $processedSymptoms[] = "[ID:{$symptomId} - Not Found]";
+                                                        }
+                                                    } else {
+                                                        // This is already a text symptom
+                                                        $processedSymptoms[] = $symptomId;
+                                                    }
+                                                }
+                                                $value = implode(', ', $processedSymptoms);
+                                            }
+                                        @endphp
+                                        {{ $value }}
+                                    @else
+                                        @php
+                                            // Check if this is the symptoms field and the value is a numeric ID
+                                            if ($key === 'symptoms' && is_numeric($value)) {
+                                                $symptom = \App\Models\Symptom::find($value);
+                                                if ($symptom) {
+                                                    $value = $symptom->name;
+                                                }
+                                            }
+                                        @endphp
+                                        {{ $value }}
+                                    @endif
+                                </div>
+                            </div>
                                 @endif
                             @endforeach
                         </div>
@@ -262,9 +375,47 @@
 </style>
 
 <script>
-function playVoiceFile() {
-    // This would need to be implemented to play the actual voice file
-    alert('Voice playback feature would be implemented here');
+function playVoiceFile(index = 0) {
+    // Create audio element
+    const audio = new Audio();
+    const voiceUrl = `/diagnosis/{{ $diagnosis->id }}/voice?file=${index}`;
+
+    // Set audio source
+    audio.src = voiceUrl;
+
+    // Add loading state to the specific button
+    const playButton = document.querySelector(`button[onclick="playVoiceFile(${index})"]`);
+    if (playButton) {
+        const originalContent = playButton.innerHTML;
+        playButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+        playButton.disabled = true;
+
+        // Reset button after audio ends or on error
+        const resetButton = () => {
+            playButton.innerHTML = originalContent;
+            playButton.disabled = false;
+        };
+
+        audio.addEventListener('ended', resetButton);
+        audio.addEventListener('error', () => {
+            resetButton();
+            alert('Error playing voice file. Please try again.');
+        });
+
+        audio.addEventListener('loadeddata', () => {
+            resetButton();
+        });
+    }
+
+    // Play the audio
+    audio.play().catch(error => {
+        console.error('Error playing audio:', error);
+        if (playButton) {
+            playButton.innerHTML = `<i class="fas fa-play me-1"></i>Play Voice Note ${index + 1}`;
+            playButton.disabled = false;
+        }
+        alert('Could not play voice file. Please check if the file exists.');
+    });
 }
 
 function resendNotification() {

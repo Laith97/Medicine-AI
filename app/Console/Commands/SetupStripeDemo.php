@@ -42,8 +42,7 @@ class SetupStripeDemo extends Command
             'STRIPE_BASIC_YEARLY_PRICE_ID=price_basic_yearly_id' => 'STRIPE_BASIC_YEARLY_PRICE_ID=price_demo_basic_yearly',
             'STRIPE_PRO_MONTHLY_PRICE_ID=price_pro_monthly_id' => 'STRIPE_PRO_MONTHLY_PRICE_ID=price_demo_pro_monthly',
             'STRIPE_PRO_YEARLY_PRICE_ID=price_pro_yearly_id' => 'STRIPE_PRO_YEARLY_PRICE_ID=price_demo_pro_yearly',
-            'STRIPE_ENTERPRISE_MONTHLY_PRICE_ID=price_enterprise_monthly_id' => 'STRIPE_ENTERPRISE_MONTHLY_PRICE_ID=price_demo_enterprise_monthly',
-            'STRIPE_ENTERPRISE_YEARLY_PRICE_ID=price_enterprise_yearly_id' => 'STRIPE_ENTERPRISE_YEARLY_PRICE_ID=price_demo_enterprise_yearly',
+
         ];
 
         foreach ($replacements as $search => $replace) {

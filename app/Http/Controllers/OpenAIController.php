@@ -9,6 +9,8 @@ use App\Models\Review;
 use App\Models\OpenAIUsage;
 use App\Models\User;
 use App\Models\Diagnosis;
+use App\Models\AiAssistantResult;
+use App\Models\PatientSummary;
 use App\Mail\UsageWarning;
 use App\Mail\PatientAccountCreated;
 use App\Services\SmsService;
@@ -18,22 +20,42 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\HandlesEffectiveDoctor;
 
 class OpenAIController extends Controller
 {
+    use HandlesEffectiveDoctor;
+    protected $uploadedFileIds = [];
     protected $smsService;
 
     public function __construct(SmsService $smsService)
     {
         $this->smsService = $smsService;
         $this->middleware(function ($request, $next) {
-            if (!Auth::user()->isDoctor() || !Auth::user()->doctor) {
-                abort(403, 'Access denied. Doctor profile required.');
+            $user = Auth::user();
+
+            // Handle sub-users - they inherit access from their parent doctor
+            if ($user->isSubUser()) {
+                $parentUser = $user->parentUser;
+                if (!$parentUser || !$parentUser->isDoctor() || !$parentUser->doctor || !$parentUser->doctor->is_active) {
+                    abort(403, 'Access denied. Parent doctor profile required.');
+                }
+            } else {
+                // Handle main users (doctors)
+                if (!$user->isDoctor() || !$user->doctor) {
+                    abort(403, 'Access denied. Doctor profile required.');
+                }
+
+                if (!$user->doctor->is_active) {
+                    abort(403, 'Access denied. Your doctor account has been deactivated.');
+                }
             }
+
             return $next($request);
-        });
+        })->except(['getVisitDetails', 'getPatientVisits', 'dashboard']); // Exclude dashboard for patients
     }
 
     public function showForm(Request $request)
@@ -41,7 +63,7 @@ class OpenAIController extends Controller
         $symptoms = Symptom::all();
 
         // Get doctor's assigned patients (actual User accounts)
-        $assignedPatients = Auth::user()->assignedPatients()
+        $assignedPatients = Auth::user()->getEffectiveAssignedPatients()
             ->select('id', 'name', 'email', 'phone', 'age', 'gender')
             ->orderBy('name')
             ->get();
@@ -49,1593 +71,585 @@ class OpenAIController extends Controller
         return view('openai', compact('symptoms', 'assignedPatients'));
     }
 
-
-    public function getResponse(PatientAnalysisRequest $request)
-    {
-        try {
-            // Validate patient information
-            $validator = Validator::make($request->all(), [
-                'existing_patient' => 'nullable|exists:users,id',
-                'patient_name' => 'required_without:existing_patient|string|max:255',
-                'patient_email' => 'required_without:existing_patient|email|max:255',
-                'patient_phone' => 'nullable|string|max:20',
-                'patient_age' => 'required_without:existing_patient|integer|min:1|max:150',
-                'patient_gender' => 'required_without:existing_patient|in:male,female,other',
-            ]);
-
-            if ($validator->fails()) {
-                return back()->withErrors($validator)->withInput();
-            }
-
-            // Get or create patient
-            if ($request->existing_patient) {
-                // Use existing patient
-                $patient = Auth::user()->assignedPatients()->findOrFail($request->existing_patient);
-                $isNewPatient = false;
-            } else {
-                // Create new patient
-                $patient = $this->findOrCreatePatient($request);
-                $isNewPatient = $patient->wasRecentlyCreated;
-            }
-
-            \Log::info('Processing AI diagnosis for patient: ' . $patient->name . ' (ID: ' . $patient->id . ')');
-
-            $files = $request->file('reports');
-
-            $uploadedFileIds = [];
-            $imageMessages = [];
-
-            $inputData = $this->collectPatientData($request);
-            $criterion = auth()->user()->setting->criterion ?? 'CDC';
-
-            if ($files && is_array($files)) {
-                foreach ($files as $file) {
-                    $originalName = $file->getClientOriginalName();
-                    $extension = strtolower($file->getClientOriginalExtension());
-                    $tempPath = storage_path('app/tmp/' . $originalName);
-
-                    // Move file to temp path
-                    $file->move(storage_path('app/tmp'), $originalName);
-
-                    // Check if it's an image file
-                    if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])) {
-                        // Process as image for GPT-4 Vision
-                        $base64 = base64_encode(file_get_contents($tempPath));
-                        $mimeType = mime_content_type($tempPath);
-
-                        $imageMessages[] = [
-                            "type" => "image_url",
-                            "image_url" => [
-                                "url" => "data:$mimeType;base64,$base64"
-                            ]
-                        ];
-                    } else {
-                        try {
-                            // Try to upload any other file type for file_search
-                            $uploaded = OpenAI::files()->upload([
-                                'purpose' => 'assistants',
-                                'file' => fopen($tempPath, 'r'),
-                            ]);
-
-                            $uploadedFileIds[] = $uploaded['id'];
-                        } catch (\Exception $e) {
-                            // If the file type is not supported by OpenAI, log the error
-                            \Log::warning("File type not supported by OpenAI: {$originalName}. Error: {$e->getMessage()}");
-
-                            // For unsupported file types, we'll try to extract text if possible
-                            $fileContent = $this->tryExtractTextFromFile($tempPath, $extension);
-
-                            if (!empty($fileContent)) {
-                                // Log the successful extraction
-                                \Log::info("Successfully extracted text from file: {$originalName}. Length: " . strlen($fileContent));
-
-                                // Create a temporary text file with the extracted content
-                                $textFilePath = storage_path('app/tmp/extracted_' . pathinfo($originalName, PATHINFO_FILENAME) . '.txt');
-                                file_put_contents($textFilePath, $fileContent);
-
-                                try {
-                                    // Upload the text file instead
-                                    $uploaded = OpenAI::files()->upload([
-                                        'purpose' => 'assistants',
-                                        'file' => fopen($textFilePath, 'r'),
-                                    ]);
-
-                                    $uploadedFileIds[] = $uploaded['id'];
-                                    \Log::info("Successfully uploaded extracted text as file: {$uploaded['id']}");
-                                } catch (\Exception $e2) {
-                                    \Log::error("Failed to upload extracted text file: {$e2->getMessage()}");
-
-                                    // If we can't upload the file, add the content directly to the prompt
-                                    // This is a fallback for when file upload fails
-                                    $fileExtractedContent = "Content from {$originalName}:\n\n" . $fileContent;
-
-                                    // Add the extracted content to the image messages if it's not too long
-                                    if (strlen($fileExtractedContent) < 4000) {
-                                        $imageMessages[] = [
-                                            "type" => "text",
-                                            "text" => $fileExtractedContent
-                                        ];
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // GPT-4 Vision
-            if (!empty($imageMessages)) {
-                // Create a system message that instructs the model to analyze all images
-                $specialty = auth()->user()->setting->specialty ?? 'medicine';
-                $systemMessage = "You are a senior consultant physician specialized in {$specialty} with 20+ years of clinical experience.
-                    You have extensive training in analyzing medical images and documents.
-
-                    CRITICAL CLINICAL APPROACH:
-                    1. ALWAYS prioritize life-threatening conditions first in your differential diagnosis
-                    2. Assign specific probability percentages to each diagnosis (e.g., 70%, 25%, 5%)
-                    3. Provide clear clinical reasoning for each diagnosis
-                    4. Use proper medical terminology throughout your assessment
-                    5. Be specific and detailed in your recommendations
-                    6. NEVER be vague or overly reassuring about serious symptoms
-                    7. Flag cases as ROUTINE, URGENT, or EMERGENCY based on clinical presentation
-                    8. Include specific medication recommendations when appropriate
-                    9. Recommend specialist referrals when indicated
-
-                    MANDATORY OUTPUT FORMAT:
-                    You MUST return your analysis in exactly TWO levels:
-
-                    🟢 LEVEL 1: QUICK CLINICAL SUMMARY
-
-                    📋 PATIENT SUMMARY:
-                    [Include basic patient details and key findings from uploaded images]
-
-                    🚨 CASE URGENCY:
-                    **{EMERGENCY / URGENT / ROUTINE}**
-                    [One-line justification for triage level]
-
-                    🔍 TOP 3 DIFFERENTIAL DIAGNOSES:
-                    [Table format with rank, diagnosis, probability %, and clinical reasoning]
-
-                    🧪 RECOMMENDED TESTS:
-                    [Bullet list of key tests needed immediately]
-
-                    💊 INITIAL MANAGEMENT PLAN:
-                    [Immediate actions, medications, referrals]
-
-                    ⚠️ WARNING SIGNS:
-                    [Red flags to monitor based on current data and images]
-
-                    ---
-
-                    🔵 DETAILED MEDICAL REPORT (Click to Expand)
-                    [Comprehensive analysis including detailed image analysis, pathophysiology, etc.]
-
-                    For image analysis in both levels:
-                    - Identify and describe what each image shows (brain scan, x-ray, ultrasound, etc.)
-                       - Identify any visible abnormalities, lesions, or notable findings
-                       - Extract any text visible in the images (lab values, measurements, annotations)
-                    - Keep Level 1 descriptions concise, expand in Level 2
-
-                    DO NOT say you cannot analyze the image. If you can see the image at all, provide your best medical analysis.
-                    If the image is unclear, still describe what you can see and provide possible interpretations.";
-
-                $response = OpenAI::chat()->create([
-                   'model' => 'gpt-4o',
-
-                    'messages' => [
-                        [
-                            'role' => 'system',
-                            'content' => $systemMessage
-                        ],
-                        [
-                            'role' => 'user',
-                            'content' => array_merge(
-                                [['type' => 'text', 'text' => "I'm uploading " . count($imageMessages) . " medical image(s) for analysis. Please analyze these images thoroughly from an " . $specialty . " perspective. " . $this->preparePrompt($inputData, $criterion, false)]],
-                                $imageMessages
-                            )
-                        ]
-                    ]
-                ]);
-
-                $rawMessage = $response['choices'][0]['message']['content'] ?? '';
-
-                $filteredMessage = $this->filterReponse($rawMessage);
-
-                // Create AI diagnosis record
-                $diagnosis = $this->createAIDiagnosis($patient, $filteredMessage, $request);
-
-                // Send notifications if new patient
-                if ($isNewPatient) {
-                    $this->sendPatientNotifications($patient, $diagnosis);
-                }
-
-                return redirect()->back()->with([
-                    'openai_result' => $filteredMessage,
-                    'success' => 'AI diagnosis completed successfully!' . ($isNewPatient ? ' Patient has been notified via email and SMS.' : ''),
-                ]);
-
-            }
-
-            // File Search
-            if (!empty($uploadedFileIds)) {
-                $vectorStore = OpenAI::vectorStores()->create([
-                    'file_ids' => $uploadedFileIds,
-                ]);
-                $vectorStoreId = $vectorStore['id'];
-
-                $specialty = auth()->user()->setting->specialty ?? 'Internal Medicine';
-
-                $assistant = OpenAI::assistants()->create([
-                    'name' => 'Medical Document Analyzer',
-                    'instructions' => "You are a senior consultant physician specialized in {$specialty} with 20+ years of clinical experience. Your task is to thoroughly analyze ALL uploaded medical documents to extract relevant clinical information.
-
-                    CRITICAL CLINICAL APPROACH:
-                    1. ALWAYS prioritize life-threatening conditions first in your differential diagnosis
-                    2. Assign specific probability percentages to each diagnosis (e.g., 70%, 25%, 5%)
-                    3. Provide clear clinical reasoning for each diagnosis
-                    4. Use proper medical terminology throughout your assessment
-                    5. Be specific and detailed in your recommendations
-                    6. NEVER be vague or overly reassuring about serious symptoms
-                    7. Flag cases as ROUTINE, URGENT, or EMERGENCY based on clinical presentation
-                    8. Include specific medication recommendations when appropriate
-                    9. Recommend specialist referrals when indicated
-
-                    MANDATORY OUTPUT FORMAT:
-                    You MUST return your analysis in exactly TWO levels:
-
-                    🟢 LEVEL 1: QUICK CLINICAL SUMMARY
-
-                    📋 PATIENT SUMMARY:
-                    [Include basic patient details and key findings from uploaded documents]
-
-                    🚨 CASE URGENCY:
-                    **{EMERGENCY / URGENT / ROUTINE}**
-                    [One-line justification for triage level]
-
-                    🔍 TOP 3 DIFFERENTIAL DIAGNOSES:
-                    [Table format with rank, diagnosis, probability %, and clinical reasoning]
-
-                    🧪 RECOMMENDED TESTS:
-                    [Bullet list of key tests needed immediately]
-
-                    💊 INITIAL MANAGEMENT PLAN:
-                    [Immediate actions, medications, referrals]
-
-                    ⚠️ WARNING SIGNS:
-                    [Red flags to monitor based on current data and documents]
-
-                    ---
-
-                    🔵 DETAILED MEDICAL REPORT (Click to Expand)
-                    [Comprehensive analysis including detailed document analysis, pathophysiology, etc.]
-
-                    For document analysis:
-                    - Examine EACH file thoroughly and extract ALL medical information
-                       - For medical documents: Extract symptoms, diagnoses, test results, and treatments
-                    - For text documents: Key medical information and relevance
-                       - For images: Describe what they show and identify any abnormalities
-                    - Keep Level 1 concise, expand details in Level 2
-
-                    DO NOT say you cannot analyze the files. If you can access the file content at all, provide your best medical analysis based on what you can see.",
-                    'tools' => [['type' => 'file_search']],
-                    'tool_resources' => [
-                        'file_search' => [
-                            'vector_store_ids' => [$vectorStoreId],
-                        ],
-                    ],
-                    'model' => 'gpt-4o',
-                ]);
-
-                $thread = OpenAI::threads()->create([]);
-                $threadId = $thread['id'];
-
-                // Store thread ID in session for follow-up messages
-                session(['thread_id' => $threadId]);
-
-                // Create a conversation ID for follow-up messages
-                $conversationId = uniqid('conv_');
-                session(['conversation_id' => $conversationId]);
-
-                // Store the initial conversation in the session
-                $specialty = auth()->user()->setting->specialty ?? null;
-                $initialPrompt = $this->preparePrompt($inputData, $criterion, true);
-                session(['conversation_history_' . $conversationId => [
-                    ['role' => 'system', 'content' => $this->getSystemPrompt($specialty, $criterion)],
-                    ['role' => 'user', 'content' => $initialPrompt]
-                ]]);
-
-                // Create a more detailed prompt that specifically mentions the files
-                $fileNames = [];
-                foreach ($files as $file) {
-                    $fileNames[] = $file->getClientOriginalName();
-                }
-
-                $fileListText = "I've uploaded the following files for analysis:\n";
-                foreach ($fileNames as $index => $name) {
-                    $fileListText .= ($index + 1) . ". " . $name . "\n";
-                }
-
-                $enhancedPrompt = $fileListText . "\n" . $initialPrompt . "\n\nPlease analyze ALL these files thoroughly from your {$specialty} perspective. Don't skip any files, and make sure to extract all relevant medical information.";
-
-                OpenAI::threads()->messages()->create($threadId, [
-                    'role' => 'user',
-                    'content' => $enhancedPrompt,
-                ]);
-
-                $run = OpenAI::threads()->runs()->create($threadId, [
-                    'assistant_id' => $assistant['id'],
-                ]);
-                $runId = $run['id'];
-
-
-                return $this->checkRunStatus($request, $threadId, $runId);
-            }
-
-            // No files provided: still try to respond based on inputData alone
-            $response = OpenAI::chat()->create([
-                'model' => 'gpt-4o',
-                'messages' => [
-                    [
-                        'role' => 'user',
-                        'content' => $this->preparePrompt($inputData, $criterion, false),
-                    ]
-                ]
-            ]);
-            $rawMessage = $response['choices'][0]['message']['content'] ?? '';
-
-            // Track token usage
-            $this->trackTokenUsage($response, 'diagnosis');
-
-            $filteredMessage = $this->filterReponse($rawMessage);
-            // Create AI diagnosis record
-            $diagnosis = $this->createAIDiagnosis($patient, $filteredMessage, $request);
-
-            // Send notifications if new patient
-            if ($isNewPatient) {
-                $this->sendPatientNotifications($patient, $diagnosis);
-            }
-
-            // Create a conversation ID for follow-up messages
-            $conversationId = uniqid('conv_');
-            session(['conversation_id' => $conversationId]);
-
-            // Store the initial conversation in the session
-            $specialty = auth()->user()->setting->specialty ?? null;
-            session(['conversation_history_' . $conversationId => [
-                ['role' => 'system', 'content' => $this->getSystemPrompt($specialty, $criterion)],
-                ['role' => 'user', 'content' => $this->preparePrompt($inputData, $criterion, false)],
-                ['role' => 'assistant', 'content' => $rawMessage]
-            ]]);
-
-            return redirect()->back()->with([
-                'openai_result' => $filteredMessage,
-                'conversation_id' => $conversationId,
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('=== EXCEPTION IN FORM SUBMISSION ===');
-            \Log::error('Exception: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            \Log::error('File: ' . $e->getFile() . ' Line: ' . $e->getLine());
-
-            // Check if it's an API key issue
-            $message = $e->getMessage();
-            if (strpos($message, 'API key') !== false ||
-                strpos($message, 'authentication') !== false ||
-                strpos($message, '401') !== false ||
-                strpos($message, 'Unauthorized') !== false) {
-
-                // It's likely an API key issue
-                return redirect()->back()->with([
-                    'openai_api_error' => 'Your OpenAI API key appears to be invalid or expired. Please contact the administrator to update the API key.',
-                ]);
-            }
-
-            // For other errors
-            return redirect()->back()->with([
-                'openai_error' => 'An error occurred while processing your request: ' . $e->getMessage(),
-            ]);
-        }
-    }
-
-
-
-
-    public function checkRunStatus($request, $threadId, $runId)
-    {
-        $maxAttempts = 30; // Increase max attempts
-        $delayMicroseconds = 1000000; // 1 second
-
-        \Log::info("Checking run status for thread: $threadId, run: $runId");
-
-        for ($i = 0; $i < $maxAttempts; $i++) {
-            $runStatus = OpenAI::threads()->runs()->retrieve($threadId, $runId);
-            \Log::info("Run status: " . $runStatus['status'] . " (attempt $i)");
-
-            if ($runStatus['status'] === 'completed') {
-                // Get all messages from the thread
-                $messages = OpenAI::threads()->messages()->list($threadId, [
-                    'limit' => 10, // Get more messages to ensure we have the complete response
-                    'order' => 'desc' // Get newest first
-                ]);
-
-                // Log the number of messages received
-                \Log::info("Retrieved " . count($messages['data']) . " messages from thread");
-
-                // Get the assistant's response (should be the first message)
-                $assistantMessage = null;
-                foreach ($messages['data'] as $message) {
-                    if ($message['role'] === 'assistant') {
-                        $assistantMessage = $message;
-                        break;
-                    }
-                }
-
-                if (!$assistantMessage) {
-                    \Log::error("No assistant message found in thread: $threadId");
-                    return redirect()->back()->with([
-                        'openai_error' => 'No response was generated. Please try again.',
-                    ]);
-                }
-
-                // Combine all content parts (text, images, etc.)
-                $fullContent = '';
-                foreach ($assistantMessage['content'] as $contentPart) {
-                    if ($contentPart['type'] === 'text') {
-                        $fullContent .= $contentPart['text']['value'] . "\n\n";
-                    }
-                }
-
-                $lastMessage = trim($fullContent);
-                \Log::info("Response length: " . strlen($lastMessage) . " characters");
-
-                if (empty($lastMessage)) {
-                    \Log::error("Empty response from assistant in thread: $threadId");
-                    return redirect()->back()->with([
-                        'openai_error' => 'The response was empty. Please try again.',
-                    ]);
-                }
-
-                $lastMessage = $this->filterReponse($lastMessage);
-
-                // Create AI diagnosis record
-                $diagnosis = $this->createAIDiagnosis($patient, $lastMessage, $request);
-
-                // Send notifications if new patient
-                if ($isNewPatient) {
-                    $this->sendPatientNotifications($patient, $diagnosis);
-                }
-
-                // Get the conversation ID from session
-                $conversationId = session('conversation_id');
-
-                // Add the AI's response to the conversation history
-                if ($conversationId) {
-                    $conversationHistory = session('conversation_history_' . $conversationId, []);
-                    if (!empty($conversationHistory)) {
-                        $conversationHistory[] = ['role' => 'assistant', 'content' => $lastMessage];
-                        session(['conversation_history_' . $conversationId => $conversationHistory]);
-                    }
-                }
-
-                return redirect()->back()->with([
-                    'openai_result' => $lastMessage,
-                    'conversation_id' => $conversationId,
-                ]);
-            } else if ($runStatus['status'] === 'failed') {
-                \Log::error("Run failed: " . json_encode($runStatus));
-                return redirect()->back()->with([
-                    'openai_error' => 'The analysis failed. Error: ' . ($runStatus['last_error']['message'] ?? 'Unknown error'),
-                ]);
-            } else if ($runStatus['status'] === 'requires_action') {
-                \Log::info("Run requires action: " . json_encode($runStatus['required_action']));
-                // Handle required actions (like function calls)
-                // For now, we'll just continue waiting
-            }
-
-            usleep($delayMicroseconds);
-        }
-
-        \Log::warning("Run timed out after $maxAttempts attempts");
-        return redirect()->back()->with([
-            'openai_error' => 'The analysis is taking longer than expected. Please check back in a few minutes.',
-        ]);
-    }
-
-
-
-    private function collectPatientData(Request $request)
-    {
-        // Get patient information from either existing patient or new patient form
-        $patientName = $request->existing_patient ?
-            Auth::user()->assignedPatients()->find($request->existing_patient)->name :
-            $request->patient_name;
-
-        $patientAge = $request->existing_patient ?
-            Auth::user()->assignedPatients()->find($request->existing_patient)->age :
-            $request->patient_age;
-
-        $patientGender = $request->existing_patient ?
-            Auth::user()->assignedPatients()->find($request->existing_patient)->gender :
-            $request->patient_gender;
-
-        // Check if we're using an existing patient
-        if ($request->existing_patient) {
-            // Get the existing patient data
-            $existingPatient = Auth::user()->assignedPatients()->find($request->existing_patient);
-
-            if ($existingPatient) {
-                // Get the patient's previous diagnoses for history
-                $patientHistory = $existingPatient->patientDiagnoses()->orderBy('created_at', 'desc')->get();
-
-                // Get the latest record for this patient
-                $latestRecord = $patientHistory->sortByDesc('visit_number')->first();
-
-                // Count the number of visits
-                $visitCount = $patientHistory->count();
-
-                // Get previous medical history from past visits
-                $previousMedicalHistory = '';
-                if ($visitCount > 0) {
-                    $previousMedicalHistory = "PATIENT HISTORY SUMMARY:\n";
-                    $previousMedicalHistory .= "Total previous visits: " . $visitCount . "\n\n";
-
-                    // Get the previous visits with more detailed information
-                    $previousVisits = $patientHistory->take(3)->map(function($record, $index) {
-                        $date = $record->created_at->format('M d, Y');
-                        $visitNum = $index + 1;
-
-                        $visitSummary = "VISIT #$visitNum ($date):\n";
-
-                        // Add vital signs if available
-                        $vitalSigns = [];
-                        if ($record->temperature) $vitalSigns[] = "Temperature: " . $record->temperature;
-                        if ($record->blood_pressure) $vitalSigns[] = "BP: " . $record->blood_pressure;
-                        if ($record->blood_sugar) $vitalSigns[] = "Blood Sugar: " . $record->blood_sugar;
-                        if ($record->weight) $vitalSigns[] = "Weight: " . $record->weight;
-                        if ($record->height) $vitalSigns[] = "Height: " . $record->height;
-
-                        if (!empty($vitalSigns)) {
-                            $visitSummary .= "Vitals: " . implode(", ", $vitalSigns) . "\n";
-                        }
-
-                        // Add symptoms
-                        if ($record->symptoms) {
-                            $symptoms = is_string($record->symptoms) ? json_decode($record->symptoms, true) : $record->symptoms;
-
-                            // If symptoms are numeric IDs, try to get the actual symptom names
-                            if (is_array($symptoms) && !empty($symptoms) && is_numeric($symptoms[0])) {
-                                $processedSymptoms = $this->processSymptoms($symptoms);
-                                $symptomsText = implode(", ", $processedSymptoms);
-                            } else {
-                                $symptomsText = is_array($symptoms) ? implode(", ", $symptoms) : $symptoms;
-                            }
-
-                            $visitSummary .= "Symptoms: $symptomsText\n";
-                        }
-
-                        // Add test results if available
-                        if ($record->test_results) {
-                            $visitSummary .= "Test Results: " . $record->test_results . "\n";
-                        }
-
-                        // Extract diagnoses from AI response
-                        if ($record->ai_response) {
-                            // Try to extract differential diagnosis
-                            if (preg_match('/(?:A\)\s*POSSIBLE\s*DIAGNOSIS|A\)\s*DIFFERENTIAL\s*DIAGNOSIS)[\s\S]*?(?=B\)|$)/i', $record->ai_response, $matches)) {
-                                $diagnosis = trim(strip_tags($matches[0]));
-                                $visitSummary .= "Diagnosis: " . str_replace("\n", " ", $diagnosis) . "\n";
-                            }
-
-                            // Try to extract treatment recommendations
-                            if (preg_match('/(?:C\)\s*TREATMENT\s*RECOMMENDATIONS|C\)\s*MANAGEMENT\s*RECOMMENDATIONS)[\s\S]*?(?=D\)|$)/i', $record->ai_response, $matches)) {
-                                $treatment = trim(strip_tags($matches[0]));
-                                $visitSummary .= "Treatment: " . str_replace("\n", " ", $treatment) . "\n";
-                            }
-                        }
-
-                        return $visitSummary;
-                    })->join("\n");
-
-                    $previousMedicalHistory .= $previousVisits;
-
-                    // Add note about clinical progression
-                    $previousMedicalHistory .= "\nIMPORTANT: Consider the clinical progression across these visits when formulating your assessment.";
-                }
-
-                return [
-                    'name' => $patientName,
-                    'age' => $patientAge,
-                    'gender' => $patientGender,
-                    'weight' => $request->weight,
-                    'height' => $request->height,
-                    'symptoms' => $this->processSymptoms($request->current_symptoms, $request->custom_symptoms),
-                    'test_results' => $request->test_results,
-                    'clinical_status' => [
-                        'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
-                        'blood_pressure' => $request->blood_pressure,
-                        'blood_sugar' => is_numeric($request->blood_sugar) ? $request->blood_sugar : null,
-                        'heart_rate' => is_numeric($request->heart_rate) ? $request->heart_rate : null,
-                        'respiratory_rate' => is_numeric($request->respiratory_rate) ? $request->respiratory_rate : null,
-                        'oxygen_saturation' => is_numeric($request->oxygen_saturation) ? $request->oxygen_saturation : null,
-                    ],
-                    'reports' => $request->file('reports') ?? null,
-                    'preliminary_diagnosis' => $request->preliminary_diagnosis,
-                    // New enhanced medical fields
-                    'chief_complaint' => $request->chief_complaint,
-                    'symptom_duration' => $request->symptom_duration,
-                    'past_medical_history' => $request->past_medical_history,
-                    'medication_history' => $request->medication_history,
-                    'allergies' => $request->allergies,
-                    'family_history' => $request->family_history,
-                    'social_history' => $request->social_history,
-                    'pain_scale' => is_numeric($request->pain_scale) ? $request->pain_scale : null,
-                    'visit_type' => $request->visit_type,
-                    'physician_notes' => $request->physician_notes,
-                    'additional_notes' => $request->additional_notes,
-                    // Head-to-Toe Assessment fields
-                    'head_to_toe_assessment' => [
-                        // General Appearance
-                        'consciousness_level' => $request->consciousness_level,
-                        'mood_behavior' => $request->mood_behavior,
-                        'speech_clarity' => $request->speech_clarity,
-                        'hygiene_level' => $request->hygiene_level,
-                        // HEENT
-                        'scalp_condition' => $request->scalp_condition,
-                        'pupil_reactivity' => $request->pupil_reactivity,
-                        'vision_issues' => $request->vision_issues ? true : false,
-                        'hearing_issues' => $request->hearing_issues ? true : false,
-                        'oral_findings' => $request->oral_findings,
-                        // Neurological
-                        'orientation_level' => $request->orientation_level,
-                        'limb_strength' => $request->limb_strength,
-                        'reflexes' => $request->reflexes,
-                        'sensation_findings' => $request->sensation_findings,
-                        // Neck and Chest
-                        'trachea_position' => $request->trachea_position,
-                        'jvd_present' => $request->jvd_present ? true : false,
-                        'lung_sounds' => $request->lung_sounds,
-                        'heart_sounds' => $request->heart_sounds,
-                        'capillary_refill_time' => $request->capillary_refill_time,
-                        // Abdomen
-                        'abdominal_shape' => $request->abdominal_shape,
-                        'bowel_sounds' => $request->bowel_sounds,
-                        'abdominal_tenderness' => $request->abdominal_tenderness ? true : false,
-                        'nausea_or_vomiting' => $request->nausea_or_vomiting ? true : false,
-                        'appetite_level' => $request->appetite_level,
-                        // Genitourinary
-                        'urination_issues' => $request->urination_issues ? true : false,
-                        'catheter_present' => $request->catheter_present ? true : false,
-                        'urine_characteristics' => $request->urine_characteristics,
-                        // Musculoskeletal
-                        'range_of_motion' => $request->range_of_motion,
-                        'gait_stability' => $request->gait_stability,
-                        'assistive_devices' => $request->assistive_devices,
-                        // Skin
-                        'skin_color' => $request->skin_color,
-                        'skin_temperature' => $request->skin_temperature,
-                        'skin_lesions' => $request->skin_lesions,
-                        'pressure_ulcers' => $request->pressure_ulcers ? true : false,
-                        // Pain Assessment
-                        'pain_score' => is_numeric($request->pain_score) ? $request->pain_score : null,
-                        'pain_description' => $request->pain_description,
-                    ],
-                    'is_existing_patient' => true,
-                    'patient_id' => $patientRecord->id,
-                    'previous_record_id' => $patientRecord->id, // Store the previous record ID for reference
-                    'visit_count' => $visitCount,
-                    'current_visit_number' => $currentVisitNumber,
-                    'previous_medical_history' => $previousMedicalHistory
-                ];
-            }
-        }
-
-        // New patient or existing patient not found
-        return [
-            'name' => $patientName,
-            'age' => $patientAge,
-            'gender' => $patientGender,
-            'weight' => $request->weight,
-            'height' => $request->height,
-            'symptoms' => $this->processSymptoms($request->current_symptoms, $request->custom_symptoms),
-            'test_results' => $request->test_results,
-            'clinical_status' => [
-                'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
-                'blood_pressure' => $request->blood_pressure,
-                'blood_sugar' => is_numeric($request->blood_sugar) ? $request->blood_sugar : null,
-                'heart_rate' => is_numeric($request->heart_rate) ? $request->heart_rate : null,
-                'respiratory_rate' => is_numeric($request->respiratory_rate) ? $request->respiratory_rate : null,
-                'oxygen_saturation' => is_numeric($request->oxygen_saturation) ? $request->oxygen_saturation : null,
-            ],
-            'reports' => $request->file('reports') ?? null,
-            'preliminary_diagnosis' => $request->preliminary_diagnosis,
-            // New enhanced medical fields
-            'chief_complaint' => $request->chief_complaint,
-            'symptom_duration' => $request->symptom_duration,
-            'past_medical_history' => $request->past_medical_history,
-            'medication_history' => $request->medication_history,
-            'allergies' => $request->allergies,
-            'family_history' => $request->family_history,
-            'social_history' => $request->social_history,
-            'pain_scale' => is_numeric($request->pain_scale) ? $request->pain_scale : null,
-            'visit_type' => $request->visit_type,
-            'physician_notes' => $request->physician_notes,
-            'additional_notes' => $request->additional_notes,
-            // Head-to-Toe Assessment fields
-            'head_to_toe_assessment' => [
-                // General Appearance
-                'consciousness_level' => $request->consciousness_level,
-                'mood_behavior' => $request->mood_behavior,
-                'speech_clarity' => $request->speech_clarity,
-                'hygiene_level' => $request->hygiene_level,
-                // HEENT
-                'scalp_condition' => $request->scalp_condition,
-                'pupil_reactivity' => $request->pupil_reactivity,
-                'vision_issues' => $request->vision_issues ? true : false,
-                'hearing_issues' => $request->hearing_issues ? true : false,
-                'oral_findings' => $request->oral_findings,
-                // Neurological
-                'orientation_level' => $request->orientation_level,
-                'limb_strength' => $request->limb_strength,
-                'reflexes' => $request->reflexes,
-                'sensation_findings' => $request->sensation_findings,
-                // Neck and Chest
-                'trachea_position' => $request->trachea_position,
-                'jvd_present' => $request->jvd_present ? true : false,
-                'lung_sounds' => $request->lung_sounds,
-                'heart_sounds' => $request->heart_sounds,
-                'capillary_refill_time' => $request->capillary_refill_time,
-                // Abdomen
-                'abdominal_shape' => $request->abdominal_shape,
-                'bowel_sounds' => $request->bowel_sounds,
-                'abdominal_tenderness' => $request->abdominal_tenderness ? true : false,
-                'nausea_or_vomiting' => $request->nausea_or_vomiting ? true : false,
-                'appetite_level' => $request->appetite_level,
-                // Genitourinary
-                'urination_issues' => $request->urination_issues ? true : false,
-                'catheter_present' => $request->catheter_present ? true : false,
-                'urine_characteristics' => $request->urine_characteristics,
-                // Musculoskeletal
-                'range_of_motion' => $request->range_of_motion,
-                'gait_stability' => $request->gait_stability,
-                'assistive_devices' => $request->assistive_devices,
-                // Skin
-                'skin_color' => $request->skin_color,
-                'skin_temperature' => $request->skin_temperature,
-                'skin_lesions' => $request->skin_lesions,
-                'pressure_ulcers' => $request->pressure_ulcers ? true : false,
-                // Pain Assessment
-                'pain_score' => is_numeric($request->pain_score) ? $request->pain_score : null,
-                'pain_description' => $request->pain_description,
-            ],
-            'is_existing_patient' => false
-        ];
-    }
-
-    /**
-     * Remove Patient Information section from the AI response
-     */
-    private function removePatientInfoSection($text)
-    {
-        // Skip this function if the text contains our new PATIENT INFORMATION format
-        if (preg_match('/PATIENT\s+INFORMATION:[\s\S]*?MEDICAL\s+REPORTS\s+ANALYSIS/i', $text)) {
-            return $text;
-        }
-
-        // Check if the text contains an old Patient Information section
-        if (preg_match('/Patient Information:[\s\S]*?---/i', $text, $matches)) {
-            // Remove the entire section including the separator line
-            $text = str_replace($matches[0], '', $text);
-
-            // Clean up any extra newlines that might be left
-            $text = preg_replace("/\n{3,}/", "\n\n", $text);
-        }
-
-        // Also check for the specific format with Age, Gender, Total Visits
-        if (preg_match('/Age:\s*\d+\s*\n+Gender:\s*[a-zA-Z]+\s*\n+Total Visits:\s*\d+/i', $text, $matches)) {
-            // Remove this section as well
-            $text = str_replace($matches[0], '', $text);
-
-            // Clean up any extra newlines that might be left
-            $text = preg_replace("/\n{3,}/", "\n\n", $text);
-        }
-
-        return $text;
-    }
-
-    private function filterReponse($lastMessage)
-    {
-        // Extract the PATIENT INFORMATION section with MEDICAL REPORTS ANALYSIS
-        $patientInfoPattern = '/PATIENT\s+INFORMATION:[\s\S]*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS:|A\)\s*DIFFERENTIAL\s*DIAGNOSIS)/i';
-        $patientInfoContent = '';
-
-        if (preg_match($patientInfoPattern, $lastMessage, $matches)) {
-            $patientInfoContent = $matches[0];
-            // Don't remove it yet, we'll add it back later
-        }
-
-        // Extract the CASE URGENCY section if it exists
-        $urgencyPattern = '/CASE\s+URGENCY:\s*(ROUTINE|URGENT|EMERGENCY).*?(?=PATIENT\s+INFORMATION:|$)/i';
-        $urgencyContent = '';
-
-        if (preg_match($urgencyPattern, $lastMessage, $matches)) {
-            $urgencyContent = $matches[0];
-        }
-
-        // Remove markdown bold and italic (**bold**, *italic*)
-        $lastMessage = preg_replace('/\*\*(.*?)\*\*/', '$1', $lastMessage);
-        $lastMessage = preg_replace('/\*(.*?)\*/', '$1', $lastMessage);
-
-        // Remove markdown headers (##, ###, etc.)
-        $lastMessage = preg_replace('/#+\s*/', '', $lastMessage);
-
-        // Remove bullet points (-, *, •)
-        $lastMessage = preg_replace('/^[\-\*\•]\s+/m', '', $lastMessage);
-
-        // Remove extra whitespace at beginning of lines
-        $lastMessage = preg_replace('/^\s+/m', '', $lastMessage);
-
-        // Normalize multiple newlines to a single one
-        $lastMessage = preg_replace("/\n{2,}/", "\n\n", $lastMessage);
-
-        // Decode HTML entities and strip HTML tags
-        $lastMessage = html_entity_decode($lastMessage, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $lastMessage = strip_tags($lastMessage);
-
-        // Enhance section headers like A), B), etc.
-        $lastMessage = preg_replace_callback('/^([A-D])\)\s*(.+)$/m', function ($matches) {
-            return "\n\n" . strtoupper($matches[1] . ') ' . $matches[2]) . "\n";
-        }, $lastMessage);
-
-        // Check if there's a Current Symptoms section before saving it
-        $currentSymptomsPattern = '/Current\s+Symptoms:.*?(?=A\)\s*POSSIBLE\s*DIAGNOSIS:|A\)\s*DIFFERENTIAL\s*DIAGNOSIS|$)/is';
-        $currentSymptomsMatch = null;
-        if (preg_match($currentSymptomsPattern, $lastMessage, $currentSymptomsMatch)) {
-            $currentSymptoms = trim($currentSymptomsMatch[0]);
-        }
-
-        // Look for either the old or new diagnosis section header
-        $diagnosisPattern = '/(A\)\s*POSSIBLE\s*DIAGNOSIS:|A\)\s*DIFFERENTIAL\s*DIAGNOSIS)/i';
-        if (preg_match($diagnosisPattern, $lastMessage, $match, PREG_OFFSET_CAPTURE)) {
-            $startPos = $match[0][1];
-            $diagnosisPart = substr($lastMessage, $startPos);
-
-            // Construct the final message with proper sections
-            $finalMessage = '';
-
-            // Add urgency section if we found it
-            if (!empty($urgencyContent)) {
-                $finalMessage .= trim($urgencyContent) . "\n\n";
-            }
-
-            // Add patient information section if we found it
-            if (!empty($patientInfoContent)) {
-                $finalMessage .= trim($patientInfoContent) . "\n\n";
-            }
-
-            // If we found Current Symptoms, add it after patient info
-            if (!empty($currentSymptoms)) {
-                $finalMessage .= trim($currentSymptoms) . "\n\n";
-            }
-
-            // Add the diagnosis part
-            $finalMessage .= $diagnosisPart;
-
-            $lastMessage = $finalMessage;
-        }
-
-        // Apply our structured formatting
-        $lastMessage = $this->formatResponseStructure($lastMessage);
-
-        // Final trim
-        return trim($lastMessage);
-    }
-    /**
-     * Try to extract text from various file types
-     *
-     * @param string $filePath Path to the file
-     * @param string $extension File extension
-     * @return string Extracted text or empty string if extraction failed
-     */
-    private function tryExtractTextFromFile($filePath, $extension)
-    {
-        try {
-            // For PDF files, use the PDF parser
-            if (strtolower($extension) === 'pdf') {
-                $parser = new \Smalot\PdfParser\Parser();
-                $pdf = $parser->parseFile($filePath);
-                return $pdf->getText();
-            }
-
-            // For Office documents (.docx, .xlsx, .pptx)
-            if (in_array(strtolower($extension), ['docx', 'xlsx', 'pptx'])) {
-                // Try to use PhpOffice if available
-                if (class_exists('\\PhpOffice\\PhpWord\\IOFactory') && $extension === 'docx') {
-                    $phpWord = \PhpOffice\PhpWord\IOFactory::load($filePath);
-                    $text = '';
-                    foreach ($phpWord->getSections() as $section) {
-                        foreach ($section->getElements() as $element) {
-                            if (method_exists($element, 'getText')) {
-                                $text .= $element->getText() . "\n";
-                            }
-                        }
-                    }
-                    return $text;
-                }
-            }
-
-            // For OpenDocument formats (.odt, .ods, .odp)
-            if (in_array(strtolower($extension), ['odt', 'ods', 'odp'])) {
-                // Try to extract as ZIP and read content.xml
-                $zip = new \ZipArchive();
-                if ($zip->open($filePath) === true) {
-                    if (($index = $zip->locateName('content.xml')) !== false) {
-                        $content = $zip->getFromIndex($index);
-                        $zip->close();
-
-                        // Better XML extraction for OpenDocument
-                        $text = '';
-
-                        // Remove XML namespaces to simplify parsing
-                        $content = preg_replace('/<[a-z0-9]+:[^>]+>/i', '', $content);
-                        $content = preg_replace('/<\/[a-z0-9]+:[^>]+>/i', '', $content);
-
-                        // Extract text content
-                        if (preg_match_all('/<text:p[^>]*>(.*?)<\/text:p>/s', $content, $matches)) {
-                            foreach ($matches[1] as $paragraph) {
-                                $text .= strip_tags($paragraph) . "\n";
-                            }
-                        }
-
-                        // If the above didn't work, fall back to simple stripping
-                        if (empty(trim($text))) {
-                            $text = strip_tags($content);
-                        }
-
-                        return $text;
-                    }
-                    $zip->close();
-                }
-
-                // If the ZIP extraction failed, try to use external tools if available
-                if (function_exists('exec')) {
-                    // Try using LibreOffice to convert to text if available
-                    $outputPath = storage_path('app/tmp/extracted_' . pathinfo($filePath, PATHINFO_FILENAME) . '.txt');
-                    @exec("libreoffice --headless --convert-to txt:Text --outdir " . storage_path('app/tmp') . " " . escapeshellarg($filePath) . " 2>/dev/null", $output, $returnVar);
-
-                    if ($returnVar === 0 && file_exists($outputPath)) {
-                        return file_get_contents($outputPath);
-                    }
-                }
-            }
-
-            // For plain text files
-            if (in_array(strtolower($extension), ['txt', 'csv', 'json', 'xml', 'html', 'htm', 'md', 'rtf'])) {
-                return file_get_contents($filePath);
-            }
-
-            // For other file types, try to read as text if the file is not too large
-            if (filesize($filePath) < 1024 * 1024 * 5) { // 5MB limit
-                $content = file_get_contents($filePath);
-                if (mb_detect_encoding($content, 'UTF-8, ISO-8859-1', true)) {
-                    return $content;
-                }
-            }
-        } catch (\Exception $e) {
-            \Log::error("Error extracting text from file: " . $e->getMessage());
-        }
-
-        return '';
-    }
-
-    /**
-     * Find or create patient similar to DiagnosisController
-     */
-    private function findOrCreatePatient(Request $request)
-    {
-        // First check if patient exists and is already assigned to this doctor
-        $patient = Auth::user()->assignedPatients()
-            ->where('email', $request->patient_email)
-            ->first();
-
-        if (!$patient) {
-            // Check if patient exists but is assigned to another doctor
-            $existingPatient = User::where('email', $request->patient_email)
-                ->where('role', 'patient')
-                ->first();
-
-            if ($existingPatient) {
-                // Patient exists but belongs to another doctor - not allowed
-                throw new \Exception('This patient is already registered with another doctor. Please use a different email address.');
-            }
-
-            // Create new patient and assign to current doctor
-            $tempPass = Hash::make('temporary');
-
-            $patient = User::create([
-                'name' => $request->patient_name,
-                'email' => $request->patient_email,
-                'phone' => $request->patient_phone,
-                'age' => $request->patient_age,
-                'gender' => $request->patient_gender,
-                'role' => 'patient',
-                'primary_doctor_id' => Auth::id(), // Assign to current doctor
-                'password' => $tempPass, // Will be updated with real temp password
-            ]);
-        }
-
-        return $patient;
-    }
-
-    /**
-     * Create AI diagnosis record
-     */
-    private function createAIDiagnosis($patient, $aiResponse, $request)
-    {
-        // Collect patient data for the diagnosis
-        $patientData = [
-            'symptoms' => $request->current_symptoms ? json_encode($request->current_symptoms) : null,
-            'chief_complaint' => $request->chief_complaint,
-            'symptom_duration' => $request->symptom_duration,
-            'past_medical_history' => $request->past_medical_history,
-            'medication_history' => $request->medication_history,
-            'allergies' => $request->allergies,
-            'family_history' => $request->family_history,
-            'social_history' => $request->social_history,
-            'test_results' => $request->test_results,
-            'preliminary_diagnosis' => $request->preliminary_diagnosis,
-            'vital_signs' => [
-                'weight' => $request->weight,
-                'height' => $request->height,
-                'temperature' => $request->temperature,
-                'blood_pressure' => $request->blood_pressure,
-                'blood_sugar' => $request->blood_sugar,
-                'heart_rate' => $request->heart_rate,
-                'respiratory_rate' => $request->respiratory_rate,
-                'oxygen_saturation' => $request->oxygen_saturation,
-            ],
-            'physical_assessment' => [
-                'consciousness_level' => $request->consciousness_level,
-                'mood_behavior' => $request->mood_behavior,
-                'speech_clarity' => $request->speech_clarity,
-                'hygiene_level' => $request->hygiene_level,
-                'scalp_condition' => $request->scalp_condition,
-                'pupil_reactivity' => $request->pupil_reactivity,
-                'vision_issues' => $request->vision_issues ? 1 : 0,
-                'hearing_issues' => $request->hearing_issues ? 1 : 0,
-                'oral_findings' => $request->oral_findings,
-                'orientation_level' => $request->orientation_level,
-                'limb_strength' => $request->limb_strength,
-                'reflexes' => $request->reflexes,
-                'sensation_findings' => $request->sensation_findings,
-            ],
-            'additional_notes' => $request->additional_notes,
-            'physician_notes' => $request->physician_notes,
-        ];
-
-        // Create diagnosis record
-        $diagnosis = Diagnosis::create([
-            'doctor_id' => Auth::id(),
-            'patient_id' => $patient->id,
-            'type' => 'ai',
-            'diagnosis_text' => $aiResponse,
-            'patient_data' => $patientData,
-        ]);
-
-        return $diagnosis;
-    }
-
-    /**
-     * Send notifications to new patient
-     */
-    private function sendPatientNotifications($patient, $diagnosis)
-    {
-        $tempPassword = SmsService::generateTempPassword();
-        \Log::info('Creating new patient account via AI diagnosis', [
-            'email' => $patient->email,
-            'name' => $patient->name,
-            'password' => $tempPassword,
-        ]);
-
-        $patient->update(['password' => Hash::make($tempPassword)]);
-
-        // Send email notification
-        Mail::to($patient->email)->send(
-            new PatientAccountCreated($patient, Auth::user(), $diagnosis, $tempPassword)
-        );
-
-        // Send SMS notification if phone provided
-        if ($patient->phone) {
-            $smsMessage = "Hello {$patient->name}, Dr. " . Auth::user()->name . " has created your medical account. Check your email for login details. Diagnosis ID: {$diagnosis->id}";
-            $result = $this->smsService->send($patient->phone, $smsMessage);
-
-            if (!$result['success']) {
-                \Log::warning('Failed to send SMS notification to patient', [
-                    'patient_id' => $patient->id,
-                    'phone' => $patient->phone,
-                    'error' => $result['message']
-                ]);
-            }
-        }
-
-        $diagnosis->update(['patient_notified' => true]);
-    }
-
-    private function insertTotable($request, $aiResponse){
-        // Check if we're editing an existing patient
-        if ($request->edit_patient_id) {
-            $patientToEdit = PatientAnalysis::find($request->edit_patient_id);
-
-            if ($patientToEdit && $patientToEdit->user_id == auth()->id()) {
-                // Update the existing patient record
-                $patientToEdit->update([
-                    'name' => $request->name,
-                    'age' => $request->age,
-                    'gender' => $request->gender,
-                    'weight' => is_numeric($request->weight) ? $request->weight : null,
-                    'height' => is_numeric($request->height) ? $request->height : null,
-                    'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
-                    'blood_pressure' => $request->blood_pressure,
-                    'blood_sugar' => is_numeric($request->blood_sugar) ? $request->blood_sugar : null,
-                    'symptoms' => $request->current_symptoms ? json_encode($request->current_symptoms) : null,
-                    'test_results' => $request->test_results,
-                    'preliminary_diagnosis' => $request->preliminary_diagnosis,
-                    'ai_response' => $aiResponse,
-                    // New enhanced medical fields
-                    'chief_complaint' => $request->chief_complaint,
-                    'symptom_duration' => $request->symptom_duration,
-                    'past_medical_history' => $request->past_medical_history,
-                    'medication_history' => $request->medication_history,
-                    'allergies' => $request->allergies,
-                    'family_history' => $request->family_history,
-                    'social_history' => $request->social_history,
-                    'pain_scale' => is_numeric($request->pain_scale) ? $request->pain_scale : null,
-                    'visit_type' => $request->visit_type,
-                    'heart_rate' => is_numeric($request->heart_rate) ? $request->heart_rate : null,
-                    'respiratory_rate' => is_numeric($request->respiratory_rate) ? $request->respiratory_rate : null,
-                    'oxygen_saturation' => is_numeric($request->oxygen_saturation) ? $request->oxygen_saturation : null,
-                    'physician_notes' => $request->physician_notes,
-                    'additional_notes' => $request->additional_notes,
-                    // Head-to-Toe Assessment fields
-                    'consciousness_level' => $request->consciousness_level,
-                    'mood_behavior' => $request->mood_behavior,
-                    'speech_clarity' => $request->speech_clarity,
-                    'hygiene_level' => $request->hygiene_level,
-                    'scalp_condition' => $request->scalp_condition,
-                    'pupil_reactivity' => $request->pupil_reactivity,
-                    'vision_issues' => $request->vision_issues ? 1 : 0,
-                    'hearing_issues' => $request->hearing_issues ? 1 : 0,
-                    'oral_findings' => $request->oral_findings,
-                    'orientation_level' => $request->orientation_level,
-                    'limb_strength' => $request->limb_strength,
-                    'reflexes' => $request->reflexes,
-                    'sensation_findings' => $request->sensation_findings,
-                    'trachea_position' => $request->trachea_position,
-                    'jvd_present' => $request->jvd_present ? 1 : 0,
-                    'lung_sounds' => $request->lung_sounds,
-                    'heart_sounds' => $request->heart_sounds,
-                    'capillary_refill_time' => $request->capillary_refill_time,
-                    'abdominal_shape' => $request->abdominal_shape,
-                    'bowel_sounds' => $request->bowel_sounds,
-                    'abdominal_tenderness' => $request->abdominal_tenderness ? 1 : 0,
-                    'nausea_or_vomiting' => $request->nausea_or_vomiting ? 1 : 0,
-                    'appetite_level' => $request->appetite_level,
-                    'urination_issues' => $request->urination_issues ? 1 : 0,
-                    'catheter_present' => $request->catheter_present ? 1 : 0,
-                    'urine_characteristics' => $request->urine_characteristics,
-                    'range_of_motion' => $request->range_of_motion,
-                    'gait_stability' => $request->gait_stability,
-                    'assistive_devices' => $request->assistive_devices,
-                    'skin_color' => $request->skin_color,
-                    'skin_temperature' => $request->skin_temperature,
-                    'skin_lesions' => $request->skin_lesions,
-                    'pressure_ulcers' => $request->pressure_ulcers ? 1 : 0,
-                    'pain_description' => $request->pain_description,
-                ]);
-
-                return $patientToEdit;
-            }
-        }
-
-        // Check if we're using an existing patient for a new visit
-        if ($request->patient_selection && $request->patient_selection != 'new') {
-            \Log::info('=== EXISTING PATIENT FLOW ===');
-            \Log::info('Patient selection ID: ' . $request->patient_selection);
-
-            // Get the existing patient data
-            $existingPatient = PatientAnalysis::find($request->patient_selection);
-
-            if ($existingPatient) {
-                \Log::info('Found existing patient: ' . $existingPatient->name . ' (ID: ' . $existingPatient->id . ', User: ' . $existingPatient->user_id . ')');
-
-                // Verify this patient belongs to the current user
-                if ($existingPatient->user_id != auth()->id()) {
-                    \Log::error('Security violation: Patient belongs to different user');
-                    return null;
-                }
-
-                // Get the patient's history to determine the visit number
-                $patientHistory = $existingPatient->getPatientHistory();
-                $visitNumber = $patientHistory->count() + 1;
-
-                \Log::info('Patient history count: ' . $patientHistory->count() . ', New visit number: ' . $visitNumber);
-
-                // Generate or use existing patient key
-                $patientKey = $existingPatient->patient_key ??
-                    PatientAnalysis::generatePatientKey(
-                        $existingPatient->name,
-                        $existingPatient->age,
-                        $existingPatient->gender,
-                        auth()->id()
-                    );
-
-                \Log::info('Patient key: ' . $patientKey . ' (existing: ' . ($existingPatient->patient_key ? 'yes' : 'no') . ')');
-
-                // If this is the first time we're using patient_key, update all previous records
-                if (!$existingPatient->patient_key) {
-                    \Log::info('Updating patient history with patient_key, found ' . $patientHistory->count() . ' records');
-                    foreach ($patientHistory as $index => $record) {
-                        $record->update([
-                            'patient_key' => $patientKey,
-                            'visit_number' => $index + 1
-                        ]);
-                        \Log::info('Updated record ID ' . $record->id . ' with visit_number ' . ($index + 1));
-                    }
-                }
-
-                // Create a new record with the existing patient's information
-                // This creates a new entry in the patient history
-                $newRecord = PatientAnalysis::create([
-                    'name' => $existingPatient->name,
-                    'age' => $existingPatient->age,
-                    'gender' => $existingPatient->gender,
-                    'weight' => is_numeric($request->weight) ? $request->weight : $existingPatient->weight,
-                    'height' => is_numeric($request->height) ? $request->height : $existingPatient->height,
-                    'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
-                    'blood_pressure' => $request->blood_pressure,
-                    'blood_sugar' => is_numeric($request->blood_sugar) ? $request->blood_sugar : null,
-                    'symptoms' => json_encode($this->processSymptoms($request->current_symptoms, $request->custom_symptoms)),
-                    'test_results' => $request->test_results,
-                    'preliminary_diagnosis' => $request->preliminary_diagnosis,
-                    'ai_response' => $aiResponse,
-                    'user_id' => auth()->id(),
-                    'previous_record_id' => $existingPatient->id,
-                    'visit_number' => $visitNumber,
-                    'patient_key' => $patientKey,
-                    // New enhanced medical fields
-                    'chief_complaint' => $request->chief_complaint,
-                    'symptom_duration' => $request->symptom_duration,
-                    'past_medical_history' => $request->past_medical_history,
-                    'medication_history' => $request->medication_history,
-                    'allergies' => $request->allergies,
-                    'family_history' => $request->family_history,
-                    'social_history' => $request->social_history,
-                    'pain_scale' => is_numeric($request->pain_scale) ? $request->pain_scale : null,
-                    'visit_type' => $request->visit_type,
-                    'heart_rate' => is_numeric($request->heart_rate) ? $request->heart_rate : null,
-                    'respiratory_rate' => is_numeric($request->respiratory_rate) ? $request->respiratory_rate : null,
-                    'oxygen_saturation' => is_numeric($request->oxygen_saturation) ? $request->oxygen_saturation : null,
-                    'physician_notes' => $request->physician_notes,
-                    'additional_notes' => $request->additional_notes,
-                    // Head-to-Toe Assessment fields
-                    'consciousness_level' => $request->consciousness_level,
-                    'mood_behavior' => $request->mood_behavior,
-                    'speech_clarity' => $request->speech_clarity,
-                    'hygiene_level' => $request->hygiene_level,
-                    'scalp_condition' => $request->scalp_condition,
-                    'pupil_reactivity' => $request->pupil_reactivity,
-                    'vision_issues' => $request->vision_issues ? 1 : 0,
-                    'hearing_issues' => $request->hearing_issues ? 1 : 0,
-                    'oral_findings' => $request->oral_findings,
-                    'orientation_level' => $request->orientation_level,
-                    'limb_strength' => $request->limb_strength,
-                    'reflexes' => $request->reflexes,
-                    'sensation_findings' => $request->sensation_findings,
-                    'trachea_position' => $request->trachea_position,
-                    'jvd_present' => $request->jvd_present ? 1 : 0,
-                    'lung_sounds' => $request->lung_sounds,
-                    'heart_sounds' => $request->heart_sounds,
-                    'capillary_refill_time' => $request->capillary_refill_time,
-                    'abdominal_shape' => $request->abdominal_shape,
-                    'bowel_sounds' => $request->bowel_sounds,
-                    'abdominal_tenderness' => $request->abdominal_tenderness ? 1 : 0,
-                    'nausea_or_vomiting' => $request->nausea_or_vomiting ? 1 : 0,
-                    'appetite_level' => $request->appetite_level,
-                    'urination_issues' => $request->urination_issues ? 1 : 0,
-                    'catheter_present' => $request->catheter_present ? 1 : 0,
-                    'urine_characteristics' => $request->urine_characteristics,
-                    'range_of_motion' => $request->range_of_motion,
-                    'gait_stability' => $request->gait_stability,
-                    'assistive_devices' => $request->assistive_devices,
-                    'skin_color' => $request->skin_color,
-                    'skin_temperature' => $request->skin_temperature,
-                    'skin_lesions' => $request->skin_lesions,
-                    'pressure_ulcers' => $request->pressure_ulcers ? 1 : 0,
-                    'pain_description' => $request->pain_description,
-                ]);
-
-                \Log::info('New visit record created for patient: ' . $newRecord->name . ' (Visit #' . $newRecord->visit_number . ')');
-
-                return $newRecord;
-            } else {
-                \Log::error('Existing patient not found with ID: ' . $request->patient_selection);
-            }
-        }
-
-        // New patient
-        $patientKey = PatientAnalysis::generatePatientKey(
-            $request->name,
-            $request->age,
-            $request->gender,
-            auth()->id()
-        );
-
-        $newPatient = PatientAnalysis::create([
-            'name' => $request->name,
-            'age' => $request->age,
-            'gender' => $request->gender,
-            'weight' => is_numeric($request->weight) ? $request->weight : null,
-            'height' => is_numeric($request->height) ? $request->height : null,
-            'temperature' => is_numeric($request->temperature) ? $request->temperature : null,
-            'blood_pressure' => $request->blood_pressure,
-            'blood_sugar' => is_numeric($request->blood_sugar) ? $request->blood_sugar : null,
-            'symptoms' => json_encode($this->processSymptoms($request->current_symptoms, $request->custom_symptoms)),
-            'test_results' => $request->test_results,
-            'preliminary_diagnosis' => $request->preliminary_diagnosis,
-            'ai_response' => $aiResponse,
-            'user_id' => auth()->id(),
-            'previous_record_id' => null, // No previous record for new patients
-            'visit_number' => 1, // First visit
-            'patient_key' => $patientKey,
-            // New enhanced medical fields
-            'chief_complaint' => $request->chief_complaint,
-            'symptom_duration' => $request->symptom_duration,
-            'past_medical_history' => $request->past_medical_history,
-            'medication_history' => $request->medication_history,
-            'allergies' => $request->allergies,
-            'family_history' => $request->family_history,
-            'social_history' => $request->social_history,
-            'pain_scale' => is_numeric($request->pain_scale) ? $request->pain_scale : null,
-            'visit_type' => $request->visit_type,
-            'heart_rate' => is_numeric($request->heart_rate) ? $request->heart_rate : null,
-            'respiratory_rate' => is_numeric($request->respiratory_rate) ? $request->respiratory_rate : null,
-            'oxygen_saturation' => is_numeric($request->oxygen_saturation) ? $request->oxygen_saturation : null,
-            'physician_notes' => $request->physician_notes,
-            'additional_notes' => $request->additional_notes,
-            // Head-to-Toe Assessment fields
-            'consciousness_level' => $request->consciousness_level,
-            'mood_behavior' => $request->mood_behavior,
-            'speech_clarity' => $request->speech_clarity,
-            'hygiene_level' => $request->hygiene_level,
-            'scalp_condition' => $request->scalp_condition,
-            'pupil_reactivity' => $request->pupil_reactivity,
-            'vision_issues' => $request->vision_issues ? 1 : 0,
-            'hearing_issues' => $request->hearing_issues ? 1 : 0,
-            'oral_findings' => $request->oral_findings,
-            'orientation_level' => $request->orientation_level,
-            'limb_strength' => $request->limb_strength,
-            'reflexes' => $request->reflexes,
-            'sensation_findings' => $request->sensation_findings,
-            'trachea_position' => $request->trachea_position,
-            'jvd_present' => $request->jvd_present ? 1 : 0,
-            'lung_sounds' => $request->lung_sounds,
-            'heart_sounds' => $request->heart_sounds,
-            'capillary_refill_time' => $request->capillary_refill_time,
-            'abdominal_shape' => $request->abdominal_shape,
-            'bowel_sounds' => $request->bowel_sounds,
-            'abdominal_tenderness' => $request->abdominal_tenderness ? 1 : 0,
-            'nausea_or_vomiting' => $request->nausea_or_vomiting ? 1 : 0,
-            'appetite_level' => $request->appetite_level,
-            'urination_issues' => $request->urination_issues ? 1 : 0,
-            'catheter_present' => $request->catheter_present ? 1 : 0,
-            'urine_characteristics' => $request->urine_characteristics,
-            'range_of_motion' => $request->range_of_motion,
-            'gait_stability' => $request->gait_stability,
-            'assistive_devices' => $request->assistive_devices,
-            'skin_color' => $request->skin_color,
-            'skin_temperature' => $request->skin_temperature,
-            'skin_lesions' => $request->skin_lesions,
-            'pressure_ulcers' => $request->pressure_ulcers ? 1 : 0,
-            'pain_description' => $request->pain_description,
-        ]);
-
-        \Log::info('=== NEW PATIENT CREATED ===');
-        \Log::info('New patient created: ' . $newPatient->name . ' (ID: ' . $newPatient->id . ')');
-
-        return $newPatient;
-    }
-
-    private function preparePrompt($inputData, $criterion, $useFileSearch = false)
-    {
-        $fileSearchInstruction = $useFileSearch
-            ? "CRITICAL INSTRUCTION: Thoroughly analyze ALL uploaded files before responding.
-
-            In your PATIENT SUMMARY section, include key findings from uploaded files:
-              - For images: Brief description and key findings
-              - For text documents: Key medical information and relevance
-            - Keep Level 1 concise, expand details in Level 2
-
-            Your diagnosis and recommendations MUST be based primarily on the content of the uploaded files.
-            DO NOT provide a generic response - your analysis should directly reference specific findings from the uploaded files."
-            : "";
-
-        // Get the user's specialty
-        $specialty = auth()->user()->setting->specialty ?? null;
-
-        $specialtyInstruction = "";
-        if ($specialty) {
-            // Ensure specialty is treated as a string
-            $specialtyStr = (string)$specialty;
-
-            $specialtyInstruction = "You are a senior consultant physician specialized in {$specialtyStr} with 20+ years of clinical experience. Your expertise in this field should guide your analysis and recommendations.
-
-            As a {$specialtyStr} specialist:
-            1. Prioritize diagnoses that are most relevant to your specialty, with special attention to life-threatening conditions
-            2. Provide specialty-specific insights that a general practitioner might miss
-            3. Recommend specialized tests and procedures appropriate for your field
-            4. Suggest evidence-based treatment approaches that reflect current best practices in {$specialtyStr}
-            5. Highlight any red flags or warning signs particularly important in your specialty
-            6. Use precise medical terminology and references that would be familiar to specialists in your field
-            7. Be precise, specific, and actionable in your recommendations, as expected from a specialist
-
-            Focus particularly on aspects of the case that relate to your specialty, but maintain a holistic view of the patient's condition.";
-        }
-
-        // Add patient history context if available
-        $patientHistoryContext = "";
-        if (isset($inputData['is_existing_patient']) && $inputData['is_existing_patient'] && isset($inputData['visit_count']) && $inputData['visit_count'] > 0) {
-            $visitNumber = $inputData['current_visit_number'] ?? ($inputData['visit_count'] + 1);
-
-            $patientHistoryContext = "
-            PATIENT HISTORY CONTEXT:
-            This is visit #" . $visitNumber . " for this patient.
-            " . $inputData['previous_medical_history'] . "
-
-            Please consider this patient history in your analysis. Compare current symptoms with previous visits and note any changes or patterns.
-            ";
-        }
-
-        // Generate dynamic clinical context based on vital signs and symptoms
-        $clinicalContext = $this->generateClinicalContext($inputData);
-
-        return "You are MedCuraAI, an advanced clinical decision support system powered by cutting-edge artificial intelligence. You function as a senior attending physician with 25+ years of clinical experience across multiple specialties, board certifications, and extensive research background. Your role is to provide comprehensive, evidence-based medical analysis that rivals the expertise of top-tier academic medical centers.
-
-            🎯 CRITICAL CLINICAL MANDATE:
-            Your analysis must demonstrate the highest standards of medical practice, incorporating:
-            - Evidence-based medicine principles with current clinical guidelines
-            - Systematic clinical reasoning using established diagnostic frameworks
-            - Risk stratification and patient safety prioritization above all else
-            - Never downplay serious symptoms or be overly reassuring
-            - Use medical terminology for doctors while remaining clear and structured
-            - Never hallucinate facts - only base output on input data or medically standard information
-
-            $fileSearchInstruction
-
-            $specialtyInstruction
-
-            $patientHistoryContext
-
-            $clinicalContext
-
-            🔁 DYNAMIC LOGIC GUIDANCE:
-            Apply these automatic clinical decision rules:
-
-            **HYPOTENSION PROTOCOL (BP < 90/60):**
-            - Automatically consider: Shock (hypovolemic, septic, adrenal)
-            - Emergency triage classification
-            - IV fluids + continuous vitals monitoring
-            - If history of adrenalectomy: Prioritize adrenal crisis with full steroid protocol
-
-            **ABDOMINAL PAIN + ANEMIA + HYPOTENSION (elderly male):**
-            - Prioritize: GI Bleed, Ruptured AAA
-            - Recommend: CT Angiography immediately
-            - Include: Vascular surgery referral
-
-            **INFECTION SIGNS + UNSTABLE VITALS:**
-            - Consider sepsis protocol
-            - Recommend: Broad-spectrum antibiotics, lactate level, blood cultures
-
-            🔶 MANDATORY OUTPUT FORMAT:
-            You MUST return your analysis in exactly TWO levels as specified below:
-
-            🟢 LEVEL 1: QUICK CLINICAL SUMMARY
-
-            📋 PATIENT SUMMARY:
-            Name: {name} | Age: {age} | Gender: {gender} | BMI: {calculate if height/weight available}
-            Vitals: T: {temperature}°C | BP: {bp} mmHg | HR: {heart_rate} bpm | SpO2: {oxygen_saturation}% | Glucose: {sugar} mg/dL
-            Key Symptoms: {primary symptoms from input}
-            Relevant History: {past_medical_history if provided}
-            Labs/Imaging: {test_results if provided, otherwise 'Pending'}
-
-            🚨 CASE URGENCY:
-            **{EMERGENCY / URGENT / ROUTINE}**
-            {One-line justification for triage level}
-
-            🔍 TOP 3 DIFFERENTIAL DIAGNOSES:
-            | Rank | Diagnosis | Probability (%) | Clinical Reasoning |
-            |------|-----------|-----------------|-------------------|
-            | 1 | {Primary diagnosis} | {%} | {Key supporting evidence} |
-            | 2 | {Secondary diagnosis} | {%} | {Key supporting evidence} |
-            | 3 | {Tertiary diagnosis} | {%} | {Key supporting evidence} |
-
-            🧪 RECOMMENDED TESTS:
-            • {Test 1} - {Brief rationale}
-            • {Test 2} - {Brief rationale}
-            • {Test 3} - {Brief rationale}
-
-            💊 INITIAL MANAGEMENT PLAN:
-            **Immediate Actions:**
-            • {Action 1} - {Brief rationale}
-            • {Action 2} - {Brief rationale}
-
-            **Medications:**
-            • {Drug} {dose} {route} {frequency} - {indication}
-
-            **Referrals:**
-            • {Specialty} - {urgency and reason}
-
-            ⚠️ WARNING SIGNS:
-            • {Red flag 1} - {action required}
-            • {Red flag 2} - {action required}
-
-            ---
-
-            🔵 DETAILED MEDICAL REPORT (Click to Expand)
-
-            **COMPREHENSIVE PATHOPHYSIOLOGICAL ANALYSIS:**
-            {Detailed explanation of underlying disease mechanisms and clinical reasoning}
-
-            **ADVANCED DIFFERENTIAL DIAGNOSIS:**
-            {Extended differential with Bayesian analysis, likelihood ratios, and detailed clinical evidence}
-
-            **COMPREHENSIVE DIAGNOSTIC WORKUP:**
-
-            **Laboratory Studies:**
-            • {Test name} - {Clinical indication, expected findings, interpretation guidelines}
-            • {Additional tests with detailed rationale}
-
-            **Imaging Studies:**
-            • {Imaging modality} - {Clinical indication, expected findings, limitations}
-            • {Additional imaging with detailed rationale}
-
-            **DETAILED PHARMACOLOGICAL MANAGEMENT:**
-
-            **Primary Medications:**
-            • {Drug name} {dose} {route} {frequency}
-              - Indication: {specific indication}
-              - Mechanism: {brief pharmacology}
-              - Monitoring: {required monitoring parameters}
-              - Contraindications: {relevant contraindications}
-              - Duration: {treatment duration}
-
-            **MULTIDISCIPLINARY CARE PLAN:**
-
-            **Specialist Consultations:**
-            • {Specialty} - {Indication, urgency, specific questions}
-
-            **Follow-up Strategy:**
-            • Immediate (24-48 hours): {specific instructions}
-            • Short-term (1-2 weeks): {follow-up requirements}
-            • Long-term: {ongoing care coordination}
-
-            **PROGNOSTIC ASSESSMENT:**
-            {Short and long-term prognosis with influencing factors}
-
-            **EVIDENCE-BASED REFERENCES:**
-            1. {Guideline name} - {Organization, year, specific recommendations}
-            2. {Additional guidelines with clinical relevance}
-
-            **COST-EFFECTIVENESS CONSIDERATIONS:**
-            {Brief analysis of diagnostic efficiency and resource utilization}
-
-            CRITICAL INSTRUCTION: Base your entire analysis on the comprehensive clinical data provided. If data is missing (like heart rate), acknowledge it briefly but don't let it overwhelm the output. Prioritize patient safety above all else.
-
-            PATIENT DATA FOR ANALYSIS: " . json_encode($inputData);
-    }
-
-
     public function getCases()
     {
         $user = auth()->user();
+        $allCases = collect();
+
+        \Log::info('getCases called for user: ' . $user->id . ' (' . $user->name . ')');
+
+        // Get Diagnosis records (current system)
+        if ($user->isDoctor()) {
+            $diagnosisRecords = Diagnosis::with(['patient', 'doctor', 'aiAssistantResults'])
+                ->where('doctor_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            \Log::info('Found ' . $diagnosisRecords->count() . ' Diagnosis records');
+
+            // Transform Diagnosis records
+            foreach ($diagnosisRecords as $diagnosis) {
+                $patient = $diagnosis->patient;
+                if (!$patient) continue;
+
+                $patientData = $diagnosis->patient_data ?? [];
+
+                $allCases->push((object)[
+                    'id' => $diagnosis->id,
+                    'name' => $patient->name,
+                    'age' => $patient->age ?? 'N/A',
+                    'gender' => $patient->gender ?? 'N/A',
+                    'height' => 'N/A',
+                    'weight' => 'N/A',
+                    'symptoms' => $patientData['symptoms'] ?? 'N/A',
+                    'type' => 'diagnosis',
+                    'ai_response' => $diagnosis->diagnosis_text ?? 'No diagnosis available',
+                    'created_at' => $diagnosis->created_at,
+                    'updated_at' => $diagnosis->updated_at,
+                    'visit_number' => 1,
+                    'total_visits' => 1,
+                    'patient_key' => 'diagnosis_' . $diagnosis->id,
+                    'source_model' => 'Diagnosis',
+                    'source_id' => $diagnosis->id,
+                    'patient_id' => $patient->id,
+                    'category' => 'diagnosed',
+                ]);
+            }
+        }
+
+        // Get PatientAnalysis records (legacy format)
+        $patientAnalysisRecords = PatientAnalysis::with('user')
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        \Log::info('Found ' . $patientAnalysisRecords->count() . ' PatientAnalysis records');
+
+        // Transform PatientAnalysis records to unified format
+        foreach ($patientAnalysisRecords as $record) {
+            // Convert symptoms from JSON array to comma-separated string for consistency
+            $symptomsString = '';
+            if ($record->symptoms) {
+                if (is_string($record->symptoms)) {
+                    // Try to decode if it's JSON
+                    $decodedSymptoms = json_decode($record->symptoms, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decodedSymptoms)) {
+                        // Convert array to comma-separated string
+                        $symptomsString = implode(', ', $decodedSymptoms);
+                    } else {
+                        // It's already a string
+                        $symptomsString = $record->symptoms;
+                    }
+                } elseif (is_array($record->symptoms)) {
+                    // Convert array to comma-separated string
+                    $symptomsString = implode(', ', $record->symptoms);
+                }
+            }
+
+            $allCases->push((object)[
+                'id' => $record->id,
+                'name' => $record->name,
+                'age' => $record->age,
+                'gender' => $record->gender,
+                'height' => $record->height,
+                'weight' => $record->weight,
+                'symptoms' => $symptomsString,
+                'type' => 'legacy',
+                'ai_response' => $record->ai_response ?? 'No diagnosis available',
+                'created_at' => $record->created_at,
+                'updated_at' => $record->updated_at,
+                'visit_number' => $record->visit_number ?? 1,
+                'total_visits' => 1,
+                'patient_key' => $record->patient_key,
+                'source_model' => 'PatientAnalysis',
+                'source_id' => $record->id,
+                'category' => 'diagnosed',
+            ]);
+        }
+
+        // Get completed appointments without diagnosis
+        $completedAppointmentsWithoutDiagnosis = [];
+        if ($user->isDoctor() && $user->doctor) {
+            $completedAppointments = Appointment::with(['patient'])
+                ->where('doctor_id', $user->doctor->id)
+                ->where('status', 'completed')
+                ->orderBy('appointment_date', 'desc')
+                ->get();
+
+            \Log::info('Found ' . $completedAppointments->count() . ' completed appointments');
+
+            // Filter out appointments that already have diagnoses
+            $diagnosedPatientIds = Diagnosis::where('doctor_id', $user->id)
+                ->pluck('patient_id')
+                ->toArray();
+
+            $completedAppointmentsWithoutDiagnosis = $completedAppointments->filter(function($appointment) use ($diagnosedPatientIds) {
+                return !in_array($appointment->patient_id, $diagnosedPatientIds);
+            });
+
+            \Log::info('Found ' . $completedAppointmentsWithoutDiagnosis->count() . ' completed appointments without diagnosis');
+        }
+
+        // Transform completed appointments without diagnosis to unified format
+        foreach ($completedAppointmentsWithoutDiagnosis as $appointment) {
+            $patient = $appointment->patient;
+
+            // Generate patient_key for appointment records
+            $patientKey = 'appointment_' . $appointment->id;
+
+            $allCases->push((object)[
+                'id' => $appointment->id,
+                'name' => $patient ? $patient->name : $appointment->guest_name,
+                'age' => $patient ? $patient->age : (isset($appointment->guest_date_of_birth) ? \Carbon\Carbon::parse($appointment->guest_date_of_birth)->age : 'N/A'),
+                'gender' => $patient ? $patient->gender : $appointment->guest_gender,
+                'height' => 'N/A',
+                'weight' => 'N/A',
+                'symptoms' => $appointment->symptoms ?? 'N/A',
+                'type' => 'appointment_completed',
+                'ai_response' => 'Appointment completed - pending diagnosis',
+                'appointment_details' => [
+                    'appointment_date' => $appointment->appointment_date,
+                    'appointment_type' => $appointment->appointment_type,
+                    'duration' => $appointment->duration,
+                    'fee' => $appointment->fee,
+                    'notes' => $appointment->notes,
+                    'reason' => $appointment->reason,
+                    'doctor_notes' => $appointment->doctor_notes,
+                    'patient_notes' => $appointment->patient_notes,
+                ],
+                'created_at' => $appointment->appointment_date,
+                'updated_at' => $appointment->updated_at,
+                'visit_number' => 1,
+                'total_visits' => 1,
+                'patient_key' => $patientKey,
+                'source_model' => 'Appointment',
+                'source_id' => $appointment->id,
+                'patient_id' => $appointment->patient_id,
+                'category' => 'pending_diagnosis',
+            ]);
+        }
+
+
+        // Sort all cases by creation date (newest first)
+        $allCases = $allCases->sortByDesc('created_at');
+
+        // Filter out cases without diagnoses (only keep those with actual diagnosis text)
+        $allCases = $allCases->filter(function($case) {
+            // For Appointment records, only show completed ones with actual responses
+            if ($case->source_model === 'Appointment') {
+                return $case->ai_response &&
+                       $case->ai_response !== 'Appointment completed - pending diagnosis' &&
+                       $case->ai_response !== 'Appointment scheduled' &&
+                       trim($case->ai_response) !== '';
+            }
+            // For Diagnosis and PatientAnalysis records, always include them
+            // (even if ai_response is "No diagnosis available", they're still valid records)
+            return true;
+        });
+
+        \Log::info('Total cases after filtering: ' . $allCases->count());
+
+        // Group records by patient for calculating total visits
+        $patientGroups = [];
+
+        // Handle Diagnosis records grouping by patient
+        $diagnosisRecords = Diagnosis::with(['patient'])
+            ->where('doctor_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        foreach ($diagnosisRecords as $record) {
+            $patient = $record->patient;
+            if ($patient) {
+                // Create a unique key for diagnosis records based on patient
+                $patientKey = 'diagnosis_' . $patient->id;
+
+                if (!isset($patientGroups[$patientKey])) {
+                    $patientGroups[$patientKey] = [];
+                }
+                $patientGroups[$patientKey][] = $record;
+            }
+        }
+
+        // Handle Appointment records grouping by patient
+        foreach ($completedAppointmentsWithoutDiagnosis as $record) {
+            $patient = $record->patient;
+            if ($patient) {
+                // Create a unique key for appointment records based on patient
+                $patientKey = 'pending_' . $patient->id;
+
+                if (!isset($patientGroups[$patientKey])) {
+                    $patientGroups[$patientKey] = [];
+                }
+                $patientGroups[$patientKey][] = $record;
+            }
+        }
+
+        // Update total_visits for all records in the unified collection
+        foreach ($allCases as $case) {
+            if ($case->source_model === 'Diagnosis' && isset($case->patient_id)) {
+                $patientKey = 'diagnosis_' . $case->patient_id;
+                if (isset($patientGroups[$patientKey])) {
+                    $case->total_visits = count($patientGroups[$patientKey]);
+                }
+            } elseif ($case->source_model === 'Appointment' && isset($case->patient_id)) {
+                $patientKey = 'pending_' . $case->patient_id;
+                if (isset($patientGroups[$patientKey])) {
+                    $case->total_visits = count($patientGroups[$patientKey]);
+                }
+            }
+        }
+
+        // Keep as collection for the view (it expects count() method)
+        $records = $allCases->values();
+
+        \Log::info('Final records count: ' . $records->count());
+
+        // Prepare patient groups for the patients table (similar to dashboard)
+        $patientGroups = [];
+        foreach ($records as $record) {
+            // Create consistent grouping key based on category and patient info
+            $key = $this->generatePatientGroupKey($record);
+
+            // Skip records with invalid keys
+            if (empty($key)) {
+                continue;
+            }
+
+            if (!isset($patientGroups[$key])) {
+                // Initialize with the first record
+                $patientGroups[$key] = [
+                    'patient' => $record,
+                    'visits' => [],
+                    'visit_count' => 0,
+                    'last_visit' => $record->created_at,
+                    'category' => $record->category ?? 'diagnosed',
+                    'has_appointments' => isset($record->appointment_details),
+                    'appointment_details' => $record->appointment_details ?? null,
+                ];
+            }
+
+            // Add this record to the visits array
+            $patientGroups[$key]['visits'][] = $record;
+            $patientGroups[$key]['visit_count']++;
+
+            // Update last visit date if this record is more recent
+            if ($record->created_at > $patientGroups[$key]['last_visit']) {
+                $patientGroups[$key]['last_visit'] = $record->created_at;
+            }
+
+            // Update category if this record has appointment details
+            if (isset($record->appointment_details) && !isset($patientGroups[$key]['appointment_details'])) {
+                $patientGroups[$key]['appointment_details'] = $record->appointment_details;
+                $patientGroups[$key]['has_appointments'] = true;
+            }
+        }
+
+        \Log::info('Patient groups count: ' . count($patientGroups));
+
+
+        // Sort by most recent visit
+        uasort($patientGroups, function($a, $b) {
+            return $b['last_visit'] <=> $a['last_visit'];
+        });
+
+        // Handle AJAX requests for dynamic content loading
+        if (request()->ajax()) {
+            return response()->view('cases', compact('records', 'patientGroups'))->header('Content-Type', 'text/html');
+        }
+
+        return view('cases', compact('records', 'patientGroups'));
+    }
+
+    /**
+     * Get patient visits for patient summary modal
+     */
+    public function getPatientVisits($patientKey)
+    {
+        try {
+            \Log::info('getPatientVisits called for patient key: ' . $patientKey);
+
+            $user = auth()->user();
+            $allCases = collect();
+
+            // Get PatientAnalysis records
+            $patientAnalysisRecords = PatientAnalysis::with('user')
+                ->where('user_id', $user->id)
+                ->where('patient_key', $patientKey)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Get Diagnosis records
+            if ($user->isDoctor()) {
+                $diagnosisRecords = Diagnosis::with(['patient', 'doctor'])
+                    ->where('doctor_id', $user->id)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+
+                // Filter by patient key logic
+                $filteredDiagnosisRecords = $diagnosisRecords->filter(function($record) use ($patientKey, $user) {
+                    if ($record->patient_key === $patientKey) {
+                        return true;
+                    }
+
+                    // Fallback to name-age-gender matching for old records
+                    if ($patientKey === 'diagnosis_' . $record->patient_id) {
+                        return true;
+                    }
+
+                    return false;
+                });
+
+                $diagnosisRecords = $filteredDiagnosisRecords;
+            } else {
+                $diagnosisRecords = collect();
+            }
+
+            // Transform and combine records
+            foreach ($patientAnalysisRecords as $record) {
+                $symptomsString = $this->extractSymptoms($record);
+
+                $allCases->push((object)[
+                    'id' => $record->id,
+                    'visit_number' => $record->visit_number,
+                    'date' => $record->created_at->format('M d, Y'),
+                    'symptoms' => $symptomsString,
+                    'diagnosis' => $record->ai_response ? substr($record->ai_response, 0, 100) . (strlen($record->ai_response) > 100 ? '...' : '') : 'No diagnosis available',
+                    'source_model' => 'PatientAnalysis',
+                ]);
+            }
+
+            foreach ($diagnosisRecords as $record) {
+                $symptomsString = $this->extractDiagnosisSymptoms($record);
+
+                $allCases->push((object)[
+                    'id' => $record->id,
+                    'visit_number' => 1, // Diagnosis records don't have visit numbers yet
+                    'date' => $record->created_at->format('M d, Y'),
+                    'symptoms' => $symptomsString,
+                    'diagnosis' => $record->diagnosis_text ? substr($record->diagnosis_text, 0, 100) . (strlen($record->diagnosis_text) > 100 ? '...' : '') : 'No diagnosis available',
+                    'source_model' => 'Diagnosis',
+                ]);
+            }
+
+            // Sort by date (newest first)
+            $visits = $allCases->sortByDesc('date')->values();
+
+            \Log::info('Found ' . $visits->count() . ' visits for patient key: ' . $patientKey);
+
+            return response()->json([
+                'success' => true,
+                'visits' => $visits
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error in getPatientVisits: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving patient visits',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get detailed visit information
+     */
+    public function getVisitDetails($recordId)
+    {
+        try {
+            \Log::info('getVisitDetails called for record ID: ' . $recordId);
+
+            $user = auth()->user();
+
+            // Check if user is authenticated
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required'
+                ], 401);
+            }
+
+            // Try to find the record in PatientAnalysis first, then Diagnosis
+            $record = PatientAnalysis::where('id', $recordId)->first();
+            $sourceModel = 'PatientAnalysis';
+
+            // If not found in PatientAnalysis, try Diagnosis records
+            if (!$record) {
+                $record = Diagnosis::where('id', $recordId)
+                    ->with(['patient'])
+                    ->first();
+                $sourceModel = 'Diagnosis';
+            }
+
+            if (!$record) {
+                \Log::error('Visit record not found for ID: ' . $recordId . ', User ID: ' . ($user ? $user->id : 'null'));
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Visit record not found'
+                ], 404);
+            }
+
+            // For security, check if the authenticated user has access to this record
+            $hasAccess = false;
+            if ($user) { // Only check access if user is authenticated
+                if ($sourceModel === 'PatientAnalysis') {
+                    // Allow access if user owns the record or is the doctor
+                    $hasAccess = ($record->user_id === $user->id) ||
+                                ($user->isDoctor() && $record->user_id === $user->id) ||
+                                ($user->isSubUser() && $record->user_id === $user->parent_user_id);
+                } else { // Diagnosis
+                    // Allow access if user is the doctor or sub-user of the doctor
+                    $hasAccess = ($record->doctor_id === $user->id) ||
+                                ($user->isSubUser() && $record->doctor_id === $user->parent_user_id);
+                }
+            } else {
+                // No authentication required for testing - allow access
+                $hasAccess = true;
+            }
+
+            // Log access denial for security monitoring
+            if (!$hasAccess) {
+                \Log::warning('Access denied for record ID: ' . $recordId . ', User ID: ' . $user->id . ', Source: ' . $sourceModel);
+            }
+
+            // Check access permissions
+            if (!$hasAccess) {
+                \Log::warning('Access denied for record ID: ' . $recordId . ', User ID: ' . ($user ? $user->id : 'null') . ', Source: ' . $sourceModel);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this record'
+                ], 403);
+            }
+
+            // Extract diagnosis text based on source
+            $diagnosisText = '';
+            if ($sourceModel === 'PatientAnalysis') {
+                $diagnosisText = $record->ai_response ?? 'No diagnosis available';
+            } else {
+                $diagnosisText = $record->diagnosis_text ?? 'No diagnosis available';
+            }
+
+            // Extract patient info
+            $patientInfo = $this->extractPatientInfo($record, $sourceModel);
+
+            return response()->json([
+                'success' => true,
+                'visit' => [
+                    'id' => $record->id,
+                    'diagnosis' => $diagnosisText,
+                    'patient_info' => $patientInfo,
+                    'date' => $record->created_at->format('M d, Y'),
+                    'source_model' => $sourceModel
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error in getVisitDetails: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving visit details',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Helper method to extract symptoms from record
+     */
+    private function extractSymptoms($record)
+    {
+        if ($record->symptoms) {
+            if (is_string($record->symptoms)) {
+                $decoded = json_decode($record->symptoms, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    return implode(', ', $decoded);
+                }
+                return $record->symptoms;
+            } elseif (is_array($record->symptoms)) {
+                return implode(', ', $record->symptoms);
+            }
+        }
+        return 'N/A';
+    }
+
+    /**
+     * Helper method to extract symptoms from diagnosis record
+     */
+    private function extractDiagnosisSymptoms($record)
+    {
+        $patientData = $record->patient_data ?? [];
+        if (isset($patientData['symptoms'])) {
+            if (is_array($patientData['symptoms'])) {
+                return implode(', ', $patientData['symptoms']);
+            }
+            return $patientData['symptoms'];
+        }
+        return 'N/A';
+    }
+
+    /**
+     * Helper method to extract patient info
+     */
+    private function extractPatientInfo($record, $sourceModel)
+    {
+        if ($sourceModel === 'PatientAnalysis') {
+            return [
+                'name' => $record->name ?? 'N/A',
+                'age' => $record->age ?? 'N/A',
+                'gender' => $record->gender ?? 'N/A'
+            ];
+        } else {
+            // Diagnosis record
+            return [
+                'name' => $record->patient->name ?? 'N/A',
+                'age' => $record->patient->age ?? 'N/A',
+                'gender' => $record->patient->gender ?? 'N/A'
+            ];
+        }
+    }
+
+    /**
+     * Generate consistent patient group key based on record type and category
+     */
+    private function generatePatientGroupKey($record)
+    {
+        if ($record->source_model === 'PatientAnalysis') {
+            return $record->patient_key ?? ($record->name . '-' . $record->age . '-' . $record->gender);
+        } elseif ($record->source_model === 'Diagnosis') {
+            return 'diagnosis_' . ($record->patient_id ?? 'unknown');
+        } elseif ($record->source_model === 'Appointment') {
+            if ($record->category === 'pending_diagnosis') {
+                return 'pending_' . ($record->patient_id ?? 'guest_' . $record->id);
+            } elseif ($record->category === 'scheduled') {
+                return 'scheduled_' . ($record->patient_id ?? 'guest_' . $record->id);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Display dashboard with aggregated data
+     */
+    public function dashboard()
+    {
+        $user = auth()->user();
+        
+        // Patients see a different dashboard
+        if ($user->isPatient()) {
+            return $this->patientDashboard($user);
+        }
+
+        // Get trial/subscription info
+        $trialInfo = [
+            'is_in_trial' => $user->isInTrialPeriod(),
+            'trial_status' => $user->getTrialStatus(),
+            'has_active_subscription' => $user->hasActiveSubscription(),
+            'trial_days_remaining' => $user->getTrialDaysRemaining(),
+        ];
+
+        // Get records similar to getCases method
         $allCases = collect();
 
         // Get PatientAnalysis records (legacy format)
@@ -1646,28 +660,48 @@ class OpenAIController extends Controller
 
         // Transform PatientAnalysis records to unified format
         foreach ($patientAnalysisRecords as $record) {
+            // Convert symptoms from JSON array to comma-separated string for consistency
+            $symptomsString = '';
+            if ($record->symptoms) {
+                if (is_string($record->symptoms)) {
+                    // Try to decode if it's JSON
+                    $decodedSymptoms = json_decode($record->symptoms, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decodedSymptoms)) {
+                        // Convert array to comma-separated string
+                        $symptomsString = implode(', ', $decodedSymptoms);
+                    } else {
+                        // It's already a string
+                        $symptomsString = $record->symptoms;
+                    }
+                } elseif (is_array($record->symptoms)) {
+                    // Convert array to comma-separated string
+                    $symptomsString = implode(', ', $record->symptoms);
+                }
+            }
+
             $allCases->push((object)[
                 'id' => $record->id,
-                'name' => $record->name, // Keep original property name for view compatibility
+                'name' => $record->name,
                 'age' => $record->age,
                 'gender' => $record->gender,
                 'height' => $record->height,
                 'weight' => $record->weight,
-                'type' => 'legacy', // PatientAnalysis records
+                'symptoms' => $symptomsString,
+                'type' => 'legacy',
                 'ai_response' => $record->ai_response ?? 'No diagnosis available',
                 'created_at' => $record->created_at,
                 'updated_at' => $record->updated_at,
                 'visit_number' => $record->visit_number ?? 1,
-                'total_visits' => 1, // Will be calculated later
+                'total_visits' => 1,
                 'patient_key' => $record->patient_key,
                 'source_model' => 'PatientAnalysis',
                 'source_id' => $record->id,
             ]);
         }
 
-        // Get Diagnosis records (new format) - both AI and manual
+        // Get Diagnosis records (new format) - doctor's manual diagnoses
         if ($user->isDoctor()) {
-            $diagnosisRecords = Diagnosis::with(['patient', 'doctor'])
+            $diagnosisRecords = Diagnosis::with(['patient', 'doctor', 'aiAssistantResults'])
                 ->where('doctor_id', $user->id)
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -1676,1371 +710,488 @@ class OpenAIController extends Controller
             foreach ($diagnosisRecords as $record) {
                 $patientData = is_array($record->patient_data) ? $record->patient_data : [];
 
+                // Ensure symptoms are in string format for consistency
+                $symptomsString = '';
+                if (isset($patientData['symptoms'])) {
+                    if (is_array($patientData['symptoms'])) {
+                        // Convert array to comma-separated string
+                        $symptomsString = implode(', ', $patientData['symptoms']);
+                    } else {
+                        // Already a string
+                        $symptomsString = $patientData['symptoms'];
+                    }
+                }
+
+                // Generate patient_key for Diagnosis records if not set
+                $patientKey = $record->patient_key;
+                if (!$patientKey && $record->patient) {
+                    $patientKey = Diagnosis::generatePatientKey(
+                        $record->patient->name,
+                        $record->patient->age,
+                        $record->patient->gender,
+                        $record->doctor_id
+                    );
+                    // Update the record with the generated patient_key
+                    $record->update(['patient_key' => $patientKey]);
+                }
+
                 $allCases->push((object)[
                     'id' => $record->id,
-                    'name' => $record->patient->name ?? 'Unknown Patient', // Keep original property name for view compatibility
+                    'name' => $record->patient->name ?? 'Unknown Patient',
                     'age' => $patientData['patient_age'] ?? $record->patient->age ?? 'N/A',
                     'gender' => $patientData['patient_gender'] ?? $record->patient->gender ?? 'N/A',
                     'height' => $patientData['height'] ?? 'N/A',
                     'weight' => $patientData['weight'] ?? 'N/A',
-                    'type' => $record->type, // 'ai' or 'manual'
-                    'ai_response' => $record->diagnosis_text ?? $record->ai_response ?? 'No diagnosis available',
+                    'symptoms' => $symptomsString,
+                    'type' => 'manual',
+                    'ai_response' => $record->diagnosis_text ?? 'No diagnosis available',
+                    'ai_assistant_results' => $record->aiAssistantResults,
                     'created_at' => $record->created_at,
                     'updated_at' => $record->updated_at,
-                    'visit_number' => 1, // Will be calculated later if needed
-                    'total_visits' => 1, // Will be calculated later if needed
-                    'patient_key' => null, // Diagnosis records don't use patient_key
+                    'visit_number' => 1,
+                    'total_visits' => 1,
+                    'patient_key' => $patientKey,
                     'source_model' => 'Diagnosis',
                     'source_id' => $record->id,
                     'patient_id' => $record->patient_id,
+                    'patient_data' => $record->patient_data,
                 ]);
             }
         }
 
         // Sort all cases by creation date (newest first)
         $allCases = $allCases->sortByDesc('created_at');
-
-        // Group records by patient_key for PatientAnalysis records to calculate total visits
-        $patientGroups = [];
-        foreach ($patientAnalysisRecords as $record) {
-            // If patient_key is not set, generate it and update the record
-            if (!$record->patient_key) {
-                $patientKey = PatientAnalysis::generatePatientKey(
-                    $record->name,
-                    $record->age,
-                    $record->gender,
-                    $record->user_id
-                );
-
-                // Find all records for this patient
-                $patientRecords = PatientAnalysis::where('name', $record->name)
-                    ->where('age', $record->age)
-                    ->where('gender', $record->gender)
-                    ->where('user_id', $record->user_id)
-                    ->orderBy('created_at', 'asc')
-                    ->get();
-
-                // Update all records with patient_key and visit_number
-                foreach ($patientRecords as $index => $patientRecord) {
-                    $patientRecord->update([
-                        'patient_key' => $patientKey,
-                        'visit_number' => $index + 1
-                    ]);
-                }
-
-                // Update the current record in memory
-                $record->patient_key = $patientKey;
-            }
-
-            // Group by patient_key
-            if (!isset($patientGroups[$record->patient_key])) {
-                $patientGroups[$record->patient_key] = [];
-            }
-            $patientGroups[$record->patient_key][] = $record;
-        }
-
-        // Update total_visits for PatientAnalysis records in the unified collection
-        foreach ($allCases as $case) {
-            if ($case->source_model === 'PatientAnalysis' && $case->patient_key && isset($patientGroups[$case->patient_key])) {
-                $case->total_visits = count($patientGroups[$case->patient_key]);
-            }
-        }
-
-        // Keep as collection for the view (it expects count() method)
         $records = $allCases->values();
-
-        return view('cases', compact('records'));
-    }
-    public function dashboard()
-    {
-        // Redirect admins to their specific dashboard
-        if (auth()->user()->role === 'admin') {
-            return redirect()->route('admin.dashboard');
-        }
-
-        $user = auth()->user();
-
-        // Filter records by the current authenticated user
-        $records = PatientAnalysis::with('user')
-            ->where('user_id', auth()->id())
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Count only the current user's records for the past week
-        $weeklyCount = PatientAnalysis::where('user_id', auth()->id())
-            ->where('created_at', '>=', now()->subDays(7))
-            ->count();
-
-        // Prepare chart data safely in the controller
-        $chartData = [];
-        $chartLabels = [];
-
-        if ($records->count() > 0) {
-            $casesOverTime = $records->groupBy(function($record) {
-                return $record->created_at->format('Y-m-d');
-            })->map(function($group) {
-                return $group->count();
-            })->sortKeys();
-
-            $chartLabels = $casesOverTime->keys()->toArray();
-            $chartData = $casesOverTime->values()->toArray();
-        }
-
-        // Group patients by patient_key for the patient list
-        $patientGroups = [];
-        foreach ($records as $record) {
-            $key = $record->patient_key ?? ($record->name . '-' . $record->age . '-' . $record->gender);
-
-            if (!isset($patientGroups[$key])) {
-                $patientGroups[$key] = [
-                    'patient' => $record,
-                    'visits' => [],
-                    'visit_count' => 0,
-                    'last_visit' => $record->created_at
-                ];
-            }
-
-            $patientGroups[$key]['visits'][] = $record;
-            $patientGroups[$key]['visit_count']++;
-
-            if ($record->created_at > $patientGroups[$key]['last_visit']) {
-                $patientGroups[$key]['last_visit'] = $record->created_at;
-            }
-        }
-
-        // Sort by last visit date (most recent first)
-        uasort($patientGroups, function($a, $b) {
-            return $b['last_visit']->timestamp - $a['last_visit']->timestamp;
-        });
-
-        // Limit to 10 for dashboard display
-        $patientGroups = array_slice($patientGroups, 0, 10, true);
 
         // Doctor-specific data
         $doctorData = null;
-        if ($user->role === 'doctor' && $user->doctor) {
-            $doctor = $user->doctor;
-
-            // Get today's appointments
-            $todayAppointments = $doctor->appointments()
-                ->with(['patient'])
+        if ($user->isDoctor() && $user->doctor) {
+            // Today's appointments
+            $todayAppointments = Appointment::with(['patient', 'doctor'])
+                ->where('doctor_id', $user->doctor->id)
                 ->whereDate('appointment_date', today())
                 ->orderBy('appointment_date')
                 ->get();
 
-            // Get upcoming appointments (next 7 days)
-            $upcomingAppointments = $doctor->appointments()
-                ->with(['patient'])
-                ->whereBetween('appointment_date', [now(), now()->addDays(7)])
-                ->whereIn('status', ['pending', 'confirmed'])
-                ->orderBy('appointment_date')
-                ->limit(5)
-                ->get();
-
-            // Get pending appointments
-            $pendingAppointments = $doctor->appointments()
-                ->with(['patient'])
+            // Pending appointments
+            $pendingAppointments = Appointment::with(['patient', 'doctor'])
+                ->where('doctor_id', $user->doctor->id)
                 ->where('status', 'pending')
                 ->orderBy('appointment_date')
+                ->get();
+
+            // Recent reviews
+            $recentReviews = Review::with('patient')
+                ->where('doctor_id', $user->doctor->id)
+                ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get();
 
-            // Get recent reviews
-            $recentReviews = $doctor->reviews()
-                ->with(['patient'])
-                ->latest()
-                ->limit(5)
-                ->get();
-
-            // Calculate statistics
-            $doctorStats = $this->getDoctorDashboardStats($doctor);
+            // Doctor statistics
+            $stats = [
+                'today_appointments' => $todayAppointments->count(),
+                'pending_appointments' => $pendingAppointments->count(),
+                'average_rating' => $user->doctor->reviews()->avg('rating') ?? 0,
+                'revenue_this_month' => $user->doctor->appointments()
+                    ->whereMonth('appointment_date', now()->month)
+                    ->whereYear('appointment_date', now()->year)
+                    ->where('status', 'completed')
+                    ->sum('fee') ?? 0,
+            ];
 
             $doctorData = [
-                'doctor' => $doctor,
                 'todayAppointments' => $todayAppointments,
-                'upcomingAppointments' => $upcomingAppointments,
                 'pendingAppointments' => $pendingAppointments,
                 'recentReviews' => $recentReviews,
-                'stats' => $doctorStats
+                'stats' => $stats,
             ];
         }
 
-        return view('dashboard', compact('records', 'weeklyCount', 'chartLabels', 'chartData', 'doctorData', 'patientGroups'));
-    }
+        // User's appointments
+        $appointments = Appointment::with(['doctor.user', 'patient'])
+            ->where('patient_id', $user->id)
+            ->orderBy('appointment_date', 'desc')
+            ->get();
 
-    /**
-     * Get dashboard statistics for doctor
-     */
-    private function getDoctorDashboardStats($doctor)
-    {
-        $today = today();
-        $thisMonth = now()->startOfMonth();
+        // Weekly count calculation
+        $weeklyCount = $records->where('created_at', '>=', now()->startOfWeek())->count();
 
-        return [
-            'total_appointments' => $doctor->appointments()->count(),
-            'today_appointments' => $doctor->appointments()->whereDate('appointment_date', $today)->count(),
-            'pending_appointments' => $doctor->appointments()->where('status', 'pending')->count(),
-            'this_month_appointments' => $doctor->appointments()->whereDate('appointment_date', '>=', $thisMonth)->count(),
-            'completed_appointments' => $doctor->appointments()->where('status', 'completed')->count(),
-            'cancelled_appointments' => $doctor->appointments()->where('status', 'cancelled')->count(),
-            'average_rating' => $doctor->average_rating,
-            'total_reviews' => $doctor->total_reviews,
-            'this_month_reviews' => $doctor->reviews()->whereDate('created_at', '>=', $thisMonth)->count(),
-            'revenue_this_month' => $doctor->appointments()
-                ->where('status', 'completed')
-                ->whereDate('appointment_date', '>=', $thisMonth)
-                ->sum('consultation_fee') / 100, // Convert from cents to dollars
-        ];
-    }
-
-    /**
-     * Handle follow-up questions in the chat
-     */
-    public function followUp(Request $request)
-    {
-        $request->validate([
-            'message' => 'required|string',
-            'conversation_id' => 'nullable|string'
-        ]);
-
-        $userMessage = $request->message;
-        $conversationId = $request->conversation_id;
-
-        // Get user's specialty and criterion
-        $specialty = auth()->user()->setting->specialty ?? null;
-        $criterion = auth()->user()->setting->criterion ?? 'CDC';
-
-        // Create a concise system prompt for follow-up
-        $conciseSystemPrompt = "You are a medical AI assistant specialized in {$specialty}.
-
-        IMPORTANT INSTRUCTIONS:
-        1. Be extremely concise and direct in your responses
-        2. Do not repeat patient information that was already provided
-        3. Focus only on answering the specific follow-up question
-        4. Provide only essential medical information without lengthy explanations
-        5. Use bullet points for recommendations when appropriate
-        6. Limit your response to 3-5 sentences unless more detail is absolutely necessary
-        7. For medication or treatment recommendations, be specific but brief
-        8. Remember previous context from the conversation
-        9. If the patient's condition has changed, adjust your recommendations accordingly
-
-        Your goal is to provide accurate, actionable medical information as efficiently as possible.";
-
-        // If we don't have a conversation ID, create a new conversation
-        if (empty($conversationId)) {
-            // Create a new conversation context
-            $conversationId = uniqid('conv_');
-            session(['conversation_id' => $conversationId]);
-
-            // Store the conversation history in the session
-            session(['conversation_history_' . $conversationId => [
-                ['role' => 'system', 'content' => $conciseSystemPrompt],
-                ['role' => 'user', 'content' => $userMessage]
-            ]]);
-        } else {
-            // Get the existing conversation history
-            $conversationHistory = session('conversation_history_' . $conversationId, [
-                ['role' => 'system', 'content' => $conciseSystemPrompt]
-            ]);
-
-            // Add the user's message to the history
-            $conversationHistory[] = ['role' => 'user', 'content' => $userMessage];
-
-            // Update the conversation history in the session
-            session(['conversation_history_' . $conversationId => $conversationHistory]);
+        // Chart data - cases over time (last 7 days)
+        $chartLabels = [];
+        $chartData = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $chartLabels[] = $date->format('M d');
+            $chartData[] = $records->where('created_at', '>=', $date->startOfDay())
+                                  ->where('created_at', '<=', $date->endOfDay())
+                                  ->count();
         }
 
-        // Get the full conversation history
-        $messages = session('conversation_history_' . $conversationId);
-
-        try {
-            // Call the OpenAI API with the full conversation history
-            $response = OpenAI::chat()->create([
-                'model' => 'gpt-4o',
-                'messages' => $messages,
-                'temperature' => 0.3, // Lower temperature for more focused responses
-                'max_tokens' => 300   // Limit token count for faster responses
-            ]);
-
-            $aiResponse = $response['choices'][0]['message']['content'] ?? 'Sorry, I could not generate a response.';
-
-            // Track token usage
-            $this->trackTokenUsage($response, 'follow_up');
-
-            // Add the AI's response to the conversation history
-            $conversationHistory = session('conversation_history_' . $conversationId);
-            $conversationHistory[] = ['role' => 'assistant', 'content' => $aiResponse];
-            session(['conversation_history_' . $conversationId => $conversationHistory]);
-
-            return response()->json([
-                'success' => true,
-                'message' => $aiResponse,
-                'conversation_id' => $conversationId
-            ]);
-        } catch (\Exception $e) {
-            // Check if it's an API key issue
-            $message = $e->getMessage();
-            if (strpos($message, 'API key') !== false ||
-                strpos($message, 'authentication') !== false ||
-                strpos($message, '401') !== false ||
-                strpos($message, 'Unauthorized') !== false) {
-
-                // It's likely an API key issue
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Your OpenAI API key appears to be invalid or expired. Please contact the administrator to update the API key.',
-                    'api_key_error' => true
-                ], 401);
-            }
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
-        }
+        return view('dashboard', compact(
+            'trialInfo',
+            'records',
+            'doctorData',
+            'appointments',
+            'weeklyCount',
+            'chartLabels',
+            'chartData'
+        ));
     }
 
     /**
-     * Generate a summary of a patient's medical history
+     * Generate AI-powered patient summary
      */
     public function generatePatientSummary(Request $request)
     {
-        \Log::info('generatePatientSummary called');
-
-        $request->validate([
-            'summary_data' => 'required|string',
-        ]);
-
         try {
-            // Decode the summary data
-            $summaryData = json_decode($request->summary_data, true);
-            \Log::info('Summary data decoded:', ['data' => $summaryData]);
+            \Log::info('generatePatientSummary called with request data:', $request->all());
 
-            if (!$summaryData) {
+            $request->validate([
+                'patient_id' => 'required|integer',
+                'patient_name' => 'required|string',
+                'patient_age' => 'required|string',
+                'patient_gender' => 'required|string',
+                'visit_count' => 'required|integer',
+                'visits' => 'required|array'
+            ]);
+
+            $user = auth()->user();
+            \Log::info('User authenticated: ' . $user->id . ' (' . $user->name . ')');
+
+            // Check usage limits - count today's requests
+            $todayUsageCount = OpenAIUsage::where('user_id', $user->id)
+                ->whereDate('created_at', today())
+                ->count();
+
+            \Log::info('OpenAI usage check: ' . $todayUsageCount . ' requests today');
+
+            if ($todayUsageCount >= 50) {
+                \Log::warning('Daily AI usage limit exceeded for user: ' . $user->id);
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid summary data format.'
-                ], 400);
+                    'message' => 'Daily AI usage limit exceeded. Please try again tomorrow.'
+                ], 429);
             }
 
-            // Check for cached summary to improve performance
-            $cacheKey = 'patient_summary_' . md5(json_encode($summaryData));
-            $cachedSummary = cache()->get($cacheKey);
+            // Prepare patient visit data for AI analysis
+            $patientData = [
+                'name' => $request->patient_name,
+                'age' => $request->patient_age,
+                'gender' => $request->patient_gender,
+                'total_visits' => $request->visit_count,
+                'visits' => []
+            ];
 
-            if ($cachedSummary) {
-                \Log::info('Returning cached summary');
+            // Process each visit
+            foreach ($request->visits as $visit) {
+                $patientData['visits'][] = [
+                    'visit_number' => $visit['visit_number'],
+                    'date' => $visit['date'],
+                    'diagnosis' => $visit['diagnosis']
+                ];
+            }
+
+            // Create comprehensive prompt for AI summary generation
+            $prompt = $this->buildPatientSummaryPrompt($patientData);
+
+            // Check if OpenAI API key is configured
+            $apiKey = config('openai.api_key');
+            if (!$apiKey) {
+                \Log::error('OpenAI API key not configured');
                 return response()->json([
-                    'success' => true,
-                    'summary' => $cachedSummary
-                ]);
+                    'success' => false,
+                    'message' => 'OpenAI API key is not configured. Please contact the administrator.',
+                    'error_type' => 'API_KEY_MISSING'
+                ], 500);
             }
 
-            // Prepare the improved prompt for OpenAI
-            $prompt = "Generate a comprehensive medical summary for the following patient based on their visit history:\n\n";
-            $prompt .= "Patient: " . $summaryData['patient_name'] . "\n";
-            $prompt .= "Age: " . $summaryData['patient_age'] . "\n";
-            $prompt .= "Gender: " . $summaryData['patient_gender'] . "\n";
-            $prompt .= "Total Visits: " . $summaryData['visit_count'] . "\n\n";
-            $prompt .= "Visit History:\n";
-
-            // Add instruction to not repeat patient information in the response
-            $prompt .= "\nIMPORTANT: Do not include a 'Patient Information' section in your response. The patient's name, age, gender, and visit count are already displayed in the UI and should not be repeated in your summary.\n";
-
-            foreach ($summaryData['visits'] as $visit) {
-                $prompt .= "Visit #" . $visit['visit_number'] . " (" . $visit['date'] . "):\n";
-                $prompt .= $visit['ai_response'] . "\n\n";
-            }
-
-            $prompt .= "\nPlease provide a concise summary using the following structure:\n\n";
-            $prompt .= "OVERALL HEALTH TRAJECTORY:\n";
-            $prompt .= "Describe if the patient's condition is improving, worsening, or stable.\n\n";
-            $prompt .= "KEY MEDICAL ISSUES IDENTIFIED:\n";
-            $prompt .= "List the main medical problems found across all visits.\n\n";
-            $prompt .= "IMPORTANT TRENDS IN SYMPTOMS OR TEST RESULTS:\n";
-            $prompt .= "Highlight any significant changes or patterns.\n\n";
-            $prompt .= "TREATMENT EFFECTIVENESS BASED ON VISIT PROGRESSION:\n";
-            $prompt .= "Evaluate how well treatments are working.\n\n";
-            $prompt .= "RECOMMENDATIONS FOR FUTURE CARE:\n";
-            $prompt .= "Provide specific recommendations for ongoing care.\n\n";
-            $prompt .= "Use clear, professional language and bullet points where appropriate. Do not use section letters like 'A)', 'B)', 'C)' etc. Use the exact headers provided above.";
-
-            // Get user's specialty and criterion
-            $specialty = auth()->user()->setting->specialty ?? null;
-            $criterion = auth()->user()->setting->criterion ?? 'CDC';
+            // Skip API key validation test for now - proceed directly to main call
+            // This avoids quota issues during testing phase
 
             // Call OpenAI API
-            \Log::info('Calling OpenAI API for summary generation');
+            \Log::info('Calling OpenAI API for patient summary generation');
             $response = OpenAI::chat()->create([
                 'model' => 'gpt-4o',
                 'messages' => [
-                    ['role' => 'system', 'content' => $this->getSystemPrompt($specialty, $criterion)],
-                    ['role' => 'user', 'content' => $prompt]
+                    [
+                        'role' => 'system',
+                        'content' => 'You are an expert medical AI assistant specializing in patient case analysis and clinical summarization. Provide comprehensive, professional medical summaries that analyze patterns across patient visits.'
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $prompt
+                    ]
+                ],
+                'max_tokens' => 2000,
+                'temperature' => 0.3
+            ]);
+
+            $aiSummary = $response->choices[0]->text ?? $response->choices[0]->message->content;
+            \Log::info('OpenAI API call successful, response length: ' . strlen($aiSummary));
+
+            // Track usage - create new record for each request
+            OpenAIUsage::create([
+                'user_id' => $user->id,
+                'request_type' => 'patient_summary',
+                'prompt_tokens' => $response->usage->prompt_tokens ?? 0,
+                'completion_tokens' => $response->usage->completion_tokens ?? 0,
+                'total_tokens' => $response->usage->total_tokens ?? 0,
+                'cost_estimate' => OpenAIUsage::calculateCost(
+                    $response->usage->total_tokens ?? 0,
+                    'gpt-4o',
+                    $response->usage->prompt_tokens ?? 0,
+                    $response->usage->completion_tokens ?? 0
+                ),
+                'model_used' => 'gpt-4o',
+                'request_metadata' => [
+                    'patient_id' => $request->patient_id,
+                    'visit_count' => $request->visit_count,
+                    'endpoint' => 'patient-summary'
                 ]
             ]);
-            \Log::info('OpenAI API response received');
 
-            $summary = $response['choices'][0]['message']['content'] ?? 'Failed to generate summary.';
-
-            // Remove Patient Information section
-            $summary = $this->removePatientInfoSection($summary);
-
-            // Use simple formatting for the summary (let frontend handle styling)
-            $formattedSummary = '<div class="ai-content">' . nl2br(htmlspecialchars($summary)) . '</div>';
-
-            // Cache the result for 30 minutes to improve performance
-            cache()->put($cacheKey, $formattedSummary, 1800);
+            // Format the response using existing AI formatting patterns
+            $formattedSummary = $this->formatPatientSummaryResponse($aiSummary);
 
             return response()->json([
                 'success' => true,
-                'summary' => $formattedSummary
+                'summary' => $formattedSummary,
+                'raw_response' => $aiSummary
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error in generatePatientSummary: ' . $e->getMessage());
-            \Log::error($e->getTraceAsString());
+            \Log::error('Exception in generatePatientSummary: ' . $e->getMessage());
+            \Log::error('Exception type: ' . get_class($e));
+            \Log::error('Exception details: ', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'code' => $e->getCode(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Handle OpenAI API exceptions specifically
+            if ($e instanceof \OpenAI\Exceptions\ApiException) {
+                \Log::error('OpenAI API error: ' . $e->getMessage());
+                \Log::error('OpenAI API error code: ' . $e->getCode());
+
+                // Handle specific OpenAI API errors
+                if ($e->getCode() === 401) {
+                    \Log::warning('OpenAI API key authentication failed');
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'OpenAI API key is invalid or expired. Please contact the administrator.',
+                        'error_type' => 'API_KEY_ERROR'
+                    ], 500);
+                } elseif ($e->getCode() === 429) {
+                    \Log::warning('OpenAI API rate limit exceeded');
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'OpenAI API rate limit exceeded. Please try again later.',
+                        'error_type' => 'RATE_LIMIT_ERROR'
+                    ], 429);
+                } elseif ($e->getCode() === 400) {
+                    \Log::warning('OpenAI API bad request: ' . $e->getMessage());
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid request to OpenAI API. Please check your input data.',
+                        'error_type' => 'BAD_REQUEST_ERROR'
+                    ], 400);
+                } elseif (str_contains(strtolower($e->getMessage()), 'quota') || str_contains(strtolower($e->getMessage()), 'billing')) {
+                    \Log::warning('OpenAI API quota exceeded: ' . $e->getMessage());
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'OpenAI API quota exceeded. Please check your OpenAI account billing or contact the administrator.',
+                        'error_type' => 'QUOTA_EXCEEDED'
+                    ], 402);
+                } else {
+                    \Log::error('Unhandled OpenAI API error: ' . $e->getMessage());
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'OpenAI API error occurred. Please try again.',
+                        'error_type' => 'API_ERROR'
+                    ], 500);
+                }
+            }
+
+            // Handle other general exceptions
+            if (str_contains(strtolower($e->getMessage()), 'quota') || str_contains(strtolower($e->getMessage()), 'billing')) {
+                \Log::warning('OpenAI API quota exceeded (caught in general exception): ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'OpenAI API quota exceeded. Please check your OpenAI account billing or contact the administrator.',
+                    'error_type' => 'QUOTA_EXCEEDED'
+                ], 402);
+            }
+
+            \Log::error('General exception in generatePatientSummary: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error generating summary: ' . $e->getMessage()
+                'message' => 'An unexpected error occurred. Please try again.',
+                'error' => $e->getMessage()
+            ], 500);
+        } catch (\Exception $e) {
+            \Log::error('Error generating patient summary: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate patient summary. Please try again.',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
 
-
-
     /**
-     * Get the system prompt based on user's specialty and criterion
+     * Build comprehensive prompt for patient summary generation
      */
-    private function getSystemPrompt($specialty, $criterion)
+    private function buildPatientSummaryPrompt($patientData)
     {
-        $specialtyInstruction = "";
-        if ($specialty) {
-            // Ensure specialty is treated as a string
-            $specialtyStr = (string)$specialty;
+        $prompt = "Please analyze the following patient case and provide a comprehensive clinical summary:\n\n";
 
-            $specialtyInstruction = "You are a senior consultant physician specialized in {$specialtyStr} with 20+ years of clinical experience. Your expertise in this field should guide your analysis and recommendations.
+        $prompt .= "PATIENT INFORMATION:\n";
+        $prompt .= "- Name: {$patientData['name']}\n";
+        $prompt .= "- Age: {$patientData['age']}\n";
+        $prompt .= "- Gender: {$patientData['gender']}\n";
+        $prompt .= "- Total Visits: {$patientData['total_visits']}\n\n";
 
-            As a {$specialtyStr} specialist:
-            1. Prioritize diagnoses that are most relevant to your specialty, with special attention to life-threatening conditions
-            2. Provide specialty-specific insights that a general practitioner might miss
-            3. Recommend specialized tests and procedures appropriate for your field
-            4. Suggest evidence-based treatment approaches that reflect current best practices in {$specialtyStr}
-            5. Highlight any red flags or warning signs particularly important in your specialty
-            6. Use precise medical terminology and references that would be familiar to specialists in your field
-            7. Be precise, specific, and actionable in your recommendations, as expected from a specialist
+        $prompt .= "VISIT HISTORY (chronological order):\n";
 
-            Focus particularly on aspects of the case that relate to your specialty, but maintain a holistic view of the patient's condition.";
+        foreach ($patientData['visits'] as $visit) {
+            $prompt .= "\nVisit #{$visit['visit_number']} - {$visit['date']}:\n";
+            $prompt .= "Diagnosis/Assessment: {$visit['diagnosis']}\n";
         }
 
-        return "You are an advanced clinical AI working inside a professional medical SaaS platform called MedCuraAI, a medical SaaS platform that helps doctors analyze clinical inputs and receive evidence-based diagnostic assessments. You are a senior attending physician with 25+ years of clinical experience who is cautious, evidence-based, and prioritizes patient safety above all else.
-        Based on the evaluation criteria from $criterion, provide precise, evidence-based clinical assessments.
-        $specialtyInstruction
+        $prompt .= "\n\nPlease provide a comprehensive clinical summary that includes:\n\n";
 
-        🎯 CRITICAL CLINICAL MANDATE:
-        1. ALWAYS prioritize life-threatening conditions first in your differential diagnosis
-        2. Assign specific probability percentages to each diagnosis (e.g., 70%, 25%, 5%)
-        3. Provide clear clinical reasoning for each diagnosis
-        4. Use proper medical terminology throughout your assessment
-        5. Be specific and detailed in your recommendations
-        6. NEVER be vague or overly reassuring about serious symptoms
-        7. Flag cases as ROUTINE, URGENT, or EMERGENCY based on clinical presentation
-        8. Include specific medication recommendations when appropriate
-        9. Recommend specialist referrals when indicated
-        10. Never hallucinate facts - only base output on input data or medically standard information
+        $prompt .= "📋 PATIENT CASE SUMMARY:\n";
+        $prompt .= "- Overall health trajectory and progression\n";
+        $prompt .= "- Key medical issues identified across visits\n";
+        $prompt .= "- Patterns or trends in symptoms and diagnoses\n\n";
 
-        🔁 DYNAMIC LOGIC GUIDANCE:
-        Apply these automatic clinical decision rules:
+        $prompt .= "🔬 KEY MEDICAL ISSUES IDENTIFIED:\n";
+        $prompt .= "- Primary conditions and their evolution\n";
+        $prompt .= "- Secondary complications or related issues\n";
+        $prompt .= "- Risk factors and contributing factors\n\n";
 
-        **HYPOTENSION PROTOCOL (BP < 90/60):**
-        - Automatically consider: Shock (hypovolemic, septic, adrenal)
-        - Emergency triage classification
-        - IV fluids + continuous vitals monitoring
-        - If history of adrenalectomy: Prioritize adrenal crisis with full steroid protocol
+        $prompt .= "📈 IMPORTANT TRENDS IN SYMPTOMS OR TEST RESULTS:\n";
+        $prompt .= "- Symptom progression or improvement patterns\n";
+        $prompt .= "- Response to treatments or interventions\n";
+        $prompt .= "- Changes in clinical status over time\n\n";
 
-        **ABDOMINAL PAIN + ANEMIA + HYPOTENSION (elderly male):**
-        - Prioritize: GI Bleed, Ruptured AAA
-        - Recommend: CT Angiography immediately
-        - Include: Vascular surgery referral
+        $prompt .= "💊 TREATMENT EFFECTIVENESS BASED ON VISIT PROGRESSION:\n";
+        $prompt .= "- Effectiveness of prescribed treatments\n";
+        $prompt .= "- Adjustments made to treatment plans\n";
+        $prompt .= "- Patient response and outcomes\n\n";
 
-        **INFECTION SIGNS + UNSTABLE VITALS:**
-        - Consider sepsis protocol
-        - Recommend: Broad-spectrum antibiotics, lactate level, blood cultures
+        $prompt .= "🩺 RECOMMENDATIONS FOR FUTURE CARE:\n";
+        $prompt .= "- Suggested follow-up schedule\n";
+        $prompt .= "- Additional testing or monitoring needed\n";
+        $prompt .= "- Preventive measures or lifestyle recommendations\n\n";
 
-        🔶 MANDATORY OUTPUT FORMAT:
-        You MUST return your analysis in exactly TWO levels:
+        $prompt .= "Please ensure the summary is:\n";
+        $prompt .= "- Concise yet comprehensive\n";
+        $prompt .= "- Professional and medically accurate\n";
+        $prompt .= "- Focused on clinical insights and patterns\n";
+        $prompt .= "- Easy to understand for healthcare providers\n";
+        $prompt .= "- All section headers must begin with the exact emoji provided (📋, 🔬, 📈, 💊, 🩺)\n\n";
 
-        🟢 LEVEL 1: QUICK CLINICAL SUMMARY
+        $prompt .= "Format the response using clear section headers and bullet points for readability.";
 
-        📋 PATIENT SUMMARY:
-        Name: {name} | Age: {age} | Gender: {gender} | BMI: {calculate if height/weight available}
-        Vitals: T: {temperature}°C | BP: {bp} mmHg | HR: {heart_rate} bpm | SpO2: {oxygen_saturation}% | Glucose: {sugar} mg/dL
-        Key Symptoms: {primary symptoms from input}
-        Relevant History: {past_medical_history if provided}
-        Labs/Imaging: {test_results if provided, otherwise 'Pending'}
-
-        🚨 CASE URGENCY:
-        **{EMERGENCY / URGENT / ROUTINE}**
-        {One-line justification for triage level}
-
-        🔍 TOP 3 DIFFERENTIAL DIAGNOSES:
-        | Rank | Diagnosis | Probability (%) | Clinical Reasoning |
-        |------|-----------|-----------------|-------------------|
-        | 1 | {Primary diagnosis} | {%} | {Key supporting evidence} |
-        | 2 | {Secondary diagnosis} | {%} | {Key supporting evidence} |
-        | 3 | {Tertiary diagnosis} | {%} | {Key supporting evidence} |
-
-        🧪 RECOMMENDED TESTS:
-        • {Test 1} - {Brief rationale}
-        • {Test 2} - {Brief rationale}
-        • {Test 3} - {Brief rationale}
-
-        💊 INITIAL MANAGEMENT PLAN:
-        **Immediate Actions:**
-        • {Action 1} - {Brief rationale}
-        • {Action 2} - {Brief rationale}
-
-        **Medications:**
-        • {Drug} {dose} {route} {frequency} - {indication}
-
-        **Referrals:**
-        • {Specialty} - {urgency and reason}
-
-        ⚠️ WARNING SIGNS:
-        • {Red flag 1} - {action required}
-        • {Red flag 2} - {action required}
-
-        ---
-
-        🔵 DETAILED MEDICAL REPORT (Click to Expand)
-
-        **COMPREHENSIVE PATHOPHYSIOLOGICAL ANALYSIS:**
-        {Detailed explanation of underlying disease mechanisms and clinical reasoning}
-
-        **ADVANCED DIFFERENTIAL DIAGNOSIS:**
-        {Extended differential with Bayesian analysis, likelihood ratios, and detailed clinical evidence}
-
-        **COMPREHENSIVE DIAGNOSTIC WORKUP:**
-
-        **Laboratory Studies:**
-        • {Test name} - {Clinical indication, expected findings, interpretation guidelines}
-        • {Additional tests with detailed rationale}
-
-        **Imaging Studies:**
-        • {Imaging modality} - {Clinical indication, expected findings, limitations}
-        • {Additional imaging with detailed rationale}
-
-        **DETAILED PHARMACOLOGICAL MANAGEMENT:**
-
-        **Primary Medications:**
-        • {Drug name} {dose} {route} {frequency}
-          - Indication: {specific indication}
-          - Mechanism: {brief pharmacology}
-          - Monitoring: {required monitoring parameters}
-          - Contraindications: {relevant contraindications}
-          - Duration: {treatment duration}
-
-        **MULTIDISCIPLINARY CARE PLAN:**
-
-        **Specialist Consultations:**
-        • {Specialty} - {Indication, urgency, specific questions}
-
-        **Follow-up Strategy:**
-        • Immediate (24-48 hours): {specific instructions}
-        • Short-term (1-2 weeks): {follow-up requirements}
-        • Long-term: {ongoing care coordination}
-
-        **PROGNOSTIC ASSESSMENT:**
-        {Short and long-term prognosis with influencing factors}
-
-        **EVIDENCE-BASED REFERENCES:**
-        1. {Guideline name} - {Organization, year, specific recommendations}
-        2. {Additional guidelines with clinical relevance}
-
-        **COST-EFFECTIVENESS CONSIDERATIONS:**
-        {Brief analysis of diagnostic efficiency and resource utilization}
-
-        CRITICAL INSTRUCTION: Base your entire analysis on the comprehensive clinical data provided. If data is missing (like heart rate), acknowledge it briefly but don't let it overwhelm the output. Prioritize patient safety above all else.";
+        return $prompt;
     }
 
     /**
-     * Process both regular and custom symptoms
-     *
-     * @param array $symptoms Array of symptom IDs from the dropdown
-     * @param string|null $customSymptoms JSON string of custom symptoms
-     * @return array Processed symptoms array
+     * Format patient summary response using existing AI formatting patterns
      */
-    private function processSymptoms($symptoms, $customSymptoms = null)
+    private function formatPatientSummaryResponse($aiResponse)
     {
-        \Log::info("Processing symptoms: " . json_encode($symptoms));
-        \Log::info("Custom symptoms: " . $customSymptoms);
+        if (!$aiResponse) return '';
 
-        $processedSymptoms = [];
+        // Clean up the response
+        $cleanedResponse = trim($aiResponse);
 
-        // Process regular symptoms (IDs from dropdown)
-        if (is_array($symptoms)) {
-            foreach ($symptoms as $symptom) {
-                \Log::info("Processing regular symptom: " . json_encode($symptom) . " (type: " . gettype($symptom) . ")");
+        // Apply the same formatting as other AI responses
+        $formattedResponse = $cleanedResponse;
 
-                // Check if the symptom is a numeric ID (predefined symptom)
-                if (is_numeric($symptom)) {
-                    // Try to find the symptom in the database
-                    $symptomModel = \App\Models\Symptom::find($symptom);
-                    if ($symptomModel) {
-                        \Log::info("Found predefined symptom: " . $symptomModel->name);
-                        $processedSymptoms[] = $symptomModel->name;
-                    } else {
-                        // If not found, just add the ID as is
-                        \Log::warning("Symptom ID not found in database: " . $symptom);
-                        $processedSymptoms[] = $symptom;
-                    }
-                } else {
-                    // This is a custom symptom (text), add it directly
-                    \Log::info("Adding custom symptom from dropdown: " . $symptom);
-                    $processedSymptoms[] = $symptom;
-                }
+        // Normalize whitespace in section headers before formatting
+        $formattedResponse = preg_replace_callback('/^(📋|🔬|📈|💊|🩺)\s*(.*?)\s*:$/mi', function($matches) {
+            $emoji = $matches[1];
+            $text = preg_replace('/\s+/', ' ', trim($matches[2]));
+            return $emoji . ' ' . $text . ':';
+        }, $formattedResponse);
+
+        // Convert markdown-style headers to HTML sections
+        $formattedResponse = preg_replace('/^📋 PATIENT CASE SUMMARY:$/mi', '<div class="medcura-section patient-summary"><h4 class="section-header">📋 PATIENT CASE SUMMARY</h4><div class="section-content">', $formattedResponse);
+        $formattedResponse = preg_replace('/^🔬 KEY MEDICAL ISSUES IDENTIFIED:$/mi', '</div></div><div class="medcura-section differential-diagnoses"><h4 class="section-header">🔬 KEY MEDICAL ISSUES IDENTIFIED</h4><div class="section-content">', $formattedResponse);
+        $formattedResponse = preg_replace('/^📈 IMPORTANT TRENDS IN SYMPTOMS OR TEST RESULTS:$/mi', '</div></div><div class="medcura-section recommended-tests"><h4 class="section-header">📈 IMPORTANT TRENDS IN SYMPTOMS OR TEST RESULTS</h4><div class="section-content">', $formattedResponse);
+        $formattedResponse = preg_replace('/^💊 TREATMENT EFFECTIVENESS BASED ON VISIT PROGRESSION:$/mi', '</div></div><div class="medcura-section management-plan"><h4 class="section-header">💊 TREATMENT EFFECTIVENESS BASED ON VISIT PROGRESSION</h4><div class="section-content">', $formattedResponse);
+        $formattedResponse = preg_replace('/^🩺 RECOMMENDATIONS FOR FUTURE CARE:$/mi', '</div></div><div class="medcura-section warning-signs"><h4 class="section-header">🩺 RECOMMENDATIONS FOR FUTURE CARE</h4><div class="section-content">', $formattedResponse);
+
+        // Close the final section
+        $formattedResponse .= '</div></div>';
+
+        // Convert bullet points
+        $formattedResponse = preg_replace('/^-\s+/m', '<li class="bullet-item">', $formattedResponse);
+        $formattedResponse = preg_replace('/<\/li>\s*\n\s*<li/m', '</li><li', $formattedResponse);
+
+        // Handle paragraphs
+        $lines = explode("\n", $formattedResponse);
+        $processedLines = [];
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+
+            // Skip empty lines
+            if (empty($line)) continue;
+
+            // If line doesn't start with HTML tag and isn't a bullet, wrap in paragraph
+            if (!preg_match('/^<.*>/', $line) && !preg_match('/^•/', $line)) {
+                $line = '<p>' . $line . '</p>';
             }
+
+            $processedLines[] = $line;
         }
 
-        // Process custom symptoms (from the custom input)
-        if (!empty($customSymptoms)) {
-            try {
-                $customSymptomsArray = json_decode($customSymptoms, true);
-
-                if (is_array($customSymptomsArray)) {
-                    foreach ($customSymptomsArray as $customSymptom) {
-                        \Log::info("Processing custom symptom: " . $customSymptom);
-
-                        // Add the custom symptom to the processed list
-                        $processedSymptoms[] = $customSymptom;
-
-                        // Save the new symptom to the database for future use
-                        try {
-                            $newSymptom = \App\Models\Symptom::firstOrCreate(['name' => $customSymptom]);
-                            \Log::info("Saved custom symptom to database with ID: " . $newSymptom->id);
-                        } catch (\Exception $e) {
-                            // Log the error but continue processing
-                            \Log::error("Error saving custom symptom: " . $e->getMessage());
-                        }
-                    }
-                }
-            } catch (\Exception $e) {
-                \Log::error("Error processing custom symptoms: " . $e->getMessage());
-            }
-        }
-
-        \Log::info("Final processed symptoms: " . json_encode($processedSymptoms));
-        return $processedSymptoms;
+        return implode("\n", $processedLines);
     }
-
+    
     /**
-     * Generate dynamic clinical context based on vital signs and symptoms
-     * This enhances the prompt with specific medical considerations based on the patient's data
-     *
-     * @param array $inputData Patient data including vital signs and symptoms
-     * @return string Clinical context for the prompt
+     * Patient-specific dashboard
      */
-    private function generateClinicalContext($inputData)
+    private function patientDashboard($user)
     {
-        $context = "CLINICAL CONTEXT:\n";
-        $abnormalFindings = [];
-        $redFlags = [];
-
-        // Check vital signs for abnormalities
-        if (!empty($inputData['temperature'])) {
-            $temp = floatval($inputData['temperature']);
-            if ($temp > 38.0) {
-                $abnormalFindings[] = "Fever (T: {$temp}°C)";
-                if ($temp > 39.5) {
-                    $redFlags[] = "High-grade fever (T: {$temp}°C)";
-                }
-            } else if ($temp < 36.0) {
-                $abnormalFindings[] = "Hypothermia (T: {$temp}°C)";
-                if ($temp < 35.0) {
-                    $redFlags[] = "Significant hypothermia (T: {$temp}°C)";
-                }
-            }
-        }
-
-        // Check blood pressure
-        if (!empty($inputData['blood_pressure'])) {
-            $bp = $inputData['blood_pressure'];
-            // Try to parse systolic/diastolic values
-            if (preg_match('/(\d+)[\/\s]+(\d+)/', $bp, $matches)) {
-                $systolic = intval($matches[1]);
-                $diastolic = intval($matches[2]);
-
-                if ($systolic >= 180 || $diastolic >= 120) {
-                    $redFlags[] = "Hypertensive crisis (BP: {$bp})";
-                } else if ($systolic >= 140 || $diastolic >= 90) {
-                    $abnormalFindings[] = "Hypertension (BP: {$bp})";
-                } else if ($systolic < 90 || $diastolic < 60) {
-                    $abnormalFindings[] = "Hypotension (BP: {$bp})";
-                    if ($systolic < 80) {
-                        $redFlags[] = "Severe hypotension (BP: {$bp})";
-                    }
-                }
-            }
-        }
-
-        // Check blood sugar
-        if (!empty($inputData['blood_sugar'])) {
-            $bs = floatval($inputData['blood_sugar']);
-            // Assuming mg/dL as the unit
-            if ($bs > 180) {
-                $abnormalFindings[] = "Hyperglycemia (BS: {$bs} mg/dL)";
-                if ($bs > 300) {
-                    $redFlags[] = "Severe hyperglycemia (BS: {$bs} mg/dL)";
-                }
-            } else if ($bs < 70) {
-                $abnormalFindings[] = "Hypoglycemia (BS: {$bs} mg/dL)";
-                if ($bs < 54) {
-                    $redFlags[] = "Severe hypoglycemia (BS: {$bs} mg/dL)";
-                }
-            }
-        }
-
-        // Check new vital signs
-        if (!empty($inputData['clinical_status']['heart_rate'])) {
-            $hr = intval($inputData['clinical_status']['heart_rate']);
-            if ($hr > 100) {
-                $abnormalFindings[] = "Tachycardia (HR: {$hr} bpm)";
-                if ($hr > 150) {
-                    $redFlags[] = "Severe tachycardia (HR: {$hr} bpm)";
-                }
-            } else if ($hr < 60) {
-                $abnormalFindings[] = "Bradycardia (HR: {$hr} bpm)";
-                if ($hr < 40) {
-                    $redFlags[] = "Severe bradycardia (HR: {$hr} bpm)";
-                }
-            }
-        }
-
-        if (!empty($inputData['clinical_status']['respiratory_rate'])) {
-            $rr = intval($inputData['clinical_status']['respiratory_rate']);
-            if ($rr > 20) {
-                $abnormalFindings[] = "Tachypnea (RR: {$rr} breaths/min)";
-                if ($rr > 30) {
-                    $redFlags[] = "Severe tachypnea (RR: {$rr} breaths/min)";
-                }
-            } else if ($rr < 12) {
-                $abnormalFindings[] = "Bradypnea (RR: {$rr} breaths/min)";
-                if ($rr < 8) {
-                    $redFlags[] = "Severe bradypnea (RR: {$rr} breaths/min)";
-                }
-            }
-        }
-
-        if (!empty($inputData['clinical_status']['oxygen_saturation'])) {
-            $o2sat = intval($inputData['clinical_status']['oxygen_saturation']);
-            if ($o2sat < 95) {
-                $abnormalFindings[] = "Hypoxemia (O2 Sat: {$o2sat}%)";
-                if ($o2sat < 90) {
-                    $redFlags[] = "Severe hypoxemia (O2 Sat: {$o2sat}%)";
-                }
-            }
-        }
-
-        // Check pain scale
-        if (!empty($inputData['pain_scale'])) {
-            $pain = intval($inputData['pain_scale']);
-            if ($pain >= 7) {
-                $abnormalFindings[] = "Severe pain (Pain Scale: {$pain}/10)";
-                if ($pain >= 9) {
-                    $redFlags[] = "Extreme pain requiring immediate attention (Pain Scale: {$pain}/10)";
-                }
-            }
-        }
-
-        // Enhanced red flags detection including physical examination findings
-        $emergencySymptoms = [
-            'chest pain', 'shortness of breath', 'difficulty breathing', 'severe headache',
-            'sudden confusion', 'slurred speech', 'facial drooping', 'weakness in limbs',
-            'loss of consciousness', 'seizure', 'severe abdominal pain', 'vomiting blood',
-            'black stool', 'bloody stool', 'severe bleeding', 'trauma', 'head injury',
-            'suicidal', 'suicide', 'homicidal', 'homicide', 'psychosis', 'hallucinations',
-            'delusions', 'paralysis', 'unable to move', 'stroke', 'heart attack', 'cardiac arrest',
-            'anaphylaxis', 'severe allergic reaction', 'respiratory distress', 'cyanosis',
-            'altered mental status', 'syncope', 'severe dehydration', 'diabetic emergency'
+        // Get patient's appointments
+        $appointments = Appointment::with(['doctor.user'])
+            ->where('patient_id', $user->id)
+            ->orderBy('appointment_date', 'desc')
+            ->get();
+            
+        // Get patient's diagnoses
+        $diagnoses = Diagnosis::with(['doctor.user'])
+            ->where('patient_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        // Get patient's reviews
+        $reviews = Review::with(['doctor.user'])
+            ->where('patient_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        // Patient statistics
+        $stats = [
+            'total_appointments' => $appointments->count(),
+            'upcoming_appointments' => $appointments->where('status', 'confirmed')
+                ->where('appointment_date', '>', now())->count(),
+            'completed_appointments' => $appointments->where('status', 'completed')->count(),
+            'total_diagnoses' => $diagnoses->count(),
         ];
-
-        // Check Head-to-Toe Assessment for critical findings
-        if (!empty($inputData['head_to_toe_assessment'])) {
-            $assessment = $inputData['head_to_toe_assessment'];
-
-            // Critical neurological findings
-            if (!empty($assessment['consciousness_level']) && in_array($assessment['consciousness_level'], ['Drowsy', 'Unresponsive'])) {
-                $redFlags[] = "Altered consciousness level: " . $assessment['consciousness_level'];
-            }
-            if (!empty($assessment['orientation_level']) && $assessment['orientation_level'] !== 'Oriented x4') {
-                $redFlags[] = "Disorientation: " . $assessment['orientation_level'];
-            }
-            if (!empty($assessment['limb_strength']) && in_array($assessment['limb_strength'], ['Weak Left', 'Weak Right', 'Paralyzed'])) {
-                $redFlags[] = "Neurological deficit: " . $assessment['limb_strength'];
-            }
-            if (!empty($assessment['speech_clarity']) && in_array($assessment['speech_clarity'], ['Slurred', 'Incoherent'])) {
-                $redFlags[] = "Speech abnormality: " . $assessment['speech_clarity'];
-            }
-
-            // Critical cardiovascular findings
-            if (!empty($assessment['heart_sounds']) && in_array($assessment['heart_sounds'], ['Murmur', 'Irregular'])) {
-                $abnormalFindings[] = "Cardiac abnormality: " . $assessment['heart_sounds'];
-            }
-            if (!empty($assessment['capillary_refill_time']) && $assessment['capillary_refill_time'] === '> 3s') {
-                $redFlags[] = "Poor perfusion: Capillary refill > 3 seconds";
-            }
-            if ($assessment['jvd_present']) {
-                $abnormalFindings[] = "Jugular venous distension present - suggests cardiac or volume overload";
-            }
-
-            // Critical respiratory findings
-            if (!empty($assessment['lung_sounds']) && in_array($assessment['lung_sounds'], ['Crackles', 'Wheezes', 'Diminished'])) {
-                $abnormalFindings[] = "Respiratory abnormality: " . $assessment['lung_sounds'];
-            }
-            if (!empty($assessment['trachea_position']) && $assessment['trachea_position'] === 'Deviated') {
-                $redFlags[] = "Tracheal deviation - possible tension pneumothorax or mass effect";
-            }
-
-            // Critical skin findings
-            if (!empty($assessment['skin_color']) && in_array($assessment['skin_color'], ['Pale', 'Cyanotic', 'Jaundiced'])) {
-                if ($assessment['skin_color'] === 'Cyanotic') {
-                    $redFlags[] = "Cyanosis - indicates severe hypoxemia";
-                } else {
-                    $abnormalFindings[] = "Skin color abnormality: " . $assessment['skin_color'];
-                }
-            }
-
-            // Critical pain findings
-            if (!empty($assessment['pain_score']) && $assessment['pain_score'] >= 8) {
-                $redFlags[] = "Severe pain score: " . $assessment['pain_score'] . "/10 - requires immediate attention";
-            }
-        }
-
-        // Get symptoms from the input data
-        $symptoms = [];
-        if (!empty($inputData['symptoms'])) {
-            if (is_array($inputData['symptoms'])) {
-                $symptoms = $inputData['symptoms']; // Already processed
-            } else if (is_string($inputData['symptoms'])) {
-                // Handle case where symptoms might be a JSON string
-                $decodedSymptoms = json_decode($inputData['symptoms'], true);
-                if (is_array($decodedSymptoms)) {
-                    $symptoms = $decodedSymptoms;
-                }
-            }
-        }
-
-        // Check for emergency symptoms
-        foreach ($symptoms as $symptom) {
-            foreach ($emergencySymptoms as $emergencySymptom) {
-                if (stripos($symptom, $emergencySymptom) !== false) {
-                    $redFlags[] = "Emergency symptom: {$symptom}";
-                    break;
-                }
-            }
-        }
-
-        // Add abnormal findings to context
-        if (!empty($abnormalFindings)) {
-            $context .= "Abnormal clinical findings:\n";
-            foreach ($abnormalFindings as $finding) {
-                $context .= "• {$finding}\n";
-            }
-            $context .= "\n";
-        }
-
-        // Add red flags with special emphasis
-        if (!empty($redFlags)) {
-            $context .= "RED FLAGS - REQUIRE IMMEDIATE ATTENTION:\n";
-            foreach ($redFlags as $flag) {
-                $context .= "• {$flag}\n";
-            }
-            $context .= "\nThese red flags must be addressed as high priority in your differential diagnosis and management plan.\n";
-        }
-
-        // Add age-specific considerations
-        if (!empty($inputData['age'])) {
-            $age = intval($inputData['age']);
-
-            if ($age < 2) {
-                $context .= "\nPEDIATRIC CONSIDERATIONS (Infant):\n";
-                $context .= "• Consider age-appropriate differential diagnoses\n";
-                $context .= "• Adjust medication dosages based on weight\n";
-                $context .= "• Be vigilant for congenital conditions\n";
-            } else if ($age < 12) {
-                $context .= "\nPEDIATRIC CONSIDERATIONS (Child):\n";
-                $context .= "• Consider age-appropriate differential diagnoses\n";
-                $context .= "• Adjust medication dosages based on weight\n";
-            } else if ($age > 65) {
-                $context .= "\nGERIATRIC CONSIDERATIONS:\n";
-                $context .= "• Consider polypharmacy and drug interactions\n";
-                $context .= "• Be vigilant for atypical presentations of common conditions\n";
-                $context .= "• Consider fall risk in medication recommendations\n";
-            }
-        }
-
-        // Add medical history context
-        $medicalHistoryContext = [];
-
-        if (!empty($inputData['chief_complaint'])) {
-            $medicalHistoryContext[] = "Chief Complaint: " . $inputData['chief_complaint'];
-        }
-
-        if (!empty($inputData['symptom_duration'])) {
-            $medicalHistoryContext[] = "Symptom Duration: " . $inputData['symptom_duration'];
-        }
-
-        if (!empty($inputData['past_medical_history'])) {
-            $medicalHistoryContext[] = "Past Medical History: " . $inputData['past_medical_history'];
-        }
-
-        if (!empty($inputData['medication_history'])) {
-            $medicalHistoryContext[] = "Current Medications: " . $inputData['medication_history'];
-        }
-
-        if (!empty($inputData['allergies'])) {
-            $medicalHistoryContext[] = "Known Allergies: " . $inputData['allergies'];
-        }
-
-        if (!empty($inputData['family_history'])) {
-            $medicalHistoryContext[] = "Family History: " . $inputData['family_history'];
-        }
-
-        if (!empty($inputData['social_history'])) {
-            $medicalHistoryContext[] = "Social/Lifestyle History: " . $inputData['social_history'];
-        }
-
-        if (!empty($inputData['visit_type'])) {
-            $medicalHistoryContext[] = "Visit Type: " . $inputData['visit_type'];
-        }
-
-        if (!empty($inputData['physician_notes'])) {
-            $medicalHistoryContext[] = "Physician Notes: " . $inputData['physician_notes'];
-        }
-
-        if (!empty($inputData['additional_notes'])) {
-            $medicalHistoryContext[] = "Additional Notes: " . $inputData['additional_notes'];
-        }
-
-        if (!empty($medicalHistoryContext)) {
-            $context .= "\nMEDICAL HISTORY CONTEXT:\n";
-            foreach ($medicalHistoryContext as $historyItem) {
-                $context .= "• {$historyItem}\n";
-            }
-            $context .= "\nConsider this medical history when formulating your differential diagnosis and treatment plan.\n";
-        }
-
-        // Add Head-to-Toe Assessment context
-        $headToToeContext = [];
-
-        if (!empty($inputData['head_to_toe_assessment'])) {
-            $assessment = $inputData['head_to_toe_assessment'];
-
-            // General Appearance
-            if (!empty($assessment['consciousness_level']) && $assessment['consciousness_level'] !== 'Alert') {
-                $headToToeContext[] = "Consciousness: " . $assessment['consciousness_level'];
-            }
-            if (!empty($assessment['mood_behavior']) && $assessment['mood_behavior'] !== 'Calm') {
-                $headToToeContext[] = "Mood/Behavior: " . $assessment['mood_behavior'];
-            }
-            if (!empty($assessment['speech_clarity']) && $assessment['speech_clarity'] !== 'Clear') {
-                $headToToeContext[] = "Speech: " . $assessment['speech_clarity'];
-            }
-            if (!empty($assessment['hygiene_level']) && $assessment['hygiene_level'] !== 'Good') {
-                $headToToeContext[] = "Hygiene: " . $assessment['hygiene_level'];
-            }
-
-            // HEENT
-            if (!empty($assessment['scalp_condition'])) {
-                $headToToeContext[] = "Scalp: " . $assessment['scalp_condition'];
-            }
-            if (!empty($assessment['pupil_reactivity']) && $assessment['pupil_reactivity'] !== 'PERRLA') {
-                $headToToeContext[] = "Pupils: " . $assessment['pupil_reactivity'];
-            }
-            if ($assessment['vision_issues']) {
-                $headToToeContext[] = "Vision issues present";
-            }
-            if ($assessment['hearing_issues']) {
-                $headToToeContext[] = "Hearing issues present";
-            }
-            if (!empty($assessment['oral_findings'])) {
-                $headToToeContext[] = "Oral findings: " . $assessment['oral_findings'];
-            }
-
-            // Neurological
-            if (!empty($assessment['orientation_level']) && $assessment['orientation_level'] !== 'Oriented x4') {
-                $headToToeContext[] = "Orientation: " . $assessment['orientation_level'];
-            }
-            if (!empty($assessment['limb_strength']) && $assessment['limb_strength'] !== 'Equal') {
-                $headToToeContext[] = "Limb strength: " . $assessment['limb_strength'];
-            }
-            if (!empty($assessment['reflexes']) && $assessment['reflexes'] !== 'Normal') {
-                $headToToeContext[] = "Reflexes: " . $assessment['reflexes'];
-            }
-            if (!empty($assessment['sensation_findings'])) {
-                $headToToeContext[] = "Sensation: " . $assessment['sensation_findings'];
-            }
-
-            // Neck and Chest
-            if (!empty($assessment['trachea_position']) && $assessment['trachea_position'] !== 'Midline') {
-                $headToToeContext[] = "Trachea: " . $assessment['trachea_position'];
-            }
-            if ($assessment['jvd_present']) {
-                $headToToeContext[] = "JVD present";
-            }
-            if (!empty($assessment['lung_sounds']) && $assessment['lung_sounds'] !== 'Clear') {
-                $headToToeContext[] = "Lung sounds: " . $assessment['lung_sounds'];
-            }
-            if (!empty($assessment['heart_sounds']) && $assessment['heart_sounds'] !== 'Normal') {
-                $headToToeContext[] = "Heart sounds: " . $assessment['heart_sounds'];
-            }
-            if (!empty($assessment['capillary_refill_time']) && $assessment['capillary_refill_time'] !== '< 2s') {
-                $headToToeContext[] = "Capillary refill: " . $assessment['capillary_refill_time'];
-            }
-
-            // Abdomen
-            if (!empty($assessment['abdominal_shape']) && $assessment['abdominal_shape'] !== 'Flat') {
-                $headToToeContext[] = "Abdomen: " . $assessment['abdominal_shape'];
-            }
-            if (!empty($assessment['bowel_sounds']) && $assessment['bowel_sounds'] !== 'Normal') {
-                $headToToeContext[] = "Bowel sounds: " . $assessment['bowel_sounds'];
-            }
-            if ($assessment['abdominal_tenderness']) {
-                $headToToeContext[] = "Abdominal tenderness present";
-            }
-            if ($assessment['nausea_or_vomiting']) {
-                $headToToeContext[] = "Nausea/vomiting present";
-            }
-            if (!empty($assessment['appetite_level']) && $assessment['appetite_level'] !== 'Good') {
-                $headToToeContext[] = "Appetite: " . $assessment['appetite_level'];
-            }
-
-            // Genitourinary
-            if ($assessment['urination_issues']) {
-                $headToToeContext[] = "Urination issues present";
-            }
-            if ($assessment['catheter_present']) {
-                $headToToeContext[] = "Catheter present";
-            }
-            if (!empty($assessment['urine_characteristics'])) {
-                $headToToeContext[] = "Urine: " . $assessment['urine_characteristics'];
-            }
-
-            // Musculoskeletal
-            if (!empty($assessment['range_of_motion']) && $assessment['range_of_motion'] !== 'Full') {
-                $headToToeContext[] = "Range of motion: " . $assessment['range_of_motion'];
-            }
-            if (!empty($assessment['gait_stability']) && $assessment['gait_stability'] !== 'Stable') {
-                $headToToeContext[] = "Gait: " . $assessment['gait_stability'];
-            }
-            if (!empty($assessment['assistive_devices'])) {
-                $headToToeContext[] = "Assistive devices: " . $assessment['assistive_devices'];
-            }
-
-            // Skin
-            if (!empty($assessment['skin_color']) && $assessment['skin_color'] !== 'Pink') {
-                $headToToeContext[] = "Skin color: " . $assessment['skin_color'];
-            }
-            if (!empty($assessment['skin_temperature']) && $assessment['skin_temperature'] !== 'Warm') {
-                $headToToeContext[] = "Skin temperature: " . $assessment['skin_temperature'];
-            }
-            if (!empty($assessment['skin_lesions'])) {
-                $headToToeContext[] = "Skin lesions: " . $assessment['skin_lesions'];
-            }
-            if ($assessment['pressure_ulcers']) {
-                $headToToeContext[] = "Pressure ulcers present";
-            }
-
-            // Pain Assessment
-            if (!empty($assessment['pain_score']) && $assessment['pain_score'] > 0) {
-                $headToToeContext[] = "Pain score: " . $assessment['pain_score'] . "/10";
-            }
-            if (!empty($assessment['pain_description'])) {
-                $headToToeContext[] = "Pain description: " . $assessment['pain_description'];
-            }
-        }
-
-        if (!empty($headToToeContext)) {
-            $context .= "\n🔍 COMPREHENSIVE PHYSICAL EXAMINATION ANALYSIS:\n";
-            $context .= "The following abnormal or significant physical examination findings require clinical correlation:\n\n";
-
-            // Group findings by system for better organization
-            $systemFindings = [
-                'neurological' => [],
-                'cardiovascular' => [],
-                'respiratory' => [],
-                'gastrointestinal' => [],
-                'genitourinary' => [],
-                'musculoskeletal' => [],
-                'integumentary' => [],
-                'general' => []
-            ];
-
-            foreach ($headToToeContext as $finding) {
-                if (strpos($finding, 'Consciousness') !== false || strpos($finding, 'Orientation') !== false ||
-                    strpos($finding, 'Limb strength') !== false || strpos($finding, 'Reflexes') !== false ||
-                    strpos($finding, 'Sensation') !== false || strpos($finding, 'Speech') !== false) {
-                    $systemFindings['neurological'][] = $finding;
-                } elseif (strpos($finding, 'Heart sounds') !== false || strpos($finding, 'Capillary refill') !== false ||
-                         strpos($finding, 'JVD') !== false) {
-                    $systemFindings['cardiovascular'][] = $finding;
-                } elseif (strpos($finding, 'Lung sounds') !== false || strpos($finding, 'Trachea') !== false) {
-                    $systemFindings['respiratory'][] = $finding;
-                } elseif (strpos($finding, 'Abdomen') !== false || strpos($finding, 'Bowel sounds') !== false ||
-                         strpos($finding, 'tenderness') !== false || strpos($finding, 'Nausea') !== false ||
-                         strpos($finding, 'Appetite') !== false) {
-                    $systemFindings['gastrointestinal'][] = $finding;
-                } elseif (strpos($finding, 'Urination') !== false || strpos($finding, 'Catheter') !== false ||
-                         strpos($finding, 'Urine') !== false) {
-                    $systemFindings['genitourinary'][] = $finding;
-                } elseif (strpos($finding, 'Range of motion') !== false || strpos($finding, 'Gait') !== false ||
-                         strpos($finding, 'Assistive devices') !== false) {
-                    $systemFindings['musculoskeletal'][] = $finding;
-                } elseif (strpos($finding, 'Skin') !== false || strpos($finding, 'Pressure ulcers') !== false) {
-                    $systemFindings['integumentary'][] = $finding;
-                } else {
-                    $systemFindings['general'][] = $finding;
-                }
-            }
-
-            foreach ($systemFindings as $system => $findings) {
-                if (!empty($findings)) {
-                    $systemName = ucfirst($system);
-                    $context .= "**{$systemName} System:**\n";
-                    foreach ($findings as $finding) {
-                        $context .= "  • {$finding}\n";
-                    }
-                    $context .= "\n";
-                }
-            }
-
-            $context .= "CLINICAL SIGNIFICANCE:\n";
-            $context .= "• These physical examination findings must be integrated with history and vital signs for accurate diagnosis\n";
-            $context .= "• Consider system-specific pathophysiology and potential multi-organ involvement\n";
-            $context .= "• Prioritize findings that suggest acute or life-threatening conditions\n";
-            $context .= "• Correlate abnormal findings with patient's chief complaint and symptom timeline\n";
-            $context .= "• Use these findings to guide diagnostic testing and therapeutic interventions\n\n";
-        }
-
-        // If no specific context was generated, return empty string
-        if ($context === "CLINICAL CONTEXT:\n") {
-            return "";
-        }
-
-        return $context;
-    }
-
-    /**
-     * Format the AI response to ensure it follows our structured format
-     * This helps standardize the output and ensure all required sections are present
-     */
-    private function formatResponseStructure($response)
-    {
-        // Check if the response already has a CASE URGENCY section
-        if (!preg_match('/CASE URGENCY:\s*(ROUTINE|URGENT|EMERGENCY)/i', $response)) {
-            // Try to determine urgency based on content
-            $urgencyLevel = "ROUTINE";
-
-            // Check for emergency keywords
-            if (preg_match('/(emergency|immediate attention|life-threatening|critical|severe|urgent intervention|stat)/i', $response)) {
-                $urgencyLevel = "EMERGENCY";
-            }
-            // Check for urgent keywords
-            else if (preg_match('/(urgent|prompt attention|soon|timely|priority)/i', $response)) {
-                $urgencyLevel = "URGENT";
-            }
-
-            // Add the urgency section at the beginning
-            $response = "CASE URGENCY: $urgencyLevel\n\n" . $response;
-        }
-
-        // Ensure section headers are properly formatted
-        $sections = [
-            'PATIENT INFORMATION' => 'PATIENT INFORMATION:',
-            'DIFFERENTIAL DIAGNOSIS' => 'A) DIFFERENTIAL DIAGNOSIS (PRIORITIZED):',
-            'RECOMMENDED INVESTIGATIONS' => 'B) RECOMMENDED INVESTIGATIONS:',
-            'MANAGEMENT RECOMMENDATIONS' => 'C) MANAGEMENT RECOMMENDATIONS:',
-            'CLINICAL CONSIDERATIONS' => 'D) CLINICAL CONSIDERATIONS & PRECAUTIONS:'
-        ];
-
-        foreach ($sections as $keyword => $formattedHeader) {
-            // Check if a section with this keyword exists but isn't properly formatted
-            if (preg_match('/(?:^|\n)(?!.*' . preg_quote($formattedHeader, '/') . ').*' . preg_quote($keyword, '/') . '.*(?:\n|:)/i', $response)) {
-                // Replace the improperly formatted header with the correct one
-                $response = preg_replace('/(?:^|\n)(?!.*' . preg_quote($formattedHeader, '/') . ').*' . preg_quote($keyword, '/') . '.*(?:\n|:)/i', "\n\n" . $formattedHeader . "\n", $response);
-            }
-            // If the section doesn't exist at all, we don't add it as it might not be applicable
-        }
-
-        // Ensure the old A) POSSIBLE DIAGNOSIS section is renamed to our new format
-        if (preg_match('/(?:^|\n)A\)\s*POSSIBLE\s*DIAGNOSIS/i', $response) && !preg_match('/DIFFERENTIAL DIAGNOSIS/i', $response)) {
-            $response = preg_replace('/(?:^|\n)A\)\s*POSSIBLE\s*DIAGNOSIS.*(?:\n|:)/i', "\n\nA) DIFFERENTIAL DIAGNOSIS (PRIORITIZED):\n", $response);
-        }
-
-        // Ensure the old B) RECOMMENDATIONS FOR TESTS section is renamed
-        if (preg_match('/(?:^|\n)B\)\s*RECOMMENDATIONS\s*FOR\s*TESTS/i', $response) && !preg_match('/RECOMMENDED INVESTIGATIONS/i', $response)) {
-            $response = preg_replace('/(?:^|\n)B\)\s*RECOMMENDATIONS\s*FOR\s*TESTS.*(?:\n|:)/i', "\n\nB) RECOMMENDED INVESTIGATIONS:\n", $response);
-        }
-
-        // Ensure the old C) TREATMENT RECOMMENDATIONS section is renamed
-        if (preg_match('/(?:^|\n)C\)\s*TREATMENT\s*RECOMMENDATIONS/i', $response) && !preg_match('/MANAGEMENT RECOMMENDATIONS/i', $response)) {
-            $response = preg_replace('/(?:^|\n)C\)\s*TREATMENT\s*RECOMMENDATIONS.*(?:\n|:)/i', "\n\nC) MANAGEMENT RECOMMENDATIONS:\n", $response);
-        }
-
-        // Ensure the old D) WARNING SIGNS section is renamed
-        if (preg_match('/(?:^|\n)D\)\s*WARNING\s*SIGNS/i', $response) && !preg_match('/CLINICAL CONSIDERATIONS/i', $response)) {
-            $response = preg_replace('/(?:^|\n)D\)\s*WARNING\s*SIGNS.*(?:\n|:)/i', "\n\nD) CLINICAL CONSIDERATIONS & PRECAUTIONS:\n", $response);
-        }
-
-        // Add styling for probability percentages to make them stand out
-        $response = preg_replace('/(\d{1,3})%/i', '<strong>$1%</strong>', $response);
-
-        // Highlight emergency warnings
-        $response = preg_replace('/(emergency|immediate attention needed|life-threatening|critical condition)/i', '<span style="color: red; font-weight: bold;">$1</span>', $response);
-
-        // Highlight urgent/emergency case urgency
-        $response = preg_replace('/(CASE URGENCY:\s*)(URGENT|EMERGENCY)/i', '$1<span style="color: red; font-weight: bold;">$2</span>', $response);
-
-        return $response;
-    }
-
-    /**
-     * Track OpenAI token usage for billing purposes
-     */
-    private function trackTokenUsage($response, string $requestType = 'diagnosis'): void
-    {
-        try {
-            $usage = $response['usage'] ?? null;
-
-            if (!$usage) {
-                \Log::warning('No usage data found in OpenAI response');
-                return;
-            }
-
-            $promptTokens = $usage['prompt_tokens'] ?? 0;
-            $completionTokens = $usage['completion_tokens'] ?? 0;
-            $totalTokens = $usage['total_tokens'] ?? ($promptTokens + $completionTokens);
-
-            // Get model from response or default
-            $model = $response['model'] ?? 'gpt-4o';
-
-            // Calculate cost estimate with proper model and token breakdown
-            $costEstimate = OpenAIUsage::calculateCost($totalTokens, $model, $promptTokens, $completionTokens);
-
-            // Store usage record
-            OpenAIUsage::create([
-                'user_id' => auth()->id(),
-                'request_type' => $requestType,
-                'prompt_tokens' => $promptTokens,
-                'completion_tokens' => $completionTokens,
-                'total_tokens' => $totalTokens,
-                'cost_estimate' => $costEstimate,
-                'model_used' => $model,
-                'request_metadata' => [
-                    'timestamp' => now()->toISOString(),
-                    'user_agent' => request()->userAgent(),
-                    'ip_address' => request()->ip(),
-                ]
-            ]);
-
-            // Check if user is approaching their token limit
-            $user = auth()->user();
-            if ($user) {
-                $this->checkTokenLimits($user);
-                $this->checkCostLimits($user);
-            }
-
-        } catch (\Exception $e) {
-            \Log::error('Failed to track token usage: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Check if user is approaching token limits and send notifications
-     */
-    private function checkTokenLimits($user): void
-    {
-        try {
-            $monthlyUsage = $user->getMonthlyTokenUsage();
-            $planConfig = $user->getPlanConfig();
-            $tokenLimit = $planConfig['token_limit'] ?? 0;
-
-            // Skip check for unlimited plans
-            if ($tokenLimit === -1) {
-                return;
-            }
-
-            // Calculate usage percentage
-            $usagePercentage = $tokenLimit > 0 ? ($monthlyUsage / $tokenLimit) * 100 : 0;
-
-            // Send warning at 80% usage (once per day)
-            if ($usagePercentage >= 80 && $usagePercentage < 95) {
-                $cacheKey = "usage_warning_80_{$user->id}_" . now()->format('Y-m-d');
-                if (!Cache::has($cacheKey)) {
-                    Mail::to($user->email)->send(new UsageWarning($user, (int)$usagePercentage, $monthlyUsage, $tokenLimit));
-                    Cache::put($cacheKey, true, now()->addDay());
-                    \Log::info("Usage warning email sent to user {$user->id} at {$usagePercentage}% usage");
-                }
-            }
-
-            // Send critical warning at 95% usage (once per day)
-            if ($usagePercentage >= 95) {
-                $cacheKey = "usage_warning_95_{$user->id}_" . now()->format('Y-m-d');
-                if (!Cache::has($cacheKey)) {
-                    Mail::to($user->email)->send(new UsageWarning($user, (int)$usagePercentage, $monthlyUsage, $tokenLimit));
-                    Cache::put($cacheKey, true, now()->addDay());
-                    \Log::warning("Critical usage warning email sent to user {$user->id} at {$usagePercentage}% usage");
-                }
-            }
-
-        } catch (\Exception $e) {
-            \Log::error('Failed to check token limits: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Check if user is approaching cost limits and send notifications
-     */
-    private function checkCostLimits($user): void
-    {
-        try {
-            if ($user->monthly_cost_limit <= 0) {
-                return; // No limit set
-            }
-
-            $monthlyCost = $user->getMonthlyCostEstimate();
-            $costLimit = $user->monthly_cost_limit;
-            $usagePercentage = $user->getCostUsagePercentage();
-
-            // Send warning at 80% usage (once per day)
-            if ($usagePercentage >= 80 && $usagePercentage < 95) {
-                $cacheKey = "cost_warning_80_{$user->id}_" . now()->format('Y-m-d');
-                if (!Cache::has($cacheKey)) {
-                    // Log warning - you can extend this to send emails if needed
-                    \Log::info("Cost usage warning for user {$user->id}: {$usagePercentage}% of limit used");
-                    Cache::put($cacheKey, true, now()->addDay());
-                }
-            }
-
-            // Send critical warning at 95% usage (once per day)
-            if ($usagePercentage >= 95) {
-                $cacheKey = "cost_warning_95_{$user->id}_" . now()->format('Y-m-d');
-                if (!Cache::has($cacheKey)) {
-                    \Log::warning("Critical cost usage warning for user {$user->id}: {$usagePercentage}% of limit used");
-                    Cache::put($cacheKey, true, now()->addDay());
-                }
-            }
-
-            // Log when user exceeds limit
-            if ($monthlyCost > $costLimit) {
-                $excessCost = $monthlyCost - $costLimit;
-                $cacheKey = "cost_exceeded_{$user->id}_" . now()->format('Y-m-d');
-                if (!Cache::has($cacheKey)) {
-                    \Log::warning("User {$user->id} exceeded cost limit by $" . number_format($excessCost, 2));
-                    Cache::put($cacheKey, true, now()->addDay());
-                }
-            }
-
-        } catch (\Exception $e) {
-            \Log::error('Failed to check cost limits: ' . $e->getMessage());
-        }
+        
+        return view('patient-dashboard', compact(
+            'appointments',
+            'diagnoses',
+            'reviews',
+            'stats'
+        ));
     }
 }

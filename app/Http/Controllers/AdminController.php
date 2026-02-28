@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ManualReminderMail;
+use App\Services\EmailService;
+use App\Services\NotificationService;
 use App\Models\User;
 use App\Models\Setting;
 use App\Models\Doctor;
@@ -9,6 +12,8 @@ use App\Models\Specialty;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Models\OpenAIUsage;
 use App\Models\Subscription;
@@ -18,6 +23,7 @@ use App\Models\MonthlyInvoiceSetting;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules;
+
 use Carbon\Carbon;
 
 class AdminController extends Controller
@@ -25,13 +31,30 @@ class AdminController extends Controller
     /**
      * Display a listing of all users.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with(['setting', 'patientAnalyses', 'monthlyInvoiceSetting', 'doctor'])
+        // Get doctors with their relationships
+        $doctors = User::with(['setting', 'monthlyInvoiceSetting', 'doctor', 'hospital', 'doctor.specialty'])
+                    ->where('role', 'doctor')
                     ->orderBy('created_at', 'desc')
-                    ->paginate(15);
+                    ->paginate(10, ['*'], 'doctors_page');
 
-        return view('admin.users.index', compact('users'));
+        // Get patients with their primary doctor info
+        $patients = User::with(['setting', 'primaryDoctor' => function($query) {
+                        $query->with('doctor');
+                    }])
+                    ->where('role', 'patient')
+                    ->withCount(['appointments'])
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(10, ['*'], 'patients_page');
+
+        // Get counts
+        $stats = [
+            'total_doctors' => User::where('role', 'doctor')->count(),
+            'total_patients' => User::where('role', 'patient')->count(),
+        ];
+
+        return view('admin.users.index', compact('doctors', 'patients', 'stats'));
     }
 
     /**
@@ -52,31 +75,65 @@ class AdminController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'phone' => ['required', 'string', 'regex:/^\+?[1-9]\d{6,14}$/', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'specialty_select' => ['nullable', 'string', 'max:255'],
-            'custom_specialty' => ['nullable', 'string', 'max:255'],
-            'specialty' => ['required', 'string', 'max:255'],
-            'billing_amount' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'role' => ['required', 'string', 'in:doctor,hospital_admin,patient'],
+            'date_of_birth' => ['nullable', 'date', 'before:today'],
+            'gender' => ['nullable', 'in:male,female,other'],
             'monthly_cost_limit' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
-            'subscription_period_months' => ['nullable', 'integer', 'in:1,3,6,12,24,36,-1'],
             'grace_period_days' => ['nullable', 'integer', 'min:1', 'max:30'],
             'warning_period_days' => ['nullable', 'integer', 'min:1', 'max:14'],
             'reminder_frequency_days' => ['nullable', 'integer', 'min:1', 'max:30'],
         ];
 
-        // Validate the request
-        $request->validate($validationRules);
-
-        // Process specialty field based on form input
-        $specialty = $request->specialty;
-        if ($request->specialty_select === 'other' && $request->filled('custom_specialty')) {
-            $specialty = trim($request->custom_specialty);
-        } elseif ($request->filled('specialty_select') && $request->specialty_select !== 'other') {
-            $specialty = $request->specialty_select;
+        // Add role-specific validation rules
+        if ($request->role === 'doctor') {
+            $validationRules['specialty_select'] = ['nullable', 'string', 'max:255'];
+            $validationRules['custom_specialty'] = ['nullable', 'string', 'max:255'];
+            $validationRules['specialty'] = ['required', 'string', 'max:255'];
         }
 
-        // Ensure we have a valid specialty
-        if (empty($specialty)) {
-            return back()->withErrors(['specialty' => 'Please select a medical specialty.'])->withInput();
+        // Hospital admin will manage their own hospital info after creation
+        // No hospital validation needed during user creation
+
+        // Custom validation messages
+        $messages = [];
+
+        // Validate the request
+        $request->validate($validationRules, $messages);
+
+        // For hospital admin, assign to first available hospital or create a default one
+        $hospitalId = null;
+        if ($request->role === 'hospital_admin') {
+            $hospital = \App\Models\Hospital::where('is_active', true)->first();
+            if (!$hospital) {
+                // Create a default hospital if none exists
+                $hospital = \App\Models\Hospital::create([
+                    'name' => 'Default Medical Center',
+                    'address' => 'Medical District',
+                    'city' => 'Healthcare City',
+                    'state' => 'Medical State',
+                    'zip_code' => '12345',
+                    'phone' => '+1234567890',
+                    'email' => 'info@defaultmedical.com',
+                    'is_active' => true,
+                ]);
+            }
+            $hospitalId = $hospital->id;
+        }
+
+        // Process specialty field for doctors
+        $specialty = null;
+        if ($request->role === 'doctor') {
+            $specialty = $request->specialty;
+            if ($request->specialty_select === 'other' && $request->filled('custom_specialty')) {
+                $specialty = trim($request->custom_specialty);
+            } elseif ($request->filled('specialty_select') && $request->specialty_select !== 'other') {
+                $specialty = $request->specialty_select;
+            }
+
+            // Ensure we have a valid specialty for doctors
+            if (empty($specialty)) {
+                return back()->withErrors(['specialty' => 'Please select a medical specialty.'])->withInput();
+            }
         }
 
         $userData = [
@@ -85,63 +142,111 @@ class AdminController extends Controller
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
             'monthly_cost_limit' => $request->monthly_cost_limit ?? 0,
-            'role' => 'doctor', // Set role to doctor for medical AI users
+            'role' => $request->role,
+            'hospital_id' => $hospitalId,
+            'date_of_birth' => $request->date_of_birth,
+            'gender' => $request->gender,
         ];
 
         // Create the user first
         $user = User::create($userData);
 
-        // Create user settings with specialty
-        $user->setting()->create([
-            'specialty' => $specialty,
-            'criterion' => 'CDC', // Default criterion
-        ]);
+        // Start trial for ALL users (consistent with self-registration)
+        $user->startTrial();
 
-        // Create doctor profile for doctor users
+        // Create role-specific profiles and settings
         if ($user->role === 'doctor') {
-            // Get or create a default specialty for the doctor profile
+            // Create user settings with specialty
+            $user->setting()->create([
+                'specialty' => $specialty,
+                'criterion' => 'CDC', // Default criterion
+            ]);
+
+            // Create doctor profile for doctor users
             $doctorSpecialty = Specialty::where('name', $specialty)->first();
             if (!$doctorSpecialty) {
                 $doctorSpecialty = Specialty::first(); // Use first available specialty
             }
 
-            if ($doctorSpecialty) {
-                $user->doctor()->create([
-                    'specialty_id' => $doctorSpecialty->id,
-                    'license_number' => 'LIC' . str_pad($user->id, 6, '0', STR_PAD_LEFT),
-                    'bio' => 'Medical professional using AI-assisted diagnosis system.',
-                    'consultation_fee' => 5000, // $50.00 in cents
-                    'appointment_duration' => 30,
+            // If still no specialty found, create a default one
+            if (!$doctorSpecialty) {
+                $doctorSpecialty = Specialty::create([
+                    'name' => 'General Medicine',
+                    'description' => 'Primary care and general health management',
                     'is_active' => true,
-                    'is_verified' => true
                 ]);
             }
-        }
 
-        // Create monthly invoice setting using provided amount or system defaults
-        $monthlyAmount = $request->billing_amount;
-        $subscriptionPeriod = $request->subscription_period_months ?? 1;
-        $gracePeriod = $request->grace_period_days ?? SystemSetting::get('default_grace_period', 7);
-        $warningPeriod = $request->warning_period_days ?? 3;
-        $reminderFrequency = $request->reminder_frequency_days ?? 3;
-
-        // Use system default if no amount provided
-        if (!$monthlyAmount && SystemSetting::get('default_monthly_amount')) {
-            $monthlyAmount = SystemSetting::get('default_monthly_amount');
-        }
-
-        if ($monthlyAmount && $monthlyAmount > 0) {
-            $user->monthlyInvoiceSetting()->create([
-                'billing_amount' => $monthlyAmount,
-                'subscription_period_months' => $subscriptionPeriod,
+            // Create the Doctor model with default values
+            $doctor = Doctor::create([
+                'user_id' => $user->id,
+                'specialty_id' => $doctorSpecialty->id,
+                'license_number' => 'TEMP-' . strtoupper(Str::random(8)) . '-' . $user->id,
+                'phone' => $user->phone,
+                'consultation_fee' => 0, // Default fee
+                'appointment_duration' => 30, // Default 30 minutes
+                'auto_approve_appointments' => true,
+                'allow_cancellation' => true,
+                'allow_rescheduling' => true,
+                'cancellation_hours' => 24, // 24 hours notice required
+                'average_rating' => 0,
+                'total_reviews' => 0,
                 'is_active' => true,
-                'grace_period_days' => $gracePeriod,
-                'warning_period_days' => $warningPeriod,
-                'reminder_frequency_days' => $reminderFrequency,
-                'restricted_pages' => ['ask-ai', 'dashboard', 'cases'],
-                'is_restricted' => false,
+                'is_verified' => true,
+                'ai_chat_enabled' => true,
+            ]);
+
+            // Log doctor creation for debugging visibility issues
+            Log::info('Doctor created by admin', [
+                'doctor_id' => $doctor->id,
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'is_active' => $doctor->is_active,
+                'is_verified' => $doctor->is_verified,
+                'created_by' => 'admin',
+                'will_be_visible_to_patients' => $doctor->is_active && $doctor->is_verified,
+            ]);
+        } elseif ($user->role === 'hospital_admin') {
+            // Create basic settings for hospital admin (no specialty needed)
+            $user->setting()->create([
+                'specialty' => 'Hospital Administration',
+                'criterion' => 'CDC', // Default criterion
+            ]);
+        } elseif ($user->role === 'patient') {
+            // Create basic settings for patient
+            $user->setting()->create([
+                'specialty' => 'Patient',
+                'criterion' => 'CDC', // Default criterion
             ]);
         }
+
+        // Create monthly invoice setting with global SaaS pricing
+        $setting = $user->getOrCreateMonthlyInvoiceSetting();
+
+        // Get global SaaS pricing from system settings (default to Professional plan)
+        $monthlyPrice = SystemSetting::get('saas_professional_monthly', 99.00);
+        $yearlyPrice = SystemSetting::get('saas_professional_yearly', 950.00);
+
+        // Prepare update data with defaults
+        $updateData = [
+            'grace_period_days' => (int) ($request->grace_period_days ?? SystemSetting::get('default_grace_period', 7)),
+            'warning_period_days' => (int) ($request->warning_period_days ?? 3),
+            'reminder_frequency_days' => (int) ($request->reminder_frequency_days ?? 3),
+            'subscription_period_months' => 1, // Default to monthly
+            'is_active' => true,
+            'is_restricted' => false,
+            'restricted_pages' => ['ai.ask-ai', 'dashboard', 'cases'],
+            // Use global SaaS pricing
+            'monthly_price' => $monthlyPrice,
+            'yearly_price' => $yearlyPrice,
+        ];
+
+        // Set billing amount if provided (for custom billing scenarios)
+        if ($request->billing_amount) {
+            $updateData['billing_amount'] = $request->billing_amount;
+        }
+
+        $setting->update($updateData);
 
         return redirect()->route('admin.users.index')
                         ->with('success', 'User created successfully with monthly invoice settings.');
@@ -172,16 +277,16 @@ class AdminController extends Controller
     {
         $validationRules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'phone' => ['required', 'string', 'regex:/^\+?[1-9]\d{6,14}$/', 'unique:users,phone,'.$user->id],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id ?? ''],
+            'phone' => ['required', 'string', 'regex:/^\+?[1-9]\d{6,14}$/', 'unique:users,phone,'.$user->id ?? ''],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'specialty_select' => ['nullable', 'string', 'max:255'],
             'custom_specialty' => ['nullable', 'string', 'max:255'],
             'specialty' => ['required', 'string', 'max:255'],
-            'billing_amount' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'monthly_cost_limit' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'grace_period_days' => ['nullable', 'integer', 'min:1', 'max:30'],
             'reminder_frequency_days' => ['nullable', 'integer', 'min:1', 'max:30'],
+            'is_verified' => ['nullable', 'boolean'],
         ];
 
         // Validate the request
@@ -197,6 +302,11 @@ class AdminController extends Controller
 
         if ($request->filled('password')) {
             $userData['password'] = Hash::make($request->password);
+        }
+
+        // Handle email verification status
+        if ($request->has('is_verified')) {
+            $userData['email_verified_at'] = $request->boolean('is_verified') ? now() : null;
         }
 
         // Process specialty field based on form input
@@ -226,53 +336,123 @@ class AdminController extends Controller
             ]);
         }
 
-        // Update or create monthly invoice setting
-        if ($request->filled('billing_amount') && $request->billing_amount > 0) {
-            $monthlyData = [
-                'billing_amount' => $request->billing_amount,
-                'is_active' => true,
-                'grace_period_days' => $request->grace_period_days ?? 7,
-                'reminder_frequency_days' => $request->reminder_frequency_days ?? 3,
-                'restricted_pages' => ['ask-ai', 'dashboard', 'cases'],
-            ];
+        // Update monthly invoice setting with user-specific or global pricing
+        $setting = $user->monthlyInvoiceSetting ?? $user->getOrCreateMonthlyInvoiceSetting();
 
-            if ($user->monthlyInvoiceSetting) {
-                $user->monthlyInvoiceSetting->update($monthlyData);
-            } else {
-                $monthlyData['is_restricted'] = false;
-                $user->monthlyInvoiceSetting()->create($monthlyData);
+        // Always update grace period and reminder frequency settings
+        $updateData = [
+            'grace_period_days' => (int) ($request->grace_period_days ?? 7),
+            'reminder_frequency_days' => (int) ($request->reminder_frequency_days ?? 3),
+        ];
+
+        // Update pricing: use user-specific pricing if provided, otherwise use global SaaS pricing
+        if ($request->filled('monthly_price') || $request->filled('yearly_price')) {
+            // Use user-specific pricing when provided
+            if ($request->filled('monthly_price')) {
+                $updateData['monthly_price'] = $request->monthly_price;
             }
-        } elseif ($user->monthlyInvoiceSetting) {
-            // If monthly amount is removed, deactivate the setting
-            $user->monthlyInvoiceSetting->update(['is_active' => false]);
+            if ($request->filled('yearly_price')) {
+                $updateData['yearly_price'] = $request->yearly_price;
+            }
+        } else {
+            // Fall back to global SaaS pricing from system settings
+            $updateData['monthly_price'] = SystemSetting::get('saas_professional_monthly', 99.00);
+            $updateData['yearly_price'] = SystemSetting::get('saas_professional_yearly', 950.00);
         }
+}
 
-        return redirect()->route('admin.users.index')
-                        ->with('success', 'User updated successfully.');
+/**
+ * Remove the specified user from storage.
+ */
+public function destroy(User $user)
+{
+    // Check if admin is authenticated
+    if (!auth('admin')->check()) {
+        return redirect()->route('admin.login')->with('error', 'You must be logged in as admin.');
     }
 
-    /**
-     * Remove the specified user from storage.
-     */
-    public function destroy(User $user)
-    {
-        // Prevent admin from deleting themselves
-        if ($user->id === auth()->id()) {
-            return redirect()->route('admin.users.index')
-                            ->with('error', 'You cannot delete your own account.');
-        }
+    $admin = auth('admin')->user();
 
-        $user->delete();
+    // Clean up related data
+    // Delete patient analyses
+    $user->patientAnalyses()->delete();
 
-        return redirect()->route('admin.users.index')
-                        ->with('success', 'User deleted successfully.');
+    // Delete doctor profile if exists
+    if ($user->doctor) {
+        $user->doctor()->delete();
     }
 
+    // Delete appointments
+    $user->appointments()->delete();
 
+    // Delete reviews
+    $user->reviews()->delete();
 
-    /**
-     * Show admin dashboard with statistics.
-     */
+    // Delete subscriptions
+    $user->subscriptions()->delete();
+
+    // Delete OpenAI usages
+    $user->openaiUsages()->delete();
+
+    // Delete Stripe invoices
+    $user->stripeInvoices()->delete();
+
+    // Delete monthly invoice setting
+    if ($user->monthlyInvoiceSetting) {
+        $user->monthlyInvoiceSetting()->delete();
+    }
+
+    // Detach permissions (many-to-many)
+    $user->permissions()->detach();
+
+    // Delete user permissions
+    $user->userPermissions()->delete();
+
+    // Delete doctor notes
+    $user->doctorNotes()->delete();
+
+    // Delete patient notes
+    $user->patientNotes()->delete();
+
+    // Delete diagnoses
+    $user->doctorDiagnoses()->delete();
+    $user->patientDiagnoses()->delete();
+
+    // Delete diagnosis follow-ups
+    $user->diagnosisFollowUps()->delete();
+
+    // Delete AI assistant results
+    $user->doctorAiAssistantResults()->delete();
+    $user->patientAiAssistantResults()->delete();
+
+    // Delete notifications
+    $user->notifications()->delete();
+
+    // Delete notification preferences
+    if ($user->notificationPreferences) {
+        $user->notificationPreferences()->delete();
+    }
+
+    // Handle assigned patients - set their primary_doctor_id to null
+    if ($user->isDoctor()) {
+        $user->assignedPatients()->update(['primary_doctor_id' => null]);
+    }
+
+    // Handle sub-users - delete them as well
+    if ($user->subUsers()->exists()) {
+        $user->subUsers()->delete();
+    }
+
+    // Finally, delete the user
+    $user->delete();
+
+    return redirect()->route('admin.users.index')
+                    ->with('success', 'User deleted successfully.');
+}
+
+/**
+ * Show admin dashboard with statistics.
+ */
     public function dashboard()
     {
         $stats = [
@@ -289,7 +469,6 @@ class AdminController extends Controller
 
     /**
      * Display patient analyses for a specific user.
-     */
     public function userPatientAnalyses(User $user)
     {
         $patientAnalyses = $user->patientAnalyses()
@@ -347,39 +526,54 @@ class AdminController extends Controller
                 $endDate = Carbon::now()->endOfMonth();
         }
 
-        // Get users with their subscription and usage data
-        $users = User::with(['activeSubscription', 'openaiUsages' => function($query) use ($startDate, $endDate) {
-            $query->whereBetween('created_at', [$startDate, $endDate]);
-        }])
-        ->withCount(['openaiUsages as total_requests' => function($query) use ($startDate, $endDate) {
-            $query->whereBetween('created_at', [$startDate, $endDate]);
-        }])
-        ->get()
+        // Get users with their monthly invoice settings and usage data
+        // Filter to show only doctors and hospital admins (billable users)
+        $users = User::whereIn('role', ['doctor', 'hospital_admin'])
+            ->with(['monthlyInvoiceSetting', 'openaiUsages' => function($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            }])
+            ->withCount(['openaiUsages as total_requests' => function($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            }])
+            ->get()
         ->map(function ($user) use ($startDate, $endDate) {
-            $usage = OpenAIUsage::getUserUsageStats($user->id, $startDate, $endDate);
+            $usage = OpenAIUsage::getUserUsageStats($user?->id, $startDate, $endDate);
+            $setting = $user->monthlyInvoiceSetting;
 
             return [
-                'id' => $user->id,
+                'id' => $user?->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'current_plan' => $user->current_plan,
-                'subscription_active' => $user->subscription_active,
-                'subscription_ends_at' => $user->subscription_ends_at,
+                'phone' => $user->phone,
+                'role' => $user->role,
                 'stripe_customer_id' => $user->stripe_customer_id,
                 'total_requests' => $usage['total_requests'],
                 'total_tokens' => $usage['total_tokens'],
                 'total_cost' => $usage['total_cost'],
                 'monthly_usage' => $user->getMonthlyTokenUsage(),
-                'token_limit' => $user->getPlanConfig()['token_limit'] ?? 0,
-                'usage_percentage' => $this->calculateUsagePercentage($user),
-                'subscription' => $user->activeSubscription,
+                'monthly_cost_limit' => $user->monthly_cost_limit,
+                'cost_usage_percentage' => $user->getCostUsagePercentage(),
+                // Monthly Invoice Settings Data
+                'monthly_price' => $setting->monthly_price ?? 0,
+                'yearly_price' => $setting->yearly_price ?? 0,
+                'billing_amount' => $setting->billing_amount ?? 0,
+                'subscription_status' => $setting ? $setting->getSubscriptionStatus() : 'setup_pending',
+                'subscription_starts_at' => $setting->subscription_starts_at ?? null,
+                'subscription_ends_at' => $setting->subscription_ends_at ?? null,
+                'is_active' => $setting->is_active ?? false,
+                'is_restricted' => $setting->is_restricted ?? false,
+                'grace_period_days' => $setting->grace_period_days ?? 0,
+                'warning_period_days' => $setting->warning_period_days ?? 0,
+                'days_remaining' => $setting ? $setting->getDaysRemaining() : null,
+                'setting' => $setting,
             ];
         });
 
         // Calculate totals
         $totals = [
             'total_users' => $users->count(),
-            'active_subscribers' => $users->where('subscription_active', true)->count(),
+            'active_subscribers' => $users->where('is_active', true)->count(),
+            'restricted_users' => $users->where('is_restricted', true)->count(),
             'total_requests' => $users->sum('total_requests'),
             'total_tokens' => $users->sum('total_tokens'),
             'total_cost' => $users->sum('total_cost'),
@@ -415,24 +609,28 @@ class AdminController extends Controller
                 $endDate = Carbon::now()->endOfMonth();
         }
 
-        $users = User::with(['activeSubscription'])
+        $users = User::whereIn('role', ['doctor', 'hospital_admin'])
+            ->with(['monthlyInvoiceSetting'])
             ->get()
             ->map(function ($user) use ($startDate, $endDate) {
-                $usage = OpenAIUsage::getUserUsageStats($user->id, $startDate, $endDate);
+                $usage = OpenAIUsage::getUserUsageStats($user?->id, $startDate, $endDate);
+                $setting = $user->monthlyInvoiceSetting;
                 return [
-                    'User ID' => $user->id,
+                    'User ID' => $user?->id,
                     'Name' => $user->name,
                     'Email' => $user->email,
-                    'Current Plan' => ucfirst($user->current_plan),
-                    'Subscription Active' => $user->subscription_active ? 'Yes' : 'No',
-                    'Subscription Ends' => $user->subscription_ends_at ? $user->subscription_ends_at->format('Y-m-d') : 'N/A',
+                    'Monthly Price' => $setting ? '$' . number_format((float)$setting->monthly_price, 2) : 'N/A',
+                    'Yearly Price' => $setting ? '$' . number_format((float)$setting->yearly_price, 2) : 'N/A',
+                    'Current Billing' => $setting && $setting->billing_amount > 0 ? '$' . number_format((float)$setting->billing_amount, 2) : 'Not chosen',
+                    'Subscription Status' => $setting ? $setting->getSubscriptionStatus() : 'setup_pending',
+                    'Subscription Ends' => $user->getSubscriptionEndDate() ? $user->getSubscriptionEndDate()->format('Y-m-d') : 'N/A',
                     'Stripe Customer ID' => $user->stripe_customer_id ?? 'N/A',
                     'Total Requests' => $usage['total_requests'],
-                    'Total Tokens' => number_format($usage['total_tokens']),
-                    'Estimated Cost' => '$' . number_format($usage['total_cost'], 4),
-                    'Monthly Token Usage' => number_format($user->getMonthlyTokenUsage()),
-                    'Token Limit' => $user->getPlanConfig()['token_limit'] === -1 ? 'Unlimited' : number_format($user->getPlanConfig()['token_limit'] ?? 0),
-                    'Usage Percentage' => number_format($this->calculateUsagePercentage($user), 2) . '%',
+                    'Total Tokens' => number_format((int)$usage['total_tokens']),
+                    'Estimated Cost' => '$' . number_format((float)$usage['total_cost'], 4),
+                    'Monthly Token Usage' => number_format((int)$user->getMonthlyTokenUsage()),
+                    'Cost Limit' => $user->monthly_cost_limit ? '$' . number_format((float)$user->monthly_cost_limit, 2) : 'Unlimited',
+                    'Cost Usage Percentage' => number_format((float)$user->getCostUsagePercentage(), 2) . '%',
                 ];
             });
 
@@ -508,6 +706,7 @@ class AdminController extends Controller
                   ->selectRaw('user_id, SUM(total_tokens) as total_tokens, SUM(cost_estimate) as total_cost')
                   ->groupBy('user_id');
         }])
+        ->groupBy('id')
         ->having('total_requests', '>', 0)
         ->orderBy('total_requests', 'desc')
         ->limit(10)
@@ -579,6 +778,11 @@ class AdminController extends Controller
             'show_pricing_section' => 'boolean',
             'default_monthly_amount' => 'nullable|numeric|min:0|max:9999.99',
             'default_grace_period' => 'nullable|integer|min:1|max:30',
+            'trial_days' => 'nullable|integer|min:0|max:365', // allow 0 to disable trials
+            // New SaaS pricing settings
+            'saas_professional_monthly' => 'nullable|numeric|min:0|max:9999.99',
+            'saas_professional_yearly' => 'nullable|numeric|min:0|max:99999.99',
+
         ]);
 
         // Update pricing section visibility
@@ -589,15 +793,7 @@ class AdminController extends Controller
             'Show/hide the pricing information section on the home page'
         );
 
-        // Update default monthly amount
-        if ($request->filled('default_monthly_amount')) {
-            SystemSetting::set(
-                'default_monthly_amount',
-                $request->default_monthly_amount,
-                'decimal',
-                'Default monthly amount for new user accounts'
-            );
-        }
+        // Note: default_monthly_amount setting is deprecated - now using per-user pricing
 
         // Update default grace period
         if ($request->filled('default_grace_period')) {
@@ -608,6 +804,37 @@ class AdminController extends Controller
                 'Default grace period in days for new user accounts'
             );
         }
+
+        // Update trial days
+        if ($request->filled('trial_days')) {
+            SystemSetting::set(
+                'trial_days',
+                $request->trial_days,
+                'integer',
+                'Number of free trial days for new users'
+            );
+        }
+
+        // Update SaaS Professional Plan pricing
+        if ($request->filled('saas_professional_monthly')) {
+            SystemSetting::set(
+                'saas_professional_monthly',
+                $request->saas_professional_monthly,
+                'decimal',
+                'Professional plan monthly price'
+            );
+        }
+
+        if ($request->filled('saas_professional_yearly')) {
+            SystemSetting::set(
+                'saas_professional_yearly',
+                $request->saas_professional_yearly,
+                'decimal',
+                'Professional plan yearly price'
+            );
+        }
+
+
 
         return redirect()->back()->with('success', 'System settings updated successfully.');
     }
@@ -737,7 +964,7 @@ class AdminController extends Controller
             ));
 
         } catch (\Exception $e) {
-            \Log::error('Error in showSendRemindersForm: ' . $e->getMessage());
+            Log::error('Error in showSendRemindersForm: ' . $e->getMessage());
             return redirect()->route('admin.dashboard')
                 ->with('error', 'Unable to load reminders form. Please try again.');
         }
@@ -750,8 +977,15 @@ class AdminController extends Controller
     {
         try {
             // Log the request data for debugging
-            \Log::info('Manual reminders request data:', $request->all());
-            \Log::info('Manual reminders started by admin: ' . auth('admin')->user()->email);
+            Log::info('Manual reminders request data:', $request->all());
+            Log::info('Manual reminders started by admin: ' . Auth::user()->email);
+
+            // Log mail configuration for debugging
+            Log::info('Mail configuration check:', [
+                'mail_mailer' => config('mail.default'),
+                'mail_host' => config('mail.mailers.smtp.host'),
+                'mail_from' => config('mail.from.address')
+            ]);
 
             $request->validate([
                 'reminder_type' => 'required|in:grace_period,warning_period,overdue,all',
@@ -760,9 +994,9 @@ class AdminController extends Controller
                 'force_send' => 'boolean'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Manual reminders validation failed:', $e->errors());
+            Log::error('Manual reminders validation failed:', $e->errors());
             return redirect()->back()
-                ->withErrors($e->validator)
+                ->withErrors($e->validator ?? null)
                 ->withInput()
                 ->with('error', 'Please check your input and try again.');
         }
@@ -811,19 +1045,6 @@ class AdminController extends Controller
                         'errors' => $overdueResults['errors']
                     ];
                     break;
-
-                case 'all':
-                    $graceResults = $this->sendGracePeriodReminders(null, $request->boolean('force_send'));
-                    $warningResults = $this->sendWarningPeriodReminders(null, $request->boolean('force_send'));
-                    $overdueResults = $this->sendOverdueReminders(null, $request->boolean('force_send'));
-
-                    $results = [
-                        'grace_reminders_sent' => $graceResults['grace_reminders_sent'],
-                        'warning_reminders_sent' => $warningResults['warning_reminders_sent'],
-                        'overdue_reminders_sent' => $overdueResults['overdue_reminders_sent'],
-                        'errors' => array_merge($graceResults['errors'], $warningResults['errors'], $overdueResults['errors'])
-                    ];
-                    break;
             }
 
             $totalSent = $results['grace_reminders_sent'] + $results['warning_reminders_sent'] + $results['overdue_reminders_sent'];
@@ -860,11 +1081,7 @@ class AdminController extends Controller
     private function sendGracePeriodReminders($userIds = null, $forceSend = false)
     {
         $results = ['grace_reminders_sent' => 0, 'errors' => []];
-
-        \Log::info('Starting sendGracePeriodReminders', [
-            'userIds' => $userIds,
-            'forceSend' => $forceSend
-        ]);
+        $notificationService = app(NotificationService::class);
 
         $query = User::whereHas('monthlyInvoiceSetting', function($query) {
             $query->where('is_active', true);
@@ -874,14 +1091,14 @@ class AdminController extends Controller
             $query->whereIn('id', $userIds);
         }
 
-        $users = $query->get()->filter(function($user) {
-            return $user->isInGracePeriod();
-        });
+        $users = $query->get();
 
-        \Log::info('Found users in grace period', [
-            'total_users' => $users->count(),
-            'user_emails' => $users->pluck('email')->toArray()
-        ]);
+        // Only filter by grace period status if not forcing send
+        if (!$forceSend) {
+            $users = $users->filter(function($user) {
+                return $user->isInGracePeriod();
+            });
+        }
 
         foreach ($users as $user) {
             try {
@@ -895,27 +1112,8 @@ class AdminController extends Controller
                     }
                 }
 
-                // Send email directly like contact form
-                \Log::info('Sending grace period reminder', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'user_name' => $user->name
-                ]);
-
-                try {
-                    // Send immediately like contact form (bypass queue)
-                    config(['queue.default' => 'sync']);
-                    \Mail::to($user->email)->send(new \App\Mail\ManualReminderMail($user, $setting, 'grace_period'));
-                    \Log::info('Grace period reminder sent successfully', [
-                        'user_email' => $user->email
-                    ]);
-                } catch (\Exception $mailException) {
-                    \Log::error('Failed to send grace period reminder email', [
-                        'user_email' => $user->email,
-                        'error' => $mailException->getMessage()
-                    ]);
-                    throw $mailException;
-                }
+                // Send notifications via unified service
+                $notificationService->sendGracePeriodReminder($user, $setting);
 
                 // Update timestamp
                 $setting->update(['last_reminder_sent_at' => now()]);
@@ -923,13 +1121,7 @@ class AdminController extends Controller
                 $results['grace_reminders_sent']++;
 
             } catch (\Exception $e) {
-                \Log::error('Failed to send grace period reminder', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                $results['errors'][] = "User {$user->id} ({$user->name}): " . $e->getMessage();
+                $results['errors'][] = "User {$user?->id} ({$user->name}): " . $e->getMessage();
             }
         }
 
@@ -942,11 +1134,7 @@ class AdminController extends Controller
     private function sendWarningPeriodReminders($userIds = null, $forceSend = false)
     {
         $results = ['warning_reminders_sent' => 0, 'errors' => []];
-
-        \Log::info('sendWarningPeriodReminders called', [
-            'userIds' => $userIds,
-            'forceSend' => $forceSend
-        ]);
+        $notificationService = app(NotificationService::class);
 
         $query = User::whereHas('monthlyInvoiceSetting', function($query) {
             $query->where('is_active', true);
@@ -954,29 +1142,18 @@ class AdminController extends Controller
 
         if ($userIds && is_array($userIds) && count($userIds) > 0) {
             $query->whereIn('id', $userIds);
-            \Log::info('Filtering by user IDs', ['userIds' => $userIds]);
         }
 
         $allUsers = $query->get();
-        \Log::info('Users with monthly invoice settings found', [
-            'count' => $allUsers->count(),
-            'user_ids' => $allUsers->pluck('id')->toArray()
-        ]);
 
-        $users = $allUsers->filter(function($user) {
-            $isInWarning = $user->isInWarningPeriod();
-            \Log::info('Checking user warning period status', [
-                'user_id' => $user->id,
-                'user_email' => $user->email,
-                'isInWarningPeriod' => $isInWarning
-            ]);
-            return $isInWarning;
-        });
-
-        \Log::info('Users in warning period after filtering', [
-            'count' => $users->count(),
-            'user_ids' => $users->pluck('id')->toArray()
-        ]);
+        // Only filter by warning period status if not forcing send
+        if (!$forceSend) {
+            $users = $allUsers->filter(function($user) {
+                return $user->isInWarningPeriod();
+            });
+        } else {
+            $users = $allUsers;
+        }
 
         foreach ($users as $user) {
             try {
@@ -984,45 +1161,14 @@ class AdminController extends Controller
 
                 // Check if we should send reminder (unless forced)
                 if (!$forceSend) {
-                    \Log::info('Checking reminder frequency', [
-                        'user_id' => $user->id,
-                        'last_reminder_sent_at' => $setting->last_reminder_sent_at ? $setting->last_reminder_sent_at->format('Y-m-d H:i:s') : null,
-                        'reminder_frequency_days' => $setting->reminder_frequency_days,
-                        'next_reminder_allowed_at' => $setting->last_reminder_sent_at ? $setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->format('Y-m-d H:i:s') : null,
-                        'is_past' => $setting->last_reminder_sent_at ? $setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->isPast() : true
-                    ]);
-
                     if ($setting->last_reminder_sent_at &&
                         !$setting->last_reminder_sent_at->addDays($setting->reminder_frequency_days)->isPast()) {
-                        \Log::info('Skipping reminder - too soon since last reminder', [
-                            'user_id' => $user->id,
-                            'user_email' => $user->email
-                        ]);
                         continue; // Skip - too soon since last reminder
                     }
                 }
 
-                // Send email directly like contact form
-                \Log::info('Sending warning period reminder', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'user_name' => $user->name
-                ]);
-
-                try {
-                    // Send immediately like contact form (bypass queue)
-                    config(['queue.default' => 'sync']);
-                    Mail::to($user->email)->send(new \App\Mail\ManualReminderMail($user, $setting, 'warning_period'));
-                    \Log::info('Warning period reminder sent successfully', [
-                        'user_email' => $user->email
-                    ]);
-                } catch (\Exception $mailException) {
-                    \Log::error('Failed to send warning period reminder email', [
-                        'user_email' => $user->email,
-                        'error' => $mailException->getMessage()
-                    ]);
-                    throw $mailException;
-                }
+                // Send notifications via unified service
+                $notificationService->sendWarningPeriodReminder($user, $setting);
 
                 // Update timestamp
                 $setting->update(['last_reminder_sent_at' => now()]);
@@ -1030,7 +1176,7 @@ class AdminController extends Controller
                 $results['warning_reminders_sent']++;
 
             } catch (\Exception $e) {
-                $results['errors'][] = "User {$user->id} ({$user->name}): " . $e->getMessage();
+                $results['errors'][] = "User {$user?->id} ({$user->name}): " . $e->getMessage();
             }
         }
 
@@ -1040,7 +1186,7 @@ class AdminController extends Controller
     /**
      * Send overdue reminders
      */
-    private function sendOverdueReminders($userIds = null, $forceSend = false)
+    private function sendOverdueReminders($userIds = [], $forceSend = false)
     {
         $results = ['overdue_reminders_sent' => 0, 'errors' => []];
 
@@ -1052,7 +1198,7 @@ class AdminController extends Controller
                   ->where('due_date', '<', now());
         }]);
 
-        if ($userIds && is_array($userIds) && count($userIds) > 0) {
+        if (!empty($userIds)) {
             $query->whereIn('id', $userIds);
         }
 
@@ -1061,53 +1207,35 @@ class AdminController extends Controller
         foreach ($users as $user) {
             foreach ($user->stripeInvoices as $invoice) {
                 try {
-                    // Check if we should send reminder (unless forced)
                     if (!$forceSend && !$invoice->needsReminder()) {
-                        continue; // Skip - doesn't need reminder yet
+                        continue;
                     }
-
-                    // Send email directly like contact form
-                    \Log::info('Sending overdue reminder', [
-                        'user_id' => $user->id,
-                        'user_email' => $user->email,
-                        'user_name' => $user->name,
-                        'invoice_id' => $invoice->id
-                    ]);
 
                     try {
-                        // For overdue, we need to pass the invoice data differently
-                        // Create a fake setting for the email template
-                        $fakeSetting = new \App\Models\MonthlyInvoiceSetting([
-                            'billing_amount' => $invoice->amount_due / 100, // Convert from cents
-                            'subscription_period_months' => 1,
-                            'subscription_starts_at' => $invoice->created_at,
-                            'subscription_ends_at' => $invoice->due_date,
-                            'grace_period_days' => 7,
-                            'warning_period_days' => 3,
-                            'is_active' => true,
-                        ]);
-
-                        Mail::to($user->email)->send(new \App\Mail\ManualReminderMail($user, $fakeSetting, 'overdue'));
-                        \Log::info('Overdue reminder sent successfully', [
-                            'user_email' => $user->email,
-                            'invoice_id' => $invoice->id
-                        ]);
+                        $emailService = new EmailService();
+                        $emailService->sendEmail(
+                            $user->email,
+                            'MedCura AI - Account Update Needed',
+                            'emails.reminders.overdue-simple',
+                            [
+                                'userName' => $user->name,
+                                'userEmail' => $user->email,
+                                'billingAmount' => $invoice->amount_due / 100,
+                                'gracePeriodDays' => 7,
+                                'subscriptionEndsAt' => $invoice->due_date,
+                                'reminderType' => 'overdue',
+                            ]
+                        );
                     } catch (\Exception $mailException) {
-                        \Log::error('Failed to send overdue reminder email', [
-                            'user_email' => $user->email,
-                            'invoice_id' => $invoice->id,
-                            'error' => $mailException->getMessage()
-                        ]);
-                        throw $mailException;
+                        Log::error('Failed to send overdue email for invoice ' . $invoice->id . ': ' . $mailException->getMessage());
+                        $results['errors'][] = "Email error for invoice {$invoice->id}: " . $mailException->getMessage();
                     }
 
-                    // Update invoice reminder tracking
                     $invoice->markReminderSent();
-
                     $results['overdue_reminders_sent']++;
 
                 } catch (\Exception $e) {
-                    $results['errors'][] = "Invoice {$invoice->id} for user {$user->id} ({$user->name}): " . $e->getMessage();
+                    $results['errors'][] = "Invoice {$invoice->id}: " . $e->getMessage();
                 }
             }
         }
@@ -1136,8 +1264,425 @@ class AdminController extends Controller
             return redirect()->back()->with('success', $message);
 
         } catch (\Exception $e) {
-            \Log::error('Error toggling doctor status: ' . $e->getMessage());
+            Log::error('Error toggling doctor status: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Failed to update doctor status. Please try again.');
         }
     }
+
+    /**
+     * Manage hospital admin and their hospital
+     */
+    public function manageHospitalAdmin(User $user)
+    {
+        if ($user->role !== 'hospital_admin') {
+            return redirect()->back()->with('error', 'This user is not a hospital admin.');
+        }
+
+        return view('admin.hospital-admins.manage', compact('user'));
+    }
+
+    /**
+     * Create hospital for hospital admin
+     */
+    public function createHospitalForAdmin(Request $request, User $user)
+    {
+        if ($user->role !== 'hospital_admin') {
+            return redirect()->back()->with('error', 'This user is not a hospital admin.');
+        }
+
+        if ($user->hospital) {
+            return redirect()->back()->with('error', 'This hospital admin already has a hospital.');
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'nullable|string|max:20',
+            'website' => 'nullable|url|max:255',
+            'address' => 'nullable|string|max:500',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'zip_code' => 'nullable|string|max:20',
+        ]);
+
+        try {
+            $hospital = \App\Models\Hospital::create([
+                'name' => $request->name,
+                'slug' => Str::slug($request->name),
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'website' => $request->website,
+                'address' => $request->address,
+                'city' => $request->city,
+                'state' => $request->state,
+                'zip_code' => $request->zip_code,
+                'is_active' => true,
+            ]);
+
+            $user->update(['hospital_id' => $hospital->id]);
+
+            return redirect()->back()->with('success', 'Hospital created successfully and assigned to hospital admin.');
+        } catch (\Exception $e) {
+            Log::error('Error creating hospital for admin: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to create hospital. Please try again.');
+        }
+    }
+
+    /**
+     * Update hospital for hospital admin
+     */
+    public function updateHospitalForAdmin(Request $request, User $user)
+    {
+        if ($user->role !== 'hospital_admin' || !$user->hospital) {
+            return redirect()->back()->with('error', 'Invalid hospital admin or no hospital found.');
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'nullable|string|max:20',
+            'website' => 'nullable|url|max:255',
+            'address' => 'nullable|string|max:500',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'zip_code' => 'nullable|string|max:20',
+            'is_active' => 'boolean',
+        ]);
+
+        try {
+            $user->hospital->update([
+                'name' => $request->name,
+                'slug' => Str::slug($request->name),
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'website' => $request->website,
+                'address' => $request->address,
+                'city' => $request->city,
+                'state' => $request->state,
+                'zip_code' => $request->zip_code,
+                'is_active' => $request->boolean('is_active', true),
+            ]);
+
+            return redirect()->back()->with('success', 'Hospital information updated successfully.');
+        } catch (\Exception $e) {
+            Log::error('Error updating hospital for admin: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update hospital. Please try again.');
+        }
+    }
+
+    /**
+     * Manage doctors for hospital admin
+     */
+    public function manageHospitalDoctors(User $user)
+    {
+        if ($user->role !== 'hospital_admin' || !$user->hospital) {
+            return redirect()->back()->with('error', 'Invalid hospital admin or no hospital found.');
+        }
+
+        $doctors = $user->hospital->doctors()->with(['doctor.specialty'])->paginate(15);
+
+        return view('admin.hospital-admins.doctors', compact('user', 'doctors'));
+    }
+
+    /**
+     * Toggle doctor status for hospital admin's doctors
+     */
+    public function toggleHospitalDoctorStatus(User $user, User $doctor)
+    {
+        if ($user->role !== 'hospital_admin' || !$user->hospital) {
+            return redirect()->back()->with('error', 'Invalid hospital admin or no hospital found.');
+        }
+
+        if ($doctor->hospital_id !== $user?->hospital_id) {
+            return redirect()->back()->with('error', 'This doctor does not belong to this hospital.');
+        }
+
+        if (!$doctor->doctor) {
+            return redirect()->back()->with('error', 'This user does not have a doctor profile.');
+        }
+
+        try {
+            $newStatus = !$doctor->doctor->is_active;
+            $doctor->doctor->update(['is_active' => $newStatus]);
+
+            $statusText = $newStatus ? 'activated' : 'deactivated';
+            $message = "Doctor {$doctor->name} has been {$statusText} successfully.";
+
+            return redirect()->back()->with('success', $message);
+        } catch (\Exception $e) {
+            Log::error('Error toggling hospital doctor status: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update doctor status. Please try again.');
+        }
+    }
+
+    /**
+     * Login as another user (Admin impersonation)
+     */
+    public function loginAs(User $user)
+    {
+        // Check if admin is authenticated using admin guard
+        if (!auth('admin')->check()) {
+            return redirect()->route('admin.login')->with('error', 'You must be logged in as admin.');
+        }
+
+        $admin = auth('admin')->user();
+
+        // Additional check to ensure admin object exists and has required properties
+        if (!$admin || !isset($admin->id) || !isset($admin->name)) {
+            return redirect()->route('admin.login')->with('error', 'Admin session is invalid. Please login again.');
+        }
+
+        // Validate that the target user is either hospital_admin or doctor
+        if (!in_array($user->role, ['hospital_admin', 'doctor'])) {
+            return redirect()->back()->with('error', 'You can only login as Hospital Admins or Doctors.');
+        }
+
+        // Clear ALL existing impersonation sessions to prevent conflicts
+        // This is CRITICAL for direct admin impersonation to work correctly
+        session()->forget([
+            'impersonating_hospital_admin_id',
+            'impersonating_hospital_admin_name',
+            'hospital_admin_impersonation_started_at',
+            'hospital_admin_impersonation_ip',
+            'impersonation_started_at',
+            'impersonation_ip',
+            // Clear any existing admin impersonation to start fresh
+            'impersonating_user_id',
+            'admin_impersonation_started_at',
+            'admin_impersonation_ip'
+        ]);
+
+        // Force session save to ensure cleanup is applied immediately
+        session()->save();
+
+        // Store admin and user session info for impersonation
+        session([
+            'impersonating_admin_id' => $admin->id,
+            'impersonating_admin_name' => $admin->name,
+            'impersonating_user_id' => $user?->id,
+            'admin_impersonation_started_at' => now()->timestamp,
+            'admin_impersonation_ip' => request()->ip(),
+        ]);
+
+        // CRITICAL: Actually log the user into the web guard
+        // This ensures they pass the 'auth' middleware on protected routes
+        auth('web')->login($user);
+
+        // Log admin impersonation
+        \App\Services\AuditLoggingService::logAdminImpersonation(
+            $admin->id,
+            $user?->id,
+            [
+                'target_user_name' => $user->name,
+                'target_user_email' => $user->email,
+                'target_user_role' => $user->role
+            ]
+        );
+
+        // Log the impersonation for security audit
+        Log::info('Admin impersonation started', [
+            'admin_id' => $admin->id,
+            'admin_name' => $admin->name,
+            'target_user_id' => $user?->id,
+            'target_user_name' => $user->name,
+            'target_user_role' => $user->role,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'web_auth_check' => auth('web')->check(),
+            'web_auth_user_id' => auth('web')->id(),
+        ]);
+
+        // Redirect to appropriate dashboard - admin sees exactly what the user sees
+        if ($user->role === 'hospital_admin') {
+            return redirect()->route('hospital-admin.dashboard')
+                ->with('success', "You are now logged in as Hospital Admin: {$user->name}");
+        } elseif ($user->role === 'doctor') {
+            return redirect()->route('dashboard')
+                ->with('success', "You are now logged in as Doctor: {$user->name}");
+        }
+
+        return redirect()->route('dashboard');
+    }
+
+    /**
+     * Return to admin from user impersonation
+     */
+    public function returnToAdmin()
+    {
+        // CRITICAL DEBUG: Log that method is being called
+        Log::emergency('🚨 returnToAdmin method called!', [
+            'timestamp' => now()->toDateTimeString(),
+            'request_method' => request()->method(),
+            'request_url' => request()->fullUrl(),
+        ]);
+
+        // Log the attempt for debugging
+        Log::info('Return to admin attempt', [
+            'session_data' => [
+                'impersonating_admin_id' => session('impersonating_admin_id'),
+                'impersonating_admin_name' => session('impersonating_admin_name'),
+                'impersonating_user_id' => session('impersonating_user_id'),
+                'admin_impersonation_started_at' => session('admin_impersonation_started_at'),
+                'admin_impersonation_ip' => session('admin_impersonation_ip'),
+            ],
+            'current_ip' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'web_auth_check' => auth('web')->check(),
+            'web_auth_user_id' => auth('web')->id(),
+            'admin_auth_check' => auth('admin')->check(),
+            'admin_auth_user_id' => auth('admin')->id(),
+        ]);
+
+        // Validate admin impersonation session
+        $adminId = session('impersonating_admin_id');
+        $adminName = session('impersonating_admin_name');
+        $userId = session('impersonating_user_id');
+        $startedAt = session('admin_impersonation_started_at');
+        $sessionIp = session('admin_impersonation_ip');
+
+        if (!$adminId || !$adminName || !$userId || !$startedAt) {
+            Log::warning('Invalid admin impersonation session - missing data', [
+                'adminId' => $adminId,
+                'adminName' => $adminName,
+                'userId' => $userId,
+                'startedAt' => $startedAt,
+            ]);
+            $this->clearImpersonationSession();
+            return redirect()->route('admin.login')->with('error', 'Invalid admin impersonation session.');
+        }
+
+        // Security checks - Allow IP changes for now (can be restrictive in some environments)
+        if ($sessionIp && $sessionIp !== request()->ip()) {
+            Log::warning('Admin impersonation IP mismatch', [
+                'session_ip' => $sessionIp,
+                'current_ip' => request()->ip(),
+                'admin_id' => $adminId,
+            ]);
+            // Don't fail on IP mismatch for now, just log it
+            // $this->clearImpersonationSession();
+            // return redirect()->route('admin.login')->with('error', 'Security violation: IP address mismatch.');
+        }
+
+        // Check session expiry (24 hours)
+        if ((now()->timestamp - $startedAt) > 86400) {
+            Log::warning('Admin impersonation session expired', [
+                'started_at' => $startedAt,
+                'current_time' => now()->timestamp,
+                'duration' => now()->timestamp - $startedAt,
+            ]);
+            $this->clearImpersonationSession();
+            return redirect()->route('admin.login')->with('error', 'Admin impersonation session expired.');
+        }
+
+        // Find the admin user
+        $admin = \App\Models\Admin::find($adminId);
+        if (!$admin) {
+            Log::error('Admin not found during return from impersonation', [
+                'admin_id' => $adminId,
+            ]);
+            $this->clearImpersonationSession();
+            return redirect()->route('admin.login')->with('error', 'Invalid admin user.');
+        }
+
+        // Get impersonated user for logging
+        $user = User::find($userId);
+        $userName = $user ? $user->name : 'Unknown';
+
+        // Log the end of impersonation
+        Log::info('Admin impersonation ended successfully', [
+            'admin_id' => $adminId,
+            'admin_name' => $adminName,
+            'impersonated_user_id' => $userId,
+            'impersonated_user_name' => $userName,
+            'duration_seconds' => now()->timestamp - $startedAt,
+            'ip_address' => request()->ip(),
+        ]);
+
+        // Clear impersonation session
+        $this->clearImpersonationSession();
+
+        // Login back as admin (like Hospital Admin does)
+        Auth::login($admin);
+
+        // Log admin impersonation ended
+        \App\Services\AuditLoggingService::logAdminImpersonationEnded(
+            $admin->id,
+            [
+                'impersonated_user_id' => $userId,
+                'impersonated_user_name' => $userName
+            ]
+        );
+
+        // Log the successful return
+        Log::info('Admin successfully returned from impersonation', [
+            'admin_id' => $admin->id,
+            'admin_name' => $admin->name,
+            'auth_check' => Auth::check(),
+            'auth_user_id' => Auth::id(),
+        ]);
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', "Welcome back, {$adminName}! You have returned from impersonation.");
+    }
+
+    /**
+     * Clear impersonation session
+     */
+    private function clearImpersonationSession(): void
+    {
+        session()->forget([
+            'impersonating_user_id',
+            'impersonating_admin_id',
+            'impersonating_admin_name',
+            'admin_impersonation_started_at',
+            'admin_impersonation_ip'
+        ]);
+    }
+
+    /**
+     * Verify a doctor (make them visible to patients)
+     */
+    public function verifyDoctor(Doctor $doctor)
+    {
+        try {
+            $doctor->update(['is_verified' => true]);
+
+            Log::info('Doctor verified by admin', [
+                'doctor_id' => $doctor->id,
+                'user_id' => $doctor->user_id,
+                'user_name' => $doctor->user->name,
+                'admin_id' => auth('admin')->id(),
+                'admin_name' => auth('admin')->user()->name,
+            ]);
+
+            return redirect()->back()->with('success', "Doctor {$doctor->user->name} has been verified and is now visible to patients.");
+        } catch (\Exception $e) {
+            Log::error('Error verifying doctor: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to verify doctor. Please try again.');
+        }
+    }
+
+    /**
+     * Unverify a doctor (hide them from patients)
+     */
+    public function unverifyDoctor(Doctor $doctor)
+    {
+        try {
+            $doctor->update(['is_verified' => false]);
+
+            Log::info('Doctor unverified by admin', [
+                'doctor_id' => $doctor->id,
+                'user_id' => $doctor->user_id,
+                'user_name' => $doctor->user->name,
+                'admin_id' => auth('admin')->id(),
+                'admin_name' => auth('admin')->user()->name,
+            ]);
+
+            return redirect()->back()->with('success', "Doctor {$doctor->user->name} has been unverified and is now hidden from patients.");
+        } catch (\Exception $e) {
+            Log::error('Error unverifying doctor: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to unverify doctor. Please try again.');
+        }
+    }
 }
+

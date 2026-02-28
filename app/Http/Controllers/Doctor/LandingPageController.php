@@ -15,7 +15,7 @@ class LandingPageController extends Controller
      */
     public function index()
     {
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor) {
             return redirect()->route('dashboard')->with('error', 'Doctor profile not found.');
@@ -36,7 +36,7 @@ class LandingPageController extends Controller
      */
     public function update(Request $request)
     {
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor) {
             return response()->json(['error' => 'Doctor profile not found.'], 404);
@@ -142,7 +142,7 @@ class LandingPageController extends Controller
             'hero_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor || !$doctor->landingPage) {
             return response()->json(['error' => 'Landing page not found.'], 404);
@@ -172,7 +172,7 @@ class LandingPageController extends Controller
      */
     public function togglePublish(Request $request)
     {
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor || !$doctor->landingPage) {
             return response()->json(['error' => 'Landing page not found.'], 404);
@@ -206,9 +206,11 @@ class LandingPageController extends Controller
         }
 
         // Check if user owns this landing page or is admin
-        if (auth()->check() &&
-            (auth()->user()->doctor->id !== $landingPage->doctor_id && !auth()->user()->isAdmin())) {
-            abort(403, 'Unauthorized access.');
+        if (auth()->check()) {
+            $effectiveDoctor = auth()->user()->getEffectiveDoctor();
+            if ($effectiveDoctor && $effectiveDoctor->id !== $landingPage->doctor_id && !auth()->user()->isAdmin()) {
+                abort(403, 'Unauthorized access.');
+            }
         }
 
         // Get language from request or use default
@@ -295,7 +297,7 @@ class LandingPageController extends Controller
      */
     public function pageBuilder()
     {
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor) {
             return redirect()->route('dashboard')->with('error', 'Doctor profile not found.');
@@ -319,28 +321,94 @@ class LandingPageController extends Controller
      */
     public function updateSections(Request $request)
     {
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor || !$doctor->landingPage) {
             return response()->json(['error' => 'Landing page not found.'], 404);
         }
 
+        // Validate the main request data
         $request->validate([
-            'sections' => 'required|array',
-            'sections.*.id' => 'required|string',
-            'sections.*.type' => 'required|string',
-            'sections.*.config' => 'required|array',
-            'sections.*.order' => 'required|integer',
+            'sections' => 'nullable|array',
+            'navbar_config' => 'nullable|array',
+            'animations_config' => 'nullable|array',
+            'fonts_config' => 'nullable|array',
+            'colors' => 'nullable|array',
+            'page_layout' => 'nullable|string|in:default,fullwidth,boxed,sidebar',
+            'enable_animations' => 'boolean'
         ]);
 
+        // If sections are provided, validate their structure
+        if ($request->has('sections') && is_array($request->sections)) {
+            foreach ($request->sections as $index => $section) {
+                $request->validate([
+                    "sections.$index.id" => 'required|string',
+                    "sections.$index.type" => 'required|string',
+                    "sections.$index.config" => 'required|array',
+                    "sections.$index.order" => 'required|integer',
+                ]);
+            }
+        }
+
         $landingPage = $doctor->landingPage;
-        $landingPage->page_sections = $request->sections;
+
+        // Update sections if provided
+        if ($request->has('sections')) {
+            $landingPage->page_sections = $request->sections;
+        }
+
+        // Update additional configuration
+        if ($request->has('navbar_config')) {
+            $landingPage->navbar_config = $request->navbar_config;
+        }
+
+        if ($request->has('animations_config')) {
+            $landingPage->animations_config = $request->animations_config;
+        }
+
+        if ($request->has('fonts_config')) {
+            $landingPage->fonts_config = $request->fonts_config;
+        }
+
+        if ($request->has('colors')) {
+            $landingPage->colors = $request->colors;
+        }
+
+        if ($request->has('page_layout')) {
+            $landingPage->page_layout = $request->page_layout;
+        }
+
+        if ($request->has('enable_animations')) {
+            $landingPage->enable_animations = $request->enable_animations;
+        }
+
         $landingPage->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Sections updated successfully!'
+            'message' => 'Page updated successfully!',
+            'preview_url' => route('doctor.landing-page.preview', $landingPage->username)
         ]);
+    }
+
+    /**
+     * Get effective doctor for the current user
+     */
+    protected function getEffectiveDoctor()
+    {
+        $user = auth()->user();
+
+        // If user is a doctor, return their doctor profile
+        if ($user->role === 'doctor' && $user->doctor) {
+            return $user->doctor;
+        }
+
+        // If user is a sub-user, return their parent doctor's profile
+        if ($user->isSubUser() && $user->parentUser && $user->parentUser->doctor) {
+            return $user->parentUser->doctor;
+        }
+
+        return null;
     }
 
     /**
@@ -495,7 +563,7 @@ class LandingPageController extends Controller
             'section_id' => 'required|string',
         ]);
 
-        $doctor = auth()->user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         if (!$doctor || !$doctor->landingPage) {
             return response()->json(['error' => 'Landing page not found.'], 404);

@@ -47,6 +47,11 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
+        .navbar .nav-link,
+        .navbar .navbar-brand {
+            color: inherit;
+        }
+
         .btn-primary {
             background-color: var(--button-color);
             border-color: var(--button-color);
@@ -130,8 +135,12 @@
         }
 
         .footer {
-            background-color: var(--footer-bg);
-            color: var(--secondary-color);
+            background-color: var(--header-bg) !important;
+            color: inherit;
+        }
+
+        .footer * {
+            color: inherit;
         }
 
         .contact-info i {
@@ -177,6 +186,22 @@
             margin-right: 0 !important;
         }
 
+        /* Dynamic sections styling */
+        .dynamic-section {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dynamic-section .section-padding {
+            padding: 80px 0;
+        }
+
+        .page-builder-sections .hero-section {
+            min-height: 600px;
+            display: flex;
+            align-items: center;
+        }
+
         @media (max-width: 768px) {
             .hero-section {
                 padding: 60px 0;
@@ -190,10 +215,20 @@
             .section-padding {
                 padding: 50px 0;
             }
+
+            .page-builder-sections .hero-section {
+                min-height: 400px;
+                padding: 60px 0;
+            }
         }
     </style>
 </head>
 <body>
+    @php
+        // Check if we have custom page sections from page builder
+        $hasPageSections = !empty($landingPage->page_sections) && is_array($landingPage->page_sections);
+        $pageSections = $hasPageSections ? collect($landingPage->page_sections)->sortBy('order') : collect();
+    @endphp
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-light fixed-top">
         <div class="container">
@@ -217,34 +252,59 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#home">{{ $translatedContent['nav_home'] ?: (($language ?? 'en') === 'ar' ? 'الرئيسية' : 'Home') }}</a>
                     </li>
-                    @if($landingPage->section_visibility['about'] ?? true)
-                    <li class="nav-item">
-                        <a class="nav-link" href="#about">{{ $translatedContent['nav_about'] ?: (($language ?? 'en') === 'ar' ? 'نبذة عني' : 'About') }}</a>
-                    </li>
+                    @if($hasPageSections)
+                        {{-- Dynamic navigation for page builder sections --}}
+                        @foreach($pageSections as $section)
+                            @if($section['type'] === 'about')
+                            <li class="nav-item">
+                                <a class="nav-link" href="#about">{{ $translatedContent['nav_about'] ?: (($language ?? 'en') === 'ar' ? 'نبذة عني' : 'About') }}</a>
+                            </li>
+                            @elseif($section['type'] === 'services')
+                            <li class="nav-item">
+                                <a class="nav-link" href="#services">Services</a>
+                            </li>
+                            @elseif($section['type'] === 'gallery')
+                            <li class="nav-item">
+                                <a class="nav-link" href="#gallery">Gallery</a>
+                            </li>
+                            @elseif($section['type'] === 'faq')
+                            <li class="nav-item">
+                                <a class="nav-link" href="#faq">FAQ</a>
+                            </li>
+                            @endif
+                        @endforeach
+                    @else
+                        {{-- Static navigation --}}
+                        @if($landingPage->section_visibility['about'] ?? true)
+                        <li class="nav-item">
+                            <a class="nav-link" href="#about">{{ $translatedContent['nav_about'] ?: (($language ?? 'en') === 'ar' ? 'نبذة عني' : 'About') }}</a>
+                        </li>
+                        @endif
+                        @if($landingPage->section_visibility['health_tips'] ?? true)
+                        <li class="nav-item">
+                            <a class="nav-link" href="#health-tips">Health Tips</a>
+                        </li>
+                        @endif
+                        @if($landingPage->section_visibility['reviews'] ?? true)
+                        <li class="nav-item">
+                            <a class="nav-link" href="#reviews">{{ $translatedContent['nav_reviews'] ?: (($language ?? 'en') === 'ar' ? 'آراء المرضى' : 'Reviews') }}</a>
+                        </li>
+                        @endif
+                        @if($landingPage->section_visibility['contact'] ?? true)
+                        <li class="nav-item">
+                            <a class="nav-link" href="#contact">{{ $translatedContent['nav_contact'] ?: (($language ?? 'en') === 'ar' ? 'اتصل بنا' : 'Contact') }}</a>
+                        </li>
+                        @endif
                     @endif
+                    {{-- Appointments is always available --}}
                     @if($landingPage->section_visibility['appointments'] ?? true)
                     <li class="nav-item">
                         <a class="nav-link" href="#appointments">{{ $translatedContent['nav_appointments'] ?: (($language ?? 'en') === 'ar' ? 'حجز موعد' : 'Book Appointment') }}</a>
                     </li>
                     @endif
-                    @if($landingPage->section_visibility['health_tips'] ?? true)
-                    <li class="nav-item">
-                        <a class="nav-link" href="#health-tips">Health Tips</a>
-                    </li>
-                    @endif
                     @if($doctor->publishedBlogPosts()->count() > 0)
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('doctor.blogs', $landingPage->username) }}">All Articles</a>
-                    </li>
-                    @endif
-                    @if($landingPage->section_visibility['reviews'] ?? true)
-                    <li class="nav-item">
-                        <a class="nav-link" href="#reviews">{{ $translatedContent['nav_reviews'] ?: (($language ?? 'en') === 'ar' ? 'آراء المرضى' : 'Reviews') }}</a>
-                    </li>
-                    @endif
-                    @if($landingPage->section_visibility['contact'] ?? true)
-                    <li class="nav-item">
-                        <a class="nav-link" href="#contact">{{ $translatedContent['nav_contact'] ?: (($language ?? 'en') === 'ar' ? 'اتصل بنا' : 'Contact') }}</a>
                     </li>
                     @endif
 
@@ -264,7 +324,248 @@
         </div>
     </nav>
 
-    @if($landingPage->section_visibility['hero'] ?? true)
+    @if($hasPageSections)
+        {{-- Render dynamic sections from page builder --}}
+        <div class="page-builder-sections">
+            @foreach($pageSections as $section)
+                @if($section['type'] === 'hero')
+                    <section id="home" class="hero-section dynamic-section"
+                        style="background: {{ $section['config']['background_color'] ?? 'linear-gradient(135deg, var(--primary-color), var(--accent-color))' }}; color: {{ $section['config']['text_color'] ?? 'white' }}; padding: 100px 0; position: relative;">
+                        @if(isset($section['config']['background_image']) && $section['config']['background_image'])
+                            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+                                background-image: url('{{ $section['config']['background_image'] }}');
+                                background-size: cover; background-position: center;
+                                opacity: {{ $section['config']['overlay_opacity'] ?? 0.7 }}; z-index: 1;"></div>
+                        @endif
+                        <div class="container" style="position: relative; z-index: 2;">
+                            <div class="row align-items-center">
+                                <div class="col-lg-12 text-center">
+                                    <h1 class="display-4 fw-bold mb-3">{{ $section['config']['title'] ?? 'Welcome' }}</h1>
+                                    @if(isset($section['config']['subtitle']))
+                                        <p class="lead mb-4">{{ $section['config']['subtitle'] }}</p>
+                                    @endif
+                                    @if(isset($section['config']['button_text']) && isset($section['config']['button_link']))
+                                        <a href="{{ $section['config']['button_link'] }}" class="btn btn-primary btn-lg px-4">
+                                            {{ $section['config']['button_text'] }}
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                @elseif($section['type'] === 'about')
+                    <section id="about" class="section-padding dynamic-section"
+                        style="background-color: {{ $section['config']['background_color'] ?? '#ffffff' }}; color: {{ $section['config']['text_color'] ?? '#374151' }};">
+                        <div class="container">
+                            <div class="row align-items-center">
+                                <div class="col-lg-6 {{ $section['config']['layout'] === 'image-right' ? 'order-lg-2' : '' }}">
+                                    @if(isset($section['config']['image']) && $section['config']['image'])
+                                        <img src="{{ $section['config']['image'] }}" alt="About" class="img-fluid rounded">
+                                    @endif
+                                </div>
+                                <div class="col-lg-6">
+                                    <h2 class="display-5 fw-bold mb-4">{{ $section['config']['title'] ?? 'About Us' }}</h2>
+                                    <div class="content">
+                                        {!! nl2br(e($section['config']['content'] ?? 'Content goes here...')) !!}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                @elseif($section['type'] === 'services')
+                    <section id="services" class="section-padding bg-light dynamic-section">
+                        <div class="container">
+                            <div class="text-center mb-5">
+                                <h2 class="display-5 fw-bold mb-3">{{ $section['config']['title'] ?? 'Our Services' }}</h2>
+                                @if(isset($section['config']['subtitle']))
+                                    <p class="lead">{{ $section['config']['subtitle'] }}</p>
+                                @endif
+                            </div>
+                            <div class="row">
+                                @if(isset($section['config']['services']) && is_array($section['config']['services']))
+                                    @foreach($section['config']['services'] as $service)
+                                        <div class="col-md-4 mb-4">
+                                            <div class="card h-100 border-0 shadow-sm">
+                                                <div class="card-body text-center">
+                                                    <i class="{{ $service['icon'] ?? 'fas fa-medical' }} fa-3x text-primary mb-3"></i>
+                                                    <h5 class="card-title">{{ $service['title'] ?? 'Service' }}</h5>
+                                                    <p class="card-text">{{ $service['description'] ?? 'Service description' }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </div>
+                        </div>
+                    </section>
+                @elseif($section['type'] === 'gallery')
+                    <section id="gallery" class="section-padding dynamic-section"
+                        style="background-color: {{ $section['config']['background_color'] ?? '#f8fafc' }};">
+                        <div class="container">
+                            <div class="text-center mb-5">
+                                <h2 class="display-5 fw-bold mb-3">{{ $section['config']['title'] ?? 'Gallery' }}</h2>
+                                @if(isset($section['config']['subtitle']))
+                                    <p class="lead">{{ $section['config']['subtitle'] }}</p>
+                                @endif
+                            </div>
+                            <div class="row">
+                                @if(isset($section['config']['images']) && is_array($section['config']['images']))
+                                    @foreach($section['config']['images'] as $image)
+                                        <div class="col-md-{{ $section['config']['columns'] ?? '4' }} mb-4">
+                                            <div class="gallery-item">
+                                                <img src="{{ $image['url'] ?? '' }}" alt="{{ $image['alt'] ?? 'Gallery Image' }}" class="img-fluid rounded shadow-sm">
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <div class="col-12 text-center">
+                                        <p class="text-muted">No gallery images available</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </section>
+                @elseif($section['type'] === 'faq')
+                    <section id="faq" class="section-padding dynamic-section"
+                        style="background-color: {{ $section['config']['background_color'] ?? '#ffffff' }};">
+                        <div class="container">
+                            <div class="text-center mb-5">
+                                <h2 class="display-5 fw-bold mb-3">{{ $section['config']['title'] ?? 'FAQ' }}</h2>
+                                @if(isset($section['config']['subtitle']))
+                                    <p class="lead">{{ $section['config']['subtitle'] }}</p>
+                                @endif
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-8 mx-auto">
+                                    @php
+                                        $faqs = [];
+                                        if (isset($section['config']['faqs'])) {
+                                            if (is_array($section['config']['faqs'])) {
+                                                $faqs = $section['config']['faqs'];
+                                            } elseif (is_string($section['config']['faqs'])) {
+                                                // Try to decode JSON if it's a string
+                                                $decoded = json_decode($section['config']['faqs'], true);
+                                                $faqs = is_array($decoded) ? $decoded : [];
+                                            }
+                                        }
+
+                                        // Default FAQs if none exist
+                                        if (empty($faqs)) {
+                                            $faqs = [
+                                                ['question' => 'What are your office hours?', 'answer' => 'Our office hours vary. Please contact us for current availability.'],
+                                                ['question' => 'How can I book an appointment?', 'answer' => 'You can book an appointment using the form above or by calling our office.']
+                                            ];
+                                        }
+                                    @endphp
+
+                                    @if(!empty($faqs))
+                                        <div class="accordion" id="faqAccordion{{ $section['id'] }}">
+                                            @foreach($faqs as $index => $faq)
+                                                <div class="accordion-item">
+                                                    <h2 class="accordion-header" id="heading{{ $section['id'] }}{{ $index }}">
+                                                        <button class="accordion-button {{ $index === 0 ? '' : 'collapsed' }}" type="button"
+                                                            data-bs-toggle="collapse" data-bs-target="#collapse{{ $section['id'] }}{{ $index }}"
+                                                            aria-expanded="{{ $index === 0 ? 'true' : 'false' }}" aria-controls="collapse{{ $section['id'] }}{{ $index }}">
+                                                            {{ $faq['question'] ?? 'Question ' . ($index + 1) }}
+                                                        </button>
+                                                    </h2>
+                                                    <div id="collapse{{ $section['id'] }}{{ $index }}" class="accordion-collapse collapse {{ $index === 0 ? 'show' : '' }}"
+                                                        aria-labelledby="heading{{ $section['id'] }}{{ $index }}" data-bs-parent="#faqAccordion{{ $section['id'] }}">
+                                                        <div class="accordion-body">
+                                                            {{ $faq['answer'] ?? 'Answer for question ' . ($index + 1) }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <div class="text-center">
+                                            <p class="text-muted">No FAQ items available</p>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                @endif
+            @endforeach
+        </div>
+
+        {{-- Always show appointments section regardless of page builder --}}
+        @if($landingPage->section_visibility['appointments'] ?? true)
+        <section id="appointments" class="section-padding">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-8 mx-auto text-center">
+                        <h2 class="display-5 fw-bold mb-5">{{ $translatedContent['appointment_title'] ?: (($language ?? 'en') === 'ar' ? 'حجز موعد' : 'Book an Appointment') }}</h2>
+                        <p class="lead mb-5">{{ $translatedContent['appointment_subtitle'] ?: (($language ?? 'en') === 'ar' ? 'املأ النموذج أدناه لحجز موعدك' : 'Fill out the form below to schedule your appointment') }}</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-8 mx-auto">
+                        <div class="card shadow-lg border-0">
+                            <div class="card-body p-5">
+                                <form id="appointmentForm" method="POST" action="{{ route('appointments.store', $landingPage->username) }}">
+                                    @csrf
+                                    <div class="row g-4">
+                                        <div class="col-md-6">
+                                            <label for="patient_name" class="form-label">{{ $translatedContent['form_name_label'] ?: (($language ?? 'en') === 'ar' ? 'الاسم الكامل *' : 'Full Name *') }}</label>
+                                            <input type="text" class="form-control form-control-lg" id="patient_name" name="patient_name" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="patient_email" class="form-label">{{ $translatedContent['form_email_label'] ?: (($language ?? 'en') === 'ar' ? 'البريد الإلكتروني *' : 'Email Address *') }}</label>
+                                            <input type="email" class="form-control form-control-lg" id="patient_email" name="patient_email" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="patient_phone" class="form-label">{{ $translatedContent['form_phone_label'] ?: (($language ?? 'en') === 'ar' ? 'رقم الهاتف *' : 'Phone Number *') }}</label>
+                                            <input type="tel" class="form-control form-control-lg" id="patient_phone" name="patient_phone" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="appointment_date" class="form-label">{{ $translatedContent['form_date_label'] ?: (($language ?? 'en') === 'ar' ? 'التاريخ المفضل *' : 'Preferred Date *') }}</label>
+                                            <input type="hidden" id="selected_appointment_datetime" name="appointment_date">
+                                            <select class="form-select form-select-lg" id="appointment_date_select" required>
+                                                <option value="">{{ ($language ?? 'en') === 'ar' ? 'اختر تاريخاً' : 'Select a date' }}</option>
+                                                @if(!empty($availableSlots))
+                                                    @foreach($availableSlots as $date => $slots)
+                                                    <option value="{{ $date }}">{{ \Carbon\Carbon::parse($date)->format('l, M j, Y') }}</option>
+                                                    @endforeach
+                                                @else
+                                                    <option value="" disabled>No slots available at the moment</option>
+                                                @endif
+                                            </select>
+                                            @if(empty($availableSlots))
+                                            <small class="text-muted">Please contact the doctor directly to schedule an appointment.</small>
+                                            @endif
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="appointment_time" class="form-label">{{ $translatedContent['form_time_label'] ?: (($language ?? 'en') === 'ar' ? 'الوقت المفضل *' : 'Preferred Time *') }}</label>
+                                            <select class="form-select form-select-lg" id="appointment_time" required disabled>
+                                                <option value="">{{ ($language ?? 'en') === 'ar' ? 'اختر وقتاً أولاً' : 'Select a date first' }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <label for="patient_notes" class="form-label">{{ $translatedContent['form_message_label'] ?: (($language ?? 'en') === 'ar' ? 'ملاحظات إضافية (اختيارية)' : 'Additional Notes (Optional)') }}</label>
+                                            <textarea class="form-control form-control-lg" id="patient_notes" name="patient_notes" rows="3" placeholder="{{ ($language ?? 'en') === 'ar' ? 'أي معلومات إضافية تود مشاركتها...' : 'Any additional information you\'d like to share...' }}"></textarea>
+                                        </div>
+                                        <div class="col-12">
+                                            <button type="submit" class="btn btn-primary btn-lg w-100" @if(empty($availableSlots)) disabled @endif>
+                                                <i class="fas fa-calendar-check me-2"></i>{{ $translatedContent['form_submit_button'] ?: (($language ?? 'en') === 'ar' ? 'احجز موعد' : 'Book Appointment') }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        @endif
+    @else
+        {{-- Render static sections for backwards compatibility --}}
+    @endif
+
+    @if(!$hasPageSections && ($landingPage->section_visibility['hero'] ?? true))
     <!-- Hero Section -->
     <section id="home" class="hero-section" @if($landingPage->hero_image) style="background-image: url('{{ Storage::url($landingPage->hero_image) }}'); background-size: cover; background-position: center;" @endif>
         <div class="container">
@@ -292,7 +593,7 @@
                                 <i class="fas fa-calendar-plus me-2"></i>Book Appointment
                             </a>
                             @endif
-                            @if($landingPage->section_visibility['contact'] ?? true)
+                            @if(!$hasPageSections && ($landingPage->section_visibility['contact'] ?? true))
                             <a href="#contact" class="btn btn-outline-light btn-lg px-4">
                                 <i class="fas fa-phone me-2"></i>Contact Me
                             </a>
@@ -323,7 +624,7 @@
     </section>
     @endif
 
-    @if($landingPage->section_visibility['about'] ?? true)
+    @if(!$hasPageSections && ($landingPage->section_visibility['about'] ?? true))
     <!-- About Section -->
     <section id="about" class="section-padding">
         <div class="container">
@@ -448,7 +749,7 @@
     </section>
     @endif
 
-    @if(($landingPage->section_visibility['appointments'] ?? true) && !empty($availableSlots))
+    @if($landingPage->section_visibility['appointments'] ?? true)
     <!-- Appointments Section -->
     <section id="appointments" class="section-padding bg-light">
         <div class="container">
@@ -497,10 +798,17 @@
                                     <input type="hidden" id="selected_appointment_datetime" name="appointment_date">
                                     <select class="form-select" id="appointment_date_select" required>
                                         <option value="">{{ ($language ?? 'en') === 'ar' ? 'اختر تاريخاً' : 'Select a date' }}</option>
-                                        @foreach($availableSlots as $date => $slots)
-                                        <option value="{{ $date }}">{{ \Carbon\Carbon::parse($date)->format('l, M j, Y') }}</option>
-                                        @endforeach
+                                        @if(!empty($availableSlots))
+                                            @foreach($availableSlots as $date => $slots)
+                                            <option value="{{ $date }}">{{ \Carbon\Carbon::parse($date)->format('l, M j, Y') }}</option>
+                                            @endforeach
+                                        @else
+                                            <option value="" disabled>No slots available at the moment</option>
+                                        @endif
                                     </select>
+                                    @if(empty($availableSlots))
+                                    <small class="text-muted">Please contact the doctor directly to schedule an appointment.</small>
+                                    @endif
                                 </div>
                                 <div class="col-md-6">
                                     <label for="appointment_time" class="form-label">{{ $translatedContent['form_time_label'] ?: (($language ?? 'en') === 'ar' ? 'الوقت المفضل *' : 'Preferred Time *') }}</label>
@@ -541,7 +849,7 @@
                                     <textarea class="form-control" id="patient_notes" name="patient_notes" rows="2" placeholder="{{ ($language ?? 'en') === 'ar' ? 'أي معلومات إضافية تود مشاركتها...' : 'Any additional information you\'d like to share...' }}"></textarea>
                                 </div>
                                 <div class="col-12">
-                                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                                    <button type="submit" class="btn btn-primary btn-lg w-100" @if(empty($availableSlots)) disabled @endif>
                                         <i class="fas fa-calendar-check me-2"></i>{{ $translatedContent['form_submit_button'] ?: (($language ?? 'en') === 'ar' ? 'احجز موعد' : 'Book Appointment') }}
                                     </button>
                                 </div>
@@ -554,7 +862,7 @@
     </section>
     @endif
 
-    @if($landingPage->section_visibility['reviews'] ?? true)
+    @if(!$hasPageSections && ($landingPage->section_visibility['reviews'] ?? true))
     <!-- Reviews Section -->
     <section id="reviews" class="section-padding">
         <div class="container">
@@ -598,7 +906,7 @@
     </section>
     @endif
 
-    @if($landingPage->section_visibility['contact'] ?? true)
+    @if(!$hasPageSections && ($landingPage->section_visibility['contact'] ?? true))
     <!-- Contact Section -->
     <section id="contact" class="section-padding bg-light">
         <div class="container">
@@ -737,6 +1045,13 @@
             $('#appointmentForm').on('submit', function(e) {
                 e.preventDefault();
 
+                // Check if appointment date/time is selected
+                const selectedDateTime = $('#selected_appointment_datetime').val();
+                if (!selectedDateTime) {
+                    alert('Please select a date and time for your appointment.');
+                    return;
+                }
+
                 const formData = $(this).serialize();
                 const $submitBtn = $(this).find('button[type="submit"]');
                 const originalText = $submitBtn.html();
@@ -746,18 +1061,37 @@
                 $.ajax({
                     url: $(this).attr('action'),
                     method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     data: formData,
                     success: function(response) {
-                        alert('Appointment booked successfully! You will receive a confirmation email shortly.');
-                        $('#appointmentForm')[0].reset();
-                        $('#appointment_time').empty().prop('disabled', true).append('<option value="">Select a date first</option>');
-                        $('#selected_appointment_datetime').val('');
+                        if (response.success) {
+                            alert(response.message || 'Appointment booked successfully! You will receive a confirmation email shortly.');
+                            $('#appointmentForm')[0].reset();
+                            $('#appointment_time').empty().prop('disabled', true).append('<option value="">Select a date first</option>');
+                            $('#selected_appointment_datetime').val('');
+
+                            // Redirect if URL is provided
+                            if (response.redirect_url) {
+                                setTimeout(() => {
+                                    window.location.href = response.redirect_url;
+                                }, 2000);
+                            }
+                        } else {
+                            alert(response.message || 'Failed to book appointment. Please try again.');
+                        }
                     },
                     error: function(xhr) {
                         let errorMessage = 'An error occurred while booking your appointment.';
-                        if (xhr.responseJSON && xhr.responseJSON.errors) {
-                            const errors = Object.values(xhr.responseJSON.errors).flat();
-                            errorMessage = errors.join('\n');
+                        if (xhr.responseJSON) {
+                            if (xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (xhr.responseJSON.errors) {
+                                const errors = Object.values(xhr.responseJSON.errors).flat();
+                                errorMessage = errors.join('\n');
+                            }
                         }
                         alert(errorMessage);
                     },

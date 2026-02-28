@@ -25,6 +25,32 @@
                     </div>
 
                     @if($unpaidInvoices->count() > 0)
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-lightbulb"></i> How to Restore Access:</h6>
+                            <ol class="mb-0">
+                                <li><strong>Pay Outstanding Invoices:</strong> Click "Pay Now" on any unpaid invoice below</li>
+                                <li><strong>Update Payment Method:</strong> Visit "Manage Subscription" to update your payment details</li>
+                                <li><strong>Automatic Restoration:</strong> Your access will be restored within minutes after payment</li>
+                            </ol>
+                        </div>
+                    @endif
+
+                    @if(auth()->user()->monthlyInvoiceSetting && auth()->user()->monthlyInvoiceSetting->restricted_pages)
+                        <div class="alert alert-secondary">
+                            <h6><i class="fas fa-ban"></i> Restricted Pages:</h6>
+                            <p class="mb-0">The following pages are currently restricted:</p>
+                            <ul class="mb-0 mt-2">
+                                @foreach(auth()->user()->monthlyInvoiceSetting->restricted_pages as $page)
+                                    @php
+                                        $availablePages = \App\Models\MonthlyInvoiceSetting::getAvailablePages();
+                                    @endphp
+                                    <li>{{ $availablePages[$page] ?? ucfirst(str_replace(['-', '_'], ' ', $page)) }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    @if($unpaidInvoices->count() > 0)
                         <div class="card mb-4">
                             <div class="card-header">
                                 <h6 class="mb-0">Outstanding Invoices</h6>
@@ -105,7 +131,7 @@
                     @endif
 
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="card h-100">
                                 <div class="card-body text-center">
                                     <i class="fas fa-file-invoice fa-2x text-primary mb-3"></i>
@@ -117,10 +143,22 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="card h-100">
                                 <div class="card-body text-center">
-                                    <i class="fas fa-credit-card fa-2x text-success mb-3"></i>
+                                    <i class="fas fa-cog fa-2x text-info mb-3"></i>
+                                    <h6>Manage Subscription</h6>
+                                    <p class="text-muted small">Update payment methods and manage your subscription.</p>
+                                    <a href="{{ route('subscription.manage') }}" class="btn btn-outline-info">
+                                        <i class="fas fa-credit-card"></i> Manage Subscription
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-envelope fa-2x text-success mb-3"></i>
                                     <h6>Contact Support</h6>
                                     <p class="text-muted small">Need help? Contact our support team for assistance.</p>
                                     <a href="{{ route('contact') }}" class="btn btn-outline-success">

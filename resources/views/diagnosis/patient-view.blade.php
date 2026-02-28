@@ -38,10 +38,16 @@
                             <p class="text-muted mb-0">{{ $diagnosis->doctor->email }}</p>
                         </div>
                         <div class="col-md-4 text-md-end">
-                            <span class="badge bg-{{ $diagnosis->type === 'ai' ? 'info' : 'success' }} fs-6">
-                                <i class="fas fa-{{ $diagnosis->type === 'ai' ? 'robot' : 'user-md' }} me-1"></i>
-                                {{ ucfirst($diagnosis->type) }} Diagnosis
+                            <span class="badge bg-success fs-6">
+                                <i class="fas fa-user-md me-1"></i>
+                                Doctor's Diagnosis
                             </span>
+                            @if($diagnosis->aiAssistantResults && $diagnosis->aiAssistantResults->count() > 0)
+                                <span class="badge bg-info fs-6 ms-2">
+                                    <i class="fas fa-robot me-1"></i>
+                                    AI Assisted
+                                </span>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -67,13 +73,24 @@
                         </div>
                     @endif
 
-                    @if($diagnosis->ai_response)
+                    @if($diagnosis->aiAssistantResults && $diagnosis->aiAssistantResults->count() > 0)
                         <hr>
-                        <div class="ai-response">
-                            <h6><i class="fas fa-robot me-2"></i>AI Analysis</h6>
-                            <div class="bg-info bg-opacity-10 p-3 rounded">
-                                {!! nl2br(e($diagnosis->ai_response)) !!}
-                            </div>
+                        <div class="ai-assistant-results">
+                            <h6><i class="fas fa-robot me-2"></i>AI Assistant Analysis</h6>
+                            @foreach($diagnosis->aiAssistantResults as $index => $result)
+                                <div class="ai-assistant-result mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0 text-info">
+                                            <i class="fas fa-robot me-1"></i>
+                                            AI Analysis {{ $index + 1 }} ({{ ucfirst($result->source) }})
+                                        </h6>
+                                        <small class="text-muted">{{ $result->created_at->format('M d, Y H:i A') }}</small>
+                                    </div>
+                                    <div class="bg-info bg-opacity-10 p-3 rounded">
+                                        {!! nl2br(e($result->ai_analysis)) !!}
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
                     @endif
                 </div>
@@ -91,7 +108,13 @@
                                 @if($value)
                                     <div class="col-md-6 mb-3">
                                         <h6 class="text-capitalize">{{ str_replace('_', ' ', $key) }}</h6>
-                                        <p class="text-muted">{{ $value }}</p>
+                                        <div class="text-muted">
+                                            @if(is_array($value))
+                                                <pre>{{ json_encode($value, JSON_PRETTY_PRINT) }}</pre>
+                                            @else
+                                                {{ $value }}
+                                            @endif
+                                        </div>
                                     </div>
                                 @endif
                             @endforeach

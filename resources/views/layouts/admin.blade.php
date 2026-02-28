@@ -6,6 +6,11 @@
     <meta name="author" content="SemiColonWeb">
     <meta name="description" content="Create Medical Clinic & Hospital Websites with Canvas Template. Get Canvas to build powerful websites easily with the Highly Customizable & Best Selling Bootstrap Template, today.">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
+	<!-- Notification meta tags -->
+	<meta name="user-id" content="{{ Auth::id() }}">
+	<meta name="user-role" content="{{ Auth::user()->role ?? 'user' }}">
+	<meta name="notification-sound-enabled" content="{{ config('app.env') === 'local' ? 'true' : 'true' }}">
+	<meta name="notification-toast-enabled" content="{{ config('app.env') === 'local' ? 'true' : 'true' }}">
 
     <!-- Font Imports -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,6 +33,10 @@
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
     <link rel="stylesheet" href="{{ asset('css/responsive-modals.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin-enhancements.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin-tables.css') }}">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @stack('styles')
 
     <!-- Global Font Styling -->
@@ -192,7 +201,7 @@
             <!-- Brand -->
             <div class="sidebar-brand">
                 <a href="{{ route('admin.dashboard') }}">
-                    <img src="{{ asset('demos/medical/images/logo-medical.jpeg') }}" alt="MedCura AI" class="img-fluid">
+                    <img src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}" alt="MedCura AI" class="img-fluid">
                 </a>
                 <div class="mt-2">
                     <small class="text-white-50">Admin Panel</small>
@@ -258,6 +267,13 @@
                     </a>
                 </div>
 
+                <div class="nav-item">
+                    <a href="{{ route('admin.user-pricing.index') }}" class="nav-link {{ request()->routeIs('admin.user-pricing.*') ? 'active' : '' }}">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>User Pricing</span>
+                    </a>
+                </div>
+
                 <!-- Communication Section -->
                 <div class="nav-section">Communication</div>
                 <div class="nav-item">
@@ -270,6 +286,84 @@
                     <a href="{{ route('admin.contact-submissions') }}" class="nav-link {{ request()->routeIs('admin.contact-submissions*') ? 'active' : '' }}">
                         <i class="fas fa-envelope"></i>
                         <span>Contact Submissions</span>
+                    </a>
+                </div>
+
+                <!-- Clearinghouse Integration Section -->
+                <div class="nav-section">Clearinghouse</div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.clearinghouse.accounts') }}" class="nav-link {{ request()->routeIs('admin.clearinghouse.accounts*') ? 'active' : '' }}">
+                        <i class="fas fa-building"></i>
+                        <span>Account Management</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.clearinghouse.monitoring') }}" class="nav-link {{ request()->routeIs('admin.clearinghouse.monitoring*') ? 'active' : '' }}">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Submission Monitoring</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.clearinghouse.errors') }}" class="nav-link {{ request()->routeIs('admin.clearinghouse.errors*') ? 'active' : '' }}">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Error Reporting</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.clearinghouse.providers') }}" class="nav-link {{ request()->routeIs('admin.clearinghouse.providers*') ? 'active' : '' }}">
+                        <i class="fas fa-cogs"></i>
+                        <span>Provider Config</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.clearinghouse.metrics') }}" class="nav-link {{ request()->routeIs('admin.clearinghouse.metrics*') ? 'active' : '' }}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Performance Metrics</span>
+                    </a>
+                </div>
+
+                <!-- HEP Management Section -->
+                <div class="nav-section">HEP Management</div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.exercises.index') }}" class="nav-link {{ request()->routeIs('admin.exercises.*') ? 'active' : '' }}">
+                        <i class="fas fa-dumbbell"></i>
+                        <span>Exercise Library</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.hep-templates.index') }}" class="nav-link {{ request()->routeIs('admin.hep-templates.*') ? 'active' : '' }}">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>HEP Templates</span>
+                    </a>
+                </div>
+
+                <!-- Payer Rules Engine Section -->
+                <div class="nav-section">Payer Rules Engine</div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.payers.index') }}" class="nav-link {{ request()->routeIs('admin.payers.*') ? 'active' : '' }}">
+                        <i class="fas fa-building"></i>
+                        <span>Payer Management</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.payers.index') }}?tab=rules" class="nav-link {{ request()->routeIs('admin.payers.rules.*') ? 'active' : '' }}">
+                        <i class="fas fa-cogs"></i>
+                        <span>Rules Configuration</span>
+                    </a>
+                </div>
+
+                <!-- Waitlist Management Section -->
+                <div class="nav-section">Waitlist Management</div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.waitlist.dashboard') }}" class="nav-link {{ request()->routeIs('admin.waitlist.dashboard') ? 'active' : '' }}">
+                        <i class="fas fa-list-ul"></i>
+                        <span>Waitlist Dashboard</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.waitlist.analytics') }}" class="nav-link {{ request()->routeIs('admin.waitlist.analytics') ? 'active' : '' }}">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Waitlist Analytics</span>
                     </a>
                 </div>
 
@@ -300,27 +394,18 @@
                         <div class="fw-semibold">{{ Auth::guard('admin')->user()->name }}</div>
                         <small class="text-white-50">Administrator</small>
                     </div>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-ellipsis-v"></i>
+                    <form method="POST" action="{{ route('admin.logout') }}" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline-light" title="Logout">
+                            <i class="fas fa-sign-out-alt"></i>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <form method="POST" action="{{ route('admin.logout') }}">
-                                    @csrf
-                                    <button type="submit" class="dropdown-item text-danger">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
-                    </div>
+                    </form>
                 </div>
             </div>
         </nav>
 
         <!-- Main Content -->
-        <div class="admin-content">
+        <div class="admin-content" id="main-content">
             <!-- Header -->
             <div class="admin-header">
                 <div class="d-flex justify-content-between align-items-center">
@@ -380,6 +465,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function toggleSidebar() {
@@ -400,6 +486,7 @@
             }
         });
     </script>
+
     @stack('scripts')
     @yield('scripts')
 </body>

@@ -1,0 +1,547 @@
+/* ===================================
+   ADMIN PANEL ENHANCEMENTS
+   - Compact tables without horizontal scroll
+   - Better pagination design
+   - Optimized layouts
+   - Responsive design
+   =================================== */
+
+/* Global Admin Styles */
+.admin-content {
+    padding: 1rem !important;
+}
+
+.container {
+    max-width: 100% !important;
+    padding: 0 1rem !important;
+}
+
+/* ===================================
+   COMPACT TABLE STYLES
+   =================================== */
+
+/* Table Container */
+.table-responsive {
+    border-radius: 12px !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+    overflow: hidden !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* Table Base */
+.custom-table {
+    margin-bottom: 0 !important;
+    font-size: 0.8rem !important;
+    table-layout: fixed !important;
+    width: 100% !important;
+}
+
+/* Table Header */
+.custom-table thead {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
+    color: white !important;
+}
+
+.custom-table thead th {
+    border: none !important;
+    padding: 0.6rem 0.4rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.3px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    vertical-align: middle !important;
+}
+
+/* Table Body */
+.custom-table tbody tr {
+    transition: all 0.2s ease !important;
+    border-bottom: 1px solid #f1f3f4 !important;
+}
+
+.custom-table tbody tr:hover {
+    background-color: rgba(222, 98, 98, 0.04) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+.custom-table tbody td {
+    padding: 0.5rem 0.4rem !important;
+    border: none !important;
+    vertical-align: middle !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* ===================================
+   OPTIMIZED COLUMN WIDTHS
+   =================================== */
+
+/* Users Table */
+.users-table .custom-table th:nth-child(1), .users-table .custom-table td:nth-child(1) { width: 12%; } /* User */
+.users-table .custom-table th:nth-child(2), .users-table .custom-table td:nth-child(2) { width: 15%; } /* Email */
+.users-table .custom-table th:nth-child(3), .users-table .custom-table td:nth-child(3) { width: 10%; } /* Phone */
+.users-table .custom-table th:nth-child(4), .users-table .custom-table td:nth-child(4) { width: 10%; } /* Specialty */
+.users-table .custom-table th:nth-child(5), .users-table .custom-table td:nth-child(5) { width: 8%; }  /* Doctor Status */
+.users-table .custom-table th:nth-child(6), .users-table .custom-table td:nth-child(6) { width: 10%; } /* Monthly Amount */
+.users-table .custom-table th:nth-child(7), .users-table .custom-table td:nth-child(7) { width: 8%; }  /* Cost Limit */
+.users-table .custom-table th:nth-child(8), .users-table .custom-table td:nth-child(8) { width: 8%; }  /* Joined */
+.users-table .custom-table th:nth-child(9), .users-table .custom-table td:nth-child(9) { width: 5%; }  /* Patient Management */
+.users-table .custom-table th:nth-child(10), .users-table .custom-table td:nth-child(10) { width: 14%; } /* Actions */
+
+/* Invoices Table */
+.invoices-table .custom-table th:nth-child(1), .invoices-table .custom-table td:nth-child(1) { width: 8%; }  /* ID */
+.invoices-table .custom-table th:nth-child(2), .invoices-table .custom-table td:nth-child(2) { width: 15%; } /* User */
+.invoices-table .custom-table th:nth-child(3), .invoices-table .custom-table td:nth-child(3) { width: 10%; } /* Amount */
+.invoices-table .custom-table th:nth-child(4), .invoices-table .custom-table td:nth-child(4) { width: 8%; }  /* Status */
+.invoices-table .custom-table th:nth-child(5), .invoices-table .custom-table td:nth-child(5) { width: 10%; } /* Type */
+.invoices-table .custom-table th:nth-child(6), .invoices-table .custom-table td:nth-child(6) { width: 10%; } /* Due Date */
+.invoices-table .custom-table th:nth-child(7), .invoices-table .custom-table td:nth-child(7) { width: 10%; } /* Created */
+.invoices-table .custom-table th:nth-child(8), .invoices-table .custom-table td:nth-child(8) { width: 15%; } /* Actions */
+
+/* Monthly Invoices Table */
+.monthly-invoices-table .custom-table th:nth-child(1), .monthly-invoices-table .custom-table td:nth-child(1) { width: 15%; } /* User */
+.monthly-invoices-table .custom-table th:nth-child(2), .monthly-invoices-table .custom-table td:nth-child(2) { width: 10%; } /* Amount */
+.monthly-invoices-table .custom-table th:nth-child(3), .monthly-invoices-table .custom-table td:nth-child(3) { width: 8%; }  /* Status */
+.monthly-invoices-table .custom-table th:nth-child(4), .monthly-invoices-table .custom-table td:nth-child(4) { width: 10%; } /* Subscription */
+.monthly-invoices-table .custom-table th:nth-child(5), .monthly-invoices-table .custom-table td:nth-child(5) { width: 10%; } /* Grace Period */
+.monthly-invoices-table .custom-table th:nth-child(6), .monthly-invoices-table .custom-table td:nth-child(6) { width: 12%; } /* Last Updated */
+.monthly-invoices-table .custom-table th:nth-child(7), .monthly-invoices-table .custom-table td:nth-child(7) { width: 15%; } /* Actions */
+
+/* ===================================
+   COMPACT COMPONENTS
+   =================================== */
+
+/* User Avatar */
+.user-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    background: linear-gradient(135deg, #DE6262 0%, #c55252 100%) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 0.7rem !important;
+    flex-shrink: 0 !important;
+}
+
+/* Badges */
+.custom-table .badge {
+    font-size: 0.65rem !important;
+    padding: 0.2rem 0.4rem !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    white-space: nowrap !important;
+}
+
+/* Action Buttons */
+.action-btn {
+    padding: 0.2rem 0.35rem !important;
+    font-size: 0.7rem !important;
+    border-radius: 6px !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+    border: 1px solid transparent !important;
+    cursor: pointer !important;
+    margin: 0 1px !important;
+}
+
+.action-btn:hover {
+    text-decoration: none !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+.action-btn i {
+    font-size: 0.7rem !important;
+}
+
+/* Action Button Container */
+.custom-table .d-flex.gap-1 {
+    gap: 2px !important;
+    flex-wrap: nowrap !important;
+    justify-content: center !important;
+}
+
+/* ===================================
+   ENHANCED PAGINATION
+   =================================== */
+
+.pagination-wrapper {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin-top: 1.5rem;
+}
+
+.pagination {
+    margin-bottom: 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 0.25rem !important;
+}
+
+.pagination .page-item {
+    margin: 0 !important;
+}
+
+.pagination .page-link {
+    color: #6c757d !important;
+    background-color: #fff !important;
+    border: 1px solid #dee2e6 !important;
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.8rem !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+    min-width: 32px !important;
+    text-align: center !important;
+}
+
+.pagination .page-link:hover {
+    color: white !important;
+    background-color: #DE6262 !important;
+    border-color: #DE6262 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 6px rgba(222, 98, 98, 0.3) !important;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #DE6262 !important;
+    border-color: #DE6262 !important;
+    color: white !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 8px rgba(222, 98, 98, 0.4) !important;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #adb5bd !important;
+    background-color: #f8f9fa !important;
+    border-color: #dee2e6 !important;
+    cursor: not-allowed !important;
+}
+
+.pagination .page-item:first-child .page-link,
+.pagination .page-item:last-child .page-link {
+    border-radius: 8px !important;
+}
+
+/* Pagination Info */
+.pagination-info {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+/* ===================================
+   COMPACT HEADERS
+   =================================== */
+
+.admin-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
+    color: white !important;
+    padding: 1.5rem !important;
+    border-radius: 12px !important;
+    margin-bottom: 1.5rem !important;
+    box-shadow: 0 6px 20px rgba(44, 62, 80, 0.2) !important;
+}
+
+.admin-header h1, .admin-header h2 {
+    font-size: 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+    font-weight: 700 !important;
+}
+
+.admin-header p {
+    font-size: 0.9rem !important;
+    opacity: 0.9 !important;
+    margin-bottom: 0 !important;
+}
+
+/* ===================================
+   COMPACT CARDS
+   =================================== */
+
+.users-table-card, .invoices-table-card, .monthly-invoices-table-card {
+    background: white !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+    border: none !important;
+    overflow: hidden !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* ===================================
+   RESPONSIVE DESIGN
+   =================================== */
+
+/* Prevent horizontal scroll */
+body, html {
+    overflow-x: hidden !important;
+}
+
+.admin-content {
+    overflow-x: hidden !important;
+}
+
+.table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+/* Ensure tables never exceed viewport */
+.custom-table {
+    min-width: 100% !important;
+    max-width: 100% !important;
+}
+
+@media (max-width: 1400px) {
+    .custom-table {
+        font-size: 0.75rem !important;
+    }
+    
+    .custom-table thead th {
+        padding: 0.5rem 0.3rem !important;
+        font-size: 0.65rem !important;
+    }
+    
+    .custom-table tbody td {
+        padding: 0.4rem 0.3rem !important;
+        font-size: 0.7rem !important;
+    }
+    
+    .action-btn {
+        padding: 0.15rem 0.25rem !important;
+        font-size: 0.65rem !important;
+    }
+    
+    /* Adjust column widths for smaller screens */
+    .users-table .custom-table th:nth-child(1), .users-table .custom-table td:nth-child(1) { width: 10%; }
+    .users-table .custom-table th:nth-child(2), .users-table .custom-table td:nth-child(2) { width: 12%; }
+    .users-table .custom-table th:nth-child(3), .users-table .custom-table td:nth-child(3) { width: 8%; }
+    .users-table .custom-table th:nth-child(4), .users-table .custom-table td:nth-child(4) { width: 8%; }
+    .users-table .custom-table th:nth-child(5), .users-table .custom-table td:nth-child(5) { width: 8%; }
+    .users-table .custom-table th:nth-child(6), .users-table .custom-table td:nth-child(6) { width: 10%; }
+    .users-table .custom-table th:nth-child(7), .users-table .custom-table td:nth-child(7) { width: 8%; }
+    .users-table .custom-table th:nth-child(8), .users-table .custom-table td:nth-child(8) { width: 8%; }
+    .users-table .custom-table th:nth-child(9), .users-table .custom-table td:nth-child(9) { width: 5%; }
+    .users-table .custom-table th:nth-child(10), .users-table .custom-table td:nth-child(10) { width: 13%; }
+}
+
+@media (max-width: 1200px) {
+    .custom-table {
+        font-size: 0.7rem !important;
+    }
+    
+    .custom-table thead th {
+        padding: 0.4rem 0.2rem !important;
+        font-size: 0.6rem !important;
+    }
+    
+    .custom-table tbody td {
+        padding: 0.3rem 0.2rem !important;
+        font-size: 0.65rem !important;
+    }
+    
+    .action-btn {
+        padding: 0.1rem 0.2rem !important;
+        font-size: 0.6rem !important;
+    }
+    
+    /* Further reduce column widths */
+    .users-table .custom-table th:nth-child(1), .users-table .custom-table td:nth-child(1) { width: 8%; }
+    .users-table .custom-table th:nth-child(2), .users-table .custom-table td:nth-child(2) { width: 10%; }
+    .users-table .custom-table th:nth-child(6), .users-table .custom-table td:nth-child(6) { width: 8%; }
+    .users-table .custom-table th:nth-child(10), .users-table .custom-table td:nth-child(10) { width: 12%; }
+}
+
+@media (max-width: 992px) {
+    .admin-content {
+        padding: 0.5rem !important;
+    }
+    
+    .container {
+        padding: 0 0.5rem !important;
+    }
+    
+    .admin-header {
+        padding: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .admin-header h1, .admin-header h2 {
+        font-size: 1.3rem !important;
+    }
+    
+    .custom-table {
+        font-size: 0.7rem !important;
+    }
+    
+    .custom-table thead th {
+        padding: 0.4rem 0.2rem !important;
+        font-size: 0.6rem !important;
+    }
+    
+    .custom-table tbody td {
+        padding: 0.3rem 0.2rem !important;
+        font-size: 0.65rem !important;
+    }
+    
+    .user-avatar {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 0.6rem !important;
+    }
+    
+    .custom-table .badge {
+        font-size: 0.6rem !important;
+        padding: 0.15rem 0.3rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Hide less important columns on mobile */
+    .custom-table th:nth-child(3),
+    .custom-table td:nth-child(3),
+    .custom-table th:nth-child(7),
+    .custom-table td:nth-child(7),
+    .custom-table th:nth-child(8),
+    .custom-table td:nth-child(8) {
+        display: none !important;
+    }
+    
+    /* Adjust remaining column widths */
+    .users-table .custom-table th:nth-child(1), .users-table .custom-table td:nth-child(1) { width: 20%; }
+    .users-table .custom-table th:nth-child(2), .users-table .custom-table td:nth-child(2) { width: 25%; }
+    .users-table .custom-table th:nth-child(4), .users-table .custom-table td:nth-child(4) { width: 15%; }
+    .users-table .custom-table th:nth-child(5), .users-table .custom-table td:nth-child(5) { width: 15%; }
+    .users-table .custom-table th:nth-child(6), .users-table .custom-table td:nth-child(6) { width: 15%; }
+    .users-table .custom-table th:nth-child(9), .users-table .custom-table td:nth-child(9) { width: 10%; }
+}
+
+/* ===================================
+   ALERT ENHANCEMENTS
+   =================================== */
+
+.alert {
+    border-radius: 10px !important;
+    border: none !important;
+    font-size: 0.85rem !important;
+    padding: 0.75rem 1rem !important;
+    margin-bottom: 1rem !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%) !important;
+    color: #155724 !important;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%) !important;
+    color: #721c24 !important;
+}
+
+/* ===================================
+   BUTTON ENHANCEMENTS
+   =================================== */
+
+.btn {
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+    font-size: 0.85rem !important;
+    padding: 0.5rem 1rem !important;
+}
+
+.btn:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15) !important;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    border: none !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #DE6262 0%, #c55252 100%) !important;
+    border: none !important;
+}
+
+/* ===================================
+   LOADING STATES
+   =================================== */
+
+.table-loading {
+    position: relative;
+}
+
+.table-loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+/* ===================================
+   UTILITY CLASSES
+   =================================== */
+
+.text-truncate-custom {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 150px !important;
+}
+
+.no-wrap {
+    white-space: nowrap !important;
+}
+
+.compact-spacing {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* ===================================
+   PRINT STYLES
+   =================================== */
+
+@media print {
+    .admin-sidebar,
+    .admin-header .btn,
+    .action-btn,
+    .pagination-wrapper {
+        display: none !important;
+    }
+    
+    .admin-content {
+        margin-left: 0 !important;
+    }
+    
+    .custom-table {
+        font-size: 0.7rem !important;
+    }
+    
+    .custom-table thead {
+        background: #f8f9fa !important;
+        color: #000 !important;
+    }
+}

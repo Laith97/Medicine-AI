@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Doctor;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\HandlesEffectiveDoctor;
 
 class AppointmentSettingsController extends Controller
 {
+    use HandlesEffectiveDoctor;
     public function __construct()
     {
         // Middleware is handled at route level
@@ -18,7 +20,7 @@ class AppointmentSettingsController extends Controller
      */
     public function index()
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
         $appointmentTypes = [
             'in_person' => 'In-Person Consultation',
             'video_call' => 'Video Call',
@@ -33,7 +35,7 @@ class AppointmentSettingsController extends Controller
      */
     public function updateAppointmentTypes(Request $request)
     {
-        $doctor = Auth::user()->doctor;
+        $doctor = $this->getEffectiveDoctor();
 
         $request->validate([
             'appointment_types' => 'nullable|array',
