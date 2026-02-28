@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Diagnosis;
 use App\Models\AiAssistantResult;
 use App\Models\VoiceAssistantPerformanceMetric;
+use App\Models\Appointment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -15,23 +16,39 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use OpenAI\Laravel\Facades\OpenAI;
+use App\Models\Patient;
+use Illuminate\Support\Facades\Storage;
+use App\Helpers\OpenAIHelper;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use App\Notifications\VoiceTranscriptionCompletedNotification;
+use App\Notifications\SystemAlertNotification;
+use App\Jobs\ProcessVoiceTranscriptionJob;
+use Google\Cloud\Speech\V1\SpeechClient;
+use Google\Cloud\Speech\V1\RecognitionConfig;
+use Google\Cloud\Speech\V1\AudioEncoding;
+use Google\Cloud\Speech\V1\SpeechAdaptation;
+use Google\Cloud\Speech\V1\PhraseSet;
+use Google\Cloud\Speech\V1\RecognitionAudio;
 
 class VoiceAssistantController extends Controller
 {
+    private $cachedMedicalPhraseSet = null;
+
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
             $user = Auth::user();
 
             // Handle sub-users - they inherit access from their parent doctor
-            if ($user->isSubUser()) {
+            if ($user->parent_user_id) { // Assuming sub-users have a parent_user_id
                 $parentUser = $user->parentUser;
-                if (!$parentUser || !$parentUser->isDoctor() || !$parentUser->doctor || !$parentUser->doctor->is_active) {
+                if (!$parentUser || $parentUser->role !== 'doctor' || !$parentUser->doctor || !$parentUser->doctor->is_active) {
                     abort(403, 'Access denied. Parent doctor profile required.');
                 }
             } else {
                 // Handle main users (doctors)
-                if (!$user->isDoctor() || !$user->doctor) {
+                if ($user->role !== 'doctor' || !$user->doctor) {
                     abort(403, 'Access denied. Doctor profile required.');
                 }
 
@@ -49,13 +66,21 @@ class VoiceAssistantController extends Controller
      */
     private function generatePatientKey($patient)
     {
-        // Use the same logic as Diagnosis model
-        return Diagnosis::generatePatientKey(
-            $patient->name,
-            $patient->age,
-            $patient->gender,
-            Auth::id()
-        );
+        try {
+            // Use the same logic as Diagnosis model
+            return Diagnosis::generatePatientKey(
+                $patient->name ?? null,
+                $patient->age ?? null,
+                $patient->gender ?? null,
+                Auth::id()
+            );
+        } catch (\Exception $e) {
+            \Log::error('Failed to generate patient key', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+            throw $e; // Re-throw to be handled by calling function
+        }
     }
 
     public function training()
@@ -97,40 +122,55 @@ class VoiceAssistantController extends Controller
 
         \Log::info('Voice Assistant - Starting index method', [
             'user_id' => Auth::id(),
-            'user_email' => Auth::user()->email,
-            'is_doctor' => Auth::user()->isDoctor(),
+            'is_doctor' => Auth::user()->role === 'doctor',
             'primary_doctor_id' => Auth::user()->primary_doctor_id ?? 'null'
         ]);
 
         try {
-            $basePatients = Auth::user()->getEffectiveAssignedPatients()
-                ->select('id', 'name', 'email', 'age', 'gender')
-                ->orderBy('name')
-                ->get();
-                
-            \Log::info('Voice Assistant - Loaded patients using getEffectiveAssignedPatients', [
-                'count' => $basePatients->count(),
+            // Use unified method to get all patients (assigned + appointments)
+            $basePatients = Auth::user()->getDoctorPatients();
+
+            // Extract only needed fields for dropdown
+            $basePatients = $basePatients->map(function($patient) {
+                return (object)[
+                    'id' => $patient->id,
+                    'name' => $patient->name,
+                    'email' => $patient->email,
+                    'age' => $patient->age ?? ($patient->date_of_birth ? \Carbon\Carbon::parse($patient->date_of_birth)->age : null),
+                    'gender' => $patient->gender,
+                ];
+            })->sortBy('name');
+
+            \Log::info('Voice Assistant - Loaded patients using unified method', [
+                'total_count' => $basePatients->count(),
                 'patient_names' => $basePatients->pluck('name')->toArray()
             ]);
         } catch (\Exception $e) {
-            \Log::warning('Could not load assigned patients, trying fallback: ' . $e->getMessage());
+            \Log::warning('Could not load patients using unified method, using fallback: ' . $e->getMessage());
 
-            // Fallback: load all patients with role 'patient' for this doctor
+            // Fallback: just get patients with confirmed or completed appointments
             try {
                 $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
-                \Log::info('Voice Assistant - Using fallback patient loading', [
-                    'effective_doctor_id' => $effectiveDoctorId
-                ]);
-                
                 $basePatients = User::where('role', 'patient')
-                    ->where('primary_doctor_id', $effectiveDoctorId)
-                    ->select('id', 'name', 'email', 'age', 'gender')
+                    ->whereHas('appointments', function($query) use ($effectiveDoctorId) {
+                        $query->where('doctor_id', $effectiveDoctorId)
+                              ->whereIn('status', ['confirmed', 'completed']);
+                    })
+                    ->select('id', 'name', 'email', 'age', 'date_of_birth', 'gender')
                     ->orderBy('name')
-                    ->get();
-                    
-                \Log::info('Voice Assistant - Loaded patients using fallback', [
+                    ->get()
+                    ->map(function($patient) {
+                        return (object)[
+                            'id' => $patient->id,
+                            'name' => $patient->name,
+                            'email' => $patient->email,
+                            'age' => $patient->age ?? ($patient->date_of_birth ? \Carbon\Carbon::parse($patient->date_of_birth)->age : null),
+                            'gender' => $patient->gender,
+                        ];
+                    });
+
+                \Log::info('Voice Assistant - Loaded patients using appointment fallback', [
                     'count' => $basePatients->count(),
-                    'patient_names' => $basePatients->pluck('name')->toArray()
                 ]);
             } catch (\Exception $e2) {
                 $basePatients = collect();
@@ -138,106 +178,101 @@ class VoiceAssistantController extends Controller
             }
         }
 
+        // Load guest patients from confirmed or completed appointments
+        $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+        $guestAppointments = \App\Models\Appointment::where('doctor_id', $effectiveDoctorId)
+            ->whereIn('status', ['confirmed', 'completed'])
+            ->whereNotNull('guest_name')
+            ->whereNotNull('guest_email')
+            ->select('guest_name', 'guest_email', 'guest_date_of_birth', 'guest_gender', 'guest_phone', 'appointment_date')
+            ->orderBy('appointment_date', 'desc')
+            ->get();
+
+        \Log::info('Voice Assistant - Loaded guest patients from confirmed appointments', [
+            'count' => $guestAppointments->count(),
+            'guest_names' => $guestAppointments->pluck('guest_name')->toArray()
+        ]);
+
+        // Convert guest appointments to patient-like objects
+        $guestPatients = $guestAppointments->map(function($appointment) {
+            // Calculate age from date of birth if available
+            $age = null;
+            if ($appointment->guest_date_of_birth) {
+                $age = $appointment->guest_date_of_birth->age;
+            }
+
+            return (object)[
+                'id' => 'guest_' . md5($appointment->guest_email . $appointment->guest_name), // Create unique ID for guest
+                'name' => $appointment->guest_name,
+                'email' => $appointment->guest_email,
+                'age' => $age,
+                'gender' => $appointment->guest_gender,
+                'phone' => $appointment->guest_phone,
+                'is_guest' => true,
+                'last_appointment' => $appointment->appointment_date
+            ];
+        });
+
+        // Merge registered patients with guest patients, removing duplicates by email
+        $allPatients = $basePatients->concat($guestPatients)->unique('email')->values();
+
+        \Log::info('Voice Assistant - Total patients after merging guests', [
+            'total_count' => $allPatients->count(),
+            'registered_count' => $basePatients->count(),
+            'guest_count' => $guestPatients->count()
+        ]);
+
         // Load available appointments for each patient (for appointment completion)
         $patientAppointments = [];
-        $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+        $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
         $loggedInUserId = Auth::id();
-        
+
+        // Define appointment collections before using them
+        $allAppointments = collect();
+        $todaysAppointments = collect();
+
+        // Load appointments for all patients at once to avoid N+1 queries
+        $effectiveDoctorIdForAppointment = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+
+        // Get all appointments for the doctor's patients
+        $appointmentsQuery = \App\Models\Appointment::where('doctor_id', $effectiveDoctorIdForAppointment)
+            ->whereIn('patient_id', $basePatients->pluck('id'))
+            ->whereIn('status', ['confirmed', 'pending', 'completed'])
+            ->with(['patient']) // Eager load patient relationship
+            ->get();
+
+        // Group appointments by patient_id
+        $allAppointments = $appointmentsQuery->groupBy('patient_id');
+
+        // Also get today's appointments specifically
+        $todaysAppointmentsQuery = \App\Models\Appointment::where('doctor_id', $effectiveDoctorIdForAppointment)
+            ->whereIn('patient_id', $basePatients->pluck('id'))
+            ->whereDate('appointment_date', Carbon::today())
+            ->whereIn('status', ['confirmed', 'pending', 'completed'])
+            ->with(['patient'])
+            ->get();
+
+        $todaysAppointments = $todaysAppointmentsQuery->groupBy('patient_id');
+
         Log::info('Voice Assistant - Doctor ID debug', [
             'effective_doctor_id' => $effectiveDoctorId,
             'logged_in_user_id' => $loggedInUserId,
-            'user_is_doctor' => Auth::user()->isDoctor(),
-            'user_email' => Auth::user()->email
+            'user_is_doctor' => Auth::user()->role === 'doctor',
         ]);
-        
-        foreach ($basePatients as $patient) {
+
+        foreach ($allPatients as $patient) {
             $appointments = collect(); // Start with empty collection
-            
-            // First, try to find ALL appointments for this patient to see what exists
-            $allPatientAppointments = \App\Models\Appointment::where('patient_id', $patient->id)
-                ->orderBy('appointment_date', 'desc')
-                ->get();
-            
-            Log::info('Voice Assistant - All appointments for patient (debug)', [
-                'patient_id' => $patient->id,
-                'patient_name' => $patient->name,
-                'total_appointments' => $allPatientAppointments->count(),
-                'appointments' => $allPatientAppointments->map(function($apt) {
-                    return [
-                        'id' => $apt->id,
-                        'doctor_id' => $apt->doctor_id,
-                        'status' => $apt->status,
-                        'appointment_date' => $apt->appointment_date->format('Y-m-d H:i:s')
-                    ];
-                })->toArray()
-            ]);
-            
-            // Now try multiple approaches to find appointments for completion
-            $searchAttempts = [
-                ['doctor_id' => $effectiveDoctorId, 'label' => 'effective_doctor_id'],
-                ['doctor_id' => $loggedInUserId, 'label' => 'logged_in_user_id'],
-            ];
-            
-            // If the patient belongs to this doctor, also try with patient's primary_doctor_id
-            if ($patient->primary_doctor_id && in_array($patient->primary_doctor_id, [$effectiveDoctorId, $loggedInUserId])) {
-                $searchAttempts[] = ['doctor_id' => $patient->primary_doctor_id, 'label' => 'patient_primary_doctor_id'];
-            }
-            
-            // Also try to get the doctor's ID from the Doctor model
-            try {
-                $doctor = Auth::user()->doctor;
-                if ($doctor && $doctor->id && !in_array($doctor->id, array_column($searchAttempts, 'doctor_id'))) {
-                    $searchAttempts[] = ['doctor_id' => $doctor->id, 'label' => 'auth_user_doctor_id'];
-                }
-            } catch (\Exception $e) {
-                Log::warning('Voice Assistant - Could not get doctor ID: ' . $e->getMessage());
-            }
-            
-            foreach ($searchAttempts as $attempt) {
-                // Search for ACTIVE appointments only (pending/confirmed, today or future)
-                $query = \App\Models\Appointment::where('patient_id', $patient->id)
-                    ->where('doctor_id', $attempt['doctor_id'])
-                    ->whereIn('status', ['pending', 'confirmed'])
-                    ->where('appointment_date', '>=', now()->startOfDay()) // Only today or future appointments
-                    ->orderBy('appointment_date', 'asc');
-                
-                $foundAppointments = $query->get();
-                
-                if ($foundAppointments->isNotEmpty()) {
-                    Log::info('Voice Assistant - Found active appointments with ' . $attempt['label'], [
-                        'patient_id' => $patient->id,
-                        'patient_name' => $patient->name,
-                        'search_type' => $attempt['label'],
-                        'doctor_id' => $attempt['doctor_id'],
-                        'appointment_count' => $foundAppointments->count()
-                    ]);
-                    $appointments = $foundAppointments;
-                    break;
-                }
-            }
-            
-            // If no active appointments found, also try today's appointments regardless of time
-            if ($appointments->isEmpty()) {
-                foreach ($searchAttempts as $attempt) {
-                    $query = \App\Models\Appointment::where('patient_id', $patient->id)
-                        ->where('doctor_id', $attempt['doctor_id'])
-                        ->whereIn('status', ['pending', 'confirmed'])
-                        ->whereDate('appointment_date', today()) // Today's appointments
-                        ->orderBy('appointment_date', 'asc');
-                    
-                    $foundAppointments = $query->get();
-                    
-                    if ($foundAppointments->isNotEmpty()) {
-                        Log::info('Voice Assistant - Found today appointments with ' . $attempt['label'], [
-                            'patient_id' => $patient->id,
-                            'patient_name' => $patient->name,
-                            'search_type' => $attempt['label'],
-                            'doctor_id' => $attempt['doctor_id'],
-                            'appointment_count' => $foundAppointments->count()
-                        ]);
-                        $appointments = $foundAppointments;
-                        break;
-                    }
+
+            // Get appointments for this patient from pre-fetched data
+            $activeAppointments = $allAppointments->get($patient->id, collect());
+
+            if ($activeAppointments->isNotEmpty()) {
+                $appointments = $activeAppointments;
+            } else {
+                // If no active appointments found, use today's appointments
+                $todaysPatientAppointments = $todaysAppointments->get($patient->id, collect());
+                if ($todaysPatientAppointments->isNotEmpty()) {
+                    $appointments = $todaysPatientAppointments;
                 }
             }
 
@@ -252,44 +287,73 @@ class VoiceAssistantController extends Controller
                 ];
             });
 
-            // Debug logging
+            // Debug logging without sensitive patient names
             Log::info('Voice Assistant - Final appointments for patient', [
                 'patient_id' => $patient->id,
-                'patient_name' => $patient->name,
-                'patient_primary_doctor_id' => $patient->primary_doctor_id,
                 'effective_doctor_id' => $effectiveDoctorId,
                 'logged_in_user_id' => $loggedInUserId,
                 'appointment_count' => $appointments->count(),
-                'appointments' => $appointments->toArray()
             ]);
 
             $patientAppointments[$patient->id] = $appointments;
         }
 
+        // Fetch all diagnosis records for the current doctor and their patients at once
+        $allDiagnoses = Diagnosis::whereIn('patient_id', $basePatients->pluck('id'))
+            ->where('doctor_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('patient_id'); // Group by patient_id for easy lookup
+
         // Process patients and build patient groups with visit history
-        foreach ($basePatients as $patient) {
+        foreach ($allPatients as $patient) {
+            // Skip guest patients for diagnosis-based processing (they don't have diagnosis records)
+            if (isset($patient->is_guest) && $patient->is_guest) {
+                // For guest patients, create minimal patient group entry
+                $patientKey = 'guest_' . $patient->id;
+                $patientGroups[$patientKey] = [
+                    'patient' => $patient,
+                    'visits' => collect(),
+                    'visit_count' => 0,
+                    'last_visit' => isset($patient->last_appointment) ? $patient->last_appointment : null,
+                    'category' => 'guest',
+                    'has_appointments' => true,
+                    'appointment_details' => null,
+                ];
+
+                // Add to patients array for dropdown
+                $patients[] = [
+                    'id' => $patient->id,
+                    'name' => $patient->name,
+                    'email' => $patient->email,
+                    'age' => $patient->age,
+                    'gender' => $patient->gender,
+                    'patient_key' => $patientKey,
+                    'visit_count' => 0,
+                    'last_visit' => isset($patient->last_appointment) ? $patient->last_appointment->format('M d, Y') : null,
+                    'is_guest' => true,
+                ];
+                continue;
+            }
+
             // Generate patient key if not exists
             $patientKey = $this->generatePatientKey($patient);
 
-            // Get visit history from Diagnosis records
-            $visits = Diagnosis::where('patient_id', $patient->id)
-                ->where('doctor_id', Auth::id())
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            $visitCount = $visits->count();
-            $lastVisit = $visits->first() ? $visits->first()->created_at : null;
+            // Get visit history from pre-fetched Diagnosis records
+            $patientsDiagnoses = $allDiagnoses->get($patient->id, collect());
+            $visitCount = $patientsDiagnoses->count();
+            $lastVisit = $patientsDiagnoses->first() ? $patientsDiagnoses->first()->created_at : null;
 
             // Add to patient groups for modal compatibility
             $patientGroups[$patientKey] = [
                 'patient' => $patient,
-                'visits' => $visits->map(function($visit) {
+                'visits' => $patientsDiagnoses->map(function($visit) {
                     return (object)[
                         'id' => $visit->id,
                         'visit_number' => 1, // Diagnosis records don't have visit numbers yet
                         'date' => $visit->created_at->format('M d, Y'),
                         'diagnosis' => substr($visit->diagnosis_text ?? 'No diagnosis available', 0, 100) .
-                                     (strlen($visit->diagnosis_text ?? '') > 100 ? '...' : ''),
+                                      (strlen($visit->diagnosis_text ?? '') > 100 ? '...' : ''),
                         'source_model' => 'Diagnosis',
                     ];
                 }),
@@ -325,7 +389,7 @@ class VoiceAssistantController extends Controller
     public function history()
     {
         $transcriptions = VoiceTranscription::where('doctor_id', Auth::id())
-            ->with('patient')
+            ->with('patient:id,name,email,age,gender') // Limit patient data loaded for security
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -356,17 +420,50 @@ class VoiceAssistantController extends Controller
     {
         $selectedPatient = $request->input('selectedPatient');
 
-        if (!$selectedPatient) {
+        // Validate patient ID
+        if (!$selectedPatient || !is_numeric($selectedPatient) || $selectedPatient <= 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Please select a patient first.'
+                'message' => 'Please select a valid patient first.'
             ]);
+        }
+
+        // Verify that the patient belongs to the current authenticated doctor
+        $patient = User::find($selectedPatient);
+        if (!$patient) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Patient not found.'
+            ], 404);
+        }
+
+        $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+
+        // Check if patient belongs to doctor either by primary_doctor_id or through appointments
+        $hasAccess = false;
+
+        // Check if patient is assigned to this doctor
+        if ($patient->primary_doctor_id == $effectiveDoctorId) {
+            $hasAccess = true;
+        } else {
+            // Check if patient has appointments with this doctor
+            $hasAccess = $patient->appointments()
+                ->where('doctor_id', $effectiveDoctorId)
+                ->whereIn('status', ['confirmed', 'completed', 'pending'])
+                ->exists();
+        }
+
+        if (!$hasAccess) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to patient.'
+            ], 403);
         }
 
         $sessionId = Str::uuid()->toString();
 
         // Create initial transcription record
-        VoiceTranscription::create([
+        $transcription = VoiceTranscription::create([
             'doctor_id' => Auth::id(),
             'patient_id' => $selectedPatient,
             'session_id' => $sessionId,
@@ -375,9 +472,53 @@ class VoiceAssistantController extends Controller
             'session_started_at' => now(),
         ]);
 
+        // Get AssemblyAI configuration for direct client-side streaming
+        // IMPORTANT: Skip AssemblyAI for Arabic - it doesn't support Arabic script properly
+        $assemblyConfig = null;
+        $lang = $request->input('language', 'en');
+        
+        // Only use AssemblyAI for English sessions
+        if ($lang === 'en') {
+            try {
+                // Check if AssemblyAI API key is configured before attempting to use the service
+                $assemblyApiKey = config('services.assemblyai.api_key');
+                if (!empty($assemblyApiKey)) {
+                    $assemblyService = new \App\Services\AssemblyAIService();
+                    
+                    $streamingParams = [
+                        'sample_rate' => 16000,
+                        'keyterms_prompt' => ['medical', 'diagnosis', 'symptoms', 'medication'],
+                        'format_turns' => true,
+                        'speech_model' => 'universal-streaming-english'
+                    ];
+                    
+                    // Get token WITHOUT extra params (v3 endpoint handles token generation)
+                    $token = $assemblyService->getTemporaryToken(600);
+
+                    if ($token) {
+                        $assemblyConfig = [
+                            'token' => $token,
+                            'websocket_url' => $assemblyService->getWebSocketUrl($token, $streamingParams),
+                            'sample_rate' => 16000
+                        ];
+                    }
+                } else {
+                    \Log::warning('AssemblyAI API key not configured, skipping WebSocket setup');
+                }
+            } catch (\Exception $e) {
+                \Log::error('Failed to generate AssemblyAI token for direct streaming: ' . $e->getMessage());
+            }
+        } else {
+            \Log::info('Non-English language selected, skipping AssemblyAI (will use GPT-4o post-processing)', [
+                'language' => $lang
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'sessionId' => $sessionId,
+            'assemblyConfig' => $assemblyConfig,
+            'transcriptionId' => $transcription->id,
             'message' => 'Session started successfully.'
         ]);
     }
@@ -386,17 +527,69 @@ class VoiceAssistantController extends Controller
     {
         $sessionId = $request->input('sessionId');
 
-        // Update transcription record
-        VoiceTranscription::where('session_id', $sessionId)
-            ->update([
-                'status' => 'completed',
-                'session_ended_at' => now(),
+        // Input validation
+        if (empty($sessionId) || !is_string($sessionId) || strlen($sessionId) > 255) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID provided.'
+            ], 400);
+        }
+
+        // Sanitize the session ID by removing any potential malicious characters
+        $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+
+        if (empty($sessionId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID format.'
+            ], 400);
+        }
+
+        try {
+            // Verify that the session belongs to the current authenticated doctor
+            $transcription = VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id())
+                ->first();
+
+            if (!$transcription) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Session not found or unauthorized access.'
+                ], 404);
+            }
+
+            // Update transcription record only if it's still active
+            $result = VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id())
+                ->where('status', 'active')
+                ->update([
+                    'status' => 'completed',
+                    'session_ended_at' => now(),
+                ]);
+
+            if ($result === 0) {
+                // Session might already be completed
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Session already completed or not found.'
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Session stopped successfully.'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Stop session error: ' . $e->getMessage(), [
+                'session_id' => $sessionId,
+                'doctor_id' => Auth::id()
             ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Session stopped successfully.'
-        ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while stopping the session.'
+            ], 500);
+        }
     }
 
     public function handleTranscription(Request $request)
@@ -404,6 +597,7 @@ class VoiceAssistantController extends Controller
         $text = trim($request->input('text', ''));
         $sessionId = $request->input('sessionId');
 
+        // Input validation
         if (empty($text)) {
             return response()->json([
                 'success' => false,
@@ -411,14 +605,40 @@ class VoiceAssistantController extends Controller
             ]);
         }
 
-        // Update the transcription in database
-        $transcription = VoiceTranscription::where('session_id', $sessionId)->first();
-        if ($transcription) {
-            $transcription->update([
-                'raw_transcription' => $text,
-                'updated_at' => now()
-            ]);
+        if (empty($sessionId) || !is_string($sessionId) || strlen($sessionId) > 255) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID provided.'
+            ], 400);
         }
+
+        // Sanitize the session ID by removing any potential malicious characters
+        $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+
+        if (empty($sessionId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID format.'
+            ], 400);
+        }
+
+        // Verify that the session belongs to the current authenticated doctor
+        $transcription = VoiceTranscription::where('session_id', $sessionId)
+            ->where('doctor_id', Auth::id())
+            ->first();
+
+        if (!$transcription) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Session not found or unauthorized access.'
+            ], 404);
+        }
+
+        // Update the transcription in database
+        $transcription->update([
+            'raw_transcription' => $text,
+            'updated_at' => now()
+        ]);
 
         return response()->json([
             'success' => true,
@@ -432,6 +652,24 @@ class VoiceAssistantController extends Controller
         $transcription = trim($request->input('transcription', ''));
         $sessionId = $request->input('sessionId');
 
+        // Input validation
+        if (empty($sessionId) || !is_string($sessionId) || strlen($sessionId) > 255) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID provided.'
+            ], 400);
+        }
+
+        // Sanitize the session ID by removing any potential malicious characters
+        $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+
+        if (empty($sessionId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID format.'
+            ], 400);
+        }
+
         \Log::info('Voice Assistant - processWithAI called', [
             'session_id' => $sessionId,
             'transcription_length' => strlen($transcription),
@@ -444,7 +682,7 @@ class VoiceAssistantController extends Controller
                 'session_id' => $sessionId,
                 'length' => strlen($transcription)
             ]);
-            
+
             // Return fallback data structure instead of error
             $fallbackData = [
                 'symptoms' => '',
@@ -455,7 +693,7 @@ class VoiceAssistantController extends Controller
                 'diagnosis' => '',
                 'care_plan' => ''
             ];
-            
+
             return response()->json([
                 'success' => true,
                 'extractedData' => $fallbackData,
@@ -464,6 +702,18 @@ class VoiceAssistantController extends Controller
         }
 
         try {
+            // Verify that the session belongs to the current authenticated doctor
+            $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id())
+                ->first();
+
+            if (!$transcriptionRecord) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Session not found or unauthorized access.'
+                ], 404);
+            }
+
             // OPTIMIZATION: Check cache for similar transcriptions first
             $cacheKey = 'voice_ai_extraction_' . md5($transcription);
             $cachedResult = Cache::get($cacheKey);
@@ -519,28 +769,23 @@ class VoiceAssistantController extends Controller
                 }
             }
 
-            $aiResponse = $response['choices'][0]['message']['content'] ?? '';
-            
             \Log::info('Voice Assistant - OpenAI response received', [
-                'response_length' => strlen($aiResponse),
-                'response_preview' => substr($aiResponse, 0, 300)
+                'response_length' => strlen($aiResponse ?? ''),
+                'response_preview' => substr($aiResponse ?? '', 0, 300)
             ]);
 
             // FIXED: More robust JSON extraction
-            $extractedData = $this->extractJsonFromResponse($aiResponse);
-            
+            $extractedData = $this->extractJsonFromResponse($aiResponse ?? '');
+
             if ($extractedData) {
                 // Validate and clean the extracted data
                 $extractedData = $this->validateAndCleanExtractedData($extractedData);
-                
+
                 // Update the transcription record with extracted data
-                $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)->first();
-                if ($transcriptionRecord) {
-                    $transcriptionRecord->update([
-                        'extracted_data' => $extractedData
-                    ]);
-                }
-                
+                $transcriptionRecord->update([
+                    'extracted_data' => $extractedData
+                ]);
+
                 \Log::info('Voice Assistant - Medical data extraction successful', [
                     'session_id' => $sessionId,
                     'extracted_fields' => array_keys(array_filter($extractedData))
@@ -556,10 +801,10 @@ class VoiceAssistantController extends Controller
                     'session_id' => $sessionId,
                     'ai_response' => $aiResponse
                 ]);
-                
+
                 // Return fallback data instead of error
                 $fallbackData = $this->generateFallbackData($transcription);
-                
+
                 return response()->json([
                     'success' => true,
                     'extractedData' => $fallbackData,
@@ -575,7 +820,7 @@ class VoiceAssistantController extends Controller
 
             // Return fallback data instead of error to prevent frontend failure
             $fallbackData = $this->generateFallbackData($transcription);
-            
+
             return response()->json([
                 'success' => true,
                 'extractedData' => $fallbackData,
@@ -714,6 +959,24 @@ class VoiceAssistantController extends Controller
         $extractedData = $request->input('extractedData', []);
         $selectedPatient = $request->input('selectedPatient');
 
+        // Input validation
+        if (empty($sessionId) || !is_string($sessionId) || strlen($sessionId) > 255) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID provided.'
+            ], 400);
+        }
+
+        // Sanitize the session ID by removing any potential malicious characters
+        $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+
+        if (empty($sessionId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID format.'
+            ], 400);
+        }
+
         if (empty($transcription)) {
             return response()->json([
                 'success' => false,
@@ -721,48 +984,83 @@ class VoiceAssistantController extends Controller
             ]);
         }
 
-        if (!$selectedPatient) {
+        if (!$selectedPatient || !is_numeric($selectedPatient) || $selectedPatient <= 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Please select a patient first.'
+                'message' => 'Please select a valid patient first.'
             ]);
         }
 
         try {
-            // Get the user's specialty and use the existing preparePrompt function logic
+            // Verify that the session belongs to the current authenticated doctor
+            $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id())
+                ->first();
+
+            if (!$transcriptionRecord) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Session not found or unauthorized access.'
+                ], 404);
+            }
+
+            // Verify that the patient belongs to the current authenticated doctor
+            $patient = User::find($selectedPatient);
+            if (!$patient) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Patient not found.'
+                ], 404);
+            }
+
+            $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+
+            // Check if patient belongs to doctor either by primary_doctor_id or through appointments
+            $hasAccess = false;
+
+            // Check if patient is assigned to this doctor
+            if ($patient->primary_doctor_id == $effectiveDoctorId) {
+                $hasAccess = true;
+            } else {
+                // Check if patient has appointments with this doctor
+                $hasAccess = $patient->appointments()
+                    ->where('doctor_id', $effectiveDoctorId)
+                    ->whereIn('status', ['confirmed', 'completed', 'pending'])
+                    ->exists();
+            }
+
+            if (!$hasAccess) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to patient.'
+                ], 403);
+            }
+
+            // Get the user's specialty and criterion
             $specialty = Auth::user()->setting->specialty ?? 'Internal Medicine';
             $criterion = Auth::user()->setting->criterion ?? 'CDC';
 
             // Get patient data for AI analysis
-            $patient = User::find($selectedPatient);
             $patientAge = $patient ? $patient->age : null;
             $patientGender = $patient ? $patient->gender : null;
 
-            // Prepare input data similar to the existing OpenAI controller
-            $inputData = [
-                'patient_name' => $patient ? $patient->name : 'Unknown',
-                'patient_age' => $patientAge,
-                'patient_gender' => $patientGender,
-                'symptoms' => $extractedData['symptoms'] ?? '',
-                'past_medical_history' => $extractedData['medical_history'] ?? '',
-                'physical_findings' => $extractedData['physical_findings'] ?? '',
-                'medication_history' => $extractedData['medications'] ?? '',
-                'vital_signs' => $extractedData['vital_signs'] ?? '',
-                'chief_complaint' => $extractedData['symptoms'] ?? '',
-                'physician_notes' => $extractedData['diagnosis'] ?? '',
-                'additional_notes' => $extractedData['care_plan'] ?? '',
+            // Prepare patient data object
+            $patientData = [
+                'name' => $patient ? $patient->name : 'Unknown',
+                'age' => $patientAge ?? 'N/A',
+                'gender' => $patientGender ?? 'N/A',
             ];
 
             // OPTIMIZATION: Check cache for similar AI analysis requests
-            $analysisCacheKey = 'voice_ai_analysis_' . md5(json_encode($inputData) . $criterion);
+            $analysisCacheKey = 'voice_ai_analysis_' . md5($transcription . $criterion);
             $cachedAnalysis = Cache::get($analysisCacheKey);
 
             if ($cachedAnalysis) {
                 \Log::info('Voice Assistant - Using cached AI analysis result');
                 $aiAnalysis = $cachedAnalysis;
             } else {
-                // Use the same prompt structure as the existing OpenAI controller
-                $prompt = $this->prepareVoicePrompt($inputData, $criterion);
+                // Use improved prompt that analyzes raw transcript
+                $prompt = $this->prepareVoicePromptFromTranscript($transcription, $patientData, $criterion);
 
                 $response = OpenAI::chat()->create([
                     'model' => 'gpt-4o',
@@ -783,10 +1081,9 @@ class VoiceAssistantController extends Controller
                 }
             }
 
-            $aiAnalysis = $response['choices'][0]['message']['content'] ?? '';
-
-            // Update database
+            // Update database - ensure only the owner can update
             VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id()) // Ensure only the owner can update
                 ->update([
                     'ai_analysis' => $aiAnalysis,
                     'structured_chart' => [
@@ -806,7 +1103,11 @@ class VoiceAssistantController extends Controller
                 'message' => 'AI analysis generated successfully.'
             ]);
         } catch (\Exception $e) {
-            \Log::error('AI analysis error: ' . $e->getMessage());
+            \Log::error('AI analysis error: ' . $e->getMessage(), [
+                'session_id' => $sessionId,
+                'user_id' => Auth::id(),
+                'selected_patient' => $selectedPatient
+            ]);
 
             return response()->json([
                 'success' => false,
@@ -823,11 +1124,80 @@ class VoiceAssistantController extends Controller
         $sessionId = $request->input('sessionId');
         $extractedData = $request->input('extractedData', []);
 
-        if (!$selectedPatient || empty($aiAnalysis)) {
+        // Validate inputs
+        if (empty($sessionId) || !is_string($sessionId) || strlen($sessionId) > 255) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot create AI result without patient selection and AI analysis.'
+                'message' => 'Invalid session ID provided.'
+            ], 400);
+        }
+
+        // Sanitize the session ID by removing any potential malicious characters
+        $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+
+        if (empty($sessionId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid session ID format.'
+            ], 400);
+        }
+
+        if (!$selectedPatient || !is_numeric($selectedPatient) || $selectedPatient <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please select a valid patient first.'
             ]);
+        }
+
+        if (empty($aiAnalysis)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot create AI result without AI analysis.'
+            ]);
+        }
+
+        // Verify that the patient belongs to the current authenticated doctor
+        $patient = User::find($selectedPatient);
+        if (!$patient) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Patient not found.'
+            ], 404);
+        }
+
+        $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+
+        // Check if patient belongs to doctor either by primary_doctor_id or through appointments
+        $hasAccess = false;
+
+        // Check if patient is assigned to this doctor
+        if ($patient->primary_doctor_id == $effectiveDoctorId) {
+            $hasAccess = true;
+        } else {
+            // Check if patient has appointments with this doctor
+            $hasAccess = $patient->appointments()
+                ->where('doctor_id', $effectiveDoctorId)
+                ->whereIn('status', ['confirmed', 'completed', 'pending'])
+                ->exists();
+        }
+
+        if (!$hasAccess) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to patient.'
+            ], 403);
+        }
+
+        // Verify that the session belongs to the current authenticated doctor
+        $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)
+            ->where('doctor_id', Auth::id())
+            ->first();
+
+        if (!$transcriptionRecord) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Session not found or unauthorized access.'
+            ], 404);
         }
 
         try {
@@ -853,6 +1223,7 @@ class VoiceAssistantController extends Controller
 
             // Update the voice transcription record
             VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id()) // Ensure only the owner can update
                 ->update([
                     'ai_assistant_result_id' => $aiResult->id,
                     'status' => 'ai_analysis_complete',
@@ -880,6 +1251,7 @@ class VoiceAssistantController extends Controller
         $sessionId = $request->input('sessionId');
         $extractedData = $request->input('extractedData', []);
 
+        // Validate inputs
         if (empty($manualDiagnosisText)) {
             return response()->json([
                 'success' => false,
@@ -887,15 +1259,74 @@ class VoiceAssistantController extends Controller
             ]);
         }
 
+        if (!empty($sessionId)) {
+            if (!is_string($sessionId) || strlen($sessionId) > 255) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid session ID provided.'
+                ], 400);
+            }
+
+            // Sanitize the session ID by removing any potential malicious characters
+            $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+
+            if (empty($sessionId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid session ID format.'
+                ], 400);
+            }
+        }
+
+        if (!$selectedPatient || !is_numeric($selectedPatient) || $selectedPatient <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please select a valid patient first.'
+            ]);
+        }
+
         try {
             // Get the AI assistant result if provided
             $aiResult = null;
             if ($aiResultId) {
-                $aiResult = AiAssistantResult::findOrFail($aiResultId);
+                $aiResult = AiAssistantResult::where('id', $aiResultId)
+                    ->where('doctor_id', Auth::id())
+                    ->first();
+
+                if (!$aiResult) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unauthorized access to AI assistant result.'
+                    ], 403);
+                }
             }
 
             // Get the patient
             $patient = User::findOrFail($selectedPatient);
+
+            // Verify that the patient belongs to the current authenticated doctor
+            $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+
+            // Check if patient belongs to doctor either by primary_doctor_id or through appointments
+            $hasAccess = false;
+
+            // Check if patient is assigned to this doctor
+            if ($patient->primary_doctor_id == $effectiveDoctorId) {
+                $hasAccess = true;
+            } else {
+                // Check if patient has appointments with this doctor
+                $hasAccess = $patient->appointments()
+                    ->where('doctor_id', $effectiveDoctorId)
+                    ->whereIn('status', ['confirmed', 'completed', 'pending'])
+                    ->exists();
+            }
+
+            if (!$hasAccess) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to patient.'
+                ], 403);
+            }
 
             // Prepare patient data - use AI result data if available, otherwise use extracted data
             $patientData = $aiResult ? $aiResult->patient_data : $extractedData;
@@ -915,12 +1346,15 @@ class VoiceAssistantController extends Controller
                 $aiResult->linkToDiagnosis($diagnosis->id);
             }
 
-            // Update the voice transcription record
-            VoiceTranscription::where('session_id', $sessionId)
-                ->update([
-                    'diagnosis_id' => $diagnosis->id,
-                    'status' => 'diagnosis_created',
-                ]);
+            // Update the voice transcription record only if session ID is provided
+            if (!empty($sessionId)) {
+                VoiceTranscription::where('session_id', $sessionId)
+                    ->where('doctor_id', Auth::id()) // Ensure only the owner can update
+                    ->update([
+                        'diagnosis_id' => $diagnosis->id,
+                        'status' => 'diagnosis_created',
+                    ]);
+            }
 
             // Send voice transcription completion notifications
             $this->sendVoiceTranscriptionNotifications($diagnosis, $transcription);
@@ -948,27 +1382,61 @@ class VoiceAssistantController extends Controller
 
     public function createNewPatient(Request $request)
     {
-        $request->validate([
-            'newPatientName' => 'required|string|max:255',
-            'newPatientEmail' => 'required|email|unique:users,email',
-            'newPatientAge' => 'required|integer|min:1|max:150',
-            'newPatientGender' => 'required|in:male,female,other',
-            'newPatientPhone' => 'nullable|string|max:20',
-        ]);
+        try {
+            $email = $request->input('newPatientEmail');
+            
+            // Check if patient already exists by email BEFORE validation
+            if ($email) {
+                $existingPatient = User::where('email', $email)->where('role', 'patient')->first();
+                
+                if ($existingPatient) {
+                    return response()->json([
+                        'success' => true,
+                        'patient' => [
+                            'id' => $existingPatient->id,
+                            'name' => $existingPatient->name,
+                            'email' => $existingPatient->email,
+                            'age' => $existingPatient->age,
+                            'gender' => $existingPatient->gender,
+                            'phone' => $existingPatient->phone,
+                        ],
+                        'existing' => true,
+                        'message' => 'Patient already exists: ' . $existingPatient->name . ' (' . $existingPatient->age . 'y, ' . $existingPatient->gender . '). You can now start a voice session.'
+                    ]);
+                }
+            }
+            
+            // Validate only for new patients
+            $request->validate([
+                'newPatientName' => 'required|string|max:255',
+                'newPatientEmail' => 'nullable|email|unique:users,email',
+                'newPatientAge' => 'required|integer|min:1|max:150',
+                'newPatientGender' => 'required|in:male,female,other',
+                'newPatientPhone' => 'nullable|string|max:20',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . implode(', ', $e->validator->errors()->all())
+            ], 422);
+        }
 
         try {
+            
+            // Generate a secure random password for the new patient
+            $temporaryPassword = Str::random(16);
+
             // Create new patient user
             $patient = User::create([
                 'name' => $request->input('newPatientName'),
-                'email' => $request->input('newPatientEmail'),
-                'password' => Hash::make('patient123'), // Default password
+                'email' => $email ?: 'patient_' . time() . '@temp.local',
+                'password' => Hash::make($temporaryPassword),
                 'role' => 'patient',
-                'age' => $request->input('newPatientAge'),
                 'gender' => $request->input('newPatientGender'),
                 'phone' => $request->input('newPatientPhone'),
-                'primary_doctor_id' => Auth::id(), // Assign current doctor as primary
-                'email_verified_at' => now(), // Auto-verify for doctor-created accounts
-                'date_of_birth' => null, // Will be calculated if needed later
+                'primary_doctor_id' => Auth::id(),
+                'email_verified_at' => now(),
+                'date_of_birth' => now()->subYears($request->input('newPatientAge', 25)),
             ]);
 
             return response()->json([
@@ -980,7 +1448,8 @@ class VoiceAssistantController extends Controller
                     'age' => $patient->age,
                     'gender' => $patient->gender,
                 ],
-                'message' => 'New patient created successfully! Default password is "patient123" - please inform the patient to change it.'
+                'temporaryPassword' => $temporaryPassword, // Include temporary password for doctor to share
+                'message' => 'New patient created successfully! Temporary password is "' . $temporaryPassword . '" - please inform the patient to change it on first login. Start a voice session to create an appointment.'
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -1001,9 +1470,152 @@ class VoiceAssistantController extends Controller
         ]);
     }
 
+    private function prepareVoicePromptFromTranscript($transcription, $patientData, $criterion)
+    {
+        $specialty = Auth::user()->setting->specialty ?? 'Internal Medicine';
+        
+        $prompt = "You are MedCuraAI, a senior {$specialty} specialist with 20+ years of clinical experience.
+
+TASK: Analyze the following medical consultation transcript and provide a comprehensive clinical analysis.
+
+IMPORTANT: This may be a partial or incomplete transcript. Analyze what is provided and clearly indicate if more information is needed.
+
+PATIENT INFORMATION:
+- Name: {$patientData['name']}
+- Age: {$patientData['age']}
+- Gender: {$patientData['gender']}
+
+CONSULTATION TRANSCRIPT:
+{$transcription}
+
+REQUIRED OUTPUT FORMAT:
+
+🟢 LEVEL 1: QUICK CLINICAL SUMMARY
+
+📋 CHIEF COMPLAINT:
+[Extract the main reason for visit from transcript - if incomplete, state what was captured]
+
+🔍 KEY FINDINGS:
+**Symptoms:** [List all symptoms mentioned - note if transcript appears incomplete]
+**Medical History:** [Extract relevant past medical history if mentioned]
+**Physical Findings:** [Note any examination findings mentioned]
+**Current Medications:** [List medications if mentioned]
+**Vital Signs:** [Note any vital signs if mentioned]
+
+🚨 CASE URGENCY: [EMERGENCY / URGENT / ROUTINE / INSUFFICIENT DATA]
+[One-line justification based on available information]
+
+🔍 PRELIMINARY ASSESSMENT (Based on available information):
+1. **[Assessment 1]** - [Key supporting evidence from transcript]
+2. **[Assessment 2]** - [Key supporting evidence from transcript]
+3. **[Assessment 3]** - [Key supporting evidence from transcript]
+
+⚠️ NOTE: If transcript is incomplete, clearly state: This analysis is based on partial information. Complete consultation needed for definitive assessment.
+
+💡 RECOMMENDATIONS:
+**Based on current information:**
+• [Recommendation 1]
+• [Recommendation 2]
+
+**Additional information needed (if transcript incomplete):**
+• [What else should be asked/examined]
+
+---
+
+🔵 LEVEL 2: DETAILED CLINICAL ANALYSIS
+
+**CLINICAL REASONING:**
+[Detailed analysis based on the consultation - acknowledge if information is limited]
+
+**ASSESSMENT:**
+[Extended assessment with clinical reasoning for each point]
+
+**RECOMMENDATIONS:**
+[Detailed recommendations based on available information]
+
+**NEXT STEPS:**
+[What should be done next, including gathering more information if needed]
+
+CRITICAL INSTRUCTIONS:
+1. Base ALL analysis ONLY on information in the transcript
+2. If transcript is incomplete or cut off, acknowledge this clearly
+3. Provide useful analysis even with limited information
+4. Distinguish between doctor's observations and patient's complaints
+5. Prioritize patient safety - highlight any concerning symptoms
+6. Use {$criterion} guidelines where applicable
+7. Be specific and actionable for immediate clinical use
+8. If more information is needed, clearly state what questions should be asked";
+
+        return $prompt;
+    }
+
+    /**
+     * Improved prompt for clinical documentation (SOAP format)
+     */
+    private function prepareClinicalDocPrompt($transcription, $patientData)
+    {
+        $specialty = Auth::user()->setting->specialty ?? 'Internal Medicine';
+        
+        $prompt = "You are a medical documentation specialist. Create a formal clinical note from this consultation transcript.
+
+PATIENT: {$patientData['name']}, {$patientData['age']}y, {$patientData['gender']}
+
+TRANSCRIPT:
+{$transcription}
+
+REQUIRED OUTPUT - SOAP NOTE FORMAT:
+
+**SUBJECTIVE:**
+Chief Complaint: [Main reason for visit]
+History of Present Illness: [Detailed HPI with timeline]
+Review of Systems: [Relevant positive and negative findings]
+Past Medical History: [Relevant PMH]
+Medications: [Current medications]
+Allergies: [If mentioned]
+Social History: [If mentioned]
+Family History: [If mentioned]
+
+**OBJECTIVE:**
+Vital Signs: [If mentioned]
+Physical Examination: [Organized by system]
+- General: [Appearance, distress level]
+- [Relevant systems examined]
+
+**ASSESSMENT:**
+1. [Primary diagnosis/problem] - [ICD-10 code if standard]
+2. [Secondary diagnosis/problem] - [ICD-10 code if standard]
+[Clinical reasoning for each]
+
+**PLAN:**
+Diagnostic:
+• [Tests ordered with rationale]
+
+Therapeutic:
+• [Medications with sig]
+• [Procedures if any]
+• [Referrals if needed]
+
+Patient Education:
+• [Key counseling points]
+
+Follow-up:
+• [When and why]
+
+INSTRUCTIONS:
+- Use professional medical terminology
+- Be concise but complete
+- Only include information from transcript
+- Format for EMR entry
+- Include relevant billing codes where standard";
+
+        return $prompt;
+    }
+
+    /**
+     * Legacy method for backward compatibility with extracted data
+     */
     private function prepareVoicePrompt($inputData, $criterion)
     {
-        // Get the user's specialty
         $specialty = Auth::user()->setting->specialty ?? 'Internal Medicine';
 
         $specialtyInstruction = "You are a senior consultant physician specialized in {$specialty} with 20+ years of clinical experience. Your expertise in this field should guide your analysis and recommendations.
@@ -1212,13 +1824,26 @@ class VoiceAssistantController extends Controller
     private function sendVoiceTranscriptionNotifications(Diagnosis $diagnosis, string $transcription)
     {
         try {
+            // Verify that the diagnosis belongs to the current authenticated doctor
+            if ($diagnosis->doctor_id !== Auth::id()) {
+                \Log::warning('Unauthorized access attempt to send notifications for diagnosis', [
+                    'diagnosis_id' => $diagnosis->id,
+                    'diagnosis_doctor_id' => $diagnosis->doctor_id,
+                    'current_user_id' => Auth::id()
+                ]);
+                return; // Don't send notifications for unauthorized diagnosis
+            }
+
             // Send notification to patient about new voice diagnosis
             if ($diagnosis->patient && $diagnosis->patient->wantsNotification('voice_transcription_completed')) {
                 // Get the voice transcription record to pass to the notification
                 $voiceTranscription = VoiceTranscription::where('session_id', $diagnosis->voice_transcript ? json_decode($diagnosis->voice_transcript, true)['session_id'] ?? null : null)->first();
 
                 if ($voiceTranscription) {
-                    $diagnosis->patient->notifyIfWants(new \App\Notifications\VoiceTranscriptionCompletedNotification($voiceTranscription));
+                    // Verify that the transcription also belongs to the current doctor
+                    if ($voiceTranscription->doctor_id === Auth::id()) {
+                        $diagnosis->patient->notifyIfWants(new \App\Notifications\VoiceTranscriptionCompletedNotification($voiceTranscription));
+                    }
                 }
             }
 
@@ -1226,7 +1851,8 @@ class VoiceAssistantController extends Controller
             if ($diagnosis->doctor && $diagnosis->doctor->user) {
                 $doctor = $diagnosis->doctor->user;
 
-                if ($doctor->wantsNotification('voice_transcription_completed')) {
+                // Only send notification to the current authenticated doctor
+                if ($doctor->id === Auth::id() && $doctor->wantsNotification('voice_transcription_completed')) {
                     $doctor->notifyIfWants(new \App\Notifications\SystemAlertNotification(
                         'Voice Diagnosis Completed',
                         "Voice transcription diagnosis completed for patient {$diagnosis->patient->name}. Diagnosis ID: {$diagnosis->id}",
@@ -1266,12 +1892,12 @@ class VoiceAssistantController extends Controller
             // Get the patient
             $patient = User::findOrFail($request->selectedPatient);
 
-            // Ensure the patient belongs to the authenticated doctor
-            $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
-            if ($patient->primary_doctor_id !== $effectiveDoctorId) {
+            // Ensure the patient belongs to the authenticated doctor or has confirmed appointments with them
+            $isAssignedPatient = Auth::user()->canAccessPatient($patient);
+            if (!$isAssignedPatient) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Patient not assigned to this doctor.'
+                    'message' => 'Patient not assigned to this doctor or no confirmed appointments exist.'
                 ], 403);
             }
 
@@ -1289,13 +1915,15 @@ class VoiceAssistantController extends Controller
                 ],
             ]);
 
-            // Update the voice transcription record
+            // Update the voice transcription record - add authorization check
             VoiceTranscription::where('session_id', $request->sessionId)
+                ->where('doctor_id', Auth::id()) // Ensure only the owner can update
                 ->update([
                     'diagnosis_id' => $diagnosis->id,
                     'status' => 'diagnosis_created',
                 ]);
 
+            // Prepare success response
             $message = 'Diagnosis saved successfully!';
             $redirectUrl = route('diagnosis.show', $diagnosis);
 
@@ -1303,7 +1931,7 @@ class VoiceAssistantController extends Controller
             if ($request->completionType === 'complete_appointment' && $request->appointmentId) {
                 try {
                     $appointment = \App\Models\Appointment::findOrFail($request->appointmentId);
-                    
+
                     // Debug logging
                     Log::info('Voice Assistant - Appointment validation', [
                         'appointment_id' => $appointment->id,
@@ -1318,10 +1946,10 @@ class VoiceAssistantController extends Controller
 
                     // Ensure the appointment belongs to the authenticated doctor (more flexible)
                     $appointmentDoctorId = $appointment->doctor_id;
-                    $isAppointmentDoctor = $appointmentDoctorId === Auth::id() || 
+                    $isAppointmentDoctor = $appointmentDoctorId === Auth::id() ||
                                          $appointmentDoctorId === $effectiveDoctorId ||
                                          (Auth::user()->doctor && $appointmentDoctorId === Auth::user()->doctor->id);
-                    
+
                     if (!$isAppointmentDoctor) {
                         Log::warning('Voice Assistant - Appointment doctor authorization failed', [
                             'appointment_id' => $appointment->id,
@@ -1330,7 +1958,7 @@ class VoiceAssistantController extends Controller
                             'effective_doctor_id' => $effectiveDoctorId,
                             'user_doctor_id' => Auth::user()->doctor ? Auth::user()->doctor->id : 'null'
                         ]);
-                        
+
                         return response()->json([
                             'success' => false,
                             'message' => 'Unauthorized access to appointment.'
@@ -1344,7 +1972,7 @@ class VoiceAssistantController extends Controller
                             'appointment_patient_id' => $appointment->patient_id,
                             'diagnosis_patient_id' => $patient->id
                         ]);
-                        
+
                         return response()->json([
                             'success' => false,
                             'message' => 'Appointment and diagnosis must be for the same patient.'
@@ -1352,23 +1980,29 @@ class VoiceAssistantController extends Controller
                     }
 
                     // Update appointment status and add doctor notes
-                    $appointment->update([
+                    $updateData = [
                         'status' => 'completed',
-                        'doctor_notes' => $request->doctorNotes,
                         'completed_at' => now(),
                         'diagnosis_id' => $diagnosis->id,
-                    ]);
-                    
+                    ];
+
+                    // Only add doctor notes if provided
+                    if ($request->has('doctorNotes') && !empty($request->doctorNotes)) {
+                        $updateData['doctor_notes'] = $request->doctorNotes;
+                    }
+
+                    $appointment->update($updateData);
+
                     // Send appointment completion notifications
                     $this->sendAppointmentCompletionNotifications($appointment, $diagnosis);
-                    
+
                     $message = 'Diagnosis saved and appointment completed successfully!';
                 } catch (\Exception $appointmentException) {
                     Log::error('Voice Assistant - Appointment completion failed', [
                         'appointment_id' => $request->appointmentId,
                         'error' => $appointmentException->getMessage()
                     ]);
-                    
+
                     return response()->json([
                         'success' => false,
                         'message' => 'Failed to complete appointment: ' . $appointmentException->getMessage()
@@ -1378,13 +2012,6 @@ class VoiceAssistantController extends Controller
 
             // Send voice transcription completion notifications
             $this->sendVoiceTranscriptionNotifications($diagnosis, $request->transcription);
-
-            // If appointment was completed, redirect to completion page
-            if ($request->completionType === 'complete_appointment' && $request->appointmentId) {
-                $appointment = \App\Models\Appointment::findOrFail($request->appointmentId);
-                return redirect()->route('doctor.appointments.completed', $appointment)
-                    ->with('success', $message . ' Review the completion summary below.');
-            }
 
             // If appointment was completed, redirect to completion page
             if ($request->completionType === 'complete_appointment' && $request->appointmentId) {
@@ -1513,14 +2140,15 @@ class VoiceAssistantController extends Controller
             'doctorNotes' => 'nullable|string|max:5000',
             'aiResultId' => 'nullable|exists:ai_assistant_results,id',
             'extractedData' => 'nullable|array',
+            'patient_data' => 'nullable|array',
         ]);
 
         try {
             // Get the patient
             $patient = User::findOrFail($request->selectedPatient);
-            
+
             // Debug logging
-            $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
+            $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
             Log::info('Voice Assistant - Complete consultation debug', [
                 'patient_id' => $patient->id,
                 'patient_name' => $patient->name,
@@ -1531,11 +2159,9 @@ class VoiceAssistantController extends Controller
                 'completion_type' => $request->completionType
             ]);
 
-            // Ensure the patient belongs to the authenticated doctor (more flexible check)
-            $isAssignedPatient = $patient->primary_doctor_id === $effectiveDoctorId || 
-                                $patient->primary_doctor_id === Auth::id() ||
-                                Auth::user()->canAccessPatient($patient);
-            
+            // Ensure the patient belongs to the authenticated doctor or has confirmed appointments with them
+            $isAssignedPatient = Auth::user()->canAccessPatient($patient);
+
             if (!$isAssignedPatient) {
                 Log::warning('Voice Assistant - Patient assignment check failed', [
                     'patient_id' => $patient->id,
@@ -1543,10 +2169,10 @@ class VoiceAssistantController extends Controller
                     'effective_doctor_id' => $effectiveDoctorId,
                     'auth_id' => Auth::id()
                 ]);
-                
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Patient not assigned to this doctor.'
+                    'message' => 'Patient not assigned to this doctor or no confirmed appointments exist.'
                 ], 403);
             }
 
@@ -1559,8 +2185,14 @@ class VoiceAssistantController extends Controller
                 }
             }
 
-            // Prepare patient data - use AI result data if available, otherwise use extracted data
-            $patientData = $aiResult ? $aiResult->patient_data : ($request->extractedData ?? []);
+            // Prepare patient data - merge modal patient_data with AI/extracted data
+            $basePatientData = $aiResult ? $aiResult->patient_data : ($request->extractedData ?? []);
+            $modalPatientData = $request->patient_data ?? [];
+            
+            // Merge with priority to modal data (user-entered allergies/medications)
+            $patientData = array_merge($basePatientData, array_filter($modalPatientData, function($value) {
+                return !empty(trim($value));
+            }));
 
             // Create the diagnosis record
             $diagnosis = Diagnosis::create([
@@ -1577,21 +2209,29 @@ class VoiceAssistantController extends Controller
                 $aiResult->linkToDiagnosis($diagnosis->id);
             }
 
-            // Update the voice transcription record
+            // Update the voice transcription record - add authorization check
             VoiceTranscription::where('session_id', $request->sessionId)
+                ->where('doctor_id', Auth::id()) // Ensure only the owner can update
                 ->update([
                     'diagnosis_id' => $diagnosis->id,
                     'status' => 'diagnosis_created',
                 ]);
 
+            // Prepare success response
             $message = 'Diagnosis saved successfully!';
             $redirectUrl = route('diagnosis.show', $diagnosis);
 
-            // Handle appointment completion if requested
+            // Check if patient has any existing appointment with this doctor
+            $existingAppointment = \App\Models\Appointment::where('patient_id', $patient->id)
+                ->where('doctor_id', Auth::user()->doctor->id)
+                ->first();
+
+            // Handle appointment creation/completion
             if ($request->completionType === 'complete_appointment' && $request->appointmentId) {
+                // Complete existing appointment
                 try {
                     $appointment = \App\Models\Appointment::findOrFail($request->appointmentId);
-                    
+
                     // Debug logging
                     Log::info('Voice Assistant - Appointment validation', [
                         'appointment_id' => $appointment->id,
@@ -1606,10 +2246,10 @@ class VoiceAssistantController extends Controller
 
                     // Ensure the appointment belongs to the authenticated doctor (more flexible)
                     $appointmentDoctorId = $appointment->doctor_id;
-                    $isAppointmentDoctor = $appointmentDoctorId === Auth::id() || 
+                    $isAppointmentDoctor = $appointmentDoctorId === Auth::id() ||
                                          $appointmentDoctorId === $effectiveDoctorId ||
                                          (Auth::user()->doctor && $appointmentDoctorId === Auth::user()->doctor->id);
-                    
+
                     if (!$isAppointmentDoctor) {
                         Log::warning('Voice Assistant - Appointment doctor authorization failed', [
                             'appointment_id' => $appointment->id,
@@ -1618,7 +2258,7 @@ class VoiceAssistantController extends Controller
                             'effective_doctor_id' => $effectiveDoctorId,
                             'user_doctor_id' => Auth::user()->doctor ? Auth::user()->doctor->id : 'null'
                         ]);
-                        
+
                         return response()->json([
                             'success' => false,
                             'message' => 'Unauthorized access to appointment.'
@@ -1632,7 +2272,7 @@ class VoiceAssistantController extends Controller
                             'appointment_patient_id' => $appointment->patient_id,
                             'diagnosis_patient_id' => $patient->id
                         ]);
-                        
+
                         return response()->json([
                             'success' => false,
                             'message' => 'Appointment and diagnosis must be for the same patient.'
@@ -1646,22 +2286,44 @@ class VoiceAssistantController extends Controller
                         'completed_at' => now(),
                         'diagnosis_id' => $diagnosis->id,
                     ]);
-                    
+
                     // Send appointment completion notifications
                     $this->sendAppointmentCompletionNotifications($appointment, $diagnosis);
-                    
+
                     $message = 'Diagnosis saved and appointment completed successfully!';
                 } catch (\Exception $appointmentException) {
                     Log::error('Voice Assistant - Appointment completion failed', [
                         'appointment_id' => $request->appointmentId,
                         'error' => $appointmentException->getMessage()
                     ]);
-                    
+
                     return response()->json([
                         'success' => false,
                         'message' => 'Failed to complete appointment: ' . $appointmentException->getMessage()
                     ], 500);
                 }
+            } elseif (!$existingAppointment) {
+                // No existing appointment - create a walk-in completed appointment for this voice session
+                $walkInAppointment = \App\Models\Appointment::create([
+                    'patient_id' => $patient->id,
+                    'doctor_id' => Auth::user()->doctor->id,
+                    'appointment_date' => now(),
+                    'appointment_end' => now()->addMinutes(30),
+                    'status' => 'completed',
+                    'type' => 'in_person',
+                    'notes' => 'Voice assistant consultation - walk-in',
+                    'diagnosis_id' => $diagnosis->id,
+                    'doctor_notes' => $request->doctorNotes,
+                    'completed_at' => now(),
+                ]);
+
+                Log::info('Voice Assistant - Created walk-in appointment for patient', [
+                    'appointment_id' => $walkInAppointment->id,
+                    'patient_id' => $patient->id,
+                    'diagnosis_id' => $diagnosis->id,
+                ]);
+
+                $message = 'Diagnosis saved and walk-in appointment created successfully!';
             }
 
             // Send voice transcription completion notifications
@@ -1725,18 +2387,19 @@ class VoiceAssistantController extends Controller
                 ]
             ]);
     
-            } catch (\Exception $e) {
-                \Log::error('Diagnosis save failed: ' . $e->getMessage(), [
-                    'diagnosis_id' => $request->diagnosis_id,
-                    'user_id' => Auth::id()
-                ]);
+        } catch (\Exception $e) {
+            \Log::error('Diagnosis save failed: ' . $e->getMessage(), [
+                'diagnosis_id' => $request->diagnosis_id,
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
+            ]);
     
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to save diagnosis: ' . $e->getMessage()
-                ], 500);
-            }
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save diagnosis: ' . $e->getMessage()
+            ], 500);
         }
+    }
     
         /**
          * HYBRID METHOD: Process audio file on server for enhanced accuracy
@@ -1746,12 +2409,51 @@ class VoiceAssistantController extends Controller
         {
             $startTime = microtime(true);
             $sessionId = $request->input('session_id');
+            
+            \Log::info("VoiceAssistant: processAudioServer called", [
+                'session_id' => $sessionId,
+                'has_file' => $request->hasFile('audio_file'),
+                'all_input' => $request->except(['audio_file', 'transcription']) // Log inputs except large fields
+            ]);
+
             $transcription = $request->input('transcription', '');
+            $language = $request->input('language', 'en'); // Default to English
             $hasLiveTranscription = $request->input('has_live_transcription', false);
-    
+
+            // Validate required parameters
+            if (empty($sessionId) || !is_string($sessionId) || strlen($sessionId) > 255) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid session ID provided.'
+                ], 400);
+            }
+
+            // Sanitize the session ID by removing any potential malicious characters
+            $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+
+            if (empty($sessionId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid session ID format.'
+                ], 400);
+            }
+
+            // Verify that the session belongs to the current authenticated doctor
+            $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id())
+                ->first();
+
+            if (!$transcriptionRecord) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Session not found or unauthorized access.'
+                ], 404);
+            }
+
             // Initialize performance metrics
+            $doctorId = Auth::id();
             $metrics = [
-                'doctor_id' => Auth::id(),
+                'doctor_id' => $doctorId,
                 'session_id' => $sessionId,
                 'processing_type' => 'hybrid',
                 'live_transcription_success' => !empty($transcription),
@@ -1761,44 +2463,96 @@ class VoiceAssistantController extends Controller
                 'network_type' => $request->input('network_type', 'unknown'),
                 'connection_speed' => $request->input('connection_speed'),
             ];
-    
+
             \Log::info('HYBRID METHOD - Server audio processing started', [
                 'session_id' => $sessionId,
-                'transcription_length' => strlen($transcription),
+                'transcription_length' => isset($transcription) ? strlen($transcription) : 0,
                 'has_live_transcription' => $hasLiveTranscription,
-                'user_id' => Auth::id()
+                'user_id' => Auth::id(),
+                'request_has_file' => $request->hasFile('audio_file')
             ]);
-    
+
             try {
-                // Check if audio file is provided
+                // Check if audio file is provided - validate input type
+                $hasAudioRecordingInput = $request->input('has_audio_recording', false);
+                $hasAudioRecording = filter_var($hasAudioRecordingInput, FILTER_VALIDATE_BOOLEAN);
+
                 if (!$request->hasFile('audio_file')) {
-                    $metrics['error_type'] = 'audio_upload';
-                    $metrics['error_message'] = 'No audio file provided';
-                    $this->recordPerformanceMetrics($metrics);
-    
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'No audio file provided for server processing'
-                    ], 400);
+                    \Log::warning("VoiceAssistant: No audio file in request", ['session_id' => $sessionId]);
+                    if ($hasAudioRecording) {
+                        $metrics['error_type'] = 'audio_upload';
+                        $metrics['error_message'] = 'Client indicated audio recording exists but no file provided';
+                        $this->recordPerformanceMetrics($metrics);
+
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Audio file expected but not received'
+                        ], 400);
+                    } else {
+                        // No audio expected, skip processing
+                        $metrics['audio_processing_skipped'] = true;
+                        $metrics['reason'] = 'No audio recording expected';
+                        $this->recordPerformanceMetrics($metrics);
+
+                        return response()->json([
+                            'success' => true,
+                            'message' => 'No audio processing needed',
+                            'improved_transcription' => $transcription,
+                            'server_extracted_data' => []
+                        ]);
+                    }
                 }
-    
+
                 $audioFile = $request->file('audio_file');
-    
-                // Validate audio file
-                if (!$this->isValidAudioFile($audioFile)) {
+                \Log::info("VoiceAssistant: Audio file received", [
+                    'original_name' => $audioFile->getClientOriginalName(),
+                    'mime_type' => $audioFile->getMimeType(),
+                    'size' => $audioFile->getSize(),
+                    'path' => $audioFile->getPathname()
+                ]);
+
+                // Enhanced audio file validation with detailed error reporting
+                $validationResult = $this->validateAudioFile($audioFile);
+                if (!$validationResult['valid']) {
+                    \Log::error("VoiceAssistant: Audio file validation failed", ['errors' => $validationResult['errors']]);
+                    $errorMessage = implode('; ', $validationResult['errors']);
                     $metrics['error_type'] = 'audio_validation';
-                    $metrics['error_message'] = 'Invalid audio file format';
+                    $metrics['error_message'] = $errorMessage;
                     $this->recordPerformanceMetrics($metrics);
-    
+
+                    \Log::warning('HYBRID METHOD - Audio file validation failed', [
+                        'session_id' => $sessionId,
+                        'errors' => $validationResult['errors'],
+                        'file_size' => $audioFile ? $audioFile->getSize() : 0,
+                        'mime_type' => $audioFile ? $audioFile->getMimeType() : 'unknown',
+                        'original_name' => $audioFile ? $audioFile->getClientOriginalName() : 'unknown'
+                    ]);
+
                     return response()->json([
                         'success' => false,
-                        'message' => 'Invalid audio file format. Supported: wav, mp3, webm, mp4'
+                        'message' => 'Audio file validation failed: ' . $errorMessage,
+                        'errors' => $validationResult['errors']
                     ], 400);
                 }
+
+                $fileSize = $audioFile->getSize();
+
+                \Log::info('HYBRID METHOD - Audio file validation passed', [
+                    'session_id' => $sessionId,
+                    'file_size' => $fileSize,
+                    'mime_type' => $audioFile->getMimeType(),
+                    'original_name' => $audioFile->getClientOriginalName(),
+                    'extension' => $audioFile->getClientOriginalExtension()
+                ]);
     
                 // Record enhanced audio file metrics
-                $metrics['audio_file_size'] = $audioFile->getSize();
-                $metrics['audio_format'] = $audioFile->getClientOriginalExtension();
+                if ($audioFile && $audioFile->getSize() > 0) {
+                    $metrics['audio_file_size'] = $audioFile->getSize();
+                    $metrics['audio_format'] = $audioFile->getClientOriginalExtension();
+                } else {
+                    $metrics['audio_file_size'] = 0;
+                    $metrics['audio_format'] = 'none';
+                }
     
                 // Get additional audio quality parameters from request
                 $audioQuality = $request->input('audio_quality', []);
@@ -1809,24 +2563,98 @@ class VoiceAssistantController extends Controller
                 }
     
                 // Estimate audio duration from file size and format
-                $metrics['audio_duration'] = $this->estimateAudioDuration($audioFile);
+                $metrics['audio_duration'] = ($audioFile && $audioFile->getSize() > 0) ? $this->estimateAudioDuration($audioFile) : 0;
     
-                // Store audio file temporarily
-                $storeStartTime = microtime(true);
-                $tempPath = $this->storeAudioFile($audioFile, $sessionId);
-    
-                // Process audio with server-side speech recognition
-                $sttStartTime = microtime(true);
-                $serverTranscription = $this->processAudioWithServerSTT($tempPath);
-                $sttEndTime = microtime(true);
-    
-                $metrics['server_processing_success'] = !empty($serverTranscription);
-                $metrics['server_processing_time'] = round(($sttEndTime - $sttStartTime) * 1000, 3); // Convert to milliseconds
-                $metrics['server_transcript_length'] = strlen($serverTranscription);
-    
-                // Clean up temporary file
-                if (file_exists($tempPath)) {
-                    unlink($tempPath);
+                // Store audio file permanently and process it
+                $serverTranscription = '';
+                $permanentPath = null;
+                $audioStoredSuccessfully = false;
+
+                if ($audioFile && $fileSize > 0) {
+                    try {
+                        // Get file size before moving the file (temporary file will be deleted after move)
+                        $fileSizeBeforeMove = $audioFile->getSize();
+
+                        $storeStartTime = microtime(true);
+                        $permanentPath = $this->storeAudioFilePermanently($audioFile, $sessionId);
+                        $storeEndTime = microtime(true);
+
+                        $metrics['audio_storage_success'] = true;
+                        $metrics['audio_storage_time'] = round(($storeEndTime - $storeStartTime) * 1000, 3);
+
+                        \Log::info('HYBRID METHOD - Audio file stored successfully', [
+                            'session_id' => $sessionId,
+                            'permanent_path' => $permanentPath,
+                            'storage_time_ms' => $metrics['audio_storage_time']
+                        ]);
+
+                        $audioStoredSuccessfully = true;
+
+                        // Update the voice transcription record with audio file path immediately
+                        // Use the file size we captured before moving
+                        $this->updateVoiceTranscriptionWithAudio($sessionId, $permanentPath, $fileSizeBeforeMove, $audioFile->getClientOriginalExtension(), $metrics['audio_duration']);
+
+                    } catch (\Exception $storageException) {
+                        \Log::error('HYBRID METHOD - Audio file storage failed', [
+                            'session_id' => $sessionId,
+                            'error' => $storageException->getMessage(),
+                            'file_size' => $fileSize
+                        ]);
+
+                        $metrics['audio_storage_success'] = false;
+                        $metrics['audio_storage_error'] = $storageException->getMessage();
+
+                        // Continue with processing even if storage fails - we can still process the audio
+                        $permanentPath = null;
+                    }
+
+                    // Process audio with server-side speech recognition if we have a stored file
+                    $fullAudioPath = storage_path('app/public/' . $permanentPath);
+                    \Log::info('VoiceAssistant: Checking if audio file exists for STT', [
+                        'permanent_path' => $permanentPath,
+                        'full_path' => $fullAudioPath,
+                        'exists' => file_exists($fullAudioPath)
+                    ]);
+
+                    if ($permanentPath && file_exists($fullAudioPath)) {
+                        try {
+                            $sttStartTime = microtime(true);
+                            $serverTranscription = $this->processAudioWithServerSTT(storage_path('app/public/' . $permanentPath), $language);
+                            $sttEndTime = microtime(true);
+
+                            $metrics['server_processing_success'] = !empty($serverTranscription);
+                            $metrics['server_processing_time'] = round(($sttEndTime - $sttStartTime) * 1000, 3);
+                            $metrics['server_transcript_length'] = strlen($serverTranscription);
+
+                            \Log::info('HYBRID METHOD - Server STT completed', [
+                                'session_id' => $sessionId,
+                                'transcription_length' => strlen($serverTranscription),
+                                'processing_time_ms' => $metrics['server_processing_time'],
+                                'transcription_preview' => substr($serverTranscription, 0, 100)
+                            ]);
+
+                        } catch (\Exception $sttException) {
+                            \Log::error('HYBRID METHOD - Server STT failed', [
+                                'session_id' => $sessionId,
+                                'error' => $sttException->getMessage(),
+                                'permanent_path' => $permanentPath
+                            ]);
+
+                            $metrics['server_processing_success'] = false;
+                            $metrics['server_processing_error'] = $sttException->getMessage();
+                            $serverTranscription = ''; // Ensure empty string for fallback
+                        }
+                    } else {
+                        $metrics['server_processing_success'] = false;
+                        $metrics['server_processing_time'] = 0;
+                        $metrics['server_transcript_length'] = 0;
+                        $metrics['reason'] = 'Audio file not available for server processing';
+                    }
+                } else {
+                    $metrics['server_processing_success'] = false;
+                    $metrics['server_processing_time'] = 0;
+                    $metrics['server_transcript_length'] = 0;
+                    $metrics['reason'] = 'No audio file to process';
                 }
     
                 // Compare results and return the better one
@@ -1862,29 +2690,188 @@ class VoiceAssistantController extends Controller
                 $endTime = microtime(true);
                 $metrics['overall_success'] = $metrics['live_transcription_success'] || $metrics['server_processing_success'];
                 $metrics['total_processing_time'] = round(($endTime - $startTime) * 1000, 3);
-    
+
+                // Determine processing status and messages
+                $processingStatus = $this->determineProcessingStatus($metrics, $transcription, $serverTranscription, $improvedTranscription);
+                $successMessage = $this->generateSuccessMessage($processingStatus, $metrics);
+
                 // Record the performance metrics
                 $this->recordPerformanceMetrics($metrics);
-    
+
                 \Log::info('HYBRID METHOD - Server processing completed', [
                     'session_id' => $sessionId,
                     'live_length' => strlen($transcription),
                     'server_length' => strlen($serverTranscription),
                     'improved_length' => strlen($improvedTranscription),
                     'data_extracted' => !empty($serverExtractedData),
-                    'processing_time_ms' => $metrics['total_processing_time']
+                    'processing_time_ms' => $metrics['total_processing_time'],
+                    'status' => $processingStatus
                 ]);
-    
+
+                // Check if we have any transcription at all
+                if (empty($improvedTranscription)) {
+                    \Log::warning('HYBRID METHOD - No transcription available', [
+                        'session_id' => $sessionId,
+                        'live_length' => strlen($transcription),
+                        'server_length' => strlen($serverTranscription),
+                        'audio_stored' => $audioStoredSuccessfully,
+                        'audio_size' => $fileSize ?? 0
+                    ]);
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No transcription could be generated. The audio may be too short or unclear. Please try recording again.',
+                        'improved_transcription' => '',
+                        'server_extracted_data' => [],
+                        'speakers' => [],
+                        'medical_terms' => [],
+                        'error_details' => 'Both live and server transcription failed to produce results',
+                        'debug_info' => [
+                            'audio_stored' => $audioStoredSuccessfully,
+                            'audio_size' => $fileSize ?? 0,
+                            'live_attempted' => !empty($transcription),
+                            'server_attempted' => isset($metrics['server_processing_success'])
+                        ]
+                    ], 422);
+                }
+
+                // Prepare speaker data for response (enhanced with AI-based speaker detection)
+                // First, extract initial speaker data from transcription
+                $initialSpeakerData = $this->extractSpeakerDataFromTranscription($improvedTranscription);
+                $speakerCount = count($initialSpeakerData['speakers'] ?? []);
+                $hasProperDiarization = $speakerCount > 1 && preg_match('/\[Speaker \d+\]:[^\n]+\n\[Speaker \d+\]:/', $improvedTranscription);
+                
+                \Log::info('HYBRID METHOD - Speaker diarization check', [
+                    'speaker_count' => $speakerCount,
+                    'has_proper_diarization' => $hasProperDiarization,
+                    'transcription_preview' => substr($improvedTranscription, 0, 200),
+                    'transcription_full' => $improvedTranscription, // LOG FULL TRANSCRIPT
+                    'has_multiple_speaker_pattern' => preg_match('/\[Speaker \d+\]:[^\n]+\n\[Speaker \d+\]:/', $improvedTranscription)
+                ]);
+                
+                if (!$hasProperDiarization) {
+                    \Log::info('HYBRID METHOD - Poor diarization detected, forcing AI speaker separation', [
+                        'speaker_count' => $speakerCount,
+                        'has_multiple_labels' => preg_match('/\[Speaker \d+\]:[^\n]+\n\[Speaker \d+\]:/', $improvedTranscription)
+                    ]);
+                    
+                    // Remove any existing speaker labels
+                    $cleanTranscription = preg_replace('/\[Speaker \d+\]:\s*/', '', $improvedTranscription);
+                    
+                    \Log::info('HYBRID METHOD - Clean transcription for AI', [
+                        'clean_length' => strlen($cleanTranscription),
+                        'clean_preview' => substr($cleanTranscription, 0, 100)
+                    ]);
+                    
+                    // Force GPT-4o to separate speakers
+                    try {
+                        $response = OpenAI::chat()->create([
+                            'model' => 'gpt-4o',
+                            'messages' => [
+                                [
+                                    'role' => 'system',
+                                    'content' => 'You are a medical transcription assistant. Your task is to identify and separate speakers in a doctor-patient medical consultation transcript. CRITICAL: You MUST use the EXACT text provided. DO NOT generate, invent, or create any new dialogue. Only separate the existing text by speaker. Return ONLY valid JSON format: {"speakers": [{"speaker": 1, "text": "..."}, {"speaker": 2, "text": "..."}]}. If the text is too short or unclear to separate speakers, return it as a single speaker with the EXACT original text.'
+                                ],
+                                [
+                                    'role' => 'user',
+                                    'content' => "Separate this EXACT medical transcript by speaker. DO NOT create new dialogue. Use ONLY the text provided below:\n\n" . $cleanTranscription . "\n\nReturn JSON with speakers array using the EXACT text above."
+                                ]
+                            ],
+                            'temperature' => 0.0,
+                            'max_tokens' => 1000
+                        ]);
+                        
+                        $aiResponse = $response['choices'][0]['message']['content'] ?? '';
+                        \Log::info('HYBRID METHOD - AI response received', [
+                            'response_length' => strlen($aiResponse),
+                            'response_preview' => substr($aiResponse, 0, 200)
+                        ]);
+                        
+                        // Remove markdown code blocks if present
+                        $aiResponse = preg_replace('/```json\s*/', '', $aiResponse);
+                        $aiResponse = preg_replace('/```\s*$/', '', $aiResponse);
+                        $aiResponse = trim($aiResponse);
+                        
+                        $aiData = json_decode($aiResponse, true);
+                        
+                        if ($aiData && isset($aiData['speakers']) && count($aiData['speakers']) > 1) {
+                            $speakerData = [
+                                'speakers' => $aiData['speakers'],
+                                'medical_terms' => []
+                            ];
+                            
+                            // Format transcription with proper speaker labels
+                            $formattedLines = [];
+                            foreach ($aiData['speakers'] as $segment) {
+                                $speakerNum = $segment['speaker'] ?? 1;
+                                $text = $segment['text'] ?? '';
+                                if (!empty($text)) {
+                                    $formattedLines[] = "[Speaker {$speakerNum}]: {$text}";
+                                }
+                            }
+                            if (!empty($formattedLines)) {
+                                $improvedTranscription = implode("\n", $formattedLines);
+                            }
+                            
+                            \Log::info('HYBRID METHOD - AI separation successful', [
+                                'speaker_count' => count($aiData['speakers']),
+                                'formatted_preview' => substr($improvedTranscription, 0, 200)
+                            ]);
+                        } else {
+                            \Log::warning('HYBRID METHOD - AI returned invalid data, using fallback', [
+                                'ai_data' => $aiData,
+                                'speaker_count' => isset($aiData['speakers']) ? count($aiData['speakers']) : 0
+                            ]);
+                            
+                            // Fallback to pattern-based separation
+                            $speakerData = $this->fallbackSpeakerSeparation($cleanTranscription);
+                            
+                            // Format transcription
+                            $formattedLines = [];
+                            foreach ($speakerData['speakers'] as $segment) {
+                                $speakerNum = $segment['speaker'] ?? 1;
+                                $text = $segment['text'] ?? '';
+                                if (!empty($text)) {
+                                    $formattedLines[] = "[Speaker {$speakerNum}]: {$text}";
+                                }
+                            }
+                            if (!empty($formattedLines)) {
+                                $improvedTranscription = implode("\n", $formattedLines);
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        \Log::error('HYBRID METHOD - AI separation failed', [
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
+                        ]);
+                        $speakerData = $this->fallbackSpeakerSeparation($cleanTranscription);
+                    }
+                } else {
+                    \Log::info('HYBRID METHOD - Proper diarization detected, using existing labels');
+                    // Transcription already has proper speaker labels (from AssemblyAI)
+                    $speakerData = $this->extractSpeakerDataFromTranscription($improvedTranscription);
+                }
+
+                // Format transcription with speaker labels for frontend display (only if not already formatted)
+                $formattedTranscription = $improvedTranscription;
+
                 return response()->json([
                     'success' => true,
-                    'message' => 'Server-side processing completed',
-                    'improved_transcription' => $improvedTranscription,
+                    'message' => $successMessage,
+                    'improved_transcription' => $formattedTranscription,
                     'server_extracted_data' => $serverExtractedData,
-                    'processing_method' => strlen($serverTranscription) > strlen($transcription) ? 'server' : 'live',
+                    'speakers' => $speakerData['speakers'],
+                    'medical_terms' => $speakerData['medical_terms'],
+                    'processing_method' => $processingStatus['method'],
+                    'processing_status' => $processingStatus,
                     'improvement_ratio' => $metrics['transcript_improvement_ratio'] ?? 1,
                     'performance_metrics' => [
                         'processing_time_ms' => $metrics['total_processing_time'],
-                        'server_improved' => $metrics['server_better_than_live'] ?? false
+                        'server_improved' => $metrics['server_better_than_live'] ?? false,
+                        'audio_stored' => $audioStoredSuccessfully,
+                        'extraction_success' => !empty($serverExtractedData),
+                        'speakers_detected' => count($speakerData['speakers']),
+                        'medical_terms_found' => count($speakerData['medical_terms'])
                     ]
                 ]);
     
@@ -1893,57 +2880,139 @@ class VoiceAssistantController extends Controller
                 $metrics['overall_success'] = false;
                 $metrics['total_processing_time'] = round(($endTime - $startTime) * 1000, 3);
                 $metrics['error_type'] = 'server_processing';
-                $metrics['error_message'] = $e->getMessage();
-    
+                $metrics['error_message'] = 'Internal server error';
+
                 $this->recordPerformanceMetrics($metrics);
-    
+
                 \Log::error('HYBRID METHOD - Server processing failed', [
                     'error' => $e->getMessage(),
                     'session_id' => $request->input('session_id'),
                     'user_id' => Auth::id(),
-                    'processing_time_ms' => $metrics['total_processing_time']
+                    'processing_time_ms' => $metrics['total_processing_time'],
+                    'trace' => $e->getTraceAsString()
                 ]);
-    
+
+                // Provide fallback response with live transcription if available
+                $fallbackTranscription = $transcription ?: '';
+                $fallbackMessage = 'Server processing encountered an error. ';
+
+                if (!empty($fallbackTranscription)) {
+                    $fallbackMessage .= 'Using live transcription as fallback.';
+                } else {
+                    $fallbackMessage .= 'No transcription available. Please try recording again.';
+                }
+
+                // Try to extract basic medical data from live transcription as fallback
+                $fallbackExtractedData = [];
+                if (!empty($fallbackTranscription) && strlen($fallbackTranscription) > 5) {
+                    try {
+                        $fallbackExtractedData = $this->extractMedicalDataFromText($fallbackTranscription);
+                        if (!empty($fallbackExtractedData)) {
+                            $fallbackMessage .= ' Basic medical data extracted from live transcription.';
+                        }
+                    } catch (\Exception $fallbackException) {
+                        \Log::warning('HYBRID METHOD - Fallback extraction also failed', [
+                            'session_id' => $request->input('session_id'),
+                            'error' => $fallbackException->getMessage()
+                        ]);
+                    }
+                }
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Server processing failed: ' . $e->getMessage(),
-                    'improved_transcription' => $transcription, // Fallback to live transcription
-                    'server_extracted_data' => []
-                ]);
+                    'message' => $fallbackMessage,
+                    'error_details' => 'An internal error occurred during audio processing. Please contact support if the problem persists.',
+                    'improved_transcription' => $fallbackTranscription,
+                    'server_extracted_data' => $fallbackExtractedData,
+                    'fallback_used' => true,
+                    'processing_method' => 'fallback'
+                ], 500);
             }
         }
     
         /**
-         * Validate audio file format and size
+         * Validate audio file format and size with detailed error reporting
+         */
+        private function validateAudioFile($file)
+        {
+            $errors = [];
+
+            if (!$file->isValid()) {
+                \Log::error("VoiceAssistant: File upload failed or corrupted", ['error' => $file->getErrorMessage()]);
+                $errors[] = 'File upload failed or file is corrupted';
+                return ['valid' => false, 'errors' => $errors];
+            }
+
+            $fileSize = $file->getSize();
+
+            // Validate file size constraints
+            if ($fileSize === 0) {
+                $errors[] = 'Audio file is empty';
+                return ['valid' => false, 'errors' => $errors];
+            }
+
+            // More reasonable minimum size for audio files (44 bytes for WAV header minimum)
+            if ($fileSize < 44) {
+                $errors[] = 'Audio file is too small to be valid (minimum 44 bytes)';
+                return ['valid' => false, 'errors' => $errors];
+            }
+
+            // Maximum size: 100MB for longer recordings
+            $maxSize = 100 * 1024 * 1024; // 100MB
+            if ($fileSize > $maxSize) {
+                $errors[] = 'Audio file is too large (maximum 100MB allowed)';
+                return ['valid' => false, 'errors' => $errors];
+            }
+
+            $mimeType = $file->getMimeType() ?? '';
+            $extension = strtolower($file->getClientOriginalExtension() ?? '');
+
+            // Expanded list of supported audio formats
+            $allowedMimeTypes = [
+                // Common audio formats
+                'audio/wav', 'audio/x-wav',
+                'audio/mp3', 'audio/mpeg', 'audio/mpeg3',
+                'audio/webm', 'audio/webm;codecs=opus',
+                'audio/mp4', 'audio/x-m4a',
+                'audio/ogg', 'audio/oga',
+                'audio/flac',
+                'audio/aac',
+                // Video formats that may contain audio
+                'video/webm', 'video/mp4',
+                // Additional formats
+                'application/octet-stream' // For files that might not have proper MIME detection
+            ];
+
+            $allowedExtensions = ['wav', 'mp3', 'webm', 'mp4', 'm4a', 'ogg', 'oga', 'flac', 'aac'];
+
+            $mimeTypeValid = in_array($mimeType, $allowedMimeTypes);
+            $extensionValid = in_array($extension, $allowedExtensions);
+
+            if (!$mimeTypeValid && !$extensionValid) {
+                $errors[] = "Unsupported audio format. MIME type: {$mimeType}, Extension: {$extension}. Supported formats: " . implode(', ', $allowedExtensions);
+                return ['valid' => false, 'errors' => $errors];
+            }
+
+            // Log warning for MIME/extension mismatch but allow if either is valid
+            if (!$mimeTypeValid || !$extensionValid) {
+                \Log::warning('Audio file validation warning: MIME/extension mismatch', [
+                    'mime_type' => $mimeType,
+                    'extension' => $extension,
+                    'mime_valid' => $mimeTypeValid,
+                    'extension_valid' => $extensionValid
+                ]);
+            }
+
+            return ['valid' => true, 'errors' => []];
+        }
+
+        /**
+         * Legacy method for backward compatibility
          */
         private function isValidAudioFile($file)
         {
-            if (!$file->isValid()) {
-                return false;
-            }
-    
-            $maxSize = 50 * 1024 * 1024; // 50MB
-            if ($file->getSize() > $maxSize) {
-                return false;
-            }
-    
-            $allowedMimeTypes = [
-                'audio/wav',
-                'audio/mp3',
-                'audio/mpeg',
-                'audio/webm',
-                'audio/mp4',
-                'video/webm',
-                'video/mp4'
-            ];
-    
-            $allowedExtensions = ['wav', 'mp3', 'webm', 'mp4'];
-            
-            $mimeType = $file->getMimeType();
-            $extension = $file->getClientOriginalExtension();
-    
-            return in_array($mimeType, $allowedMimeTypes) &&
-                   in_array(strtolower($extension), $allowedExtensions);
+            $result = $this->validateAudioFile($file);
+            return $result['valid'];
         }
     
         /**
@@ -1951,53 +3020,1116 @@ class VoiceAssistantController extends Controller
          */
         private function storeAudioFile($file, $sessionId)
         {
-            $tempDir = storage_path('app/temp/audio_processing');
-            if (!is_dir($tempDir)) {
-                mkdir($tempDir, 0755, true);
+            // Validate the file extension against an allowlist to prevent malicious file types
+            $allowedExtensions = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'mp4', 'webm', '3gp'];
+            $originalExtension = strtolower($file->getClientOriginalExtension());
+
+            if (!in_array($originalExtension, $allowedExtensions)) {
+                throw new \Exception("Invalid file extension: {$originalExtension}. Allowed extensions: " . implode(', ', $allowedExtensions));
             }
-    
-            $filename = "session_{$sessionId}_" . time() . '.' . $file->getClientOriginalExtension();
-            $tempPath = $tempDir . '/' . $filename;
-            
-            $file->move($tempDir, $filename);
-            
-            return $tempPath;
+
+            // Sanitize the filename to prevent directory traversal attacks
+            $sessionId = preg_replace('/[^a-zA-Z0-9_-]/', '', $sessionId);
+            if (empty($sessionId)) {
+                throw new \Exception('Invalid session ID provided');
+            }
+
+            $filename = "session_{$sessionId}_" . time() . '.' . $originalExtension;
+
+            // Validate filename to prevent directory traversal
+            if (strpos($filename, '..') !== false || strpos($filename, '/') !== false || strpos($filename, '\\') !== false) {
+                throw new \Exception('Invalid filename detected');
+            }
+
+            // Use Laravel's Storage facade for secure file operations
+            $storagePath = 'temp/audio_processing';
+
+            // Validate storage path to prevent directory traversal
+            if (strpos($storagePath, '..') !== false || strpos($storagePath, '/') !== false || strpos($storagePath, '\\') !== false) {
+                throw new \Exception('Invalid storage path detected');
+            }
+
+            // Ensure the directory exists
+            if (!\Storage::exists($storagePath)) {
+                \Storage::makeDirectory($storagePath);
+            }
+
+            // Store the file using Laravel's Storage facade
+            try {
+                $path = \Storage::putFileAs($storagePath, $file, $filename, 'private');
+
+                if (!$path) {
+                    throw new \Exception('Failed to store audio file in temporary storage');
+                }
+
+                // Verify the file was actually stored
+                if (!\Storage::exists($path)) {
+                    throw new \Exception('Audio file storage verification failed');
+                }
+
+                // Return the full path for processing
+                return storage_path('app/' . $path);
+
+            } catch (\Exception $e) {
+                \Log::error('Audio file storage failed', [
+                    'session_id' => $sessionId,
+                    'filename' => $filename,
+                    'error' => $e->getMessage()
+                ]);
+                throw new \Exception('Failed to store audio file: ' . $e->getMessage());
+            }
         }
-    
+
         /**
-         * Process audio with server-side speech-to-text (OpenAI Whisper)
+         * Store audio file permanently for long-term access
          */
-        private function processAudioWithServerSTT($audioPath)
+        private function storeAudioFilePermanently($file, $sessionId)
         {
             try {
-                // Check if audio file exists
-                if (!file_exists($audioPath)) {
-                    throw new \Exception('Audio file not found');
+                \Log::info("VoiceAssistant: Attempting to store audio file", ['session_id' => $sessionId]);
+                
+                // Validate the file extension against an allowlist to prevent malicious file types
+                $allowedExtensions = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'mp4', 'webm', '3gp'];
+                $originalExtension = strtolower($file->getClientOriginalExtension());
+
+                if (!in_array($originalExtension, $allowedExtensions)) {
+                    throw new \Exception("Invalid file extension: {$originalExtension}. Allowed extensions: " . implode(', ', $allowedExtensions));
+                }
+
+                // Sanitize the filename to prevent directory traversal attacks
+                $sessionId = preg_replace('/[^a-zA-Z0-9_-]/', '', $sessionId);
+                if (empty($sessionId)) {
+                    throw new \Exception('Invalid session ID provided');
+                }
+
+                $filename = "session_{$sessionId}_" . time() . '_' . uniqid() . '.' . $originalExtension;
+
+                // Validate filename to prevent directory traversal
+                if (strpos($filename, '..') !== false || strpos($filename, '/') !== false || strpos($filename, '\\') !== false) {
+                    throw new \Exception('Invalid filename detected');
+                }
+
+                // Use Laravel's Storage facade for secure file operations
+                $storagePath = 'audio/voice_transcriptions';
+
+                // Validate storage path to prevent directory traversal
+                if (strpos($storagePath, '..') !== false) {
+                    throw new \Exception('Invalid storage path detected');
+                }
+
+                // Ensure the directory exists
+                if (!\Storage::disk('public')->exists($storagePath)) {
+                    \Storage::disk('public')->makeDirectory($storagePath);
+                }
+
+                // Store the file using Laravel's Storage facade on the public disk
+                $path = \Storage::disk('public')->putFileAs($storagePath, $file, $filename);
+
+                if (!$path) {
+                    \Log::error("VoiceAssistant: Failed to store audio file in permanent storage", ['path' => $storagePath, 'filename' => $filename]);
+                    return false;
+                }
+                
+                \Log::info("VoiceAssistant: Audio file stored successfully", ['path' => $path]);
+                return $path;
+
+            } catch (\Exception $e) {
+                \Log::error("VoiceAssistant: Exception during audio storage", ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+                return false;
+            }
+        }
+
+        /**
+         * Update voice transcription record with audio file information
+         */
+        private function updateVoiceTranscriptionWithAudio($sessionId, $audioPath, $fileSize, $fileExtension, $estimatedDuration)
+        {
+            try {
+                if (!$audioPath || $audioPath === false) {
+                    return false;
+                }
+
+                // If it's a relative path from storage, get the absolute path
+                if (is_string($audioPath) && strpos($audioPath, 'audio/') === 0) {
+                    $audioPath = storage_path('app/public/' . $audioPath);
+                }
+
+                // Validate the audio path to prevent path traversal attacks
+                $resolvedAudioPath = realpath($audioPath); // Resolve any relative paths
+                $storagePath = realpath(storage_path('app')); // Base path for validation
+                
+                // On Windows, realpath might return different separators, so we normalize
+                if ($resolvedAudioPath) {
+                    $resolvedAudioPath = str_replace('\\', '/', $resolvedAudioPath);
+                }
+                if ($storagePath) {
+                    $storagePath = str_replace('\\', '/', $storagePath);
+                }
+
+                if (!$resolvedAudioPath || strpos($resolvedAudioPath, $storagePath) !== 0) {
+                    \Log::error('Invalid audio file path for update', [
+                        'audio_path' => $audioPath,
+                        'resolved_path' => $resolvedAudioPath,
+                        'storage_path' => $storagePath
+                    ]);
+                    throw new \Exception('Invalid audio file path');
+                }
+
+                $audioPath = $resolvedAudioPath;
+
+                $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)->first();
+
+                if (!$transcriptionRecord) {
+                    \Log::warning('HYBRID METHOD - Voice transcription record not found for audio update', [
+                        'session_id' => $sessionId
+                    ]);
+                    return false;
+                }
+
+                $updateData = [
+                    'audio_file' => $audioPath,
+                    'audio_file_size' => $fileSize,
+                    'audio_format' => $fileExtension,
+                    'audio_duration' => $estimatedDuration,
+                    'updated_at' => now()
+                ];
+    
+                $updated = $transcriptionRecord->update($updateData);
+    
+                if ($updated) {
+                    \Log::info('HYBRID METHOD - Voice transcription record updated with audio info', [
+                        'session_id' => $sessionId,
+                        'record_id' => $transcriptionRecord->id,
+                        'audio_path' => $audioPath,
+                        'file_size' => $fileSize,
+                        'file_extension' => $fileExtension
+                    ]);
+                } else {
+                    \Log::warning('HYBRID METHOD - Failed to update voice transcription record', [
+                        'session_id' => $sessionId,
+                        'record_id' => $transcriptionRecord->id
+                    ]);
                 }
     
-                // Use OpenAI Whisper API for server-side transcription
-                $response = OpenAI::audio()->transcribe('whisper-1', fopen($audioPath, 'r'), [
-                    'response_format' => 'text',
-                    'language' => 'auto' // Auto-detect language
-                ]);
-    
-                $transcription = is_string($response) ? $response : '';
-                
-                \Log::info('HYBRID METHOD - OpenAI Whisper transcription completed', [
-                    'transcription_length' => strlen($transcription),
-                    'preview' => substr($transcription, 0, 100)
-                ]);
-    
-                return trim($transcription);
+                return $updated;
     
             } catch (\Exception $e) {
-                \Log::error('HYBRID METHOD - OpenAI Whisper error', [
+                \Log::error('HYBRID METHOD - Error updating voice transcription with audio', [
+                    'session_id' => $sessionId,
                     'error' => $e->getMessage(),
                     'audio_path' => $audioPath
                 ]);
-                
-                return '';
+                return false;
             }
+        }
+    
+        /**
+         * Process audio with advanced medical speech recognition (Google Cloud Speech-to-Text Healthcare)
+         */
+        private function processAudioWithServerSTT($audioPath, $language = 'en')
+        {
+            try {
+                if (!$audioPath || $audioPath === false) {
+                    return '';
+                }
+
+                // Validate the audio path to prevent path traversal attacks
+                $resolvedAudioPath = realpath($audioPath);
+                $storagePath = realpath(storage_path('app'));
+                
+                if ($resolvedAudioPath) {
+                    $resolvedAudioPath = str_replace('\\', '/', $resolvedAudioPath);
+                }
+                if ($storagePath) {
+                    $storagePath = str_replace('\\', '/', $storagePath);
+                }
+
+                if (!$resolvedAudioPath || strpos($resolvedAudioPath, $storagePath) !== 0) {
+                    \Log::error('Invalid audio file path for STT', [
+                        'audio_path' => $audioPath,
+                        'resolved_path' => $resolvedAudioPath,
+                        'storage_path' => $storagePath
+                    ]);
+                    throw new \Exception('Invalid audio file path');
+                }
+
+                $audioPath = $resolvedAudioPath;
+
+                if (!file_exists($audioPath)) {
+                    throw new \Exception('Audio file not found');
+                }
+
+                $fileInfo = pathinfo($audioPath);
+                $fileSize = filesize($audioPath);
+
+                // AUTO-DETECT: Use Whisper to detect the actual spoken language
+                if ($language === 'en' || $language === 'auto') {
+                    \Log::info('HYBRID METHOD - Detecting spoken language with Whisper');
+                    $detectedLang = $this->detectLanguageWithWhisper($audioPath);
+                    \Log::info('HYBRID METHOD - Language detected', ['detected' => $detectedLang, 'original' => $language]);
+                    
+                    // Use detected language for processing
+                    if ($detectedLang === 'ar' || $detectedLang === 'arabic') {
+                        \Log::info('HYBRID METHOD - Arabic detected, using GPT-4o Audio');
+                        $result = $this->processWithGPT4oAudio($audioPath, 'ar');
+                        if ($result['success']) {
+                            return $result['transcription'];
+                        }
+                        $result = $this->processWithOpenAIWhisper($audioPath);
+                        return $result['success'] ? $result['transcription'] : '';
+                    }
+                    // English detected - use AssemblyAI
+                    $language = 'en';
+                }
+
+                // Explicitly selected Arabic
+                if ($language === 'ar' || $language === 'ar-SA') {
+                    \Log::info('HYBRID METHOD - Arabic explicitly selected, using GPT-4o Audio');
+                    $result = $this->processWithGPT4oAudio($audioPath, $language);
+                    if ($result['success']) {
+                        return $result['transcription'];
+                    }
+                    $result = $this->processWithOpenAIWhisper($audioPath);
+                    return $result['success'] ? $result['transcription'] : '';
+                }
+    
+                \Log::info('HYBRID METHOD - Starting server-side transcription', [
+                    'audio_path' => $audioPath,
+                    'file_size' => $fileSize,
+                    'extension' => $fileInfo['extension'],
+                    'language' => $language
+                ]);
+    
+                // Try AssemblyAI for English
+                $result = $this->processWithAssemblyAI($audioPath, $language);
+    
+                if ($result['success']) {
+                    \Log::info('HYBRID METHOD - AssemblyAI successful', [
+                        'transcription_length' => strlen($result['transcription']),
+                        'speakers_detected' => count($result['speakers'] ?? [])
+                    ]);
+                    return $result['transcription'];
+                }
+    
+                // Fallback to Whisper
+                \Log::info('HYBRID METHOD - AssemblyAI failed, falling back to Whisper');
+                $result = $this->processWithOpenAIWhisper($audioPath);
+     
+                return $result['success'] ? $result['transcription'] : '';
+    
+            } catch (\Exception $e) {
+                \Log::error('HYBRID METHOD - Server STT processing failed', [
+                    'error' => $e->getMessage(),
+                    'audio_path' => $audioPath
+                ]);
+    
+                $result = $this->processWithOpenAIWhisper($audioPath);
+                return $result['success'] ? $result['transcription'] : '';
+            }
+        }
+
+        /**
+         * Detect spoken language using Whisper
+         */
+        private function detectLanguageWithWhisper($audioPath)
+        {
+            $fileHandle = null;
+            try {
+                $fileHandle = fopen($audioPath, 'r');
+                if (!$fileHandle) {
+                    return 'en';
+                }
+
+                $response = OpenAI::audio()->transcribe([
+                    'model' => 'whisper-1',
+                    'file' => $fileHandle,
+                    'response_format' => 'verbose_json'
+                ]);
+
+                $detectedLang = $response['language'] ?? 'en';
+                return $detectedLang;
+
+            } catch (\Exception $e) {
+                \Log::error('Language detection failed', ['error' => $e->getMessage()]);
+                return 'en';
+            } finally {
+                if ($fileHandle && is_resource($fileHandle)) {
+                    fclose($fileHandle);
+                }
+            }
+        }
+    
+        /**
+         * Process audio with Google Cloud Speech-to-Text Healthcare API
+         */
+        private function processWithGoogleHealthcareSTT($audioPath)
+        {
+            try {
+                // Validate the audio path to prevent path traversal attacks
+                $audioPath = realpath($audioPath); // Resolve any relative paths
+                $storagePath = storage_path('app'); // Base path for validation
+                if (!$audioPath || strpos($audioPath, $storagePath) !== 0) {
+                    throw new \Exception('Invalid audio file path');
+                }
+
+                // Check if Google Cloud SDK is available
+                if (!class_exists('\Google\Cloud\Speech\V1\SpeechClient')) {
+                    throw new \Exception('Google Cloud Speech SDK not installed');
+                }
+
+                // Check if Google Cloud credentials are available
+                $credentialsPath = env('GOOGLE_CLOUD_CREDENTIALS');
+                if (!$credentialsPath || !file_exists($credentialsPath)) {
+                    throw new \Exception('Google Cloud credentials not configured');
+                }
+
+                // Initialize Google Cloud client with error handling
+                try {
+                    $client = new \Google\Cloud\Speech\V1\SpeechClient([
+                        'credentials' => $credentialsPath
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Google Cloud Speech client initialization failed', [
+                        'error' => $e->getMessage(),
+                        'credentials_path' => $credentialsPath
+                    ]);
+                    throw new \Exception('Google Cloud Speech service unavailable: ' . $e->getMessage());
+                }
+
+                // Read audio file
+                $audioContent = file_get_contents($audioPath);
+                if (!$audioContent) {
+                    throw new \Exception('Could not read audio file');
+                }
+    
+                // Configure recognition with healthcare features with error handling
+                try {
+                    $config = new \Google\Cloud\Speech\V1\RecognitionConfig([
+                        'encoding' => \Google\Cloud\Speech\V1\AudioEncoding::LINEAR16,
+                        'sample_rate_hertz' => 16000,
+                        'language_code' => 'ar-SA', // Primary Arabic, will auto-detect
+                        'alternative_language_codes' => ['en-US'],
+                        'enable_automatic_punctuation' => true,
+                        'enable_word_time_offsets' => true,
+                        'enable_speaker_diarization' => true,
+                        'diarization_speaker_count' => 2, // Doctor and patient
+                        'min_speaker_count' => 1,
+                        'max_speaker_count' => 3,
+                        'model' => 'medical_dictation', // Healthcare model
+                        'use_enhanced' => true,
+                        // Healthcare-specific features
+                        'adaptation' => new \Google\Cloud\Speech\V1\SpeechAdaptation([
+                            'phrase_sets' => [
+                                new \Google\Cloud\Speech\V1\PhraseSet([
+                                    'phrases' => $this->getMedicalPhraseSet()
+                                ])
+                            ]
+                        ])
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Google Speech RecognitionConfig creation failed', [
+                        'error' => $e->getMessage()
+                    ]);
+                    throw new \Exception('Failed to configure speech recognition: ' . $e->getMessage());
+                }
+
+                try {
+                    $audio = new \Google\Cloud\Speech\V1\RecognitionAudio([
+                        'content' => $audioContent
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Google Speech RecognitionAudio creation failed', [
+                        'error' => $e->getMessage()
+                    ]);
+                    throw new \Exception('Failed to create audio object for recognition: ' . $e->getMessage());
+                }
+    
+                // Perform recognition
+                $response = $client->recognize($config, $audio);
+    
+                // Process results with speaker diarization
+                $transcription = '';
+                $speakers = [];
+                $medicalTerms = [];
+    
+                foreach ($response->getResults() as $result) {
+                    $alternative = $result->getAlternatives()[0];
+                    $transcript = $alternative->getTranscript();
+    
+                    // Extract speaker information
+                    $words = $alternative->getWords();
+                    $currentSpeaker = null;
+                    $speakerText = [];
+    
+                    foreach ($words as $word) {
+                        $speakerTag = $word->getSpeakerTag();
+    
+                        if ($currentSpeaker !== $speakerTag) {
+                            if ($currentSpeaker !== null && !empty($speakerText)) {
+                                $speakers[] = [
+                                    'speaker' => $currentSpeaker,
+                                    'text' => implode(' ', $speakerText),
+                                    'start_time' => $word->getStartTime()->getSeconds(),
+                                    'end_time' => $word->getEndTime()->getSeconds()
+                                ];
+                            }
+                            $currentSpeaker = $speakerTag;
+                            $speakerText = [];
+                        }
+    
+                        $wordText = $word->getWord();
+                        $speakerText[] = $wordText;
+    
+                        // Check for medical terms
+                        if ($this->isMedicalTerm($wordText)) {
+                            $medicalTerms[] = $wordText;
+                        }
+                    }
+    
+                    // Add final speaker segment
+                    if ($currentSpeaker !== null && !empty($speakerText)) {
+                        $speakers[] = [
+                            'speaker' => $currentSpeaker,
+                            'text' => implode(' ', $speakerText)
+                        ];
+                    }
+    
+                    $transcription .= $transcript . ' ';
+                }
+    
+                $client->close();
+    
+                return [
+                    'success' => true,
+                    'transcription' => trim($transcription),
+                    'speakers' => $speakers,
+                    'medical_terms' => array_unique($medicalTerms),
+                    'method' => 'google_healthcare'
+                ];
+    
+            } catch (\Exception $e) {
+                Log::error('Google Healthcare STT failed', [
+                    'error' => $e->getMessage(),
+                    'audio_path' => $audioPath
+                ]);
+    
+                return [
+                    'success' => false,
+                    'error' => $e->getMessage()
+                ];
+            }
+        }
+    
+        /**
+         * Use GPT-4o to identify speakers from transcribed text
+         */
+        private function diarizeTranscriptWithGPT4o($transcription, $language = 'ar')
+        {
+            try {
+                $response = OpenAI::chat()->create([
+                    'model' => 'gpt-4o',
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'You are a medical conversation analyst. Analyze this medical conversation and identify different speakers (Doctor and Patient). Return ONLY a JSON array: [{"speaker_tag": 1, "text": "...", "start_time": 0}]. Speaker 1 = Doctor, Speaker 2 = Patient.'
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => "Identify speakers in this conversation:\n\n" . $transcription
+                        ]
+                    ],
+                    'temperature' => 0.1
+                ]);
+
+                $content = $response['choices'][0]['message']['content'] ?? '';
+                $segments = json_decode($content, true);
+
+                if (is_array($segments)) {
+                    $formatted = "";
+                    foreach ($segments as $seg) {
+                        $speaker = $seg['speaker_tag'] ?? 1;
+                        $text = $seg['text'] ?? '';
+                        if ($text) {
+                            $formatted .= "[Speaker $speaker]: $text\n";
+                        }
+                    }
+                    return trim($formatted);
+                }
+
+                return null;
+            } catch (\Exception $e) {
+                \Log::error('GPT-4o diarization failed', ['error' => $e->getMessage()]);
+                return null;
+            }
+        }
+
+        /**
+         * Process audio using GPT-4o Audio Preview (Transcribe + Diarize)
+         */
+        private function processWithGPT4oAudio($audioPath, $language = 'ar')
+        {
+            try {
+                $openAI = app(\App\Services\OpenAIClient::class);
+                $segments = $openAI->transcribeAndDiarizeWithGPT4o($audioPath, $language);
+
+                if (!$segments || !is_array($segments)) {
+                    throw new \Exception('GPT-4o Audio returned invalid or empty segments');
+                }
+
+                // Format the transcription with speaker tags
+                $fullTranscript = "";
+                $speakers = [];
+                
+                foreach ($segments as $segment) {
+                    // Handle if segment is a JSON string (parse it)
+                    if (is_string($segment)) {
+                        $segment = json_decode($segment, true);
+                        if (!$segment) continue;
+                    }
+                    
+                    $speakerTag = $segment['speaker_tag'] ?? 1;
+                    $text = $segment['text'] ?? '';
+                    $startTime = $segment['start_time'] ?? 0;
+                    
+                    if (empty($text)) continue;
+
+                    $fullTranscript .= "[Speaker $speakerTag]: $text\n";
+                    
+                    $speakers[] = [
+                        'speaker_tag' => $speakerTag,
+                        'text' => $text,
+                        'start_time' => $startTime
+                    ];
+                }
+
+                return [
+                    'success' => true,
+                    'transcription' => trim($fullTranscript),
+                    'speakers' => $speakers,
+                    'medical_terms' => [], // Extraction happens in next phase
+                    'method' => 'gpt-4o-audio'
+                ];
+
+            } catch (\Exception $e) {
+                \Log::error('GPT-4o Audio processing failed', [
+                    'error' => $e->getMessage()
+                ]);
+                return ['success' => false, 'error' => $e->getMessage()];
+            }
+        }
+
+        /**
+         * Fallback to OpenAI Whisper
+         */
+        private function processWithOpenAIWhisper($audioPath)
+        {
+            $fileHandle = null;
+            try {
+                // Validate the audio path to prevent path traversal attacks
+                $audioPath = realpath($audioPath); // Resolve any relative paths
+                $storagePath = storage_path('app'); // Base path for validation
+                if (!$audioPath || strpos($audioPath, $storagePath) !== 0) {
+                    throw new \Exception('Invalid audio file path');
+                }
+
+                if (!file_exists($audioPath)) {
+                    throw new \Exception('Audio file not found at path: ' . $audioPath);
+                }
+
+                \Log::info('HYBRID METHOD - Whisper processing started', [
+                    'audio_path' => $audioPath,
+                    'file_size' => filesize($audioPath),
+                    'file_exists' => file_exists($audioPath)
+                ]);
+
+                // Open file handle for Whisper API
+                $fileHandle = fopen($audioPath, 'r');
+                if (!$fileHandle) {
+                    throw new \Exception('Failed to open audio file for reading');
+                }
+
+                // Prepare parameters for OpenAI Whisper transcription
+                $transcribeParams = [
+                    'model' => 'whisper-1',
+                    'file' => $fileHandle,
+                    'response_format' => 'text'
+                ];
+
+                // Perform transcription using OpenAI Whisper API
+                $response = OpenAI::audio()->transcribe($transcribeParams);
+                
+                $transcription = is_string($response) ? $response : ($response['text'] ?? '');
+
+                \Log::info('HYBRID METHOD - Whisper processing completed', [
+                    'transcription_length' => strlen($transcription),
+                    'transcription_preview' => substr($transcription, 0, 100)
+                ]);
+
+                return [
+                    'success' => true,
+                    'transcription' => trim($transcription),
+                    'speakers' => [],
+                    'medical_terms' => [],
+                    'method' => 'openai_whisper'
+                ];
+    
+            } catch (\Exception $e) {
+                \Log::error('OpenAI Whisper fallback failed', [
+                    'error' => $e->getMessage(),
+                    'audio_path' => $audioPath ?? 'unknown'
+                ]);
+                return [
+                    'success' => false,
+                    'transcription' => '',
+                    'error' => $e->getMessage()
+                ];
+            } finally {
+                // Always close file handle if it's still valid
+                if ($fileHandle && is_resource($fileHandle)) {
+                    fclose($fileHandle);
+                }
+            }
+        }
+
+        /**
+         * Process audio with AssemblyAI
+         */
+        private function processWithAssemblyAI($audioPath, $language = 'en')
+        {
+            try {
+                $assemblyAIService = new \App\Services\AssemblyAIService();
+
+                // Check if API key is configured before proceeding
+                $apiKey = config('services.assemblyai.api_key');
+                if (empty($apiKey)) {
+                    \Log::warning('AssemblyAI API key not configured, skipping AssemblyAI processing');
+                    return ['success' => false, 'error' => 'AssemblyAI API key not configured'];
+                }
+
+                \Log::info('HYBRID METHOD - Starting AssemblyAI processing', [
+                    'audio_path' => $audioPath,
+                    'file_exists' => file_exists($audioPath),
+                    'file_size' => file_exists($audioPath) ? filesize($audioPath) : 0,
+                    'language' => $language
+                ]);
+
+                // 1. Upload file to AssemblyAI
+                $uploadUrl = $assemblyAIService->uploadFile($audioPath);
+
+                if (!$uploadUrl) {
+                    \Log::error('HYBRID METHOD - AssemblyAI file upload failed', [
+                        'audio_path' => $audioPath
+                    ]);
+                    throw new \Exception('Failed to upload audio file to AssemblyAI');
+                }
+
+                \Log::info('HYBRID METHOD - AssemblyAI file uploaded', [
+                    'upload_url' => $uploadUrl
+                ]);
+
+                // 2. Submit for transcription with speaker diarization enabled
+                $config = [
+                    'speaker_labels' => true,  // Enable speaker diarization
+                    'speakers_expected' => 2   // Expect 2 speakers (doctor and patient)
+                ];
+                
+                if (!empty($language) && $language !== 'auto') {
+                    $langCode = substr($language, 0, 2);
+                    $config['language_code'] = $langCode;
+                } else {
+                    $config['language_detection'] = true;
+                }
+
+                $submission = $assemblyAIService->processTranscript($uploadUrl, $config);
+                if (!$submission || !isset($submission['id'])) {
+                    \Log::error('HYBRID METHOD - AssemblyAI transcript submission failed', [
+                        'submission_response' => $submission
+                    ]);
+                    throw new \Exception('Failed to submit audio for transcription');
+                }
+
+                $transcriptId = $submission['id'];
+                \Log::info('HYBRID METHOD - AssemblyAI transcript submitted', [
+                    'transcript_id' => $transcriptId
+                ]);
+
+                // 3. Poll for result
+                $maxRetries = 30;
+                $retryCount = 0;
+                $transcription = '';
+                $speakers = [];
+
+                while ($retryCount < $maxRetries) {
+                    $result = $assemblyAIService->getTranscript($transcriptId);
+
+                    if (!$result) {
+                        \Log::error('HYBRID METHOD - Failed to retrieve transcript', [
+                            'transcript_id' => $transcriptId,
+                            'retry_count' => $retryCount
+                        ]);
+                        throw new \Exception('Failed to retrieve transcript from AssemblyAI');
+                    }
+
+                    \Log::debug('HYBRID METHOD - AssemblyAI status check', [
+                        'transcript_id' => $transcriptId,
+                        'status' => $result['status'] ?? 'unknown',
+                        'retry_count' => $retryCount
+                    ]);
+
+                    if ($result['status'] === 'completed') {
+                        $transcription = $result['text'] ?? '';
+
+                        \Log::info('HYBRID METHOD - AssemblyAI transcription completed', [
+                            'transcript_id' => $transcriptId,
+                            'transcription_length' => strlen($transcription),
+                            'has_utterances' => isset($result['utterances'])
+                        ]);
+
+                        // Extract speaker-separated utterances
+                        if (isset($result['utterances']) && is_array($result['utterances'])) {
+                            foreach ($result['utterances'] as $utterance) {
+                                $speakerLabel = $utterance['speaker'] ?? 'A';
+                                $speakers[] = [
+                                    'speaker' => $speakerLabel,
+                                    'text' => $utterance['text'] ?? '',
+                                    'start_time' => ($utterance['start'] ?? 0) / 1000,
+                                    'end_time' => ($utterance['end'] ?? 0) / 1000,
+                                    'role' => 'Speaker ' . ($speakerLabel === 'A' ? '1' : '2')
+                                ];
+                            }
+                            
+                            // Format transcription with speaker labels
+                            $formattedTranscription = '';
+                            foreach ($speakers as $segment) {
+                                $speakerNum = $segment['speaker'] === 'A' ? '1' : '2';
+                                $formattedTranscription .= "[Speaker {$speakerNum}]: {$segment['text']}\n";
+                            }
+                            
+                            if (!empty($formattedTranscription)) {
+                                $transcription = trim($formattedTranscription);
+                            }
+                        }
+
+                        break;
+                    } elseif ($result['status'] === 'error') {
+                        $errorMsg = $result['error'] ?? 'Unknown error';
+                        \Log::error('HYBRID METHOD - AssemblyAI processing error', [
+                            'transcript_id' => $transcriptId,
+                            'error' => $errorMsg
+                        ]);
+                        throw new \Exception('AssemblyAI processing error: ' . $errorMsg);
+                    }
+
+                    $retryCount++;
+                    sleep(2);
+                }
+
+                if (empty($transcription)) {
+                    \Log::warning('HYBRID METHOD - AssemblyAI returned empty transcription', [
+                        'transcript_id' => $transcriptId,
+                        'retry_count' => $retryCount,
+                        'max_retries' => $maxRetries
+                    ]);
+                    throw new \Exception('AssemblyAI transcription timed out or returned empty');
+                }
+
+                return [
+                    'success' => true,
+                    'transcription' => $transcription,
+                    'speakers' => $speakers,
+                    'medical_terms' => [],
+                    'method' => 'assemblyai'
+                ];
+
+            } catch (\Exception $e) {
+                \Log::error('AssemblyAI processing failed', [
+                    'error' => $e->getMessage(),
+                    'audio_path' => $audioPath
+                ]);
+                return ['success' => false, 'error' => $e->getMessage()];
+            }
+        }
+    
+        /**
+         * Get medical phrase set for Google Speech adaptation
+         */
+        private function getMedicalPhraseSet()
+        {
+            // Return cached phrase set if available to improve performance
+            if ($this->cachedMedicalPhraseSet !== null) {
+                return $this->cachedMedicalPhraseSet;
+            }
+
+            $this->cachedMedicalPhraseSet = [
+                // Arabic medical terms
+                'ألم', 'صداع', 'حمى', 'سعال', 'غثيان', 'قيء', 'إسهال', 'إمساك',
+                'ضغط دم', 'سكري', 'ضغط', 'قلب', 'رئة', 'كبد', 'كلى', 'معدة',
+                'دواء', 'حقنة', 'جراحة', 'تشخيص', 'علاج', 'فحص', 'تحاليل', 'أشعة',
+                'طبيب', 'مريض', 'مستشفى', 'عيادة', 'صيدلية', 'تمريض',
+
+                // English medical terms
+                'pain', 'headache', 'fever', 'cough', 'nausea', 'vomiting', 'diarrhea', 'constipation',
+                'blood pressure', 'diabetes', 'hypertension', 'heart', 'lung', 'liver', 'kidney', 'stomach',
+                'medicine', 'injection', 'surgery', 'diagnosis', 'treatment', 'examination', 'tests', 'x-ray',
+                'doctor', 'patient', 'hospital', 'clinic', 'pharmacy', 'nursing',
+
+                // Medical procedures and conditions
+                'electrocardiogram', 'echocardiogram', 'endoscopy', 'colonoscopy', 'biopsy',
+                'myocardial infarction', 'cerebrovascular accident', 'chronic obstructive pulmonary disease',
+                'gastroesophageal reflux disease', 'hypertensive emergency',
+
+                // Vital signs
+                'temperature', 'pulse', 'respiration', 'blood pressure', 'oxygen saturation',
+                'heart rate', 'respiratory rate', 'body mass index'
+            ];
+
+            return $this->cachedMedicalPhraseSet;
+        }
+    
+        /**
+         * Check if a word is a medical term
+         */
+        private function isMedicalTerm($word)
+        {
+            $medicalTerms = [
+                'pain', 'headache', 'fever', 'cough', 'nausea', 'vomiting', 'diarrhea', 'constipation',
+                'hypertension', 'diabetes', 'myocardial', 'infarction', 'stroke', 'copd', 'gerd',
+                'electrocardiogram', 'echocardiogram', 'endoscopy', 'colonoscopy', 'biopsy',
+                'ألم', 'صداع', 'حمى', 'سعال', 'غثيان', 'قيء', 'إسهال', 'إمساك',
+                'ضغط', 'سكري', 'قلب', 'رئة', 'كبد', 'كلى', 'معدة'
+            ];
+    
+            $lowerWord = strtolower(trim($word));
+            return in_array($lowerWord, $medicalTerms);
+        }
+    
+        /**
+         * Extract speaker data from transcription using AI analysis
+         */
+        private function extractSpeakerDataFromTranscription($transcription)
+        {
+            // If transcription already has speaker labels, parse them directly
+            if (preg_match('/\[Speaker \d+\]:/', $transcription)) {
+                \Log::info('HYBRID METHOD - Transcription already has speaker labels, parsing directly');
+                return $this->parseSpeakerLabelsFromTranscription($transcription);
+            }
+
+            try {
+                // Use AI to analyze transcription and separate speakers
+                $response = OpenAI::chat()->create([
+                    'model' => 'gpt-4o',
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'You are a medical transcription specialist. Analyze this doctor-patient conversation and separate the speakers. Return ONLY valid JSON with speaker segments.
+    
+                            Rules:
+                            - Speaker 1 is typically the DOCTOR (asks questions, gives medical advice, uses medical terminology)
+                            - Speaker 2 is typically the PATIENT (describes symptoms, answers questions, expresses concerns)
+                            - Identify medical terms used
+                            - Estimate timing for each speaker segment
+                            - Return JSON: {"speakers": [{"speaker": 1, "text": "...", "start_time": 0, "role": "doctor/patient"}], "medical_terms": ["term1", "term2"]}'
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => "Analyze this medical conversation and separate speakers:\n\n" . $transcription
+                        ]
+                    ],
+                    'temperature' => 0.1,
+                    'max_tokens' => 1000
+                ]);
+    
+                $aiResponse = $response['choices'][0]['message']['content'] ?? '';
+                $speakerData = json_decode($aiResponse, true);
+    
+                if ($speakerData && isset($speakerData['speakers']) && !empty($speakerData['speakers'])) {
+                    \Log::info('HYBRID METHOD - AI speaker extraction successful', [
+                        'speaker_count' => count($speakerData['speakers'])
+                    ]);
+                    return [
+                        'speakers' => $speakerData['speakers'],
+                        'medical_terms' => $speakerData['medical_terms'] ?? []
+                    ];
+                }
+    
+            } catch (\Exception $e) {
+                Log::error('Speaker extraction failed', ['error' => $e->getMessage()]);
+            }
+    
+            // Fallback: basic speaker separation based on content patterns
+            \Log::info('HYBRID METHOD - Using fallback speaker separation');
+            return $this->fallbackSpeakerSeparation($transcription);
+        }
+
+        /**
+         * Parse speaker labels that already exist in transcription
+         */
+        private function parseSpeakerLabelsFromTranscription($transcription)
+        {
+            $lines = explode("\n", $transcription);
+            $speakers = [];
+            $startTime = 0;
+
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if (empty($line)) continue;
+
+                if (preg_match('/\[Speaker (\d+)\]:\s*(.*)/', $line, $matches)) {
+                    $speakerNum = (int)$matches[1];
+                    $text = trim($matches[2]);
+                    
+                    if (!empty($text)) {
+                        $speakers[] = [
+                            'speaker' => $speakerNum,
+                            'text' => $text,
+                            'start_time' => $startTime,
+                            'role' => 'Speaker ' . $speakerNum
+                        ];
+                        $startTime += 5;
+                    }
+                }
+            }
+
+            return [
+                'speakers' => $speakers,
+                'medical_terms' => []
+            ];
+        }
+    
+        /**
+         * Fallback speaker separation based on content analysis
+         */
+        private function fallbackSpeakerSeparation($transcription)
+        {
+            // If transcription is too short, return as single speaker
+            if (strlen($transcription) < 20) {
+                return [
+                    'speakers' => [
+                        [
+                            'speaker' => 1,
+                            'text' => $transcription,
+                            'start_time' => 0,
+                            'role' => 'Speaker 1'
+                        ]
+                    ],
+                    'medical_terms' => []
+                ];
+            }
+
+            $sentences = preg_split('/[.!?]+/', $transcription);
+            $speakers = [];
+            $medicalTerms = [];
+    
+            $currentSpeaker = 1; // Start with doctor
+            $speakerText = [];
+            $startTime = 0;
+    
+            // Pre-compile medical keywords for performance
+            $medicalKeywords = $this->getMedicalPhraseSet();
+            $lowercaseMedicalKeywords = array_map('strtolower', $medicalKeywords);
+            $medicalKeywordsSet = array_flip($lowercaseMedicalKeywords);
+
+            foreach ($sentences as $index => $sentence) {
+                $sentence = trim($sentence);
+                if (empty($sentence)) continue;
+
+                // Simple heuristic: questions and medical terms suggest doctor
+                $hasQuestion = strpos($sentence, '?') !== false;
+
+                // Optimized medical term check
+                $hasMedicalTerms = false;
+                $lowerSentence = strtolower($sentence);
+                foreach ($lowercaseMedicalKeywords as $medicalKeyword) {
+                    if (strpos($lowerSentence, $medicalKeyword) !== false) {
+                        $hasMedicalTerms = true;
+                        break;
+                    }
+                }
+
+                if ($hasQuestion || $hasMedicalTerms) {
+                    if ($currentSpeaker === 2 && !empty($speakerText)) {
+                        $speakers[] = [
+                            'speaker' => 2,
+                            'text' => implode('. ', $speakerText),
+                            'start_time' => $startTime,
+                            'role' => 'Speaker 2'
+                        ];
+                        $speakerText = [];
+                        $startTime = $index * 5;
+                    }
+                    $currentSpeaker = 1;
+                } else {
+                    if ($currentSpeaker === 1 && !empty($speakerText)) {
+                        $speakers[] = [
+                            'speaker' => 1,
+                            'text' => implode('. ', $speakerText),
+                            'start_time' => $startTime,
+                            'role' => 'Speaker 1'
+                        ];
+                        $speakerText = [];
+                        $startTime = $index * 5;
+                    }
+                    $currentSpeaker = 2;
+                }
+
+                $speakerText[] = $sentence;
+
+                // Extract medical terms
+                $words = preg_split('/\s+/', $sentence);
+                foreach ($words as $word) {
+                    $cleanWord = strtolower(trim(preg_replace('/[^\w]/', '', $word)));
+                    if (isset($medicalKeywordsSet[$cleanWord]) && !in_array($cleanWord, $medicalTerms)) {
+                        $medicalTerms[] = $cleanWord;
+                    }
+                }
+            }
+
+            // Add final speaker segment
+            if (!empty($speakerText)) {
+                $speakers[] = [
+                    'speaker' => $currentSpeaker,
+                    'text' => implode('. ', $speakerText),
+                    'start_time' => $startTime,
+                    'role' => $currentSpeaker === 1 ? 'Speaker 1' : 'Speaker 2'
+                ];
+            }
+
+            // If no speakers were detected, return entire transcription as single speaker
+            if (empty($speakers)) {
+                $speakers[] = [
+                    'speaker' => 1,
+                    'text' => $transcription,
+                    'start_time' => 0,
+                    'role' => 'Speaker 1'
+                ];
+            }
+
+            return [
+                'speakers' => $speakers,
+                'medical_terms' => array_unique($medicalTerms)
+            ];
+        }
+    
+        /**
+         * Check if text contains medical terms
+         */
+        private function containsMedicalTerms($text)
+        {
+            $medicalKeywords = [
+                'pain', 'headache', 'fever', 'cough', 'nausea', 'vomiting', 'diarrhea',
+                'blood pressure', 'diabetes', 'hypertension', 'heart', 'lung', 'liver',
+                'kidney', 'stomach', 'medicine', 'treatment', 'diagnosis', 'symptoms',
+                'ألم', 'صداع', 'حمى', 'سعال', 'غثيان', 'ضغط', 'سكري', 'قلب', 'دواء'
+            ];
+    
+            $lowerText = strtolower($text);
+            foreach ($medicalKeywords as $keyword) {
+                if (strpos($lowerText, $keyword) !== false) {
+                    return true;
+                }
+            }
+    
+            return false;
         }
     
         /**
@@ -2005,31 +4137,50 @@ class VoiceAssistantController extends Controller
          */
         private function selectBestTranscription($liveTranscription, $serverTranscription)
         {
+            // Log the decision-making process
+            \Log::debug('HYBRID METHOD - Selecting best transcription', [
+                'live_transcription_length' => strlen($liveTranscription ?? ''),
+                'server_transcription_length' => strlen($serverTranscription ?? ''),
+                'has_live_transcription' => !empty($liveTranscription),
+                'has_server_transcription' => !empty($serverTranscription)
+            ]);
+
             // If no server transcription, use live
             if (empty($serverTranscription)) {
+                \Log::debug('HYBRID METHOD - Using live transcription (no server available)');
                 return $liveTranscription;
             }
-    
+
             // If no live transcription, use server
             if (empty($liveTranscription)) {
+                \Log::debug('HYBRID METHOD - Using server transcription (no live available)');
                 return $serverTranscription;
             }
-    
+
             // Compare lengths and content quality
             $liveLength = strlen($liveTranscription);
             $serverLength = strlen($serverTranscription);
-            
+
+            \Log::debug('HYBRID METHOD - Transcription comparison', [
+                'live_length' => $liveLength,
+                'server_length' => $serverLength,
+                'length_ratio' => $serverLength > 0 ? $liveLength / $serverLength : 0
+            ]);
+
             // Prefer server if it's significantly longer (likely more accurate)
             if ($serverLength > $liveLength * 1.2) {
+                \Log::debug('HYBRID METHOD - Using server transcription (significantly longer)');
                 return $serverTranscription;
             }
-            
+
             // If live is longer or similar, prefer live (real-time context)
             if ($liveLength >= $serverLength) {
+                \Log::debug('HYBRID METHOD - Using live transcription (longer or similar length)');
                 return $liveTranscription;
             }
-            
+
             // Fallback to server
+            \Log::debug('HYBRID METHOD - Using server transcription (fallback)');
             return $serverTranscription;
         }
     
@@ -2076,6 +4227,10 @@ class VoiceAssistantController extends Controller
         private function recordPerformanceMetrics(array $metrics): void
         {
             try {
+                // Ensure doctor_id is in metrics
+                if (!isset($metrics['doctor_id'])) {
+                    $metrics['doctor_id'] = Auth::id();
+                }
                 VoiceAssistantPerformanceMetric::recordMetric($metrics);
             } catch (\Exception $e) {
                 \Log::error('Failed to record performance metrics', [
@@ -2108,7 +4263,7 @@ class VoiceAssistantController extends Controller
         {
             $fileSize = $file->getSize();
             $extension = strtolower($file->getClientOriginalExtension());
-    
+
             // Rough estimation based on common audio formats and bitrates
             // These are approximations for typical medical consultation recordings
             $estimates = [
@@ -2117,13 +4272,87 @@ class VoiceAssistantController extends Controller
                 'webm' => 64000 / 8,  // ~64 kbps WebM/Opus
                 'mp4' => 128000 / 8,  // 128 kbps AAC
             ];
-    
+
             $bytesPerSecond = $estimates[$extension] ?? 100000; // Fallback estimate
-    
+
             if ($bytesPerSecond > 0) {
                 return round($fileSize / $bytesPerSecond, 2);
             }
-    
+
             return null;
+        }
+
+        /**
+         * Determine the processing status based on results
+         */
+        private function determineProcessingStatus($metrics, $liveTranscription, $serverTranscription, $improvedTranscription)
+        {
+            $status = [
+                'method' => 'live', // default
+                'server_processed' => $metrics['server_processing_success'] ?? false,
+                'audio_stored' => $metrics['audio_storage_success'] ?? false,
+                'extraction_success' => !empty($metrics['medical_extraction_success'] ?? false),
+                'improvement_detected' => false,
+                'fallback_used' => false
+            ];
+    
+            // Determine which method was used based on what was attempted, not just what succeeded
+            $serverAttempted = isset($metrics['server_processing_success']); // Server processing was attempted if this key exists
+    
+            if ($serverAttempted) {
+                $status['method'] = 'server';
+                // Check if server transcription was better than live
+                if (!empty($serverTranscription) && strlen($serverTranscription) > strlen($liveTranscription) * 1.1) {
+                    $status['improvement_detected'] = true;
+                }
+            } elseif (!empty($liveTranscription)) {
+                $status['method'] = 'live';
+            } else {
+                $status['method'] = 'none';
+                $status['fallback_used'] = true;
+            }
+    
+            // Check if fallback was used (when both server and live failed but we have improved transcription)
+            if (empty($liveTranscription) && empty($serverTranscription) && !empty($improvedTranscription)) {
+                $status['fallback_used'] = true;
+            }
+    
+            return $status;
+        }
+
+        /**
+         * Generate appropriate success message based on processing status
+         */
+        private function generateSuccessMessage($processingStatus, $metrics)
+        {
+            $messages = [];
+
+            if ($processingStatus['audio_stored']) {
+                $messages[] = 'Audio file stored successfully';
+            }
+
+            if ($processingStatus['server_processed']) {
+                if ($processingStatus['improvement_detected']) {
+                    $messages[] = 'Server processing improved transcription quality';
+                } else {
+                    $messages[] = 'Server processing completed';
+                }
+            } elseif ($processingStatus['method'] === 'live') {
+                $messages[] = 'Using live transcription';
+            }
+
+            if ($processingStatus['extraction_success']) {
+                $messages[] = 'Medical data extracted successfully';
+            }
+
+            if ($processingStatus['fallback_used']) {
+                $messages[] = 'Fallback methods used due to processing limitations';
+            }
+
+            if (empty($messages)) {
+                return 'Audio processing completed with basic transcription';
+            }
+
+            return implode('. ', $messages) . '.';
         }
     }

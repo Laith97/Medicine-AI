@@ -9,8 +9,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h1 class="card-title h3 mb-2">🎤 Voice Assistant History</h1>
-                            <p class="card-text mb-0">Review your previous voice consultation sessions</p>
+                            <h1 class="card-title h3 mb-2">🎤 Ambient Listening History</h1>
+                            <p class="card-text mb-0">Review your previous ambient listening sessions</p>
                         </div>
                         <a href="{{ route('ai.voice-assistant.index') }}" class="btn btn-light">
                             <i class="fas fa-microphone me-2"></i>

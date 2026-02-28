@@ -3,16 +3,22 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VoiceTranscription extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'doctor_id',
         'patient_id',
         'diagnosis_id',
         'session_id',
         'raw_transcription',
+        'audio_file',
+        'audio_format',
+        'audio_duration',
+        'audio_file_size',
         'extracted_data',
         'ai_analysis',
         'structured_chart',

@@ -41,7 +41,7 @@
 <div class="dashboard-container">
     <div class="container">
         <!-- Dashboard Header -->
-        <div class="dashboard-header py-2 border-bottom">
+        <div class="dashboard-header">
             <h2>Doctor Profile</h2>
             <p>Manage your professional profile and settings</p>
         </div>
@@ -118,12 +118,15 @@
 
                     <!-- Phone -->
                     <div class="col-md-6">
-                        <label for="phone" class="form-label">Phone Number</label>
+                        <label for="phone" class="form-label">Phone Number *</label>
                         <input type="tel"
                                name="phone"
                                id="phone"
                                value="{{ old('phone', $doctor->phone) }}"
-                               class="form-control">
+                               class="form-control"
+                               required
+                               placeholder="+1234567890">
+                        <small class="form-text text-muted">Required for phone call appointments</small>
                     </div>
 
                     <!-- Consultation Fee -->

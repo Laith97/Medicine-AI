@@ -8,7 +8,11 @@
     <meta name="description"
         content="Create Medical Clinic & Hospital Websites with Canvas Template. Get Canvas to build powerful websites easily with the Highly Customizable & Best Selling Bootstrap Template, today.">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-@auth
+    <!-- Force fresh logo loading - prevent JPEG caching -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+ @auth
     <meta name="user-id" content="{{ Auth::id() }}">
     <meta name="notification-sound-enabled" content="{{ env('NOTIFICATION_SOUND_ENABLED', 'true') }}">
     <meta name="notification-toast-enabled" content="{{ env('NOTIFICATION_TOAST_ENABLED', 'true') }}">
@@ -26,13 +30,17 @@
             color: #333;
             /* dark gray */
             position: relative;
-            padding: 5px 8px;
-            transition: color 0.3s ease;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            display: inline-block;
         }
 
         .top-link:hover {
-            color: #007bff;
-            /* blue on hover */
+            color: #DE6262;
+            /* accent color on hover */
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
         }
 
         /* Add nice underline on hover */
@@ -41,15 +49,16 @@
             display: block;
             width: 0;
             height: 2px;
-            background: #007bff;
+            background: #DE6262;
             transition: width 0.3s;
             position: absolute;
             bottom: 0;
-            left: 0;
+            left: 12px;
+            right: 12px;
         }
 
 .top-link:hover::after {
-    width: 100%;
+    width: calc(100% - 24px);
 }
 /* Header Dropdown Styling - Match EXACTLY the .sub-menu-container style */
 .dropdown-menu {
@@ -182,14 +191,16 @@
     }
 
     .cnvs-hamburger:hover {
-        opacity: 0.8 !important;
+        background: rgba(222, 98, 98, 0.2) !important;
+        border-color: rgba(222, 98, 98, 0.5) !important;
+        transform: scale(1.05) !important;
     }
 
     /* Make sure hamburger lines are visible */
-    .cnvs-hamburger-inner,
-    .cnvs-hamburger-inner::before,
-    .cnvs-hamburger-inner::after {
-        background-color: #333 !important;
+    .cnvs-hamburger .cnvs-hamburger-inner,
+    .cnvs-hamburger .cnvs-hamburger-inner::before,
+    .cnvs-hamburger .cnvs-hamburger-inner::after {
+        background-color: white !important;
     }
 
     /* Fix logo positioning on mobile - keep it on the left */
@@ -339,6 +350,10 @@ body .dropdown .dropdown-menu.show,
             overflow-y: auto !important;
             z-index: 9999999 !important;
             position: absolute !important;
+            top: 100% !important;
+            left: auto !important;
+            right: 0 !important;
+            transform: none !important;
         }
 
         .notifications-dropdown {
@@ -348,6 +363,11 @@ body .dropdown .dropdown-menu.show,
 
         .user-dropdown .dropdown-menu {
             min-width: 200px !important;
+            position: absolute !important;
+            top: 100% !important;
+            left: auto !important;
+            right: 0 !important;
+            transform: none !important;
         }
 
         /* Mobile responsive */
@@ -752,6 +772,134 @@ body .dropdown .dropdown-menu.show,
             z-index: 1050 !important;
         }
 
+        /* Ensure alerts appear above sidebar */
+        .alert {
+            z-index: 1060 !important;
+            position: relative;
+        }
+
+        /* Ensure alert close buttons also have high z-index */
+        .alert .btn-close {
+            z-index: 1065 !important;
+        }
+
+        /* Ensure top-level alert containers have proper positioning */
+        .container-fluid > .row > .col-12 > .alert {
+            position: relative !important;
+            z-index: 1060 !important;
+        }
+
+        /* Professional Skeleton Loading Animation */
+        .skeleton-loader {
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+            background: linear-gradient(90deg,
+                rgba(222, 98, 98, 0.1) 25%,
+                rgba(222, 98, 98, 0.05) 50%,
+                rgba(222, 98, 98, 0.1) 75%);
+            background-size: 200% 100%;
+            border: 1px solid rgba(222, 98, 98, 0.1);
+        }
+
+        /* Loading indicator overlay */
+        .ajax-loading-overlay {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9998;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(222, 98, 98, 0.2);
+            border-radius: 50px;
+            padding: 8px 16px;
+            box-shadow: 0 4px 12px rgba(222, 98, 98, 0.15);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #DE6262;
+            font-weight: 500;
+        }
+
+        .ajax-loading-overlay.show {
+            display: flex;
+        }
+
+        .ajax-loading-overlay .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(222, 98, 98, 0.3);
+            border-top: 2px solid #DE6262;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes skeleton-loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .skeleton-header {
+            height: 60px;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+
+        .skeleton-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .skeleton-stat-card {
+            flex: 1;
+            height: 120px;
+            border-radius: 20px;
+        }
+
+        .skeleton-tabs {
+            height: 50px;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .skeleton-table {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .skeleton-table-header {
+            height: 50px;
+            margin-bottom: 1rem;
+        }
+
+        .skeleton-table-row {
+            height: 60px;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+        }
+
+        /* Responsive skeleton adjustments */
+        @media (max-width: 768px) {
+            .skeleton-stats {
+                flex-direction: column;
+            }
+
+            .skeleton-stat-card {
+                height: 100px;
+                margin-bottom: 1rem;
+            }
+        }
+
+
         /* Header Layout - Fix Z-Index Issues */
         #header {
             overflow: visible !important;
@@ -896,22 +1044,35 @@ body .dropdown .dropdown-menu.show,
             .header-row {
                 display: flex !important;
                 padding: 0.5rem 0 !important;
-                flex-wrap: nowrap !important;
+                flex-wrap: wrap !important; /* Allow wrapping on mobile */
                 justify-content: space-between !important;
                 align-items: center !important;
                 width: 100% !important;
+                min-height: 60px !important;
             }
 
-            /* Logo and nav container adjustments for mobile */
-            .d-flex.align-items-center.flex-grow-1 {
-                display: flex !important;
+            /* Left side: Logo only */
+            .col-md-auto.d-flex.align-items-center.gap-3:first-child {
+                order: 1 !important;
+                flex: 0 0 auto !important;
+                justify-content: flex-start !important;
+                width: auto !important;
+            }
+
+            /* Right side: Login/Register buttons and hamburger */
+            .col-md-auto.d-flex.align-items-center.gap-3:last-child {
+                order: 2 !important;
+                flex: 0 0 auto !important;
+                justify-content: space-between !important;
                 align-items: center !important;
-                flex-grow: 1 !important;
+                margin-top: 0 !important;
+                margin-left: auto !important;
+                width: auto !important;
             }
 
             /* Logo adjustments for mobile */
             #logo {
-                margin-right: 1rem !important;
+                margin-right: 0 !important;
                 flex-shrink: 0 !important;
             }
 
@@ -920,6 +1081,48 @@ body .dropdown .dropdown-menu.show,
                 max-width: 120px !important;
                 height: auto !important;
                 display: block !important;
+            }
+
+            /* Mobile navigation dropdown - positioned below top bar */
+            .show-mobile-nav {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 0.5rem !important;
+                position: absolute !important;
+                top: 100% !important; /* Below the top bar */
+                left: 0 !important;
+                right: 0 !important;
+                background: white !important;
+                border: 1px solid #dee2e6 !important;
+                border-top: none !important;
+                padding: 1rem !important;
+                z-index: 10000 !important;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+                max-height: 60vh !important;
+                overflow-y: auto !important;
+                width: 100% !important;
+            }
+
+            .show-mobile-nav .top-link {
+                color: #333 !important;
+                background: #f8f9fa !important;
+                border: 1px solid #dee2e6 !important;
+                font-size: 14px !important;
+                padding: 12px 16px !important;
+                width: 100% !important;
+                text-align: center !important;
+                border-radius: 6px !important;
+                margin: 4px 0 !important;
+                text-decoration: none !important;
+                display: block !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .show-mobile-nav .top-link:hover {
+                background: #DE6262 !important;
+                color: white !important;
+                border-color: #DE6262 !important;
             }
 
             /* Hide desktop navigation */
@@ -931,8 +1134,8 @@ body .dropdown .dropdown-menu.show,
             .primary-menu-trigger,
             .primary-menu-trigger.d-block.d-lg-none {
                 display: block !important;
-                margin-left: auto !important;
                 padding: 0.5rem !important;
+                order: 2 !important;
             }
 
             /* Mobile hamburger styling */
@@ -1172,21 +1375,24 @@ body .dropdown .dropdown-menu.show,
             .primary-menu .sub-menu-container .menu-item.current .menu-link {
                 border-left-color: #DE6262 !important;
             }
-        }
+        
     </style>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'Medical Demo | Canvas')</title>
+    <title>@yield('title', 'MedcuraAI')</title>
 </head>
 
 <body class="stretched page-transition"
     data-loader-html="<div id='css3-spinner-svg-pulse-wrapper'><svg id='css3-spinner-svg-pulse' version='1.2' height='210' width='550' xmlns='https://www.w3.org/2000/svg' viewport='0 0 60 60' xmlns:xlink='https://www.w3.org/1999/xlink'><path id='css3-spinner-pulse' stroke='#DE6262' fill='none' stroke-width='2' stroke-linejoin='round' d='M0,90L250,90Q257,60 262,87T267,95 270,88 273,92t6,35 7,-60T290,127 297,107s2,-11 10,-10 1,1 8,-10T319,95c6,4 8,-6 10,-17s2,10 9,11h210'></svg></div>">
 
+<!-- Skip to main content link for accessibility -->
+<a href="#main-content" class="sr-only sr-only-focusable btn btn-primary position-fixed" style="top: 10px; left: 10px; z-index: 9999;">Skip to main content</a>
+
     {{-- Sidebar CSS/JS --}}
     @auth
     <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
     @include('layouts.sidebar')
-    <style>#header{display:none !important;} #top-bar .top-bar-logo{display:none !important;}</style>
+    <style>#header{display:none !important;}</style>
     @endauth
 
 <!-- Prevent notification redirects after login -->
@@ -1244,41 +1450,35 @@ body .dropdown .dropdown-menu.show,
     <div id="wrapper">
 
         <!-- Top Bar Start -->
-        <div id="top-bar" class="py-2 border-bottom"
-            style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; position: fixed; top: 0; left: 0; right: 0; z-index: 1050; width: 100%;">
+        <div id="top-bar" class="py-1 border-bottom"
+            style="background: white; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div class="container">
                 <div class="row justify-content-between align-items-center">
 
                     <!-- Left Side: Logo & Navigation -->
-                    <div class="col-md-auto d-flex align-items-center gap-4">
+                    <div class="col-md-auto d-flex align-items-center gap-3 flex-nowrap">
                         <!-- Logo in Top Bar -->
                         <div class="top-bar-logo">
                             <a href="{{ url('/') }}" class="d-flex align-items-center text-decoration-none">
-                                <img style="width: 120px; height: auto;" class="logo-default img-fluid"
-                                      srcset="{{ asset('demos/medical/images/logo-medical.png') }}, {{ asset('demos/medical/images/logo-medical.jpeg') }} 2x"
-                                      src="{{ asset('demos/medical/images/logo-medical.png') }}"
+                                <img style="width: 100px; height: 75px;" class="logo-default img-fluid"
+                                      src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}"
                                       alt="Medcura Logo">
                             </a>
                         </div>
 
                         <!-- Quick Info & Status / Navigation Links -->
-                        <div class="d-none d-md-flex align-items-center gap-4 small">
+                        <div class="d-none d-md-flex align-items-center gap-3 small">
                             @auth
                             <div class="d-flex align-items-center">
                                 <div class="status-indicator bg-success rounded-circle me-2"
-                                    style="width: 8px; height: 8px;"></div>
-                                <span><i class="bi bi-shield-check me-1"></i> AI System Online</span>
+                                    style="width: 8px; height: 8px; box-shadow: 0 0 0 2px white;"></div>
+                                <span class="text-muted"><i class="bi bi-shield-check me-1 text-success"></i> AI System Online</span>
                             </div>
-                            <div><i class="bi bi-cpu me-1"></i> Advanced Diagnostics Available</div>
-                            <div><i class="bi bi-envelope me-1"></i> <a href="mailto:info@medcuraai.com"
-                                    class="text-decoration-none text-white-50">info@medcuraai.com</a></div>
                             @else
-                            <div class="d-flex align-items-center gap-3">
-                                <a href="{{ url('/') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">Home</a>
-                                <a href="{{ route('about') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">About Us</a>
-                                <a href="{{ route('contact') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">Contact</a>
-                                <a href="{{ route('doctors.index') }}" class="top-link" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">For Patients</a>
-                            </div>
+                            <a href="{{ url('/') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Home</a>
+                            <a href="{{ route('about') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">About Us</a>
+                            <a href="{{ route('contact') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Contact</a>
+                            <a href="{{ route('doctors.index') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">For Patients</a>
                             @endauth
                         </div>
                     </div>
@@ -1286,28 +1486,24 @@ body .dropdown .dropdown-menu.show,
                     <!-- Right Side: Notifications & User Menu -->
                     <div class="col-md-auto d-flex align-items-center gap-3">
                         @auth
-                            {{-- AI Ask temporarily disabled --}}
-                            {{-- AI Ask temporarily disabled --}}
-                            {{-- <!-- Quick Action Button for Emergency -->
-                            <a href="{{ route('ai.ask-ai') }}" class="btn btn-sm px-3 py-1"
-                                style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; font-size: 12px;"> --}}
-                                <i class="bi bi-lightning-charge me-1"></i> Quick Diagnosis
-                            </a>
+                            <!-- Mobile Sidebar Toggle Button -->
+                            <button id="sidebarCollapse" class="btn btn-sm btn-outline-secondary d-lg-none d-flex align-items-center justify-content-center"
+                                    type="button" aria-label="Toggle navigation sidebar" aria-expanded="false"
+                                    title="Open sidebar menu"
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px;">
+                                <i class="fa-solid fa-bars" aria-hidden="true"></i>
+                            </button>
 
                             <!-- Notifications Bell -->
                             <div class="dropdown notifications-dropdown">
-                                <button class="btn btn-sm position-relative notification-bell dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                                    aria-expanded="false"
-                                    aria-haspopup="menu"
-                                    aria-label="Notifications"
-                                    role="button"
-                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; line-height: 1; backdrop-filter: blur(10px);">
+                                <button class="btn btn-sm position-relative notification-bell dropdown-toggle d-flex align-items-center justify-content-center" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true"
+                                    aria-label="Notifications menu" title="Notifications"
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px;">
                                     <i class="bi bi-bell" aria-hidden="true"></i>
-                                    <span
-                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count"
-                                        id="notification-count"
-                                        aria-label="unread notifications"
-                                        style="font-size: 10px; padding: 2px 6px; display: none;">
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count"
+                                        id="notification-count" aria-label="unread notifications count"
+                                        style="font-size: 10px; padding: 2px 6px; display: none; font-weight: 600;">
                                         0
                                     </span>
                                 </button>
@@ -1320,12 +1516,14 @@ body .dropdown .dropdown-menu.show,
                                         <div class="btn-group btn-group-sm" role="group" aria-label="Notification actions">
                                             <button type="button" class="btn btn-outline-secondary mark-all-read-btn"
                                                 title="Mark all as read"
-                                                aria-label="Mark all notifications as read">
+                                                aria-label="Mark all notifications as read"
+                                                style="min-width: 44px; min-height: 44px;">
                                                 <i class="bi bi-check-all" aria-hidden="true"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-secondary view-all-btn"
                                                 title="View all notifications"
-                                                aria-label="View all notifications">
+                                                aria-label="View all notifications"
+                                                style="min-width: 44px; min-height: 44px;">
                                                 <i class="bi bi-list-ul" aria-hidden="true"></i>
                                             </button>
                                         </div>
@@ -1341,18 +1539,20 @@ body .dropdown .dropdown-menu.show,
 
                             <!-- User Dropdown -->
                             <div class="dropdown">
-                                <a class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle user-dropdown-toggle" href="#"
-                                    role="button" data-bs-toggle="dropdown" aria-expanded="false"
-                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
-                                    <i class="bi bi-person-circle"></i>
-                                    <div class="d-flex flex-column align-items-start">
-                                        <span class="small">{{ Auth::user()->name }}</span>
+                                <button class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle user-dropdown-toggle" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true"
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; font-weight: 500; border-radius: 25px;">
+                                    <i class="bi bi-person-circle" aria-hidden="true"></i>
+                                    <div class="d-flex flex-column align-items-start d-none d-sm-flex">
+                                        <span class="small fw-semibold">{{ Auth::user()->name }}</span>
                                         @if (Auth::user()->isSubUser())
-                                            <small
-                                                class="opacity-75 small">{{ \App\Helpers\MenuHelper::getUserRoleDisplay(Auth::user()) }}</small>
+                                            <small class="opacity-75 small text-truncate" style="max-width: 120px;">{{ \App\Helpers\MenuHelper::getUserRoleDisplay(Auth::user()) }}</small>
                                         @endif
                                     </div>
-                                </a>
+                                    <span class="d-sm-none">
+                                        <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                                    </span>
+                                </button>
                                 <ul class="dropdown-menu dropdown-menu-end shadow user-dropdown-menu">
                                     @if (Auth::guard('admin')->check())
                                         <li>
@@ -1421,16 +1621,31 @@ body .dropdown .dropdown-menu.show,
                             </div>
                         @endauth
                         @guest
-                            <a href="{{ route('login') }}"
-                                class="btn btn-sm px-4 me-2"
-                                style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 500; border-radius: 25px; backdrop-filter: blur(10px);">
-                                <i class="bi bi-box-arrow-in-right me-1"></i> Login
-                            </a>
-                            <a href="{{ route('register') }}"
-                                class="btn btn-sm px-4"
-                                style="background: white; color: #DE6262; border: none; font-weight: 500; border-radius: 25px;">
-                                <i class="bi bi-person-plus me-1"></i> Register
-                            </a>
+                            <div class="d-flex gap-2 align-items-center">
+                                <a href="{{ route('login') }}"
+                                    class="btn btn-sm px-3 d-flex align-items-center justify-content-center"
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; font-weight: 500; border-radius: 25px; min-height: 40px;">
+                                    <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>
+                                    <span class="d-none d-sm-inline">Login</span>
+                                    <span class="d-sm-none">Sign In</span>
+                                </a>
+                                <a href="{{ route('register') }}"
+                                    class="btn btn-sm px-3 d-flex align-items-center justify-content-center"
+                                    style="background: #DE6262; color: white; border: 1px solid #DE6262; font-weight: 500; border-radius: 25px; min-height: 40px;">
+                                    <i class="bi bi-person-plus me-1" aria-hidden="true"></i>
+                                    <span class="d-none d-sm-inline">Register</span>
+                                    <span class="d-sm-none">Sign Up</span>
+                                </a>
+                                <!-- Hamburger Button for Mobile Navigation -->
+                                <button class="cnvs-hamburger d-lg-none d-flex align-items-center justify-content-center"
+                                    type="button" aria-label="Toggle navigation menu" aria-expanded="false"
+                                    title="Open navigation menu"
+                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px;">
+                                    <div class="cnvs-hamburger-box">
+                                        <div class="cnvs-hamburger-inner"></div>
+                                    </div>
+                                </button>
+                            </div>
                         @endguest
                     </div>
                 </div>
@@ -1442,6 +1657,24 @@ body .dropdown .dropdown-menu.show,
     </div>
 </div>
 <!-- Top Bar End -->
+
+
+        <!-- Screen Reader Announcements for Flash Messages -->
+        <div aria-live="polite" aria-atomic="true" class="sr-only">
+            @if (session('success'))
+                <div>Success: {{ session('success') }}</div>
+            @endif
+            @if (session('error'))
+                <div>Error: {{ session('error') }}</div>
+            @endif
+            @if (session('warning'))
+                <div>Warning: {{ session('warning') }}</div>
+            @endif
+            @if (session('info'))
+                <div>Information: {{ session('info') }}</div>
+            @endif
+        </div>
+
         <!-- Flash Messages -->
         @if (session('success') || session('error') || session('warning') || session('info'))
             <div class="container-fluid px-0">
@@ -1449,13 +1682,13 @@ body .dropdown .dropdown-menu.show,
                     <div class="col-12">
                         @if (session('success'))
                             <div class="alert alert-success alert-dismissible fade show m-0 rounded-0 border-0"
-                                role="alert">
+                                role="alert" aria-live="assertive">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-check-circle me-2"></i>
+                                        <i class="fas fa-check-circle me-2" aria-hidden="true"></i>
                                         <strong>Success!</strong> {{ session('success') }}
                                         <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
-                                            aria-label="Close"></button>
+                                            aria-label="Close success message"></button>
                                     </div>
                                 </div>
                             </div>
@@ -1463,13 +1696,13 @@ body .dropdown .dropdown-menu.show,
 
                         @if (session('error'))
                             <div class="alert alert-danger alert-dismissible fade show m-0 rounded-0 border-0"
-                                role="alert">
+                                role="alert" aria-live="assertive">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-exclamation-circle me-2"></i>
+                                        <i class="fas fa-exclamation-circle me-2" aria-hidden="true"></i>
                                         <strong>Error!</strong> {{ session('error') }}
                                         <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
-                                            aria-label="Close"></button>
+                                            aria-label="Close error message"></button>
                                     </div>
                                 </div>
                             </div>
@@ -1477,13 +1710,13 @@ body .dropdown .dropdown-menu.show,
 
                         @if (session('warning'))
                             <div class="alert alert-warning alert-dismissible fade show m-0 rounded-0 border-0"
-                                role="alert">
+                                role="alert" aria-live="assertive">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>
                                         <strong>Warning!</strong> {{ session('warning') }}
                                         <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
-                                            aria-label="Close"></button>
+                                            aria-label="Close warning message"></button>
                                     </div>
                                 </div>
                             </div>
@@ -1491,13 +1724,13 @@ body .dropdown .dropdown-menu.show,
 
                         @if (session('info'))
                             <div class="alert alert-info alert-dismissible fade show m-0 rounded-0 border-0"
-                                role="alert">
+                                role="alert" aria-live="assertive">
                                 <div class="container">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-info-circle me-2"></i>
+                                        <i class="fas fa-info-circle me-2" aria-hidden="true"></i>
                                         <strong>Info!</strong> {{ session('info') }}
                                         <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
-                                            aria-label="Close"></button>
+                                            aria-label="Close info message"></button>
                                     </div>
                                 </div>
                             </div>
@@ -1605,12 +1838,20 @@ body .dropdown .dropdown-menu.show,
             </div>
         @endif
 
+        <!-- AJAX Loading Indicator -->
+        <div id="ajax-loading-overlay" class="ajax-loading-overlay">
+            <div class="loading-spinner"></div>
+            <span>Loading...</span>
+        </div>
+
         <!-- Main Content -->
-        <div class="dashboard-container" style="padding-top: 70px;">
+        <div id="main-content" class="dashboard-container">
+            <!-- Seamless connection gradient -->
+            <div style="position: absolute; top: -5px; left: 0; right: 0; height: 15px; background: linear-gradient(to bottom, rgba(222, 98, 98, 0.2), transparent); pointer-events: none;"></div>
             <main class="app-main">
                 @yield('content')
-            </main>
-        </div>
+            </div>
+        </main>
 
     </div><!-- #wrapper end -->
 		<!-- Footer -->
@@ -1618,39 +1859,39 @@ body .dropdown .dropdown-menu.show,
 
     @if (!auth()->check())
         <!-- Footer -->
-        <footer id="footer" class="text-white py-5"
-    style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
+        <footer id="footer" class="text-white py-5" role="contentinfo"
+    style="background: white; color: #333;">
     <div class="container">
         <div class="row g-4">
             <!-- Company Info -->
             <div class="col-lg-4 col-md-6">
                 <div class="footer-brand mb-4">
-                    <h4 class="text-white mb-3" style="color: #DE6262 !important;">
+                    <h4 class="mb-3" style="color: #DE6262 !important;">
                         <i class="bi bi-heart-pulse me-2" style="color: #DE6262;"></i>
-                        AI Medical Diagnosis
+                        Clinical Decision Support
                     </h4>
-                    <p class="text-white-50 mb-4">
-                        Revolutionizing healthcare with cutting-edge artificial intelligence.
-                        Empowering medical professionals with advanced diagnostic tools for
+                    <p class="text-muted mb-4">
+                        Revolutionizing healthcare with cutting-edge clinical technology.
+                        Empowering medical professionals with advanced decision support tools for
                         superior patient care and outcomes.
                     </p>
 
                     <!-- Social Links -->
                     <div class="social-links">
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
-                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: #dee2e6; color: #333;">
                             <i class="bi bi-facebook"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
-                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: #dee2e6; color: #333;">
                             <i class="bi bi-twitter"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
-                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: #dee2e6; color: #333;">
                             <i class="bi bi-linkedin"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
-                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: #dee2e6; color: #333;">
                             <i class="bi bi-instagram"></i>
                         </a>
                     </div>
@@ -1659,38 +1900,38 @@ body .dropdown .dropdown-menu.show,
 
             <!-- Quick Links -->
             <div class="col-lg-2 col-md-6">
-                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Platform</h6>
+                <h6 class="mb-3" style="color: #DE6262 !important;">Platform</h6>
                 <ul class="list-unstyled footer-links">
                     @auth
-                        <li class="mb-2"><a href="{{ route('dashboard') }}" class="text-white-50 text-decoration-none hover-link">Dashboard</a></li>
+                        <li class="mb-2"><a href="{{ route('dashboard') }}" class="text-muted text-decoration-none hover-link">Dashboard</a></li>
                         {{-- AI Ask temporarily disabled --}}
-                        {{-- <li class="mb-2"><a href="{{ route('ai.ask-ai') }}" class="text-white-50 text-decoration-none hover-link">AI Assistant</a></li> --}}
-                        <li class="mb-2"><a href="{{ route('doctor.patient-management.index') }}" class="text-white-50 text-decoration-none hover-link">Patient Management</a></li>
-                        <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Settings</a></li>
+                        {{-- <li class="mb-2"><a href="{{ route('ai.ask-ai') }}" class="text-muted text-decoration-none hover-link">AI Assistant</a></li> --}}
+                        <li class="mb-2"><a href="{{ route('doctor.cases.overview') }}" class="text-muted text-decoration-none hover-link">Cases Overview</a></li>
+                        <li class="mb-2"><a href="{{ route('settings') }}" class="text-muted text-decoration-none hover-link">Settings</a></li>
                     @else
-                        <li class="mb-2"><a href="{{ url('/') }}" class="text-white-50 text-decoration-none hover-link">Home</a></li>
-                        <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Us</a></li>
-                        <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact</a></li>
-                        <li class="mb-2"><a href="{{ route('login') }}" class="text-white-50 text-decoration-none hover-link">Login</a></li>
+                        <li class="mb-2"><a href="{{ url('/') }}" class="text-muted text-decoration-none hover-link">Home</a></li>
+                        <li class="mb-2"><a href="{{ route('about') }}" class="text-muted text-decoration-none hover-link">About Us</a></li>
+                        <li class="mb-2"><a href="{{ route('contact') }}" class="text-muted text-decoration-none hover-link">Contact</a></li>
+                        <li class="mb-2"><a href="{{ route('login') }}" class="text-muted text-decoration-none hover-link">Login</a></li>
                     @endauth
                 </ul>
             </div>
 
             <!-- Resources -->
             <div class="col-lg-2 col-md-6">
-                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Support</h6>
+                <h6 class="mb-3" style="color: #DE6262 !important;">Support</h6>
                 <ul class="list-unstyled footer-links">
-                    <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Platform</a></li>
-                    <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact Support</a></li>
+                    <li class="mb-2"><a href="{{ route('about') }}" class="text-muted text-decoration-none hover-link">About Platform</a></li>
+                    <li class="mb-2"><a href="{{ route('contact') }}" class="text-muted text-decoration-none hover-link">Contact Support</a></li>
                     @auth
-                        <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Profile Settings</a></li>
+                        <li class="mb-2"><a href="{{ route('settings') }}" class="text-muted text-decoration-none hover-link">Profile Settings</a></li>
                     @endauth
                 </ul>
             </div>
 
             <!-- Contact & Support -->
             <div class="col-lg-4 col-md-6">
-                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Contact & Support</h6>
+                <h6 class="mb-3" style="color: #DE6262 !important;">Contact & Support</h6>
 
                 <!-- Go To Top Button -->
                 <div id="gotoTop" class="fas fa-chevron-up rounded-circle"
@@ -1703,8 +1944,8 @@ body .dropdown .dropdown-menu.show,
                         <i class="bi bi-headset" style="color: #DE6262;"></i>
                     </div>
                     <div>
-                        <small class="text-white-50 d-block">24/7 Support</small>
-                        <span class="text-white">AI-Powered Help Available</span>
+                        <small class="text-muted d-block">24/7 Support</small>
+                        <span style="color: #333;">AI-Powered Help Available</span>
                     </div>
                 </div>
 
@@ -1714,15 +1955,15 @@ body .dropdown .dropdown-menu.show,
                         <i class="bi bi-shield-check" style="color: #DE6262;"></i>
                     </div>
                     <div>
-                        <small class="text-white-50 d-block">Security & Privacy</small>
-                        <span class="text-white">HIPAA Compliant Platform</span>
+                        <small class="text-muted d-block">Security & Privacy</small>
+                        <span style="color: #333;">HIPAA Compliant Platform</span>
                     </div>
                 </div>
 
                 <!-- Quick Contact -->
                 <div class="quick-contact">
-                    <h6 class="text-white mb-2">Need Help?</h6>
-                    <p class="text-white-50 small mb-3">Our AI-powered support is here to assist you</p>
+                    <h6 class="mb-2" style="color: #333;">Need Help?</h6>
+                    <p class="text-muted small mb-3">Our AI-powered support is here to assist you</p>
                     <a href="{{ route('contact') }}" class="btn btn-sm"
                         style="background: #DE6262; color: white; border: none; border-radius: 25px;">
                         <i class="bi bi-chat-dots me-2"></i>Contact Support
@@ -1732,18 +1973,18 @@ body .dropdown .dropdown-menu.show,
         </div>
 
         <!-- Footer Bottom -->
-        <hr class="my-4" style="border-color: rgba(222,98,98,0.2);">
+        <hr class="my-4" style="border-color: #dee2e6;">
         <div class="row align-items-center">
             <div class="col-md-6">
-                <p class="text-white-50 mb-0">
-                    &copy; {{ date('Y') }} AI Medical Diagnosis Platform. All rights reserved.
+                <p class="text-muted mb-0">
+                    &copy; {{ date('Y') }} MedCura Clinical Platform. All rights reserved.
                 </p>
             </div>
             <div class="col-md-6 text-md-end">
                 <div class="footer-legal-links">
-                    <span class="text-white-50 me-3">Secure & HIPAA Compliant</span>
-                    <a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link me-3">Contact Us</a>
-                    <a href="{{ route('admin.login') }}" class="text-white-50 text-decoration-none hover-link"
+                    <span class="text-muted me-3">Secure & HIPAA Compliant</span>
+                    <a href="{{ route('contact') }}" class="text-muted text-decoration-none hover-link me-3">Contact Us</a>
+                    <a href="{{ route('admin.login') }}" class="text-muted text-decoration-none hover-link"
                         style="font-size: 0.8rem;">Admin</a>
                 </div>
             </div>
@@ -1762,6 +2003,7 @@ body .dropdown .dropdown-menu.show,
         .social-links a:hover {
             background-color: #DE6262 !important;
             border-color: #DE6262 !important;
+            color: white !important;
             transform: translateY(-2px);
             transition: all 0.3s ease;
         }
@@ -1793,10 +2035,13 @@ body .dropdown .dropdown-menu.show,
     <script src="{{ asset('js/functions.bundle.js') }}"></script>
     <!-- Ensure Bootstrap JS (with Popper) is available for dropdowns/modals -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    @auth
     <!-- Sidebar JS -->
     <script src="{{ asset('js/sidebar.js') }}" defer></script>
+    @endauth
 
     <!-- Vite Assets (Laravel Echo & Pusher) -->
+    @viteReactRefresh
     @vite(['resources/js/app.js', 'resources/css/app.css'])
 
     <!-- Notification System Styles -->
@@ -1813,8 +2058,316 @@ body .dropdown .dropdown-menu.show,
 
     <!-- Remove conflicting notification scripts - now handled by Vite -->
 
+{{-- Modals --}}
+@stack('modals')
+
 {{-- Extra scripts --}}
 @stack('scripts')
+
+{{-- AJAX Navigation Script --}}
+<script>
+$(document).ready(function() {
+   // Intercept sidebar link clicks
+   $(document).on('click', '.sidebar-nav a[data-ajax="true"]', function(e) {
+       e.preventDefault();
+
+       const $link = $(this);
+       const route = $link.data('route');
+       const url = $link.attr('href');
+
+       // Don't navigate if already active
+       if ($link.hasClass('active')) {
+           return;
+       }
+
+       // Update active state
+       $('.sidebar-nav .nav-link').removeClass('active');
+       $link.addClass('active');
+
+       // Load content via AJAX
+       loadPageContent(url, route);
+
+       // Update browser history
+       history.pushState({route: route, url: url}, '', url);
+   });
+
+   // Handle browser back/forward buttons
+   window.addEventListener('popstate', function(e) {
+       if (e.state && e.state.url) {
+           loadPageContent(e.state.url, e.state.route);
+       }
+   });
+});
+
+function loadPageContent(url, route) {
+    // Clean up voice assistant elements if navigating away from voice-assistant page
+    if (url !== '/ai/voice-assistant') {
+        // Clean up keyboard shortcuts help
+        const helpIndicator = document.querySelector('.keyboard-shortcuts-help');
+        if (helpIndicator) {
+            helpIndicator.remove();
+        }
+    }
+
+    // Show loading overlay and skeleton
+    const $loadingOverlay = $('#ajax-loading-overlay');
+    const $mainContent = $('#main-content');
+    const originalContent = $mainContent.html();
+
+    // Show loading overlay
+    $loadingOverlay.addClass('show');
+
+    $mainContent.html(`
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10">
+                    <!-- Skeleton Header -->
+                    <div class="skeleton-loader skeleton-header"></div>
+
+                    <!-- Skeleton Stats Cards -->
+                    <div class="skeleton-stats">
+                        <div class="skeleton-loader skeleton-stat-card"></div>
+                        <div class="skeleton-loader skeleton-stat-card"></div>
+                        <div class="skeleton-loader skeleton-stat-card"></div>
+                        <div class="skeleton-loader skeleton-stat-card"></div>
+                    </div>
+
+                    <!-- Skeleton Tabs -->
+                    <div class="skeleton-loader skeleton-tabs"></div>
+
+                    <!-- Skeleton Table -->
+                    <div class="skeleton-loader skeleton-table">
+                        <div class="skeleton-loader skeleton-table-header"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                        <div class="skeleton-loader skeleton-table-row"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `);
+
+   $.ajax({
+       url: url,
+       method: 'GET',
+       headers: {
+           'X-Requested-With': 'XMLHttpRequest',
+           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+       },
+       success: function(response) {
+           try {
+               // Hide loading overlay
+               $loadingOverlay.removeClass('show');
+
+               // Extract content from the response (between main-content div)
+               const $temp = $('<div>').html(response);
+               const newContent = $temp.find('#main-content').html();
+
+               if (newContent) {
+                   $mainContent.html(newContent);
+
+                   // Update page title
+                   const newTitle = $temp.find('title').text();
+                   if (newTitle) {
+                       document.title = newTitle;
+                   }
+
+                   // Mark content as AJAX loaded for components that need to know
+                   $mainContent.attr('data-ajax-loaded', 'true');
+
+                   // Re-initialize any JavaScript components (including executing scripts)
+                   initializePageComponents(route);
+
+                   // Scroll to top smoothly
+                   $('html, body').animate({ scrollTop: 0 }, 300);
+               } else {
+                   // If no main-content found, assume full page response
+                   $mainContent.html(response);
+               }
+           } catch (error) {
+               console.error('Error parsing AJAX response:', error);
+               $mainContent.html(originalContent);
+               showAjaxError('Failed to load page content. Please try again.');
+           }
+       },
+       error: function(xhr, status, error) {
+           // Hide loading overlay
+           $loadingOverlay.removeClass('show');
+
+           console.error('AJAX Error:', error);
+           $mainContent.html(originalContent);
+
+           // Fallback to regular navigation for critical errors
+           if (xhr.status === 0 || xhr.status >= 500) {
+               showAjaxError('Connection failed. Redirecting...');
+               setTimeout(() => {
+                   window.location.href = url;
+               }, 2000);
+           } else {
+               showAjaxError('Failed to load page. Please refresh and try again.');
+           }
+       }
+   });
+}
+
+function initializePageComponents(route) {
+    // Execute any script tags in the newly loaded content
+    executeScriptsInContent();
+
+    // Re-initialize DataTables if present
+    if (typeof $.fn.DataTable !== 'undefined') {
+        $('.dataTable').each(function() {
+            if ($.fn.DataTable.isDataTable(this)) {
+                $(this).DataTable().destroy();
+            }
+        });
+
+        // Re-initialize DataTables with new content
+        if (typeof initializeDataTable === 'function') {
+            initializeDataTable();
+        }
+    }
+
+    // Re-initialize Bootstrap components (Bootstrap 5 - no jQuery plugins)
+    if (typeof bootstrap !== 'undefined') {
+        // Re-initialize tooltips
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(element => {
+            const tooltip = bootstrap.Tooltip.getInstance(element);
+            if (tooltip) {
+                tooltip.dispose();
+            }
+            new bootstrap.Tooltip(element);
+        });
+
+        // Re-initialize popovers
+        document.querySelectorAll('[data-bs-toggle="popover"]').forEach(element => {
+            const popover = bootstrap.Popover.getInstance(element);
+            if (popover) {
+                popover.dispose();
+            }
+            new bootstrap.Popover(element);
+        });
+
+        // Clean up modals (dispose existing instances)
+        document.querySelectorAll('.modal').forEach(modalElement => {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.dispose();
+            }
+        });
+    }
+
+    // Trigger custom event for page-specific initializations
+    $(document).trigger('pageContentLoaded', [route]);
+}
+
+// Function to execute script tags in dynamically loaded content
+function executeScriptsInContent() {
+    // Find all script tags in the main content area that haven't been executed yet
+    const scripts = document.querySelectorAll('#main-content script:not([data-executed])');
+
+    // Separate external and inline scripts
+    const externalScripts = [];
+    const inlineScripts = [];
+
+    scripts.forEach(script => {
+        if (script.src) {
+            externalScripts.push(script);
+        } else if (script.textContent) {
+            inlineScripts.push(script);
+        }
+    });
+
+    // Load external scripts first, then execute inline scripts
+    if (externalScripts.length > 0) {
+        loadExternalScriptsSequentially(externalScripts, () => {
+            executeInlineScripts(inlineScripts);
+        });
+    } else {
+        executeInlineScripts(inlineScripts);
+    }
+}
+
+function loadExternalScriptsSequentially(scripts, callback) {
+    let index = 0;
+
+    function loadNext() {
+        if (index >= scripts.length) {
+            callback();
+            return;
+        }
+
+        const script = scripts[index];
+        const newScript = document.createElement('script');
+        newScript.src = script.src;
+        newScript.async = false; // Load synchronously to ensure proper order
+        newScript.defer = false;
+
+        // Copy any data attributes
+        Array.from(script.attributes).forEach(attr => {
+            if (attr.name.startsWith('data-')) {
+                newScript.setAttribute(attr.name, attr.value);
+            }
+        });
+
+        newScript.onload = () => {
+            console.log('Loaded external script:', script.src);
+            script.setAttribute('data-executed', 'true');
+            index++;
+            loadNext();
+        };
+
+        newScript.onerror = () => {
+            console.error('Failed to load external script:', script.src);
+            script.setAttribute('data-executed', 'true');
+            index++;
+            loadNext(); // Continue with next script even if one fails
+        };
+
+        // Replace the old script with the new one
+        script.parentNode.replaceChild(newScript, script);
+    }
+
+    loadNext();
+}
+
+function executeInlineScripts(scripts) {
+    scripts.forEach(script => {
+        try {
+            // Execute the script in global scope
+            (function() {
+                eval(script.textContent);
+            })();
+            script.setAttribute('data-executed', 'true');
+        } catch (error) {
+            console.error('Error executing inline script:', error);
+        }
+    });
+}
+
+function showAjaxError(message) {
+   // Create a temporary error notification
+   const $error = $(`
+       <div class="alert alert-danger alert-dismissible fade show position-fixed"
+            style="top: 80px; right: 20px; z-index: 9999; min-width: 300px;">
+           <i class="fas fa-exclamation-triangle me-2"></i>
+           ${message}
+           <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+       </div>
+   `);
+
+   $('body').append($error);
+
+   // Auto-remove after 5 seconds
+   setTimeout(() => {
+       $error.alert('close');
+   }, 5000);
+}
+</script>
 
 <script>
     // Dropdown initialization
@@ -1863,6 +2416,55 @@ body .dropdown .dropdown-menu.show,
             if (notificationsDropdown) {
                 notificationsDropdown.addEventListener('shown.bs.dropdown', function() {
                     loadNotifications();
+                    // Focus first focusable element in dropdown for keyboard navigation
+                    setTimeout(() => {
+                        const firstFocusable = notificationsDropdown.querySelector('.mark-all-read-btn, .view-all-btn, .notification-item');
+                        if (firstFocusable) {
+                            firstFocusable.focus();
+                        }
+                    }, 100);
+                });
+
+                // Add keyboard navigation support
+                notificationsDropdown.addEventListener('keydown', function(e) {
+                    const dropdownMenu = notificationsDropdown.querySelector('.dropdown-menu');
+                    if (!dropdownMenu) return;
+
+                    const focusableElements = dropdownMenu.querySelectorAll(
+                        '.mark-all-read-btn, .view-all-btn, .notification-item, .dropdown-item'
+                    );
+                    const firstElement = focusableElements[0];
+                    const lastElement = focusableElements[focusableElements.length - 1];
+
+                    switch (e.key) {
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            const currentIndex = Array.from(focusableElements).indexOf(document.activeElement);
+                            const nextIndex = currentIndex < focusableElements.length - 1 ? currentIndex + 1 : 0;
+                            focusableElements[nextIndex].focus();
+                            break;
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            const currentIndexUp = Array.from(focusableElements).indexOf(document.activeElement);
+                            const prevIndex = currentIndexUp > 0 ? currentIndexUp - 1 : focusableElements.length - 1;
+                            focusableElements[prevIndex].focus();
+                            break;
+                        case 'Home':
+                            e.preventDefault();
+                            firstElement.focus();
+                            break;
+                        case 'End':
+                            e.preventDefault();
+                            lastElement.focus();
+                            break;
+                        case 'Escape':
+                            e.preventDefault();
+                            const dropdownInstance = bootstrap.Dropdown.getInstance(notificationsDropdown.querySelector('.dropdown-toggle'));
+                            if (dropdownInstance) {
+                                dropdownInstance.hide();
+                            }
+                            break;
+                    }
                 });
             }
 
@@ -1896,11 +2498,9 @@ body .dropdown .dropdown-menu.show,
         }, 500);
     });
 
-        // NEW SIMPLE MOBILE MENU - Bottom Sheet Style
-        function createBottomSheetMenu() {
-            const body = document.body;
-
-            // Try multiple selectors to find the hamburger button
+        // MOBILE NAVIGATION TOGGLE - Show/Hide navigation links
+        function initializeMobileNavigation() {
+            // Find the hamburger button
             let mobileMenuTrigger = document.querySelector('.primary-menu-trigger .cnvs-hamburger');
             if (!mobileMenuTrigger) {
                 mobileMenuTrigger = document.querySelector('.cnvs-hamburger');
@@ -1910,33 +2510,16 @@ body .dropdown .dropdown-menu.show,
             }
 
             if (!mobileMenuTrigger) {
-                // Only log if we're in debug mode
-                if (window.location.search.includes('debug=true')) {
-                }
+                console.log('Hamburger button not found - checking all possible selectors');
+                console.log('Available hamburger buttons:', document.querySelectorAll('.cnvs-hamburger'));
+                console.log('Available primary-menu-trigger:', document.querySelectorAll('.primary-menu-trigger'));
                 return;
             }
 
-            // Remove existing mobile menu if it exists
-            const existingMobileMenu = document.querySelector('.bottom-sheet-menu');
-            const existingOverlay = document.querySelector('.bottom-sheet-overlay');
-            if (existingMobileMenu) existingMobileMenu.remove();
-            if (existingOverlay) existingOverlay.remove();
+            console.log('Hamburger button found:', mobileMenuTrigger);
 
-            // Create overlay
-            const overlay = document.createElement('div');
-            overlay.className = 'bottom-sheet-overlay';
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 999998;
-                opacity: 0;
-                visibility: hidden;
-                transition: all 0.3s ease;
-            `;
+            // Find the navigation links container
+            const navLinks = document.querySelector('.d-none.d-md-flex.align-items-center.gap-3.small');
 
             // Create bottom sheet menu
             const bottomSheet = document.createElement('div');
@@ -2067,282 +2650,200 @@ body .dropdown .dropdown-menu.show,
                         { title: 'Billing', icon: 'fas fa-dollar-sign', url: '{{ route("admin.billing") }}' }
                     ]
                 });
+            if (!navLinks) {
+                console.log('Navigation links container not found - checking all possible selectors');
+                console.log('Available navigation containers:', document.querySelectorAll('[class*="d-none"][class*="d-md-flex"]'));
+                console.log('All div elements:', document.querySelectorAll('div').length);
+                return;
             }
 
-            // Create menu items HTML
-            menuItems.forEach(item => {
-                const menuItem = document.createElement('div');
-                menuItem.className = 'bottom-sheet-menu-item';
-                menuItem.style.cssText = `
-                    margin-bottom: 8px;
-                    border-radius: 12px;
-                    background: #f8f9fa;
-                    border: 1px solid #e9ecef;
-                    overflow: hidden;
-                `;
+            console.log('Navigation links container found:', navLinks);
+            console.log('Navigation links HTML:', navLinks.innerHTML);
 
-                if (item.submenu) {
-                    // Menu item with submenu
-                    menuItem.innerHTML = `
-                        <div class="menu-item-header" style="
-                            display: flex;
-                            align-items: center;
-                            justify-content: space-between;
-                            padding: 16px 20px;
-                            cursor: pointer;
-                            background: white;
-                            transition: all 0.2s ease;
-                        ">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <i class="${item.icon}" style="color: #DE6262; width: 20px; text-align: center;"></i>
-                                <span style="font-weight: 500; color: #333;">${item.title}</span>
-                            </div>
-                            <i class="fas fa-chevron-down" style="color: #666; transition: transform 0.3s ease;"></i>
-                        </div>
-                        <div class="submenu-items" style="
-                            display: none;
-                            background: #f8f9fa;
-                            border-top: 1px solid #e9ecef;
-                        ">
-                            ${item.submenu.map(subItem => `
-                                <a href="${subItem.url}" style="
-                                    display: flex;
-                                    align-items: center;
-                                    gap: 12px;
-                                    padding: 12px 20px 12px 52px;
-                                    color: #555;
-                                    text-decoration: none;
-                                    transition: all 0.2s ease;
-                                    border-bottom: 1px solid rgba(0,0,0,0.05);
-                                " class="submenu-link">
-                                    <i class="${subItem.icon}" style="color: #DE6262; width: 16px; text-align: center; font-size: 14px;"></i>
-                                    <span style="font-size: 14px;">${subItem.title}</span>
-                                </a>
-                            `).join('')}
-                        </div>
-                    `;
+            // Function to toggle navigation
+            function toggleMobileNav() {
+                console.log('Toggling mobile navigation');
 
-                    // Add click handler for dropdown
-                    const header = menuItem.querySelector('.menu-item-header');
-                    const submenu = menuItem.querySelector('.submenu-items');
-                    const arrow = menuItem.querySelector('.fa-chevron-down');
-
-                    header.addEventListener('click', function() {
-                        const isOpen = submenu.style.display === 'block';
-
-                        // Close all other submenus
-                        bottomSheet.querySelectorAll('.submenu-items').forEach(sub => {
-                            if (sub !== submenu) {
-                                sub.style.display = 'none';
-                            }
-                        });
-                        bottomSheet.querySelectorAll('.fa-chevron-down').forEach(arr => {
-                            if (arr !== arrow) {
-                                arr.style.transform = 'rotate(0deg)';
-                            }
-                        });
-
-                        // Toggle current submenu
-                        if (isOpen) {
-                            submenu.style.display = 'none';
-                            arrow.style.transform = 'rotate(0deg)';
-                        } else {
-                            submenu.style.display = 'block';
-                            arrow.style.transform = 'rotate(180deg)';
-                        }
-                    });
-
-                    // Add hover effects for submenu links
-                    menuItem.querySelectorAll('.submenu-link').forEach(link => {
-                        link.addEventListener('mouseenter', function() {
-                            this.style.background = 'rgba(222, 98, 98, 0.1)';
-                            this.style.color = '#DE6262';
-                        });
-                        link.addEventListener('mouseleave', function() {
-                            this.style.background = 'transparent';
-                            this.style.color = '#555';
-                        });
-                        link.addEventListener('click', function() {
-                            closeBottomSheet();
-                        });
-                    });
-
+                if (navLinks.classList.contains('show-mobile-nav')) {
+                    // Hide navigation - remove the dropdown and event listeners
+                    navLinks.classList.remove('show-mobile-nav');
+                    if (navLinks._dropdown) {
+                        navLinks._dropdown.remove();
+                        navLinks._dropdown = null;
+                        console.log('Navigation dropdown removed');
+                    }
+                    // Remove any click outside listeners
+                    document.removeEventListener('click', navLinks._closeHandler);
+                    navLinks._closeHandler = null;
+                    console.log('Navigation hidden');
                 } else {
-                    // Simple menu item
-                    menuItem.innerHTML = `
-                        <a href="${item.url}" style="
-                            display: flex;
-                            align-items: center;
-                            gap: 12px;
-                            padding: 16px 20px;
-                            color: #333;
-                            text-decoration: none;
-                            background: white;
-                            transition: all 0.2s ease;
-                        " class="simple-menu-link">
-                            <i class="${item.icon}" style="color: #DE6262; width: 20px; text-align: center;"></i>
-                            <span style="font-weight: 500;">${item.title}</span>
-                        </a>
+                    // Create a professional dropdown matching site style
+                    const dropdown = document.createElement('div');
+                    dropdown.id = 'mobile-nav-dropdown';
+                    dropdown.style.cssText = `
+                        position: fixed;
+                        top: 80px;
+                        left: 0;
+                        right: 0;
+                        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+                        border-bottom: 1px solid rgba(255,255,255,0.1);
+                        padding: 20px;
+                        z-index: 99999;
+                        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    `;
+                    dropdown.innerHTML = `
+                        <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
+                            <a href="/" style="color: white; text-decoration: none; font-weight: 500; padding: 12px 20px; border-radius: 8px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); display: block; width: 100%; text-align: center; font-size: 16px;">Home</a>
+                            <a href="/about" style="color: white; text-decoration: none; font-weight: 500; padding: 12px 20px; border-radius: 8px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); display: block; width: 100%; text-align: center; font-size: 16px;">About Us</a>
+                            <a href="/contact" style="color: white; text-decoration: none; font-weight: 500; padding: 12px 20px; border-radius: 8px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); display: block; width: 100%; text-align: center; font-size: 16px;">Contact</a>
+                            <a href="/doctors" style="color: white; text-decoration: none; font-weight: 500; padding: 12px 20px; border-radius: 8px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); display: block; width: 100%; text-align: center; font-size: 16px;">For Patients</a>
+                        </div>
                     `;
 
-                    // Add hover effect and close on click
-                    const link = menuItem.querySelector('.simple-menu-link');
-                    link.addEventListener('mouseenter', function() {
-                        this.style.background = 'rgba(222, 98, 98, 0.05)';
-                        this.style.color = '#DE6262';
-                    });
-                    link.addEventListener('mouseleave', function() {
-                        this.style.background = 'white';
-                        this.style.color = '#333';
-                    });
-                    link.addEventListener('click', function() {
-                        closeBottomSheet();
-                    });
+                    document.body.appendChild(dropdown);
+                    console.log('Created new visible dropdown element');
+
+                    // Store reference to remove it later
+                    navLinks._dropdown = dropdown;
+
+                    // Add click outside to close
+                    const closeDropdown = (e) => {
+                        if (!dropdown.contains(e.target) && e.target !== mobileMenuTrigger && !mobileMenuTrigger.contains(e.target)) {
+                            dropdown.remove();
+                            navLinks.classList.remove('show-mobile-nav');
+                            navLinks._dropdown = null;
+                            document.removeEventListener('click', closeDropdown);
+                            navLinks._closeHandler = null;
+                            console.log('Dropdown closed by clicking outside');
+                        }
+                    };
+
+                    // Store the handler for cleanup
+                    navLinks._closeHandler = closeDropdown;
+
+                    // Add the event listener after a short delay to avoid immediate closing
+                    setTimeout(() => {
+                        document.addEventListener('click', closeDropdown);
+                    }, 100);
                 }
 
-                menuItemsContainer.appendChild(menuItem);
+                console.log('Navigation links classes:', navLinks.className);
+                console.log('Navigation links style display:', navLinks.style.display);
+
+                // Update hamburger animation
+                const hamburger = mobileMenuTrigger;
+                if (hamburger) {
+                    hamburger.classList.toggle('active');
+                    console.log('Hamburger active class toggled');
+                }
+            }
+
+            // Function to close navigation
+            function closeMobileNav() {
+                console.log('Closing mobile navigation');
+                navLinks.classList.remove('show-mobile-nav');
+
+                // Reset hamburger animation
+                const hamburger = mobileMenuTrigger;
+                if (hamburger) {
+                    hamburger.classList.remove('active');
+                }
+            }
+
+            // Add click event to hamburger
+            mobileMenuTrigger.addEventListener('click', function(e) {
+                console.log('Hamburger clicked');
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMobileNav();
             });
 
-            // Add to body
-            body.appendChild(overlay);
-            body.appendChild(bottomSheet);
+            // Close navigation when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!mobileMenuTrigger.contains(e.target) && !navLinks.contains(e.target)) {
+                    closeMobileNav();
+                }
+            });
 
-            // Functions to open/close
-            function openBottomSheet() {
-                overlay.style.opacity = '1';
-                overlay.style.visibility = 'visible';
-                bottomSheet.style.bottom = '0';
-                body.style.overflow = 'hidden';
-            }
-
-            function closeBottomSheet() {
-                overlay.style.opacity = '0';
-                overlay.style.visibility = 'hidden';
-                bottomSheet.style.bottom = '-100%';
-                body.style.overflow = '';
-
-                // Close all submenus
-                bottomSheet.querySelectorAll('.submenu-items').forEach(sub => {
-                    sub.style.display = 'none';
-                });
-                bottomSheet.querySelectorAll('.fa-chevron-down').forEach(arrow => {
-                    arrow.style.transform = 'rotate(0deg)';
-                });
-            }
-
-            // Event listeners
-            mobileMenuTrigger.addEventListener('click', openBottomSheet);
-            overlay.addEventListener('click', closeBottomSheet);
-            bottomSheet.querySelector('.close-bottom-sheet').addEventListener('click', closeBottomSheet);
-
-            // Close on window resize
+            // Close navigation on window resize to desktop
             window.addEventListener('resize', function() {
                 if (window.innerWidth > 991) {
-                    closeBottomSheet();
+                    closeMobileNav();
                 }
             });
 
-            // Only log in debug mode
-            if (window.location.search.includes('debug=true')) {
+            // Close navigation when a link is clicked
+            navLinks.addEventListener('click', function(e) {
+                if (e.target.closest('.top-link')) {
+                    closeMobileNav();
+                }
+            });
+        }
+
+        // Force fresh logo loading on mobile devices
+        function forceFreshLogoLoading() {
+            // Check if we're on mobile
+            if (window.innerWidth <= 768) {
+                const logos = document.querySelectorAll('img[src*="logo-medical"]');
+                logos.forEach(img => {
+                    const currentSrc = img.src;
+                    // Add timestamp to force fresh load
+                    const separator = currentSrc.includes('?') ? '&' : '?';
+                    img.src = currentSrc + separator + 'force=' + Date.now();
+                });
             }
         }
 
-        // Initialize mobile menu on DOM ready
+        // Initialize mobile navigation on DOM ready
         document.addEventListener('DOMContentLoaded', function() {
+            // Force fresh logo loading
+            forceFreshLogoLoading();
+
+            // Initialize mobile navigation toggle
+            initializeMobileNavigation();
+
             // Only log in debug mode
             if (window.location.search.includes('debug=true')) {
-            }
-            createBottomSheetMenu();
-
-            // Fallback: Add click listener directly to hamburger button
-            const hamburger = document.querySelector('.cnvs-hamburger');
-            if (hamburger) {
-                hamburger.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    // Try to trigger bottom sheet
-                    const bottomSheet = document.querySelector('.bottom-sheet-menu');
-                    const overlay = document.querySelector('.bottom-sheet-overlay');
-                    if (bottomSheet && overlay) {
-                        bottomSheet.style.bottom = '0';
-                        overlay.style.opacity = '1';
-                        overlay.style.visibility = 'visible';
-                        document.body.style.overflow = 'hidden';
-                    } else {
-                        createBottomSheetMenu();
-                        // Try again after recreation
-                        setTimeout(() => {
-                            const newBottomSheet = document.querySelector('.bottom-sheet-menu');
-                            const newOverlay = document.querySelector('.bottom-sheet-overlay');
-                            if (newBottomSheet && newOverlay) {
-                                newBottomSheet.style.bottom = '0';
-                                newOverlay.style.opacity = '1';
-                                newOverlay.style.visibility = 'visible';
-                                document.body.style.overflow = 'hidden';
-                            }
-                        }, 100);
-                    }
-                });
-            } else {
             }
         });
 
         // Add manual test trigger (temporary for debugging)
-        window.testMobileMenu = function() {
-            const bottomSheet = document.querySelector('.bottom-sheet-menu');
-            const overlay = document.querySelector('.bottom-sheet-overlay');
-            if (bottomSheet && overlay) {
-                bottomSheet.style.bottom = '0';
-                overlay.style.opacity = '1';
-                overlay.style.visibility = 'visible';
-                document.body.style.overflow = 'hidden';
-            } else {
-                createBottomSheetMenu();
-                setTimeout(() => {
-                    const newBottomSheet = document.querySelector('.bottom-sheet-menu');
-                    const newOverlay = document.querySelector('.bottom-sheet-overlay');
-                    if (newBottomSheet && newOverlay) {
-                        newBottomSheet.style.bottom = '0';
-                        newOverlay.style.opacity = '1';
-                        newOverlay.style.visibility = 'visible';
-                        document.body.style.overflow = 'hidden';
-                    }
-                }, 100);
+        window.testMobileNav = function() {
+            const navLinks = document.querySelector('.d-none.d-md-flex.align-items-center.gap-4.small');
+            if (navLinks) {
+                navLinks.classList.toggle('show-mobile-nav');
             }
         };
 
         // Also initialize on page show (for back/forward navigation)
         window.addEventListener('pageshow', function() {
-            // Only create if it doesn't exist
-            const existingMobileMenu = document.querySelector('.bottom-sheet-menu');
-            if (!existingMobileMenu) {
-                createBottomSheetMenu();
-            }
+            // Re-initialize mobile navigation if needed
+            initializeMobileNavigation();
         });
 
-        // For SPA-like navigation, reinitialize only when needed
-        let mobileMenuInitialized = false;
-        
-        function initializeMobileMenuIfNeeded() {
-            const existingMobileMenu = document.querySelector('.bottom-sheet-menu');
-            const mobileMenuTrigger = document.querySelector('.primary-menu-trigger .cnvs-hamburger');
+        // For SPA-like navigation, reinitialize mobile navigation when needed
+        let mobileNavInitialized = false;
 
-            // Only reinitialize if elements exist but mobile menu doesn't and we haven't initialized recently
-            if (mobileMenuTrigger && !existingMobileMenu && !mobileMenuInitialized) {
-                createBottomSheetMenu();
-                mobileMenuInitialized = true;
-                
+        function initializeMobileNavIfNeeded() {
+            const mobileMenuTrigger = document.querySelector('.primary-menu-trigger .cnvs-hamburger') ||
+                                     document.querySelector('.cnvs-hamburger');
+
+            // Only reinitialize if trigger exists but we haven't initialized recently
+            if (mobileMenuTrigger && !mobileNavInitialized) {
+                initializeMobileNavigation();
+                mobileNavInitialized = true;
+
                 // Reset flag after a delay to allow re-initialization if needed
                 setTimeout(() => {
-                    mobileMenuInitialized = false;
+                    mobileNavInitialized = false;
                 }, 5000);
             }
         }
-        
+
         // Check on navigation events instead of continuous polling
-        window.addEventListener('popstate', initializeMobileMenuIfNeeded);
-        window.addEventListener('hashchange', initializeMobileMenuIfNeeded);
+        window.addEventListener('popstate', initializeMobileNavIfNeeded);
+        window.addEventListener('hashchange', initializeMobileNavIfNeeded);
 
     // Function to load notifications into dropdown
     function loadNotifications() {
@@ -2370,7 +2871,7 @@ body .dropdown .dropdown-menu.show,
                 return response.json();
             })
             .then(data => {
- 
+
                 if (data.notifications && data.notifications.length > 0) {
                     // Render notifications
                     let html = '';
@@ -2379,7 +2880,7 @@ body .dropdown .dropdown-menu.show,
                         const time = new Date(notification.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
                         html += `
-                            <div class="notification-item ${notification.read_at ? 'read' : 'unread'}" data-id="${notification.id}">
+                            <div class="notification-item ${notification.read_at ? 'read' : 'unread'}" data-id="${notification.id}" data-link="${notification.data?.link || ''}" data-message="${notification.data?.message || ''}">
                                 <div class="d-flex align-items-start gap-3 p-3 border-bottom">
                                     <div class="notification-icon">
                                         <i class="bi ${notification.data?.icon || 'bi-bell'} text-${notification.data?.color || 'primary'}"></i>
@@ -2405,11 +2906,34 @@ body .dropdown .dropdown-menu.show,
 
                     notificationList.innerHTML = html;
 
-                    // Add click handlers to mark as read
+                    // Add click handlers to mark as read and redirect
                     document.querySelectorAll('.notification-item.unread').forEach(item => {
-                        item.addEventListener('click', function() {
+                        item.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+
                             const notificationId = this.dataset.id;
+                            const link = this.dataset.link;
+                            const message = this.dataset.message;
+
                             markAsRead(notificationId);
+
+                            // Close the dropdown
+                            const dropdown = bootstrap.Dropdown.getInstance(document.querySelector('.notifications-dropdown .dropdown-toggle'));
+                            if (dropdown) dropdown.hide();
+
+                            // Small delay to ensure dropdown closes before redirect
+                            setTimeout(() => {
+                                // Redirect based on notification type
+                                if (link) {
+                                    window.location.href = link;
+                                } else if (message && message.toLowerCase().includes('appointment')) {
+                                    window.location.href = '/appointments';
+                                } else {
+                                    // Default fallback to dashboard
+                                    window.location.href = '/dashboard';
+                                }
+                            }, 100);
                         });
                     });
 
@@ -2464,77 +2988,101 @@ body .dropdown .dropdown-menu.show,
 
     // Function to update notification badge
     function updateNotificationBadge() {
-        // Use a timeout to prevent hanging requests
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        fetch('/api/notifications/unread-count', {
-            signal: controller.signal,
-            credentials: 'same-origin'  // Include cookies for authentication
-        })
-        .then(response => {
-            clearTimeout(timeoutId);
-
-            // Check if the response is a redirect
-            if (response.redirected) {
-                throw new Error('Redirect detected. User may not be authenticated.');
-            }
-
-            // Check if response is JSON or HTML (error page)
-            const contentType = response.headers.get('content-type');
-            if (!response.ok) {
-                if (contentType && contentType.includes('text/html')) {
-                    // If we get HTML back, it's likely an authentication error
-                    return response.text().then(html => {
-                        throw new Error('Authentication required. Please log in again.');
-                    });
+        return new Promise((resolve) => {
+            // Use a timeout to prevent hanging requests
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                // Only abort if the controller hasn't been used already
+                if (!controller.signal.aborted) {
+                    controller.abort();
                 }
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
+            }, 10000); // Increased timeout to 10 seconds
 
-            // Ensure we have JSON
-            if (!contentType || !contentType.includes('json')) {
-                throw new Error('Invalid response format. Expected JSON.');
-            }
+            fetch('/api/notifications/unread-count', {
+                signal: controller.signal,
+                credentials: 'same-origin',  // Include cookies for authentication
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    // Include CSRF token if available
+                    ...(document.querySelector('meta[name="csrf-token"]') && {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    })
+                }
+            })
+            .then(response => {
+                clearTimeout(timeoutId);
 
-            return response.json();
-        })
-        .then(data => {
-            const badge = document.getElementById('notification-count');
-            if (badge) {
-                // Handle both old format (data.count) and new format (data.count)
-                const count = data.count || 0;
-
-                // Check if user is authenticated
-                if (data.authenticated === false) {
-                    // User is not authenticated, hide badge
-                    badge.style.display = 'none';
-                    return;
+                // Check if the response is a redirect
+                if (response.redirected) {
+                    throw new Error('Redirect detected. User may not be authenticated.');
                 }
 
-                if (count > 0) {
-                    badge.textContent = count > 99 ? '99+' : count;
-                    badge.style.display = 'block';
+                // Check if response is JSON or HTML (error page)
+                const contentType = response.headers.get('content-type');
+                if (!response.ok) {
+                    if (contentType && contentType.includes('text/html')) {
+                        // If we get HTML back, it's likely an authentication error
+                        return response.text().then(html => {
+                            throw new Error('Authentication required. Please log in again.');
+                        });
+                    }
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                // Ensure we have JSON
+                if (!contentType || !contentType.includes('json')) {
+                    throw new Error('Invalid response format. Expected JSON.');
+                }
+
+                return response.json();
+            })
+            .then(data => {
+                const badge = document.getElementById('notification-count');
+                if (badge) {
+                    // Handle both old format (data.count) and new format (data.count)
+                    const count = data.count || 0;
+
+                    // Check if user is authenticated
+                    if (data.authenticated === false) {
+                        // User is not authenticated, hide badge
+                        badge.style.display = 'none';
+                        resolve(false);
+                        return;
+                    }
+
+                    if (count > 0) {
+                        badge.textContent = count > 99 ? '99+' : count;
+                        badge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+                resolve(true);
+            })
+            .catch(error => {
+                clearTimeout(timeoutId);
+
+                // Check if it's an AbortError (timeout)
+                if (error.name === 'AbortError') {
+                    console.warn('Notification badge update timed out:', error);
                 } else {
+                    console.error('Error updating notification badge:', error);
+                }
+
+                // Ensure badge is hidden on error
+                const badge = document.getElementById('notification-count');
+                if (badge) {
                     badge.style.display = 'none';
                 }
-            }
-        })
-        .catch(error => {
-            clearTimeout(timeoutId);
-            console.error('Error updating notification badge:', error);
 
-            // Ensure badge is hidden on error
-            const badge = document.getElementById('notification-count');
-            if (badge) {
-                badge.style.display = 'none';
-            }
-
-            // If it's an authentication error, we might want to redirect to login
-            if (error.message.includes('Authentication required') || error.message.includes('Redirect detected')) {
-                // Optionally: show a message or redirect to login
-                // window.location.href = '/login';
-            }
+                // If it's an authentication error, we might want to redirect to login
+                if (error.message && (error.message.includes('Authentication required') || error.message.includes('Redirect detected'))) {
+                    // Optionally: show a message or redirect to login
+                    // window.location.href = '/login';
+                }
+                resolve(false);
+            });
         });
     }
 
@@ -2548,12 +3096,57 @@ body .dropdown .dropdown-menu.show,
         if (loginParam === 'success') {
             setTimeout(() => {
                 updateNotificationBadge();
+                // Start polling after login delay
+                startNotificationPolling();
             }, 5000); // Wait 5 seconds before enabling notifications
         } else {
             // Otherwise, load notifications normally with a small delay
             setTimeout(() => {
                 updateNotificationBadge();
+                // Start polling immediately
+                startNotificationPolling();
             }, 1000);
+        }
+    });
+
+    // Optimized notification polling with exponential backoff
+    let notificationPollingInterval = null;
+    let pollingDelay = 30000; // Start with 30 seconds
+    const maxPollingDelay = 300000; // Max 5 minutes
+    const minPollingDelay = 15000; // Min 15 seconds
+
+    function startNotificationPolling() {
+        if (notificationPollingInterval) {
+            clearInterval(notificationPollingInterval);
+        }
+
+        notificationPollingInterval = setInterval(() => {
+            updateNotificationBadge().then(success => {
+                if (success) {
+                    // Reset to faster polling on success
+                    pollingDelay = Math.max(minPollingDelay, pollingDelay - 5000);
+                } else {
+                    // Increase delay on failure
+                    pollingDelay = Math.min(maxPollingDelay, pollingDelay * 1.5);
+                }
+                // Restart with new delay
+                startNotificationPolling();
+            });
+        }, pollingDelay);
+    }
+
+    // Stop polling when page becomes hidden to save resources
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            if (notificationPollingInterval) {
+                clearInterval(notificationPollingInterval);
+                notificationPollingInterval = null;
+            }
+        } else {
+            // Resume polling when page becomes visible
+            if (!notificationPollingInterval) {
+                startNotificationPolling();
+            }
         }
     });
 </script>

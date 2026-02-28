@@ -18,6 +18,44 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping() // Prevent overlapping executions
             ->runInBackground(); // Run in background
 
+        // Clean up expired kiosk sessions every 15 minutes
+        $schedule->job(\App\Jobs\CleanupExpiredKioskSessions::class)
+            ->everyFifteenMinutes()
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // Process workflow tasks and send reminders every hour
+        $schedule->job(\App\Jobs\ProcessWorkflowTasks::class)
+            ->hourly()
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // Process claim workflow automation every 4 hours
+        $schedule->job(\App\Jobs\ProcessClaimWorkflowAutomation::class)
+            ->everyFourHours()
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // Run system monitoring every 5 minutes
+        $schedule->command('monitor:system --all')
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // Train ML models daily at 2 AM
+        $schedule->command('models:train')
+            ->dailyAt('02:00')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->evenInMaintenanceMode();
+
+        // Generate predictions for next 7 days daily at 3 AM
+        $schedule->command('predictions:generate')
+            ->dailyAt('03:00')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->evenInMaintenanceMode();
+
         // Optional: Add other billing-related scheduled tasks here
         // For example, cleanup old alerts, generate reports, etc.
     }

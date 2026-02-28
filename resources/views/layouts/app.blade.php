@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Stylesheets -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
@@ -30,6 +30,9 @@
     <link rel="stylesheet" href="{{ asset('css/responsive-modals.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin-enhancements.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin-tables.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/ui-consistency.css') }}">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @stack('styles')
 
     <!-- Global Font Styling -->
@@ -113,13 +116,13 @@
         .nav-link:hover {
             color: white;
             background: rgba(255,255,255,0.1);
-            border-left-color: #60a5fa;
+            border-left-color: #DE6262;
         }
 
         .nav-link.active {
             color: white;
-            background: rgba(96,165,250,0.2);
-            border-left-color: #60a5fa;
+            background: rgba(222,98,98,0.2);
+            border-left-color: #DE6262;
         }
 
         .nav-link i {
@@ -185,12 +188,122 @@
 
         /* Hospital Admin specific styles */
         .hospital-badge {
-            background: rgba(96,165,250,0.2);
-            color: #60a5fa;
+            background: rgba(222,98,98,0.2);
+            color: #DE6262;
             padding: 0.25rem 0.5rem;
             border-radius: 0.375rem;
             font-size: 0.75rem;
             font-weight: 500;
+        }
+
+        /* Professional Skeleton Loading Animation */
+        .skeleton-loader {
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+            background: linear-gradient(90deg,
+                rgba(222,98,98, 0.1) 25%,
+                rgba(222,98,98, 0.05) 50%,
+                rgba(222,98,98, 0.1) 75%);
+            background-size: 200% 100%;
+            border: 1px solid rgba(222,98,98, 0.1);
+        }
+
+        @keyframes skeleton-loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .skeleton-header {
+            height: 60px;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+
+        .skeleton-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .skeleton-stat-card {
+            flex: 1;
+            height: 120px;
+            border-radius: 20px;
+        }
+
+        .skeleton-tabs {
+            height: 50px;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .skeleton-table {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .skeleton-table-header {
+            height: 50px;
+            margin-bottom: 1rem;
+        }
+
+        .skeleton-table-row {
+            height: 60px;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+        }
+
+        /* Loading indicator overlay */
+        .ajax-loading-overlay {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9998;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(222,98,98, 0.2);
+            border-radius: 50px;
+            padding: 8px 16px;
+            box-shadow: 0 4px 12px rgba(222,98,98, 0.15);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #DE6262;
+            font-weight: 500;
+        }
+
+        .ajax-loading-overlay.show {
+            display: flex;
+        }
+
+        .ajax-loading-overlay .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(222,98,98, 0.3);
+            border-top: 2px solid #DE6262;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive skeleton adjustments */
+        @media (max-width: 768px) {
+            .skeleton-stats {
+                flex-direction: column;
+            }
+
+            .skeleton-stat-card {
+                height: 100px;
+                margin-bottom: 1rem;
+            }
         }
     </style>
 
@@ -198,19 +311,38 @@
     <title>@yield('title', 'Hospital Admin | MedCura AI')</title>
 </head>
 <body>
+    <!-- AJAX Loading Indicator -->
+    <div id="ajax-loading-overlay" class="ajax-loading-overlay">
+        <div class="loading-spinner"></div>
+        <span>Loading...</span>
+    </div>
+
     <div class="admin-wrapper">
         <!-- Sidebar -->
         <nav class="admin-sidebar" id="adminSidebar">
+            @php
+                $user = Auth::user();
+                $isHospitalAdmin = $user->isHospitalAdmin();
+                $isDoctor = $user->isDoctor();
+
+                // Check if admin is impersonating (either admin or hospital admin)
+                $isImpersonating = session()->has('impersonating_admin_id') || session()->has('impersonating_hospital_admin_id');
+
+                // Determine which navigation to show
+                $showHospitalAdminNav = $isHospitalAdmin && !$isImpersonating;
+                $showDoctorNav = ($isDoctor || $isImpersonating) && !$isHospitalAdmin;
+            @endphp
+
             <!-- Brand -->
             <div class="sidebar-brand">
-                <a href="{{ route('hospital-admin.dashboard') }}">
-                    <img src="{{ asset('demos/medical/images/logo-medical.jpeg') }}" alt="MedCura AI" class="img-fluid">
+                <a href="{{ $showHospitalAdminNav ? route('hospital-admin.dashboard') : route('dashboard') }}">
+                    <img src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}" alt="MedCura AI" class="img-fluid">
                 </a>
                 <div class="mt-2">
-                    <small class="text-white-50">Hospital Admin</small>
-                    @if(Auth::user()->hospital)
+                    <small class="text-white-50">{{ $showHospitalAdminNav ? 'Hospital Admin' : ($isDoctor ? 'Doctor' : 'User') }}</small>
+                    @if($user->hospital)
                         <div class="hospital-badge mt-1">
-                            {{ Str::limit(Auth::user()->hospital->name, 20) }}
+                            {{ Str::limit($user->hospital->name, 20) }}
                         </div>
                     @endif
                 </div>
@@ -218,65 +350,103 @@
 
             <!-- Navigation -->
             <div class="sidebar-nav">
-                <!-- Dashboard Section -->
-                <div class="nav-section">Dashboard</div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.dashboard') }}" class="nav-link {{ request()->routeIs('hospital-admin.dashboard') ? 'active' : '' }}">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <span>Overview</span>
-                    </a>
-                </div>
+                @if($showHospitalAdminNav)
+                    <!-- Hospital Admin Navigation -->
+                    <!-- Dashboard Section -->
+                    <div class="nav-section">Dashboard</div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.dashboard') }}" class="nav-link {{ request()->routeIs('hospital-admin.dashboard') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Overview</span>
+                        </a>
+                    </div>
 
-                <!-- Hospital Management Section -->
-                <div class="nav-section">Hospital Management</div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.doctors.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.doctors.*') ? 'active' : '' }}">
-                        <i class="fas fa-user-md"></i>
-                        <span>Doctors</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.departments.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.departments.*') ? 'active' : '' }}">
-                        <i class="fas fa-building"></i>
-                        <span>Departments</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.hospital.profile') }}" class="nav-link {{ request()->routeIs('hospital-admin.hospital.*') ? 'active' : '' }}">
-                        <i class="fas fa-hospital"></i>
-                        <span>Hospital Profile</span>
-                    </a>
-                </div>
+                    <!-- Hospital Management Section -->
+                    <div class="nav-section">Hospital Management</div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.doctors.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.doctors.*') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-user-md"></i>
+                            <span>Doctors</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.departments.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.departments.*') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-building"></i>
+                            <span>Departments</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.hospital.profile') }}" class="nav-link {{ request()->routeIs('hospital-admin.hospital.*') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-hospital"></i>
+                            <span>Hospital Profile</span>
+                        </a>
+                    </div>
 
-                <!-- Analytics & Reports Section -->
-                <div class="nav-section">Analytics & Reports</div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.analytics.overview') }}" class="nav-link {{ request()->routeIs('hospital-admin.analytics.*') ? 'active' : '' }}">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Analytics</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.usage.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.usage.*') ? 'active' : '' }}">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Usage Reports</span>
-                    </a>
-                </div>
+                    <!-- Analytics & Reports Section -->
+                    <div class="nav-section">Analytics & Reports</div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.analytics.overview') }}" class="nav-link {{ request()->routeIs('hospital-admin.analytics.*') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Analytics</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.usage.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.usage.*') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Usage Reports</span>
+                        </a>
+                    </div>
 
-                <!-- Billing Section -->
-                <div class="nav-section">Billing & Finance</div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.subscription.manage') }}" class="nav-link {{ request()->routeIs('hospital-admin.subscription.*') ? 'active' : '' }}">
-                        <i class="fas fa-credit-card"></i>
-                        <span>Subscription</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('hospital-admin.invoices.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.invoices.*') ? 'active' : '' }}">
-                        <i class="fas fa-file-invoice"></i>
-                        <span>Invoices</span>
-                    </a>
-                </div>
+                    <!-- Administration Section -->
+                    <div class="nav-section">Administration</div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.subscription.manage') }}" class="nav-link {{ request()->routeIs('hospital-admin.subscription.*') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Subscription</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{{ route('hospital-admin.invoices.index') }}" class="nav-link {{ request()->routeIs('hospital-admin.invoices.*') ? 'active' : '' }}" data-ajax="true">
+                            <i class="fas fa-file-invoice"></i>
+                            <span>Invoices</span>
+                        </a>
+                    </div>
+                @elseif($showDoctorNav)
+                    <!-- Doctor Navigation -->
+                    <!-- Generate doctor menu dynamically using MenuHelper -->
+                    @php
+                        $menuItems = App\Helpers\MenuHelper::getMenuItems($user);
+                    @endphp
+                    @foreach($menuItems as $item)
+                        @if(isset($item['dropdown']) && isset($item['items']))
+                            @php
+                                $isActiveDropdown = false;
+                                foreach($item['items'] as $subItem) {
+                                    if(request()->routeIs($subItem['route'])) {
+                                        $isActiveDropdown = true;
+                                        break;
+                                    }
+                                }
+                            @endphp
+                            <div class="nav-section" style="{{ $item['header_style'] ?? 'font-weight: 600; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #DE6262; padding: 12px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.75rem;' }}">{{ $item['name'] }}</div>
+                            @foreach($item['items'] as $subItem)
+                                <div class="nav-item">
+                                    <a href="{{ route($subItem['route']) }}" class="nav-link {{ request()->routeIs($subItem['route']) ? 'active' : '' }}" data-ajax="true">
+                                        <i class="{{ $subItem['icon'] }}"></i>
+                                        <span>{{ $subItem['name'] }}</span>
+                                    </a>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="nav-item">
+                                <a href="{{ route($item['route']) }}" class="nav-link {{ request()->routeIs($item['route']) ? 'active' : '' }}" data-ajax="true">
+                                    <i class="{{ $item['icon'] }}"></i>
+                                    <span>{{ $item['name'] }}</span>
+                                </a>
+                            </div>
+                        @endif
+                    @endforeach
+                @endif
             </div>
 
             <!-- User Info -->
@@ -287,18 +457,26 @@
                     </div>
                     <div class="flex-grow-1">
                         <div class="fw-semibold">{{ Auth::user()->name }}</div>
-                        <small class="text-white-50">Hospital Admin</small>
+                        <small class="text-white-50">{{ $showHospitalAdminNav ? 'Hospital Admin' : ($isDoctor ? 'Doctor' : 'User') }}</small>
                     </div>
                     <div class="dropdown">
                         <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
                             <i class="fas fa-ellipsis-v"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <a class="dropdown-item" href="{{ route('hospital-admin.hospital.profile') }}">
-                                    <i class="fas fa-user-cog me-2"></i>Profile
-                                </a>
-                            </li>
+                            @if($showHospitalAdminNav)
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('hospital-admin.hospital.profile') }}">
+                                        <i class="fas fa-user-cog me-2"></i>Profile
+                                    </a>
+                                </li>
+                            @else
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('profile.edit') }}">
+                                        <i class="fas fa-user-cog me-2"></i>Profile
+                                    </a>
+                                </li>
+                            @endif
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
@@ -315,7 +493,7 @@
         </nav>
 
         <!-- Main Content -->
-        <div class="admin-content">
+        <div class="admin-content" id="main-content">
             <!-- Header -->
             <div class="admin-header">
                 <div class="d-flex justify-content-between align-items-center">
@@ -323,7 +501,7 @@
                         <button class="btn btn-outline-secondary mobile-toggle me-3" onclick="toggleSidebar()">
                             <i class="fas fa-bars"></i>
                         </button>
-                        <h4 class="mb-0">@yield('page-title', 'Hospital Admin Panel')</h4>
+                        <h4 class="mb-0">@yield('page-title', $showHospitalAdminNav ? 'Hospital Admin Panel' : ($isDoctor || $isImpersonating ? 'Doctor Dashboard' : 'User Panel'))</h4>
                     </div>
                     <div class="d-flex align-items-center">
                         @if(Auth::user()->hospital)
@@ -363,6 +541,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function toggleSidebar() {
@@ -373,15 +552,219 @@
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('adminSidebar');
             const toggle = document.querySelector('.mobile-toggle');
-            
-            if (window.innerWidth <= 768 && 
-                !sidebar.contains(event.target) && 
-                !toggle.contains(event.target) && 
+
+            if (window.innerWidth <= 768 &&
+                !sidebar.contains(event.target) &&
+                !toggle.contains(event.target) &&
                 sidebar.classList.contains('show')) {
                 sidebar.classList.remove('show');
             }
         });
     </script>
+
+    {{-- AJAX Navigation Script --}}
+    <script>
+    $(document).ready(function() {
+       // Intercept sidebar link clicks
+       $(document).on('click', '.sidebar-nav a[data-ajax="true"]', function(e) {
+           e.preventDefault();
+
+           const $link = $(this);
+           const route = $link.data('route');
+           const url = $link.attr('href');
+
+           // Don't navigate if already active
+           if ($link.hasClass('active')) {
+               return;
+           }
+
+           // Update active state
+           $('.sidebar-nav .nav-link').removeClass('active');
+           $link.addClass('active');
+
+           // Load content via AJAX
+           loadPageContent(url, route);
+
+           // Update browser history
+           history.pushState({route: route, url: url}, '', url);
+       });
+
+       // Handle browser back/forward buttons
+       window.addEventListener('popstate', function(e) {
+           if (e.state && e.state.url) {
+               loadPageContent(e.state.url, e.state.route);
+           }
+       });
+    });
+
+    function loadPageContent(url, route) {
+        // Show loading overlay and skeleton
+        const $loadingOverlay = $('#ajax-loading-overlay');
+        const $mainContent = $('#main-content');
+        const originalContent = $mainContent.html();
+
+        // Show loading overlay
+        $loadingOverlay.addClass('show');
+
+        $mainContent.html(`
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+                        <!-- Skeleton Header -->
+                        <div class="skeleton-loader skeleton-header"></div>
+
+                        <!-- Skeleton Stats Cards -->
+                        <div class="skeleton-stats">
+                            <div class="skeleton-loader skeleton-stat-card"></div>
+                            <div class="skeleton-loader skeleton-stat-card"></div>
+                            <div class="skeleton-loader skeleton-stat-card"></div>
+                            <div class="skeleton-loader skeleton-stat-card"></div>
+                        </div>
+
+                        <!-- Skeleton Table -->
+                        <div class="skeleton-loader skeleton-table">
+                            <div class="skeleton-loader skeleton-table-header"></div>
+                            <div class="skeleton-loader skeleton-table-row"></div>
+                            <div class="skeleton-loader skeleton-table-row"></div>
+                            <div class="skeleton-loader skeleton-table-row"></div>
+                            <div class="skeleton-loader skeleton-table-row"></div>
+                            <div class="skeleton-loader skeleton-table-row"></div>
+                            <div class="skeleton-loader skeleton-table-row"></div>
+                            <div class="skeleton-loader skeleton-table-row"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+
+        $.ajax({
+            url: url,
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            },
+            success: function(response) {
+                try {
+                    // Hide loading overlay
+                    $loadingOverlay.removeClass('show');
+
+                    // Extract content from the response (between main-content div)
+                    const $temp = $('<div>').html(response);
+                    const newContent = $temp.find('#main-content').html();
+
+                    if (newContent) {
+                        $mainContent.html(newContent);
+
+                        // Update page title
+                        const newTitle = $temp.find('title').text();
+                        if (newTitle) {
+                            document.title = newTitle;
+                        }
+
+                        // Re-initialize any JavaScript components
+                        initializePageComponents(route);
+
+                        // Scroll to top smoothly
+                        $('html, body').animate({ scrollTop: 0 }, 300);
+                    } else {
+                        // If no main-content found, assume full page response
+                        $mainContent.html(response);
+                    }
+                } catch (error) {
+                    console.error('Error parsing AJAX response:', error);
+                    $mainContent.html(originalContent);
+                    showAjaxError('Failed to load page content. Please try again.');
+                }
+            },
+            error: function(xhr, status, error) {
+                // Hide loading overlay
+                $loadingOverlay.removeClass('show');
+
+                console.error('AJAX Error:', error);
+                $mainContent.html(originalContent);
+
+                // Fallback to regular navigation for critical errors
+                if (xhr.status === 0 || xhr.status >= 500) {
+                    showAjaxError('Connection failed. Redirecting...');
+                    setTimeout(() => {
+                        window.location.href = url;
+                    }, 2000);
+                } else {
+                    showAjaxError('Failed to load page. Please refresh and try again.');
+                }
+            }
+        });
+    }
+
+    function initializePageComponents(route) {
+        // Re-initialize DataTables if present
+        if (typeof $.fn.DataTable !== 'undefined') {
+            $('.dataTable').each(function() {
+                if ($.fn.DataTable.isDataTable(this)) {
+                    $(this).DataTable().destroy();
+                }
+            });
+
+            // Re-initialize DataTables with new content
+            if (typeof initializeDataTable === 'function') {
+                initializeDataTable();
+            }
+        }
+
+        // Re-initialize Bootstrap components (Bootstrap 5 - no jQuery plugins)
+        if (typeof bootstrap !== 'undefined') {
+            // Re-initialize tooltips
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(element => {
+                const tooltip = bootstrap.Tooltip.getInstance(element);
+                if (tooltip) {
+                    tooltip.dispose();
+                }
+                new bootstrap.Tooltip(element);
+            });
+
+            // Re-initialize popovers
+            document.querySelectorAll('[data-bs-toggle="popover"]').forEach(element => {
+                const popover = bootstrap.Popover.getInstance(element);
+                if (popover) {
+                    popover.dispose();
+                }
+                new bootstrap.Popover(element);
+            });
+
+            // Clean up modals (dispose existing instances)
+            document.querySelectorAll('.modal').forEach(modalElement => {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.dispose();
+                }
+            });
+        }
+
+        // Trigger custom event for page-specific initializations
+        $(document).trigger('pageContentLoaded', [route]);
+    }
+
+    function showAjaxError(message) {
+        // Create a temporary error notification
+        const $error = $(`
+            <div class="alert alert-danger alert-dismissible fade show position-fixed"
+                 style="top: 80px; right: 20px; z-index: 9999; min-width: 300px;">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `);
+
+        $('body').append($error);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            $error.alert('close');
+        }, 5000);
+    }
+    </script>
+
     @stack('scripts')
 </body>
 </html>

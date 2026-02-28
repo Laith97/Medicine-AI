@@ -5,383 +5,485 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
 <link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
+<style>
+.copilot-tab {
+    cursor: pointer;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background-color: transparent;
+    color: #6c757d;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.copilot-tab.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+    font-weight: 500;
+}
+
+.copilot-tab-content {
+    display: none;
+    padding: 1.5rem 0;
+}
+
+.copilot-tab-content.active {
+    display: block;
+}
+
+.copilot-section {
+    margin-bottom: 2rem;
+}
+
+.copilot-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.copilot-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.copilot-badge {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.copilot-content {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+    border-left: 4px solid #0d6efd;
+}
+
+.copilot-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.copilot-list li {
+    padding: 0.5rem 0;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.copilot-list li:before {
+    content: "•";
+    color: #0d6efd;
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+}
+
+.copilot-warning {
+    background-color: #fff3cd;
+    border-left-color: #ffc107;
+}
+
+.copilot-danger {
+    background-color: #f8d7da;
+    border-left-color: #dc3545;
+}
+
+.copilot-success {
+    background-color: #d1e7dd;
+    border-left-color: #198754;
+}
+
+.copilot-info {
+    background-color: #cff4fc;
+    border-left-color: #0dcaf0;
+}
+
+.copilot-disclaimer {
+    font-size: 0.875rem;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    margin-top: 1rem;
+    border: 1px solid #e9ecef;
+}
+
+.copilot-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.copilot-checkbox {
+    margin-right: 0.5rem;
+}
+
+.edit-copilot-btn {
+    cursor: pointer;
+    color: #0d6efd;
+    font-size: 0.875rem;
+}
+
+.edit-copilot-btn:hover {
+    text-decoration: underline;
+}
+
+.copilot-loading {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+}
+
+.copilot-loading.active {
+    display: block;
+}
+
+.copilot-loading-spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 0.25rem solid #f3f3f3;
+    border-top: 0.25rem solid #0d6efd;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.copilot-error {
+    color: #dc3545;
+    background-color: #f8d7da;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid #f5c2c7;
+}
+
+.copilot-compliance-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-align: right;
+    margin-top: 1rem;
+    font-style: italic;
+}
+</style>
 @endpush
 
 @section('content')
 <div class="dashboard-container">
-    <div class="container">
+    <div class="container appointment-details">
         <!-- Header -->
-        <div class="dashboard-header py-3 border-bottom d-flex justify-content-between align-items-center mb-4" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; border-radius: 10px 10px 0 0;">
-            <div class="d-flex align-items-center">
-                <a href="{{ route('doctor.appointments.index') }}" class="btn btn-light me-3 shadow-sm">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Appointments
-                </a>
-                <div>
-                    <h1 class="h2 mb-1 fw-bold" style="color: white;">Appointment Details</h1>
-                    <p class="mb-0 opacity-75">ID: #{{ $appointment->id }} • {{ $appointment->appointment_date->format('M j, Y \a\t g:i A') }}</p>
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div class="d-flex align-items-center">
+                    <a href="{{ route('doctor.appointments.index') }}" class="btn btn-light me-3 shadow-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Appointments
+                    </a>
+                    <div>
+                        <h1 class="h2 mb-1 fw-bold">Appointment Details</h1>
+                        <p class="mb-0 opacity-75">ID: #{{ $appointment->id }} • {{ $appointment->appointment_date->format('M j, Y \a\t g:i A') }}</p>
+                    </div>
                 </div>
-            </div>
 
-            @php
-                $statusColors = [
-                    'pending' => 'bg-warning',
-                    'confirmed' => 'bg-success',
-                    'completed' => 'bg-primary',
-                    'cancelled' => 'bg-danger',
-                    'no_show' => 'bg-secondary'
-                ];
-                $statusIcons = [
-                    'pending' => 'fas fa-clock',
-                    'confirmed' => 'fas fa-check-circle',
-                    'completed' => 'fas fa-check-double',
-                    'cancelled' => 'fas fa-times-circle',
-                    'no_show' => 'fas fa-user-times'
-                ];
-            @endphp
-            <div class="text-end">
-                <div class="d-flex flex-column align-items-end">
-                    <span class="badge {{ $statusColors[$appointment->status] ?? 'bg-secondary' }} fs-6 px-3 py-2 shadow-sm mb-2">
-                        <i class="{{ $statusIcons[$appointment->status] ?? 'fas fa-question-circle' }} me-1"></i>
-                        {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
+                <div class="text-end">
+                    <div class="d-flex flex-column align-items-end gap-2">
+                        <span class="status-badge status-{{ $appointment->status }}">
+                            <i class="fas fa-{{ $appointment->status == 'pending' ? 'clock' : ($appointment->status == 'confirmed' ? 'check-circle' : ($appointment->status == 'completed' ? 'check-double' : ($appointment->status == 'cancelled' ? 'times-circle' : 'user-times'))) }}"></i>
+                            {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
+                        </span>
                         @if($appointment->status == 'completed')
-                        <i class="fas fa-check-circle ms-1 text-white"></i>
+                        <div class="bg-success bg-opacity-25 px-3 py-1 rounded-pill">
+                            <small class="text-white fw-semibold">
+                                <i class="fas fa-trophy me-1"></i>Successfully Completed
+                            </small>
+                        </div>
                         @endif
-                    </span>
-                    @if($appointment->status == 'completed')
-                    <div class="bg-success bg-opacity-25 px-3 py-1 rounded-pill mb-2">
-                        <small class="text-white fw-semibold">
-                            <i class="fas fa-trophy me-1"></i>Successfully Completed
+                        <small class="text-white-50">
+                            <i class="fas fa-calendar-alt me-1"></i>{{ $appointment->appointment_date->format('l, F j, Y') }}
                         </small>
                     </div>
-                    @endif
-                    <small class="text-white-50">
-                        <i class="fas fa-calendar-alt me-1"></i>{{ $appointment->appointment_date->format('l, F j, Y') }}
-                    </small>
                 </div>
             </div>
         </div>
 
         <div class="row">
             <!-- Main Content -->
-            <div class="col-lg-8">
-                <!-- Appointment Overview -->
-                <div class="table-card mb-4 shadow-sm">
-                    <div class="bg-gradient-primary text-white p-4 rounded-top" style="background: linear-gradient(135deg, #DE6262 0%, #c54545 100%);">
-                        <div class="d-flex justify-content-between align-items-center">
+            <div class="col-lg-12">
+                <!-- Information Cards Grid -->
+                <div class="info-cards-grid">
+                    <!-- Call/Video Buttons -->
+                @if($appointment->status === 'confirmed')
+                    @include('components.appointment-call-buttons', ['appointment' => $appointment])
+                @endif
+
+                <!-- Appointment Overview Card -->
+                    <div class="table-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
                             <div>
-                                <h3 class="mb-1 fw-bold">{{ $appointment->appointment_date->format('l, F j, Y') }}</h3>
-                                <p class="mb-0 opacity-90">{{ $appointment->appointment_date->format('g:i A') }}</p>
+                                <h5 class="mb-1 fw-bold text-primary">
+                                    <i class="fas fa-calendar-check me-2"></i>Appointment Overview
+                                </h5>
+                                <small class="text-muted">{{ $appointment->appointment_date->format('l, F j, Y') }}</small>
                             </div>
                             <div class="text-end">
-                                <div class="h1 mb-0 fw-bold">{{ $appointment->appointment_duration ?? 30 }}</div>
-                                <small class="opacity-90">minutes</small>
+                                <div class="h4 mb-0 fw-bold text-primary">{{ $appointment->appointment_duration ?? 30 }}</div>
+                                <small class="text-muted">minutes</small>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="p-4">
                         <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-center p-3 bg-light rounded">
-                                    <div class="bg-primary bg-opacity-15 rounded p-3 me-3">
-                                        <i class="fas fa-calendar-alt text-primary fa-lg"></i>
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-15 rounded p-2 me-3">
+                                        <i class="fas fa-calendar-alt text-primary"></i>
                                     </div>
                                     <div>
-                                        <h6 class="mb-1 fw-semibold">Appointment Type</h6>
+                                        <small class="text-muted d-block">Type</small>
                                         <span class="badge bg-primary">{{ ucfirst(str_replace('_', ' ', $appointment->appointment_type)) }}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-center p-3 bg-light rounded">
-                                    <div class="bg-success bg-opacity-15 rounded p-3 me-3">
-                                        <i class="fas fa-dollar-sign text-success fa-lg"></i>
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-success bg-opacity-15 rounded p-2 me-3">
+                                        <i class="fas fa-dollar-sign text-success"></i>
                                     </div>
                                     <div>
-                                        <h6 class="mb-1 fw-semibold">Consultation Fee</h6>
-                                        <span class="h5 text-success fw-bold">${{ number_format($appointment->consultation_fee / 100, 2) }}</span>
+                                        <small class="text-muted d-block">Fee</small>
+                                        <span class="h6 text-success fw-bold">${{ number_format($appointment->consultation_fee / 100, 2) }}</span>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Patient Information Card -->
+                    <div class="table-card">
+                        <h5 class="mb-3 fw-bold text-primary">
+                            <i class="fas fa-user-injured me-2"></i>Patient Information
+                        </h5>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-user text-muted me-2"></i>
+                                    <span class="fw-semibold">{{ e($appointment->patient_name) }}</span>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-envelope text-muted me-2"></i>
+                                    <span>{{ e($appointment->patient_email) }}</span>
+                                </div>
+                            </div>
+                            @if($appointment->patient_phone)
+                            <div class="col-12">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-phone text-muted me-2"></i>
+                                    <span>{{ e($appointment->patient_phone) }}</span>
+                                </div>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
 
                 <!-- Next Steps Section for Completed Appointments -->
                 @if($appointment->status == 'completed')
-                <div class="table-card mb-4 shadow-lg border-0" style="border-radius: 15px; overflow: hidden;">
-                    <div class="bg-gradient-success text-white p-4" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h4 class="mb-1 fw-bold">
-                                    <i class="fas fa-check-double me-2"></i>Appointment Completed Successfully
-                                </h4>
-                                <p class="mb-0 opacity-90 small">What would you like to do next?</p>
-                            </div>
-                            <div class="text-end">
-                                <i class="fas fa-rocket fa-3x opacity-75"></i>
-                            </div>
+                <div class="table-card mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="mb-1 fw-bold text-success">
+                                <i class="fas fa-check-double me-2"></i>Appointment Completed Successfully
+                            </h4>
+                            <p class="mb-0 text-muted">What would you like to do next?</p>
+                        </div>
+                        <div class="text-end">
+                            <i class="fas fa-rocket fa-3x text-success opacity-75"></i>
                         </div>
                     </div>
-                    <div class="p-4">
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <a href="#ai-analytics" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 shadow-sm" style="border-radius: 12px; text-decoration: none; min-height: 120px;">
-                                    <i class="fas fa-brain fa-2x mb-2 text-primary"></i>
-                                    <span class="fw-bold">AI Analytics</span>
-                                    <small class="text-muted">View risk predictions & insights</small>
-                                </a>
-                            </div>
-                            <div class="col-md-4">
-                                <a href="#prescriptions" class="btn btn-outline-success btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 shadow-sm" style="border-radius: 12px; text-decoration: none; min-height: 120px;">
-                                    <i class="fas fa-prescription-bottle fa-2x mb-2 text-success"></i>
-                                    <span class="fw-bold">Prescriptions</span>
-                                    <small class="text-muted">Manage medications</small>
-                                </a>
-                            </div>
-                            <div class="col-md-4">
-                                <a href="{{ route('doctor.follow-ups.create', $appointment) }}" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 shadow-sm" style="border-radius: 12px; text-decoration: none; min-height: 120px;">
-                                    <i class="fas fa-calendar-plus fa-2x mb-2 text-info"></i>
-                                    <span class="fw-bold">Follow-ups</span>
-                                    <small class="text-muted">Schedule next appointment</small>
-                                </a>
-                            </div>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <button onclick="toggleAIMedicalCopilotForm()" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
+                                <i class="fas fa-brain fa-2x mb-2 text-primary"></i>
+                                AI Copilot
+                                <small class="text-muted">Clinical Decision Support</small>
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button onclick="viewPatientAIAnalyses({{ $appointment->patient_id }})" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
+                                <i class="fas fa-history fa-2x mb-2 text-info"></i>
+                                View AI History
+                                <small class="text-muted">Patient's Saved Analyses</small>
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="#ai-analytics" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
+                                <i class="fas fa-brain fa-2x mb-2 text-primary"></i>
+                                <span class="fw-bold">AI Analytics</span>
+                                <small class="text-muted">View risk predictions & insights</small>
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <button onclick="toggleDiagnosisForm()" class="btn btn-outline-warning btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
+                                <i class="fas fa-stethoscope fa-2x mb-2 text-warning"></i>
+                                <span class="fw-bold">Diagnosis</span>
+                                <small class="text-muted">Create medical diagnosis</small>
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="#prescriptions" class="btn btn-outline-success btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
+                                <i class="fas fa-prescription-bottle fa-2x mb-2 text-success"></i>
+                                <span class="fw-bold">Prescriptions</span>
+                                <small class="text-muted">Manage medications</small>
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ route('doctor.follow-ups.create', $appointment) }}" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
+                                <i class="fas fa-calendar-plus fa-2x mb-2 text-info"></i>
+                                <span class="fw-bold">Follow-ups</span>
+                                <small class="text-muted">Schedule next appointment</small>
+                            </a>
                         </div>
                     </div>
                 </div>
                 @endif
 
-                <!-- Doctor Information -->
-                <div class="table-card mb-4 shadow-sm">
-                    <div class="p-4">
-                        <h5 class="mb-4 text-primary fw-bold">
-                            <i class="fas fa-user-md me-2"></i>Your Doctor
-                        </h5>
-                        <div class="d-flex align-items-start p-3 bg-light rounded">
-                            <div class="me-4">
-                                @if($appointment->doctor->profile_image)
-                                    <img src="{{ asset('storage/' . $appointment->doctor->profile_image) }}"
-                                          alt="{{ $appointment->doctor->user->name }}"
-                                          class="rounded-circle shadow-sm border border-3 border-white" style="width: 80px; height: 80px; object-fit: cover;">
-                                @else
-                                    <div class="rounded-circle bg-gradient-primary d-flex align-items-center justify-content-center shadow-sm border border-3 border-white"
-                                          style="width: 80px; height: 80px; background: linear-gradient(135deg, #DE6262 0%, #c54545 100%);">
-                                        <i class="fas fa-user-md text-white fa-2x"></i>
-                                    </div>
-                                @endif
-                            </div>
-                            <div class="flex-grow-1">
-                                <h4 class="mb-1 fw-bold">{{ $appointment->doctor->user->name }}</h4>
-                                <p class="text-primary mb-3 fw-semibold">
-                                    <i class="fas fa-stethoscope me-1"></i>{{ $appointment->doctor->specialty->name }}
-                                </p>
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="text-warning me-2">
-                                        @for($i = 1; $i <= 5; $i++)
-                                            @if($i <= floor($appointment->doctor->average_rating ?? 0))
-                                                <i class="fas fa-star"></i>
-                                            @else
-                                                <i class="far fa-star"></i>
-                                            @endif
-                                        @endfor
-                                    </div>
-                                    <span class="badge bg-warning text-dark fw-semibold">
-                                        {{ number_format($appointment->doctor->average_rating ?? 0, 1) }} ({{ $appointment->doctor->reviews_count ?? 0 }} reviews)
-                                    </span>
-                                </div>
-                                @if($appointment->doctor->bio)
-                                    <p class="text-muted small mb-0">{{ Str::limit($appointment->doctor->bio, 150) }}</p>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Patient Information -->
-                <div class="table-card mb-4 shadow-sm">
-                    <div class="p-4">
-                        <h5 class="mb-4 text-primary fw-bold">
-                            <i class="fas fa-user-injured me-2"></i>Patient Information
-                        </h5>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="p-3 bg-light rounded">
-                                    <p class="text-muted mb-1 small fw-semibold">FULL NAME</p>
-                                    <p class="mb-0 fw-semibold h6">{{ $appointment->patient_name }}</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="p-3 bg-light rounded">
-                                    <p class="text-muted mb-1 small fw-semibold">EMAIL ADDRESS</p>
-                                    <p class="mb-0 fw-semibold h6">
-                                        <i class="fas fa-envelope text-muted me-1"></i>{{ $appointment->patient_email }}
-                                    </p>
-                                </div>
-                            </div>
-                            @if($appointment->patient_phone)
-                                <div class="col-md-6">
-                                    <div class="p-3 bg-light rounded">
-                                        <p class="text-muted mb-1 small fw-semibold">PHONE NUMBER</p>
-                                        <p class="mb-0 fw-semibold h6">
-                                            <i class="fas fa-phone text-muted me-1"></i>{{ $appointment->patient_phone }}
-                                        </p>
-                                    </div>
-                                </div>
-                            @endif
-                            @if($appointment->isGuestAppointment() && $appointment->guest_date_of_birth)
-                                <div class="col-md-6">
-                                    <div class="p-3 bg-light rounded">
-                                        <p class="text-muted mb-1 small fw-semibold">DATE OF BIRTH</p>
-                                        <p class="mb-0 fw-semibold h6">
-                                            <i class="fas fa-birthday-cake text-muted me-1"></i>{{ \Carbon\Carbon::parse($appointment->guest_date_of_birth)->format('F j, Y') }}
-                                        </p>
-                                    </div>
-                                </div>
-                            @endif
-                            <div class="col-md-12">
-                                <div class="p-3 bg-light rounded">
-                                    <p class="text-muted mb-2 small fw-semibold">AI RISK ASSESSMENT</p>
-                                    @php
-                                        $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
-                                    @endphp
-                                    @if($riskScore)
-                                        @php
-                                            $noShowRisk = $riskScore->no_show_risk;
-                                            $hospitalizationRisk = $riskScore->hospitalization_risk;
-                                            $maxRisk = max($noShowRisk, $hospitalizationRisk);
-                                        @endphp
-                                        <div class="d-flex align-items-center justify-content-between">
-                                            <div>
-                                                @if($maxRisk < 0.3)
-                                                    <span class="badge bg-success fs-6 px-3 py-2 me-2">
-                                                        <i class="fas fa-shield-alt me-1"></i>Low Risk
-                                                    </span>
-                                                @elseif($maxRisk < 0.7)
-                                                    <span class="badge bg-warning fs-6 px-3 py-2 text-dark me-2">
-                                                        <i class="fas fa-exclamation-triangle me-1"></i>Medium Risk
-                                                    </span>
-                                                @else
-                                                    <span class="badge bg-danger fs-6 px-3 py-2 me-2">
-                                                        <i class="fas fa-exclamation-circle me-1"></i>High Risk
-                                                    </span>
-                                                @endif
-                                            </div>
-                                            <div class="text-end">
-                                                <small class="text-muted d-block">No-show: <strong>{{ number_format($noShowRisk * 100, 1) }}%</strong></small>
-                                                <small class="text-muted d-block">Hospitalization: <strong>{{ number_format($hospitalizationRisk * 100, 1) }}%</strong></small>
-                                            </div>
-                                        </div>
-                                    @else
-                                        <div class="text-center py-2">
-                                            <i class="fas fa-spinner fa-spin text-info me-2"></i>
-                                            <span class="text-muted">Calculating risk assessment...</span>
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Predictive Analytics Section -->
-                <div id="ai-analytics" class="table-card mb-4 shadow-lg border-0" style="border-radius: 15px; overflow: hidden;">
-                    <div class="bg-gradient-info text-white p-4" style="background: linear-gradient(135deg, #DE6262 0%, #c54545 100%);">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h4 class="mb-0 fw-bold">
-                                    <i class="fas fa-brain me-2"></i>AI Predictive Analytics
-                                </h4>
-                                <p class="mb-0 opacity-90 small">Machine Learning Risk Assessment</p>
-                            </div>
-                            @if($appointment->status == 'completed')
-                            <div class="text-end">
-                                <span class="badge bg-success fs-6 px-3 py-2 shadow-sm">
-                                    <i class="fas fa-check-circle me-1"></i>Analysis Complete
-                                </span>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="p-4">
-                        <h5 class="mb-4 text-primary fw-bold">
-                            <i class="fas fa-chart-bar me-2"></i>Risk Predictions
-                        </h5>
+                <!-- Risk Assessment Section -->
+                <div class="table-card">
+                    <h5 class="section-header">
+                        <i class="fas fa-shield-alt me-2"></i>AI Risk Assessment
+                    </h5>
+                    @php
+                        $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
+                    @endphp
+                    @if($riskScore)
                         @php
-                            $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
+                            $noShowRisk = $riskScore->no_show_risk;
+                            $hospitalizationRisk = $riskScore->hospitalization_risk;
+                            $maxRisk = max($noShowRisk, $hospitalizationRisk);
                         @endphp
-                        @if($riskScore)
-                            <div class="row g-4 mb-4">
-                                <div class="col-md-6">
-                                    <div class="card border-warning shadow-sm h-100" style="border-radius: 12px;">
-                                        <div class="card-body text-center p-4">
-                                            <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                                <i class="fas fa-user-times text-warning fa-2x"></i>
-                                            </div>
-                                            <h5 class="card-title text-warning fw-bold">No-Show Risk</h5>
-                                            <div class="display-4 fw-bold text-warning mb-2">{{ number_format($riskScore->no_show_risk * 100, 1) }}<span class="h3">%</span></div>
-                                            <p class="text-muted small mb-0">Probability of patient missing appointment</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="card border-danger shadow-sm h-100" style="border-radius: 12px;">
-                                        <div class="card-body text-center p-4">
-                                            <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                                <i class="fas fa-hospital text-danger fa-2x"></i>
-                                            </div>
-                                            <h5 class="card-title text-danger fw-bold">Hospitalization Risk</h5>
-                                            <div class="display-4 fw-bold text-danger mb-2">{{ number_format($riskScore->hospitalization_risk * 100, 1) }}<span class="h3">%</span></div>
-                                            <p class="text-muted small mb-0">Probability of requiring hospitalization</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Risk Level Indicator -->
-                            <div class="bg-light p-4 rounded" style="border-radius: 12px;">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="mb-0 fw-bold text-dark">
-                                        <i class="fas fa-shield-alt me-2"></i>Overall Risk Assessment
-                                    </h6>
-                                    <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#mlExplanationModal">
-                                        <i class="fas fa-info-circle me-1"></i>How is this calculated?
-                                    </button>
-                                </div>
-                                @php
-                                    $maxRisk = max($riskScore->no_show_risk, $riskScore->hospitalization_risk);
-                                @endphp
-                                <div class="d-flex align-items-center">
-                                    @if($maxRisk < 0.3)
-                                        <span class="badge bg-success fs-5 px-4 py-2 me-3 shadow-sm">
+                        <div class="risk-card {{ $maxRisk < 0.3 ? 'low-risk' : ($maxRisk < 0.7 ? 'medium-risk' : 'high-risk') }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1 fw-bold">
+                                        @if($maxRisk < 0.3)
                                             <i class="fas fa-shield-alt me-2"></i>Low Risk Patient
-                                        </span>
-                                        <small class="text-muted">Strong compliance patterns detected</small>
-                                    @elseif($maxRisk < 0.7)
-                                        <span class="badge bg-warning fs-5 px-4 py-2 text-dark me-3 shadow-sm">
+                                        @elseif($maxRisk < 0.7)
                                             <i class="fas fa-exclamation-triangle me-2"></i>Medium Risk Patient
-                                        </span>
-                                        <small class="text-muted">Consider follow-up reminders</small>
-                                    @else
-                                        <span class="badge bg-danger fs-5 px-4 py-2 me-3 shadow-sm">
+                                        @else
                                             <i class="fas fa-exclamation-circle me-2"></i>High Risk Patient
-                                        </span>
-                                        <small class="text-muted">Immediate attention recommended</small>
-                                    @endif
+                                        @endif
+                                    </h6>
+                                    <small class="text-muted">Based on patient history and patterns</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="mb-1">
+                                        <small class="d-block">No-show: <strong>{{ number_format($noShowRisk * 100, 1) }}%</strong></small>
+                                        <small class="d-block">Hospitalization: <strong>{{ number_format($hospitalizationRisk * 100, 1) }}%</strong></small>
+                                    </div>
                                 </div>
                             </div>
-                        @else
-                            <div class="text-center py-5">
-                                <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                                    <i class="fas fa-brain text-info fa-2x"></i>
-                                </div>
-                                <h5 class="text-muted mb-2">AI Analysis in Progress</h5>
-                                <p class="text-muted">Risk predictions are being calculated...</p>
-                                <div class="spinner-border spinner-border-lg text-info" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                            </div>
+                        </div>
+                    @else
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin text-info me-2"></i>
+                            <span class="text-muted">Calculating risk assessment...</span>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- AI Predictive Analytics Section -->
+                <div id="ai-analytics" class="table-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="mb-0 fw-bold text-primary">
+                                <i class="fas fa-brain me-2"></i>AI Predictive Analytics
+                            </h4>
+                            <p class="mb-0 text-muted small">Machine Learning Risk Assessment</p>
+                        </div>
+                        @if($appointment->status == 'completed')
+                        <span class="badge bg-success">
+                            <i class="fas fa-check-circle me-1"></i>Analysis Complete
+                        </span>
                         @endif
                     </div>
+
+                    @php
+                        $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
+                    @endphp
+                    @if($riskScore)
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <div class="text-center p-4 bg-light rounded">
+                                    <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                        <i class="fas fa-user-times text-warning fa-2x"></i>
+                                    </div>
+                                    <h5 class="text-warning fw-bold mb-2">No-Show Risk</h5>
+                                    <div class="h2 fw-bold text-warning mb-2">{{ number_format($riskScore->no_show_risk * 100, 1) }}<span class="h4">%</span></div>
+                                    <p class="text-muted small mb-0">Probability of patient missing appointment</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-center p-4 bg-light rounded">
+                                    <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                        <i class="fas fa-hospital text-danger fa-2x"></i>
+                                    </div>
+                                    <h5 class="text-danger fw-bold mb-2">Hospitalization Risk</h5>
+                                    <div class="h2 fw-bold text-danger mb-2">{{ number_format($riskScore->hospitalization_risk * 100, 1) }}<span class="h4">%</span></div>
+                                    <p class="text-muted small mb-0">Probability of requiring hospitalization</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Risk Level Summary -->
+                        <div class="bg-light p-3 rounded">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    @php
+                                        $maxRisk = max($riskScore->no_show_risk, $riskScore->hospitalization_risk);
+                                    @endphp
+                                    @if($maxRisk < 0.3)
+                                        <span class="badge bg-success fs-6 px-3 py-2">
+                                            <i class="fas fa-shield-alt me-1"></i>Low Risk Patient
+                                        </span>
+                                        <small class="text-muted d-block mt-1">Strong compliance patterns detected</small>
+                                    @elseif($maxRisk < 0.7)
+                                        <span class="badge bg-warning fs-6 px-3 py-2 text-dark">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>Medium Risk Patient
+                                        </span>
+                                        <small class="text-muted d-block mt-1">Consider follow-up reminders</small>
+                                    @else
+                                        <span class="badge bg-danger fs-6 px-3 py-2">
+                                            <i class="fas fa-exclamation-circle me-1"></i>High Risk Patient
+                                        </span>
+                                        <small class="text-muted d-block mt-1">Immediate attention recommended</small>
+                                    @endif
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#mlExplanationModal">
+                                    <i class="fas fa-info-circle me-1"></i>How is this calculated?
+                                </button>
+                            </div>
+                        </div>
+                    @else
+                        <div class="text-center py-4">
+                            <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                <i class="fas fa-brain text-info fa-2x"></i>
+                            </div>
+                            <h5 class="text-muted mb-2">AI Analysis in Progress</h5>
+                            <p class="text-muted">Risk predictions are being calculated...</p>
+                            <div class="spinner-border text-info" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Reason for Visit -->
@@ -391,177 +493,126 @@
                             <i class="fas fa-clipboard-list me-2"></i>Reason for Visit
                         </h5>
                         <div class="bg-light p-4 rounded" style="border-left: 4px solid #007bff;">
-                            <p class="mb-0 fs-6 lh-base">{{ $appointment->reason }}</p>
+                            <p class="mb-0 fs-6 lh-base">{{ e($appointment->reason) }}</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Prescriptions Section -->
                 @if(auth()->check() && auth()->user()->isDoctor())
-                <div id="prescriptions" class="table-card mb-4">
-                    <div class="bg-success text-white p-4 rounded-top">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h4 class="mb-0 fw-bold">
-                                    <i class="fas fa-prescription-bottle me-2"></i>Prescriptions
-                                </h4>
-                                @if($appointment->status == 'completed')
-                                <p class="mb-0 opacity-90 small">Manage patient medications and treatments</p>
-                                @endif
-                            </div>
+                <div id="prescriptions" class="table-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="mb-0 fw-bold text-primary">
+                                <i class="fas fa-prescription-bottle me-2"></i>Prescriptions
+                            </h4>
                             @if($appointment->status == 'completed')
-                            <div class="text-end">
-                                <span class="badge bg-primary fs-6 px-3 py-2 shadow-sm">
-                                    <i class="fas fa-plus-circle me-1"></i>Ready to Prescribe
-                                </span>
-                            </div>
+                            <p class="mb-0 text-muted small">Manage patient medications and treatments</p>
                             @endif
                         </div>
+                        @if($appointment->status == 'completed')
+                        <span class="badge bg-success">
+                            <i class="fas fa-plus-circle me-1"></i>Ready to Prescribe
+                        </span>
+                        @endif
                     </div>
-                    <div class="p-4">
-                        @if($appointment->prescriptions && $appointment->prescriptions->count() > 0)
-                            <h5 class="mb-3">Existing Prescriptions</h5>
-                            @foreach($appointment->prescriptions as $prescription)
-                                <div class="card mb-3" data-prescription-id="{{ $prescription->id }}">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <h6 class="mb-0 fw-bold">{{ $prescription->medication_name }}</h6>
-                                            <div class="d-flex gap-2">
-                                                <a href="{{ route('prescriptions.show', $prescription->id) }}?pdf=1" class="btn btn-primary btn-sm">
-                                                    <i class="fas fa-download me-1"></i>Download PDF
-                                                </a>
-                                                <button type="button" class="btn btn-danger btn-sm" onclick="deletePrescription({{ $prescription->id }}, '{{ $prescription->medication_name }}')">
-                                                    <i class="fas fa-trash me-1"></i>Delete
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="row text-small mb-2">
-                                            <div class="col-md-3">
-                                                <strong>Dosage:</strong><br>
-                                                <span class="text-muted">{{ $prescription->dosage }}</span>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <strong>Form:</strong><br>
-                                                <span class="text-muted">{{ ucfirst($prescription->form ?? 'N/A') }}</span>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <strong>Route:</strong><br>
-                                                <span class="text-muted">{{ ucfirst($prescription->route ?? 'N/A') }}</span>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <strong>Quantity:</strong><br>
-                                                <span class="text-muted">{{ $prescription->quantity ?? 'N/A' }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="row text-small mb-2">
-                                            <div class="col-md-3">
-                                                <strong>Frequency:</strong><br>
-                                                <span class="text-muted">{{ $prescription->frequency }}</span>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <strong>Duration:</strong><br>
-                                                <span class="text-muted">{{ $prescription->duration }}</span>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <strong>Refills:</strong><br>
-                                                <span class="text-muted">{{ $prescription->refills ?? 0 }}</span>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <strong>Created:</strong><br>
-                                                <span class="text-muted">{{ $prescription->created_at->format('M j, Y') }}</span>
-                                            </div>
-                                        </div>
-                                        @if($prescription->indication || $prescription->start_date || $prescription->generic_allowed !== null)
-                                        <div class="row text-small mb-2">
-                                            @if($prescription->indication)
-                                            <div class="col-md-4">
-                                                <strong>Indication:</strong><br>
-                                                <span class="text-muted">{{ $prescription->indication }}</span>
-                                            </div>
-                                            @endif
-                                            @if($prescription->start_date)
-                                            <div class="col-md-4">
-                                                <strong>Start Date:</strong><br>
-                                                <span class="text-muted">{{ $prescription->start_date->format('M j, Y') }}</span>
-                                            </div>
-                                            @endif
-                                            <div class="col-md-4">
-                                                <strong>Generic Allowed:</strong><br>
-                                                <span class="text-muted">{{ $prescription->generic_allowed ? 'Yes' : 'No' }}</span>
-                                            </div>
-                                        </div>
-                                        @endif
-                                        @if($prescription->instructions)
-                                            <hr class="my-2">
-                                            <p class="mb-0 text-muted small"><strong>Instructions:</strong> {{ $prescription->instructions }}</p>
-                                        @endif
-                                        @if($prescription->notes)
-                                            <hr class="my-2">
-                                            <p class="mb-0 text-muted small"><strong>Notes:</strong> {{ $prescription->notes }}</p>
-                                        @endif
+
+                    @if($appointment->prescriptions && $appointment->prescriptions->count() > 0)
+                        <h5 class="section-header">Existing Prescriptions</h5>
+                        @foreach($appointment->prescriptions as $prescription)
+                            <div class="bg-light p-3 rounded mb-3" data-prescription-id="{{ $prescription->id }}">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h6 class="mb-0 fw-bold">{{ $prescription->medication_name }}</h6>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ route('prescriptions.show', $prescription->id) }}?pdf=1" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-download me-1"></i>PDF
+                                        </a>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="deletePrescription({{ $prescription->id }}, '{{ $prescription->medication_name }}')">
+                                            <i class="fas fa-trash me-1"></i>Delete
+                                        </button>
                                     </div>
                                 </div>
-                            @endforeach
-                        @else
-                            <div class="text-center py-4">
-                                <i class="fas fa-prescription-bottle-alt text-muted mb-3" style="font-size: 3rem; opacity: 0.5;"></i>
-                                <p class="text-muted">No prescriptions have been added for this appointment yet.</p>
+                                <div class="row g-2 text-small">
+                                    <div class="col-md-3">
+                                        <strong>Dosage:</strong><br>
+                                        <span class="text-muted">{{ $prescription->dosage }}</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Form:</strong><br>
+                                        <span class="text-muted">{{ ucfirst($prescription->form ?? 'N/A') }}</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Frequency:</strong><br>
+                                        <span class="text-muted">{{ $prescription->frequency }}</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Duration:</strong><br>
+                                        <span class="text-muted">{{ $prescription->duration }}</span>
+                                    </div>
+                                </div>
+                                @if($prescription->instructions)
+                                    <hr class="my-2">
+                                    <p class="mb-0 text-muted small"><strong>Instructions:</strong> {{ $prescription->instructions }}</p>
+                                @endif
                             </div>
-                        @endif
-                        
-                        <hr class="my-4">
-                        
-                        <!-- Prescription Workflow Header -->
-                        <div class="bg-light p-3 rounded mb-4 border">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h5 class="mb-0 text-primary fw-bold">
-                                    <i class="fas fa-prescription-bottle me-2"></i>Add New Prescription
-                                </h5>
-                                <button type="button" class="btn btn-outline-info btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#prescriptionHelpModal">
+                        @endforeach
+                    @else
+                        <div class="text-center py-4">
+                            <i class="fas fa-prescription-bottle-alt text-muted mb-3 fa-3x"></i>
+                            <p class="text-muted">No prescriptions have been added for this appointment yet.</p>
+                        </div>
+                    @endif
+
+                    <!-- Prescription Workflow Header -->
+                    <div class="prescription-workflow">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0 text-primary fw-bold">
+                                <i class="fas fa-prescription-bottle me-2"></i>Add New Prescription
+                            </h5>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#prescriptionHelpModal">
                                     <i class="fas fa-question-circle me-1"></i>How to Use
                                 </button>
-                            </div>
-
-                            <!-- Quick Workflow Selector -->
-                            <div class="row g-2">
-                                <div class="col-auto">
-                                    <button type="button" class="btn btn-outline-success btn-sm workflow-btn active" data-workflow="manual">
-                                        <i class="fas fa-user-md me-1"></i>Manual Entry
-                                    </button>
-                                </div>
-                                <div class="col-auto">
-                                    <button type="button" class="btn btn-outline-primary btn-sm workflow-btn" data-workflow="ai-first">
-                                        <i class="fas fa-brain me-1"></i>AI First
-                                    </button>
-                                </div>
-                                <div class="col-auto">
-                                    <button type="button" class="btn btn-outline-info btn-sm workflow-btn" data-workflow="ai-assisted">
-                                        <i class="fas fa-handshake me-1"></i>AI Assisted
-                                    </button>
-                                </div>
-                                <div class="col-auto">
-                                    <button type="button" class="btn btn-outline-warning btn-sm workflow-btn" data-workflow="explore">
-                                        <i class="fas fa-search me-1"></i>Explore AI
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Workflow Description -->
-                            <div id="workflow-description" class="mt-2 small text-muted">
-                                <i class="fas fa-info-circle me-1"></i>
-                                <span id="workflow-text">Manual Entry: Fill the form directly with your prescription details.</span>
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#aiDataSourcesModal">
+                                    <i class="fas fa-database me-1"></i>What Data Does AI Use?
+                                </button>
                             </div>
                         </div>
+
+                        <!-- Quick Workflow Selector -->
+                        <div class="workflow-buttons">
+                            <button type="button" class="workflow-btn active" data-workflow="manual">
+                                <i class="fas fa-user-md me-1"></i>Manual Entry
+                            </button>
+                            <button type="button" class="workflow-btn" data-workflow="ai-first">
+                                <i class="fas fa-brain me-1"></i>AI First
+                            </button>
+                            <button type="button" class="workflow-btn" data-workflow="ai-assisted">
+                                <i class="fas fa-handshake me-1"></i>AI Assisted
+                            </button>
+                            <button type="button" class="workflow-btn" data-workflow="explore">
+                                <i class="fas fa-search me-1"></i>Explore AI
+                            </button>
+                        </div>
+
+                        <!-- Workflow Description -->
+                        <div id="workflow-description" class="mt-3 small text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <span id="workflow-text">Manual Entry: Fill the form directly with your prescription details.</span>
+                        </div>
+                    </div>
 
                         <form id="prescriptionForm" method="POST" action="{{ route('doctor.prescriptions.store', $appointment->id) }}">
                             @csrf
 
                             <!-- Essential Information Section -->
-                            <div class="mb-4">
-                                <h6 class="text-primary fw-bold mb-3">
-                                    <i class="fas fa-pills me-2"></i>Medication Details
-                                    <span class="badge bg-danger ms-2">Required</span>
-                                </h6>
+                            <div class="form-section">
+                                <div class="form-section-header">
+                                    <h6 class="form-section-title">
+                                        <i class="fas fa-pills me-2"></i>Medication Details
+                                    </h6>
+                                    <span class="form-section-badge bg-danger">Required</span>
+                                </div>
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label for="medication_name" class="form-label fw-semibold">
@@ -622,11 +673,13 @@
                             </div>
 
                             <!-- Administration Section -->
-                            <div class="mb-4">
-                                <h6 class="text-primary fw-bold mb-3">
-                                    <i class="fas fa-clock me-2"></i>Administration Schedule
-                                    <span class="badge bg-danger ms-2">Required</span>
-                                </h6>
+                            <div class="form-section">
+                                <div class="form-section-header">
+                                    <h6 class="form-section-title">
+                                        <i class="fas fa-clock me-2"></i>Administration Schedule
+                                    </h6>
+                                    <span class="form-section-badge bg-danger">Required</span>
+                                </div>
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label for="frequency" class="form-label fw-semibold">
@@ -669,28 +722,31 @@
 
                             <!-- AI Clinical Support Section - Enhanced for completed appointments -->
                             @if(config('ai.prescription_suggestions.enabled', true))
-                                <div class="mb-4">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h6 class="text-primary fw-bold mb-0">
+                                <div class="form-section">
+                                    <div class="form-section-header">
+                                        <h6 class="form-section-title">
                                             <i class="fas fa-brain me-2"></i>AI Clinical Support
-                                            <span class="badge bg-warning text-dark ms-2">Optional</span>
                                         </h6>
-                                        @if($appointment->status == 'completed')
-                                        <small class="text-muted">
-                                            <i class="fas fa-lightbulb text-warning me-1"></i>AI can suggest medications based on appointment data
-                                        </small>
-                                        @endif
+                                        <span class="form-section-badge bg-warning text-dark">Optional</span>
                                     </div>
+                                    @if($appointment->status == 'completed')
+                                    <small class="text-muted d-block mb-3">
+                                        <i class="fas fa-lightbulb text-warning me-1"></i>AI can suggest medications based on appointment data
+                                    </small>
+                                    @endif
                                     @include('ai.prescription_suggestion')
+
                                 </div>
                             @endif
 
                             <!-- Additional Options Section -->
-                            <div class="mb-4">
-                                <h6 class="text-primary fw-bold mb-3">
-                                    <i class="fas fa-cogs me-2"></i>Additional Options
-                                    <span class="badge bg-info ms-2">Optional</span>
-                                </h6>
+                            <div class="form-section">
+                                <div class="form-section-header">
+                                    <h6 class="form-section-title">
+                                        <i class="fas fa-cogs me-2"></i>Additional Options
+                                    </h6>
+                                    <span class="form-section-badge bg-info">Optional</span>
+                                </div>
                                 <div class="row g-3">
                                     <div class="col-md-4">
                                         <label for="refills" class="form-label fw-semibold">
@@ -726,11 +782,13 @@
                             </div>
 
                             <!-- Instructions & Notes Section -->
-                            <div class="mb-4">
-                                <h6 class="text-primary fw-bold mb-3">
-                                    <i class="fas fa-sticky-note me-2"></i>Instructions & Notes
-                                    <span class="badge bg-info ms-2">Recommended</span>
-                                </h6>
+                            <div class="form-section">
+                                <div class="form-section-header">
+                                    <h6 class="form-section-title">
+                                        <i class="fas fa-sticky-note me-2"></i>Instructions & Notes
+                                    </h6>
+                                    <span class="form-section-badge bg-info">Recommended</span>
+                                </div>
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label for="instructions" class="form-label fw-semibold">
@@ -749,14 +807,13 @@
                                 </div>
                             </div>
 
-
                             <!-- Action Buttons -->
-                            <div class="d-flex gap-2 justify-content-between align-items-center">
+                            <div class="d-flex gap-3 justify-content-between align-items-center mt-4 pt-3 border-top">
                                 <div class="d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary btn-lg fw-semibold">
+                                    <button type="submit" class="btn btn-primary-custom btn-lg fw-semibold">
                                         <i class="fas fa-save me-2"></i>Save Prescription
                                     </button>
-                                    <button type="button" class="btn btn-outline-secondary fw-semibold" onclick="resetPrescriptionForm()">
+                                    <button type="button" class="btn btn-secondary-custom fw-semibold" onclick="resetPrescriptionForm()">
                                         <i class="fas fa-undo me-2"></i>Reset Form
                                     </button>
                                 </div>
@@ -769,98 +826,363 @@
                     </div>
                 </div>
                 @endif
-            </div>
 
-            <!-- Sidebar -->
-            <div class="col-lg-4">
-                <!-- Quick Actions -->
-                <div class="table-card mb-4 shadow-sm">
-                    <div class="bg-gradient-primary text-white p-4 rounded-top" style="background: linear-gradient(135deg, #DE6262 0%, #c54545 100%);">
-                        <h5 class="mb-0 fw-bold">
-                            <i class="fas fa-bolt me-2"></i>Quick Actions
-                        </h5>
-                    </div>
-                    <div class="p-4">
-                        <div class="d-grid gap-3">
-                            @if($appointment->canBeCancelled())
-                                <button onclick="cancelAppointment({{ $appointment->id }})" class="btn btn-danger btn-lg fw-semibold shadow-sm">
-                                    <i class="fas fa-times me-2"></i>Cancel Appointment
-                                </button>
-                            @endif
-
-                            @if($appointment->status == 'confirmed' && $appointment->appointment_type == 'video_call')
-                                <button class="btn btn-success btn-lg fw-semibold shadow-sm">
-                                    <i class="fas fa-video me-2"></i>Join Video Call
-                                </button>
-                            @endif
-
-                            @if($appointment->status == 'confirmed')
-                                <form method="POST" action="{{ route('doctor.appointments.complete', $appointment) }}" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-primary btn-lg fw-semibold shadow-sm w-100 mb-2">
-                                        <i class="fas fa-check-circle me-2"></i>Mark as Completed
-                                    </button>
-                                </form>
-                                <button onclick="markNoShow({{ $appointment->id }})" class="btn btn-warning btn-lg fw-semibold shadow-sm w-100">
-                                    <i class="fas fa-user-times me-2"></i>Mark as No Show
-                                </button>
-                            @endif
-
-                            @if($appointment->status == 'completed' && !Auth::user()->isDoctor())
-                                <a href="{{ route('appointments.review', $appointment) }}" class="btn btn-warning btn-lg fw-semibold shadow-sm">
-                                    <i class="fas fa-star me-2"></i>Leave Review
-                                </a>
-                            @endif
+                <!-- Diagnosis Section -->
+                @if(auth()->check() && auth()->user()->isDoctor())
+                <div id="diagnosis-section" class="table-card" style="@if($errors->has('diagnosis_text') || $errors->has('voice_files') || $errors->any()) display: block; @else display: none; @endif">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="mb-0 fw-bold text-warning">
+                                <i class="fas fa-stethoscope me-2"></i>Create Diagnosis
+                            </h4>
+                            <p class="mb-0 text-muted small">Document medical findings and diagnosis for this appointment</p>
                         </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleDiagnosisForm()">
+                            <i class="fas fa-times me-1"></i>Close
+                        </button>
                     </div>
-                </div>
 
-                <!-- Appointment Timeline -->
-                <div class="table-card shadow-sm">
-                    <div class="p-4">
-                        <h5 class="mb-4 text-primary fw-bold">
-                            <i class="fas fa-history me-2"></i>Appointment Timeline
-                        </h5>
-                        <div class="timeline position-relative">
-                            <div class="timeline-item d-flex mb-4">
-                                <div class="timeline-marker bg-primary rounded-circle shadow-sm me-3" style="width: 16px; height: 16px; margin-top: 6px;"></div>
-                                <div class="timeline-content flex-grow-1">
-                                    <h6 class="mb-1 fw-semibold">Appointment Booked</h6>
-                                    <small class="text-muted">{{ $appointment->created_at->format('M j, Y \a\t g:i A') }}</small>
+                    <!-- Show validation errors if any -->
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <!-- Context Information -->
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Appointment Context:</strong> {{ $appointment->patient_name }} - {{ $appointment->reason }}
+                        @if($appointment->doctor_notes)
+                        <br><small class="text-muted"><strong>Doctor Notes:</strong> {{ Str::limit($appointment->doctor_notes, 100) }}</small>
+                        @endif
+                    </div>
+
+                    <form id="diagnosisForm" method="POST" action="{{ route('doctor.appointments.create-diagnosis', $appointment) }}" enctype="multipart/form-data">
+                        @csrf
+
+                        <!-- Diagnosis Input Section -->
+                        <div class="form-section">
+                            <div class="form-section-header">
+                                <h6 class="form-section-title">
+                                    <i class="fas fa-stethoscope me-2"></i>Diagnosis Details
+                                </h6>
+                                <span class="form-section-badge bg-warning text-dark">Required</span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label for="diagnosis_text" class="form-label fw-semibold">
+                                        Diagnosis Text <span class="text-danger">*</span>
+                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Enter your medical diagnosis, findings, and treatment plan"></i>
+                                    </label>
+                                    <textarea class="form-control" id="diagnosis_text" name="diagnosis_text" rows="6" placeholder="Enter your medical diagnosis, clinical findings, and treatment recommendations..." required></textarea>
+                                    <div class="form-text">
+                                        Include symptoms assessment, clinical findings, diagnosis, and treatment recommendations.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Voice Recording Section -->
+                        <div class="form-section">
+                            <div class="form-section-header">
+                                <h6 class="form-section-title">
+                                    <i class="fas fa-microphone me-2"></i>Voice Recording (Optional)
+                                </h6>
+                                <span class="form-section-badge bg-info">Optional</span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="voice-recording-container">
+                                        <button type="button" id="startRecording" class="btn btn-outline-primary">
+                                            <i class="fas fa-microphone me-2"></i>Start Voice Recording
+                                        </button>
+                                        <button type="button" id="stopRecording" class="btn btn-outline-danger" style="display: none;">
+                                            <i class="fas fa-stop me-2"></i>Stop Recording
+                                        </button>
+                                        <button type="button" id="playRecording" class="btn btn-outline-success" style="display: none;">
+                                            <i class="fas fa-play me-2"></i>Play Back
+                                        </button>
+                                        <span id="recordingStatus" class="ms-3 text-muted"></span>
+                                        <audio id="audioPlayback" controls style="display: none; max-width: 300px;"></audio>
+                                    </div>
+                                    <input type="file" id="voice_files" name="voice_files[]" multiple accept="audio/*" style="display: none;">
+                                    <div class="form-text">
+                                        Alternatively, you can upload audio files directly.
+                                        <button type="button" class="btn btn-link btn-sm p-0 ms-2" onclick="document.getElementById('voice_files').click()">
+                                            Upload Files
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Patient Data Section -->
+                        <div class="form-section">
+                            <div class="form-section-header">
+                                <h6 class="form-section-title">
+                                    <i class="fas fa-user-md me-2"></i>Additional Patient Information
+                                </h6>
+                                <span class="form-section-badge bg-info">Optional</span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="patient_data_height" class="form-label fw-semibold">
+                                        Height (cm)
+                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Patient's height in centimeters"></i>
+                                    </label>
+                                    <input type="number" class="form-control" id="patient_data_height" name="patient_data[height]" placeholder="170">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="patient_data_weight" class="form-label fw-semibold">
+                                        Weight (kg)
+                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Patient's weight in kilograms"></i>
+                                    </label>
+                                    <input type="number" step="0.1" class="form-control" id="patient_data_weight" name="patient_data[weight]" placeholder="70.5">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="patient_data_blood_pressure" class="form-label fw-semibold">
+                                        Blood Pressure
+                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Systolic/Diastolic (e.g., 120/80)"></i>
+                                    </label>
+                                    <input type="text" class="form-control" id="patient_data_blood_pressure" name="patient_data[blood_pressure]" placeholder="120/80">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="patient_data_temperature" class="form-label fw-semibold">
+                                        Temperature (°C)
+                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Body temperature in Celsius"></i>
+                                    </label>
+                                    <input type="number" step="0.1" class="form-control" id="patient_data_temperature" name="patient_data[temperature]" placeholder="36.6">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-3 justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-warning btn-lg fw-semibold" onclick="submitDiagnosisForm()">
+                                    <i class="fas fa-save me-2"></i>Create Diagnosis
+                                </button>
+                                <button type="button" class="btn btn-secondary fw-semibold" onclick="toggleDiagnosisForm()">
+                                    <i class="fas fa-times me-2"></i>Cancel
+                                </button>
+                            </div>
+                            <div class="text-muted small">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                Diagnosis will be saved and patient will be notified
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                @endif
+
+                <!-- AI Medical Copilot Section -->
+                @if(auth()->check() && auth()->user()->isDoctor())
+                <div id="ai-medical-copilot-section" class="table-card" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="mb-0 fw-bold text-primary">
+                                <i class="fas fa-brain me-2"></i>AI Medical Copilot
+                            </h4>
+                            <p class="mb-0 text-muted small">AI-powered clinical decision support for this appointment</p>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAIMedicalCopilotForm()">
+                            <i class="fas fa-times me-1"></i>Close
+                        </button>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div class="copilot-loading" id="copilotLoadingSection">
+                        <div class="copilot-loading-spinner mx-auto"></div>
+                        <h5 class="text-primary text-center">AI Medical Copilot is analyzing...</h5>
+                        <p class="text-muted text-center">Processing clinical data and generating decision support insights</p>
+                    </div>
+
+                    <!-- Error State -->
+                    <div class="copilot-error alert alert-danger" id="copilotErrorSection" style="display: none;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="copilotErrorMessageSection"></span>
+                    </div>
+
+                    <!-- Content Area -->
+                    <div id="copilotContentSection" style="display: none;">
+                        <!-- Tab Navigation -->
+                        <div class="d-flex justify-content-start mb-3 border-bottom">
+                            <button class="copilot-tab active" data-tab="summary">
+                                <i class="fas fa-file-medical me-1"></i>Summary
+                            </button>
+                            <button class="copilot-tab" data-tab="considerations">
+                                <i class="fas fa-list-check me-1"></i>Considerations
+                            </button>
+                            <button class="copilot-tab" data-tab="questions">
+                                <i class="fas fa-question-circle me-1"></i>Questions
+                            </button>
+                            <button class="copilot-tab" data-tab="red-flags">
+                                <i class="fas fa-flag me-1"></i>Red Flags
+                            </button>
+                            <button class="copilot-tab" data-tab="history">
+                                <i class="fas fa-history me-1"></i>Patient History
+                            </button>
+                        </div>
+
+                        <!-- Tab Content -->
+                        <div id="copilotTabsSection">
+                            <!-- Summary Tab -->
+                            <div class="copilot-tab-content active" data-tab-content="summary">
+                                <div class="copilot-section">
+                                    <div class="copilot-section-header">
+                                        <h6 class="copilot-section-title">
+                                            <i class="fas fa-file-medical me-2"></i>Medical Case Summary
+                                        </h6>
+                                        <span class="badge copilot-badge bg-primary">
+                                            <i class="fas fa-check-circle me-1"></i>AI-Generated
+                                        </span>
+                                    </div>
+                                    <div class="copilot-content" id="copilotSummarySection">
+                                        <p class="text-muted">Loading medical case summary...</p>
+                                    </div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input copilot-checkbox" type="checkbox" id="includeSummaryInNoteSection">
+                                        <label class="form-check-label" for="includeSummaryInNoteSection">
+                                            Include in clinical note
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
 
-                            @if($appointment->status != 'pending')
-                                <div class="timeline-item d-flex mb-4">
-                                    <div class="timeline-marker bg-success rounded-circle shadow-sm me-3" style="width: 16px; height: 16px; margin-top: 6px;"></div>
-                                    <div class="timeline-content flex-grow-1">
-                                        <h6 class="mb-1 fw-semibold">Status Updated</h6>
-                                        <small class="text-muted">{{ ucfirst(str_replace('_', ' ', $appointment->status)) }}</small>
-                                        @if($appointment->updated_at != $appointment->created_at)
-                                            <br><small class="text-muted">{{ $appointment->updated_at->format('M j, Y \a\t g:i A') }}</small>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endif
-
-                            @if($appointment->status == 'completed')
-                                <div class="timeline-item d-flex">
-                                    <div class="timeline-marker bg-success rounded-circle shadow-sm me-3" style="width: 16px; height: 16px; margin-top: 6px;"></div>
-                                    <div class="timeline-content flex-grow-1">
-                                        <h6 class="mb-1 fw-semibold text-success">
-                                            <i class="fas fa-check-circle me-1"></i>Appointment Completed Successfully
+                            <!-- Considerations Tab -->
+                            <div class="copilot-tab-content" data-tab-content="considerations">
+                                <div class="copilot-section">
+                                    <div class="copilot-section-header">
+                                        <h6 class="copilot-section-title">
+                                            <i class="fas fa-list-check me-2"></i>Differential Considerations
                                         </h6>
-                                        <small class="text-muted">{{ $appointment->updated_at->format('M j, Y \a\t g:i A') }}</small>
-                                        @if($appointment->doctor_notes)
-                                            <br><small class="text-muted">Doctor notes added</small>
-                                        @endif
+                                        <span class="badge copilot-badge bg-warning text-dark">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>Not Diagnoses
+                                        </span>
+                                    </div>
+                                    <div class="copilot-content copilot-warning" id="copilotConsiderationsSection">
+                                        <p class="text-muted">Loading differential considerations...</p>
+                                    </div>
+                                    <div class="copilot-disclaimer">
+                                        <strong>⚠️ For clinical consideration only. Physician judgment required.</strong>
+                                    </div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input copilot-checkbox" type="checkbox" id="includeConsiderationsInNoteSection">
+                                        <label class="form-check-label" for="includeConsiderationsInNoteSection">
+                                            Include in clinical note
+                                        </label>
                                     </div>
                                 </div>
-                            @endif
+                            </div>
+
+                            <!-- Questions Tab -->
+                            <div class="copilot-tab-content" data-tab-content="questions">
+                                <div class="copilot-section">
+                                    <div class="copilot-section-header">
+                                        <h6 class="copilot-section-title">
+                                            <i class="fas fa-question-circle me-2"></i>Suggested Follow-up Questions
+                                        </h6>
+                                        <span class="badge copilot-badge bg-info">
+                                            <i class="fas fa-lightbulb me-1"></i>Clinical Insights
+                                        </span>
+                                    </div>
+                                    <div class="copilot-content copilot-info" id="copilotQuestionsSection">
+                                        <p class="text-muted">Loading follow-up questions...</p>
+                                    </div>
+                                    <div class="copilot-disclaimer">
+                                        <strong>💡 These questions help raise diagnostic quality and reduce oversight.</strong>
+                                    </div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input copilot-checkbox" type="checkbox" id="includeQuestionsInNoteSection">
+                                        <label class="form-check-label" for="includeQuestionsInNoteSection">
+                                            Include in clinical note
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Red Flags Tab -->
+                            <div class="copilot-tab-content" data-tab-content="red-flags">
+                                <div class="copilot-section">
+                                    <div class="copilot-section-header">
+                                        <h6 class="copilot-section-title">
+                                            <i class="fas fa-flag me-2"></i>Red Flags Detection
+                                        </h6>
+                                        <span class="badge copilot-badge bg-danger">
+                                            <i class="fas fa-exclamation-circle me-1"></i>Urgent Attention
+                                        </span>
+                                    </div>
+                                    <div class="copilot-content copilot-danger" id="copilotRedFlagsSection">
+                                        <p class="text-muted">Loading red flags analysis...</p>
+                                    </div>
+                                    <div class="copilot-disclaimer">
+                                        <strong>⚠️ Consider urgent evaluation if clinically indicated.</strong>
+                                    </div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input copilot-checkbox" type="checkbox" id="includeRedFlagsInNoteSection">
+                                        <label class="form-check-label" for="includeRedFlagsInNoteSection">
+                                            Include in clinical note
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Patient History Tab -->
+                            <div class="copilot-tab-content" data-tab-content="history">
+                                <div class="copilot-section">
+                                    <div class="copilot-section-header">
+                                        <h6 class="copilot-section-title">
+                                            <i class="fas fa-history me-2"></i>Patient Medical History
+                                        </h6>
+                                        <span class="badge copilot-badge bg-info">
+                                            <i class="fas fa-database me-1"></i>Historical Data
+                                        </span>
+                                    </div>
+                                    <div class="copilot-content" id="copilotHistorySection">
+                                        <p class="text-muted">Loading patient history...</p>
+                                    </div>
+                                    <div class="copilot-disclaimer">
+                                        <strong>📋 Patient history was used in AI analysis to provide context-aware recommendations.</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Compliance Information -->
+                        <div class="copilot-compliance-label">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            <span id="copilotComplianceLabelSection">AI-generated draft. Physician verified.</span>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-3 justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-primary" id="saveCopilotAnalysisSection">
+                                    <i class="fas fa-save me-2"></i>Save Analysis
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="toggleAIMedicalCopilotForm()">
+                                    <i class="fas fa-times me-2"></i>Close
+                                </button>
+                            </div>
+                            <div class="text-muted small">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                AI analysis will be saved and available for review
+                            </div>
                         </div>
                     </div>
                 </div>
+                @endif
             </div>
+
+
         </div>
     </div>
 </div>
@@ -1069,6 +1391,81 @@
     </div>
 </div>
 
+<!-- AI Data Sources Modal -->
+<div class="modal fade" id="aiDataSourcesModal" tabindex="-1" aria-labelledby="aiDataSourcesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="aiDataSourcesModalLabel">
+                    <i class="fas fa-database me-2"></i>AI Clinical Data Sources
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Understanding AI Data Sources:</strong> The AI analyzes clinical information to provide medication suggestions. Data sources are prioritized by importance:
+                    <ul class="mb-0 mt-2">
+                        <li><strong class="text-danger">CRITICAL:</strong> Required for AI suggestions - AI will be BLOCKED without these</li>
+                        <li><strong class="text-warning">Important:</strong> Strongly recommended for accurate suggestions</li>
+                        <li><strong class="text-info">Helpful:</strong> Provides additional context</li>
+                        <li><strong class="text-secondary">Context:</strong> Used for background information only</li>
+                    </ul>
+                </div>
+
+                <!-- Data Sources Table -->
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-primary">
+                            <tr>
+                                <th><i class="fas fa-clipboard-list me-1"></i>Data Source & Why It's Needed</th>
+                                <th><i class="fas fa-check-circle me-1"></i>Status</th>
+                                <th><i class="fas fa-exclamation-triangle me-1"></i>Importance</th>
+                                <th><i class="fas fa-shield-alt me-1"></i>Reliability</th>
+                                <th><i class="fas fa-info-circle me-1"></i>Current Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataSourcesTableBody">
+                            <!-- Dynamic content will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Data Quality Indicators -->
+                <div class="mt-4">
+                    <h6 class="text-primary mb-3"><i class="fas fa-chart-line me-2"></i>Data Completeness</h6>
+                    <div class="progress mb-2" style="height: 25px;" id="dataCompletenessProgress">
+                        <div class="progress-bar bg-success" id="dataCompletenessBar" style="width: 0%">Calculating...</div>
+                    </div>
+                    <small class="text-muted" id="dataCompletenessText">Analyzing available clinical data...</small>
+                </div>
+
+                <!-- Action Items -->
+                <div class="mt-4">
+                    <h6 class="text-warning mb-3"><i class="fas fa-lightbulb me-2"></i>To Improve AI Suggestions:</h6>
+                    <ul class="small text-muted" id="improvementSuggestions">
+                        <li>Complete patient allergy information in Patient Management</li>
+                        <li>Update current medications regularly</li>
+                        <li>Add detailed symptoms during appointment booking</li>
+                        <li>Create diagnosis records for better clinical context</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-light border mt-4">
+                    <h6 class="text-dark mb-2"><i class="fas fa-shield-alt me-2"></i>Privacy & Security</h6>
+                    <small class="text-muted">All clinical data is encrypted and HIPAA-compliant. AI analysis occurs locally and no patient data leaves your secure environment.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="refreshDataSources()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ML Explanation Modal -->
 <div class="modal fade" id="mlExplanationModal" tabindex="-1" aria-labelledby="mlExplanationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -1085,23 +1482,134 @@
                     <strong>How it works:</strong> Our machine learning model analyzes patient history, appointment patterns, and medical data to predict healthcare risks.
                 </div>
 
-                <h6 class="text-primary mb-3"><i class="fas fa-chart-line me-2"></i>Factors Analyzed:</h6>
+                <h6 class="text-primary mb-3"><i class="fas fa-chart-line me-2"></i>Features Actually Analyzed:</h6>
+                @php
+                    if ($appointment->patient) {
+                        $extractor = app(\App\Services\FeatureExtractor::class);
+                        $features = $extractor->extractFeatures($appointment->patient, $appointment);
+                        $hasHighRisk = $extractor->hasHighRiskCondition($appointment->patient);
+                    } else {
+                        $features = [0,0,0,0,0];
+                        $hasHighRisk = false;
+                    }
+                @endphp
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Feature</th>
+                                <th>Value</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>No-Show Count</strong></td>
+                                <td class="text-center"><span class="badge bg-warning">{{ $features[0] ?? 0 }}</span></td>
+                                <td>Number of previous missed appointments</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cancellation Count</strong></td>
+                                <td class="text-center"><span class="badge bg-secondary">{{ $features[1] ?? 0 }}</span></td>
+                                <td>Number of cancelled appointments</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Days Since Last Visit</strong></td>
+                                <td class="text-center"><span class="badge bg-info">{{ $features[2] ?? 0 }}</span></td>
+                                <td>Days since patient's last appointment</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Visit Frequency</strong></td>
+                                <td class="text-center"><span class="badge bg-primary">{{ number_format($features[3] ?? 0, 1) }}</span></td>
+                                <td>Average appointments per year</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Patient Age</strong></td>
+                                <td class="text-center"><span class="badge bg-primary">{{ $features[4] ?? 0 }}</span></td>
+                                <td>Patient's age in years</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Gender</strong></td>
+                                <td class="text-center">
+                                    <span class="badge {{ ($features[5] ?? 0) == 1 ? 'bg-danger' : 'bg-secondary' }}">
+                                        {{ ($features[5] ?? 0) == 1 ? 'Male' : 'Female/Other' }}
+                                    </span>
+                                </td>
+                                <td>Gender encoding (1=Male, 0=Female/Other)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Chronic Conditions</strong></td>
+                                <td class="text-center">
+                                    <span class="badge {{ ($features[6] ?? 0) > 0 ? 'bg-danger' : 'bg-success' }}">
+                                        {{ $features[6] ?? 0 }}
+                                    </span>
+                                </td>
+                                <td>Count of high-risk conditions from doctor diagnoses</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Current Medications</strong></td>
+                                <td class="text-center"><span class="badge bg-info">{{ $features[7] ?? 0 }}</span></td>
+                                <td>Number of current medications</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Appointment Lead Time</strong></td>
+                                <td class="text-center"><span class="badge bg-secondary">{{ $features[8] ?? 0 }}</span></td>
+                                <td>Days between booking and appointment</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info mt-3">
+                    <small><i class="fas fa-info-circle me-1"></i><strong>Enhanced ML Features:</strong> Now using 9 features including cancellations, visit frequency, medications, and appointment lead time for improved accuracy.</small>
+                </div>
+
+                <hr class="my-4">
+
+                <h6 class="text-primary mb-3"><i class="fas fa-cogs me-2"></i>Prediction Method Used:</h6>
+                @php
+                    $service = app(\App\Services\PredictiveAnalyticsService::class);
+                    $reflection = new ReflectionClass($service);
+                    $method = $reflection->getMethod('checkTrainingDataAdequacy');
+                    $method->setAccessible(true);
+                    $adequacy = $method->invoke($service);
+                    $usingML = $adequacy['adequate'];
+                @endphp
                 <div class="row">
                     <div class="col-md-6">
-                        <ul class="list-unstyled">
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>Appointment History:</strong> Past attendance patterns</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>Demographics:</strong> Age, gender, location</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>Medical History:</strong> Previous diagnoses and treatments</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>Scheduling Patterns:</strong> Appointment timing preferences</li>
-                        </ul>
+                        <div class="card border-{{ $usingML ? 'success' : 'warning' }} mb-3">
+                            <div class="card-body p-3">
+                                <h6 class="card-title mb-2">
+                                    <i class="fas fa-{{ $usingML ? 'brain' : 'calculator' }} me-2"></i>
+                                    {{ $usingML ? 'Machine Learning' : 'Rule-Based' }}
+                                </h6>
+                                <p class="card-text small mb-1">
+                                    {{ $usingML ? 'Using trained ML models for predictions' : 'Using rule-based calculations (ML models not adequately trained)' }}
+                                </p>
+                                <small class="text-muted">
+                                    Training Data: {{ $adequacy['total_appointments'] }} appointments
+                                    ({{ $adequacy['no_show_count'] }} no-shows, {{ $adequacy['high_risk_count'] }} high-risk)
+                                </small>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <ul class="list-unstyled">
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>No-Show History:</strong> Previous missed appointments</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>Health Indicators:</strong> Vital signs and risk factors</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>Seasonal Patterns:</strong> Time-based attendance trends</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i><strong>Appointment Type:</strong> Consultation vs. follow-up patterns</li>
-                        </ul>
+                        <div class="card border-info mb-3">
+                            <div class="card-body p-3">
+                                <h6 class="card-title mb-2">
+                                    <i class="fas fa-chart-bar me-2"></i>Model Status
+                                </h6>
+                                <p class="card-text small mb-1">
+                                    @if($usingML)
+                                        <span class="text-success">✓ ML Models Active</span>
+                                    @else
+                                        <span class="text-warning">⚠ Rule-Based Fallback</span>
+                                    @endif
+                                </p>
+                                <small class="text-muted">
+                                    Minimum required: 50 appointments, 2% no-show rate, 5% high-risk rate
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1179,7 +1687,51 @@ function cancelAppointment(appointmentId) {
 }
 
 function submitCancellation() {
-    document.getElementById('cancelForm').submit();
+    const form = document.getElementById('cancelForm');
+    const submitBtn = document.querySelector('#cancelModal button[type="button"][onclick="submitCancellation()"]');
+    const originalText = submitBtn.textContent;
+
+    // Update button to show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Cancellation...';
+
+    // Submit via AJAX to properly handle errors
+    const formData = new FormData(form);
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            // Success - reload the page to update the appointment status
+            window.location.reload();
+        } else {
+            // Handle errors
+            return response.json().then(data => {
+                console.error('Error cancelling appointment:', data);
+                // Show error notification
+                alert(data.message || 'Failed to cancel appointment. Please try again.');
+                // Reset button state
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }).catch(() => {
+                // If response isn't JSON, show generic error
+                alert('Failed to cancel appointment. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Network error cancelling appointment:', error);
+        alert('Network error. Please check your connection and try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
 }
 
 // Prescription delete functionality
@@ -1187,7 +1739,9 @@ let prescriptionToDelete = null;
 
 function deletePrescription(prescriptionId, medicationName) {
     prescriptionToDelete = prescriptionId;
-    document.getElementById('deletePrescriptionName').textContent = medicationName;
+    // Sanitize the medication name to prevent XSS by using textContent instead of innerHTML
+    const cleanName = medicationName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    document.getElementById('deletePrescriptionName').textContent = cleanName;
     new bootstrap.Modal(document.getElementById('deletePrescriptionModal')).show();
 }
 
@@ -1257,14 +1811,30 @@ function showNotification(message, type = 'info') {
     // Create notification element
     const notification = document.createElement('div');
     notification.className = `alert ${alertTypes[type]} alert-dismissible fade show position-fixed`;
-    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    notification.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="${icons[type]} me-2"></i>
-            <span>${message}</span>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
+    // Position below the top navigation bar (assuming ~80px height) and to the right
+    notification.style.cssText = 'top: 100px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px; margin-top: 10px;';
+
+    // Create content safely to prevent XSS
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'd-flex align-items-center';
+
+    const icon = document.createElement('i');
+    icon.className = `${icons[type]} me-2`;
+
+    const span = document.createElement('span');
+    // Sanitize message to prevent XSS
+    span.textContent = message.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn-close';
+    button.setAttribute('data-bs-dismiss', 'alert');
+    button.setAttribute('aria-label', 'Close');
+
+    contentDiv.appendChild(icon);
+    contentDiv.appendChild(span);
+    contentDiv.appendChild(button);
+    notification.appendChild(contentDiv);
 
     document.body.appendChild(notification);
 
@@ -1287,7 +1857,90 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize form transformation
     initializeFormTransformation();
+
+    // Debug ML Risk Assessment Data
+    debugMLRiskAssessment();
 });
+
+function debugMLRiskAssessment() {
+    console.log('🔍 ML RISK ASSESSMENT DEBUG');
+    console.log('===========================');
+
+    // Check if risk scores exist
+    @php
+        $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
+    @endphp
+
+    @if($riskScore)
+        console.log('✅ Risk Scores Found:', {
+            no_show_risk: '{{ number_format($riskScore->no_show_risk * 100, 1) }}%',
+            hospitalization_risk: '{{ number_format($riskScore->hospitalization_risk * 100, 1) }}%'
+        });
+    @else
+        console.log('❌ NO RISK SCORES FOUND - ML prediction has not run');
+    @endif
+
+    // Check training data adequacy
+    @php
+        $service = app(\App\Services\PredictiveAnalyticsService::class);
+        $reflection = new ReflectionClass($service);
+        $method = $reflection->getMethod('checkTrainingDataAdequacy');
+        $method->setAccessible(true);
+        $adequacy = $method->invoke($service);
+    @endphp
+
+    console.log('🎓 Training Data Status:', {
+        adequate: {{ $adequacy['adequate'] ? 'true' : 'false' }},
+        total_appointments: {{ $adequacy['total_appointments'] }},
+        using_fallback: '{{ !$adequacy['adequate'] ? 'YES (Rule-based)' : 'NO (ML)' }}'
+    });
+
+    // Show what SHOULD be calculated
+    @php
+        if ($appointment->patient) {
+            $result = $service->predictRisks($appointment->patient, $appointment);
+            $expectedNoShow = number_format($result['no_show_risk'] * 100, 1);
+            $expectedHospitalization = number_format($result['hospitalization_risk'] * 100, 1);
+        } else {
+            $expectedNoShow = 'N/A';
+            $expectedHospitalization = 'N/A';
+        }
+    @endphp
+
+    // Feature Extraction Debug
+    @php
+        if ($appointment->patient) {
+            $extractor = app(\App\Services\FeatureExtractor::class);
+            $features = $extractor->extractFeatures($appointment->patient, $appointment);
+            $hasHighRisk = $extractor->hasHighRiskCondition($appointment->patient);
+        } else {
+            $features = [0,0,0,0,0];
+            $hasHighRisk = false;
+        }
+    @endphp
+    console.log('🔧 ML Features Extracted:', {
+        features_array: {{ json_encode($features) }},
+        breakdown: {
+            no_show_count: {{ $features[0] ?? 0 }},
+            last_visit_days: {{ $features[1] ?? 0 }},
+            age: {{ $features[2] ?? 0 }},
+            gender_encoded: {{ $features[3] ?? 0 }},
+            chronic_conditions_from_appointments: {{ $features[4] ?? 0 }}
+        },
+        has_high_risk_conditions: {{ $hasHighRisk ? 'true' : 'false' }}
+    });
+
+    console.log('🎯 Expected Calculation:', {
+        no_show_risk: '{{ $expectedNoShow }}%',
+        hospitalization_risk: '{{ $expectedHospitalization }}%'
+    });
+
+    @if($riskScore)
+        console.log('📊 Match Check:', {
+            scores_match: '{{ ($expectedNoShow === number_format($riskScore->no_show_risk * 100, 1) && $expectedHospitalization === number_format($riskScore->hospitalization_risk * 100, 1)) ? 'YES' : 'NO' }}'
+        });
+    @endif
+}
 
 // Dynamic form transformation
 function initializeFormTransformation() {
@@ -1463,6 +2116,121 @@ function resetFormField() {
     });
 }
 
+// Diagnosis form functionality
+function toggleDiagnosisForm() {
+    const diagnosisSection = document.getElementById('diagnosis-section');
+    const isVisible = diagnosisSection.style.display !== 'none';
+
+    if (isVisible) {
+        // Hide the form
+        diagnosisSection.style.display = 'none';
+        // Scroll to the Next Steps section
+        document.querySelector('.table-card.mb-4').scrollIntoView({ behavior: 'smooth' });
+    } else {
+        // Show the form
+        diagnosisSection.style.display = 'block';
+        // Scroll to the diagnosis section
+        diagnosisSection.scrollIntoView({ behavior: 'smooth' });
+        // Focus on the diagnosis text area
+        setTimeout(() => {
+            document.getElementById('diagnosis_text').focus();
+        }, 300);
+    }
+}
+
+// Voice recording functionality for diagnosis
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if there are validation errors and show the diagnosis form if needed
+    const hasErrors = @json($errors->any());
+    if (hasErrors) {
+        const diagnosisSection = document.getElementById('diagnosis-section');
+        diagnosisSection.style.display = 'block';
+
+        // Scroll to the diagnosis section to make errors visible
+        diagnosisSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Initialize voice recording buttons
+    const startRecordingBtn = document.getElementById('startRecording');
+    const stopRecordingBtn = document.getElementById('stopRecording');
+    const playRecordingBtn = document.getElementById('playRecording');
+    const audioPlayback = document.getElementById('audioPlayback');
+    const recordingStatus = document.getElementById('recordingStatus');
+
+    if (startRecordingBtn) {
+        startRecordingBtn.addEventListener('click', startVoiceRecording);
+    }
+    if (stopRecordingBtn) {
+        stopRecordingBtn.addEventListener('click', stopVoiceRecording);
+    }
+    if (playRecordingBtn) {
+        playRecordingBtn.addEventListener('click', function() {
+            if (audioPlayback.src) {
+                audioPlayback.play();
+            }
+        });
+    }
+
+    function startVoiceRecording() {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    audioPlayback.src = audioUrl;
+                    audioPlayback.style.display = 'block';
+                    playRecordingBtn.style.display = 'inline-block';
+
+                    // Create a file input for the recorded audio
+                    const fileInput = document.getElementById('voice_files');
+                    const file = new File([audioBlob], 'voice_recording.wav', { type: 'audio/wav' });
+
+                    // Create a DataTransfer to set the file
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    fileInput.files = dt.files;
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                startRecordingBtn.style.display = 'none';
+                stopRecordingBtn.style.display = 'inline-block';
+                recordingStatus.textContent = 'Recording... Click "Stop Recording" when finished.';
+                recordingStatus.style.color = 'red';
+            })
+            .catch(error => {
+                console.error('Error accessing microphone:', error);
+                recordingStatus.textContent = 'Error: Could not access microphone. Please check permissions.';
+                recordingStatus.style.color = 'red';
+            });
+    }
+
+    function stopVoiceRecording() {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            isRecording = false;
+
+            stopRecordingBtn.style.display = 'none';
+            startRecordingBtn.style.display = 'inline-block';
+            recordingStatus.textContent = 'Recording saved. You can play it back or upload additional files.';
+            recordingStatus.style.color = 'green';
+        }
+    }
+});
+
 // Workflow selector functionality
 document.addEventListener('DOMContentLoaded', function() {
     const workflowButtons = document.querySelectorAll('.workflow-btn');
@@ -1503,6 +2271,822 @@ document.addEventListener('DOMContentLoaded', function() {
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+
+    // Initialize AI Medical Copilot save button
+    const saveButton = document.getElementById('saveCopilotAnalysisSection');
+    if (saveButton) {
+        saveButton.addEventListener('click', function() {
+            const appointmentId = window.currentAppointmentId; // This should be set when opening the section
+
+            if (!appointmentId) {
+                showNotification('Error: Appointment ID not found', 'error');
+                return;
+            }
+
+            // Collect current analysis data from the UI
+            const analysisData = collectAnalysisData();
+
+            // Include checkboxes for clinical note inclusion
+            const includeInNote = {
+                summary: document.getElementById('includeSummaryInNoteSection').checked,
+                considerations: document.getElementById('includeConsiderationsInNoteSection').checked,
+                questions: document.getElementById('includeQuestionsInNoteSection').checked,
+                red_flags: document.getElementById('includeRedFlagsInNoteSection').checked
+            };
+
+            // Save the analysis
+            saveAICopilotAnalysis(appointmentId, analysisData, includeInNote);
+        });
+    }
 });
+
+// Function to submit diagnosis form via AJAX
+function submitDiagnosisForm() {
+    const form = document.getElementById('diagnosisForm');
+    const formData = new FormData(form);
+
+    // Disable the submit button to prevent multiple submissions
+    const submitButton = document.querySelector('#diagnosisForm button[type="button"][onclick="submitDiagnosisForm()"]');
+    const originalButtonText = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Diagnosis...';
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(async response => {
+        // Clone the response to handle both JSON and text cases
+        const responseClone = response.clone();
+
+        // Check if the response is OK
+        if (!response.ok) {
+            // For 422 validation errors, Laravel returns JSON with validation errors
+            if (response.status === 422) {
+                const errorData = await response.json();
+                // Return the error data in a consistent format
+                return {
+                    success: false,
+                    message: 'Validation failed',
+                    errors: errorData.errors || {}
+                };
+            } else {
+                // For other error statuses, try to get error response as JSON first
+                try {
+                    const errorData = await response.json();
+                    return {
+                        success: false,
+                        message: errorData.message || `HTTP error! status: ${response.status}`,
+                        errors: errorData.errors || {}
+                    };
+                } catch (jsonError) {
+                    // If JSON parsing fails, get response as text from the clone
+                    try {
+                        const errorText = await responseClone.text();
+                        return {
+                            success: false,
+                            message: `HTTP error! status: ${response.status}, message: ${errorText.substring(0, 200)}...`,
+                            errors: {}
+                        };
+                    } catch (textError) {
+                        // If both fail, return a generic error
+                        return {
+                            success: false,
+                            message: `HTTP error! status: ${response.status}`,
+                            errors: {}
+                        };
+                    }
+                }
+            }
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Show success toast notification
+            showNotification(data.message || 'Diagnosis created successfully!', 'success');
+
+            // Reset and hide the form
+            form.reset();
+            document.getElementById('diagnosis-section').style.display = 'none';
+
+            // Reload the page after a delay to show updated content
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            // Clear previous validation errors
+            clearValidationErrors();
+
+            // Show error notification
+            let errorMessage = data.message || 'Failed to create diagnosis. Please try again.';
+
+            // Handle Laravel's validation error format and display on form
+            if (data.errors) {
+                // Format validation errors and display on form fields
+                for (const field in data.errors) {
+                    displayValidationError(field, data.errors[field].join(', '));
+                    errorMessage += ' ' + data.errors[field].join(', ');
+                }
+            }
+
+            showNotification(errorMessage, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error creating diagnosis:', error);
+        // Extract error message from the error object
+        let errorMessage = 'An error occurred while creating the diagnosis. Please try again.';
+        if (error.message) {
+            errorMessage = error.message;
+        }
+        showNotification(errorMessage, 'error');
+    })
+    .finally(() => {
+        // Re-enable the submit button
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonText;
+    });
+}
+
+// Helper function to display validation error for a specific field
+function displayValidationError(fieldName, errorMessage) {
+    // Find the input field by name
+    let field = document.querySelector(`[name="${fieldName}"]`);
+
+    // Special handling for nested array fields like patient_data[height]
+    if (!field && fieldName.includes('[')) {
+        const normalizedFieldName = fieldName.replace(/\[/g, '\\[').replace(/\]/g, '\\]');
+        field = document.querySelector(`[name="${normalizedFieldName}"]`);
+    }
+
+    if (field) {
+        // Add error styling to the field
+        field.classList.add('is-invalid');
+
+        // Check if error feedback element already exists
+        let errorElement = field.parentNode.querySelector('.invalid-feedback');
+
+        if (!errorElement) {
+            // Create error feedback element
+            errorElement = document.createElement('div');
+            errorElement.className = 'invalid-feedback';
+            field.parentNode.appendChild(errorElement);
+        }
+
+        // Set the error message
+        errorElement.textContent = errorMessage;
+    }
+
+    // Special handling for array fields like voice_files[]
+    if (fieldName === 'voice_files') {
+        const fields = document.querySelectorAll('[name="voice_files[]"]');
+        fields.forEach(fileField => {
+            fileField.classList.add('is-invalid');
+        });
+    }
+}
+
+// Helper function to clear validation errors
+function clearValidationErrors() {
+    // Remove error styling and messages from all fields
+    const invalidFields = document.querySelectorAll('.is-invalid');
+    invalidFields.forEach(field => {
+        field.classList.remove('is-invalid');
+    });
+
+    // Remove all error message elements
+    const errorMessages = document.querySelectorAll('.invalid-feedback');
+    errorMessages.forEach(element => {
+        element.remove();
+    });
+}
+
+// AI Medical Copilot section functionality
+function toggleAIMedicalCopilotForm() {
+    const copilotSection = document.getElementById('ai-medical-copilot-section');
+    const isVisible = copilotSection.style.display !== 'none';
+
+    if (isVisible) {
+        // Hide the form
+        copilotSection.style.display = 'none';
+        // Scroll to the Next Steps section
+        document.querySelector('.table-card.mb-4').scrollIntoView({ behavior: 'smooth' });
+    } else {
+        // Show the form
+        copilotSection.style.display = 'block';
+        // Scroll to the AI copilot section
+        copilotSection.scrollIntoView({ behavior: 'smooth' });
+
+        // Initialize the AI Medical Copilot for this appointment
+        const appointmentId = {{ $appointment->id }};
+        initializeAIMedicalCopilot(appointmentId);
+    }
+}
+
+// Function to initialize AI Medical Copilot
+function initializeAIMedicalCopilot(appointmentId) {
+    // Show loading state
+    document.getElementById('copilotLoadingSection').style.display = 'block';
+    document.getElementById('copilotContentSection').style.display = 'none';
+    document.getElementById('copilotErrorSection').style.display = 'none';
+
+    // Collect structured data from the appointment
+    const structuredData = collectStructuredData(appointmentId);
+
+    // Call AI Medical Copilot API
+    callAIMedicalCopilotAPI(appointmentId, structuredData);
+}
+
+// Function to collect structured data from the appointment
+function collectStructuredData(appointmentId) {
+    // This would be populated with actual data from the appointment
+    // For now, we'll use sample data that matches the required structure
+
+    return {
+        complaint: {
+            chief_complaint: document.querySelector('[data-appointment-reason]')?.textContent || '{{ $appointment->reason }}',
+            onset: 'recent',
+            severity: 'moderate',
+            associated_symptoms: []
+        },
+        vitals: {
+            bp: '',
+            hr: null,
+            spo2: null,
+            temperature: null
+        },
+        history: {
+            chronic_conditions: [],
+            medications: [],
+            allergies: []
+        },
+        labs: {},
+        previous_visits: {
+            last_diagnoses: [],
+            recent_er_visits: [],
+            patterns: []
+        }
+    };
+}
+
+// Function to call AI Medical Copilot API
+function callAIMedicalCopilotAPI(appointmentId, structuredData) {
+    fetch(`/ai/appointments/${appointmentId}/medical-copilot`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            complaint: structuredData.complaint,
+            vitals: structuredData.vitals,
+            history: structuredData.history,
+            labs: structuredData.labs,
+            previous_visits: structuredData.previous_visits
+        })
+    })
+    .then(response => response.json())
+    .then(response => {
+        // Hide loading, show content
+        document.getElementById('copilotLoadingSection').style.display = 'none';
+        document.getElementById('copilotContentSection').style.display = 'block';
+
+        // Check for errors
+        if (response.error) {
+            showCopilotErrorSection(response.message || response.error);
+            return;
+        }
+
+        if (response.disabled) {
+            showCopilotErrorSection('AI Medical Copilot is currently disabled');
+            return;
+        }
+
+        // Store the response for saving
+        window.currentCopilotResponse = response;
+        window.currentAppointmentId = appointmentId;
+
+        // Populate the UI with AI analysis
+        populateCopilotUISection(response);
+
+        // Log success
+        console.log('AI Medical Copilot analysis successful', response);
+    })
+    .catch(error => {
+        // Hide loading, show error
+        document.getElementById('copilotLoadingSection').style.display = 'none';
+
+        const errorMessage = error.message || 'Failed to connect to AI Medical Copilot';
+        showCopilotErrorSection(errorMessage);
+
+        // Log error
+        console.error('AI Medical Copilot error:', errorMessage);
+    });
+}
+
+// Function to show error in section
+function showCopilotErrorSection(message) {
+    document.getElementById('copilotErrorMessageSection').textContent = message;
+    document.getElementById('copilotErrorSection').style.display = 'block';
+    document.getElementById('copilotContentSection').style.display = 'none';
+}
+
+// Function to populate UI with AI analysis in section
+function populateCopilotUISection(response) {
+    // Medical Case Summary
+    const summaryContent = `
+        <p class="mb-0">${response.medical_case_summary || 'No summary available'}</p>
+        <div class="mt-2 small text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Smart summary for quick case understanding
+        </div>
+    `;
+    document.getElementById('copilotSummarySection').innerHTML = summaryContent;
+
+    // Differential Considerations
+    let considerationsHtml = '<p><strong>Possible considerations (not diagnoses):</strong></p>';
+    if (Array.isArray(response.differential_considerations) && response.differential_considerations.length > 0) {
+        considerationsHtml += '<ul class="copilot-list">';
+        response.differential_considerations.forEach(item => {
+            if (typeof item === 'object' && item.consideration) {
+                considerationsHtml += `<li>
+                    <strong>${item.consideration}</strong>
+                    ${item.rationale ? `<br><small class="text-muted">${item.rationale}</small>` : ''}
+                </li>`;
+            } else {
+                // Fallback for string format
+                considerationsHtml += `<li>${item}</li>`;
+            }
+        });
+        considerationsHtml += '</ul>';
+    } else {
+        considerationsHtml = '<p class="text-muted">No specific considerations identified based on current data.</p>';
+    }
+    document.getElementById('copilotConsiderationsSection').innerHTML = considerationsHtml;
+
+    // Follow-up Questions
+    let questionsHtml = '<p><strong>Questions to help complete the clinical picture:</strong></p>';
+    if (Array.isArray(response.follow_up_questions) && response.follow_up_questions.length > 0) {
+        questionsHtml += '<ul class="copilot-list">';
+        response.follow_up_questions.forEach(question => {
+            questionsHtml += `<li>${question}</li>`;
+        });
+        questionsHtml += '</ul>';
+    } else {
+        questionsHtml = '<p class="text-muted">No additional questions suggested based on current information.</p>';
+    }
+    document.getElementById('copilotQuestionsSection').innerHTML = questionsHtml;
+
+    // Red Flags
+    let redFlagsHtml = '<p><strong>Potential red flags detected:</strong></p>';
+    if (Array.isArray(response.red_flags) && response.red_flags.length > 0) {
+        redFlagsHtml += '<ul class="copilot-list">';
+        response.red_flags.forEach(flag => {
+            redFlagsHtml += `<li>${flag}</li>`;
+        });
+        redFlagsHtml += '</ul>';
+    } else {
+        redFlagsHtml = '<p class="text-success">No immediate red flags detected based on available data.</p>';
+    }
+    document.getElementById('copilotRedFlagsSection').innerHTML = redFlagsHtml;
+
+    // Compliance label
+    if (response.compliance && response.compliance.label) {
+        document.getElementById('copilotComplianceLabelSection').textContent = response.compliance.label;
+    }
+
+    // Patient History (if available in response)
+    if (response.patient_history) {
+        const history = response.patient_history;
+        let historyHtml = '';
+
+        if (Array.isArray(history.previous_diagnoses) && history.previous_diagnoses.length > 0) {
+            historyHtml += '<h6 class="text-primary mb-2"><i class="fas fa-stethoscope me-1"></i>Previous Diagnoses:</h6>';
+            historyHtml += '<ul class="copilot-list mb-3">';
+            history.previous_diagnoses.forEach(diagnosis => {
+                historyHtml += `<li>${diagnosis}</li>`;
+            });
+            historyHtml += '</ul>';
+        }
+
+        if (Array.isArray(history.chronic_conditions) && history.chronic_conditions.length > 0) {
+            historyHtml += '<h6 class="text-primary mb-2"><i class="fas fa-heartbeat me-1"></i>Chronic Conditions:</h6>';
+            historyHtml += '<ul class="copilot-list mb-3">';
+            history.chronic_conditions.forEach(condition => {
+                historyHtml += `<li>${condition}</li>`;
+            });
+            historyHtml += '</ul>';
+        }
+
+        if (Array.isArray(history.previous_ai_analyses) && history.previous_ai_analyses.length > 0) {
+            historyHtml += '<h6 class="text-primary mb-2"><i class="fas fa-brain me-1"></i>Previous AI Analyses:</h6>';
+            history.previous_ai_analyses.forEach(analysis => {
+                historyHtml += `<div class="border-start border-info border-3 ps-3 mb-3">
+                    <small class="text-muted">${analysis.generated_at}</small>
+                    <p class="mb-1">${analysis.summary}</p>
+                    ${Array.isArray(analysis.red_flags) && analysis.red_flags.length > 0 ?
+                        `<small class="text-danger">⚠️ Red flags: ${analysis.red_flags.join(', ')}</small>` :
+                        '<small class="text-success">✓ No red flags</small>'}
+                </div>`;
+            });
+        }
+
+        if (!historyHtml) {
+            historyHtml = '<p class="text-muted">No significant patient history available.</p>';
+        }
+
+        document.getElementById('copilotHistorySection').innerHTML = historyHtml;
+    }
+
+    // Add disclaimer if available
+    if (response.legal_disclaimer) {
+        const disclaimerDiv = document.createElement('div');
+        disclaimerDiv.className = 'copilot-disclaimer mt-3';
+        disclaimerDiv.innerHTML = `<i class="fas fa-shield-alt me-1"></i> ${response.legal_disclaimer}`;
+        document.querySelector('.copilot-disclaimer').parentNode.appendChild(disclaimerDiv);
+    }
+
+    // Initialize tab functionality for the section
+    initializeCopilotTabFunctionality();
+}
+
+// Function to initialize tab functionality for the section
+function initializeCopilotTabFunctionality() {
+    // Add event listeners to the tab buttons
+    const tabButtons = document.querySelectorAll('#ai-medical-copilot-section .copilot-tab');
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+
+            // Update tab buttons
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            // Update tab content
+            const tabContents = document.querySelectorAll('#ai-medical-copilot-section .copilot-tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                if (content.getAttribute('data-tab-content') === tabId) {
+                    content.classList.add('active');
+                }
+            });
+        });
+    });
+}
+
+
+// Function to collect analysis data from the current UI state
+function collectAnalysisData() {
+    // Extract data from the global response object if available
+    if (window.currentCopilotResponse) {
+        return window.currentCopilotResponse;
+    }
+
+    // Fallback: extract from current display (less reliable)
+    return {
+        medical_case_summary: document.querySelector('#copilotSummarySection p')?.textContent.trim() || 'No summary available',
+        differential_considerations: extractListItems('#copilotConsiderationsSection li'),
+        follow_up_questions: extractListItems('#copilotQuestionsSection li'),
+        red_flags: extractListItems('#copilotRedFlagsSection li'),
+        disclaimer: 'This content is generated by AI Medical Copilot for clinical decision support only. All medical decisions must be made by qualified healthcare professionals.',
+        compliance: {
+            ai_generated: true,
+            physician_verification_required: true,
+            label: 'AI-generated draft. Physician verified.',
+            timestamp: new Date().toISOString(),
+            generated_by: 'AI Medical Copilot',
+            version: 'ai-copilot-clinical-v1.1'
+        },
+        legal_disclaimer: 'This content is generated by AI Medical Copilot for clinical decision support only. All medical decisions must be made by qualified healthcare professionals.'
+    };
+}
+
+// Helper function to extract list items from HTML
+function extractListItems(selector) {
+    const items = [];
+    const elements = document.querySelectorAll(selector);
+    elements.forEach(element => {
+        const text = element.cloneNode(true).textContent.trim();
+        if (text && text !== 'Loading...' && !text.includes('Loading')) {
+            items.push(text);
+        }
+    });
+    return items;
+}
+
+// Function to save AI copilot analysis
+function saveAICopilotAnalysis(appointmentId, analysisData, includeInNote) {
+    fetch(`/ai/appointments/${appointmentId}/ai-analyses/save`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            analysis_data: analysisData,
+            include_in_note: includeInNote
+        })
+    })
+    .then(response => response.json())
+    .then(response => {
+        if (response.success) {
+            showNotification('AI Medical Copilot analysis saved successfully!', 'success');
+
+            // Close the section after a short delay
+            setTimeout(() => {
+                document.getElementById('ai-medical-copilot-section').style.display = 'none';
+            }, 1500);
+        } else {
+            showNotification(response.message || 'Failed to save analysis', 'error');
+        }
+    })
+    .catch(error => {
+        const errorMessage = error.message || 'Failed to save AI analysis';
+        showNotification(errorMessage, 'error');
+        console.error('Save AI analysis error:', errorMessage);
+    });
+}
+
+// Function to view patient's AI analysis history
+function viewPatientAIAnalyses(patientId) {
+    // Show the AI history section
+    const historySection = document.getElementById('ai-history-section');
+    let shouldScroll = true;
+
+    if (!historySection) {
+        // Create the AI history section if it doesn't exist
+        createAIHistorySection();
+    } else {
+        // Check if section is currently visible
+        const isVisible = historySection.style.display !== 'none';
+        if (!isVisible) {
+            // If it's hidden, show it
+            historySection.style.display = 'block';
+        } else {
+            // If it's already visible, we might want to scroll anyway to bring it into view
+            shouldScroll = true;
+        }
+    }
+
+    // Load patient AI analyses
+    loadPatientAIAnalyses(patientId);
+
+    // Small delay to ensure DOM is updated before scrolling
+    setTimeout(() => {
+        if (shouldScroll) {
+            const section = document.getElementById('ai-history-section');
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    }, 100);
+}
+
+// Function to create AI history section
+function createAIHistorySection() {
+    // Check if section already exists
+    if (document.getElementById('ai-history-section')) {
+        return;
+    }
+
+    // Create the section element
+    const section = document.createElement('div');
+    section.id = 'ai-history-section';
+    section.className = 'table-card';
+    section.style.display = 'block'; // Start visible to show loading
+
+    section.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="mb-0 fw-bold text-info">
+                    <i class="fas fa-history me-2"></i>Patient AI Analysis History
+                </h4>
+                <p class="mb-0 text-muted small">Previous AI Medical Copilot analyses for this patient</p>
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAIHistorySection()">
+                <i class="fas fa-times me-1"></i>Close
+            </button>
+        </div>
+
+        <div id="aiHistoryContentSection">
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading AI analysis history...</p>
+            </div>
+        </div>
+    `;
+
+    // Insert the section after the AI Medical Copilot section or at the end of content
+    const copilotSection = document.getElementById('ai-medical-copilot-section');
+    const diagnosisSection = document.getElementById('diagnosis-section');
+
+    if (copilotSection) {
+        copilotSection.parentNode.insertBefore(section, copilotSection.nextSibling);
+    } else if (diagnosisSection) {
+        diagnosisSection.parentNode.insertBefore(section, diagnosisSection.nextSibling);
+    } else {
+        // If neither section exists, append to the main content area
+        const mainContent = document.querySelector('.dashboard-container .container');
+        if (mainContent) {
+            mainContent.appendChild(section);
+        }
+    }
+}
+
+// Function to toggle AI history section
+function toggleAIHistorySection() {
+    const historySection = document.getElementById('ai-history-section');
+    if (!historySection) return;
+
+    const isVisible = historySection.style.display !== 'none';
+
+    if (isVisible) {
+        // Hide the section
+        historySection.style.display = 'none';
+        // Scroll to the Next Steps section
+        document.querySelector('.table-card.mb-4').scrollIntoView({ behavior: 'smooth' });
+    } else {
+        // Show the section
+        historySection.style.display = 'block';
+        // Scroll to the AI history section
+        historySection.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// Function to load patient AI analyses
+function loadPatientAIAnalyses(patientId) {
+    const contentElement = document.getElementById('aiHistoryContentSection');
+    if (!contentElement) return;
+
+    contentElement.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading AI analysis history...</p>
+        </div>
+    `;
+
+    // Log for debugging
+    console.log('Loading AI analyses for patient ID:', patientId);
+    console.log('Fetching from URL:', `/ai/patients/${patientId}/ai-analyses`);
+
+    fetch(`/ai/patients/${patientId}/ai-analyses`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(response => {
+        console.log('API Response:', response);
+        // The response is paginated, so we need to use response.data which contains the analyses
+        if (response.data !== undefined) {
+            displayAIAnalysesSection(response.data || []);
+        } else {
+            contentElement.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${response.message || 'Failed to load AI analysis history'}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Detailed error:', error);
+        contentElement.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Failed to load AI analysis history: ${error.message}. Please check browser console for details.
+            </div>
+        `;
+        console.error('Load AI analysis error:', error);
+    });
+}
+
+// Function to display AI analyses in the section
+function displayAIAnalysesSection(analyses) {
+    const contentElement = document.getElementById('aiHistoryContentSection');
+    if (!contentElement) return;
+
+    if (!analyses || analyses.length === 0) {
+        contentElement.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-brain fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No AI Analyses Found</h5>
+                <p class="text-muted">This patient hasn't had any AI Medical Copilot analyses saved yet.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '<div class="ai-analyses-timeline">';
+
+    analyses.forEach(analysis => {
+        const analysisData = typeof analysis.analysis_data === 'string' ?
+            JSON.parse(analysis.analysis_data) : analysis.analysis_data;
+
+        html += `
+            <div class="ai-analysis-card mb-4">
+                <div class="card border-primary">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">
+                                <i class="fas fa-brain me-2"></i>AI Medical Copilot Analysis
+                            </h6>
+                            <small>${new Date(analysis.generated_at).toLocaleDateString()} at ${new Date(analysis.generated_at).toLocaleTimeString()}</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            ${analysis.status === 'reviewed' ?
+                                '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Reviewed</span>' :
+                                '<span class="badge bg-warning"><i class="fas fa-clock me-1"></i>Pending Review</span>'}
+                            <a href="/ai/ai-analyses/${analysis.id}" class="btn btn-sm btn-primary" target="_blank">
+                                <i class="fas fa-eye me-1"></i>View Details
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary"><i class="fas fa-file-medical me-1"></i>Summary</h6>
+                                <p class="mb-3">${analysisData.medical_case_summary || 'No summary available'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-warning"><i class="fas fa-list-check me-1"></i>Key Considerations</h6>
+                                <ul class="mb-3 small">
+                                    ${displayConsiderationsSection(analysisData.differential_considerations || [])}
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-info"><i class="fas fa-question-circle me-1"></i>Follow-up Questions</h6>
+                                <ul class="mb-3 small">
+                                    ${displayQuestionsSection(analysisData.follow_up_questions || [])}
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-danger"><i class="fas fa-flag me-1"></i>Red Flags</h6>
+                                <ul class="mb-3 small">
+                                    ${displayRedFlagsSection(analysisData.red_flags || [])}
+                                </ul>
+                            </div>
+                        </div>
+                        ${analysis.reviewed_at ? `
+                            <div class="border-top pt-3 mt-3">
+                                <h6 class="text-success"><i class="fas fa-user-md me-1"></i>Physician Review</h6>
+                                <p class="mb-1 small text-muted">Reviewed by Dr. ${analysis.reviewer?.name || 'Unknown'} on ${new Date(analysis.reviewed_at).toLocaleDateString()}</p>
+                                ${analysis.doctor_notes ? `<p class="mb-0">${analysis.doctor_notes}</p>` : '<p class="text-muted small">No additional notes</p>'}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    contentElement.innerHTML = html;
+}
+
+// Helper functions for displaying analysis components in the section
+function displayConsiderationsSection(considerations) {
+    if (!considerations || considerations.length === 0) return '<li class="text-muted">No considerations recorded</li>';
+
+    return considerations.slice(0, 3).map(item => {
+        if (typeof item === 'object' && item.consideration) {
+            return `<li><strong>${item.consideration}</strong><br><small class="text-muted">${item.rationale || ''}</small></li>`;
+        } else {
+            return `<li>${item}</li>`;
+        }
+    }).join('');
+}
+
+function displayQuestionsSection(questions) {
+    if (!questions || questions.length === 0) return '<li class="text-muted">No questions recorded</li>';
+    return questions.slice(0, 3).map(question => `<li>${question}</li>`).join('');
+}
+
+function displayRedFlagsSection(flags) {
+    if (!flags || flags.length === 0) return '<li class="text-success">No red flags detected</li>';
+    return flags.slice(0, 3).map(flag => `<li class="text-danger">${flag}</li>`).join('');
+}
 </script>
 @endpush

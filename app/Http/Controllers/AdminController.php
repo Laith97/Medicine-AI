@@ -31,13 +31,30 @@ class AdminController extends Controller
     /**
      * Display a listing of all users.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with(['setting', 'patientAnalyses', 'monthlyInvoiceSetting', 'doctor', 'hospital'])
+        // Get doctors with their relationships
+        $doctors = User::with(['setting', 'monthlyInvoiceSetting', 'doctor', 'hospital', 'doctor.specialty'])
+                    ->where('role', 'doctor')
                     ->orderBy('created_at', 'desc')
-                    ->paginate(15);
+                    ->paginate(10, ['*'], 'doctors_page');
 
-        return view('admin.users.index', compact('users'));
+        // Get patients with their primary doctor info
+        $patients = User::with(['setting', 'primaryDoctor' => function($query) {
+                        $query->with('doctor');
+                    }])
+                    ->where('role', 'patient')
+                    ->withCount(['appointments'])
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(10, ['*'], 'patients_page');
+
+        // Get counts
+        $stats = [
+            'total_doctors' => User::where('role', 'doctor')->count(),
+            'total_patients' => User::where('role', 'patient')->count(),
+        ];
+
+        return view('admin.users.index', compact('doctors', 'patients', 'stats'));
     }
 
     /**
@@ -689,6 +706,7 @@ public function destroy(User $user)
                   ->selectRaw('user_id, SUM(total_tokens) as total_tokens, SUM(cost_estimate) as total_cost')
                   ->groupBy('user_id');
         }])
+        ->groupBy('id')
         ->having('total_requests', '>', 0)
         ->orderBy('total_requests', 'desc')
         ->limit(10)

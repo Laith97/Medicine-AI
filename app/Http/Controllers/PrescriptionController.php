@@ -8,6 +8,7 @@ use App\Models\Appointment;
 use App\Models\User; // Patients are Users
 use App\Models\PatientData; // Assuming patient_data table model exists
 use App\Services\AIAssistant;
+use App\Services\DrugInteractionService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -95,6 +96,29 @@ class PrescriptionController extends Controller
             'ai_risk_flags' => $aiRiskFlags,
         ]);
 
+        // Drug Interaction Validation
+        $drugInteractionService = new DrugInteractionService();
+        $validationResult = $drugInteractionService->validatePrescription($prescription);
+
+        // Store drug interaction results in database
+        $prescription->drug_interaction_warnings = $validationResult['warnings'];
+        $prescription->drug_interaction_errors = $validationResult['errors'];
+        $prescription->drug_interaction_severity = $validationResult['severity'];
+        $prescription->drug_interaction_validated_at = now();
+        $prescription->force_override = $request->boolean('force_prescription', false);
+
+        // Add drug interaction warnings/errors to AI risk flags for backward compatibility
+        if (!empty($validationResult['warnings']) || !empty($validationResult['errors'])) {
+            $prescription->ai_risk_flags = array_merge($aiRiskFlags, [
+                'drug_interactions' => [
+                    'warnings' => $validationResult['warnings'],
+                    'errors' => $validationResult['errors'],
+                    'severity' => $validationResult['severity'],
+                    'is_safe' => $validationResult['is_safe']
+                ]
+            ]);
+        }
+
         // AI Integration
         if ($request->suggest_ai && config('ai.prescription_suggestions.enabled', true)) {
             $aiAssistant = new AIAssistant();
@@ -107,14 +131,13 @@ class PrescriptionController extends Controller
                 'patient_gender' => $patientData['gender'],
                 'patient_name' => $patientData['name'],
                 'doctor_notes' => $appointment->doctor_notes,
-                'appointment_symptoms' => $appointment->symptoms,
             ];
 
             try {
                 $aiResult = $aiAssistant->generatePrescriptionSuggestions($appointment, $symptoms, $patientData['allergies'], $patientData['past_medications'], $additionalData);
 
                 $prescription->ai_suggestions = $aiResult['suggestions'] ?? [];
-                $prescription->ai_risk_flags = $aiResult['risk_flags'] ?? [];
+                $prescription->ai_risk_flags = array_merge($prescription->ai_risk_flags ?? [], $aiResult['risk_flags'] ?? []);
             } catch (\Exception $e) {
                 // Handle error gracefully, log or set empty
                 Log::error('AI Suggestion failed: ' . $e->getMessage());
@@ -124,6 +147,14 @@ class PrescriptionController extends Controller
             Log::info('AI prescription suggestions requested but disabled by feature flag', [
                 'appointment_id' => $appointmentId,
                 'doctor_id' => Auth::id(),
+            ]);
+        }
+
+        // Check if prescription should be blocked due to severe interactions
+        if (!$validationResult['is_safe'] && $request->boolean('force_prescription', false) === false) {
+            return redirect()->back()->withInput()->withErrors([
+                'medication_name' => 'This prescription cannot be created due to severe drug interactions or contraindications. Please review the warnings and consider alternative medications.',
+                'drug_interactions' => $validationResult
             ]);
         }
 

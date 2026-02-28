@@ -2,22 +2,83 @@
 
 @section('title', 'Register - Choose Your Account Type')
 
-@section('content')
-<div class="dashboard-header py-2 border-bottom">
-    <h2 class="h1 mb-1" style="font-weight: 700;">Register</h2>
-    <p>Choose your account type to get started</p>
-</div>
+@push('styles')
+<style>
+/* Professional Dashboard Header Styling */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    margin-top: 90px; /* Add space from fixed top-bar */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    position: relative;
+    overflow: hidden;
+}
 
-<div class="auth-wrapper hero-section d-flex align-items-center" style="background: linear-gradient(135deg, #fbfdff00 0%, #34495e 100%); min-height: 100vh; padding: 2rem 0;">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-12 col-md-8 col-lg-6">
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+}
+
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header h2::before {
+    content: '👥';
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+}
+</style>
+@endpush
+
+@section('content')
+<div class="auth-page">
+    <div class="container-fluid">
+        <div class="row justify-content-center min-vh-100 align-items-center">
+            <div class="col-12 col-md-10 col-lg-8 col-xl-7">
+
+                <!-- Main form card -->
                 <div class="auth-card">
                     <!-- Header -->
                     <div class="auth-header text-center mb-5">
-                        <div class="auth-logo mb-3">
-                            <i class="bi bi-heart-pulse" style="font-size: 3rem; color: #DE6262;"></i>
-                        </div>
+                                            <i class="bi bi-heart-pulse text-primary mb-3" style="font-size: 3rem;"></i>
+
                         <h2 class="auth-title">Join Our Platform</h2>
                         <p class="auth-subtitle">Select the account type that best describes you</p>
                     </div>
@@ -25,21 +86,21 @@
                     <!-- Registration Options -->
                     <div class="row g-4">
                         <!-- Doctor Registration -->
-                        <div class="col-12">
+                        <div class="col-12 col-lg-6 col-md-6 mx-auto">
                             <div class="registration-option-card doctor-card" onclick="window.location.href='/register-doctor'">
-                                <div class="card-body text-center p-4">
+                                <div class="card-body text-center p-4 d-flex flex-column h-100">
                                     <div class="option-icon mb-3">
                                         <i class="fas fa-user-doctor" style="font-size: 3rem; color: #DE6262;"></i>
                                     </div>
                                     <h4 class="option-title mb-3">Healthcare Professional</h4>
                                     <p class="option-description mb-4">
-                                        Register as a doctor, nurse, or healthcare provider to access AI-powered diagnosis tools, patient management, and professional features.
+                                        Register as a doctor, nurse, or healthcare provider to access clinical decision support tools, patient management, and professional features.
                                     </p>
                                     <div class="option-features mb-4">
                                         <div class="row text-start">
                                             <div class="col-6">
                                                 <i class="fas fa-check text-success me-2"></i>
-                                                <small>AI Diagnosis</small>
+                                                <small>Clinical Decision Support</small>
                                             </div>
                                             <div class="col-6">
                                                 <i class="fas fa-check text-success me-2"></i>
@@ -64,9 +125,9 @@
                         </div>
 
                         <!-- Patient Registration -->
-                        <div class="col-12">
+                        <div class="col-12 col-lg-6 col-md-6 mx-auto">
                             <div class="registration-option-card patient-card" onclick="window.location.href='{{ route('patient.register') }}'">
-                                <div class="card-body text-center p-4">
+                                <div class="card-body text-center p-4 d-flex flex-column h-100">
                                     <div class="option-icon mb-3">
                                         <i class="fas fa-user-injured" style="font-size: 3rem; color: #4A90E2;"></i>
                                     </div>
@@ -123,18 +184,25 @@
                         </a>
                     </div>
                 </div>
+
+                <!-- Footer links -->
+                <div class="text-center mt-4">
+                    <small class="text-muted">Need help? <a href="{{ route('contact') }}" class="text-decoration-none">Contact Support</a></small>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-.auth-wrapper {
+.auth-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     position: relative;
     overflow: hidden;
 }
 
-.auth-wrapper::before {
+.auth-page::before {
     content: '';
     position: absolute;
     top: 0;
@@ -143,17 +211,20 @@
     bottom: 0;
     background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="a" cx="50%" cy="50%"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.1"/><stop offset="100%" stop-color="%23ffffff" stop-opacity="0"/></radialGradient></defs><circle cx="200" cy="200" r="100" fill="url(%23a)"/><circle cx="800" cy="300" r="150" fill="url(%23a)"/><circle cx="400" cy="700" r="120" fill="url(%23a)"/></svg>');
     opacity: 0.3;
+    z-index: 1;
 }
 
 .auth-card {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px);
     border-radius: 20px;
     padding: 3rem;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     position: relative;
-    z-index: 1;
+    z-index: 2;
+    max-width: 1000px;
+    width: 100%;
 }
 
 .auth-title {
@@ -172,16 +243,37 @@
 .registration-option-card {
     background: white;
     border: 2px solid #e9ecef;
-    border-radius: 16px;
+    border-radius: 20px;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    position: relative;
+    overflow: hidden;
+    min-height: 450px;
+    display: flex;
+    flex-direction: column;
 }
 
 .registration-option-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    transform: translateY(-8px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
     border-color: #DE6262;
+}
+
+.registration-option-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #4A90E2 100%);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.registration-option-card:hover::before {
+    transform: scaleX(1);
 }
 
 .doctor-card:hover {
@@ -235,6 +327,38 @@
 .option-features small {
     color: #495057;
     font-weight: 500;
+}
+
+.registration-option-card .card-body {
+    justify-content: space-between;
+}
+
+.registration-option-card .card-body > *:last-child {
+    margin-top: auto;
+}
+
+/* Force side-by-side layout for registration cards */
+@media (min-width: 768px) {
+    .registration-option-card {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+    }
+
+    .row.g-4 > [class*="col-"] {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+
+    /* Override any conflicting Bootstrap styles */
+    .row.g-4 .col-12.col-lg-6.col-md-6.mx-auto {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+        width: 50% !important;
+    }
 }
 
 .auth-btn {

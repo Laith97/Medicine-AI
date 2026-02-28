@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\GetCodeSuggestionsRequest;
+use App\Http\Requests\PredictDenialRequest;
+use App\Http\Requests\SuggestCodesRequest;
 use App\Models\Claim;
 use App\Services\CodeSuggestionService;
 use App\Services\ClaimDenialPredictionService;
@@ -26,14 +29,9 @@ class BillingController extends Controller
         $this->underpaymentDetectionService = $underpaymentDetectionService;
     }
 
-    public function suggestCodes(Request $request): JsonResponse
+    public function suggestCodes(SuggestCodesRequest $request): JsonResponse
     {
-        $request->validate([
-            'encounter_id' => 'required|integer',
-            'clinical_text' => 'required|string',
-        ]);
-
-        $clinicalText = $request->input('clinical_text');
+        $clinicalText = $request->clinical_text;
         $suggestions = $this->codeSuggestionService->suggestCodes($clinicalText);
 
         if (isset($suggestions['error'])) {
@@ -50,13 +48,9 @@ class BillingController extends Controller
     /**
      * Predict claim denial risk
      */
-    public function predictDenial(Request $request): JsonResponse
+    public function predictDenial(PredictDenialRequest $request): JsonResponse
     {
-        $request->validate([
-            'claim_id' => 'required|string',
-        ]);
-
-        $claimId = $request->input('claim_id');
+        $claimId = $request->claim_id;
 
         // Find the claim
         $claim = Claim::where('claim_id', $claimId)->first();
@@ -112,18 +106,11 @@ class BillingController extends Controller
     /**
      * Get AI-powered code suggestions for clinical description
      */
-    public function getCodeSuggestions(Request $request): JsonResponse
+    public function getCodeSuggestions(GetCodeSuggestionsRequest $request): JsonResponse
     {
-        $request->validate([
-            'description' => 'required|string',
-            'patient_info' => 'nullable|array',
-            'patient_info.age' => 'nullable|integer|min:0|max:150',
-            'patient_info.gender' => 'nullable|string|in:male,female,other',
-        ]);
-
         try {
             // For now, just use the description - the service expects a string
-            $suggestions = $this->codeSuggestionService->suggestCodes($request->input('description'));
+            $suggestions = $this->codeSuggestionService->suggestCodes($request->description);
 
             return response()->json([
                 'icd10_codes' => $suggestions['suggested_icd10'] ?? [],
@@ -139,13 +126,9 @@ class BillingController extends Controller
     /**
      * Get denial risk prediction for claim data
      */
-    public function getDenialPrediction(Request $request): JsonResponse
+    public function getDenialPrediction(PredictDenialRequest $request): JsonResponse
     {
-        $request->validate([
-            'claim_id' => 'required|string',
-        ]);
-
-        $claimId = $request->input('claim_id');
+        $claimId = $request->claim_id;
 
         // Find the claim
         $claim = Claim::where('claim_id', $claimId)->first();

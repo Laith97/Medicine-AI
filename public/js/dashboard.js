@@ -1013,7 +1013,7 @@ function setupPatientFilters() {
 // Set up patient modal functionality
 function setupPatientModal() {
     // Get all patient records from PHP
-    const allRecords = [];
+    const allRecords = window.records || [];
 
     // Patient modal elements
     const patientModal = document.getElementById('patientModal');

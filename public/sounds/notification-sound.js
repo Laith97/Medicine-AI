@@ -78,20 +78,20 @@ window.notificationSound = new NotificationSound();
 // Integrate with enhanced notification system
 if (typeof window.enhancedNotificationSystem !== 'undefined') {
     const originalPlayNotificationSound = window.enhancedNotificationSystem.playNotificationSound;
-    
+
     window.enhancedNotificationSystem.playNotificationSound = function() {
-        console.log('🔊 Playing notification sound using enhanced system');
+        // Playing notification sound using enhanced system
         try {
             // Use the notification sound if available
             if (window.notificationSound && typeof window.notificationSound.play === 'function') {
                 window.notificationSound.play();
-                console.log('✅ Sound played successfully using notification sound');
+                // Sound played successfully using notification sound
             } else {
                 // Fallback to original method
                 originalPlayNotificationSound.call(this);
             }
         } catch (error) {
-            console.error('❌ Sound error:', error);
+            // Sound error:
             // Try fallback method
             this.playFallbackSound();
         }

@@ -23,6 +23,12 @@
     color: white;
 }
 
+.dashboard-header h2::before {
+    content: '🎙️';
+    font-size: 2rem;
+    margin-right: 0.5rem;
+}
+
 .dashboard-header p {
     margin: 0.5rem 0 0 0;
     opacity: 0.9;
@@ -928,7 +934,6 @@ body:not(.modal-open) .modal-backdrop {
 .dashboard-container {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     min-height: 100vh;
-    padding: 2rem 0;
 }
 footer {
     position: relative;
@@ -939,7 +944,7 @@ footer {
     font-weight: 600;
     color: #1f2937;
     background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-    border-left: 4px solid #3b82f6;
+    border-left: 4px solid #DE6262;
     padding: 12px 16px;
     margin: 8px 0;
     border-radius: 8px;

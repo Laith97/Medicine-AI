@@ -4,8 +4,78 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Services\AppointmentBroadcastService;
 
+/**
+ * Appointment Model
+ *
+ * Represents medical appointments in the MedcuraAI system. Supports both
+ * registered patients and guest appointments with comprehensive status
+ * tracking, payment processing, and real-time updates.
+ *
+ * Key Features:
+ * - Multi-status appointment lifecycle (pending, confirmed, completed, cancelled, no_show)
+ * - Guest appointment support with email verification
+ * - Real-time status broadcasting
+ * - Payment processing integration
+ * - Reminder system
+ * - Kiosk integration
+ * - Optimistic locking with versioning
+ *
+ * @property int $id Unique identifier for the appointment
+ * @property int|null $patient_id ID of the registered patient (null for guest appointments)
+ * @property int $doctor_id ID of the doctor
+ * @property \Carbon\Carbon $appointment_date Scheduled date and time
+ * @property string $status Current status (pending, confirmed, completed, cancelled, no_show)
+ * @property string|null $appointment_type Type of appointment
+ * @property int|null $duration Duration in minutes
+ * @property int|null $fee Appointment fee in cents
+ * @property string|null $notes Additional notes
+ * @property string|null $cancellation_reason Reason for cancellation
+ * @property int|null $cancelled_by ID of user who cancelled
+ * @property \Carbon\Carbon|null $cancelled_at Cancellation timestamp
+ * @property \Carbon\Carbon|null $confirmed_at Confirmation timestamp
+ * @property \Carbon\Carbon|null $completed_at Completion timestamp
+ * @property string|null $payment_status Payment status
+ * @property string|null $payment_intent_id Stripe payment intent ID
+ * @property string|null $meeting_link Video meeting link
+ * @property string|null $meeting_id Meeting identifier
+ * @property \Carbon\Carbon|null $reminder_sent_at Reminder sent timestamp
+ * @property bool $follow_up_required Whether follow-up is required
+ * @property \Carbon\Carbon|null $follow_up_date Follow-up date
+ * @property bool $prescription_given Whether prescription was given
+ * @property int|null $visit_number Visit number for patient
+ * @property string $appointment_number Unique appointment number
+ * @property \Carbon\Carbon|null $appointment_end End time (calculated or stored)
+ * @property string|null $reason Reason for visit
+ * @property string|null $symptoms Patient symptoms
+ * @property string|null $doctor_notes Doctor's notes
+ * @property string|null $patient_notes Patient's notes
+ * @property int|null $consultation_fee Consultation fee in cents
+ * @property bool $reminder_sent Whether reminder was sent
+ * @property int|null $kiosk_id Associated kiosk ID
+ * @property int $version Version number for optimistic locking
+ * @property string|null $guest_name Guest patient name
+ * @property string|null $guest_email Guest patient email
+ * @property string|null $guest_phone Guest patient phone
+ * @property \Carbon\Carbon|null $guest_date_of_birth Guest patient date of birth
+ * @property string|null $guest_gender Guest patient gender
+ * @property string|null $guest_address Guest patient address
+ * @property string|null $verification_token Email verification token
+ * @property \Carbon\Carbon|null $token_expires_at Token expiration time
+ * @property bool $is_verified Whether guest appointment is verified
+ * @property \Carbon\Carbon $created_at Creation timestamp
+ * @property \Carbon\Carbon $updated_at Last update timestamp
+ *
+ * Relationships:
+ * @property-read \App\Models\Doctor $doctor Associated doctor
+ * @property-read \App\Models\User|null $patient Associated registered patient
+ * @property-read \App\Models\Review|null $review Appointment review
+ * @property-read \Illuminate\Database\Eloquent\Collection $prescriptions Appointment prescriptions
+ * @property-read \App\Models\Kiosk|null $kiosk Associated kiosk
+ */
 class Appointment extends Model
 {
     use HasFactory;
@@ -25,6 +95,8 @@ class Appointment extends Model
         'patient_notes',
         'consultation_fee',
         'reminder_sent',
+        'kiosk_id',
+        'version',
         // Guest patient fields
         'guest_name',
         'guest_email',
@@ -66,6 +138,27 @@ class Appointment extends Model
         static::creating(function ($appointment) {
             if (empty($appointment->appointment_number)) {
                 $appointment->appointment_number = 'APT-' . strtoupper(uniqid());
+            }
+        });
+
+        // Observe status changes for broadcasting and version increment
+        static::updating(function ($appointment) {
+            if ($appointment->isDirty()) {
+                // Increment version for optimistic locking
+                $appointment->version = $appointment->version + 1;
+
+                if ($appointment->isDirty('status')) {
+                    $oldStatus = $appointment->getOriginal('status');
+                    $newStatus = $appointment->status;
+
+                    // Only broadcast if status actually changed
+                    if ($oldStatus !== $newStatus) {
+                        // Use queue to avoid blocking the update
+                        dispatch(function () use ($appointment, $oldStatus, $newStatus) {
+                            app(AppointmentBroadcastService::class)->broadcastStatusChange($appointment->fresh(), $oldStatus, $newStatus);
+                        })->afterCommit();
+                    }
+                }
             }
         });
     }
@@ -253,37 +346,112 @@ class Appointment extends Model
 
     /**
      * Cancel the appointment
+     *
+     * Updates the appointment status to cancelled, records the cancellation
+     * details, and broadcasts the status change. Fires additional events
+     * if the appointment was previously confirmed.
+     *
+     * @param string|null $reason Optional reason for cancellation
+     * @param int|null $cancelledBy ID of the user who cancelled the appointment
+     * @return void
+     * @throws \Exception If concurrent update is detected
      */
     public function cancel($reason = null, $cancelledBy = null)
     {
-        $this->update([
-            'status' => 'cancelled',
-            'cancelled_at' => now(),
-            'cancelled_by' => $cancelledBy,
-            'cancellation_reason' => $reason,
-        ]);
+        DB::transaction(function () use ($reason, $cancelledBy) {
+            $wasConfirmed = $this->isConfirmed();
+            $oldStatus = $this->status;
+
+            $result = $this->update([
+                'status' => 'cancelled',
+                'cancelled_at' => now(),
+                'cancelled_by' => $cancelledBy,
+                'cancellation_reason' => $reason,
+            ]);
+
+            if (!$result) {
+                throw new \Exception('Concurrent update detected - appointment was modified by another process');
+            }
+
+            // Fire status change event
+            if ($oldStatus !== 'cancelled') {
+                app(AppointmentBroadcastService::class)->broadcastStatusChange($this, $oldStatus, 'cancelled', $cancelledBy);
+            }
+
+            // Fire cancellation event if appointment was previously confirmed
+            if ($wasConfirmed) {
+                event(new \App\Events\AppointmentCancelledEvent($this, $cancelledBy, $reason));
+            }
+        });
     }
 
     /**
      * Confirm the appointment
+     *
+     * Updates the appointment status to confirmed and broadcasts the status change.
+     * This method handles the transition from pending to confirmed status.
+     *
+     * @return void
+     * @throws \Exception If concurrent update is detected
      */
     public function confirm()
     {
-        $this->update([
-            'status' => 'confirmed',
-            'confirmed_at' => now(),
-        ]);
+        DB::transaction(function () {
+            $oldStatus = $this->status;
+
+            $result = $this->update([
+                'status' => 'confirmed',
+                'confirmed_at' => now(),
+            ]);
+
+            if (!$result) {
+                throw new \Exception('Concurrent update detected - appointment was modified by another process');
+            }
+
+            // Auto-assign primary doctor to patient if not already assigned
+            if ($this->patient && !$this->patient->primary_doctor_id) {
+                $this->patient->update(['primary_doctor_id' => $this->doctor->user_id]);
+            }
+
+            // Fire status change event
+            if ($oldStatus !== 'confirmed') {
+                app(AppointmentBroadcastService::class)->broadcastStatusChange($this, $oldStatus, 'confirmed');
+            }
+        });
     }
 
     /**
      * Complete the appointment
+     *
+     * Marks the appointment as completed, records the completion time,
+     * broadcasts the status change, and fires completion events for
+     * slot availability monitoring.
+     *
+     * @return void
+     * @throws \Exception If concurrent update is detected
      */
     public function complete()
     {
-        $this->update([
-            'status' => 'completed',
-            'completed_at' => now(),
-        ]);
+        DB::transaction(function () {
+            $oldStatus = $this->status;
+
+            $result = $this->update([
+                'status' => 'completed',
+                'completed_at' => now(),
+            ]);
+
+            if (!$result) {
+                throw new \Exception('Concurrent update detected - appointment was modified by another process');
+            }
+
+            // Fire status change event
+            if ($oldStatus !== 'completed') {
+                app(AppointmentBroadcastService::class)->broadcastStatusChange($this, $oldStatus, 'completed');
+            }
+
+            // Fire completion event for slot availability monitoring
+            event(new \App\Events\AppointmentCompletedEvent($this));
+        });
     }
 
     /**
@@ -342,9 +510,22 @@ class Appointment extends Model
      */
     public function markAsNoShow()
     {
-        $this->update([
-            'status' => 'no_show',
-        ]);
+        DB::transaction(function () {
+            $oldStatus = $this->status;
+
+            $result = $this->update([
+                'status' => 'no_show',
+            ]);
+
+            if (!$result) {
+                throw new \Exception('Concurrent update detected - appointment was modified by another process');
+            }
+
+            // Fire status change event
+            if ($oldStatus !== 'no_show') {
+                app(AppointmentBroadcastService::class)->broadcastStatusChange($this, $oldStatus, 'no_show');
+            }
+        });
     }
 
     /**
@@ -501,5 +682,53 @@ class Appointment extends Model
     public function scopeByGuestEmail($query, $email)
     {
         return $query->where('guest_email', $email);
+    }
+
+    /**
+     * Get the kiosk for this appointment
+     */
+    public function kiosk()
+    {
+        return $this->belongsTo(Kiosk::class);
+    }
+
+    /**
+     * Get the kiosk checkins for this appointment
+     */
+    public function kioskCheckins()
+    {
+        return $this->hasMany(KioskCheckin::class);
+    }
+
+    /**
+     * Get the kiosk payments for this appointment
+     */
+    public function kioskPayments()
+    {
+        return $this->hasMany(KioskPayment::class);
+    }
+
+    /**
+     * Confirm the appointment (alias for confirm method for backward compatibility)
+     *
+     * @return void
+     * @throws \Exception If concurrent update is detected
+     */
+    public function confirmAppointment()
+    {
+        return $this->confirm();
+    }
+
+    /**
+     * Cancel the appointment (alias for cancel method for backward compatibility)
+     *
+     * @param string|null $reason Optional reason for cancellation
+     * @param int|null $cancelledBy ID of the user who cancelled the appointment
+     * @return void
+     * @throws \Exception If concurrent update is detected
+     */
+    public function cancelAppointment($reason = null, $cancelledBy = null)
+    {
+        return $this->cancel($reason, $cancelledBy);
     }
 }

@@ -1,21 +1,81 @@
 @extends('master')
 
+@push('styles')
+<style>
+/* Professional Dashboard Header Styling */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(222, 98, 98, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
+}
+
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header h2::before {
+    content: '🎙️';
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+}
+</style>
+@endpush
+
 @section('content')
+<div class="dashboard-header">
+    <h2>Session Recordings History</h2>
+    <p>View all your saved session recordings and transcripts</p>
+</div>
 <div class="container-fluid py-4">
-    <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-2">
-                        <i class="fas fa-microphone-alt me-2"></i>
-                        Recorded Voices History
-                    </h1>
-                    <p class="text-muted mb-0">View all your saved voice transcriptions and sessions</p>
-                </div>
+            <div class="d-flex justify-content-end">
                 <a href="{{ route('ai.voice-assistant.index') }}" class="btn btn-primary">
                     <i class="fas fa-plus me-2"></i>
-                    New Recording
+                    New Ambient Listening Session
                 </a>
             </div>
         </div>
@@ -120,11 +180,11 @@
                             <div class="mb-4">
                                 <i class="fas fa-microphone-slash fa-4x text-muted"></i>
                             </div>
-                            <h4 class="text-muted">No Recorded Voices Yet</h4>
-                            <p class="text-muted mb-4">Start recording voice consultations to see them here.</p>
+                            <h4 class="text-muted">No Session Recordings Yet</h4>
+                            <p class="text-muted mb-4">Start ambient listening sessions to see them here.</p>
                             <a href="{{ route('ai.voice-assistant.index') }}" class="btn btn-primary">
                                 <i class="fas fa-microphone me-2"></i>
-                                Start Recording
+                                Start Ambient Listening Session
                             </a>
                         </div>
                     @endif

@@ -9,9 +9,11 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
 use App\Models\StripeInvoice;
 use App\Models\DoctorBlogPost;
+use App\Models\Appointment;
 use App\Policies\BlogPostPolicy;
 use App\Channels\SmsChannel;
 use App\Http\Middleware\RoleRedirectMiddleware;
+use App\Observers\AppointmentObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,6 +30,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register model observers
+        Appointment::observe(AppointmentObserver::class);
+
         // Use custom pagination view for admin pages
         Paginator::defaultView('custom.pagination');
         Paginator::defaultSimpleView('custom.pagination');
@@ -35,11 +40,11 @@ class AppServiceProvider extends ServiceProvider
         // Custom route model binding for StripeInvoice to ensure URLs are strings
         Route::bind('invoice', function ($value) {
             $invoice = StripeInvoice::findOrFail($value);
-            
+
             // Force access to URL attributes to trigger accessors
             $invoice->invoice_url;
             $invoice->invoice_pdf;
-            
+
             return $invoice;
         });
 
@@ -47,7 +52,7 @@ class AppServiceProvider extends ServiceProvider
         Route::bind('post', function ($value) {
             return DoctorBlogPost::where('slug', $value)->orWhere('id', $value)->firstOrFail();
         });
-        
+
         // Register role.redirect middleware
         Route::aliasMiddleware('role.redirect', RoleRedirectMiddleware::class);
 

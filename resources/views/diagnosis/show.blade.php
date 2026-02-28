@@ -80,19 +80,28 @@
                         </div>
                     </div>
 
-                    @if($diagnosis->voice_transcript && $diagnosis->voice_transcript !== $diagnosis->diagnosis_text)
-                        <div class="voice-transcript mb-4">
-                            <h6><i class="fas fa-microphone me-2"></i>Voice Transcript:</h6>
-                            <div class="bg-info bg-opacity-10 p-3 rounded">
-                                {!! nl2br(e($diagnosis->voice_transcript)) !!}
-                            </div>
-                            @if($diagnosis->voice_file_path)
-                                <div class="mt-2">
-                                    <button class="btn btn-sm btn-outline-info" onclick="playVoiceFile()">
-                                        <i class="fas fa-play me-1"></i>Play Original Recording
-                                    </button>
-                                </div>
-                            @endif
+                    @if($diagnosis->voice_transcripts && count($diagnosis->voice_transcripts) > 0)
+                        <div class="voice-transcripts mb-4">
+                            <h6><i class="fas fa-microphone me-2"></i>Voice Notes:</h6>
+                            @foreach($diagnosis->voice_transcripts as $index => $transcript)
+                                @if($transcript && $transcript !== $diagnosis->diagnosis_text)
+                                    <div class="voice-transcript-item mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="mb-0">Voice Note {{ $index + 1 }}</h6>
+                                            @if(isset($diagnosis->voice_files[$index]) && (!empty(trim($diagnosis->voice_files[$index])) || $diagnosis->voice_transcripts[$index]))
+                                                <button class="btn btn-sm btn-outline-info" onclick="playVoiceFile({{ $index }})">
+                                                    <i class="fas fa-play me-1"></i>Play Voice Note {{ $index + 1 }}
+                                                </button>
+                                            @else
+                                                <span class="text-muted small"><i class="fas fa-exclamation-triangle me-1"></i>Audio file not available</span>
+                                            @endif
+                                        </div>
+                                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                                            {!! nl2br(e($transcript)) !!}
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
                         </div>
                     @endif
 
@@ -366,16 +375,16 @@
 </style>
 
 <script>
-function playVoiceFile() {
+function playVoiceFile(index = 0) {
     // Create audio element
     const audio = new Audio();
-    const voiceUrl = `/diagnosis/{{ $diagnosis->id }}/voice`;
+    const voiceUrl = `/diagnosis/{{ $diagnosis->id }}/voice?file=${index}`;
 
     // Set audio source
     audio.src = voiceUrl;
 
-    // Add loading state
-    const playButton = document.querySelector('button[onclick="playVoiceFile()"]');
+    // Add loading state to the specific button
+    const playButton = document.querySelector(`button[onclick="playVoiceFile(${index})"]`);
     if (playButton) {
         const originalContent = playButton.innerHTML;
         playButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
@@ -402,7 +411,7 @@ function playVoiceFile() {
     audio.play().catch(error => {
         console.error('Error playing audio:', error);
         if (playButton) {
-            playButton.innerHTML = '<i class="fas fa-volume-up me-2"></i>Play Voice';
+            playButton.innerHTML = `<i class="fas fa-play me-1"></i>Play Voice Note ${index + 1}`;
             playButton.disabled = false;
         }
         alert('Could not play voice file. Please check if the file exists.');

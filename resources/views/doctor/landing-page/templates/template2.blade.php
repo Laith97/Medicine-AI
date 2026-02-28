@@ -167,8 +167,8 @@
         }
 
         .footer {
-            background-color: var(--footer-bg);
-            color: var(--secondary-color);
+            background-color: var(--header-bg) !important;
+            color: inherit;
             border-top: 1px solid #e5e7eb;
         }
 

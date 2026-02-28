@@ -47,6 +47,11 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
+        .navbar .nav-link,
+        .navbar .navbar-brand {
+            color: inherit;
+        }
+
         .btn-primary {
             background-color: var(--button-color);
             border-color: var(--button-color);
@@ -130,8 +135,12 @@
         }
 
         .footer {
-            background-color: var(--footer-bg);
-            color: var(--secondary-color);
+            background-color: var(--header-bg) !important;
+            color: inherit;
+        }
+
+        .footer * {
+            color: inherit;
         }
 
         .contact-info i {

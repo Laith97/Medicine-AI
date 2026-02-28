@@ -39,11 +39,33 @@ Route::middleware(['auth', 'sub.user.permissions'])->prefix('ai')->name('ai.')->
     Route::post('/appointments/{appointment}/suggest', [AppointmentController::class, 'aiSuggest'])->name('appointments.suggest');
     Route::post('/appointments/test-openai', [AppointmentController::class, 'testOpenAI'])->name('appointments.test-openai');
 
+    // AI Medical Copilot route for comprehensive clinical decision support
+    Route::post('/appointments/{appointment}/medical-copilot', [AppointmentController::class, 'aiMedicalCopilot'])->name('appointments.medical-copilot');
+
+    // AI Medical Copilot analysis management
+    Route::get('/patients/{patientId}/ai-analyses', [AppointmentController::class, 'getPatientAIAnalyses'])->name('patients.ai-analyses');
+    Route::get('/ai-analyses/{analysisId}', [AppointmentController::class, 'showAIAnalysis'])->name('ai-analyses.show');
+    Route::post('/appointments/{appointment}/ai-analyses/save', [AppointmentController::class, 'saveAICopilotAnalysis'])->name('appointments.ai-analyses.save');
+    Route::post('/ai-analyses/{analysisId}/review', [AppointmentController::class, 'reviewAIAnalysis'])->name('ai-analyses.review');
+
     // General AI routes that may be used for prescription suggestions
-    // Route::get('/ask', [OpenAIController::class, 'showForm'])->name('ask-ai'); // Temporarily disabled
     Route::get('/progress', function () { return view('openai-progress'); })->name('progress');
     Route::post('/respond', [OpenAIController::class, 'getResponse'])->name('respond');
     Route::post('/follow-up', [OpenAIController::class, 'followUp'])->name('follow-up');
     Route::post('/create-manual-diagnosis', [OpenAIController::class, 'createManualDiagnosis'])->name('create-manual-diagnosis');
     Route::post('/patient-summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient-summary');
+
+    // AI Documentation Intelligence routes
+    Route::prefix('documentation')->name('documentation.')->group(function () {
+        Route::post('/generate-from-transcription', [\App\Http\Controllers\AIDocumentationController::class, 'generateFromTranscription'])
+            ->name('generate.from.transcription');
+        Route::get('/appointment/{appointmentId}', [\App\Http\Controllers\AIDocumentationController::class, 'getDocumentation'])
+            ->name('for.appointment');
+        Route::post('/{docId}/validate', [\App\Http\Controllers\AIDocumentationController::class, 'validateDocumentation'])
+            ->name('validate');
+        Route::post('/codes/{codeId}/validate', [\App\Http\Controllers\AIDocumentationController::class, 'validateCode'])->name('code.validate');
+        Route::get('/pending-validation', [\App\Http\Controllers\AIDocumentationController::class, 'getPendingValidation'])
+            ->name('pending.validation');
+        Route::get('/{docId}/export', [\App\Http\Controllers\AIDocumentationController::class, 'export'])->name('export');
+    });
 });

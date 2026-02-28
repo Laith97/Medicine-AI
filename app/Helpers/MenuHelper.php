@@ -78,24 +78,50 @@ class MenuHelper
                 'permission' => 'dashboard',
             ],
 
+            // Physical Therapy Section - Only for doctors with relevant specialties
+            [
+                'name' => 'Physical Therapy',
+                'icon' => 'fas fa-dumbbell',
+                'dropdown' => true,
+                'header_class' => 'sidebar-header-clinical',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
+                'items' => [
+                    [
+                        'name' => 'Home Exercise Programs',
+                        'route' => 'doctor.hep.index',
+                        'icon' => 'fas fa-dumbbell',
+                        'permission' => 'hep',
+                    ],
+                ],
+                'visible' => function($user) {
+                    // Show only for doctors with specialties related to physical therapy
+                    $doctor = $user->doctor;
+                    if (!$doctor || !$doctor->specialty) {
+                        return false;
+                    }
+
+                    $relevantSpecialties = ['orthopedics', 'physical therapy', 'sports medicine', 'rehabilitation'];
+                    return in_array(strtolower($doctor->specialty->name), $relevantSpecialties);
+                }
+            ],
             // Clinical Section
             [
                 'name' => 'Clinical',
                 'icon' => 'fas fa-tools',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-clinical',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-left: 4px solid #3b82f6; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => [
                     // AI Ask temporarily disabled - removed completely
                     [
-                        'name' => 'Voice Assistant',
+                        'name' => 'Ambient Listening',
                         'route' => 'ai.voice-assistant.index',
                         'icon' => 'fas fa-microphone',
                         'permission' => 'voice_assistant',
                         'restricted' => true,
                     ],
                     [
-                        'name' => 'Recorded Voices',
+                        'name' => 'Session Recordings',
                         'route' => 'ai.voice-assistant.recorded-voices',
                         'icon' => 'fas fa-history',
                         'permission' => 'voice_assistant',
@@ -107,6 +133,12 @@ class MenuHelper
                         'icon' => 'fas fa-stethoscope',
                         'permission' => 'diagnosis',
                     ],
+                    [
+                        'name' => 'Clinical Monitoring',
+                        'route' => 'clinical.monitoring',
+                        'icon' => 'fas fa-heartbeat',
+                        'permission' => 'diagnosis', // Reusing diagnosis permission for now
+                    ],
                 ]
             ],
 
@@ -116,8 +148,14 @@ class MenuHelper
                 'icon' => 'fas fa-users',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-patients',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => [
+                    [
+                        'name' => 'My Patients',
+                        'route' => 'doctor.patients.index',
+                        'icon' => 'fas fa-users',
+                        'permission' => 'cases',
+                    ],
                     [
                         'name' => 'Doctor Notes',
                         'route' => 'doctor.notes.index',
@@ -131,8 +169,8 @@ class MenuHelper
                         'permission' => 'chat',
                     ],
                     [
-                        'name' => 'Patient Management',
-                        'route' => 'doctor.patient-management.index',
+                        'name' => 'Cases Overview',
+                        'route' => 'doctor.cases.overview',
                         'icon' => 'fas fa-folder',
                         'permission' => 'cases',
                     ],
@@ -145,7 +183,7 @@ class MenuHelper
                 'icon' => 'fas fa-calendar-alt',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-practice',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left: 4px solid #2563eb; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => [
                     [
                         'name' => 'Appointments',
@@ -174,7 +212,7 @@ class MenuHelper
                 'icon' => 'fas fa-chart-line',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-analytics',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 4px solid #16a34a; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => [
                     [
                         'name' => 'Analytics',
@@ -203,7 +241,7 @@ class MenuHelper
                 'icon' => 'fas fa-user-cog',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-account',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-left: 4px solid #6b7280; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => [
                     [
                         'name' => 'Doctor Profile',
@@ -220,7 +258,7 @@ class MenuHelper
                 'icon' => 'fas fa-briefcase',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-business-tools',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #d97706; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => array_filter([
                     // Only show billing for standalone doctors (not hospital doctors)
                     !$user->hospital_id ? [
@@ -254,6 +292,18 @@ class MenuHelper
                         'permission' => 'blog',
                     ],
                     [
+                        'name' => 'Claims Management',
+                        'route' => 'doctor.claims.index',
+                        'icon' => 'fas fa-file-invoice-dollar',
+                        'permission' => 'claims',
+                    ],
+                    [
+                        'name' => 'Kiosk Setup',
+                        'route' => 'doctor.kiosk.setup',
+                        'icon' => 'fas fa-desktop',
+                        'permission' => 'kiosk',
+                    ],
+                    [
                         'name' => 'Sub-Users',
                         'route' => 'sub-users.index',
                         'icon' => 'fas fa-users',
@@ -266,6 +316,13 @@ class MenuHelper
 
         // Filter menu items and their dropdown items based on permissions
         return array_filter(array_map(function ($item) use ($user) {
+            // Check if the item has a visibility callback
+            if (isset($item['visible']) && is_callable($item['visible'])) {
+                if (!$item['visible']($user)) {
+                    return null;
+                }
+            }
+
             if (isset($item['dropdown']) && isset($item['items'])) {
                 // Filter dropdown items
                 $filteredItems = array_filter($item['items'], function ($subItem) use ($user) {
@@ -299,22 +356,47 @@ class MenuHelper
                 'icon' => 'fas fa-tachometer-alt',
             ],
 
+            // Physical Therapy Section - Only for doctors with relevant specialties
+            [
+                'name' => 'Physical Therapy',
+                'icon' => 'fas fa-dumbbell',
+                'dropdown' => true,
+                'header_class' => 'sidebar-header-clinical',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
+                'items' => [
+                    [
+                        'name' => 'Home Exercise Programs',
+                        'route' => 'doctor.hep.index',
+                        'icon' => 'fas fa-dumbbell',
+                    ],
+                ],
+                'visible' => function($user) {
+                    // Show only for doctors with specialties related to physical therapy
+                    $doctor = $user->doctor;
+                    if (!$doctor || !$doctor->specialty) {
+                        return false;
+                    }
+
+                    $relevantSpecialties = ['orthopedics', 'physical therapy', 'sports medicine', 'rehabilitation'];
+                    return in_array(strtolower($doctor->specialty->name), $relevantSpecialties);
+                }
+            ],
             // Clinical Section - Show ALL items
             [
                 'name' => 'Clinical',
                 'icon' => 'fas fa-tools',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-clinical',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-left: 4px solid #3b82f6; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => [
                     // AI Ask temporarily disabled - removed completely
                     [
-                        'name' => 'Voice Assistant',
+                        'name' => 'Ambient Listening',
                         'route' => 'ai.voice-assistant.index',
                         'icon' => 'fas fa-microphone',
                     ],
                     [
-                        'name' => 'Recorded Voices',
+                        'name' => 'Session Recordings',
                         'route' => 'ai.voice-assistant.recorded-voices',
                         'icon' => 'fas fa-history',
                     ],
@@ -322,6 +404,11 @@ class MenuHelper
                         'name' => 'Diagnoses',
                         'route' => 'diagnosis.index',
                         'icon' => 'fas fa-stethoscope',
+                    ],
+                    [
+                        'name' => 'Clinical Monitoring',
+                        'route' => 'clinical.monitoring',
+                        'icon' => 'fas fa-heartbeat',
                     ],
                 ]
             ],
@@ -332,7 +419,7 @@ class MenuHelper
                 'icon' => 'fas fa-users',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-patients',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => [
                     [
                         'name' => 'Doctor Notes',
@@ -345,8 +432,8 @@ class MenuHelper
                         'icon' => 'fas fa-comments',
                     ],
                     [
-                        'name' => 'Patient Management',
-                        'route' => 'doctor.patient-management.index',
+                        'name' => 'Cases Overview',
+                        'route' => 'doctor.cases.overview',
                         'icon' => 'fas fa-folder',
                     ],
                 ]
@@ -358,7 +445,7 @@ class MenuHelper
                 'icon' => 'fas fa-calendar-alt',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-practice',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left: 4px solid #2563eb; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => [
                     [
                         'name' => 'Appointments',
@@ -384,7 +471,7 @@ class MenuHelper
                 'icon' => 'fas fa-chart-line',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-analytics',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 4px solid #16a34a; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => [
                     [
                         'name' => 'Analytics',
@@ -410,7 +497,7 @@ class MenuHelper
                 'icon' => 'fas fa-user-cog',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-account',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-left: 4px solid #6b7280; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => [
                     [
                         'name' => 'Doctor Profile',
@@ -426,7 +513,7 @@ class MenuHelper
                 'icon' => 'fas fa-briefcase',
                 'dropdown' => true,
                 'header_class' => 'sidebar-header-business-tools',
-                'header_style' => 'font-weight: 600; color: #1f2937; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #d97706; padding: 12px 16px; margin: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => array_filter([
                     // Only show billing for standalone doctors (not hospital doctors) - even during impersonation
                     !$user->hospital_id ? [
@@ -455,6 +542,18 @@ class MenuHelper
                         'icon' => 'fas fa-blog',
                     ],
                     [
+                        'name' => 'Claims Management',
+                        'route' => 'doctor.claims.index',
+                        'icon' => 'fas fa-file-invoice-dollar',
+                        'permission' => 'claims',
+                    ],
+                    [
+                        'name' => 'Kiosk Setup',
+                        'route' => 'doctor.kiosk.setup',
+                        'icon' => 'fas fa-desktop',
+                        'permission' => 'kiosk',
+                    ],
+                    [
                         'name' => 'Sub-Users',
                         'route' => 'sub-users.index',
                         'icon' => 'fas fa-users',
@@ -463,8 +562,19 @@ class MenuHelper
             ],
         ];
 
-        // Return all menu items without any filtering
-        return $menuItems;
+        // Apply visibility callbacks but return all other items without permission filtering
+        return array_filter(array_map(function ($item) use ($user) {
+            // Check if the item has a visibility callback
+            if (isset($item['visible']) && is_callable($item['visible'])) {
+                if (!$item['visible']($user)) {
+                    return null;
+                }
+            }
+
+            return $item;
+        }, $menuItems), function ($item) {
+            return $item !== null;
+        });
     }
 
     /**
@@ -726,7 +836,7 @@ class MenuHelper
                 ['name' => 'Edit Sub-User', 'route' => null]
             ],
             // 'ai.ask-ai' => [['name' => 'AI Assistant', 'route' => null]], // Temporarily disabled
-            'ai.voice-assistant.index' => [['name' => 'Voice Assistant', 'route' => null]],
+            'ai.voice-assistant.index' => [['name' => 'Ambient Listening', 'route' => null]],
             'diagnosis.index' => [['name' => 'Diagnoses', 'route' => null]],
         ];
 
