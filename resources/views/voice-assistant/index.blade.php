@@ -6,13 +6,35 @@
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
+            <!-- Breadcrumb Navigation -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Ambient Listening</li>
+                </ol>
+            </nav>
+
             <div class="card bg-primary text-white">
                 <div class="card-body">
-                    <h1 class="card-title h3 mb-2">Ambient Listening</h1>
-                    <p class="card-text">Ambient listening for medical consultation with real-time AI analysis</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="card-title h3 mb-2"><i class="fas fa-ear-listen me-2"></i>Ambient Listening</h1>
+                            <p class="card-text mb-0">AI-powered consultation recording with real-time transcription</p>
+                        </div>
+                        <a href="{{ route('ai.ambient-listening.recorded-voices') }}" class="btn btn-light">
+                            <i class="fas fa-history me-2"></i>View History
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                    <!-- Privacy Notice -->
-                    <div class="alert alert-warning mt-3 mb-0" role="alert">
+    <!-- Privacy & Keyboard Shortcuts -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <!-- Privacy Notice -->
+            <div class="alert alert-warning" role="alert">
                         <div class="d-flex align-items-start">
                             <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
                             <div>
@@ -22,8 +44,8 @@
                         </div>
                     </div>
 
-                    <!-- Keyboard Shortcuts -->
-                    <div class="alert alert-info mt-3 mb-0" role="alert">
+            <!-- Keyboard Shortcuts -->
+            <div class="alert alert-info" role="alert">
                         <div class="d-flex align-items-start">
                             <i class="fas fa-keyboard me-2 mt-1"></i>
                             <div>
@@ -35,8 +57,6 @@
                                 </ul>
                             </div>
                         </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -157,13 +177,13 @@
 
                         <!-- Global Action Buttons -->
                         <div class="d-flex gap-2">
-                            <a href="{{ route('ai.voice-assistant.training') }}" class="btn btn-outline-secondary btn-sm">
+                            <a href="{{ route('ai.ambient-listening.training') }}" class="btn btn-outline-secondary btn-sm">
                                 <i class="fas fa-graduation-cap me-1"></i>Guide
                             </a>
-                            <a href="{{ route('ai.voice-assistant.recorded-voices') }}" class="btn btn-outline-secondary btn-sm">
+                            <a href="{{ route('ai.ambient-listening.recorded-voices') }}" class="btn btn-outline-secondary btn-sm">
                                 <i class="fas fa-history me-1"></i>History
                             </a>
-                            <a href="{{ route('ai.voice-assistant.performance') }}" class="btn btn-outline-secondary btn-sm">
+                            <a href="{{ route('ai.ambient-listening.performance') }}" class="btn btn-outline-secondary btn-sm">
                                 <i class="fas fa-chart-line me-1"></i>Stats
                             </a>
                             <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#ambientListeningHelpModal">
@@ -1190,7 +1210,7 @@
             this.disabled = true;
             this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Analyzing...';
             
-            fetch('{{ route("ai.voice-assistant.generate-ai-analysis") }}', {
+            fetch('{{ route("ai.ambient-listening.generate-ai-analysis") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -1667,7 +1687,7 @@
             this.disabled = true;
             this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
             
-            fetch('{{ route("ai.voice-assistant.create-new-patient") }}', {
+            fetch('{{ route("ai.ambient-listening.create-new-patient") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',

@@ -25,7 +25,7 @@
                             <p><i class="fas fa-phone me-2"></i>{{ $patient->phone }}</p>
                         @endif
                     </div>
-                    <a href="{{ route('ai.voice-assistant.index', ['patient' => $patient->id]) }}" 
+                    <a href="{{ route('ai.ambient-listening.index', ['patient' => $patient->id]) }}" 
                        class="btn btn-success w-100 mt-3">
                         <i class="fas fa-microphone me-1"></i>Start Consultation
                     </a>

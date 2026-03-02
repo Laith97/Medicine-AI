@@ -401,13 +401,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 patientNameInput.readOnly = true;
                 patientEmailInput.readOnly = true;
                 patientPhoneInput.readOnly = true;
-                patientAgeInput.readOnly = true;
                 patientGenderSelect.disabled = true;
 
                 // Remove required attributes since we're using guest patient data
                 patientNameInput.required = false;
                 patientEmailInput.required = false;
-                patientAgeInput.required = false;
                 patientGenderSelect.required = false;
             } else {
                 // Existing registered patient selected - hide form and populate hidden fields
@@ -424,13 +422,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 patientNameInput.readOnly = true;
                 patientEmailInput.readOnly = true;
                 patientPhoneInput.readOnly = true;
-                patientAgeInput.readOnly = true;
                 patientGenderSelect.disabled = true;
 
                 // Remove required attributes since we're using existing patient
                 patientNameInput.required = false;
                 patientEmailInput.required = false;
-                patientAgeInput.required = false;
                 patientGenderSelect.required = false;
             }
 
@@ -449,13 +445,11 @@ document.addEventListener('DOMContentLoaded', function() {
             patientNameInput.readOnly = false;
             patientEmailInput.readOnly = false;
             patientPhoneInput.readOnly = false;
-            patientAgeInput.readOnly = false;
             patientGenderSelect.disabled = false;
 
             // Restore required attributes
             patientNameInput.required = true;
             patientEmailInput.required = true;
-            patientAgeInput.required = true;
             patientGenderSelect.required = true;
         }
     });

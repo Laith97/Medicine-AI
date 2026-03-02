@@ -68,21 +68,34 @@
 
 @section('content')
 <div class="dashboard-header">
-    <h2>Diagnosis</h2>
-    <p>View and manage diagnoses</p>
+    <h2>Diagnosed Cases</h2>
+    <p>View and manage all patient diagnoses and medical records</p>
 </div>
 <div class="container-fluid px-2 px-md-4">
     <div class="row justify-content-center">
         <div class="col-12">
+            <!-- Breadcrumb Navigation -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Diagnoses</li>
+                </ol>
+            </nav>
+            
             <!-- Page Header -->
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h2><i class="fas fa-clipboard-list me-2"></i>Diagnoses</h2>
-                        <p class="text-muted">Manage and view all diagnoses you've created</p>
-                    </div>
-                <a href="{{ route('diagnosis.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Create New Diagnosis
-                </a>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-clipboard-list me-2"></i>All Diagnoses</h2>
+                    <p class="text-muted">Manage and view all diagnoses you've created</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-success">
+                        <i class="fas fa-microphone me-2"></i>New Consultation
+                    </a>
+                    <a href="{{ route('diagnosis.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Manual Diagnosis
+                    </a>
+                </div>
             </div>
 
             @if (session('success'))

@@ -65,22 +65,27 @@
 @endpush
 
 @section('content')
+<!-- Breadcrumb Navigation -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ route('ai.ambient-listening.index') }}">Ambient Listening</a></li>
+        <li class="breadcrumb-item active" aria-current="page">History</li>
+    </ol>
+</nav>
+
 <div class="dashboard-header">
-    <h2>Session Recordings History</h2>
-    <p>View all your saved session recordings and transcripts</p>
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Consultation History</h2>
+            <p>View all your saved consultation recordings and transcripts</p>
+        </div>
+        <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-light btn-lg">
+            <i class="fas fa-microphone me-2"></i>New Consultation
+        </a>
+    </div>
 </div>
 <div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-end">
-                <a href="{{ route('ai.voice-assistant.index') }}" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>
-                    New Ambient Listening Session
-                </a>
-            </div>
-        </div>
-    </div>
-
     <!-- Transcriptions List -->
     <div class="row">
         <div class="col-12">
@@ -152,7 +157,7 @@
                                             </td>
                                             <td>
                                                 <div class="btn-group" role="group">
-                                                    <a href="{{ route('ai.voice-assistant.show', $transcription) }}"
+                                                    <a href="{{ route('ai.ambient-listening.show', $transcription) }}"
                                                        class="btn btn-sm btn-outline-primary">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
@@ -182,7 +187,7 @@
                             </div>
                             <h4 class="text-muted">No Session Recordings Yet</h4>
                             <p class="text-muted mb-4">Start ambient listening sessions to see them here.</p>
-                            <a href="{{ route('ai.voice-assistant.index') }}" class="btn btn-primary">
+                            <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-primary">
                                 <i class="fas fa-microphone me-2"></i>
                                 Start Ambient Listening Session
                             </a>

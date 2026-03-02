@@ -140,6 +140,14 @@
 @section('content')
 <div class="dashboard-container">
     <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">My Patients</li>
+            </ol>
+        </nav>
+
         <!-- Dashboard Header -->
         <div class="dashboard-header">
             <div class="d-flex justify-content-between align-items-center flex-wrap">
@@ -147,8 +155,8 @@
                     <h2>My Patients</h2>
                     <p>Your assigned patient profiles and records</p>
                 </div>
-                <a href="{{ route('doctor.patients.create') }}" class="btn btn-light btn-lg mt-3 mt-md-0">
-                    <i class="fas fa-user-plus me-2"></i>Add New Patient
+                <a href="{{ route('doctor.appointments.create') }}" class="btn btn-light btn-lg mt-3 mt-md-0">
+                    <i class="fas fa-user-plus me-2"></i>New Appointment
                 </a>
             </div>
         </div>
@@ -180,15 +188,6 @@
                     </div>
                     <p class="stats-number">{{ collect($patients->items())->filter(fn($p) => $p->appointments->isNotEmpty())->count() }}</p>
                     <p class="stats-label">With Appointments</p>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6 mb-3">
-                <div class="stats-card clickable-card" onclick="window.location.href='{{ route('doctor.patients.create') }}'">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);">
-                        <i class="fas fa-plus"></i>
-                    </div>
-                    <p class="stats-number">+</p>
-                    <p class="stats-label">Add Patient</p>
                 </div>
             </div>
         </div>
@@ -344,7 +343,7 @@
                                                class="btn btn-sm btn-outline-warning action-btn" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="{{ route('ai.voice-assistant.index', ['patient' => $patient->id]) }}"
+                                            <a href="{{ route('ai.ambient-listening.index', ['patient' => $patient->id]) }}"
                                                class="btn btn-sm btn-outline-success action-btn" title="Start Consultation">
                                                 <i class="fas fa-microphone"></i>
                                             </a>
@@ -379,11 +378,11 @@
                     @if(request('search') || request('gender') || request('status'))
                         No patients match your search criteria.
                     @else
-                        You haven't added any patients yet.
+                        You haven't added any patients yet. Create appointments to add patients.
                     @endif
                 </p>
-                <a href="{{ route('doctor.patients.create') }}" class="btn btn-primary-custom">
-                    <i class="fas fa-user-plus me-2"></i>Add Your First Patient
+                <a href="{{ route('doctor.appointments.create') }}" class="btn btn-primary-custom">
+                    <i class="fas fa-calendar-plus me-2"></i>Create Appointment
                 </a>
             </div>
         @endif

@@ -72,6 +72,14 @@
 @section('content')
 <div class="dashboard-container">
     <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Appointments</li>
+            </ol>
+        </nav>
+
         <!-- Dashboard Header -->
         <div class="dashboard-header">
             <div class="d-flex justify-content-between align-items-center">
@@ -79,9 +87,12 @@
                     <h2>Appointments</h2>
                     <p>Manage your appointments</p>
                 </div>
-                <div>
-                    <a href="{{ route('doctor.appointments.create') }}" class="btn btn-primary btn-lg">
-                        <i class="fas fa-plus me-2"></i>Book Appointment
+                <div class="d-flex gap-2">
+                    <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-success btn-lg">
+                        <i class="fas fa-microphone me-2"></i>Start Consultation
+                    </a>
+                    <a href="{{ route('doctor.appointments.create') }}" class="btn btn-light btn-lg">
+                        <i class="fas fa-plus me-2"></i>New Appointment
                     </a>
                 </div>
             </div>
