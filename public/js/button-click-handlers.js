@@ -34,7 +34,7 @@
             
             // Create session synchronously
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/ai/voice-assistant/start-session', false);
+            xhr.open('POST', '/ai/ambient-listening/start-session', false);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').content);
             xhr.send(JSON.stringify({
@@ -101,7 +101,7 @@
                 generateAnalysisBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Analyzing...';
                 
                 // Make request
-                fetch('/ai/voice-assistant/generate-ai-analysis', {
+                fetch('/ai/ambient-listening/generate-ai-analysis', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -177,7 +177,7 @@
                 generateClinicalDocBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating...';
                 
                 // Make request
-                fetch('/ai/voice-assistant/generate-ai-analysis', {
+                fetch('/ai/ambient-listening/generate-ai-analysis', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

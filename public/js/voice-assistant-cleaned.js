@@ -1619,7 +1619,7 @@
 
         // AJAX call to start session
         $.ajax({
-            url: '/ai/voice-assistant/start-session',
+            url: '/ai/ambient-listening/start-session',
             method: 'POST',
             data: {
                 selectedPatient: selectedPatient,
@@ -1770,7 +1770,7 @@
 
         // AJAX call to stop session (mark as completed)
         $.ajax({
-            url: '/ai/voice-assistant/stop-session',
+            url: '/ai/ambient-listening/stop-session',
             method: 'POST',
             data: {
                 sessionId: sessionId,
@@ -1894,7 +1894,7 @@
             updateServerProcessingStatus('Uploading audio for server processing...');
 
             $.ajax({
-                url: '/ai/voice-assistant/process-audio-server',
+                url: '/ai/ambient-listening/process-audio-server',
                 method: 'POST',
                 data: formData,
                 processData: false,
@@ -2488,7 +2488,7 @@
 
         // AJAX call to handle transcription (for backward compatibility)
         $.ajax({
-            url: '/ai/voice-assistant/handle-transcription',
+            url: '/ai/ambient-listening/handle-transcription',
             method: 'POST',
             data: {
                 text: cleanText,
@@ -2520,7 +2520,7 @@
 
         // AJAX call to process with AI
         $.ajax({
-            url: '/ai/voice-assistant/process-with-ai',
+            url: '/ai/ambient-listening/process-with-ai',
             method: 'POST',
             data: {
                 transcription: text,
@@ -2754,7 +2754,7 @@
 
         // AJAX call to generate AI analysis
         $.ajax({
-            url: '/ai/voice-assistant/generate-ai-analysis',
+            url: '/ai/ambient-listening/generate-ai-analysis',
             method: 'POST',
             data: {
                 sessionId: sessionId,
@@ -2803,7 +2803,7 @@
     function createAiAssistantResult(transcription) {
         // AJAX call to create AI assistant result
         $.ajax({
-            url: '/ai/voice-assistant/create-ai-result',
+            url: '/ai/ambient-listening/create-ai-result',
             method: 'POST',
             data: {
                 sessionId: sessionId,
@@ -3528,7 +3528,7 @@
 
         // AJAX call to create new patient
         $.ajax({
-            url: '/ai/voice-assistant/create-new-patient',
+            url: '/ai/ambient-listening/create-new-patient',
             method: 'POST',
             data: {
                 newPatientName: name,
@@ -3854,7 +3854,7 @@
 
         // AJAX call to complete consultation
         $.ajax({
-            url: '/ai/voice-assistant/complete-consultation',
+            url: '/ai/ambient-listening/complete-consultation',
             method: 'POST',
             data: ajaxData,
             success: function(response) {

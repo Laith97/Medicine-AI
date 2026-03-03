@@ -1806,7 +1806,7 @@
             modalCompleteBtn.disabled = true;
             modalCompleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
             
-            fetch('/ai/voice-assistant/complete-consultation', {
+            fetch('/ai/ambient-listening/complete-consultation', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

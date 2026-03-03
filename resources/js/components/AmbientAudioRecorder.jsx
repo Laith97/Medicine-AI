@@ -82,7 +82,7 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
                 throw new Error('Please select a patient first');
             }
 
-            const response = await window.axios.post('/ai/voice-assistant/start-session', {
+            const response = await window.axios.post('/ai/ambient-listening/start-session', {
                 selectedPatient: selectedPatient,
                 language: language
             });
@@ -291,7 +291,7 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
                         formData.append('language', language);
                         formData.append('has_audio_recording', 'true');
 
-                        const response = await window.axios.post('/ai/voice-assistant/process-audio-server', formData, {
+                        const response = await window.axios.post('/ai/ambient-listening/process-audio-server', formData, {
                             headers: {
                                 'Content-Type': 'multipart/form-data'
                             }
