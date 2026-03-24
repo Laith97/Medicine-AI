@@ -712,14 +712,14 @@ function savePreference() {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        // console.error('Error:', error);
         alert('An error occurred while saving the preference.');
     });
 }
 
 function editPreference(preferenceId) {
     // This would load the preference data and populate the modal
-    console.log('Editing preference:', preferenceId);
+    // console.log('Editing preference:', preferenceId);
     // Implementation would fetch preference data via AJAX
 }
 
@@ -742,17 +742,17 @@ function deletePreference(preferenceId) {
 
 function duplicatePreference(preferenceId) {
     // Implementation for duplicating a preference
-    console.log('Duplicating preference:', preferenceId);
+    // console.log('Duplicating preference:', preferenceId);
 }
 
 function applyAISuggestions() {
     // Implementation for applying AI suggestions
-    console.log('Applying AI suggestions');
+    // console.log('Applying AI suggestions');
 }
 
 function bulkUpdatePreferences() {
     // Implementation for bulk updating preferences
-    console.log('Bulk update preferences');
+    // console.log('Bulk update preferences');
 }
 
 function exportPreferences() {

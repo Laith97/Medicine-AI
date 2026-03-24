@@ -2,37 +2,37 @@
 (function() {
     'use strict';
 
-    console.log('🔧 Button enabler fix loaded');
+    // console.log('🔧 Button enabler fix loaded');
 
     // Function to enable buttons
     function enableAnalysisButtons() {
         const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
         const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
 
-        console.log('Enabling analysis buttons...');
+        // console.log('Enabling analysis buttons...');
 
         if (generateAnalysisBtn) {
             generateAnalysisBtn.disabled = false;
             generateAnalysisBtn.style.opacity = '1';
-            console.log('✅ Analysis button enabled');
+            // console.log('✅ Analysis button enabled');
         }
 
         if (generateClinicalDocBtn) {
             generateClinicalDocBtn.disabled = false;
             generateClinicalDocBtn.style.opacity = '1';
-            console.log('✅ Clinical doc button enabled');
+            // console.log('✅ Clinical doc button enabled');
         }
     }
 
     // Listen for multiple events that indicate recording has stopped
     window.addEventListener('serverTranscriptReady', function() {
-        console.log('📥 Server transcript ready - enabling buttons');
+        // console.log('📥 Server transcript ready - enabling buttons');
         enableAnalysisButtons();
     });
 
     window.addEventListener('statusUpdate', function(event) {
         if (event.detail.status === 'stopped') {
-            console.log('⏹️ Recording stopped - enabling buttons');
+            // console.log('⏹️ Recording stopped - enabling buttons');
             setTimeout(enableAnalysisButtons, 500); // Small delay to ensure state is set
         }
     });
@@ -44,7 +44,7 @@
             const hasContent = transcriptContainer && transcriptContainer.innerText.trim().length > 50;
 
             if (hasContent) {
-                console.log('📄 Content detected on load - enabling buttons');
+                // console.log('📄 Content detected on load - enabling buttons');
                 enableAnalysisButtons();
             }
         }, 1000);
@@ -57,7 +57,7 @@
         const hasContent = transcriptContainer && transcriptContainer.innerText.trim().length > 50;
 
         if (hasContent && generateAnalysisBtn && generateAnalysisBtn.disabled) {
-            console.log('🔄 Fallback: Enabling buttons (content detected, buttons disabled)');
+            // console.log('🔄 Fallback: Enabling buttons (content detected, buttons disabled)');
             enableAnalysisButtons();
         }
     }, 2000);

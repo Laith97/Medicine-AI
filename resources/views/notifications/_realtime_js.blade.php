@@ -11,7 +11,7 @@
             Echo.private(`App.User.${window.userId}`)
                 .notification((notification) => {
                     // Handle new notification
-                    console.log('New notification received:', notification);
+                    // console.log('New notification received:', notification);
 
                     // Update notification manager if available
                     if (window.notificationManager) {
@@ -33,7 +33,7 @@
             // Listen for notification read events
             Echo.channel('notification-updates')
                 .listen('NotificationRead', (event) => {
-                    console.log('Notification read:', event.notificationId);
+                    // console.log('Notification read:', event.notificationId);
                     if (window.notificationManager) {
                         window.notificationManager.updateNotificationReadStatus(event.notificationId);
                     }
@@ -42,7 +42,7 @@
             // Listen for notification deleted events
             Echo.channel('notification-updates')
                 .listen('NotificationDeleted', (event) => {
-                    console.log('Notification deleted:', event.notificationId);
+                    // console.log('Notification deleted:', event.notificationId);
                     if (window.notificationManager) {
                         window.notificationManager.deleteNotification(event.notificationId);
                     }
@@ -53,7 +53,7 @@
     // Play notification sound
     function playNotificationSound() {
         const audio = new Audio('/sounds/notification.mp3');
-        audio.play().catch(e => console.log('Audio play failed:', e));
+        audio.play().catch(e => // console.log('Audio play failed:', e));
     }
 
     // Update browser badge using notification manager
@@ -68,7 +68,7 @@
         if ('Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission().then(permission => {
                 if (permission === 'granted') {
-                    console.log('Notification permission granted');
+                    // console.log('Notification permission granted');
                 }
             });
         }

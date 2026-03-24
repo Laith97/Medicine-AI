@@ -616,7 +616,7 @@ function configureProvider(providerId) {
             }
         })
         .catch(error => {
-            console.error('Error loading provider:', error);
+            // console.error('Error loading provider:', error);
             alert('Error loading provider configuration');
         });
 }
@@ -677,7 +677,7 @@ function testProvider(providerId) {
         }
     })
     .catch(error => {
-        console.error('Error testing provider:', error);
+        // console.error('Error testing provider:', error);
         alert('Error testing provider');
     })
     .finally(() => {
@@ -714,7 +714,7 @@ function testEndpoints() {
         }
     })
     .catch(error => {
-        console.error('Error testing endpoints:', error);
+        // console.error('Error testing endpoints:', error);
         resultDiv.innerHTML = '<div class="endpoint-test-result error">Error testing endpoints</div>';
     });
 }
@@ -729,7 +729,7 @@ function loadProviders() {
             }
         })
         .catch(error => {
-            console.error('Error loading providers:', error);
+            // console.error('Error loading providers:', error);
         });
 }
 
@@ -767,7 +767,7 @@ function duplicateProvider(providerId) {
             }
         })
         .catch(error => {
-            console.error('Error duplicating provider:', error);
+            // console.error('Error duplicating provider:', error);
             alert('Error duplicating provider');
         });
     }
@@ -794,7 +794,7 @@ function deleteProvider(providerId) {
         }
     })
     .catch(error => {
-        console.error('Error deleting provider:', error);
+        // console.error('Error deleting provider:', error);
         alert('Error deleting provider');
     });
 }
@@ -860,7 +860,7 @@ document.getElementById('providerForm').addEventListener('submit', function(e) {
         }
     })
     .catch(error => {
-        console.error('Error saving provider:', error);
+        // console.error('Error saving provider:', error);
         alert('Error saving provider');
     });
 });

@@ -592,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
                    }
                })
                .catch(error => {
-                   console.error('Error:', error);
+                   // console.error('Error:', error);
                    alert('Error fetching accounts');
                });
        });
@@ -619,7 +619,7 @@ document.addEventListener('DOMContentLoaded', function() {
                        }
                    })
                    .catch(error => {
-                       console.error('Error:', error);
+                       // console.error('Error:', error);
                        alert('Error fetching locations');
                    });
            } else {
@@ -666,7 +666,7 @@ document.addEventListener('DOMContentLoaded', function() {
                }
            })
            .catch(error => {
-               console.error('Error:', error);
+               // console.error('Error:', error);
                alert('Error saving configuration');
            });
        });
@@ -754,7 +754,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide loading toast
             if (loadingToast) loadingToast.remove();
 
-            console.error('Error:', error);
+            // console.error('Error:', error);
             showNotification('Failed to update appointment preferences. Please try again.', 'error');
         });
     }

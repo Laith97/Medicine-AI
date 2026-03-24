@@ -26,14 +26,34 @@ class InvoiceReminder extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels = ['mail'];
-        
-        // Add SMS if user has phone number and Twilio is configured
-        if ($notifiable->phone && config('services.twilio.sid')) {
-            $channels[] = TwilioChannel::class;
-        }
+        $channels = ['mail', 'sms'];
         
         return $channels;
+    }
+
+    /**
+     * Get the SMS representation of the notification.
+     */
+    public function toSms(object $notifiable): array
+    {
+        $daysOverdue = $this->invoice->due_date->diffInDays(now());
+        $urgencyLevel = $this->getUrgencyLevel();
+        $doctorId = $this->invoice->user_id ?? 0;
+        $hospitalId = 0;
+
+        $message = "{$urgencyLevel['sms_prefix']} Reminder #{$this->reminderNumber}: ";
+        $message .= "Invoice {$this->invoice->getFormattedPeriod()} ({$this->invoice->getFormattedAmountDue()}) ";
+        $message .= "is {$daysOverdue} days overdue. Pay now: " . route('invoices.show', $this->invoice);
+
+        return [
+            'message' => $message,
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'invoice_notification',
+                'context_id' => $this->invoice->id,
+            ]
+        ];
     }
 
     /**

@@ -34,7 +34,7 @@ const ClinicalDashboard = ({ patientId, appointmentId }) => {
 
     useEffect(() => {
         if (!patientId) {
-            console.warn('Patient ID is required for ClinicalDashboard');
+            // console.warn('Patient ID is required for ClinicalDashboard');
             return;
         }
 
@@ -70,7 +70,7 @@ const ClinicalDashboard = ({ patientId, appointmentId }) => {
                 setAiInsights(insights);
 
             } catch (error) {
-                console.error('Error fetching clinical data:', error);
+                // console.error('Error fetching clinical data:', error);
             } finally {
                 if (isMounted) setLoading(false);
             }

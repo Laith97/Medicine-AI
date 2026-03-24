@@ -46,7 +46,7 @@ class DoctorDashboardRealtime {
      */
     async init() {
         if (!this.options.container) {
-            console.error('DoctorDashboardRealtime: Container not found');
+            // console.error('DoctorDashboardRealtime: Container not found');
             return;
         }
 
@@ -57,9 +57,9 @@ class DoctorDashboardRealtime {
             this.loadInitialData();
 
             this.isInitialized = true;
-            console.log('DoctorDashboardRealtime initialized successfully');
+            // console.log('DoctorDashboardRealtime initialized successfully');
         } catch (error) {
-            console.error('Failed to initialize DoctorDashboardRealtime:', error);
+            // console.error('Failed to initialize DoctorDashboardRealtime:', error);
         }
     }
 
@@ -176,7 +176,7 @@ class DoctorDashboardRealtime {
             }
 
         } catch (error) {
-            console.error('Error loading appointments:', error);
+            // console.error('Error loading appointments:', error);
         }
     }
 
@@ -197,7 +197,7 @@ class DoctorDashboardRealtime {
             }
 
         } catch (error) {
-            console.error('Error updating stats:', error);
+            // console.error('Error updating stats:', error);
         }
     }
 
@@ -719,7 +719,7 @@ class DoctorDashboardRealtime {
             await this.loadInitialData();
             this.showNotification('Dashboard refreshed', 'success');
         } catch (error) {
-            console.error('Error refreshing dashboard:', error);
+            // console.error('Error refreshing dashboard:', error);
             this.showNotification('Failed to refresh dashboard', 'error');
         } finally {
             if (refreshBtn) {

@@ -90,6 +90,59 @@ class PatientManagementController extends Controller
     {
         return view('doctor.patients.create');
     }
+
+    public function store(Request $request)
+    {
+        // Ensure user is a doctor
+        if (!Auth::user()->doctor) {
+            abort(403, 'Only doctors can create patients.');
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'age' => ['required', 'integer', 'min:1', 'max:150'],
+            'gender' => ['required', 'in:male,female,other'],
+        ]);
+
+        // Generate a secure temporary password
+        $temporaryPassword = \Illuminate\Support\Str::random(16);
+
+        // Convert age to date_of_birth
+        $dateOfBirth = now()->subYears($validated['age'])->format('Y-m-d');
+
+        $patient = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'password' => \Illuminate\Support\Facades\Hash::make($temporaryPassword),
+            'role' => 'patient',
+            'gender' => $validated['gender'],
+            'date_of_birth' => $dateOfBirth,
+            'primary_doctor_id' => Auth::id(),
+            'email_verified_at' => now(),
+        ]);
+
+        // Send welcome notification if contact info is available
+        $notificationService = app(\App\Services\NotificationService::class);
+        $notificationSent = $notificationService->sendPatientWelcome($patient, $temporaryPassword);
+
+        if (!$notificationSent) {
+            // Log warning and show message to doctor
+            Log::warning('Patient created but welcome notification failed', [
+                'patient_id' => $patient->id,
+                'doctor_id' => Auth::id(),
+            ]);
+
+            return redirect()->route('doctor.patients.show', $patient->id)
+                ->with('warning', 'Patient created successfully, but login credentials could not be sent automatically. Please contact the patient with their credentials.')
+                ->with('temp_password', $temporaryPassword);
+        }
+
+        return redirect()->route('doctor.patients.show', $patient->id)
+            ->with('success', 'Patient created successfully! Login credentials have been sent to the patient.');
+    }
     
     public function edit($id)
     {

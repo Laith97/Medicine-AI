@@ -280,7 +280,7 @@ function regenerateToken() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            // console.error('Error:', error);
             showNotification('Error regenerating token. Please try again.', 'error');
         })
         .finally(() => {
@@ -308,7 +308,7 @@ function generateQRCode() {
             showNotification('Please allow popups for this site to view the QR code.', 'warning');
         }
     } catch (error) {
-        console.error('Error generating QR code:', error);
+        // console.error('Error generating QR code:', error);
         showNotification('Error generating QR code. Please try again.', 'error');
     }
 }

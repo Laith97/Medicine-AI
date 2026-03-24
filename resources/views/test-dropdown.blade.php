@@ -247,29 +247,29 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('=== Dropdown Test Initialized ===');
+            // console.log('=== Dropdown Test Initialized ===');
 
             // Check if Bootstrap is loaded
             if (typeof bootstrap === 'undefined') {
-                console.error('❌ Bootstrap is not loaded!');
+                // console.error('❌ Bootstrap is not loaded!');
                 updateStatus('Bootstrap Status', 'Not Loaded', false);
             } else {
-                console.log('✅ Bootstrap is loaded');
+                // console.log('✅ Bootstrap is loaded');
                 updateStatus('Bootstrap Status', 'Loaded', true);
             }
 
             // Check dropdown elements
             const dropdowns = document.querySelectorAll('.dropdown');
-            console.log('Found dropdowns:', dropdowns.length);
+            // console.log('Found dropdowns:', dropdowns.length);
 
             dropdowns.forEach((dropdown, index) => {
-                console.log(`Dropdown ${index}:`, dropdown);
+                // console.log(`Dropdown ${index}:`, dropdown);
 
                 const toggle = dropdown.querySelector('.dropdown-toggle');
                 const menu = dropdown.querySelector('.dropdown-menu');
 
-                console.log(`Dropdown ${index} - Toggle:`, !!toggle);
-                console.log(`Dropdown ${index} - Menu:`, !!menu);
+                // console.log(`Dropdown ${index} - Toggle:`, !!toggle);
+                // console.log(`Dropdown ${index} - Menu:`, !!menu);
 
                 if (toggle) {
                     // Add click event listener
@@ -280,9 +280,9 @@
                         const dropdownInstance = bootstrap.Dropdown.getInstance(toggle);
                         if (dropdownInstance) {
                             dropdownInstance.toggle();
-                            console.log(`Dropdown ${index} toggled`);
+                            // console.log(`Dropdown ${index} toggled`);
                         } else {
-                            console.error(`Dropdown ${index} instance not found`);
+                            // console.error(`Dropdown ${index} instance not found`);
                         }
                     });
                 }
@@ -290,7 +290,7 @@
 
             // Test manual dropdown show/hide
             setTimeout(() => {
-                console.log('=== Testing Manual Dropdown Control ===');
+                // console.log('=== Testing Manual Dropdown Control ===');
 
                 const basicDropdown = document.getElementById('basic-dropdown');
                 if (basicDropdown) {
@@ -298,21 +298,21 @@
                     if (toggle) {
                         try {
                             const instance = new bootstrap.Dropdown(toggle);
-                            console.log('✅ Basic dropdown initialized');
+                            // console.log('✅ Basic dropdown initialized');
 
                             // Test showing
                             setTimeout(() => {
                                 instance.show();
-                                console.log('✅ Basic dropdown shown');
+                                // console.log('✅ Basic dropdown shown');
                             }, 1000);
 
                             // Test hiding
                             setTimeout(() => {
                                 instance.hide();
-                                console.log('✅ Basic dropdown hidden');
+                                // console.log('✅ Basic dropdown hidden');
                             }, 2000);
                         } catch (e) {
-                            console.error('❌ Error initializing basic dropdown:', e);
+                            // console.error('❌ Error initializing basic dropdown:', e);
                         }
                     }
                 }
@@ -329,17 +329,17 @@
 
             // Check for any CSS conflicts
             setTimeout(() => {
-                console.log('=== Checking CSS Conflicts ===');
+                // console.log('=== Checking CSS Conflicts ===');
 
                 const dropdownMenu = document.querySelector('.dropdown-menu');
                 if (dropdownMenu) {
                     const computedStyle = window.getComputedStyle(dropdownMenu);
-                    console.log('Dropdown menu computed style:');
-                    console.log('- display:', computedStyle.display);
-                    console.log('- visibility:', computedStyle.visibility);
-                    console.log('- opacity:', computedStyle.opacity);
-                    console.log('- position:', computedStyle.position);
-                    console.log('- z-index:', computedStyle.zIndex);
+                    // console.log('Dropdown menu computed style:');
+                    // console.log('- display:', computedStyle.display);
+                    // console.log('- visibility:', computedStyle.visibility);
+                    // console.log('- opacity:', computedStyle.opacity);
+                    // console.log('- position:', computedStyle.position);
+                    // console.log('- z-index:', computedStyle.zIndex);
                 }
             }, 1500);
         });

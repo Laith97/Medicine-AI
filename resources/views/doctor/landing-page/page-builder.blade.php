@@ -1091,7 +1091,7 @@ class PageBuilder {
                 enable_animations: this.getEnableAnimations()
             };
 
-            console.log('Sending formData:', formData);
+            // console.log('Sending formData:', formData);
 
             fetch('{{ route("doctor.landing-page.update-sections") }}', {
                 method: 'POST',
@@ -1104,19 +1104,19 @@ class PageBuilder {
                 body: JSON.stringify(formData)
             })
             .then(response => {
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
+                // console.log('Response status:', response.status);
+                // console.log('Response headers:', response.headers);
 
                 if (!response.ok) {
                     return response.text().then(text => {
-                        console.error('Error response text:', text);
+                        // console.error('Error response text:', text);
                         throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
                     });
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('Success response:', data);
+                // console.log('Success response:', data);
                 if (data.success) {
                     this.showNotification('Page saved successfully!', 'success');
                 } else {
@@ -1124,7 +1124,7 @@ class PageBuilder {
                 }
             })
             .catch(error => {
-                console.error('Fetch error:', error);
+                // console.error('Fetch error:', error);
                 this.showNotification('Error saving page: ' + error.message, 'error');
             })
             .finally(() => {
@@ -1132,7 +1132,7 @@ class PageBuilder {
                 saveBtn.disabled = false;
             });
         } catch (error) {
-            console.error('JavaScript error in savePage:', error);
+            // console.error('JavaScript error in savePage:', error);
             this.showNotification('Error preparing data: ' + error.message, 'error');
             saveBtn.innerHTML = originalText;
             saveBtn.disabled = false;
@@ -1226,7 +1226,7 @@ class PageBuilder {
         })
         .catch(error => {
             this.showNotification('Error processing request', 'error');
-            console.error('Error:', error);
+            // console.error('Error:', error);
         })
         .finally(() => {
             publishBtn.disabled = false;

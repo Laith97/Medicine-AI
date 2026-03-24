@@ -27,10 +27,16 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Restore old columns if needed for rollback
-            $table->string('current_plan')->default('free')->after('stripe_customer_id');
-            $table->boolean('subscription_active')->default(false)->after('current_plan');
-            $table->timestamp('subscription_ends_at')->nullable()->after('subscription_active');
+            // Restore old columns if they don't already exist
+            if (!Schema::hasColumn('users', 'current_plan')) {
+                $table->string('current_plan')->default('free')->after('stripe_customer_id');
+            }
+            if (!Schema::hasColumn('users', 'subscription_active')) {
+                $table->boolean('subscription_active')->default(false)->after('current_plan');
+            }
+            if (!Schema::hasColumn('users', 'subscription_ends_at')) {
+                $table->timestamp('subscription_ends_at')->nullable()->after('subscription_active');
+            }
         });
     }
 };

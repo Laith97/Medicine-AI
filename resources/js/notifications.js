@@ -82,7 +82,7 @@ class NotificationSystem {
             });
 
         } catch (error) {
-            // Failed to setup Echo listener
+            console.error('Failed to setup Echo listener:', error);
         }
     }
 
@@ -162,9 +162,9 @@ class NotificationSystem {
             this.updateUnreadCountDisplay();
         } catch (error) {
             if (error.name === 'TimeoutError') {
-                // Unread count request timed out
+                console.warn('Unread count request timed out');
             } else {
-                // Failed to load unread count
+                console.error('Failed to load unread count:', error);
             }
         } finally {
             this.loadingUnreadCount = false;
@@ -270,7 +270,7 @@ class NotificationSystem {
                     // Dropdown refreshed with latest notifications
                 }
             } catch (error) {
-                // Failed to refresh dropdown
+                console.error('Failed to refresh notification dropdown:', error);
             }
         }
     }
@@ -394,7 +394,7 @@ class NotificationSystem {
                 return true;
             }
         } catch (error) {
-            // Failed to mark notification as read
+            console.error('Failed to mark notification as read:', error);
         }
         return false;
     }
@@ -415,7 +415,7 @@ class NotificationSystem {
                 return true;
             }
         } catch (error) {
-            // Failed to mark all notifications as read
+            console.error('Failed to mark all notifications as read:', error);
         }
         return false;
     }

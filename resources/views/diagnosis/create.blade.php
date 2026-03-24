@@ -523,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 recordingStatus.textContent = `Recording saved and added (${extension.toUpperCase()})`;
                 recordingStatus.className = 'ms-3 text-success';
 
-                console.log('Recording saved:', {
+                // console.log('Recording saved:', {
                     mimeType: selectedMimeType,
                     fileName: fileName,
                     size: recordedBlob.size
@@ -538,7 +538,7 @@ document.addEventListener('DOMContentLoaded', function() {
             recordingStatus.className = 'ms-3 text-danger';
 
         } catch (error) {
-            console.error('Error accessing microphone:', error);
+            // console.error('Error accessing microphone:', error);
             recordingStatus.textContent = 'Microphone access denied';
             recordingStatus.className = 'ms-3 text-danger';
             alert('Error accessing microphone. Please check permissions and try again.');

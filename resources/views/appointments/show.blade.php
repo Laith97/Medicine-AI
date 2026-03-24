@@ -777,17 +777,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 button.prop('disabled', false).html('<i class="fas fa-magic me-1"></i>Suggest with AI');
 
                 // Debug logging
-                console.log('AI Response:', response);
-                console.log('Response suggestions:', response.suggestions);
-                console.log('Response risk_flags:', response.risk_flags);
+                // console.log('AI Response:', response);
+                // console.log('Response suggestions:', response.suggestions);
+                // console.log('Response risk_flags:', response.risk_flags);
 
                 // Suggestions
                 if (response.suggestions && response.suggestions.length > 0) {
                     var suggestionsHtml = '<h6 class="mb-2 text-primary">AI Suggested Medications:</h6><ul class="list-unstyled">';
                     $.each(response.suggestions, function(i, suggestion) {
-                        console.log('Processing suggestion ' + i + ':', suggestion);
-                        console.log('Suggestion type:', typeof suggestion);
-                        console.log('Suggestion keys:', suggestion ? Object.keys(suggestion) : 'null/undefined');
+                        // console.log('Processing suggestion ' + i + ':', suggestion);
+                        // console.log('Suggestion type:', typeof suggestion);
+                        // console.log('Suggestion keys:', suggestion ? Object.keys(suggestion) : 'null/undefined');
 
                         // More flexible parsing - try different possible key names
                         var medName = suggestion.med || suggestion.medication || suggestion.name || suggestion.drug || '';
@@ -802,7 +802,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (duration) medDetails += ' for ' + duration;
                             suggestionsHtml += '<li class="p-2 bg-white border rounded mb-1" onclick="useSuggestion(' + i + ')" style="cursor: pointer;">' + medDetails + '</li>';
                         } else {
-                            console.log('Suggestion ' + i + ' has no valid medication name, skipping');
+                            // console.log('Suggestion ' + i + ' has no valid medication name, skipping');
                         }
                     });
                     suggestionsHtml += '</ul>';
@@ -813,22 +813,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.aiSuggestions = response.suggestions;
                     $('#ai_suggestions').val(JSON.stringify(response.suggestions));
                 } else {
-                    console.log('No suggestions found in response');
+                    // console.log('No suggestions found in response');
                     $('#ai-suggestions').html('<div class="p-3 text-muted">No AI suggestions available at this time.</div>').show();
                     $('#ai_suggestions').val('');
                     window.aiSuggestions = [];
                 }
                 
                 // Risks
-                console.log('Processing risk_flags:', response.risk_flags);
+                // console.log('Processing risk_flags:', response.risk_flags);
                 if (response.risk_flags && Array.isArray(response.risk_flags) && response.risk_flags.length > 0) {
                     var risksText = response.risk_flags.join(', ');
-                    console.log('Risk flags text:', risksText);
+                    // console.log('Risk flags text:', risksText);
                     $('#risks-content').text(risksText);
                     $('#ai-risks').show();
                     $('#ai_risk_flags').val(JSON.stringify(response.risk_flags));
                 } else {
-                    console.log('No valid risk_flags found');
+                    // console.log('No valid risk_flags found');
                     $('#ai-risks').hide();
                     $('#ai_risk_flags').val('');
                 }

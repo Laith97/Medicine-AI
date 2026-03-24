@@ -501,20 +501,20 @@ body .dropdown-menu {
 
 <script>
 function loginAsDoctor(doctorId, doctorName) {
-    console.log('loginAsDoctor called with:', doctorId, doctorName);
+    // console.log('loginAsDoctor called with:', doctorId, doctorName);
     
     if (confirm('Are you sure you want to login as Dr. ' + doctorName + '? You will be redirected to their dashboard.')) {
-        console.log('User confirmed, submitting form...');
+        // console.log('User confirmed, submitting form...');
         const form = document.getElementById('login-as-form-' + doctorId);
         if (form) {
-            console.log('Form found, submitting...');
+            // console.log('Form found, submitting...');
             form.submit();
         } else {
-            console.error('Form not found:', 'login-as-form-' + doctorId);
+            // console.error('Form not found:', 'login-as-form-' + doctorId);
             alert('Error: Form not found. Please refresh the page and try again.');
         }
     } else {
-        console.log('User cancelled');
+        // console.log('User cancelled');
     }
 }
 

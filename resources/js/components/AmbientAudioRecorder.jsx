@@ -15,7 +15,7 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
     useEffect(() => {
         // Only create if we don't have one
         if (recorderRef.current) {
-            console.log('⚠️ Recorder already exists, skipping creation');
+            // console.log('⚠️ Recorder already exists, skipping creation');
             return;
         }
 
@@ -62,7 +62,7 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
         // Cleanup function to stop recording if component unmounts while recording
         return () => {
             if (recorderRef.current && isRecording) {
-                console.log('🧹 Component unmounting, stopping recorder');
+                // console.log('🧹 Component unmounting, stopping recorder');
                 recorderRef.current.stopRecording();
             }
         };
@@ -264,9 +264,9 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
             setIsRecording(false);
             setStatus('stopped');
         } else if (recorderRef.current) {
-            console.log('⏹️ Stopping recording via MedicalAmbientRecorder...');
+            // console.log('⏹️ Stopping recording via MedicalAmbientRecorder...');
             const audioBlob = await recorderRef.current.stopRecordingAsync();
-            console.log('✅ Recording stopped, audio blob received:', audioBlob ? audioBlob.size + ' bytes' : 'null');
+            // console.log('✅ Recording stopped, audio blob received:', audioBlob ? audioBlob.size + ' bytes' : 'null');
 
             // Clean up after getting the blob
             if (recorderRef.current) {
@@ -276,13 +276,13 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
             // Trigger server-side processing
             try {
                 if (audioBlob && audioBlob.size > 0) {
-                    console.log('🚀 Triggering server-side processing for audio blob...');
+                    // console.log('🚀 Triggering server-side processing for audio blob...');
 
                     // Show loading spinner
                     window.dispatchEvent(new CustomEvent('showTranscriptLoading'));
 
                     const currentSessionId = sessionId || window.sessionId || (typeof window.getSessionId === 'function' ? window.getSessionId() : null);
-                    console.log('   Using session ID:', currentSessionId);
+                    // console.log('   Using session ID:', currentSessionId);
 
                     if (currentSessionId) {
                         const formData = new FormData();
@@ -298,16 +298,16 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
                         });
 
                         if (response.data.success) {
-                            console.log('✅ Server-side processing completed successfully');
-                            console.log('📥 Server response data:', response.data);
-                            console.log('📥 Server transcript received:', response.data.improved_transcription);
-                            console.log('📥 Transcript length:', response.data.improved_transcription ? response.data.improved_transcription.length : 0);
+                            // console.log('✅ Server-side processing completed successfully');
+                            // console.log('📥 Server response data:', response.data);
+                            // console.log('📥 Server transcript received:', response.data.improved_transcription);
+                            // console.log('📥 Transcript length:', response.data.improved_transcription ? response.data.improved_transcription.length : 0);
 
                             // Hide loading spinner
                             window.dispatchEvent(new CustomEvent('hideTranscriptLoading'));
 
                             if (response.data.improved_transcription) {
-                                console.log('🎯 Dispatching serverTranscriptReady event');
+                                // console.log('🎯 Dispatching serverTranscriptReady event');
                                 window.dispatchEvent(new CustomEvent('serverTranscriptReady', {
                                     detail: {
                                         transcription: response.data.improved_transcription,
@@ -316,21 +316,21 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
                                     }
                                 }));
                             } else {
-                                console.warn('⚠️ No improved_transcription in response');
+                                // console.warn('⚠️ No improved_transcription in response');
                             }
                         } else {
-                            console.error('❌ Server-side processing failed:', response.data.message);
+                            // console.error('❌ Server-side processing failed:', response.data.message);
                             // Hide loading on error
                             window.dispatchEvent(new CustomEvent('hideTranscriptLoading'));
                         }
                     } else {
-                        console.warn('⚠️ No session ID available for server-side processing');
+                        // console.warn('⚠️ No session ID available for server-side processing');
                     }
                 } else {
-                    console.warn('⚠️ No audio blob available for server-side processing');
+                    // console.warn('⚠️ No audio blob available for server-side processing');
                 }
             } catch (error) {
-                console.error('❌ Error during server-side processing:', error);
+                // console.error('❌ Error during server-side processing:', error);
                 // Hide loading on error
                 window.dispatchEvent(new CustomEvent('hideTranscriptLoading'));
             }

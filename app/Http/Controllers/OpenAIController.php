@@ -504,8 +504,8 @@ class OpenAIController extends Controller
                                 ($user->isSubUser() && $record->doctor_id === $user->parent_user_id);
                 }
             } else {
-                // No authentication required for testing - allow access
-                $hasAccess = true;
+                // Require authentication for access - deny by default
+                $hasAccess = false;
             }
 
             // Log access denial for security monitoring

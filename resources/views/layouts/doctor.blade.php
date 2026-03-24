@@ -210,12 +210,6 @@
                         @endif
                     </a>
                 </div>
-                <div class="nav-item">
-                    <a href="{{ route('ai.ambient-listening.index') }}" class="nav-link {{ request()->routeIs('ai.ambient-listening.index') ? 'active' : '' }}">
-                        <i class="fas fa-microphone-alt"></i>
-                        <span>Start Consultation</span>
-                    </a>
-                </div>
 
                 <div class="nav-divider"></div>
                 <div class="nav-section">Patient Management</div>

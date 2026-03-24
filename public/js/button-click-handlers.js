@@ -2,7 +2,7 @@
 (function() {
     'use strict';
 
-    console.log('🔧 Button click handlers loaded');
+    // console.log('🔧 Button click handlers loaded');
 
     function getOrCreateSessionId() {
         // Prioritize window.sessionId (set by recording component)
@@ -17,7 +17,7 @@
             sessionId = localStorage.getItem('voice_assistant_session_id');
         }
         
-        console.log('Session ID sources:', { 
+        // console.log('Session ID sources:', { 
             window: window.sessionId,
             container: document.querySelector('[data-session-id]')?.getAttribute('data-session-id'), 
             localStorage: localStorage.getItem('voice_assistant_session_id'),
@@ -48,7 +48,7 @@
                     sessionId = response.sessionId;
                     window.sessionId = sessionId;
                     localStorage.setItem('voice_assistant_session_id', sessionId);
-                    console.log('✅ Created new session:', sessionId);
+                    // console.log('✅ Created new session:', sessionId);
                 } else {
                     alert('Failed to create session: ' + (response.message || 'Unknown error'));
                     return null;
@@ -67,12 +67,12 @@
         const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
 
         if (generateAnalysisBtn && !generateAnalysisBtn.dataset.handlerAttached) {
-            console.log('Attaching AI Analysis button handler');
+            // console.log('Attaching AI Analysis button handler');
             generateAnalysisBtn.dataset.handlerAttached = 'true';
             
             generateAnalysisBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                console.log('🧠 AI Analysis button clicked');
+                // console.log('🧠 AI Analysis button clicked');
                 
                 // Get transcript
                 const transcriptContainer = document.querySelector('#react-transcript-container');
@@ -116,7 +116,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        console.log('✅ AI Analysis successful', data);
+                        // console.log('✅ AI Analysis successful', data);
                         
                         // Populate clinical chart fields
                         populateClinicalFields(data.aiAnalysis || data.analysis);
@@ -134,7 +134,7 @@
                     }
                 })
                 .catch(error => {
-                    console.error('❌ AI Analysis error:', error);
+                    // console.error('❌ AI Analysis error:', error);
                     alert('Failed to generate AI analysis: ' + error.message);
                     generateAnalysisBtn.innerHTML = originalHTML;
                     generateAnalysisBtn.disabled = false;
@@ -143,12 +143,12 @@
         }
 
         if (generateClinicalDocBtn && !generateClinicalDocBtn.dataset.handlerAttached) {
-            console.log('Attaching Clinical Doc button handler');
+            // console.log('Attaching Clinical Doc button handler');
             generateClinicalDocBtn.dataset.handlerAttached = 'true';
             
             generateClinicalDocBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                console.log('📄 Clinical Doc button clicked');
+                // console.log('📄 Clinical Doc button clicked');
                 
                 // Get transcript
                 const transcriptContainer = document.querySelector('#react-transcript-container');
@@ -193,7 +193,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        console.log('✅ Clinical Doc successful', data);
+                        // console.log('✅ Clinical Doc successful', data);
                         
                         // Show professional modal with formatted results
                         const content = data.aiAnalysis || data.clinicalDoc || data.documentation || 'No documentation generated';
@@ -209,7 +209,7 @@
                     }
                 })
                 .catch(error => {
-                    console.error('❌ Clinical Doc error:', error);
+                    // console.error('❌ Clinical Doc error:', error);
                     alert('Failed to generate clinical documentation: ' + error.message);
                     generateClinicalDocBtn.innerHTML = originalHTML;
                     generateClinicalDocBtn.disabled = false;
@@ -271,7 +271,7 @@
         if (carePlan && document.getElementById('carePlan')) 
             document.getElementById('carePlan').value = carePlan;
         
-        console.log('✅ Clinical chart fields populated');
+        // console.log('✅ Clinical chart fields populated');
     }
 
     // Disable buttons during transcript processing

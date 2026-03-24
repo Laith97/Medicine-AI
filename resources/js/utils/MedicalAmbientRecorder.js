@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class MedicalAmbientRecorder {
     constructor(config = {}) {
         this.instanceId = Math.random().toString(36).substr(2, 9);
-        console.log('🎬 Creating MedicalAmbientRecorder instance:', this.instanceId);
+        // console.log('🎬 Creating MedicalAmbientRecorder instance:', this.instanceId);
         
         this.audioContext = null;
         this.mediaStream = null;
@@ -101,42 +101,42 @@ export class MedicalAmbientRecorder {
                 }
             });
 
-            console.log('✅ Microphone access granted, mediaStream:', this.mediaStream);
+            // console.log('✅ Microphone access granted, mediaStream:', this.mediaStream);
 
             // 2. Setup direct AssemblyAI connection ONLY if config is provided (English only)
             if (assemblyConfig) {
-                console.log('🔗 Connecting to AssemblyAI...', assemblyConfig);
+                // console.log('🔗 Connecting to AssemblyAI...', assemblyConfig);
                 try {
                     await this.setupAssemblyAIConnection(assemblyConfig);
-                    console.log('✅ AssemblyAI streaming initialized');
+                    // console.log('✅ AssemblyAI streaming initialized');
                 } catch (assemblyError) {
-                    console.error('❌ AssemblyAI connection failed:', assemblyError);
+                    // console.error('❌ AssemblyAI connection failed:', assemblyError);
                 }
             } else {
-                console.log('ℹ️ No AssemblyAI config provided - using local recording with post-session processing');
+                // console.log('ℹ️ No AssemblyAI config provided - using local recording with post-session processing');
             }
 
             // 2b. Setup local recording for high-quality fallback
-            console.log('🎥 Setting up local recording...');
+            // console.log('🎥 Setting up local recording...');
             this.setupLocalRecording();
-            console.log('✅ Local recording setup complete, localMediaRecorder:', this.localMediaRecorder);
+            // console.log('✅ Local recording setup complete, localMediaRecorder:', this.localMediaRecorder);
 
             // 3. Skip WebSocket for all languages - use post-processing for speaker diarization
             if (false) { // Disabled: Always use post-processing for better speaker diarization
                 try {
-                    console.log('🔗 Connecting to local WebSocket...');
+                    // console.log('🔗 Connecting to local WebSocket...');
                     await this.connectWebSocket();
-                    console.log('✅ Local WebSocket connected');
+                    // console.log('✅ Local WebSocket connected');
                 } catch (wsError) {
-                    console.warn('⚠️ Local WebSocket connection failed:', wsError.message);
+                    // console.warn('⚠️ Local WebSocket connection failed:', wsError.message);
                     if (!this.sendToAssemblyAI) {
-                        console.error('❌ No active transcription service available');
+                        // console.error('❌ No active transcription service available');
                         throw wsError;
                     }
-                    console.log('ℹ️ Proceeding with AssemblyAI streaming only');
+                    // console.log('ℹ️ Proceeding with AssemblyAI streaming only');
                 }
             } else {
-                console.log('ℹ️ Arabic session: Recording locally, will use GPT-4o for high-quality transcription after recording stops');
+                // console.log('ℹ️ Arabic session: Recording locally, will use GPT-4o for high-quality transcription after recording stops');
             }
 
             // 4. Create audio processing pipeline
@@ -159,7 +159,7 @@ export class MedicalAmbientRecorder {
                 const originalOnStop = this.localMediaRecorder.onstop;
                 this.localMediaRecorder.onstop = () => {
                     if (originalOnStop) originalOnStop();
-                    console.log('⏹️ Local MediaRecorder stopped, audio blob ready');
+                    // console.log('⏹️ Local MediaRecorder stopped, audio blob ready');
                     resolve();
                 };
                 this.localMediaRecorder.stop();
@@ -199,7 +199,7 @@ export class MedicalAmbientRecorder {
 
                     // Throttled logging to verify audio flow (every ~100 chunks)
                     if (this.chunkSequence % 100 === 0) {
-                        console.log(`🎙️ Audio flow check: Chunks sent: ${this.chunkSequence}, Size: ${pcmData.length}, AssemblyAI State: ${this.assemblySocket ? this.assemblySocket.readyState : 'null'}`);
+                        // console.log(`🎙️ Audio flow check: Chunks sent: ${this.chunkSequence}, Size: ${pcmData.length}, AssemblyAI State: ${this.assemblySocket ? this.assemblySocket.readyState : 'null'}`);
                     }
 
                     // Send to AssemblyAI if configured
@@ -212,7 +212,7 @@ export class MedicalAmbientRecorder {
                             }
                             this.assemblySocket.send(audioBuffer);
                         } catch (sendError) {
-                            console.error('❌ Error sending to AssemblyAI:', sendError);
+                            // console.error('❌ Error sending to AssemblyAI:', sendError);
                         }
                     }
 
@@ -228,7 +228,7 @@ export class MedicalAmbientRecorder {
 
                     this.chunkSequence++;
                 } catch (error) {
-                    console.error('❌ Audio processing logic error:', error);
+                    // console.error('❌ Audio processing logic error:', error);
                 }
             };
 
@@ -311,7 +311,7 @@ export class MedicalAmbientRecorder {
                     this.onTranscriptUpdate(data);
                 }
             } catch (e) {
-                console.error('Error parsing WebSocket message:', e);
+                // console.error('Error parsing WebSocket message:', e);
             }
         };
 
@@ -334,7 +334,7 @@ export class MedicalAmbientRecorder {
     }
 
     handleError(message, error) {
-        console.error(message, error);
+        // console.error(message, error);
         const enhancedMessage = this.getEnhancedErrorMessage(message, error);
         if (this.onError) {
             this.onError(enhancedMessage, error);
@@ -420,11 +420,11 @@ export class MedicalAmbientRecorder {
                         const messageType = data.type || data.message_type;
 
                         // Debug log all message types from v3 
-                        console.log(`🔍 AssemblyAI Message Received (${messageType}):`, data);
+                        // console.log(`🔍 AssemblyAI Message Received (${messageType}):`, data);
 
                         // 1. Handle v3 "Begin" or v2 "SessionBegins"
                         if (messageType === 'Begin' || messageType === 'SessionBegins') {
-                            console.log('🎯 AssemblyAI Session Began:', data.id || data.session_id);
+                            // console.log('🎯 AssemblyAI Session Began:', data.id || data.session_id);
                             return;
                         }
 
@@ -444,7 +444,7 @@ export class MedicalAmbientRecorder {
                                 return;
                             }
 
-                            console.log(`📝 ${isFinal ? '✅ FINAL' : '⏳ Partial'}: ${transcriptText}`);
+                            // console.log(`📝 ${isFinal ? '✅ FINAL' : '⏳ Partial'}: ${transcriptText}`);
 
 
 
@@ -468,12 +468,12 @@ export class MedicalAmbientRecorder {
                             }
                         }
                     } catch (error) {
-                        console.error('❌ Error parsing AssemblyAI message:', error, event.data);
+                        // console.error('❌ Error parsing AssemblyAI message:', error, event.data);
                     }
                 };
 
                 this.assemblySocket.onclose = (event) => {
-                    console.warn(`🔌 AssemblyAI WebSocket Closed: Code ${event.code}, Reason: ${event.reason || 'None provided'}`);
+                    // console.warn(`🔌 AssemblyAI WebSocket Closed: Code ${event.code}, Reason: ${event.reason || 'None provided'}`);
                     this.sendToAssemblyAI = false;
                     if (this.isRecording && !this.isDestroyed) {
                         this.handleStatusChange('assemblyai_disconnected');
@@ -496,7 +496,7 @@ export class MedicalAmbientRecorder {
         try {
             // Prevent re-initialization if already recording
             if (this.localMediaRecorder && this.localMediaRecorder.state === 'recording') {
-                console.log('⚠️ Local recording already active, skipping setup');
+                // console.log('⚠️ Local recording already active, skipping setup');
                 return;
             }
 
@@ -516,7 +516,7 @@ export class MedicalAmbientRecorder {
             this.localMediaRecorder.ondataavailable = (event) => {
                 if (event.data && event.data.size > 0) {
                     this.recordedChunks.push(event.data);
-                    console.log(`💾 Chunk recorded: ${event.data.size} bytes, Total chunks: ${this.recordedChunks.length}`);
+                    // console.log(`💾 Chunk recorded: ${event.data.size} bytes, Total chunks: ${this.recordedChunks.length}`);
                 }
             };
 
@@ -524,7 +524,7 @@ export class MedicalAmbientRecorder {
                 this.audioBlob = new Blob(this.recordedChunks, {
                     type: this.localMediaRecorder.mimeType || 'audio/webm'
                 });
-                console.log('💾 Local audio recording captured:', this.audioBlob.size, 'bytes');
+                // console.log('💾 Local audio recording captured:', this.audioBlob.size, 'bytes');
 
                 if (window && !window.audioBlob) {
                     window.audioBlob = this.audioBlob;
@@ -534,9 +534,9 @@ export class MedicalAmbientRecorder {
             };
 
             this.localMediaRecorder.start(1000);
-            console.log('🎙️ Local recording started with mimeType:', this.localMediaRecorder.mimeType);
+            // console.log('🎙️ Local recording started with mimeType:', this.localMediaRecorder.mimeType);
         } catch (error) {
-            console.warn('⚠️ Failed to setup local recording:', error);
+            // console.warn('⚠️ Failed to setup local recording:', error);
         }
     }
 
@@ -546,21 +546,21 @@ export class MedicalAmbientRecorder {
 
     async stopRecordingAsync() {
         return new Promise((resolve) => {
-            console.log('🛑 stopRecordingAsync called on instance:', this.instanceId);
-            console.log('   this.localMediaRecorder:', this.localMediaRecorder);
-            console.log('   MediaRecorder state:', this.localMediaRecorder?.state);
-            console.log('   recordedChunks length:', this.recordedChunks?.length);
-            console.log('   recordedChunks:', this.recordedChunks);
+            // console.log('🛑 stopRecordingAsync called on instance:', this.instanceId);
+            // console.log('   this.localMediaRecorder:', this.localMediaRecorder);
+            // console.log('   MediaRecorder state:', this.localMediaRecorder?.state);
+            // console.log('   recordedChunks length:', this.recordedChunks?.length);
+            // console.log('   recordedChunks:', this.recordedChunks);
             
             if (this.localMediaRecorder && this.localMediaRecorder.state !== 'inactive') {
                 this.localMediaRecorder.onstop = () => {
-                    console.log('🎬 MediaRecorder onstop fired, creating blob from', this.recordedChunks.length, 'chunks');
+                    // console.log('🎬 MediaRecorder onstop fired, creating blob from', this.recordedChunks.length, 'chunks');
                     
                     this.audioBlob = new Blob(this.recordedChunks, {
                         type: this.localMediaRecorder.mimeType || 'audio/webm'
                     });
                     
-                    console.log('💾 Audio blob created:', this.audioBlob.size, 'bytes');
+                    // console.log('💾 Audio blob created:', this.audioBlob.size, 'bytes');
 
                     if (window) {
                         window.audioBlob = this.audioBlob;
@@ -571,17 +571,17 @@ export class MedicalAmbientRecorder {
                     resolve(this.audioBlob);
                 };
                 
-                console.log('⏹️ Calling MediaRecorder.stop()');
+                // console.log('⏹️ Calling MediaRecorder.stop()');
                 this.localMediaRecorder.stop();
             } else {
-                console.log('⚠️ MediaRecorder already inactive or not initialized');
-                console.log('   Trying to use window.audioBlob or create from chunks...');
+                // console.log('⚠️ MediaRecorder already inactive or not initialized');
+                // console.log('   Trying to use window.audioBlob or create from chunks...');
                 
                 // Try to create blob from existing chunks
                 if (this.recordedChunks && this.recordedChunks.length > 0) {
-                    console.log('💾 Creating blob from', this.recordedChunks.length, 'existing chunks');
+                    // console.log('💾 Creating blob from', this.recordedChunks.length, 'existing chunks');
                     this.audioBlob = new Blob(this.recordedChunks, { type: 'audio/webm' });
-                    console.log('💾 Blob created:', this.audioBlob.size, 'bytes');
+                    // console.log('💾 Blob created:', this.audioBlob.size, 'bytes');
                     if (window) {
                         window.audioBlob = this.audioBlob;
                     }
@@ -598,7 +598,7 @@ export class MedicalAmbientRecorder {
     }
 
     cleanup() {
-        console.log('🧹 Cleanup called, localMediaRecorder state:', this.localMediaRecorder?.state);
+        // console.log('🧹 Cleanup called, localMediaRecorder state:', this.localMediaRecorder?.state);
         
         // Stop media stream tracks
         if (this.mediaStream) {
@@ -635,7 +635,7 @@ export class MedicalAmbientRecorder {
 
         // CRITICAL: Don't nullify localMediaRecorder - just stop it if needed
         if (this.localMediaRecorder && this.localMediaRecorder.state === 'recording') {
-            console.log('⏹️ Stopping MediaRecorder in cleanup');
+            // console.log('⏹️ Stopping MediaRecorder in cleanup');
             this.localMediaRecorder.stop();
         }
         // Don't set to null: this.localMediaRecorder = null;

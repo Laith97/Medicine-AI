@@ -187,7 +187,7 @@ class ChatWidget {
         this.chatMessages = document.getElementById('chat-messages');
 
         // Debug: Check if elements exist
-        console.log('Chat elements:', {
+        // console.log('Chat elements:', {
             toggle: !!this.chatToggleBtn,
             box: !!this.chatBox,
             close: !!this.chatCloseBtn,
@@ -198,16 +198,16 @@ class ChatWidget {
     }
 
     bindEvents() {
-        console.log('Binding chat widget events');
+        // console.log('Binding chat widget events');
 
         if (!this.chatToggleBtn) {
-            console.error('Chat toggle button not found!');
+            // console.error('Chat toggle button not found!');
             return;
         }
 
-        console.log('Adding click event listener to chat toggle button');
+        // console.log('Adding click event listener to chat toggle button');
         this.chatToggleBtn.addEventListener('click', (e) => {
-            console.log('Chat toggle button clicked!', e);
+            // console.log('Chat toggle button clicked!', e);
             e.preventDefault();
             e.stopPropagation();
             this.toggleChat();
@@ -215,7 +215,7 @@ class ChatWidget {
 
         if (this.chatCloseBtn) {
             this.chatCloseBtn.addEventListener('click', () => {
-                console.log('Chat close button clicked');
+                // console.log('Chat close button clicked');
                 this.closeChat();
             });
         }
@@ -236,35 +236,35 @@ class ChatWidget {
     }
 
     async toggleChat() {
-        console.log('toggleChat called');
-        console.log('chatBox element:', this.chatBox);
-        console.log('chatBox classes:', this.chatBox?.className);
+        // console.log('toggleChat called');
+        // console.log('chatBox element:', this.chatBox);
+        // console.log('chatBox classes:', this.chatBox?.className);
 
         if (!this.chatBox) {
-            console.error('Chat box element not found!');
+            // console.error('Chat box element not found!');
             return;
         }
 
         if (this.chatBox.classList.contains('d-none')) {
-            console.log('Opening chat...');
+            // console.log('Opening chat...');
             await this.openChat();
         } else {
-            console.log('Closing chat...');
+            // console.log('Closing chat...');
             this.closeChat();
         }
     }
 
     async openChat() {
-        console.log('openChat called');
-        console.log('Removing d-none class from chat box');
+        // console.log('openChat called');
+        // console.log('Removing d-none class from chat box');
         this.chatBox.classList.remove('d-none');
-        console.log('Chat box classes after removing d-none:', this.chatBox.className);
+        // console.log('Chat box classes after removing d-none:', this.chatBox.className);
 
         if (!this.isInitialized) {
-            console.log('Chat not initialized, initializing...');
+            // console.log('Chat not initialized, initializing...');
             await this.initializeChat();
         } else {
-            console.log('Chat already initialized');
+            // console.log('Chat already initialized');
         }
 
         this.scrollToBottom();
@@ -301,7 +301,7 @@ class ChatWidget {
                 this.startPolling();
             }
         } catch (error) {
-            console.error('Failed to initialize chat:', error);
+            // console.error('Failed to initialize chat:', error);
             this.addMessage('Sorry, chat is currently unavailable. Please try again later.', 'bot', 'now');
         }
     }
@@ -361,7 +361,7 @@ class ChatWidget {
                 this.hideTypingIndicator();
             }
         } catch (error) {
-            console.error('Failed to send message:', error);
+            // console.error('Failed to send message:', error);
             this.hideTypingIndicator();
             this.addMessage('Sorry, I couldn\'t process your message. Please try again.', 'bot', 'now');
         }
@@ -443,7 +443,7 @@ class ChatWidget {
                 });
             }
         } catch (error) {
-            console.error('Failed to check for new messages:', error);
+            // console.error('Failed to check for new messages:', error);
         }
     }
 
@@ -456,44 +456,44 @@ class ChatWidget {
 
 // Initialize chat widget when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM Content Loaded - Starting chat widget initialization');
+    // console.log('DOM Content Loaded - Starting chat widget initialization');
     const doctorUsername = '{{ $doctorUsername ?? "" }}';
-    console.log('Doctor username:', doctorUsername);
+    // console.log('Doctor username:', doctorUsername);
 
     // Check if elements exist before initializing
     const toggleBtn = document.getElementById('chat-toggle-btn');
     const chatBox = document.getElementById('chat-box');
 
-    console.log('Chat elements found:', {
+    // console.log('Chat elements found:', {
         toggleBtn: !!toggleBtn,
         chatBox: !!chatBox
     });
 
     if (!toggleBtn) {
-        console.error('Chat toggle button not found in DOM!');
+        // console.error('Chat toggle button not found in DOM!');
         return;
     }
 
-    console.log('Chat toggle button found, proceeding with ChatWidget initialization');
+    // console.log('Chat toggle button found, proceeding with ChatWidget initialization');
 
     if (doctorUsername) {
         // Add delay to ensure all elements are rendered
         setTimeout(() => {
             try {
-                console.log('Creating ChatWidget instance...');
+                // console.log('Creating ChatWidget instance...');
                 window.chatWidget = new ChatWidget(doctorUsername);
-                console.log('Chat widget initialized successfully');
+                // console.log('Chat widget initialized successfully');
             } catch (error) {
-                console.error('Error initializing chat widget:', error);
-                console.error('Error stack:', error.stack);
+                // console.error('Error initializing chat widget:', error);
+                // console.error('Error stack:', error.stack);
             }
         }, 500);
     } else {
-        console.error('No doctor username provided for chat widget');
+        // console.error('No doctor username provided for chat widget');
 
         // Still try to add basic click handler for testing
         toggleBtn.addEventListener('click', function() {
-            console.log('Chat button clicked - but no doctor username available');
+            // console.log('Chat button clicked - but no doctor username available');
             alert('Chat not available - missing doctor username');
         });
     }

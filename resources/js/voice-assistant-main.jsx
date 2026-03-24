@@ -18,7 +18,7 @@ function initializeVoiceAssistantComponents() {
     // Check if we're on the voice assistant page
     const container = document.querySelector('[data-session-id]');
     if (!container) {
-        console.log('Not on voice assistant page, skipping React component initialization');
+        // console.log('Not on voice assistant page, skipping React component initialization');
         return;
     }
 

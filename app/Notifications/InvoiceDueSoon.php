@@ -23,7 +23,28 @@ class InvoiceDueSoon extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        $channels = ['mail', 'database', 'sms'];
+        return $channels;
+    }
+
+    /**
+     * Get the SMS representation of the notification.
+     */
+    public function toSms(object $notifiable): array
+    {
+        $daysUntilDue = now()->diffInDays($this->invoice->due_date, false);
+        $doctorId = $this->invoice->user_id ?? 0;
+        $hospitalId = 0;
+
+        return [
+            'message' => "Reminder: Your MedCura AI invoice of {$this->invoice->getFormattedAmountDue()} is due in {$daysUntilDue} days. Due: {$this->invoice->due_date->format('M d, Y')}. Pay: " . route('invoices.show', $this->invoice),
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'invoice_notification',
+                'context_id' => $this->invoice->id,
+            ]
+        ];
     }
 
     /**

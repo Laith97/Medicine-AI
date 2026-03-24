@@ -1898,7 +1898,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 })
                 .catch(error => {
-                    console.error('Error loading patient visits:', error);
+                    // console.error('Error loading patient visits:', error);
                 })
                 .finally(() => {
                     // Hide loading state

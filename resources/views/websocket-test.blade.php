@@ -52,10 +52,10 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Message sent:', data);
+                    // console.log('Message sent:', data);
                     document.getElementById('message-input').value = '';
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => // console.error('Error:', error));
             }
         }
     </script>

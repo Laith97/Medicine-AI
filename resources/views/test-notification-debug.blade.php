@@ -319,7 +319,7 @@
                     // Test notification listener
                     userChannel.notification((notification) => {
                         window.addTestResult(resultsDiv, '✅ Notification listener working', 'success');
-                        console.log('Test notification received:', notification);
+                        // console.log('Test notification received:', notification);
                     });
                 });
 

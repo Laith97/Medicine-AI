@@ -672,7 +672,7 @@
                         $mainContent.html(response);
                     }
                 } catch (error) {
-                    console.error('Error parsing AJAX response:', error);
+                    // console.error('Error parsing AJAX response:', error);
                     $mainContent.html(originalContent);
                     showAjaxError('Failed to load page content. Please try again.');
                 }
@@ -681,7 +681,7 @@
                 // Hide loading overlay
                 $loadingOverlay.removeClass('show');
 
-                console.error('AJAX Error:', error);
+                // console.error('AJAX Error:', error);
                 $mainContent.html(originalContent);
 
                 // Fallback to regular navigation for critical errors

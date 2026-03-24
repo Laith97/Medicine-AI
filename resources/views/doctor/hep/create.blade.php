@@ -515,7 +515,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            // console.error('Error:', error);
             alert('An error occurred while generating the program');
         })
         .finally(() => {
@@ -544,24 +544,24 @@ document.addEventListener('DOMContentLoaded', function() {
         switch(step) {
             case 1:
                 const diagnosisValid = document.getElementById('diagnosis_id').value !== '';
-                console.log('Step 1 validation - diagnosis_id:', diagnosisValid, 'value:', document.getElementById('diagnosis_id').value);
+                // console.log('Step 1 validation - diagnosis_id:', diagnosisValid, 'value:', document.getElementById('diagnosis_id').value);
                 return diagnosisValid;
             case 2:
                 const methodValid = selectedMethod !== null;
-                console.log('Step 2 validation - selectedMethod:', methodValid, selectedMethod);
+                // console.log('Step 2 validation - selectedMethod:', methodValid, selectedMethod);
                 return methodValid;
             case 3:
                 if (selectedMethod === 'ai') {
-                    console.log('Step 3 validation - AI mode: valid');
+                    // console.log('Step 3 validation - AI mode: valid');
                     return true;
                 } else if (selectedMethod === 'manual') {
                     const titleValid = document.getElementById('program_title').value.trim() !== '';
                     const exercisesValid = exercises.length > 0;
                     const step3Valid = titleValid && exercisesValid;
-                    console.log('Step 3 validation - Manual mode: titleValid:', titleValid, 'exercisesValid:', exercisesValid, 'valid:', step3Valid);
+                    // console.log('Step 3 validation - Manual mode: titleValid:', titleValid, 'exercisesValid:', exercisesValid, 'valid:', step3Valid);
                     return step3Valid;
                 } else {
-                    console.log('Step 3 validation - No method selected: invalid');
+                    // console.log('Step 3 validation - No method selected: invalid');
                     return false;
                 }
             default:
@@ -791,7 +791,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Log exercises array for debugging
-        console.log('Exercises array after adding:', exercises);
+        // console.log('Exercises array after adding:', exercises);
     }
     
     // Remove exercise functionality
@@ -806,7 +806,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 exercises = exercises.filter(ex => ex.exercise_id != exerciseId);
                 
                 // Log exercises array for debugging
-                console.log('Exercises array after removal:', exercises);
+                // console.log('Exercises array after removal:', exercises);
                 
                 // Update exercise indices
                 updateExerciseIndices();
@@ -901,7 +901,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('exercise-search')?.addEventListener('input', filterExercises);
             })
             .catch(error => {
-                console.error('Error loading exercises:', error);
+                // console.error('Error loading exercises:', error);
                 modalBody.innerHTML = '<div class="alert alert-danger">Failed to load exercises. Please try again.</div>';
             });
     }
@@ -930,9 +930,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Debug form data before submission
         const formData = new FormData(this);
-        console.log('Form submission data:');
+        // console.log('Form submission data:');
         for (let [key, value] of formData.entries()) {
-            console.log(key, value);
+            // console.log(key, value);
         }
         
         // Submit form via AJAX
@@ -965,7 +965,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
-            console.error('Error saving HEP program:', error);
+            // console.error('Error saving HEP program:', error);
             alert(error.message || 'Failed to save HEP program. Please try again.');
         })
         .finally(() => {
@@ -976,8 +976,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Log form data for debugging
         if(selectedMethod === 'manual'){
             const title = document.getElementById('program_title').value.trim();
-            console.log('Manual title value:', title, 'is empty:', title === '');
-            console.log('Exercises count:', exercises.length);
+            // console.log('Manual title value:', title, 'is empty:', title === '');
+            // console.log('Exercises count:', exercises.length);
             
             // Check if we have exercises
             if (exercises.length === 0) {
@@ -995,17 +995,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        console.log('Form submission - selectedMethod:', selectedMethod, 'currentStep:', currentStep);
+        // console.log('Form submission - selectedMethod:', selectedMethod, 'currentStep:', currentStep);
     });
     
     // Form submission logging for debugging
     document.getElementById('save-hep-btn').addEventListener('click', function() {
-        console.log('Save button clicked - selectedMethod:', selectedMethod, 'currentStep:', currentStep);
+        // console.log('Save button clicked - selectedMethod:', selectedMethod, 'currentStep:', currentStep);
         if(selectedMethod === 'manual'){
             const title = document.getElementById('program_title').value.trim();
-            console.log('Manual title value:', title, 'is empty:', title === '');
+            // console.log('Manual title value:', title, 'is empty:', title === '');
             const step3Display = document.getElementById('step3-content').style.display;
-            console.log('Step3-content display:', step3Display);
+            // console.log('Step3-content display:', step3Display);
         }
     });
 });

@@ -252,22 +252,22 @@
 
 <script>
 function loginAsUser(userId, userName, userRole) {
-    console.log('loginAsUser called with:', userId, userName, userRole);
+    // console.log('loginAsUser called with:', userId, userName, userRole);
     
     const roleText = userRole === 'hospital_admin' ? 'Hospital Admin' : 'Doctor';
     
     if (confirm(`Are you sure you want to login as ${roleText} ${userName}? You will be redirected to their dashboard.`)) {
-        console.log('User confirmed, submitting form...');
+        // console.log('User confirmed, submitting form...');
         const form = document.getElementById('login-as-form-' + userId);
         if (form) {
-            console.log('Form found, submitting...');
+            // console.log('Form found, submitting...');
             form.submit();
         } else {
-            console.error('Form not found:', 'login-as-form-' + userId);
+            // console.error('Form not found:', 'login-as-form-' + userId);
             alert('Error: Form not found. Please refresh the page and try again.');
         }
     } else {
-        console.log('User cancelled');
+        // console.log('User cancelled');
     }
 }
 </script>

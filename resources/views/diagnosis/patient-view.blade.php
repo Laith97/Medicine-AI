@@ -440,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert(data.error || 'Failed to submit question. Please try again.');
                 }
             } catch (error) {
-                console.error('Error:', error);
+                // console.error('Error:', error);
                 alert('Failed to submit question. Please try again.');
             } finally {
                 // Re-enable submit button

@@ -618,7 +618,7 @@
                 }
             })
             .catch(error => {
-                console.error('Error cancelling appointment:', error);
+                // console.error('Error cancelling appointment:', error);
                 alert('Failed to cancel appointment');
             });
         });

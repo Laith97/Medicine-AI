@@ -218,39 +218,39 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('=== Dropdown Fix Test Initialized ===');
+            // console.log('=== Dropdown Fix Test Initialized ===');
 
             // Test dropdown functionality
             const dropdowns = document.querySelectorAll('.dropdown-toggle');
-            console.log('Found dropdowns:', dropdowns.length);
+            // console.log('Found dropdowns:', dropdowns.length);
 
             dropdowns.forEach((dropdown, index) => {
-                console.log(`Dropdown ${index}:`, dropdown);
+                // console.log(`Dropdown ${index}:`, dropdown);
 
                 // Check if dropdown has proper attributes
                 if (dropdown.hasAttribute('data-bs-toggle')) {
-                    console.log(`✅ Dropdown ${index} has data-bs-toggle attribute`);
+                    // console.log(`✅ Dropdown ${index} has data-bs-toggle attribute`);
                 } else {
-                    console.log(`❌ Dropdown ${index} missing data-bs-toggle attribute`);
+                    // console.log(`❌ Dropdown ${index} missing data-bs-toggle attribute`);
                 }
 
                 // Check if dropdown is visible
                 const computedStyle = window.getComputedStyle(dropdown);
                 if (computedStyle.display !== 'none' && computedStyle.opacity !== '0') {
-                    console.log(`✅ Dropdown ${index} is visible`);
+                    // console.log(`✅ Dropdown ${index} is visible`);
                 } else {
-                    console.log(`❌ Dropdown ${index} is hidden`);
+                    // console.log(`❌ Dropdown ${index} is hidden`);
                 }
             });
 
             // Test dropdown menu visibility
             const dropdownMenus = document.querySelectorAll('.dropdown-menu');
-            console.log('Found dropdown menus:', dropdownMenus.length);
+            // console.log('Found dropdown menus:', dropdownMenus.length);
 
             dropdownMenus.forEach((menu, index) => {
-                console.log(`Dropdown menu ${index}:`, menu);
+                // console.log(`Dropdown menu ${index}:`, menu);
                 const computedStyle = window.getComputedStyle(menu);
-                console.log(`Dropdown menu ${index} computed style:`, {
+                // console.log(`Dropdown menu ${index} computed style:`, {
                     display: computedStyle.display,
                     visibility: computedStyle.visibility,
                     opacity: computedStyle.opacity
@@ -260,19 +260,19 @@
             // Add click handlers for testing
             dropdowns.forEach((dropdown, index) => {
                 dropdown.addEventListener('click', function() {
-                    console.log(`Dropdown ${index} clicked`);
+                    // console.log(`Dropdown ${index} clicked`);
 
                     // Check if dropdown is showing
                     const dropdownElement = dropdown.closest('.dropdown');
                     if (dropdownElement.classList.contains('show')) {
-                        console.log(`✅ Dropdown ${index} is showing`);
+                        // console.log(`✅ Dropdown ${index} is showing`);
                     } else {
-                        console.log(`❌ Dropdown ${index} is not showing`);
+                        // console.log(`❌ Dropdown ${index} is not showing`);
                     }
                 });
             });
 
-            console.log('=== Dropdown Fix Test Complete ===');
+            // console.log('=== Dropdown Fix Test Complete ===');
         });
     </script>
 </body>

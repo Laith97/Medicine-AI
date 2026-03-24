@@ -358,7 +358,7 @@ function sendCommand(kioskId, command) {
     })
     .catch(error => {
         showNotification('Error sending command', 'error');
-        console.error('Error:', error);
+        // console.error('Error:', error);
     })
     .finally(() => {
         button.innerHTML = originalHtml;
@@ -384,7 +384,7 @@ function deleteKiosk(id) {
         })
         .catch(error => {
             showNotification('Error deleting kiosk', 'error');
-            console.error('Error:', error);
+            // console.error('Error:', error);
         });
     }
 }
@@ -431,7 +431,7 @@ document.getElementById('addKioskForm').addEventListener('submit', function(e) {
     })
     .catch(error => {
         showNotification('Error creating kiosk', 'error');
-        console.error('Error:', error);
+        // console.error('Error:', error);
     });
 });
 

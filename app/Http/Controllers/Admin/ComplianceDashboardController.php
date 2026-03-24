@@ -69,7 +69,7 @@ class ComplianceDashboardController extends Controller
     {
         $startDate = Carbon::parse($request->get('start_date', now()->subDays(30)));
         $endDate = Carbon::parse($request->get('end_date', now()));
-        $limit = $request->get('limit', 20);
+        $limit = min($request->get('limit', 20), 100); // Cap at 100 to prevent DoS
 
         $topRules = $this->effectivenessService->getTopPerformingRules($limit, $startDate, $endDate);
 

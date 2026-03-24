@@ -409,7 +409,7 @@ function playVoiceFile(index = 0) {
 
     // Play the audio
     audio.play().catch(error => {
-        console.error('Error playing audio:', error);
+        // console.error('Error playing audio:', error);
         if (playButton) {
             playButton.innerHTML = `<i class="fas fa-play me-1"></i>Play Voice Note ${index + 1}`;
             playButton.disabled = false;
@@ -430,7 +430,7 @@ function copyDiagnosisLink() {
     navigator.clipboard.writeText(link).then(function() {
         alert('Patient link copied to clipboard!');
     }, function(err) {
-        console.error('Could not copy text: ', err);
+        // console.error('Could not copy text: ', err);
         alert('Failed to copy link. Please copy manually: ' + link);
     });
 }

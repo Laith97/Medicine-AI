@@ -41,9 +41,9 @@ use Illuminate\Support\Str;
 // Broadcasting authentication route - simplified
 Broadcast::routes(['middleware' => ['web']]);
 
-// Debug authentication routes (temporary)
+// Debug authentication routes (temporary) - restricted to localhost only
 if (config('app.debug')) {
-    Route::middleware(['web'])->group(function () {
+    Route::middleware(['web', 'localhost'])->group(function () {
         Route::get('/debug-broadcasting-auth', function (\Illuminate\Http\Request $request) {
             $user = Auth::user();
 
@@ -831,6 +831,9 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
     // Appointment Settings
     Route::get('/settings/appointments', [App\Http\Controllers\Doctor\AppointmentSettingsController::class, 'index'])->name('settings.appointments');
     Route::put('/settings/appointments', [App\Http\Controllers\Doctor\AppointmentSettingsController::class, 'updateAppointmentTypes'])->name('settings.appointments.update');
+
+    // SMS Provider Settings
+    Route::get('/sms-settings', [App\Http\Controllers\Doctor\DashboardController::class, 'smsSettings'])->name('sms-settings');
 
     // Google integration
     Route::prefix('google')->name('google.')->group(function () {

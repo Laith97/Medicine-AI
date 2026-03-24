@@ -426,7 +426,7 @@ function selectPlan(planType) {
         }
     })
     .catch(error => {
-        console.error('Checkout error:', error);
+        // console.error('Checkout error:', error);
         clearTimeout(timeoutWarning);
         
         // More specific error messages

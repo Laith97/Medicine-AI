@@ -518,7 +518,7 @@ function skipPreferences() {
 
 function loadDoctorRecommendations(doctorId) {
     // This would load AI-powered recommendations for the selected doctor
-    console.log('Loading recommendations for doctor:', doctorId);
+    // console.log('Loading recommendations for doctor:', doctorId);
     // Implementation would fetch recommendations via AJAX
 }
 

@@ -512,7 +512,7 @@ $(document).ready(function() {
                 populateCopilotUI(response);
 
                 // Log success
-                console.log('AI Medical Copilot analysis successful', response);
+                // console.log('AI Medical Copilot analysis successful', response);
             },
             error: function(xhr, status, error) {
                 // Hide loading, show error
@@ -522,7 +522,7 @@ $(document).ready(function() {
                 showCopilotError(errorMessage);
 
                 // Log error
-                console.error('AI Medical Copilot error:', errorMessage);
+                // console.error('AI Medical Copilot error:', errorMessage);
             }
         });
     }
@@ -743,7 +743,7 @@ $(document).ready(function() {
             error: function(xhr, status, error) {
                 const errorMessage = xhr.responseJSON?.message || xhr.responseJSON?.error || 'Failed to save AI analysis';
                 showNotification(errorMessage, 'error');
-                console.error('Save AI analysis error:', errorMessage);
+                // console.error('Save AI analysis error:', errorMessage);
             }
         });
     }

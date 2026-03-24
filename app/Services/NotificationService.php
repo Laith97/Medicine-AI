@@ -665,6 +665,61 @@ class NotificationService
     }
 
     /**
+     * Send welcome notification to a newly created patient
+     *
+     * @return bool True if at least one notification was sent, false if patient has no email or phone
+     */
+    public function sendPatientWelcome(User $patient, string $temporaryPassword): bool
+    {
+        $name = $patient->name;
+        $emailSent = false;
+        $smsSent = false;
+
+        // Check notification preferences
+        $preferences = $patient->notificationPreferences;
+        $emailEnabled = !$preferences || $preferences->email_notifications;
+        $smsEnabled = !$preferences || $preferences->sms_notifications;
+
+        // Send email if patient has email and email notifications are enabled
+        if ($patient->email && $emailEnabled) {
+            try {
+                $this->sendNotification($patient, [
+                    'title' => 'Welcome to Medicine AI - Your Account Has Been Created',
+                    'message' => "Hello {$name},\n\nYour patient account has been created by your doctor.\n\nYour temporary login credentials:\nEmail: {$patient->email}\nTemporary Password: {$temporaryPassword}\n\nPlease log in and change your password immediately.\n\nBest regards,\nMedicine AI Team",
+                    'type' => 'patient_welcome',
+                    'send_email' => true,
+                ]);
+                $emailSent = true;
+            } catch (\Exception $e) {
+                Log::error('Failed to send patient welcome email', [
+                    'patient_id' => $patient->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        // Send SMS if patient has phone and SMS notifications are enabled
+        if ($patient->phone && $smsEnabled) {
+            try {
+                $this->sendNotification($patient, [
+                    'title' => 'Medicine AI - Account Created',
+                    'message' => "Hello {$name}, your patient account has been created. Temporary Password: {$temporaryPassword}. Please log in and change your password.",
+                    'type' => 'patient_welcome',
+                    'send_sms' => true,
+                ]);
+                $smsSent = true;
+            } catch (\Exception $e) {
+                Log::error('Failed to send patient welcome SMS', [
+                    'patient_id' => $patient->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $emailSent || $smsSent;
+    }
+
+    /**
      * Send waitlist expired notification
      */
     public function sendWaitlistExpiredNotification(User $user, $waitlistEntry): bool

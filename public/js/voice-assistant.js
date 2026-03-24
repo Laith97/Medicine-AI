@@ -1834,21 +1834,21 @@
 
     // NEW: Server-side audio processing for hybrid method with enhanced validation - FIXED: Returns promise for session completion timing
     function triggerServerSideProcessing() {
-        console.log('🏁 triggerServerSideProcessing called');
-        console.log('   SessionID:', sessionId);
-        console.log('   Language:', currentLanguage);
-        console.log('   AudioBlob exists:', !!(audioBlob || window.audioBlob));
-        if (audioBlob || window.audioBlob) console.log('   AudioBlob size:', (audioBlob || window.audioBlob).size);
+        // console.log('🏁 triggerServerSideProcessing called');
+        // console.log('   SessionID:', sessionId);
+        // console.log('   Language:', currentLanguage);
+        // console.log('   AudioBlob exists:', !!(audioBlob || window.audioBlob));
+        if (audioBlob || window.audioBlob) // console.log('   AudioBlob size:', (audioBlob || window.audioBlob).size);
 
         return new Promise((resolve, reject) => {
             if (!hybridModeEnabled) {
-                console.log('ℹ️ Hybrid mode disabled, skipping server processing');
+                // console.log('ℹ️ Hybrid mode disabled, skipping server processing');
                 resolve();
                 return;
             }
 
             if (serverProcessingInProgress) {
-                console.log('⏳ Server processing already in progress, skipping...');
+                // console.log('⏳ Server processing already in progress, skipping...');
                 resolve();
                 return;
             }
@@ -1856,7 +1856,7 @@
             // Validate that we have valid audio data before sending
             const effectiveAudioBlob = audioBlob || window.audioBlob;
             if (!effectiveAudioBlob || !validateAudioBlob(effectiveAudioBlob)) {
-                console.warn('⚠️ Audio recording failed validation or is missing');
+                // console.warn('⚠️ Audio recording failed validation or is missing');
                 updateServerProcessingStatus('Audio recording failed validation, no transcription available.');
                 showAlert('Audio recording validation failed. No transcription available.', 'warning');
 
@@ -1928,14 +1928,14 @@
                             // Update server transcription
                             serverTranscription = improvedText;
 
-                            console.log('📊 Server processing returned transcription:', improvedText.substring(0, 50) + '...');
+                            // console.log('📊 Server processing returned transcription:', improvedText.substring(0, 50) + '...');
 
                             // Also send the transcription to the React component if it exists
                             const reactContainer = document.getElementById('react-transcript-container');
                             if (reactContainer && reactContainer.children.length > 0) {
                                 // If we have individual speaker segments, send them one by one
                                 if (response.speakers && response.speakers.length > 0) {
-                                    console.log(`👤 Sending ${response.speakers.length} diarized segments to React UI`);
+                                    // console.log(`👤 Sending ${response.speakers.length} diarized segments to React UI`);
                                     response.speakers.forEach((s, index) => {
                                         const transcriptEvent = new CustomEvent('transcriptUpdate', {
                                             detail: {

@@ -401,7 +401,7 @@ function loadAnalyticsData() {
             updateBottlenecks(data.bottlenecks);
         })
         .catch(error => {
-            console.error('Error loading analytics data:', error);
+            // console.error('Error loading analytics data:', error);
             showAlert('Error loading analytics data', 'danger');
         });
 }

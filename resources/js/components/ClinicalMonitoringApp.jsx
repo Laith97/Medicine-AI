@@ -16,7 +16,7 @@ const ClinicalMonitoringApp = () => {
                 const root = createRoot(dashboardElement);
                 root.render(<ClinicalDashboard patientId={patientId} />);
             } else {
-                console.warn('ClinicalDashboard element found but no data-patient-id attribute provided');
+                // console.warn('ClinicalDashboard element found but no data-patient-id attribute provided');
             }
         }
 
@@ -30,7 +30,7 @@ const ClinicalMonitoringApp = () => {
             root.render(<ConfigurationPanel />);
         }
     } catch (error) {
-        console.error('Error initializing ClinicalMonitoringApp:', error);
+        // console.error('Error initializing ClinicalMonitoringApp:', error);
     }
 };
 

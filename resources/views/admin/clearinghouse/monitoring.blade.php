@@ -404,7 +404,7 @@ function loadMonitoringData() {
             }
         })
         .catch(error => {
-            console.error('Error loading monitoring data:', error);
+            // console.error('Error loading monitoring data:', error);
         });
 }
 
@@ -576,12 +576,12 @@ function showSubmissionDetails(submissionId) {
         .then(data => {
             if (data.success) {
                 // Show modal with submission details
-                console.log('Submission details:', data.submission);
+                // console.log('Submission details:', data.submission);
                 // Implementation for modal display would go here
             }
         })
         .catch(error => {
-            console.error('Error loading submission details:', error);
+            // console.error('Error loading submission details:', error);
         });
 }
 

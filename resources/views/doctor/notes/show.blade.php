@@ -298,7 +298,7 @@ document.getElementById('confirmDelete').addEventListener('click', function() {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        // console.error('Error:', error);
         alert('Error deleting note');
     });
 });

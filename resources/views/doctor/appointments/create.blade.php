@@ -780,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
             displaySearchResults(data);
         })
         .catch(error => {
-            console.error('Search error:', error);
+            // console.error('Search error:', error);
             // Show user-friendly error
             displaySearchResults([]);
         });

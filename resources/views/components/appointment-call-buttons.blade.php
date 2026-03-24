@@ -69,7 +69,7 @@ function showPatientPhone(appointmentId) {
     .catch(error => {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-phone"></i> Show Patient Phone';
-        console.error('Error:', error);
+        // console.error('Error:', error);
         
         if (typeof Swal !== 'undefined') {
             Swal.fire({

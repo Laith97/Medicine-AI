@@ -310,7 +310,7 @@ $(document).ready(function() {
                 }
             },
             error: function() {
-                console.error('Failed to load analytics data');
+                // console.error('Failed to load analytics data');
             }
         });
     }

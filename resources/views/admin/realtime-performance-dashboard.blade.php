@@ -405,7 +405,7 @@ function refreshDashboard() {
             dashboard.classList.remove('loading');
         })
         .catch(error => {
-            console.error('Error refreshing dashboard:', error);
+            // console.error('Error refreshing dashboard:', error);
             dashboard.classList.remove('loading');
         });
 }
@@ -415,7 +415,7 @@ function updateMetrics(data) {
     document.querySelectorAll('.metric-value').forEach((el, index) => {
         // This would need more specific selectors in a real implementation
         // For now, just log the data
-        console.log('Updating metrics:', data);
+        // console.log('Updating metrics:', data);
     });
 }
 

@@ -49,33 +49,84 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('rule_applications', function (Blueprint $table) {
-            $table->dropColumn([
-                'user_id',
-                'session_id',
-                'ip_address',
-                'user_agent',
-                'request_id',
-                'rule_conditions',
-                'rule_actions',
-                'rule_triggered',
-                'execution_time_ms',
-                'data_classification',
-                'hipaa_compliance_flags',
-                'data_retention_until',
-                'outcome_status',
-                'outcome_reason',
-                'user_acknowledged',
-                'user_acknowledged_at',
-                'audit_metadata',
-                'compliance_event_type',
-            ]);
+            $columnsToDrop = [];
+            if (Schema::hasColumn('rule_applications', 'user_id')) {
+                $columnsToDrop[] = 'user_id';
+            }
+            if (Schema::hasColumn('rule_applications', 'session_id')) {
+                $columnsToDrop[] = 'session_id';
+            }
+            if (Schema::hasColumn('rule_applications', 'ip_address')) {
+                $columnsToDrop[] = 'ip_address';
+            }
+            if (Schema::hasColumn('rule_applications', 'user_agent')) {
+                $columnsToDrop[] = 'user_agent';
+            }
+            if (Schema::hasColumn('rule_applications', 'request_id')) {
+                $columnsToDrop[] = 'request_id';
+            }
+            if (Schema::hasColumn('rule_applications', 'rule_conditions')) {
+                $columnsToDrop[] = 'rule_conditions';
+            }
+            if (Schema::hasColumn('rule_applications', 'rule_actions')) {
+                $columnsToDrop[] = 'rule_actions';
+            }
+            if (Schema::hasColumn('rule_applications', 'rule_triggered')) {
+                $columnsToDrop[] = 'rule_triggered';
+            }
+            if (Schema::hasColumn('rule_applications', 'execution_time_ms')) {
+                $columnsToDrop[] = 'execution_time_ms';
+            }
+            if (Schema::hasColumn('rule_applications', 'data_classification')) {
+                $columnsToDrop[] = 'data_classification';
+            }
+            if (Schema::hasColumn('rule_applications', 'hipaa_compliance_flags')) {
+                $columnsToDrop[] = 'hipaa_compliance_flags';
+            }
+            if (Schema::hasColumn('rule_applications', 'data_retention_until')) {
+                $columnsToDrop[] = 'data_retention_until';
+            }
+            if (Schema::hasColumn('rule_applications', 'outcome_status')) {
+                $columnsToDrop[] = 'outcome_status';
+            }
+            if (Schema::hasColumn('rule_applications', 'outcome_reason')) {
+                $columnsToDrop[] = 'outcome_reason';
+            }
+            if (Schema::hasColumn('rule_applications', 'user_acknowledged')) {
+                $columnsToDrop[] = 'user_acknowledged';
+            }
+            if (Schema::hasColumn('rule_applications', 'user_acknowledged_at')) {
+                $columnsToDrop[] = 'user_acknowledged_at';
+            }
+            if (Schema::hasColumn('rule_applications', 'audit_metadata')) {
+                $columnsToDrop[] = 'audit_metadata';
+            }
+            if (Schema::hasColumn('rule_applications', 'compliance_event_type')) {
+                $columnsToDrop[] = 'compliance_event_type';
+            }
 
-            // Drop indexes
-            $table->dropIndex(['user_id', 'applied_at']);
-            $table->dropIndex(['rule_triggered', 'applied_at']);
-            $table->dropIndex(['outcome_status', 'applied_at']);
-            $table->dropIndex(['data_classification']);
-            $table->dropIndex(['compliance_event_type']);
+            if (!empty($columnsToDrop)) {
+                $table->dropColumn($columnsToDrop);
+            }
+
+            // Drop indexes if they exist using raw SQL
+            $this->dropIndexIfExists('rule_applications', 'rule_applications_user_id_applied_at_index');
+            $this->dropIndexIfExists('rule_applications', 'rule_applications_rule_triggered_applied_at_index');
+            $this->dropIndexIfExists('rule_applications', 'rule_applications_outcome_status_applied_at_index');
+            $this->dropIndexIfExists('rule_applications', 'rule_applications_data_classification_index');
+            $this->dropIndexIfExists('rule_applications', 'rule_applications_compliance_event_type_index');
         });
+    }
+
+    /**
+     * Drop an index if it exists
+     */
+    private function dropIndexIfExists(string $table, string $indexName): void
+    {
+        try {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE `{$table}` DROP INDEX IF EXISTS `{$indexName}`");
+        } catch (\Exception $e) {
+            // Index doesn't exist or another error occurred, continue silently
+        }
     }
 };

@@ -31,7 +31,7 @@ class PatientStatusDisplay {
      */
     async init() {
         if (!this.options.appointmentId) {
-            console.error('PatientStatusDisplay: Appointment ID is required');
+            // console.error('PatientStatusDisplay: Appointment ID is required');
             return;
         }
 
@@ -41,9 +41,9 @@ class PatientStatusDisplay {
             this.loadCurrentStatus();
 
             this.isInitialized = true;
-            console.log('PatientStatusDisplay initialized successfully');
+            // console.log('PatientStatusDisplay initialized successfully');
         } catch (error) {
-            console.error('Failed to initialize PatientStatusDisplay:', error);
+            // console.error('Failed to initialize PatientStatusDisplay:', error);
         }
     }
 
@@ -116,7 +116,7 @@ class PatientStatusDisplay {
             }
 
         } catch (error) {
-            console.error('Error loading current status:', error);
+            // console.error('Error loading current status:', error);
         }
     }
 

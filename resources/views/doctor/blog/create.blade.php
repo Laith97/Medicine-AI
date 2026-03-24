@@ -213,7 +213,7 @@ $(document).ready(function() {
             editorInstance = editor;
         })
         .catch(error => {
-            console.error(error);
+            // console.error(error);
         });
 
     // Form validation

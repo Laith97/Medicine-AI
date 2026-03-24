@@ -219,7 +219,7 @@ function loadDashboardData() {
             updateRecentActivity(data.recentActivity);
         })
         .catch(error => {
-            console.error('Error loading dashboard data:', error);
+            // console.error('Error loading dashboard data:', error);
             showAlert('Error loading dashboard data', 'danger');
         });
 }
@@ -330,7 +330,7 @@ function loadDoctorsList() {
                 select.appendChild(option);
             });
         })
-        .catch(error => console.error('Error loading doctors:', error));
+        .catch(error => // console.error('Error loading doctors:', error));
 }
 
 function refreshDashboard() {
