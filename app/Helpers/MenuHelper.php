@@ -736,7 +736,7 @@ class MenuHelper
     /**
      * Get SMS Configuration menu item
      */
-    private static function getSmsConfigMenuItem(?string $permission = null): array
+    public static function getSmsConfigMenuItem(?string $permission = null): array
     {
         $item = [
             'name' => 'SMS Configuration',

@@ -8,6 +8,7 @@ use App\Models\User;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
+use ReflectionMethod;
 
 class SmsServiceTest extends TestCase
 {
@@ -333,5 +334,108 @@ class SmsServiceTest extends TestCase
         $result = $this->smsService->getDeliveryReport($messageId);
 
         $this->assertEquals($expectedReport, $result);
+    }
+
+    /**
+     * Test getProviderRequirements returns array with all providers
+     */
+    public function test_get_provider_requirements_returns_all_providers(): void
+    {
+        $requirements = $this->smsService->getProviderRequirements();
+
+        $this->assertIsArray($requirements);
+
+        // Check that all known providers have requirements
+        $this->assertArrayHasKey('twilio', $requirements);
+        $this->assertArrayHasKey('plivo', $requirements);
+        $this->assertArrayHasKey('messagebird', $requirements);
+        $this->assertArrayHasKey('unifonic', $requirements);
+        $this->assertArrayHasKey('smsgatewayhub', $requirements);
+        $this->assertArrayHasKey('msegat', $requirements);
+        $this->assertArrayHasKey('taqnyat', $requirements);
+        $this->assertArrayHasKey('smsala', $requirements);
+        $this->assertArrayHasKey('connectsaudi', $requirements);
+    }
+
+    /**
+     * Test getProviderRequirements returns correct fields for Saudi providers
+     */
+    public function test_get_provider_requirements_saudi_providers_have_correct_fields(): void
+    {
+        $requirements = $this->smsService->getProviderRequirements();
+
+        // Msegat should have email, password, sender_name
+        $this->assertArrayHasKey('email', $requirements['msegat']);
+        $this->assertArrayHasKey('password', $requirements['msegat']);
+        $this->assertArrayHasKey('sender_name', $requirements['msegat']);
+
+        // Taqnyat should have bearer_token, sender_name
+        $this->assertArrayHasKey('bearer_token', $requirements['taqnyat']);
+        $this->assertArrayHasKey('sender_name', $requirements['taqnyat']);
+
+        // SMSALA should have api_key, sender_id
+        $this->assertArrayHasKey('api_key', $requirements['smsala']);
+        $this->assertArrayHasKey('sender_id', $requirements['smsala']);
+
+        // ConnectSaudi should have account_id, api_key, sender_name
+        $this->assertArrayHasKey('account_id', $requirements['connectsaudi']);
+        $this->assertArrayHasKey('api_key', $requirements['connectsaudi']);
+        $this->assertArrayHasKey('sender_name', $requirements['connectsaudi']);
+    }
+
+    /**
+     * Test getProviderRequirements returns non-empty requirements for each provider
+     */
+    public function test_get_provider_requirements_returns_non_empty_for_each_provider(): void
+    {
+        $requirements = $this->smsService->getProviderRequirements();
+
+        foreach ($requirements as $provider => $fields) {
+            // The 'log' provider intentionally has no config requirements
+            if ($provider === 'log') {
+                continue;
+            }
+            $this->assertNotEmpty($fields, "Provider {$provider} should have at least one config requirement");
+        }
+    }
+
+    /**
+     * Test isValidProvider returns true for valid providers
+     */
+    public function test_is_valid_provider_returns_true_for_valid_providers(): void
+    {
+        $validProviders = ['twilio', 'plivo', 'messagebird', 'unifonic', 'smsgatewayhub', 'msegat', 'taqnyat', 'smsala', 'connectsaudi', 'log'];
+
+        foreach ($validProviders as $provider) {
+            $this->assertTrue(
+                $this->invokeProtectedMethod($this->smsService, 'isValidProvider', [$provider]),
+                "Provider {$provider} should be valid"
+            );
+        }
+    }
+
+    /**
+     * Test isValidProvider returns false for invalid providers
+     */
+    public function test_is_valid_provider_returns_false_for_invalid_providers(): void
+    {
+        $invalidProviders = ['invalid', 'unknown', 'random', 'foobar', 'twili', 'sms'];
+
+        foreach ($invalidProviders as $provider) {
+            $this->assertFalse(
+                $this->invokeProtectedMethod($this->smsService, 'isValidProvider', [$provider]),
+                "Provider {$provider} should be invalid"
+            );
+        }
+    }
+
+    /**
+     * Helper to invoke protected methods using reflection
+     */
+    protected function invokeProtectedMethod($object, string $methodName, array $parameters = [])
+    {
+        $reflection = new ReflectionMethod($object, $methodName);
+        $reflection->setAccessible(true);
+        return $reflection->invokeArgs($object, $parameters);
     }
 }
