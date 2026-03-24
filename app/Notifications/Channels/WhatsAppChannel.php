@@ -79,7 +79,11 @@ class WhatsAppChannel
             'provider_config' => $config->provider_config,
         ];
 
-        $this->whatsappService->send($phoneNumber, $message, $options);
+        $result = $this->whatsappService->send($phoneNumber, $message, $options);
+
+        if (!$result['success']) {
+            \Log::warning("WhatsApp message failed for user {$notifiable->id}: " . ($result['error'] ?? 'Unknown error'));
+        }
     }
 
     /**

@@ -27,7 +27,7 @@ class TwilioWhatsAppProvider implements WhatsAppProviderInterface
         return true;
     }
 
-    public function sendMessage(string $to, string $message): bool
+    public function sendMessage(string $to, string $message): array
     {
         try {
             if (!$this->client) {
@@ -41,7 +41,7 @@ class TwilioWhatsAppProvider implements WhatsAppProviderInterface
             $to = $this->formatWhatsAppNumber($to);
             $from = $this->config['from'];
 
-            $this->client->messages->create(
+            $twilioMessage = $this->client->messages->create(
                 $to,
                 [
                     'from' => $from,
@@ -49,11 +49,28 @@ class TwilioWhatsAppProvider implements WhatsAppProviderInterface
                 ]
             );
 
-            return true;
+            return [
+                'success' => true,
+                'message_id' => $twilioMessage->sid,
+                'status' => 'sent',
+            ];
         } catch (Exception $e) {
             \Log::error('Twilio WhatsApp send failed: ' . $e->getMessage());
-            return false;
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
         }
+    }
+
+    public function getName(): string
+    {
+        return 'Twilio WhatsApp';
+    }
+
+    public function getKey(): string
+    {
+        return 'twilio';
     }
 
     private function formatWhatsAppNumber(string $number): string

@@ -57,4 +57,26 @@ return [
         'graph_api' => 'WhatsApp Business API',
         'log' => 'Log Only (Testing)',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Webhook Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for WhatsApp webhook verification and handling.
+    |
+    */
+
+    'webhook_verify_token' => env('WHATSAPP_WEBHOOK_VERIFY_TOKEN', 'medcura-webhook-verify'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Message Logging
+    |--------------------------------------------------------------------------
+    |
+    | Enable logging of WhatsApp messages and status updates.
+    |
+    */
+
+    'log_messages' => env('WHATSAPP_LOG_MESSAGES', true),
 ];

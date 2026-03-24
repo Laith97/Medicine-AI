@@ -1144,6 +1144,10 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::post('/whatsapp-settings/update', [AdminController::class, 'updateWhatsAppSettings'])->name('whatsapp-settings.update');
     Route::post('/whatsapp-settings/test', [AdminController::class, 'sendTestWhatsApp'])->name('whatsapp-settings.test');
 
+    // WhatsApp Webhook routes (no CSRF, no auth)
+    Route::get('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'verify'])->name('webhooks.whatsapp.verify');
+    Route::post('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'webhook'])->name('webhooks.whatsapp');
+
     // Invoice management for admin
     Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
     Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');

@@ -26,7 +26,7 @@ class WhatsAppBusinessProvider implements WhatsAppProviderInterface
         return true;
     }
 
-    public function sendMessage(string $to, string $message): bool
+    public function sendMessage(string $to, string $message): array
     {
         try {
             $url = "https://graph.facebook.com/v18.0/{$this->config['phone_number_id']}/messages";
@@ -45,15 +45,36 @@ class WhatsAppBusinessProvider implements WhatsAppProviderInterface
             ]);
 
             if ($response->successful()) {
-                return true;
+                $responseData = $response->json();
+                return [
+                    'success' => true,
+                    'message_id' => $responseData['messages'][0]['id'] ?? null,
+                    'status' => 'sent',
+                ];
             } else {
                 \Log::error('WhatsApp Business API error: ' . $response->body());
-                return false;
+                return [
+                    'success' => false,
+                    'error' => $response->body(),
+                ];
             }
         } catch (Exception $e) {
             \Log::error('WhatsApp Business API send failed: ' . $e->getMessage());
-            return false;
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
         }
+    }
+
+    public function getName(): string
+    {
+        return 'WhatsApp Business API';
+    }
+
+    public function getKey(): string
+    {
+        return 'graph_api';
     }
 
     private function formatNumber(string $number): string

@@ -22,12 +22,12 @@ class WhatsAppNotificationService
     /**
      * Send a WhatsApp message using the appropriate provider and configuration
      */
-    public function send(string $to, string $message, array $options = []): bool
+    public function send(string $to, string $message, array $options = []): array
     {
         try {
             $providerKey = $options['provider_key'] ?? 'twilio';
             $providerConfig = $options['provider_config'] ?? [];
-            
+
             if (!isset($this->providers[$providerKey])) {
                 throw new Exception("Unsupported WhatsApp provider: {$providerKey}");
             }
@@ -38,7 +38,10 @@ class WhatsAppNotificationService
             return $provider->sendMessage($to, $message);
         } catch (Exception $e) {
             \Log::error('WhatsApp notification failed: ' . $e->getMessage());
-            return false;
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
         }
     }
 
