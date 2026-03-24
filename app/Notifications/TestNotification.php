@@ -31,11 +31,18 @@ class TestNotification extends Notification implements ShouldBroadcast
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast'];
+        $channels = ['database', 'broadcast'];
+
+        // Add WhatsApp if user has WhatsApp notifications enabled
+        if ($notifiable->wantsNotificationChannel('whatsapp')) {
+            $channels[] = 'whatsapp';
+        }
+
+        return $channels;
     }
 
     /**
-     * Get the mail representation of the notification.
+     * Get the database representation of the notification.
      */
     public function toDatabase(object $notifiable): array
     {
@@ -71,6 +78,14 @@ class TestNotification extends Notification implements ShouldBroadcast
             'link' => $this->data['link'] ?? null,
             'created_at' => now()->toISOString()
         ]);
+    }
+
+    /**
+     * Get the WhatsApp representation of the notification.
+     */
+    public function toWhatsApp(object $notifiable): string
+    {
+        return "📞 Test: " . ($this->data['message'] ?? 'This is a test notification');
     }
 
     /**

@@ -472,6 +472,131 @@
                 </div>
             </div>
 
+            <!-- WhatsApp Notification Preferences -->
+            <div class="table-card">
+                <h6 class="mb-4"><i class="fab fa-whatsapp me-2 text-success"></i>WhatsApp Notification Preferences</h6>
+
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <label class="form-label mb-0">Enable WhatsApp Notifications</label>
+                                <small class="form-text text-muted d-block">Receive important notifications via WhatsApp</small>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input type="checkbox"
+                                       name="whatsapp_enabled"
+                                       id="whatsapp_enabled"
+                                       value="1"
+                                       {{ old('whatsapp_enabled', $doctor->user->getOrCreateNotificationPreferences()->whatsapp_enabled ?? false) ? 'checked' : '' }}
+                                       class="form-check-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- WhatsApp Notification Types -->
+                    <div class="col-12">
+                        <label class="form-label">WhatsApp Notification Types</label>
+                        <p class="text-muted small mb-3">Select which types of notifications you want to receive via WhatsApp:</p>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="whatsapp_appointment_reminders"
+                                           id="whatsapp_appointment_reminders"
+                                           value="1"
+                                           {{ old('whatsapp_appointment_reminders', $doctor->user->getOrCreateNotificationPreferences()->whatsapp_appointment_reminders ?? false) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="whatsapp_appointment_reminders">
+                                        Appointment Reminders
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="whatsapp_urgent_alerts"
+                                           id="whatsapp_urgent_alerts"
+                                           value="1"
+                                           {{ old('whatsapp_urgent_alerts', $doctor->user->getOrCreateNotificationPreferences()->whatsapp_urgent_alerts ?? false) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="whatsapp_urgent_alerts">
+                                        Urgent Alerts
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="whatsapp_diagnosis_updates"
+                                           id="whatsapp_diagnosis_updates"
+                                           value="1"
+                                           {{ old('whatsapp_diagnosis_updates', $doctor->user->getOrCreateNotificationPreferences()->whatsapp_diagnosis_updates ?? false) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="whatsapp_diagnosis_updates">
+                                        Diagnosis Updates
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="whatsapp_review_requests"
+                                           id="whatsapp_review_requests"
+                                           value="1"
+                                           {{ old('whatsapp_review_requests', $doctor->user->getOrCreateNotificationPreferences()->whatsapp_review_requests ?? false) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="whatsapp_review_requests">
+                                        Review Requests
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- WhatsApp Configuration -->
+                    <div class="col-12">
+                        <label class="form-label">WhatsApp Configuration</label>
+                        <p class="text-muted small mb-3">Configure your WhatsApp provider settings:</p>
+
+                        @php
+                            $whatsappConfigs = \App\Models\UserWhatsAppConfiguration::where('user_id', $doctor->user_id)->get();
+                            $currentPhone = $doctor->user->phone ?? '';
+                        @endphp
+
+                        @if($whatsappConfigs->count() > 0)
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>WhatsApp Configuration Active</strong>
+                                <p class="mb-0">Your WhatsApp notifications are configured and active.</p>
+                            </div>
+
+                            @foreach($whatsappConfigs as $config)
+                                <div class="border rounded p-3 mb-3">
+                                    <h6>{{ ucfirst($config->provider_key) }} Configuration</h6>
+                                    <p class="mb-0">
+                                        <strong>Status:</strong>
+                                        <span class="badge {{ $config->is_active ? 'bg-success' : 'bg-secondary' }}">
+                                            {{ $config->is_active ? 'Active' : 'Inactive' }}
+                                        </span>
+                                    </p>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>No WhatsApp Configuration</strong>
+                                <p class="mb-0">Please contact your system administrator to set up WhatsApp notifications.</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
             <!-- Action Buttons -->
             <div class="d-flex justify-content-end gap-3">
                 <a href="{{ route('dashboard') }}" class="btn btn-secondary-custom">

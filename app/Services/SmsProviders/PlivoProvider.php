@@ -12,11 +12,17 @@ class PlivoProvider implements SmsProviderInterface
     protected $authToken;
     protected $fromNumber;
 
-    public function __construct()
+    public function __construct(?array $config = null)
     {
-        $this->authId = config('sms.providers.plivo.auth_id');
-        $this->authToken = config('sms.providers.plivo.auth_token');
-        $this->fromNumber = config('sms.providers.plivo.from_number');
+        if ($config) {
+            $this->authId = $config['auth_id'] ?? $config['authId'] ?? config('sms.providers.plivo.auth_id');
+            $this->authToken = $config['auth_token'] ?? $config['authToken'] ?? config('sms.providers.plivo.auth_token');
+            $this->fromNumber = $config['from_number'] ?? $config['fromNumber'] ?? config('sms.providers.plivo.from_number');
+        } else {
+            $this->authId = config('sms.providers.plivo.auth_id');
+            $this->authToken = config('sms.providers.plivo.auth_token');
+            $this->fromNumber = config('sms.providers.plivo.from_number');
+        }
     }
 
     public function send(string $to, string $message): array

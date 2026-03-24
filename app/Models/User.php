@@ -1291,6 +1291,8 @@ public function wantsNotificationChannel(string $channel): bool
             return $preferences->email_enabled;
         case 'sms':
             return $preferences->sms_enabled;
+        case 'whatsapp':
+            return $preferences->whatsapp_enabled;
         case 'in_app':
             return $preferences->in_app_enabled;
         default:

@@ -1139,6 +1139,15 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::post('/sms-settings/remove-assignments', [AdminController::class, 'removeProviderCountryAssignments'])->name('sms-settings.remove-assignments');
     Route::post('/sms-settings/test', [AdminController::class, 'sendTestSms'])->name('sms-settings.test');
 
+    // WhatsApp Configuration routes
+    Route::get('/whatsapp-settings', [AdminController::class, 'whatsappSettings'])->name('whatsapp-settings');
+    Route::post('/whatsapp-settings/update', [AdminController::class, 'updateWhatsAppSettings'])->name('whatsapp-settings.update');
+    Route::post('/whatsapp-settings/test', [AdminController::class, 'sendTestWhatsApp'])->name('whatsapp-settings.test');
+
+    // WhatsApp Webhook routes (no CSRF, no auth)
+    Route::get('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'verify'])->name('webhooks.whatsapp.verify');
+    Route::post('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'webhook'])->name('webhooks.whatsapp');
+
     // Invoice management for admin
     Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
     Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');
@@ -1313,6 +1322,15 @@ Route::middleware('auth')->group(function () {
 
     // Return to admin from user impersonation - requires web auth (impersonated user)
     Route::post('/return-to-admin', [AdminController::class, 'returnToAdmin'])->name('return-to-admin');
+
+    // SMS Configuration routes for doctors and hospital admins
+    Route::prefix('sms-config')->name('sms.config.')->group(function () {
+        Route::get('/', [App\Http\Controllers\UserSmsConfigurationController::class, 'index'])->name('index');
+        Route::post('/store', [App\Http\Controllers\UserSmsConfigurationController::class, 'store'])->name('store');
+        Route::post('/hospital/store', [App\Http\Controllers\UserSmsConfigurationController::class, 'storeHospital'])->name('store.hospital');
+        Route::post('/test', [App\Http\Controllers\UserSmsConfigurationController::class, 'testSms'])->name('test');
+        Route::delete('/{id}', [App\Http\Controllers\UserSmsConfigurationController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Debug route to test if routes are working - COMMENTED OUT FOR PRODUCTION
@@ -1352,6 +1370,7 @@ Route::get('/test-dropdown-fix', function () {
 })->name('test.dropdown.fix');
 
 require __DIR__.'/auth.php';
+require __DIR__.'/whatsapp-test.php';
 
 // Broadcasting test route
 Route::get('/test-broadcasting', function () {

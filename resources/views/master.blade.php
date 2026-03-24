@@ -2521,6 +2521,135 @@ function showAjaxError(message) {
             // Find the navigation links container
             const navLinks = document.querySelector('.d-none.d-md-flex.align-items-center.gap-3.small');
 
+            // Create bottom sheet menu
+            const bottomSheet = document.createElement('div');
+            bottomSheet.className = 'bottom-sheet-menu';
+            bottomSheet.style.cssText = `
+                position: fixed;
+                bottom: -100%;
+                left: 0;
+                width: 100%;
+                max-height: 80vh;
+                background: white;
+                z-index: 9999999;
+                border-radius: 20px 20px 0 0;
+                box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+                transition: bottom 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                overflow-y: auto;
+            `;
+
+            // Create menu content
+            const menuContent = `
+                <div style="
+                    padding: 20px;
+                    border-bottom: 1px solid #eee;
+                    background: linear-gradient(135deg, #DE6262 0%, #c54545 100%);
+                    color: white;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 600;">
+                        <i class="fas fa-bars me-2"></i>Navigation Menu
+                    </h3>
+                    <button class="close-bottom-sheet" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        font-size: 24px;
+                        cursor: pointer;
+                        padding: 5px;
+                    ">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="menu-items-container" style="padding: 20px;">
+                    <!-- Menu items will be added here -->
+                </div>
+            `;
+
+            bottomSheet.innerHTML = menuContent;
+
+            // Add menu items
+            const menuItemsContainer = bottomSheet.querySelector('.menu-items-container');
+
+            // Define menu items manually (since cloning was problematic)
+            const menuItems = [
+                {
+                    title: 'Dashboard',
+                    icon: 'fas fa-tachometer-alt',
+                    url: '{{ route("dashboard") }}',
+                    submenu: null
+                },
+                {{-- AI Ask temporarily disabled --}}
+                {{-- {
+                    title: 'Ask AI',
+                    // icon: 'fas fa-robot',
+                    // url: '{{ route("ai.ask-ai") }}',
+                    // submenu: null
+                }, --}}
+                {
+                    title: 'Voice Assistant',
+                    icon: 'fas fa-microphone',
+                    url: '{{ route("ai.voice-assistant.index") }}',
+                    submenu: null
+                },
+                {
+                    title: 'Medical Tools',
+                    icon: 'fas fa-stethoscope',
+                    url: '#',
+                    submenu: [
+                        { title: 'Patient Management', icon: 'fas fa-folder-medical', url: '/doctor/patient-management' },
+                        { title: 'Diagnosis', icon: 'fas fa-diagnoses', url: '/diagnosis' },
+                        { title: 'Medical Notes', icon: 'fas fa-notes-medical', url: '/medical-notes' }
+                    ]
+                },
+                {
+                    title: 'Appointments',
+                    icon: 'fas fa-calendar-check',
+                    url: '#',
+                    submenu: [
+                        { title: 'View Appointments', icon: 'fas fa-calendar', url: '{{ route("appointments.index") }}' },
+                        { title: 'Reviews', icon: 'fas fa-star', url: '{{ route("reviews.index") }}' }
+                    ]
+                },
+                {
+                    title: 'Sub Users',
+                    icon: 'fas fa-users',
+                    url: '{{ route("sub-users.index") }}',
+                    submenu: null
+                },
+
+                {
+                    title: 'Profile',
+                    icon: 'fas fa-user',
+                    url: '{{ route("doctor.profile.edit") }}',
+                    submenu: null
+                },
+                {
+                    title: 'Settings',
+                    icon: 'fas fa-cog',
+                    url: '{{ route("settings") }}',
+                    submenu: null
+                }
+            ];
+
+            // Add admin menu item if user is admin
+            const isAdmin = {{ Auth::check() && Auth::user() && Auth::user()->isAdmin() ? 'true' : 'false' }};
+            if (isAdmin) {
+                menuItems.splice(-2, 0, {
+                    title: 'Admin Panel',
+                    icon: 'fas fa-cog',
+                    url: '#',
+                    submenu: [
+                        { title: 'Dashboard', icon: 'fas fa-tachometer-alt', url: '{{ route("admin.dashboard") }}' },
+                        { title: 'User Management', icon: 'fas fa-users-cog', url: '{{ route("admin.users.index") }}' },
+                        { title: 'System Settings', icon: 'fas fa-sliders-h', url: '{{ route("admin.system-settings") }}' },
+                        { title: 'SMS Settings', icon: 'fas fa-comment-sms', url: '{{ route("admin.sms-settings") }}' },
+                        { title: 'WhatsApp Settings', icon: 'fab fa-whatsapp', url: '{{ route("admin.whatsapp-settings") }}' },
+                        { title: 'Billing', icon: 'fas fa-dollar-sign', url: '{{ route("admin.billing") }}' }
+                    ]
+                });
             if (!navLinks) {
                 console.log('Navigation links container not found - checking all possible selectors');
                 console.log('Available navigation containers:', document.querySelectorAll('[class*="d-none"][class*="d-md-flex"]'));

@@ -13,11 +13,17 @@ class SmsGatewayHubProvider implements SmsProviderInterface
     private ?string $device;
     private string $baseUrl = 'https://smsgateway.me/api/v4';
 
-    public function __construct()
+    public function __construct(?array $config = null)
     {
-        $this->email = config('sms.providers.smsgatewayhub.email');
-        $this->password = config('sms.providers.smsgatewayhub.password');
-        $this->device = config('sms.providers.smsgatewayhub.device');
+        if ($config) {
+            $this->email = $config['email'] ?? config('sms.providers.smsgatewayhub.email');
+            $this->password = $config['password'] ?? config('sms.providers.smsgatewayhub.password');
+            $this->device = $config['device'] ?? config('sms.providers.smsgatewayhub.device');
+        } else {
+            $this->email = config('sms.providers.smsgatewayhub.email');
+            $this->password = config('sms.providers.smsgatewayhub.password');
+            $this->device = config('sms.providers.smsgatewayhub.device');
+        }
     }
 
     public function send(string $to, string $message): array

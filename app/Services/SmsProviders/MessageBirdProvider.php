@@ -11,10 +11,15 @@ class MessageBirdProvider implements SmsProviderInterface
     protected $accessKey;
     protected $fromNumber;
 
-    public function __construct()
+    public function __construct(?array $config = null)
     {
-        $this->accessKey = config('sms.providers.messagebird.access_key');
-        $this->fromNumber = config('sms.providers.messagebird.from_number');
+        if ($config) {
+            $this->accessKey = $config['access_key'] ?? $config['accessKey'] ?? config('sms.providers.messagebird.access_key');
+            $this->fromNumber = $config['from_number'] ?? $config['fromNumber'] ?? config('sms.providers.messagebird.from_number');
+        } else {
+            $this->accessKey = config('sms.providers.messagebird.access_key');
+            $this->fromNumber = config('sms.providers.messagebird.from_number');
+        }
     }
 
     public function send(string $to, string $message): array

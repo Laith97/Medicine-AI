@@ -10,6 +10,8 @@ use App\Services\SmsProviders\UnifonicProvider;
 use App\Services\SmsProviders\SmsGatewayHubProvider;
 use App\Models\SystemSetting;
 use App\Models\SmsProviderCountry;
+use App\Models\UserSmsConfiguration;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 class SmsService
@@ -17,38 +19,47 @@ class SmsService
     protected $provider;
     protected $providerInstance;
 
-    public function __construct()
+    public function __construct(?string $providerKey = null)
     {
-        $this->provider = $this->getActiveProvider();
+        $this->provider = $providerKey ?: $this->getActiveProvider();
         $this->providerInstance = $this->createProviderInstance($this->provider);
     }
 
     /**
-     * Send SMS message with country-based provider routing
+     * Send SMS message with user-specific configuration priority, then country-based provider routing
      *
      * @param string $to
      * @param string $message
+     * @param User|null $user Optional user to use their specific SMS configuration
      * @return array ['success' => bool, 'message' => string, 'data' => array]
      */
-    public function send(string $to, string $message): array
+    public function send(string $to, string $message, ?User $user = null): array
     {
         try {
             // Extract country code from phone number
             $countryCode = $this->extractCountryCode($to);
 
-            // Get provider for this country
+            // First, determine the provider based on user configuration if user is provided
             $providerKey = null;
-            if ($countryCode) {
-                $providerKey = SmsProviderCountry::getProviderForCountry($countryCode);
+            $customConfig = null;
+
+            if ($user) {
+                // User-specific configuration has highest priority
+                $providerKey = $this->getActiveProviderForUser($user);
+                $customConfig = $this->getUserProviderConfig($user, $providerKey);
+            } else {
+                // If no user provided, use country-based routing or fallback
+                if ($countryCode) {
+                    $providerKey = SmsProviderCountry::getProviderForCountry($countryCode);
+                }
+
+                if (!$providerKey) {
+                    $providerKey = $this->getFallbackProvider();
+                }
             }
 
-            // If no country-specific provider found, use fallback provider
-            if (!$providerKey) {
-                $providerKey = $this->getFallbackProvider();
-            }
-
-            // Create provider instance
-            $providerInstance = $this->createProviderInstance($providerKey);
+            // Create provider instance with custom config if available
+            $providerInstance = $this->createProviderInstance($providerKey, $customConfig);
 
             if (!$providerInstance) {
                 return [
@@ -61,10 +72,11 @@ class SmsService
             $result = $providerInstance->send($to, $message);
 
             // Log the routing decision
-            Log::info('SMS sent via country-based routing', [
+            Log::info('SMS sent via user-specific or country-based routing', [
                 'to' => $to,
                 'country_code' => $countryCode,
                 'provider_used' => $providerKey,
+                'user_id' => $user ? $user->id : null,
                 'success' => $result['success']
             ]);
 
@@ -74,7 +86,8 @@ class SmsService
             Log::error('SMS sending failed: ' . $e->getMessage(), [
                 'to' => $to,
                 'message' => $message,
-                'provider' => $providerKey ?? 'unknown'
+                'provider' => $providerKey ?? 'unknown',
+                'user_id' => $user ? $user->id : null
             ]);
 
             return [
@@ -102,12 +115,13 @@ class SmsService
      * Send test SMS
      *
      * @param string $to
+     * @param User|null $user Optional user to use their specific SMS configuration
      * @return array
      */
-    public function sendTestSms(string $to): array
+    public function sendTestSms(string $to, ?User $user = null): array
     {
         $message = "Test SMS from MedcuraAI. Provider: {$this->getProviderName()}. Time: " . now()->format('Y-m-d H:i:s');
-        return $this->send($to, $message);
+        return $this->send($to, $message, $user);
     }
 
     /**
@@ -131,6 +145,126 @@ class SmsService
     }
 
     /**
+     * Get active provider name for a specific user
+     *
+     * @param User|null $user
+     * @return string
+     */
+    public function getActiveProviderForUser(?User $user): string
+    {
+        if (!$user) {
+            // Use system default if no user
+            return $this->getActiveProvider();
+        }
+
+        // Check if user is doctor or hospital admin with custom configuration
+        if ($user->isDoctor() || $user->isHospitalAdmin()) {
+            // Check if user has custom SMS configuration
+            $userConfig = UserSmsConfiguration::where('user_id', $user->id)
+                ->where('is_active', true)
+                ->where('use_admin_config', false)
+                ->first();
+
+            if ($userConfig) {
+                if ($this->isValidProvider($userConfig->provider_key)) {
+                    return $userConfig->provider_key;
+                }
+            }
+
+            // Check if user belongs to a hospital with custom configuration
+            if ($user->hospital_id) {
+                $hospitalConfig = UserSmsConfiguration::where('hospital_id', $user->hospital_id)
+                    ->where('is_active', true)
+                    ->where('use_admin_config', false)
+                    ->first();
+
+                if ($hospitalConfig) {
+                    if ($this->isValidProvider($hospitalConfig->provider_key)) {
+                        return $hospitalConfig->provider_key;
+                    }
+                }
+            }
+
+            // Check if user should use admin config specifically
+            $userAdminConfig = UserSmsConfiguration::where('user_id', $user->id)
+                ->where('use_admin_config', true)
+                ->first();
+
+            $hospitalAdminConfig = UserSmsConfiguration::where('hospital_id', $user->hospital_id)
+                ->where('use_admin_config', true)
+                ->first();
+
+            if ($userAdminConfig || $hospitalAdminConfig) {
+                // Use system default when user is configured to use admin config
+                $provider = SystemSetting::get('sms_provider');
+                if ($provider && $this->isValidProvider($provider)) {
+                    return $provider;
+                }
+            }
+        }
+
+        // Fallback to system default
+        $provider = config('sms.default_provider', 'log');
+        return $this->isValidProvider($provider) ? $provider : 'log';
+    }
+
+    /**
+     * Get user-specific provider configuration
+     *
+     * @param User|null $user
+     * @param string $providerKey
+     * @return array|null
+     */
+    protected function getUserProviderConfig(?User $user, string $providerKey): ?array
+    {
+        if (!$user) {
+            return null;
+        }
+
+        // Check if user has custom configuration
+        if ($user->isDoctor() || $user->isHospitalAdmin()) {
+            // Check user-specific config first
+            $userConfig = UserSmsConfiguration::where('user_id', $user->id)
+                ->where('provider_key', $providerKey)
+                ->where('is_active', true)
+                ->first();
+
+            if ($userConfig && !$userConfig->use_admin_config) {
+                return $userConfig->provider_config;
+            }
+
+            // Check hospital-specific config if user belongs to a hospital
+            if ($user->hospital_id) {
+                $hospitalConfig = UserSmsConfiguration::where('hospital_id', $user->hospital_id)
+                    ->where('provider_key', $providerKey)
+                    ->where('is_active', true)
+                    ->first();
+
+                if ($hospitalConfig && !$hospitalConfig->use_admin_config) {
+                    return $hospitalConfig->provider_config;
+                }
+            }
+
+            // If user is configured to use admin config, return null to use default
+            $userAdminConfig = UserSmsConfiguration::where('user_id', $user->id)
+                ->where('provider_key', $providerKey)
+                ->where('use_admin_config', true)
+                ->first();
+
+            $hospitalAdminConfig = UserSmsConfiguration::where('hospital_id', $user->hospital_id)
+                ->where('provider_key', $providerKey)
+                ->where('use_admin_config', true)
+                ->first();
+
+            if ($userAdminConfig || $hospitalAdminConfig) {
+                return null; // Use admin/system config
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Check if provider is valid
      *
      * @param string $provider
@@ -138,65 +272,76 @@ class SmsService
      */
     protected function isValidProvider(string $provider): bool
     {
-        return in_array($provider, ['twilio', 'plivo', 'messagebird', 'unifonic', 'smsgatewayhub', 'log']);
+        $availableProviders = array_keys(config('sms.available_providers', []));
+        return in_array($provider, $availableProviders);
     }
 
     /**
      * Create provider instance
      *
      * @param string $provider
+     * @param array|null $customConfig Custom configuration to override default provider settings
      * @return SmsProviderInterface|null
      */
-    protected function createProviderInstance(string $provider): ?SmsProviderInterface
+    protected function createProviderInstance(string $provider, ?array $customConfig = null): ?SmsProviderInterface
     {
         try {
+            // Create provider based on type but with potential custom config
             switch ($provider) {
                 case 'twilio':
-                    return new TwilioProvider();
+                    return new TwilioProvider($customConfig);
                 case 'plivo':
-                    return new PlivoProvider();
+                    return new PlivoProvider($customConfig);
                 case 'messagebird':
-                    return new MessageBirdProvider();
+                    return new MessageBirdProvider($customConfig);
                 case 'unifonic':
-                    return new UnifonicProvider();
+                    return new UnifonicProvider($customConfig);
                 case 'smsgatewayhub':
-                    return new SmsGatewayHubProvider();
+                    return new SmsGatewayHubProvider($customConfig);
+                case 'msegat':
+                    return new \App\Services\SmsProviders\MsegatProvider($customConfig);
+                case 'taqnyat':
+                    return new \App\Services\SmsProviders\TaqnyatProvider($customConfig);
+                case 'smsala':
+                    return new \App\Services\SmsProviders\SMSALAProvider($customConfig);
+                case 'connectsaudi':
+                    return new \App\Services\SmsProviders\ConnectSaudiProvider($customConfig);
                 case 'log':
-                return new class implements SmsProviderInterface {
-                    public function send(string $to, string $message): array
-                    {
-                        Log::info('SMS would be sent', [
-                            'to' => $to,
-                            'message' => $message,
-                            'provider' => 'log'
-                        ]);
-                        return [
-                            'success' => true,
-                            'message' => 'SMS logged successfully',
-                            'data' => ['logged_at' => now()->toISOString()]
-                        ];
-                    }
+                    return new class implements SmsProviderInterface {
+                        public function send(string $to, string $message): array
+                        {
+                            Log::info('SMS would be sent', [
+                                'to' => $to,
+                                'message' => $message,
+                                'provider' => 'log'
+                            ]);
+                            return [
+                                'success' => true,
+                                'message' => 'SMS logged successfully',
+                                'data' => ['logged_at' => now()->toISOString()]
+                            ];
+                        }
 
-                    public function getName(): string
-                    {
-                        return 'Log Only';
-                    }
+                        public function getName(): string
+                        {
+                            return 'Log Only';
+                        }
 
-                    public function isConfigured(): bool
-                    {
-                        return true;
-                    }
+                        public function isConfigured(): bool
+                        {
+                            return true;
+                        }
 
-                    public function getConfigRequirements(): array
-                    {
-                        return [];
-                    }
+                        public function getConfigRequirements(): array
+                        {
+                            return [];
+                        }
 
-                    public function getKey(): string
-                    {
-                        return 'log';
-                    }
-                };
+                        public function getKey(): string
+                        {
+                            return 'log';
+                        }
+                    };
                 default:
                     return null;
             }
@@ -245,7 +390,7 @@ class SmsService
                 $providers[$key] = [
                     'name' => $name,
                     'configured' => $instance ? $instance->isConfigured() : false,
-                    'requirements' => $instance && method_exists($instance, 'getRequiredConfig') ? $instance->getRequiredConfig() : [],
+                    'requirements' => $instance && method_exists($instance, 'getConfigRequirements') ? $instance->getConfigRequirements() : [],
                     'active' => $key === $this->provider
                 ];
             } catch (\Exception $e) {
@@ -261,6 +406,30 @@ class SmsService
         }
 
         return $providers;
+    }
+
+    /**
+     * Get configuration requirements for all providers
+     *
+     * @return array
+     */
+    public function getProviderRequirements(): array
+    {
+        $requirements = [];
+        $availableProviders = config('sms.available_providers', []);
+
+        foreach ($availableProviders as $key => $name) {
+            try {
+                $instance = $this->createProviderInstance($key);
+                $requirements[$key] = $instance && method_exists($instance, 'getConfigRequirements')
+                    ? $instance->getConfigRequirements()
+                    : [];
+            } catch (\Exception $e) {
+                $requirements[$key] = [];
+            }
+        }
+
+        return $requirements;
     }
 
     /**

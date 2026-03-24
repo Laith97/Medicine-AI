@@ -55,6 +55,28 @@ return [
             'device' => env('SMSGATEWAYHUB_DEVICE'),
         ],
 
+        'msegat' => [
+            'email' => env('MSEGAT_EMAIL'),
+            'password' => env('MSEGAT_PASSWORD'),
+            'sender_name' => env('MSEGAT_SENDER_NAME'),
+        ],
+
+        'taqnyat' => [
+            'bearer_token' => env('TAQNYAT_BEARER_TOKEN'),
+            'sender_name' => env('TAQNYAT_SENDER_NAME'),
+        ],
+
+        'smsala' => [
+            'api_key' => env('SMSALA_API_KEY'),
+            'sender_id' => env('SMSALA_SENDER_ID'),
+        ],
+
+        'connectsaudi' => [
+            'account_id' => env('CONNECTSAUDI_ACCOUNT_ID'),
+            'api_key' => env('CONNECTSAUDI_API_KEY'),
+            'sender_name' => env('CONNECTSAUDI_SENDER_NAME'),
+        ],
+
         'log' => [
             // No configuration needed for log provider
         ],
@@ -75,6 +97,10 @@ return [
         'messagebird' => 'MessageBird',
         'unifonic' => 'Unifonic',
         'smsgatewayhub' => 'SMS Gateway Hub',
+        'msegat' => 'Msegat (Saudi Arabia)',
+        'taqnyat' => 'Taqnyat (Saudi Arabia)',
+        'smsala' => 'SMSALA (MENA)',
+        'connectsaudi' => 'ConnectSaudi',
         'log' => 'Log Only (Testing)',
     ],
 ];
