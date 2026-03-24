@@ -137,7 +137,7 @@
                     <div class="mt-3">
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
-                            <strong>Note:</strong> A default password "patient123" will be assigned. Please inform the patient to change it after first login.
+                            <strong>Note:</strong> A secure temporary password will be generated. Please inform the patient to change it after first login.
                         </div>
                     </div>
                     <div class="d-flex gap-2 mt-3">
