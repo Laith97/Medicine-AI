@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('title', 'Voice Assistant Training Guide')
+@section('title', 'Ambient Listening Training Guide')
 
 @section('content')
 <div class="container-fluid">
@@ -10,15 +10,15 @@
                 <div class="card-header bg-info text-white">
                     <h4 class="card-title mb-0">
                         <i class="fas fa-graduation-cap me-2"></i>
-                        Voice Assistant Training Guide
+                        Ambient Listening Training Guide
                     </h4>
-                    <small>Master the hybrid voice assistant for enhanced medical consultations</small>
+                    <small>Master the hybrid ambient listening for enhanced medical consultations</small>
                 </div>
                 <div class="card-body">
                     <!-- Introduction -->
                     <div class="alert alert-info">
-                        <h5><i class="fas fa-info-circle me-2"></i>Welcome to Hybrid Voice Assistant Training</h5>
-                        <p class="mb-0">This guide will help you understand and effectively use our advanced hybrid voice assistant system, which combines real-time transcription with AI-powered server processing for superior medical documentation accuracy.</p>
+                        <h5><i class="fas fa-info-circle me-2"></i>Welcome to Ambient Listening Training</h5>
+                        <p class="mb-0">This guide will help you understand and effectively use our advanced ambient listening system, which combines real-time transcription with AI-powered server processing for superior medical documentation accuracy.</p>
                     </div>
 
                     <!-- Quick Start -->
@@ -328,7 +328,7 @@
                                     </h5>
                                 </div>
                                 <div class="card-body">
-                                    <p>Use the Performance page to track your voice assistant usage and success rates. Key metrics include:</p>
+                                    <p>Use the Performance page to track your ambient listening usage and success rates. Key metrics include:</p>
                                     <div class="row">
                                         <div class="col-md-4">
                                             <div class="text-center">
@@ -350,7 +350,7 @@
                                         </div>
                                     </div>
                                     <div class="text-center mt-3">
-                                        <a href="{{ route('ai.voice-assistant.performance') }}" class="btn btn-primary">
+                                        <a href="{{ route('ai.ambient-listening.performance') }}" class="btn btn-primary">
                                             <i class="fas fa-chart-line me-2"></i>View Performance Analytics
                                         </a>
                                     </div>

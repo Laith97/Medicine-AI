@@ -408,6 +408,11 @@ class Appointment extends Model
                 throw new \Exception('Concurrent update detected - appointment was modified by another process');
             }
 
+            // Auto-assign primary doctor to patient if not already assigned
+            if ($this->patient && !$this->patient->primary_doctor_id) {
+                $this->patient->update(['primary_doctor_id' => $this->doctor->user_id]);
+            }
+
             // Fire status change event
             if ($oldStatus !== 'confirmed') {
                 app(AppointmentBroadcastService::class)->broadcastStatusChange($this, $oldStatus, 'confirmed');

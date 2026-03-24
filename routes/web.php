@@ -31,6 +31,8 @@ use App\Http\Controllers\Admin\SubscriptionPlanController;
 use App\Http\Controllers\Admin\AdminWaitlistController;
 use App\Models\SystemSetting;
 use App\Models\User;
+use App\Models\Appointment;
+use App\Models\Review;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Auth;
@@ -95,6 +97,14 @@ Route::get('/', function () {
     $professionalMonthly = SystemSetting::get('saas_professional_monthly', 30);
     $professionalYearly = SystemSetting::get('saas_professional_yearly', 300);
 
+    // Get real statistics from database
+    $stats = [
+        'doctors' => User::where('role', 'doctor')->count(),
+        'appointments' => Appointment::count(),
+        'patients' => Appointment::distinct('patient_id')->count('patient_id'),
+        'avg_rating' => number_format(Review::avg('rating') ?? 0, 1),
+    ];
+
     // Define SaaS pricing plans (no free plan)
     $pricingPlans = [
         'professional' => [
@@ -130,7 +140,7 @@ Route::get('/', function () {
         ]
     ];
 
-    return view('main', compact('showPricingSection', 'pricingPlans'));
+    return view('main', compact('showPricingSection', 'pricingPlans', 'stats'));
 });
 
 // Registration choice page
@@ -308,7 +318,8 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
     Route::get('/settings', [UserSettingsController::class, 'index'])->name('settings');
     Route::put('/user/settings/update', [UserSettingsController::class, 'update'])->name('settings.update');
-    Route::get('/doctor/patient-management', [OpenAIController::class, 'getCases'])->name('doctor.patient-management.index');
+    // Diagnosed Cases (AI analysis results)
+    Route::get('/doctor/cases-overview', [OpenAIController::class, 'getCases'])->name('doctor.cases.overview');
     // Route::get('/openai/form', [OpenAIController::class, 'showForm'])->name('openai.form');
     Route::post('/patient/summary', [OpenAIController::class, 'generatePatientSummary'])->name('patient.summary');
     Route::get('/dashboard', [OpenAIController::class, 'dashboard'])->name('dashboard');
@@ -495,9 +506,9 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
             'can_access' => [
                 'dashboard' => $user->canAccessRoute('dashboard'),
                 // 'ai.ask-ai' => $user->canAccessRoute('ai.ask-ai'), // Temporarily disabled
-                'ai.voice-assistant.index' => $user->canAccessRoute('ai.voice-assistant.index'),
+                'ai.ambient-listening.index' => $user->canAccessRoute('ai.ambient-listening.index'),
                 'diagnosis.index' => $user->canAccessRoute('diagnosis.index'),
-                'doctor.patient-management.index' => $user->canAccessRoute('doctor.patient-management.index'),
+                'doctor.cases.overview' => $user->canAccessRoute('doctor.cases.overview'),
                 'sub-users.index' => $user->canAccessRoute('sub-users.index'),
             ],
         ]);
@@ -599,7 +610,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
                 'accessible_routes' => [
                     'dashboard' => $user->canAccessRoute('dashboard'),
                     'appointments' => $user->canAccessRoute('doctor.appointments.index'),
-                    'doctor.patient-management.index' => $user->canAccessRoute('doctor.patient-management.index'),
+                    'doctor.cases.overview' => $user->canAccessRoute('doctor.cases.overview'),
                     'settings' => $user->canAccessRoute('settings'),
                 ]
             ]);
@@ -727,7 +738,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
         }
 
         $setting = $user->monthlyInvoiceSetting;
-        $testRoutes = ['doctor.patient-management.index', 'dashboard', 'appointments', 'reviews', 'settings', 'profile.edit']; // Removed ai.ask-ai temporarily
+        $testRoutes = ['doctor.cases.overview', 'dashboard', 'appointments', 'reviews', 'settings', 'profile.edit']; // Removed ai.ask-ai temporarily
 
         $results = [];
         foreach ($testRoutes as $route) {
@@ -807,6 +818,15 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
     // Profile management
     Route::get('/profile', [DoctorDashboardController::class, 'profile'])->name('profile.edit');
     Route::patch('/profile', [DoctorDashboardController::class, 'updateProfile'])->name('profile.update');
+
+    // Patient Management
+    Route::get('/patients', [App\Http\Controllers\PatientManagementController::class, 'index'])->name('patients.index');
+    Route::get('/patients/create', [App\Http\Controllers\PatientManagementController::class, 'create'])->name('patients.create');
+    Route::post('/patients', [App\Http\Controllers\PatientManagementController::class, 'store'])->name('patients.store');
+    Route::get('/patients/{id}', [App\Http\Controllers\PatientManagementController::class, 'show'])->name('patients.show');
+    Route::get('/patients/{id}/edit', [App\Http\Controllers\PatientManagementController::class, 'edit'])->name('patients.edit');
+    Route::put('/patients/{id}', [App\Http\Controllers\PatientManagementController::class, 'update'])->name('patients.update');
+    Route::delete('/patients/{id}', [App\Http\Controllers\PatientManagementController::class, 'destroy'])->name('patients.destroy');
 
     // Appointment Settings
     Route::get('/settings/appointments', [App\Http\Controllers\Doctor\AppointmentSettingsController::class, 'index'])->name('settings.appointments');
@@ -1028,6 +1048,37 @@ Route::get('/doctor/{username}/chat/check-new', [PublicChatController::class, 'c
 
 // Public Testimonials API
 Route::get('/doctor/{username}/testimonials', [TestimonialController::class, 'getPublicTestimonials'])->name('doctor.testimonials.public');
+
+// Video room route
+Route::middleware(['auth'])->get('/video/room/{appointment}', function($appointmentId) {
+    $appointment = \App\Models\Appointment::findOrFail($appointmentId);
+    
+    if (Auth::id() !== $appointment->doctor->user_id && Auth::id() !== $appointment->patient_id) {
+        abort(403);
+    }
+    
+    // Create room if not exists
+    $roomName = 'appointment-' . $appointmentId;
+    if (!$appointment->meeting_id) {
+        $dailyService = app(\App\Services\DailyService::class);
+        try {
+            $room = $dailyService->createRoom($roomName, 120);
+            $appointment->update(['meeting_id' => $roomName]);
+            \Log::info('Video room created successfully', ['room' => $roomName]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to create video room', [
+                'room' => $roomName,
+                'error' => $e->getMessage()
+            ]);
+            return view('video.room-error', [
+                'appointment' => $appointment,
+                'error' => 'Unable to create video room. Please contact support.'
+            ]);
+        }
+    }
+    
+    return view('video.room', compact('appointment'));
+})->name('video.room');
 
 // Stripe webhook (outside auth middleware)
 Route::post('/stripe/webhook', [SubscriptionController::class, 'webhook'])->name('stripe.webhook');
@@ -1483,3 +1534,13 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureJsonResponse::class])->gro
     Route::get('/api/doctor/waitlist/stats', [App\Http\Controllers\Doctor\WaitlistController::class, 'getStats'])->name('api.doctor.waitlist.stats');
     Route::get('/api/doctor/waitlist/patient/{waitlist}', [App\Http\Controllers\Doctor\WaitlistController::class, 'getPatient'])->name('api.doctor.waitlist.patient');
 });
+
+// Admin Settings Routes
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/settings/transcription', [App\Http\Controllers\Admin\SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings/transcription', [App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('settings.update');
+});
+
+// WebSocket test routes
+Route::get('/websocket-test', [App\Http\Controllers\WebSocketController::class, 'testPage'])->name('websocket.test');
+Route::post('/send-notification', [App\Http\Controllers\WebSocketController::class, 'sendNotification'])->name('send.notification');

@@ -1,11 +1,67 @@
 @extends('master')
 
-@section('title', 'Patient Management')
+@section('title', 'Cases Overview')
 
 @section('content')
 <div class="dashboard-header">
-    <h2>Patient Management</h2>
-    <p>Manage patient records and appointments</p>
+    <h2>Diagnosed Cases</h2>
+    <p>View and manage all patient diagnoses and medical records</p>
+</div>
+
+<!-- Quick Navigation Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <a href="{{ route('ai.ambient-listening.index') }}" class="text-decoration-none">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center py-4">
+                    <div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="fas fa-microphone text-success fs-4"></i>
+                    </div>
+                    <h5 class="text-dark">New Consultation</h5>
+                    <p class="text-muted small mb-0">Start AI-powered</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ route('doctor.appointments.index') }}" class="text-decoration-none">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center py-4">
+                    <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="fas fa-calendar-check text-primary fs-4"></i>
+                    </div>
+                    <h5 class="text-dark">Appointments</h5>
+                    <p class="text-muted small mb-0">Manage schedule</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ route('doctor.patients.index') }}" class="text-decoration-none">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center py-4">
+                    <div class="rounded-circle bg-info bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="fas fa-users text-info fs-4"></i>
+                    </div>
+                    <h5 class="text-dark">Patients</h5>
+                    <p class="text-muted small mb-0">View records</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ route('diagnosis.index') }}" class="text-decoration-none">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center py-4">
+                    <div class="rounded-circle bg-warning bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="fas fa-list text-warning fs-4"></i>
+                    </div>
+                    <h5 class="text-dark">All Diagnoses</h5>
+                    <p class="text-muted small mb-0">Full list view</p>
+                </div>
+            </div>
+        </a>
+    </div>
 </div>
 
 @push('styles')
@@ -750,13 +806,24 @@
 
                 <!-- Page Header -->
                 <div class="page-header">
+                    <!-- Breadcrumb Navigation -->
+                    <nav aria-label="breadcrumb" class="mb-3">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Medical Records</li>
+                        </ol>
+                    </nav>
+                    
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h1><i class="fas fa-user-injured me-2"></i>Patient Management</h1>
-                            <p class="text-muted mb-0">Manage and view all patient medical records</p>
+                            <h1><i class="fas fa-user-injured me-2"></i>Cases Overview</h1>
+                            <p class="text-muted mb-0">All patient cases including diagnoses, legacy records, and pending cases</p>
                         </div>
                         <div class="d-flex gap-2">
-                            <button class="btn-custom-secondary" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                            <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-success">
+                                <i class="fas fa-microphone me-2"></i>New Consultation
+                            </a>
+                            <button class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
                                 <i class="fas fa-filter"></i> Filters
                             </button>
                         </div>

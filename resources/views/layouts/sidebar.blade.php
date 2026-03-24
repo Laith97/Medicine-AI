@@ -1,6 +1,4 @@
-<aside id="appSidebar" class="sidebar">
-
-
+<aside id="appSidebar" class="sidebar" style="top: 84px">
   <nav class="sidebar-nav">
     <ul class="nav flex-column">
       @auth
@@ -46,28 +44,31 @@
             </li>
           @endif
         @endforeach
+        <li class="nav-item" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+          <a href="{{ route('profile.edit') }}" class="nav-link {{ request()->routeIs('profile.*') ? 'active' : '' }}">
+            <i class="fa-solid fa-user"></i><span>Profile</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+            @csrf
+            <button type="submit" class="nav-link" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer;">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Logout</span>
+            </button>
+          </form>
+        </li>
+      @else
+        <li class="nav-item">
+          <a href="{{ route('login') }}" class="nav-link {{ request()->routeIs('login') ? 'active' : '' }}">
+            <i class="fa-solid fa-right-to-bracket"></i><span>Login</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ route('register') }}" class="nav-link {{ request()->routeIs('register') ? 'active' : '' }}">
+            <i class="fa-solid fa-user-plus"></i><span>Register</span>
+          </a>
+        </li>
       @endauth
     </ul>
   </nav>
-
-  <div class="sidebar-footer">
-    @auth
-      <a href="{{ route('profile.edit') }}" class="nav-link {{ request()->routeIs('profile.*') ? 'active' : '' }}">
-        <i class="fa-solid fa-user"></i><span>Profile</span>
-      </a>
-      <form method="POST" action="{{ route('logout') }}" class="mt-1">
-        @csrf
-        <button type="submit" class="nav-link btn btn-link text-start p-0">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Logout</span>
-        </button>
-      </form>
-    @else
-      <a href="{{ route('login') }}" class="nav-link {{ request()->routeIs('login') ? 'active' : '' }}">
-        <i class="fa-solid fa-right-to-bracket"></i><span>Login</span>
-      </a>
-      <a href="{{ route('register') }}" class="nav-link {{ request()->routeIs('register') ? 'active' : '' }}">
-        <i class="fa-solid fa-user-plus"></i><span>Register</span>
-      </a>
-    @endauth
-  </div>
 </aside>

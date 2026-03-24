@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Route;
 // AI Prescription Suggestion Routes
 Route::middleware(['auth', 'sub.user.permissions'])->prefix('ai')->name('ai.')->group(function () {
 
-    // Voice Assistant routes for AI prescription suggestions
-    Route::prefix('voice-assistant')->name('voice-assistant.')->group(function () {
+    // Ambient Listening routes for AI-powered consultation recording
+    Route::prefix('ambient-listening')->name('ambient-listening.')->group(function () {
         Route::get('/', [VoiceAssistantController::class, 'index'])->name('index');
         Route::get('/training', [VoiceAssistantController::class, 'training'])->name('training');
         Route::get('/performance', [VoiceAssistantController::class, 'performance'])->name('performance');

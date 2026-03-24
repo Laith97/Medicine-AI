@@ -481,15 +481,8 @@ class DashboardController extends Controller
             }
         }
 
-        // Get doctor's existing patients for selection
-        $patients = $doctor->appointments()
-            ->with('patient')
-            ->whereNotNull('patient_id')
-            ->get()
-            ->pluck('patient')
-            ->unique('id')
-            ->filter()
-            ->values();
+        // Get doctor's existing patients for selection (unified method - primary_doctor_id OR appointments)
+        $patients = $this->getEffectiveDoctorUser()->getDoctorPatients();
 
         return view('doctor.appointments.create', compact('doctor', 'availableSlots', 'patients'));
     }
@@ -682,15 +675,15 @@ class DashboardController extends Controller
 
             $query = $request->input('query');
 
-            // Search all patients in the system (not just those with appointments with this doctor)
-            $patients = \App\Models\User::where('role', 'patient')
-                ->where(function($q) use ($query) {
-                    $q->where('name', 'like', "%{$query}%")
-                      ->orWhere('email', 'like', "%{$query}%")
-                      ->orWhere('phone', 'like', "%{$query}%");
+            // Get only patients related to the current doctor
+            $doctorUser = $this->getEffectiveDoctorUser();
+            $patients = $doctorUser->getDoctorPatients()
+                ->filter(function($patient) use ($query) {
+                    return stripos($patient->name, $query) !== false ||
+                           stripos($patient->email, $query) !== false ||
+                           ($patient->phone && stripos($patient->phone, $query) !== false);
                 })
                 ->take(10)
-                ->get()
                 ->map(function($patient) {
                     return [
                         'id' => $patient->id,
@@ -700,7 +693,8 @@ class DashboardController extends Controller
                         'text' => "{$patient->name} ({$patient->email})"
                     ];
                 })
-                ->toArray(); // Convert to array explicitly
+                ->values()
+                ->toArray();
 
             return response()->json($patients);
         } catch (\Exception $e) {

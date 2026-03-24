@@ -9,10 +9,10 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h1 class="card-title h3 mb-2">🎤 Voice Assistant History</h1>
-                            <p class="card-text mb-0">Review your previous voice consultation sessions</p>
+                            <h1 class="card-title h3 mb-2">🎤 Ambient Listening History</h1>
+                            <p class="card-text mb-0">Review your previous ambient listening sessions</p>
                         </div>
-                        <a href="{{ route('ai.voice-assistant.index') }}" class="btn btn-light">
+                        <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-light">
                             <i class="fas fa-microphone me-2"></i>
                             New Session
                         </a>
@@ -67,7 +67,7 @@
                                         @endif
                                     </div>
                                     <div class="btn-group" role="group">
-                                        <a href="{{ route('ai.voice-assistant.show', $transcription) }}"
+                                        <a href="{{ route('ai.ambient-listening.show', $transcription) }}"
                                            class="btn btn-outline-primary btn-sm">
                                             <i class="fas fa-eye me-1"></i>
                                             View
@@ -105,7 +105,7 @@
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                        <a href="{{ route('ai.voice-assistant.show', $transcription) }}" class="btn btn-primary">
+                                        <a href="{{ route('ai.ambient-listening.show', $transcription) }}" class="btn btn-primary">
                                             View Full Details
                                         </a>
                                     </div>
@@ -125,7 +125,7 @@
                         <i class="fas fa-microphone fa-4x text-muted mb-3"></i>
                         <h4 class="text-muted">No Voice Sessions Yet</h4>
                         <p class="text-muted mb-4">You haven't recorded any voice consultations yet.</p>
-                        <a href="{{ route('ai.voice-assistant.index') }}" class="btn btn-primary">
+                        <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-primary">
                             <i class="fas fa-microphone me-2"></i>
                             Start Your First Session
                         </a>

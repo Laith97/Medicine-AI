@@ -127,6 +127,7 @@ class User extends Authenticatable
         'is_sub_user',
         'hospital_id',
         'analytics_role_id',
+        'requires_password_reset',
     ];
 
     /**
@@ -154,42 +155,20 @@ class User extends Authenticatable
             'trial_ends_at' => 'datetime',
             'trial_used' => 'boolean',
             'is_sub_user' => 'boolean',
+            'requires_password_reset' => 'boolean',
         ];
     }
 
     /**
-     * Automatically calculate age from date of birth when saving
+     * Get the user's age calculated from date of birth
      */
-    protected function setAgeAttribute($value)
+    public function getAgeAttribute(): ?int
     {
-        // If age is being explicitly set, use that value
-        if ($value !== null) {
-            $this->attributes['age'] = $value;
-        }
-        // If date of birth is set but age is not, calculate it automatically
-        elseif (!empty($this->attributes['date_of_birth']) && $value === null) {
-            $birthDate = \Carbon\Carbon::parse($this->attributes['date_of_birth']);
-            $this->attributes['age'] = $birthDate->age;
-        }
-    }
-
-    /**
-     * Get age from date of birth if not stored in database
-     */
-    protected function getAgeAttribute($value)
-    {
-        // If age is stored in the database (not null), return it
-        if ($value !== null) {
-            return $value;
+        if (!$this->date_of_birth) {
+            return null;
         }
 
-        // If date of birth exists but age is null, calculate it
-        if (!empty($this->attributes['date_of_birth'])) {
-            $birthDate = \Carbon\Carbon::parse($this->attributes['date_of_birth']);
-            return $birthDate->age;
-        }
-
-        return $value; // Return null if no date of birth exists
+        return $this->date_of_birth->age;
     }
 
     /**
@@ -235,6 +214,14 @@ class User extends Authenticatable
     public function patientData()
     {
         return $this->hasOne(PatientData::class, 'assigned_patient_id')->latest();
+    }
+
+    /**
+     * Get patient insurances
+     */
+    public function patientInsurances()
+    {
+        return $this->hasMany(PatientInsurance::class, 'patient_id');
     }
 
     // Doctor relationship
@@ -608,6 +595,31 @@ public function getFreshMonthlyInvoiceSetting()
     {
         $doctor = $this->getEffectiveDoctor();
         return $doctor && $doctor->is_active;
+    }
+
+    /**
+     * Get all patients for this doctor (assigned OR have appointments with this doctor)
+     * This is the unified method for patient queries across the system
+     *
+     * @param int|null $doctorId Override the doctor ID (useful for sub-users)
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getDoctorPatients($doctorId = null)
+    {
+        $effectiveDoctorId = $doctorId ?? $this->id;
+
+        return User::where('role', 'patient')
+            ->where(function($q) use ($effectiveDoctorId) {
+                $q->where('primary_doctor_id', $effectiveDoctorId)
+                  ->orWhereHas('appointments', function($q2) use ($effectiveDoctorId) {
+                      $q2->where('doctor_id', $effectiveDoctorId);
+                  });
+            })
+            ->with(['appointments' => function($q) use ($effectiveDoctorId) {
+                $q->where('doctor_id', $effectiveDoctorId)->latest()->limit(1);
+            }])
+            ->orderBy('name')
+            ->get();
     }
 
     /**

@@ -219,7 +219,12 @@
             <div class="col-lg-12">
                 <!-- Information Cards Grid -->
                 <div class="info-cards-grid">
-                    <!-- Appointment Overview Card -->
+                    <!-- Call/Video Buttons -->
+                @if($appointment->status === 'confirmed')
+                    @include('components.appointment-call-buttons', ['appointment' => $appointment])
+                @endif
+
+                <!-- Appointment Overview Card -->
                     <div class="table-card">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div>
@@ -1399,7 +1404,13 @@
             <div class="modal-body">
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
-                    <strong>Understanding AI Data Sources:</strong> The AI analyzes clinical information from multiple sources to provide medication suggestions. Here's what data is currently available and being used:
+                    <strong>Understanding AI Data Sources:</strong> The AI analyzes clinical information to provide medication suggestions. Data sources are prioritized by importance:
+                    <ul class="mb-0 mt-2">
+                        <li><strong class="text-danger">CRITICAL:</strong> Required for AI suggestions - AI will be BLOCKED without these</li>
+                        <li><strong class="text-warning">Important:</strong> Strongly recommended for accurate suggestions</li>
+                        <li><strong class="text-info">Helpful:</strong> Provides additional context</li>
+                        <li><strong class="text-secondary">Context:</strong> Used for background information only</li>
+                    </ul>
                 </div>
 
                 <!-- Data Sources Table -->
@@ -1407,11 +1418,11 @@
                     <table class="table table-sm table-hover">
                         <thead class="table-primary">
                             <tr>
-                                <th><i class="fas fa-clipboard-list me-1"></i>Data Source</th>
+                                <th><i class="fas fa-clipboard-list me-1"></i>Data Source & Why It's Needed</th>
                                 <th><i class="fas fa-check-circle me-1"></i>Status</th>
+                                <th><i class="fas fa-exclamation-triangle me-1"></i>Importance</th>
                                 <th><i class="fas fa-shield-alt me-1"></i>Reliability</th>
-                                <th><i class="fas fa-info-circle me-1"></i>Example</th>
-                                <th><i class="fas fa-map-marker-alt me-1"></i>Location</th>
+                                <th><i class="fas fa-info-circle me-1"></i>Current Value</th>
                             </tr>
                         </thead>
                         <tbody id="dataSourcesTableBody">
@@ -1498,20 +1509,30 @@
                                 <td>Number of previous missed appointments</td>
                             </tr>
                             <tr>
+                                <td><strong>Cancellation Count</strong></td>
+                                <td class="text-center"><span class="badge bg-secondary">{{ $features[1] ?? 0 }}</span></td>
+                                <td>Number of cancelled appointments</td>
+                            </tr>
+                            <tr>
                                 <td><strong>Days Since Last Visit</strong></td>
-                                <td class="text-center"><span class="badge bg-info">{{ $features[1] ?? 0 }}</span></td>
+                                <td class="text-center"><span class="badge bg-info">{{ $features[2] ?? 0 }}</span></td>
                                 <td>Days since patient's last appointment</td>
                             </tr>
                             <tr>
+                                <td><strong>Visit Frequency</strong></td>
+                                <td class="text-center"><span class="badge bg-primary">{{ number_format($features[3] ?? 0, 1) }}</span></td>
+                                <td>Average appointments per year</td>
+                            </tr>
+                            <tr>
                                 <td><strong>Patient Age</strong></td>
-                                <td class="text-center"><span class="badge bg-primary">{{ $features[2] ?? 0 }}</span></td>
+                                <td class="text-center"><span class="badge bg-primary">{{ $features[4] ?? 0 }}</span></td>
                                 <td>Patient's age in years</td>
                             </tr>
                             <tr>
                                 <td><strong>Gender</strong></td>
                                 <td class="text-center">
-                                    <span class="badge {{ ($features[3] ?? 0) == 1 ? 'bg-danger' : 'bg-secondary' }}">
-                                        {{ ($features[3] ?? 0) == 1 ? 'Male' : 'Female/Other' }}
+                                    <span class="badge {{ ($features[5] ?? 0) == 1 ? 'bg-danger' : 'bg-secondary' }}">
+                                        {{ ($features[5] ?? 0) == 1 ? 'Male' : 'Female/Other' }}
                                     </span>
                                 </td>
                                 <td>Gender encoding (1=Male, 0=Female/Other)</td>
@@ -1519,17 +1540,27 @@
                             <tr>
                                 <td><strong>Chronic Conditions</strong></td>
                                 <td class="text-center">
-                                    <span class="badge {{ ($features[4] ?? 0) > 0 ? 'bg-danger' : 'bg-success' }}">
-                                        {{ $features[4] ?? 0 }}
+                                    <span class="badge {{ ($features[6] ?? 0) > 0 ? 'bg-danger' : 'bg-success' }}">
+                                        {{ $features[6] ?? 0 }}
                                     </span>
                                 </td>
-                                <td>Count of high-risk conditions from appointment records</td>
+                                <td>Count of high-risk conditions from doctor diagnoses</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Current Medications</strong></td>
+                                <td class="text-center"><span class="badge bg-info">{{ $features[7] ?? 0 }}</span></td>
+                                <td>Number of current medications</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Appointment Lead Time</strong></td>
+                                <td class="text-center"><span class="badge bg-secondary">{{ $features[8] ?? 0 }}</span></td>
+                                <td>Days between booking and appointment</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="alert alert-info mt-3">
-                    <small><i class="fas fa-info-circle me-1"></i><strong>Note:</strong> This is the current MVP implementation using 5 basic features. Future versions will include more comprehensive analysis.</small>
+                    <small><i class="fas fa-info-circle me-1"></i><strong>Enhanced ML Features:</strong> Now using 9 features including cancellations, visit frequency, medications, and appointment lead time for improved accuracy.</small>
                 </div>
 
                 <hr class="my-4">

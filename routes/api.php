@@ -298,6 +298,13 @@ Route::middleware(['auth', 'web'])->group(function () {
         Route::get('/compliance/webhooks', [App\Http\Controllers\Api\ComplianceIntegrationController::class, 'getWebhooks']);
         });
 
+    // Video Call Routes
+    Route::prefix('appointments')->group(function () {
+        Route::get('{appointment}/patient-phone', [App\Http\Controllers\VideoCallController::class, 'getPatientPhone']);
+        Route::post('{appointment}/video/token', [App\Http\Controllers\VideoCallController::class, 'generateVideoToken']);
+        Route::post('{appointment}/video/end', [App\Http\Controllers\VideoCallController::class, 'endVideoCall']);
+    });
+
     // Clinical Monitoring Routes
     Route::prefix('monitoring')->group(function () {
         Route::post('{patient_id}/vitals', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'receiveVitals']);

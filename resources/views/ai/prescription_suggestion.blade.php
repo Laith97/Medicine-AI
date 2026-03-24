@@ -85,9 +85,6 @@ function showClinicalDataSummary(clinicalData) {
         if (clinicalData.voice_diagnosis) {
             summaryHtml += '<div class="col-12"><strong>🎤 Voice Assistant Diagnosis:</strong> ' + clinicalData.voice_diagnosis + '</div>';
         }
-        if (clinicalData.reason_for_visit) {
-            summaryHtml += '<div class="col-12"><strong>📋 Reason for Visit:</strong> ' + clinicalData.reason_for_visit + '</div>';
-        }
 
         summaryHtml += '</div>';
         summaryHtml += '<div class="mt-2 small text-success"><i class="fas fa-check-circle me-1"></i>AI analyzed the above verified clinical data to provide medication suggestions.</div>';
@@ -102,9 +99,6 @@ function showClinicalDataSummary(clinicalData) {
 // Prescription AI Suggestion
 $('#aiSuggestBtn').click(function(e) {
     e.preventDefault();
-
-    var button = $(this);
-    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Generating...');
 
     // CRITICAL SAFETY: Only use doctor-verified clinical data for AI medication suggestions
     // Patient-reported symptoms are excluded due to unreliability
@@ -121,7 +115,86 @@ $('#aiSuggestBtn').click(function(e) {
     // Include voice assistant diagnosis if available
     var voiceDiagnosis = @json($appointment->patient ? \App\Models\AiAssistantResult::where('patient_id', $appointment->patient->id)->where('source', 'voice_assistant')->latest()->first() : null);
 
-    $.ajax({
+    // Check for missing critical data
+    var missingData = [];
+    if (!allergies || (Array.isArray(allergies) && allergies.length === 0)) {
+        missingData.push('Patient Allergies');
+    }
+    if ((!pastMeds || (Array.isArray(pastMeds) && pastMeds.length === 0)) && 
+        (!currentDiagnosis || !currentDiagnosis.patient_data || !currentDiagnosis.patient_data.medications)) {
+        missingData.push('Current Medications');
+    }
+    if (!symptoms && !currentDiagnosis) {
+        missingData.push('Doctor Clinical Assessment');
+    }
+
+    // Show warning modal if critical data is missing
+    if (missingData.length > 0) {
+        var warningHtml = `
+            <div class="modal fade" id="aiWarningModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Missing Critical Data</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p><strong>⚠️ The following critical data is missing:</strong></p>
+                            <ul class="text-danger">
+                                ${missingData.map(item => '<li>' + item + '</li>').join('')}
+                            </ul>
+                            <p class="mb-2"><strong>Why this matters:</strong></p>
+                            <ul class="small">
+                                <li><strong>Without allergies:</strong> AI could suggest medications patient is allergic to (life-threatening)</li>
+                                <li><strong>Without current medications:</strong> Cannot check drug interactions (dangerous)</li>
+                                <li><strong>Without clinical assessment:</strong> No basis for medication recommendations</li>
+                            </ul>
+                            <hr>
+                            <p class="mb-0"><strong>What would you like to do?</strong></p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </button>
+                            <a href="/diagnosis/create" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>Add Missing Data
+                            </a>
+                            <button type="button" class="btn btn-warning" id="continueAnywayBtn">
+                                <i class="fas fa-exclamation-triangle me-1"></i>Continue Anyway (Not Recommended)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        $('#aiWarningModal').remove();
+        
+        // Add modal to body
+        $('body').append(warningHtml);
+        
+        // Show modal
+        var modal = new bootstrap.Modal(document.getElementById('aiWarningModal'));
+        modal.show();
+        
+        // Handle continue anyway button
+        $('#continueAnywayBtn').click(function() {
+            modal.hide();
+            proceedWithAISuggestion();
+        });
+        
+        return;
+    }
+    
+    // If all critical data is present, proceed
+    proceedWithAISuggestion();
+    
+    function proceedWithAISuggestion() {
+        var button = $('#aiSuggestBtn');
+        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Generating...');
+
+        $.ajax({
         url: "{{ route('ai.appointments.suggest', $appointment->id) }}",
         method: 'POST',
         data: {
@@ -132,8 +205,7 @@ $('#aiSuggestBtn').click(function(e) {
             current_diagnosis: JSON.stringify(currentDiagnosis),
             past_diagnoses: JSON.stringify(pastDiagnoses),
             voice_diagnosis: JSON.stringify(voiceDiagnosis),
-            doctor_notes: @json($appointment->doctor_notes),
-            reason_for_visit: @json($appointment->reason)
+            doctor_notes: @json($appointment->doctor_notes)
         },
         success: function(response) {
             button.prop('disabled', false).html('<i class="fas fa-magic me-1"></i>Suggest with AI');
@@ -271,6 +343,7 @@ $('#aiSuggestBtn').click(function(e) {
             $('#ai-risks').hide();
         }
     });
+    }
 });
 
 // Handle accept suggestion button
@@ -354,36 +427,14 @@ function populateDataSourcesModal() {
 
     const dataSources = [
         {
-            name: 'Patient Age',
-            status: patient && patient.age ? 'available' : 'missing',
-            example: patient && patient.age ? patient.age + ' years old' : 'Age not recorded',
-            location: 'Patient Management (Administrative)',
-            reliability: 'Administrative',
-            icon: 'fas fa-birthday-cake'
-        },
-        {
-            name: 'Patient Gender',
-            status: patient && patient.gender ? 'available' : 'missing',
-            example: patient && patient.gender ? patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : 'Gender not recorded',
-            location: 'Patient Management (Administrative)',
-            reliability: 'Administrative',
-            icon: 'fas fa-venus-mars'
-        },
-        {
-            name: 'Doctor Notes',
-            status: appointment.doctor_notes ? 'available' : 'missing',
-            example: appointment.doctor_notes ? (appointment.doctor_notes.length > 30 ? appointment.doctor_notes.substring(0, 30) + '...' : appointment.doctor_notes) : 'No doctor notes',
-            location: 'Appointment completion modal (Doctor-verified)',
-            reliability: 'Doctor-verified',
-            icon: 'fas fa-user-md'
-        },
-        {
             name: 'Patient Allergies',
             status: patientData && patientData.allergies && (Array.isArray(patientData.allergies) ? patientData.allergies.length > 0 : patientData.allergies.toString().trim().length > 0) ? 'available' : 'missing',
             example: patientData && patientData.allergies ? (Array.isArray(patientData.allergies) ? patientData.allergies.join(', ') : patientData.allergies.toString()) : 'No allergies recorded',
             location: 'Diagnosis creation form (Doctor-verified)',
             reliability: 'Doctor-verified',
-            icon: 'fas fa-allergies'
+            icon: 'fas fa-allergies',
+            importance: 'critical',
+            reason: 'Prevents prescribing medications patient is allergic to (life-threatening)'
         },
         {
             name: 'Current Medications',
@@ -391,7 +442,19 @@ function populateDataSourcesModal() {
             example: patientData && patientData.past_medications ? (Array.isArray(patientData.past_medications) ? patientData.past_medications.join(', ') : patientData.past_medications.toString()) : 'No medications recorded',
             location: 'Diagnosis creation form (Doctor-verified)',
             reliability: 'Doctor-verified',
-            icon: 'fas fa-pills'
+            icon: 'fas fa-pills',
+            importance: 'critical',
+            reason: 'Required to check drug-drug interactions (dangerous without this)'
+        },
+        {
+            name: 'Doctor Notes',
+            status: appointment.doctor_notes ? 'available' : 'missing',
+            example: appointment.doctor_notes ? (appointment.doctor_notes.length > 30 ? appointment.doctor_notes.substring(0, 30) + '...' : appointment.doctor_notes) : 'No doctor notes',
+            location: 'Appointment completion modal (Doctor-verified)',
+            reliability: 'Doctor-verified',
+            icon: 'fas fa-user-md',
+            importance: 'critical',
+            reason: 'Provides clinical assessment - required if no diagnosis exists'
         },
         {
             name: 'Current Diagnosis',
@@ -399,7 +462,29 @@ function populateDataSourcesModal() {
             example: currentDiagnosis ? (currentDiagnosis.diagnosis_text ? currentDiagnosis.diagnosis_text.substring(0, 30) + (currentDiagnosis.diagnosis_text.length > 30 ? '...' : '') : 'Diagnosis recorded') : 'No current diagnosis',
             location: 'Most recent diagnosis record (Doctor-verified)',
             reliability: 'Doctor-verified',
-            icon: 'fas fa-stethoscope'
+            icon: 'fas fa-stethoscope',
+            importance: 'critical',
+            reason: 'Primary driver for medication selection - required if no doctor notes'
+        },
+        {
+            name: 'Patient Age',
+            status: patient && patient.age ? 'available' : 'missing',
+            example: patient && patient.age ? patient.age + ' years old' : 'Age not recorded',
+            location: 'Patient Management (Administrative)',
+            reliability: 'Administrative',
+            icon: 'fas fa-birthday-cake',
+            importance: 'important',
+            reason: 'Needed for dosage calculations (especially pediatric/geriatric)'
+        },
+        {
+            name: 'Patient Weight',
+            status: patientData && patientData.weight ? 'available' : 'missing',
+            example: patientData && patientData.weight ? patientData.weight + ' kg' : 'Weight not recorded',
+            location: 'Diagnosis creation form',
+            reliability: 'Doctor-verified',
+            icon: 'fas fa-weight',
+            importance: 'important',
+            reason: 'Critical for pediatric weight-based dosing calculations'
         },
         {
             name: 'Past Diagnosis History',
@@ -407,7 +492,19 @@ function populateDataSourcesModal() {
             example: pastDiagnoses && pastDiagnoses.length > 0 ? `${pastDiagnoses.length} past diagnosis(es) found` : 'No past diagnosis history',
             location: 'Historical diagnosis records (Doctor-verified)',
             reliability: 'Doctor-verified',
-            icon: 'fas fa-history'
+            icon: 'fas fa-history',
+            importance: 'helpful',
+            reason: 'Provides context for comorbidities and treatment history'
+        },
+        {
+            name: 'Patient Gender',
+            status: patient && patient.gender ? 'available' : 'missing',
+            example: patient && patient.gender ? patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : 'Gender not recorded',
+            location: 'Patient Management (Administrative)',
+            reliability: 'Administrative',
+            icon: 'fas fa-venus-mars',
+            importance: 'helpful',
+            reason: 'Relevant for pregnancy/breastfeeding considerations and some medications'
         },
         {
             name: 'Voice Assistant Diagnosis',
@@ -415,20 +512,16 @@ function populateDataSourcesModal() {
             example: voiceDiagnosis ? (voiceDiagnosis.patient_data && voiceDiagnosis.patient_data.diagnosis ? voiceDiagnosis.patient_data.diagnosis : 'Voice diagnosis available') : 'No voice diagnosis',
             location: 'Voice Assistant sessions (AI-assisted clinical)',
             reliability: 'AI-assisted clinical',
-            icon: 'fas fa-microphone'
+            icon: 'fas fa-microphone',
+            importance: 'helpful',
+            reason: 'Additional clinical context from voice sessions'
         },
-        {
-            name: 'Reason for Visit',
-            status: appointment.reason ? 'available' : 'missing',
-            example: appointment.reason || 'No reason specified',
-            location: 'Appointment creation (Doctor/Patient - Context only)',
-            reliability: 'Patient-reported',
-            icon: 'fas fa-calendar-check'
-        }
+
     ];
 
     let tableHtml = '';
     let availableCount = 0;
+    let criticalMissing = [];
 
     dataSources.forEach(source => {
         const statusBadge = source.status === 'available'
@@ -436,6 +529,9 @@ function populateDataSourcesModal() {
             : '<span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i>Missing</span>';
 
         if (source.status === 'available') availableCount++;
+        if (source.status === 'missing' && source.importance === 'critical') {
+            criticalMissing.push(source.name);
+        }
 
         const reliabilityBadge = source.reliability === 'Doctor-verified'
             ? '<span class="badge bg-success"><i class="fas fa-user-md me-1"></i>Doctor-verified</span>'
@@ -445,13 +541,24 @@ function populateDataSourcesModal() {
             ? '<span class="badge bg-secondary"><i class="fas fa-cog me-1"></i>Administrative</span>'
             : '<span class="badge bg-warning text-dark"><i class="fas fa-user me-1"></i>Patient-reported</span>';
 
+        const importanceBadge = source.importance === 'critical'
+            ? '<span class="badge bg-danger"><i class="fas fa-exclamation-circle me-1"></i>CRITICAL</span>'
+            : source.importance === 'important'
+            ? '<span class="badge bg-warning text-dark"><i class="fas fa-star me-1"></i>Important</span>'
+            : source.importance === 'helpful'
+            ? '<span class="badge bg-info"><i class="fas fa-info-circle me-1"></i>Helpful</span>'
+            : '<span class="badge bg-secondary"><i class="fas fa-tag me-1"></i>Context</span>';
+
         tableHtml += `
             <tr class="${source.status === 'missing' ? 'table-light' : ''}">
-                <td><i class="${source.icon} me-2 text-primary"></i><strong>${source.name}</strong></td>
+                <td>
+                    <i class="${source.icon} me-2 text-primary"></i><strong>${source.name}</strong>
+                    <br><small class="text-muted">${source.reason}</small>
+                </td>
                 <td>${statusBadge}</td>
+                <td class="small">${importanceBadge}</td>
                 <td class="small">${reliabilityBadge}</td>
                 <td class="small text-muted">${source.example}</td>
-                <td class="small">${source.location}</td>
             </tr>
         `;
     });
@@ -466,15 +573,19 @@ function populateDataSourcesModal() {
     completenessBar.style.width = completenessPercentage + '%';
     completenessBar.textContent = completenessPercentage + '% Complete';
 
-    if (completenessPercentage >= 80) {
+    // Check if critical data is missing
+    if (criticalMissing.length > 0) {
+        completenessBar.className = 'progress-bar bg-danger';
+        completenessText.innerHTML = `<strong class="text-danger">⚠️ CRITICAL DATA MISSING:</strong> AI medication suggestions are <strong>BLOCKED</strong> for patient safety. Missing: ${criticalMissing.join(', ')}`;
+    } else if (completenessPercentage >= 80) {
         completenessBar.className = 'progress-bar bg-success';
-        completenessText.textContent = 'Excellent data completeness! AI suggestions will be highly accurate.';
+        completenessText.textContent = '✅ Excellent data completeness! AI suggestions will be highly accurate.';
     } else if (completenessPercentage >= 60) {
         completenessBar.className = 'progress-bar bg-warning';
-        completenessText.textContent = 'Good data completeness. AI suggestions will be moderately accurate.';
+        completenessText.textContent = '⚠️ Good data completeness. AI suggestions will be moderately accurate.';
     } else {
         completenessBar.className = 'progress-bar bg-danger';
-        completenessText.textContent = 'Limited data available. Consider adding more clinical information for better AI suggestions.';
+        completenessText.textContent = '❌ Limited data available. Consider adding more clinical information for better AI suggestions.';
     }
 
     // Update improvement suggestions based on missing data

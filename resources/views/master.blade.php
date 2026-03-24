@@ -1375,11 +1375,11 @@ body .dropdown .dropdown-menu.show,
             .primary-menu .sub-menu-container .menu-item.current .menu-link {
                 border-left-color: #DE6262 !important;
             }
-        }
+        
     </style>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'Medical Demo | Canvas')</title>
+    <title>@yield('title', 'MedcuraAI')</title>
 </head>
 
 <body class="stretched page-transition"
@@ -1866,17 +1866,17 @@ body .dropdown .dropdown-menu.show,
     @if (!auth()->check())
         <!-- Footer -->
         <footer id="footer" class="text-white py-5" role="contentinfo"
-    style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
+    style="background: white; color: #333;">
     <div class="container">
         <div class="row g-4">
             <!-- Company Info -->
             <div class="col-lg-4 col-md-6">
                 <div class="footer-brand mb-4">
-                    <h4 class="text-white mb-3" style="color: #DE6262 !important;">
+                    <h4 class="mb-3" style="color: #DE6262 !important;">
                         <i class="bi bi-heart-pulse me-2" style="color: #DE6262;"></i>
                         Clinical Decision Support
                     </h4>
-                    <p class="text-white-50 mb-4">
+                    <p class="text-muted mb-4">
                         Revolutionizing healthcare with cutting-edge clinical technology.
                         Empowering medical professionals with advanced decision support tools for
                         superior patient care and outcomes.
@@ -1884,20 +1884,20 @@ body .dropdown .dropdown-menu.show,
 
                     <!-- Social Links -->
                     <div class="social-links">
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
-                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: #dee2e6; color: #333;">
                             <i class="bi bi-facebook"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
-                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: #dee2e6; color: #333;">
                             <i class="bi bi-twitter"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
-                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: #dee2e6; color: #333;">
                             <i class="bi bi-linkedin"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2 p-2"
-                            style="width: 40px; height: 40px; border-color: rgba(222,98,98,0.3);">
+                        <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
+                            style="width: 40px; height: 40px; border-color: #dee2e6; color: #333;">
                             <i class="bi bi-instagram"></i>
                         </a>
                     </div>
@@ -1906,38 +1906,38 @@ body .dropdown .dropdown-menu.show,
 
             <!-- Quick Links -->
             <div class="col-lg-2 col-md-6">
-                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Platform</h6>
+                <h6 class="mb-3" style="color: #DE6262 !important;">Platform</h6>
                 <ul class="list-unstyled footer-links">
                     @auth
-                        <li class="mb-2"><a href="{{ route('dashboard') }}" class="text-white-50 text-decoration-none hover-link">Dashboard</a></li>
+                        <li class="mb-2"><a href="{{ route('dashboard') }}" class="text-muted text-decoration-none hover-link">Dashboard</a></li>
                         {{-- AI Ask temporarily disabled --}}
-                        {{-- <li class="mb-2"><a href="{{ route('ai.ask-ai') }}" class="text-white-50 text-decoration-none hover-link">AI Assistant</a></li> --}}
-                        <li class="mb-2"><a href="{{ route('doctor.patient-management.index') }}" class="text-white-50 text-decoration-none hover-link">Patient Management</a></li>
-                        <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Settings</a></li>
+                        {{-- <li class="mb-2"><a href="{{ route('ai.ask-ai') }}" class="text-muted text-decoration-none hover-link">AI Assistant</a></li> --}}
+                        <li class="mb-2"><a href="{{ route('doctor.cases.overview') }}" class="text-muted text-decoration-none hover-link">Cases Overview</a></li>
+                        <li class="mb-2"><a href="{{ route('settings') }}" class="text-muted text-decoration-none hover-link">Settings</a></li>
                     @else
-                        <li class="mb-2"><a href="{{ url('/') }}" class="text-white-50 text-decoration-none hover-link">Home</a></li>
-                        <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Us</a></li>
-                        <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact</a></li>
-                        <li class="mb-2"><a href="{{ route('login') }}" class="text-white-50 text-decoration-none hover-link">Login</a></li>
+                        <li class="mb-2"><a href="{{ url('/') }}" class="text-muted text-decoration-none hover-link">Home</a></li>
+                        <li class="mb-2"><a href="{{ route('about') }}" class="text-muted text-decoration-none hover-link">About Us</a></li>
+                        <li class="mb-2"><a href="{{ route('contact') }}" class="text-muted text-decoration-none hover-link">Contact</a></li>
+                        <li class="mb-2"><a href="{{ route('login') }}" class="text-muted text-decoration-none hover-link">Login</a></li>
                     @endauth
                 </ul>
             </div>
 
             <!-- Resources -->
             <div class="col-lg-2 col-md-6">
-                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Support</h6>
+                <h6 class="mb-3" style="color: #DE6262 !important;">Support</h6>
                 <ul class="list-unstyled footer-links">
-                    <li class="mb-2"><a href="{{ route('about') }}" class="text-white-50 text-decoration-none hover-link">About Platform</a></li>
-                    <li class="mb-2"><a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link">Contact Support</a></li>
+                    <li class="mb-2"><a href="{{ route('about') }}" class="text-muted text-decoration-none hover-link">About Platform</a></li>
+                    <li class="mb-2"><a href="{{ route('contact') }}" class="text-muted text-decoration-none hover-link">Contact Support</a></li>
                     @auth
-                        <li class="mb-2"><a href="{{ route('settings') }}" class="text-white-50 text-decoration-none hover-link">Profile Settings</a></li>
+                        <li class="mb-2"><a href="{{ route('settings') }}" class="text-muted text-decoration-none hover-link">Profile Settings</a></li>
                     @endauth
                 </ul>
             </div>
 
             <!-- Contact & Support -->
             <div class="col-lg-4 col-md-6">
-                <h6 class="text-white mb-3" style="color: #DE6262 !important;">Contact & Support</h6>
+                <h6 class="mb-3" style="color: #DE6262 !important;">Contact & Support</h6>
 
                 <!-- Go To Top Button -->
                 <div id="gotoTop" class="fas fa-chevron-up rounded-circle"
@@ -1950,8 +1950,8 @@ body .dropdown .dropdown-menu.show,
                         <i class="bi bi-headset" style="color: #DE6262;"></i>
                     </div>
                     <div>
-                        <small class="text-white-50 d-block">24/7 Support</small>
-                        <span class="text-white">AI-Powered Help Available</span>
+                        <small class="text-muted d-block">24/7 Support</small>
+                        <span style="color: #333;">AI-Powered Help Available</span>
                     </div>
                 </div>
 
@@ -1961,15 +1961,15 @@ body .dropdown .dropdown-menu.show,
                         <i class="bi bi-shield-check" style="color: #DE6262;"></i>
                     </div>
                     <div>
-                        <small class="text-white-50 d-block">Security & Privacy</small>
-                        <span class="text-white">HIPAA Compliant Platform</span>
+                        <small class="text-muted d-block">Security & Privacy</small>
+                        <span style="color: #333;">HIPAA Compliant Platform</span>
                     </div>
                 </div>
 
                 <!-- Quick Contact -->
                 <div class="quick-contact">
-                    <h6 class="text-white mb-2">Need Help?</h6>
-                    <p class="text-white-50 small mb-3">Our AI-powered support is here to assist you</p>
+                    <h6 class="mb-2" style="color: #333;">Need Help?</h6>
+                    <p class="text-muted small mb-3">Our AI-powered support is here to assist you</p>
                     <a href="{{ route('contact') }}" class="btn btn-sm"
                         style="background: #DE6262; color: white; border: none; border-radius: 25px;">
                         <i class="bi bi-chat-dots me-2"></i>Contact Support
@@ -1979,18 +1979,18 @@ body .dropdown .dropdown-menu.show,
         </div>
 
         <!-- Footer Bottom -->
-        <hr class="my-4" style="border-color: rgba(222,98,98,0.2);">
+        <hr class="my-4" style="border-color: #dee2e6;">
         <div class="row align-items-center">
             <div class="col-md-6">
-                <p class="text-white-50 mb-0">
+                <p class="text-muted mb-0">
                     &copy; {{ date('Y') }} MedCura Clinical Platform. All rights reserved.
                 </p>
             </div>
             <div class="col-md-6 text-md-end">
                 <div class="footer-legal-links">
-                    <span class="text-white-50 me-3">Secure & HIPAA Compliant</span>
-                    <a href="{{ route('contact') }}" class="text-white-50 text-decoration-none hover-link me-3">Contact Us</a>
-                    <a href="{{ route('admin.login') }}" class="text-white-50 text-decoration-none hover-link"
+                    <span class="text-muted me-3">Secure & HIPAA Compliant</span>
+                    <a href="{{ route('contact') }}" class="text-muted text-decoration-none hover-link me-3">Contact Us</a>
+                    <a href="{{ route('admin.login') }}" class="text-muted text-decoration-none hover-link"
                         style="font-size: 0.8rem;">Admin</a>
                 </div>
             </div>
@@ -2009,6 +2009,7 @@ body .dropdown .dropdown-menu.show,
         .social-links a:hover {
             background-color: #DE6262 !important;
             border-color: #DE6262 !important;
+            color: white !important;
             transform: translateY(-2px);
             transition: all 0.3s ease;
         }

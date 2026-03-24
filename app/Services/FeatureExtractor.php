@@ -50,10 +50,14 @@ class FeatureExtractor
     {
         return [
             $this->getNoShowCount($patient, $appointment),
+            $this->getCancellationCount($patient, $appointment),
             $this->getLastVisitDays($patient, $appointment),
+            $this->getVisitFrequency($patient),
             $this->getPatientAge($patient),
             $this->getGenderEncoded($patient),
             $this->getChronicConditionCount($patient),
+            $this->getCurrentMedicationCount($patient),
+            $this->getAppointmentLeadTime($appointment),
         ];
     }
 
@@ -118,28 +122,34 @@ class FeatureExtractor
     }
 
     /**
-     * Get count of chronic conditions from appointment history
-     * Since this system doesn't have separate patient medical history,
-     * we look at past appointment reasons and symptoms for chronic conditions
+     * Get count of chronic conditions from DOCTOR-VERIFIED diagnosis records
+     * Uses actual diagnosis data instead of unreliable text search in appointment reasons
      *
      * @param User $patient
      * @return int
      */
     private function getChronicConditionCount(User $patient): int
     {
-        // Get all past appointment reasons and symptoms
-        $pastAppointments = Appointment::where('patient_id', $patient->id)
-            ->where('status', 'completed')
-            ->whereNotNull('reason')
-            ->get(['reason', 'symptoms']);
+        // Get all diagnosis records for this patient
+        $diagnoses = \App\Models\Diagnosis::where('patient_id', $patient->id)
+            ->whereNotNull('diagnosis_text')
+            ->get();
 
         $chronicConditionsFound = [];
 
-        foreach ($pastAppointments as $appointment) {
-            $textToCheck = strtolower($appointment->reason . ' ' . ($appointment->symptoms ?? ''));
+        foreach ($diagnoses as $diagnosis) {
+            // Only use doctor-written diagnosis, not AI-generated content
+            $diagnosisText = strtolower($diagnosis->diagnosis_text ?? '');
+            
+            // Skip if this is purely AI-generated (not doctor-verified)
+            $aiAnalysis = strtolower($diagnosis->ai_analysis ?? '');
+            if (!empty($aiAnalysis) && trim($diagnosisText) === trim($aiAnalysis)) {
+                continue; // Skip AI-only diagnoses
+            }
 
+            // Check for high-risk conditions in doctor-verified diagnosis
             foreach ($this->getHighRiskConditions() as $condition) {
-                if (strpos($textToCheck, strtolower($condition)) !== false) {
+                if (strpos($diagnosisText, strtolower($condition)) !== false) {
                     $chronicConditionsFound[$condition] = true;
                 }
             }
@@ -157,5 +167,72 @@ class FeatureExtractor
     public function hasHighRiskCondition(User $patient): bool
     {
         return $this->getChronicConditionCount($patient) > 0;
+    }
+
+    /**
+     * Get count of cancelled appointments
+     */
+    private function getCancellationCount(User $patient, Appointment $appointment): int
+    {
+        return Appointment::where('patient_id', $patient->id)
+            ->where('status', 'cancelled')
+            ->where('appointment_date', '<', $appointment->appointment_date)
+            ->count();
+    }
+
+    /**
+     * Get visit frequency (appointments per year)
+     */
+    private function getVisitFrequency(User $patient): float
+    {
+        $firstAppointment = Appointment::where('patient_id', $patient->id)
+            ->orderBy('appointment_date', 'asc')
+            ->first();
+
+        if (!$firstAppointment) {
+            return 0.0;
+        }
+
+        $daysSinceFirst = abs(Carbon::now()->diffInDays($firstAppointment->appointment_date));
+        $totalAppointments = Appointment::where('patient_id', $patient->id)->count();
+
+        return $daysSinceFirst > 0 ? ($totalAppointments / $daysSinceFirst) * 365 : 0.0;
+    }
+
+    /**
+     * Get current medication count from patient data
+     */
+    private function getCurrentMedicationCount(User $patient): int
+    {
+        $patientData = $patient->patientData ?? null;
+        
+        if (!$patientData || !isset($patientData->past_medications)) {
+            return 0;
+        }
+
+        $medications = $patientData->past_medications;
+        
+        if (is_array($medications)) {
+            return count($medications);
+        }
+        
+        if (is_string($medications)) {
+            return count(array_filter(explode(',', $medications)));
+        }
+
+        return 0;
+    }
+
+    /**
+     * Get appointment lead time (days between booking and appointment)
+     */
+    private function getAppointmentLeadTime(Appointment $appointment): int
+    {
+        if (!$appointment->created_at || !$appointment->appointment_date) {
+            return 7; // Default to 1 week
+        }
+
+        return max(0, Carbon::parse($appointment->appointment_date)
+            ->diffInDays(Carbon::parse($appointment->created_at)));
     }
 }

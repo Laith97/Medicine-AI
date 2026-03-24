@@ -22,6 +22,11 @@ class AppointmentController extends Controller
      */
     public function index(Request $request)
     {
+        // Redirect doctors to their appointment management page
+        if (Auth::check() && Auth::user()->isDoctor()) {
+            return redirect()->route('doctor.appointments.index');
+        }
+
         // Redirect guests to guest appointment lookup
         if (!Auth::check()) {
             return redirect()->route('appointments.guest.lookup');

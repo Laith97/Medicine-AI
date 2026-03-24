@@ -14,15 +14,14 @@ return new class extends Migration
     {
         if (!Schema::hasTable('appointments_fact')) {
             Schema::create('appointments_fact', function (Blueprint $table) {
-                $table->bigIncrements('appointment_key');
+                $table->unsignedBigInteger('appointment_id');
+                $table->date('scheduled_date');
                 $table->integer('date_key');
                 $table->integer('time_key');
                 $table->integer('patient_key');
                 $table->integer('doctor_key');
                 $table->integer('hospital_key')->nullable();
                 $table->integer('service_key')->nullable();
-                $table->unsignedBigInteger('appointment_id');
-                $table->date('scheduled_date');
                 $table->time('scheduled_time');
                 $table->time('actual_start_time')->nullable();
                 $table->time('actual_end_time')->nullable();
@@ -39,6 +38,8 @@ return new class extends Migration
                 $table->decimal('insurance_covered_amount', 10, 2)->nullable();
                 $table->decimal('patient_paid_amount', 10, 2)->nullable();
                 $table->timestamp('created_at')->useCurrent();
+
+                $table->primary(['appointment_id', 'scheduled_date']); // Composite primary key to satisfy partitioning requirement
 
                 // Indexes
                 $table->index(['date_key', 'patient_key', 'doctor_key']);
