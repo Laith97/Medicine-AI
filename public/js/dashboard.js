@@ -51,7 +51,7 @@ function initializeCharts() {
         Promise.all(chartPromises).then(() => {
         }).catch(error => {
             // Only show general fallback if all charts fail
-            console.error('Chart initialization error:', error);
+            // console.error('Chart initialization error:', error);
         });
 
     } catch (error) {

@@ -455,6 +455,11 @@ class AppointmentController extends Controller
      */
     public function getCalendarEvents(Request $request)
     {
+        $request->validate([
+            'start' => 'required|date',
+            'end' => 'required|date|after:start',
+        ]);
+
         $start = $request->start;
         $end = $request->end;
 

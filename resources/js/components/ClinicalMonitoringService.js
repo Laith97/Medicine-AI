@@ -10,7 +10,7 @@ class ClinicalMonitoringService {
         this.echo = window.Echo;
         
         if (!this.echo) {
-            console.warn('Echo not found on window, initializing fallback Echo');
+            // console.warn('Echo not found on window, initializing fallback Echo');
             const pusherKey = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_PUSHER_APP_KEY : window.VITE_PUSHER_APP_KEY;
             const pusherCluster = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_PUSHER_APP_CLUSTER : window.VITE_PUSHER_APP_CLUSTER;
 
@@ -31,7 +31,7 @@ class ClinicalMonitoringService {
             const response = await this.axios.get('/api/monitoring/alerts');
             return response.data;
         } catch (error) {
-            console.error('Error fetching clinical alerts:', error);
+            // console.error('Error fetching clinical alerts:', error);
             return [];
         }
     }
@@ -41,7 +41,7 @@ class ClinicalMonitoringService {
             const response = await this.axios.get(`/api/monitoring/patients/${patientId}/scores`);
             return response.data;
         } catch (error) {
-            console.error('Error fetching historical scores:', error);
+            // console.error('Error fetching historical scores:', error);
             return [];
         }
     }
@@ -51,7 +51,7 @@ class ClinicalMonitoringService {
             const response = await this.axios.get(`/api/monitoring/patients/${patientId}/insights`);
             return response.data;
         } catch (error) {
-            console.error('Error fetching clinical insights:', error);
+            // console.error('Error fetching clinical insights:', error);
             return null;
         }
     }
@@ -61,7 +61,7 @@ class ClinicalMonitoringService {
             const response = await this.axios.post(`/api/monitoring/alerts/${id}/acknowledge`);
             return response.data;
         } catch (error) {
-            console.error('Error acknowledging alert:', error);
+            // console.error('Error acknowledging alert:', error);
             throw error;
         }
     }
@@ -71,14 +71,14 @@ class ClinicalMonitoringService {
             const response = await this.axios.post(`/api/monitoring/alerts/${id}/escalate`);
             return response.data;
         } catch (error) {
-            console.error('Error escalating alert:', error);
+            // console.error('Error escalating alert:', error);
             throw error;
         }
     }
 
     subscribeToAlerts(callback) {
         if (!this.echo) {
-            console.error('Echo instance not available for alerts subscription');
+            // console.error('Echo instance not available for alerts subscription');
             return;
         }
 
@@ -88,7 +88,7 @@ class ClinicalMonitoringService {
                     callback(e.alert);
                 });
         } catch (error) {
-            console.error('Error subscribing to clinical alerts:', error);
+            // console.error('Error subscribing to clinical alerts:', error);
         }
     }
 
@@ -105,7 +105,7 @@ class ClinicalMonitoringService {
                 channel.stopListening('.clinical.alert.triggered');
             };
         } catch (error) {
-            console.error(`Error subscribing to patient ${patientId} data:`, error);
+            // console.error(`Error subscribing to patient ${patientId} data:`, error);
             return null;
         }
     }
@@ -115,7 +115,7 @@ class ClinicalMonitoringService {
             const response = await this.axios.get('/api/monitoring/rules');
             return response.data;
         } catch (error) {
-            console.error('Error fetching clinical rules:', error);
+            // console.error('Error fetching clinical rules:', error);
             return [];
         }
     }
@@ -125,7 +125,7 @@ class ClinicalMonitoringService {
             const response = await this.axios.put(`/api/monitoring/rules/${id}`, ruleData);
             return response.data;
         } catch (error) {
-            console.error('Error updating clinical rule:', error);
+            // console.error('Error updating clinical rule:', error);
             throw error;
         }
     }

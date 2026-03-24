@@ -1712,7 +1712,7 @@ function submitCancellation() {
         } else {
             // Handle errors
             return response.json().then(data => {
-                console.error('Error cancelling appointment:', data);
+                // console.error('Error cancelling appointment:', data);
                 // Show error notification
                 alert(data.message || 'Failed to cancel appointment. Please try again.');
                 // Reset button state
@@ -1727,7 +1727,7 @@ function submitCancellation() {
         }
     })
     .catch(error => {
-        console.error('Network error cancelling appointment:', error);
+        // console.error('Network error cancelling appointment:', error);
         alert('Network error. Please check your connection and try again.');
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
@@ -1782,7 +1782,7 @@ function confirmDeletePrescription() {
         }
     })
     .catch(error => {
-        console.error('Delete error:', error);
+        // console.error('Delete error:', error);
         showNotification(error.message || 'Failed to delete prescription. Please try again.', 'error');
     })
     .finally(() => {
@@ -1863,8 +1863,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function debugMLRiskAssessment() {
-    console.log('🔍 ML RISK ASSESSMENT DEBUG');
-    console.log('===========================');
+    // console.log('🔍 ML RISK ASSESSMENT DEBUG');
+    // console.log('===========================');
 
     // Check if risk scores exist
     @php
@@ -1872,12 +1872,12 @@ function debugMLRiskAssessment() {
     @endphp
 
     @if($riskScore)
-        console.log('✅ Risk Scores Found:', {
+        // console.log('✅ Risk Scores Found:', {
             no_show_risk: '{{ number_format($riskScore->no_show_risk * 100, 1) }}%',
             hospitalization_risk: '{{ number_format($riskScore->hospitalization_risk * 100, 1) }}%'
         });
     @else
-        console.log('❌ NO RISK SCORES FOUND - ML prediction has not run');
+        // console.log('❌ NO RISK SCORES FOUND - ML prediction has not run');
     @endif
 
     // Check training data adequacy
@@ -1889,7 +1889,7 @@ function debugMLRiskAssessment() {
         $adequacy = $method->invoke($service);
     @endphp
 
-    console.log('🎓 Training Data Status:', {
+    // console.log('🎓 Training Data Status:', {
         adequate: {{ $adequacy['adequate'] ? 'true' : 'false' }},
         total_appointments: {{ $adequacy['total_appointments'] }},
         using_fallback: '{{ !$adequacy['adequate'] ? 'YES (Rule-based)' : 'NO (ML)' }}'
@@ -1918,7 +1918,7 @@ function debugMLRiskAssessment() {
             $hasHighRisk = false;
         }
     @endphp
-    console.log('🔧 ML Features Extracted:', {
+    // console.log('🔧 ML Features Extracted:', {
         features_array: {{ json_encode($features) }},
         breakdown: {
             no_show_count: {{ $features[0] ?? 0 }},
@@ -1930,13 +1930,13 @@ function debugMLRiskAssessment() {
         has_high_risk_conditions: {{ $hasHighRisk ? 'true' : 'false' }}
     });
 
-    console.log('🎯 Expected Calculation:', {
+    // console.log('🎯 Expected Calculation:', {
         no_show_risk: '{{ $expectedNoShow }}%',
         hospitalization_risk: '{{ $expectedHospitalization }}%'
     });
 
     @if($riskScore)
-        console.log('📊 Match Check:', {
+        // console.log('📊 Match Check:', {
             scores_match: '{{ ($expectedNoShow === number_format($riskScore->no_show_risk * 100, 1) && $expectedHospitalization === number_format($riskScore->hospitalization_risk * 100, 1)) ? 'YES' : 'NO' }}'
         });
     @endif
@@ -2211,7 +2211,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 recordingStatus.style.color = 'red';
             })
             .catch(error => {
-                console.error('Error accessing microphone:', error);
+                // console.error('Error accessing microphone:', error);
                 recordingStatus.textContent = 'Error: Could not access microphone. Please check permissions.';
                 recordingStatus.style.color = 'red';
             });
@@ -2398,7 +2398,7 @@ function submitDiagnosisForm() {
         }
     })
     .catch(error => {
-        console.error('Error creating diagnosis:', error);
+        // console.error('Error creating diagnosis:', error);
         // Extract error message from the error object
         let errorMessage = 'An error occurred while creating the diagnosis. Please try again.';
         if (error.message) {
@@ -2576,7 +2576,7 @@ function callAIMedicalCopilotAPI(appointmentId, structuredData) {
         populateCopilotUISection(response);
 
         // Log success
-        console.log('AI Medical Copilot analysis successful', response);
+        // console.log('AI Medical Copilot analysis successful', response);
     })
     .catch(error => {
         // Hide loading, show error
@@ -2586,7 +2586,7 @@ function callAIMedicalCopilotAPI(appointmentId, structuredData) {
         showCopilotErrorSection(errorMessage);
 
         // Log error
-        console.error('AI Medical Copilot error:', errorMessage);
+        // console.error('AI Medical Copilot error:', errorMessage);
     });
 }
 
@@ -2810,7 +2810,7 @@ function saveAICopilotAnalysis(appointmentId, analysisData, includeInNote) {
     .catch(error => {
         const errorMessage = error.message || 'Failed to save AI analysis';
         showNotification(errorMessage, 'error');
-        console.error('Save AI analysis error:', errorMessage);
+        // console.error('Save AI analysis error:', errorMessage);
     });
 }
 
@@ -2937,8 +2937,8 @@ function loadPatientAIAnalyses(patientId) {
     `;
 
     // Log for debugging
-    console.log('Loading AI analyses for patient ID:', patientId);
-    console.log('Fetching from URL:', `/ai/patients/${patientId}/ai-analyses`);
+    // console.log('Loading AI analyses for patient ID:', patientId);
+    // console.log('Fetching from URL:', `/ai/patients/${patientId}/ai-analyses`);
 
     fetch(`/ai/patients/${patientId}/ai-analyses`, {
         method: 'GET',
@@ -2949,14 +2949,14 @@ function loadPatientAIAnalyses(patientId) {
         }
     })
     .then(response => {
-        console.log('Response status:', response.status);
+        // console.log('Response status:', response.status);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
     })
     .then(response => {
-        console.log('API Response:', response);
+        // console.log('API Response:', response);
         // The response is paginated, so we need to use response.data which contains the analyses
         if (response.data !== undefined) {
             displayAIAnalysesSection(response.data || []);
@@ -2970,14 +2970,14 @@ function loadPatientAIAnalyses(patientId) {
         }
     })
     .catch(error => {
-        console.error('Detailed error:', error);
+        // console.error('Detailed error:', error);
         contentElement.innerHTML = `
             <div class="alert alert-danger">
                 <i class="fas fa-exclamation-triangle me-2"></i>
                 Failed to load AI analysis history: ${error.message}. Please check browser console for details.
             </div>
         `;
-        console.error('Load AI analysis error:', error);
+        // console.error('Load AI analysis error:', error);
     });
 }
 

@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
             filterStatus.textContent = 'Filters applied successfully.';
         })
         .catch(error => {
-            console.error('Filter error:', error);
+            // console.error('Filter error:', error);
             filterStatus.textContent = 'Error applying filters. Please try again.';
             // Fallback to page reload
             window.location.href = newUrl;

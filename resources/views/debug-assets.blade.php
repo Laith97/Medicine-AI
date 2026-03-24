@@ -21,7 +21,7 @@
         function log(message, color = '#000') {
             const results = document.getElementById('results');
             results.innerHTML += `<div style="color: ${color}; margin: 5px 0; padding: 5px; border-left: 3px solid ${color}; padding-left: 10px;">[${new Date().toLocaleTimeString()}] ${message}</div>`;
-            console.log(message);
+            // console.log(message);
         }
 
         function runDebug() {

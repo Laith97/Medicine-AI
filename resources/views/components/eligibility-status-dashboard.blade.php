@@ -115,7 +115,7 @@ function loadEligibilityStatus() {
         }
     })
     .catch(error => {
-        console.error('Error loading eligibility status:', error);
+        // console.error('Error loading eligibility status:', error);
         container.innerHTML = `
             <div class="alert alert-danger">
                 <i class="fas fa-exclamation-circle me-2"></i>
@@ -300,7 +300,7 @@ function checkEligibility() {
         }
     })
     .catch(error => {
-        console.error('Error checking eligibility:', error);
+        // console.error('Error checking eligibility:', error);
         showErrorMessage('Error checking eligibility. Please try again.');
         resetCheckButton();
     });

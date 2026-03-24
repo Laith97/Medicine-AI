@@ -600,7 +600,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function filterFAQsByCategory(category) {
         // This is a placeholder - you would implement actual filtering logic
         // based on how you categorize your FAQs
-        console.log('Filtering by category:', category);
+        // console.log('Filtering by category:', category);
     }
 
     // Keyboard navigation for accordion

@@ -443,7 +443,7 @@ function loadErrorData() {
             }
         })
         .catch(error => {
-            console.error('Error loading error data:', error);
+            // console.error('Error loading error data:', error);
         });
 }
 
@@ -508,12 +508,12 @@ function showErrorDetails(errorId) {
         .then(data => {
             if (data.success) {
                 // Show modal with error details
-                console.log('Error details:', data.error);
+                // console.log('Error details:', data.error);
                 // Implementation for modal display would go here
             }
         })
         .catch(error => {
-            console.error('Error loading error details:', error);
+            // console.error('Error loading error details:', error);
         });
 }
 
@@ -557,7 +557,7 @@ function saveAlertSettings() {
         }
     })
     .catch(error => {
-        console.error('Error saving alert settings:', error);
+        // console.error('Error saving alert settings:', error);
         alert('Error saving alert settings');
     });
 }
@@ -573,7 +573,7 @@ function loadAlertSettings() {
             }
         })
         .catch(error => {
-            console.error('Error loading alert settings:', error);
+            // console.error('Error loading alert settings:', error);
         });
 }
 
@@ -602,7 +602,7 @@ function clearResolvedErrors() {
         }
     })
     .catch(error => {
-        console.error('Error clearing resolved errors:', error);
+        // console.error('Error clearing resolved errors:', error);
         alert('Error clearing resolved errors');
     });
 }
@@ -624,7 +624,7 @@ function testAlerts() {
         }
     })
     .catch(error => {
-        console.error('Error testing alerts:', error);
+        // console.error('Error testing alerts:', error);
         alert('Error testing alerts');
     });
 }
@@ -659,7 +659,7 @@ function clearAllErrors() {
         }
     })
     .catch(error => {
-        console.error('Error clearing all errors:', error);
+        // console.error('Error clearing all errors:', error);
         alert('Error clearing all errors');
     });
 }

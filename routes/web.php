@@ -41,9 +41,9 @@ use Illuminate\Support\Str;
 // Broadcasting authentication route - simplified
 Broadcast::routes(['middleware' => ['web']]);
 
-// Debug authentication routes (temporary)
+// Debug authentication routes (temporary) - restricted to localhost only
 if (config('app.debug')) {
-    Route::middleware(['web'])->group(function () {
+    Route::middleware(['web', 'localhost'])->group(function () {
         Route::get('/debug-broadcasting-auth', function (\Illuminate\Http\Request $request) {
             $user = Auth::user();
 

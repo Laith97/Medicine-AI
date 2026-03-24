@@ -488,7 +488,7 @@ function loadAnalyticsData() {
 function renderCharts(data) {
     // This would use Chart.js to render the charts
     // Implementation depends on Chart.js being included
-    console.log('Analytics data:', data);
+    // console.log('Analytics data:', data);
 }
 
 function renderMetrics(data) {

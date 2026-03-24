@@ -1338,7 +1338,7 @@ function loadVisitDetails(visitId, buttonData) {
             }
         },
         error: function(xhr, status, error) {
-            console.error('Error loading visit details:', error);
+            // console.error('Error loading visit details:', error);
             visitDetailsContent.innerHTML = '<div class="alert alert-danger">Error loading visit details. Please try again.</div>';
         }
     });
@@ -1584,7 +1584,7 @@ function editInsurance(insuranceId) {
         }
     })
     .catch(error => {
-        console.error('Error loading insurance:', error);
+        // console.error('Error loading insurance:', error);
         alert('Error loading insurance information');
     });
 }
@@ -1624,7 +1624,7 @@ function deleteInsurance(insuranceId) {
             }
         })
         .catch(error => {
-            console.error('Error deleting insurance:', error);
+            // console.error('Error deleting insurance:', error);
             alert('Error deleting insurance information');
         });
     }
@@ -1650,7 +1650,7 @@ function loadInsuranceList() {
         }
     })
     .catch(error => {
-        console.error('Error loading insurance list:', error);
+        // console.error('Error loading insurance list:', error);
         container.innerHTML = '<div class="alert alert-danger">Error loading insurance information</div>';
     });
 }
@@ -1880,7 +1880,7 @@ function submitInsuranceForm() {
         }
     })
     .catch(error => {
-        console.error('Error saving insurance:', error);
+        // console.error('Error saving insurance:', error);
         alert('Error saving insurance information');
     });
 }

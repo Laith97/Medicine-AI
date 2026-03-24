@@ -86,9 +86,11 @@ Route::middleware(['auth', 'web'])->group(function () {
     Route::middleware('eligibility.access:eligibility.manage')->put('/patient-insurance/{insurance}', [App\Http\Controllers\Api\PatientInsuranceController::class, 'update']);
     Route::middleware('eligibility.access:eligibility.manage')->delete('/patient-insurance/{insurance}', [App\Http\Controllers\Api\PatientInsuranceController::class, 'destroy']);
 
-    // Patient cases and visit history API routes
-    Route::get('/doctor/patient-management/patient-visits/{patientKey}', [\App\Http\Controllers\OpenAIController::class, 'getPatientVisits']);
-    Route::get('/doctor/patient-management/visit-history/{id}', [\App\Http\Controllers\OpenAIController::class, 'getVisitDetails']);
+    // Patient cases and visit history API routes (rate limited)
+    Route::middleware('throttle:60,1')->group(function () {
+        Route::get('/doctor/patient-management/patient-visits/{patientKey}', [\App\Http\Controllers\OpenAIController::class, 'getPatientVisits']);
+        Route::get('/doctor/patient-management/visit-history/{id}', [\App\Http\Controllers\OpenAIController::class, 'getVisitDetails']);
+    });
 
     /*
     |--------------------------------------------------------------------------

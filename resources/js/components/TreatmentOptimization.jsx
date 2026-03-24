@@ -37,7 +37,7 @@ const TreatmentOptimization = ({ patientId, appointmentId }) => {
         await handleReanalyze();
       }
     } catch (err) {
-      console.error('Error fetching recommendations:', err);
+      // console.error('Error fetching recommendations:', err);
       setError('Failed to load treatment recommendations. Please try re-analyzing.');
     } finally {
       setLoading(false);
@@ -56,7 +56,7 @@ const TreatmentOptimization = ({ patientId, appointmentId }) => {
       });
       setRecommendation(response.data);
     } catch (err) {
-      console.error('Error generating recommendations:', err);
+      // console.error('Error generating recommendations:', err);
       setError('Failed to generate AI recommendations.');
     } finally {
       setLoading(false);
@@ -71,7 +71,7 @@ const TreatmentOptimization = ({ patientId, appointmentId }) => {
       alert('Treatment plan validated and implemented successfully.');
       fetchRecommendations(); // Refresh data
     } catch (err) {
-      console.error('Error validating recommendation:', err);
+      // console.error('Error validating recommendation:', err);
       alert('Failed to validate treatment plan.');
     } finally {
       setActionLoading(false);
@@ -88,7 +88,7 @@ const TreatmentOptimization = ({ patientId, appointmentId }) => {
       alert('Treatment plan rejected.');
       fetchRecommendations(); // Refresh data
     } catch (err) {
-      console.error('Error rejecting recommendation:', err);
+      // console.error('Error rejecting recommendation:', err);
       alert('Failed to reject treatment plan.');
     } finally {
       setActionLoading(false);

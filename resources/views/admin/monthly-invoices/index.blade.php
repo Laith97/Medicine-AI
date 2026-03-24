@@ -558,7 +558,7 @@ function processOverdue() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            // console.error('Error:', error);
             alert('❌ An error occurred while processing overdue invoices: ' + error.message);
         });
     }
@@ -590,7 +590,7 @@ function processPayments() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            // console.error('Error:', error);
             alert('❌ An error occurred while processing payments: ' + error.message);
         });
     }

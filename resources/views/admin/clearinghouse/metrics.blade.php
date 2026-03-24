@@ -606,7 +606,7 @@ function loadMetrics() {
             }
         })
         .catch(error => {
-            console.error('Error loading metrics:', error);
+            // console.error('Error loading metrics:', error);
         });
 }
 

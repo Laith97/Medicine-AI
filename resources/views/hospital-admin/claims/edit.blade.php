@@ -282,7 +282,7 @@
             checkDenialRisk(data);
         })
         .catch(error => {
-            console.error('Error:', error);
+            // console.error('Error:', error);
             alert('Error getting AI suggestions. Please try again.');
         })
         .finally(() => {
@@ -367,7 +367,7 @@
             displayDenialRisk(data);
         })
         .catch(error => {
-            console.error('Error checking denial risk:', error);
+            // console.error('Error checking denial risk:', error);
         });
     }
 
@@ -469,7 +469,7 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            // console.error('Error:', error);
             alert('Error saving draft. Please try again.');
         });
     });

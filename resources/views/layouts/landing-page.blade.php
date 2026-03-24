@@ -234,14 +234,14 @@
             window.addEventListener('load', function() {
                 setTimeout(() => {
                     const perfData = performance.getEntriesByType('navigation')[0];
-                    console.log('Page load time:', perfData.loadEventEnd - perfData.loadEventStart, 'ms');
+                    // console.log('Page load time:', perfData.loadEventEnd - perfData.loadEventStart, 'ms');
                 }, 0);
             });
         }
 
         // Error handling
         window.addEventListener('error', function(e) {
-            console.error('JavaScript error:', e.error);
+            // console.error('JavaScript error:', e.error);
             // You could send this to an error tracking service
         });
 
@@ -250,10 +250,10 @@
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/sw.js')
                     .then(function(registration) {
-                        console.log('SW registered: ', registration);
+                        // console.log('SW registered: ', registration);
                     })
                     .catch(function(registrationError) {
-                        console.log('SW registration failed: ', registrationError);
+                        // console.log('SW registration failed: ', registrationError);
                     });
             });
         }

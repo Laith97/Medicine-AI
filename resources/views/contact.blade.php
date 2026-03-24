@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Check if elements exist
     if (!form || !submitBtn || !submitText || !submitLoading || !formResult) {
-        console.error('Contact form elements not found');
+        // console.error('Contact form elements not found');
         return;
     }
 
@@ -343,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
-            console.error('Contact form error:', error);
+            // console.error('Contact form error:', error);
             formResult.innerHTML = `
                 <div class="contact-error-notification">
                     <div class="notification-content">

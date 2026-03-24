@@ -47,7 +47,7 @@ const SmsSettings = {
         this.revertBtn = document.getElementById(this.options.revertBtnId);
 
         if (!this.form) {
-            console.error('SMS Settings: Form not found');
+            // console.error('SMS Settings: Form not found');
             return;
         }
 
@@ -93,7 +93,7 @@ const SmsSettings = {
         e.preventDefault();
 
         if (!this.options.saveUrl) {
-            console.error('SMS Settings: Save URL not configured');
+            // console.error('SMS Settings: Save URL not configured');
             return;
         }
 
@@ -144,7 +144,7 @@ const SmsSettings = {
         }
 
         if (!this.options.revertUrl) {
-            console.error('SMS Settings: Revert URL not configured');
+            // console.error('SMS Settings: Revert URL not configured');
             return;
         }
 

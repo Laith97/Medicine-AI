@@ -523,7 +523,7 @@ function refreshPosition() {
             }
         })
         .catch(error => {
-            console.error('Error refreshing position:', error);
+            // console.error('Error refreshing position:', error);
             button.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Error';
             button.classList.remove('btn-outline-primary');
             button.classList.add('btn-danger');
@@ -547,7 +547,7 @@ setInterval(() => {
                 document.querySelector('.position-label').textContent = `of ${data.position.total_waitlisted}`;
             }
         })
-        .catch(error => console.error('Auto-refresh error:', error));
+        .catch(error => // console.error('Auto-refresh error:', error));
 }, 60000);
 
 // Add pulse animation to active offers

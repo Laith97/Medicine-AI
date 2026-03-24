@@ -317,7 +317,7 @@ function updateWaitlistPosition(waitlistId) {
             }
         })
         .catch(error => {
-            console.error('Error updating position:', error);
+            // console.error('Error updating position:', error);
         });
 }
 
@@ -363,7 +363,7 @@ function leaveWaitlist(waitlistId) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        // console.error('Error:', error);
         alert('An error occurred while leaving the waitlist.');
     });
 }

@@ -61,6 +61,16 @@ class BillingController extends Controller
             ], 404);
         }
 
+        // Check if authenticated user has access to this claim
+        $user = auth()->user();
+        $isOwner = $claim->doctor_id === $user->id;
+        $isSubUserOfOwner = $user->isSubUser() && $user->parent_user_id === $claim->doctor_id;
+        if (!$isOwner && !$isSubUserOfOwner) {
+            return response()->json([
+                'error' => 'Access denied to this claim'
+            ], 403);
+        }
+
         // Predict denial risk
         $prediction = $this->denialPredictionService->predictDenialRisk($claim);
 
@@ -85,6 +95,16 @@ class BillingController extends Controller
             return response()->json([
                 'error' => 'Claim not found'
             ], 404);
+        }
+
+        // Check if authenticated user has access to this claim
+        $user = auth()->user();
+        $isOwner = $claim->doctor_id === $user->id;
+        $isSubUserOfOwner = $user->isSubUser() && $user->parent_user_id === $claim->doctor_id;
+        if (!$isOwner && !$isSubUserOfOwner) {
+            return response()->json([
+                'error' => 'Access denied to this claim'
+            ], 403);
         }
 
         // Get underpayment data

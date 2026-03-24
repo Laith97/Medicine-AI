@@ -445,7 +445,7 @@ function quickLogModal(assignmentId, programTitle) {
             new bootstrap.Modal(document.getElementById('quickLogModal')).show();
         })
         .catch(error => {
-            console.error('Error loading exercises:', error);
+            // console.error('Error loading exercises:', error);
             showHepError('Error loading exercises. Please try again.');
         });
 }
@@ -475,7 +475,7 @@ document.getElementById('quickLogForm').addEventListener('submit', function(e) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        // console.error('Error:', error);
         showHepError('An error occurred while logging progress');
     });
 });

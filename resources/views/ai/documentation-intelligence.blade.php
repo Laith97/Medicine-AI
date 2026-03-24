@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.setAIDocumentationIds = function(aptId, transId) {
         appointmentId = aptId;
         transcriptionId = transId;
-        console.log('AI Documentation IDs updated:', { appointmentId, transcriptionId });
+        // console.log('AI Documentation IDs updated:', { appointmentId, transcriptionId });
         
         if (appointmentId) {
             checkExistingDocumentation();
@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                // console.error('Error:', error);
                 Swal.fire('Error', 'An unexpected error occurred during generation', 'error');
             })
             .finally(() => {
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                // console.error('Error:', error);
                 Swal.fire('Error', 'An unexpected error occurred during validation', 'error');
             })
             .finally(() => {
@@ -539,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         displayDocumentation(data.documentation);
                     }
                 })
-                .catch(error => console.error('Error fetching existing documentation:', error));
+                .catch(error => // console.error('Error fetching existing documentation:', error));
         }
     }
 

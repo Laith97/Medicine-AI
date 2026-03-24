@@ -599,7 +599,7 @@ function refreshWaitlistData() {
             refreshBtn.disabled = false;
         })
         .catch(error => {
-            console.error('Error refreshing data:', error);
+            // console.error('Error refreshing data:', error);
             refreshBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
             setTimeout(() => {
                 refreshBtn.innerHTML = originalHtml;
@@ -668,7 +668,7 @@ function updateStatistics() {
             document.querySelector('.avg-wait-time .stat-number').textContent = data.stats.average_wait_days || 0;
             // Update fulfillment rate calculation
         })
-        .catch(error => console.error('Error updating statistics:', error));
+        .catch(error => // console.error('Error updating statistics:', error));
 }
 
 function openManualOfferModal() {

@@ -444,7 +444,7 @@ function viewRuleReport(ruleId) {
 
 function showRuleReportModal(data) {
     // Implementation for rule report modal
-    console.log('Rule report:', data);
+    // console.log('Rule report:', data);
     // You can implement a modal here to show detailed rule information
 }
 

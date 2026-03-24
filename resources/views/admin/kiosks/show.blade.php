@@ -256,7 +256,7 @@ function sendCommand(command) {
     .catch(error => {
         statusDiv.className = 'alert alert-danger';
         statusDiv.innerHTML = 'Error sending command';
-        console.error('Error:', error);
+        // console.error('Error:', error);
     });
 }
 

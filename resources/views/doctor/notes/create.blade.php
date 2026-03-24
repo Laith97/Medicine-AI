@@ -349,7 +349,7 @@ class VoiceRecorder {
             this.updateUI();
 
         } catch (error) {
-            console.error('Error starting recording:', error);
+            // console.error('Error starting recording:', error);
             alert('Error accessing microphone. Please check permissions.');
         }
     }
@@ -424,7 +424,7 @@ class VoiceRecorder {
                     // Show success message
                     this.showTranscriptionSuccess();
                 } else {
-                    console.error('Transcription failed:', data);
+                    // console.error('Transcription failed:', data);
                     alert('Transcription failed: ' + (data.message || 'Unknown error'));
                 }
             };
@@ -432,7 +432,7 @@ class VoiceRecorder {
             reader.readAsDataURL(this.audioBlob);
 
         } catch (error) {
-            console.error('Transcription error:', error);
+            // console.error('Transcription error:', error);
             alert('Transcription failed: ' + error.message);
         } finally {
             this.hideTranscriptionLoading();
@@ -645,11 +645,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 window.location.href = '{{ route("doctor.notes.index") }}';
             } else {
-                console.error('Error saving note:', data);
+                // console.error('Error saving note:', data);
                 alert('Error saving note: ' + (data.message || 'Unknown error'));
             }
         } catch (error) {
-            console.error('Error:', error);
+            // console.error('Error:', error);
             alert('Error saving note: ' + error.message);
         } finally {
             saveBtn.innerHTML = originalText;

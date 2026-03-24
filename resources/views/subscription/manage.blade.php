@@ -1376,7 +1376,7 @@ function selectPlan(planId) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        // console.error('Error:', error);
         
         let errorMessage = 'An error occurred while starting checkout';
         if (error.message.includes('non-JSON response')) {
@@ -1431,7 +1431,7 @@ function startPersonalizedCheckout() {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        // console.error('Error:', error);
         
         let errorMessage = 'An error occurred while starting checkout';
         if (error.message.includes('non-JSON response')) {
@@ -1471,7 +1471,7 @@ function cancelSubscription() {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        // console.error('Error:', error);
         alert('An error occurred while cancelling the subscription');
         button.innerHTML = originalText;
         button.disabled = false;

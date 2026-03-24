@@ -232,7 +232,7 @@ $('#testRuleForm').on('submit', function(e) {
     .then(data => {
         if (data.success) {
             alert('Rule test completed! Check the browser console for results.');
-            console.log('Rule Test Result:', data.result);
+            // console.log('Rule Test Result:', data.result);
         } else {
             alert('Test failed: ' + (data.error || 'Unknown error'));
         }

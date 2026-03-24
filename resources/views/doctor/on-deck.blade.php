@@ -309,7 +309,7 @@ function handleStatusUpdate(appointmentId, action, btn) {
         }
     })
     .catch(error => {
-        console.error('Error updating status:', error);
+        // console.error('Error updating status:', error);
         alert('An error occurred while updating the appointment status');
     })
     .finally(() => {
@@ -401,19 +401,19 @@ function updateAppointmentOrder() {
         },
         body: JSON.stringify({ order: order })
     }).catch(error => {
-        console.error('Error updating appointment order:', error);
+        // console.error('Error updating appointment order:', error);
     });
 }
 
 function addNewAppointment(appointment) {
     // This would be called when a new appointment is added via real-time updates
     // Implementation would depend on the appointment data structure
-    console.log('New appointment added:', appointment);
+    // console.log('New appointment added:', appointment);
 }
 
 function updateAppointmentData(appointment) {
     // Update appointment data when changed
-    console.log('Appointment updated:', appointment);
+    // console.log('Appointment updated:', appointment);
 }
 
 // Touch event handlers for tablets

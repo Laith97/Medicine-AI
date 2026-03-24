@@ -301,7 +301,7 @@
             checkDenialRisk(data);
         })
         .catch(error => {
-            console.error('Error:', error);
+            // console.error('Error:', error);
             alert('Error getting AI suggestions. Please try again.');
         })
         .finally(() => {
@@ -386,7 +386,7 @@
             displayDenialRisk(data);
         })
         .catch(error => {
-            console.error('Error checking denial risk:', error);
+            // console.error('Error checking denial risk:', error);
         });
 
         // Check payer rules
@@ -428,7 +428,7 @@
             displayPayerRulesFeedback(data);
         })
         .catch(error => {
-            console.error('Error checking payer rules:', error);
+            // console.error('Error checking payer rules:', error);
         });
     }
 
@@ -582,7 +582,7 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            // console.error('Error:', error);
             alert('Error saving draft. Please try again.');
         });
     });

@@ -317,7 +317,7 @@
                 }
             })
             .catch(error => {
-                console.error('Error updating analytics:', error);
+                // console.error('Error updating analytics:', error);
             });
     }
 
@@ -337,7 +337,7 @@
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(function() {
             // You could show a toast notification here
-            console.log('URL copied to clipboard');
+            // console.log('URL copied to clipboard');
         });
     }
 </script>

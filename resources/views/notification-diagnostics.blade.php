@@ -336,7 +336,7 @@
                     // Test listening for notifications
                     userChannel.notification((notification) => {
                         addResult('connection-results', '✅ Notification listener working', 'success');
-                        console.log('Test notification received:', notification);
+                        // console.log('Test notification received:', notification);
                     });
 
                     userChannel.error((error) => {

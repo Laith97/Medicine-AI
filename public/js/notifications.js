@@ -22,7 +22,7 @@ class NotificationManager {
             const data = await response.json();
             this.updateUnreadCount(data.count);
         } catch (error) {
-            ;
+            console.error('Failed to load unread count:', error);
         }
     }
 
@@ -49,7 +49,7 @@ class NotificationManager {
             this.notifications = data.notifications;
             this.updateDropdown(data.notifications, data.unread_count);
         } catch (error) {
-            ;
+            console.error('Failed to load notifications:', error);
             // Don't fail silently - show user-friendly message
             this.updateDropdown([], 0);
         }

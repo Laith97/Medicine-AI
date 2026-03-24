@@ -34,7 +34,8 @@
     <div class="row mb-4">
         <div class="col-12">
             <!-- Privacy Notice -->
-            <div class="alert alert-warning" role="alert">
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
                         <div class="d-flex align-items-start">
                             <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
                             <div>
@@ -45,7 +46,8 @@
                     </div>
 
             <!-- Keyboard Shortcuts -->
-            <div class="alert alert-info" role="alert">
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         <div class="d-flex align-items-start">
                             <i class="fas fa-keyboard me-2 mt-1"></i>
                             <div>
@@ -396,8 +398,8 @@
         .ambient-recorder-container .btn,
         #react-audio-recorder-container .btn {
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            min-height: 38px;
-            max-height: 42px;
+            min-height: 44px;
+            max-height: 48px;
             font-weight: 500;
             border-radius: 6px;
             padding: 0.5rem 1rem;
@@ -1043,6 +1045,41 @@
 <script>
     window.records = @json($records ?? []);
     window.patientAppointments = @json($patientAppointments ?? []);
+
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        const toastContainer = document.getElementById('toast-container') || (function() {
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+            return container;
+        })();
+
+        const toastEl = document.createElement('div');
+        toastEl.className = `toast show align-items-center text-white bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'primary'} border-0`;
+        toastEl.setAttribute('role', 'alert');
+        const bodyDiv = document.createElement('div');
+        bodyDiv.className = 'd-flex';
+        const messageEl = document.createElement('div');
+        messageEl.className = 'toast-body';
+        messageEl.textContent = message;
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'btn-close btn-close-white me-2 m-auto';
+        closeBtn.setAttribute('data-bs-dismiss', 'toast');
+        closeBtn.setAttribute('aria-label', 'Close');
+        bodyDiv.appendChild(messageEl);
+        bodyDiv.appendChild(closeBtn);
+        toastEl.appendChild(bodyDiv);
+        toastContainer.appendChild(toastEl);
+
+        setTimeout(() => {
+            toastEl.classList.remove('show');
+            setTimeout(() => toastEl.remove(), 150);
+        }, 4000);
+    }
 </script>
 
 <!-- Include React components for ambient listening -->
@@ -1168,7 +1205,7 @@
 
         // Listen for server transcript ready event
         window.addEventListener('serverTranscriptReady', function(event) {
-            console.log('Server transcript ready - enabling buttons');
+            // console.log('Server transcript ready - enabling buttons');
             // Enable AI Analysis and Clinical Doc buttons when server processing completes
             const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
             const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
@@ -1177,33 +1214,33 @@
                 generateAnalysisBtn.disabled = false;
                 generateAnalysisBtn.style.opacity = '1';
                 generateAnalysisBtn.style.cursor = 'pointer';
-                console.log('Analysis button enabled via server transcript');
+                // console.log('Analysis button enabled via server transcript');
             }
             if (generateClinicalDocBtn) {
                 generateClinicalDocBtn.disabled = false;
                 generateClinicalDocBtn.style.opacity = '1';
                 generateClinicalDocBtn.style.cursor = 'pointer';
-                console.log('Clinical doc button enabled via server transcript');
+                // console.log('Clinical doc button enabled via server transcript');
             }
         });
 
         // Add click handler for AI Analysis button
         document.getElementById('generateAnalysisBtn').addEventListener('click', function() {
-            console.log('AI Analysis button clicked');
+            // console.log('AI Analysis button clicked');
             const transcriptContainer = document.getElementById('react-transcript-container');
             const transcript = transcriptContainer ? transcriptContainer.innerText.trim() : '';
             
-            console.log('Sending transcript to AI:', transcript);
-            console.log('Transcript length:', transcript.length);
+            // console.log('Sending transcript to AI:', transcript);
+            // console.log('Transcript length:', transcript.length);
             
             if (!transcript || transcript.length < 20) {
-                alert('Please record more audio. Transcript is too short for analysis.');
+                showToast('Please record more audio. Transcript is too short for analysis.', 'warning');
                 return;
             }
             
             const patientSelect = document.getElementById('patientSelect');
             if (!patientSelect || !patientSelect.value) {
-                alert('Please select a patient first');
+                showToast('Please select a patient first', 'warning');
                 return;
             }
             
@@ -1259,13 +1296,13 @@
                         this.remove();
                     });
                 } else {
-                    alert('Error: ' + (data.message || 'Failed'));
+                    showToast('Error: ' + (data.message || 'Failed'), 'error');
                 }
                 this.disabled = false;
                 this.innerHTML = '<i class="fas fa-brain me-1"></i>AI Analysis';
             })
             .catch(e => {
-                alert('Error: ' + e.message);
+                showToast('Error: ' + e.message, 'error');
                 this.disabled = false;
                 this.innerHTML = '<i class="fas fa-brain me-1"></i>AI Analysis';
             });
@@ -1276,7 +1313,7 @@
             const status = event.detail.status;
             if (status === 'stopped' || status === 'idle') {
                 // Don't enable buttons here - wait for serverTranscriptReady event
-                console.log('Recording stopped, waiting for server processing...');
+                // console.log('Recording stopped, waiting for server processing...');
             }
         });
 
@@ -1328,7 +1365,7 @@
         window.copyAnalysis = function() {
             const analysisText = document.querySelector('#aiAnalysisModal .modal-body').innerText;
             navigator.clipboard.writeText(analysisText).then(() => {
-                alert('Analysis copied to clipboard!');
+                showToast('Analysis copied to clipboard!', 'success');
             });
         };
 
@@ -1343,7 +1380,7 @@
                 if (transcriptContainer) {
                     const text = transcriptContainer.innerText || transcriptContainer.textContent;
                     if (!text.trim()) {
-                        alert('No transcript to copy');
+                        showToast('No transcript to copy', 'warning');
                         return;
                     }
                     navigator.clipboard.writeText(text).then(function() {
@@ -1365,7 +1402,7 @@
             clearTranscriptBtn.addEventListener('click', function() {
                 const transcriptContainer = document.getElementById('react-transcript-container');
                 if (!transcriptContainer || !transcriptContainer.innerText.trim()) {
-                    alert('No transcript to clear');
+                    showToast('No transcript to clear', 'warning');
                     return;
                 }
                 if (confirm('Are you sure you want to clear the transcript? This cannot be undone.')) {
@@ -1381,7 +1418,7 @@
                 if (transcriptContainer) {
                     const text = transcriptContainer.innerText || transcriptContainer.textContent;
                     if (!text.trim()) {
-                        alert('No transcript to export');
+                        showToast('No transcript to export', 'warning');
                         return;
                     }
                     const blob = new Blob([text], { type: 'text/plain' });
@@ -1409,34 +1446,34 @@
         // Add event listener for when React component updates status
         window.addEventListener('statusUpdate', function(event) {
             const status = event.detail.status;
-            console.log('Status update received:', status);
+            // console.log('Status update received:', status);
             updateRecordingStatus(status);
 
             // Enable AI Analysis and Clinical Doc buttons when recording stops
             const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
             const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
 
-            console.log('Button states before update:', {
+            // console.log('Button states before update:', {
                 analysisDisabled: generateAnalysisBtn?.disabled,
                 clinicalDisabled: generateClinicalDocBtn?.disabled,
                 status: status
             });
 
             if (status === 'stopped') {
-                console.log('Enabling buttons for stopped status');
+                // console.log('Enabling buttons for stopped status');
                 if (generateAnalysisBtn) {
                     generateAnalysisBtn.disabled = false;
                     generateAnalysisBtn.style.opacity = '1';
-                    console.log('Analysis button enabled');
+                    // console.log('Analysis button enabled');
                 }
                 if (generateClinicalDocBtn) {
                     generateClinicalDocBtn.disabled = false;
                     generateClinicalDocBtn.style.opacity = '1';
-                    console.log('Clinical doc button enabled');
+                    // console.log('Clinical doc button enabled');
                 }
             } else if (status === 'idle' || status === 'recording') {
                 // Disable buttons when not stopped
-                console.log('Disabling buttons for status:', status);
+                // console.log('Disabling buttons for status:', status);
                 if (generateAnalysisBtn) {
                     generateAnalysisBtn.disabled = true;
                     generateAnalysisBtn.style.opacity = '0.6';
@@ -1447,7 +1484,7 @@
                 }
             }
 
-            console.log('Button states after update:', {
+            // console.log('Button states after update:', {
                 analysisDisabled: generateAnalysisBtn?.disabled,
                 clinicalDisabled: generateClinicalDocBtn?.disabled
             });
@@ -1549,13 +1586,13 @@
 
         // Custom Advanced Controls Toggle Implementation
         function initializeAdvancedControls() {
-            console.log('Initializing Advanced Controls toggle');
+            // console.log('Initializing Advanced Controls toggle');
 
             const toggleBtn = document.getElementById('advancedControlsToggleBtn');
             const advancedControlsDiv = document.getElementById('voiceAssistantAdvancedControls');
 
             if (toggleBtn && advancedControlsDiv) {
-                console.log('Advanced controls elements found, setting up toggle');
+                // console.log('Advanced controls elements found, setting up toggle');
 
                 // Track the state of the advanced controls
                 let advancedControlsVisible = false;
@@ -1565,26 +1602,26 @@
                 toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
 
                 newToggleBtn.addEventListener('click', function() {
-                    console.log('Advanced controls toggle button clicked');
+                    // console.log('Advanced controls toggle button clicked');
 
                     if (advancedControlsVisible) {
                         // Hide the controls
                         advancedControlsDiv.style.display = 'none';
                         newToggleBtn.innerHTML = '<i class="fas fa-cog me-1"></i> Advanced Controls';
                         advancedControlsVisible = false;
-                        console.log('Advanced controls hidden');
+                        // console.log('Advanced controls hidden');
                     } else {
                         // Show the controls
                         advancedControlsDiv.style.display = 'block';
                         newToggleBtn.innerHTML = '<i class="fas fa-cog me-1"></i> Advanced Controls (Hide)';
                         advancedControlsVisible = true;
-                        console.log('Advanced controls shown');
+                        // console.log('Advanced controls shown');
                     }
                 });
 
-                console.log('Advanced controls toggle initialized successfully');
+                // console.log('Advanced controls toggle initialized successfully');
             } else {
-                console.log('Advanced controls elements not found:', {
+                // console.log('Advanced controls elements not found:', {
                     toggleBtn: !!toggleBtn,
                     advancedControlsDiv: !!advancedControlsDiv
                 });
@@ -1620,7 +1657,7 @@
 
             // If there's content, enable the buttons
             if (hasContent) {
-                console.log('Content detected on page load - enabling buttons');
+                // console.log('Content detected on page load - enabling buttons');
                 const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
                 const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
 
@@ -1677,10 +1714,10 @@
             const age = ageField ? parseInt(ageField.value) || 25 : 25;
             const gender = genderField ? genderField.value : 'male';
             
-            console.log('Creating patient with:', {name, phone, email, age, gender});
+            // console.log('Creating patient with:', {name, phone, email, age, gender});
             
             if (!name || !age || !gender) {
-                alert('Name, age, and gender are required');
+                showToast('Name, age, and gender are required', 'warning');
                 return;
             }
             
@@ -1704,21 +1741,21 @@
                 })
             })
             .then(r => {
-                console.log('Create patient response:', r.status);
+                // console.log('Create patient response:', r.status);
                 return r.text().then(text => {
-                    console.log('Response text:', text.substring(0, 200));
+                    // console.log('Response text:', text.substring(0, 200));
                     try {
                         return JSON.parse(text);
                     } catch (e) {
-                        console.error('Not JSON, full response:', text);
+                        // console.error('Not JSON, full response:', text);
                         throw new Error('Server returned HTML instead of JSON');
                     }
                 });
             })
             .then(data => {
-                console.log('Create patient response:', data);
+                // console.log('Create patient response:', data);
                 if (data.success) {
-                    alert('Patient created successfully!');
+                    showToast('Patient created successfully!', 'success');
                     // Add to dropdown
                     const select = document.getElementById('patientSelect');
                     const patientLabel = `${data.patient.name} (${data.patient.age || '?'}y, ${data.patient.gender || 'Unknown'})`;
@@ -1733,13 +1770,13 @@
                     if (ageField) ageField.value = '';
                     if (genderField) genderField.value = '';
                 } else {
-                    alert('Error: ' + (data.message || 'Failed to create patient'));
+                    showToast('Error: ' + (data.message || 'Failed to create patient'), 'error');
                 }
                 this.disabled = false;
                 this.innerHTML = '<i class="fas fa-user-plus me-2"></i>Create Patient';
             })
             .catch(e => {
-                alert('Error: ' + e.message);
+                showToast('Error: ' + e.message, 'error');
                 this.disabled = false;
                 this.innerHTML = '<i class="fas fa-user-plus me-2"></i>Create Patient';
             });
@@ -1757,7 +1794,7 @@
         completeBtn.addEventListener('click', function() {
             const diagnosis = diagnosisText.value.trim();
             if (!diagnosis) {
-                alert('Please enter your diagnosis first.');
+                showToast('Please enter your diagnosis first.', 'warning');
                 return;
             }
             
@@ -1768,12 +1805,12 @@
             const transcription = transcriptContainer ? (transcriptContainer.innerText || transcriptContainer.textContent || '').trim() : '';
             
             if (!selectedPatient) {
-                alert('Please select a patient.');
+                showToast('Please select a patient.', 'warning');
                 return;
             }
             
             if (!transcription) {
-                alert('No transcript available. Please record a session first.');
+                showToast('No transcript available. Please record a session first.', 'warning');
                 return;
             }
             
@@ -1829,7 +1866,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Consultation completed successfully!');
+                    showToast('Consultation completed successfully!', 'success');
                     if (data.redirectUrl) {
                         window.location.href = data.redirectUrl;
                     } else {
@@ -1840,7 +1877,7 @@
                 }
             })
             .catch(error => {
-                alert('Error: ' + error.message);
+                showToast('Error: ' + error.message, 'error');
                 modalCompleteBtn.disabled = false;
                 modalCompleteBtn.innerHTML = '<i class="fas fa-check me-1"></i>Complete Session';
             });

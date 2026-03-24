@@ -141,7 +141,7 @@ document.getElementById('editKioskForm').addEventListener('submit', function(e) 
     })
     .catch(error => {
         alert('Error updating kiosk');
-        console.error('Error:', error);
+        // console.error('Error:', error);
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
     });

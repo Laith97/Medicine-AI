@@ -499,7 +499,7 @@ document.getElementById('quickLogForm').addEventListener('submit', function(e) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        // console.error('Error:', error);
         alert('An error occurred while logging progress');
     });
 });
@@ -563,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         })
         .catch(error => {
-            console.error('Error loading progress data:', error);
+            // console.error('Error loading progress data:', error);
         });
 });
 

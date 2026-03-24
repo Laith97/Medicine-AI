@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 patientSelect.innerHTML = options;
             })
             .catch(error => {
-                console.error('Error loading patients:', error);
+                // console.error('Error loading patients:', error);
                 patientSelect.innerHTML = '<option value="">Error loading patients</option>';
             });
     }
@@ -377,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            // console.error('Error:', error);
             alert('An error occurred while assigning the program');
         });
     });

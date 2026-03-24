@@ -211,9 +211,9 @@ $('#aiSuggestBtn').click(function(e) {
             button.prop('disabled', false).html('<i class="fas fa-magic me-1"></i>Suggest with AI');
 
             // Debug logging
-            console.log('AI Response:', response);
-            console.log('Suggestions:', response.suggestions);
-            console.log('First suggestion:', response.suggestions ? response.suggestions[0] : 'none');
+            // console.log('AI Response:', response);
+            // console.log('Suggestions:', response.suggestions);
+            // console.log('First suggestion:', response.suggestions ? response.suggestions[0] : 'none');
 
             // Show clinical data summary first
             showClinicalDataSummary(response.clinical_data_used);
@@ -222,11 +222,11 @@ $('#aiSuggestBtn').click(function(e) {
             if (response.suggestions && response.suggestions.length > 0) {
                 var suggestionsHtml = '<h6 class="mb-3 text-primary"><i class="fas fa-pills me-2"></i>AI Suggested Medications:</h6>';
                 $.each(response.suggestions, function(i, suggestion) {
-                    console.log('Processing suggestion ' + i + ':', suggestion);
+                    // console.log('Processing suggestion ' + i + ':', suggestion);
 
                     // Ensure suggestion is an object
                     if (typeof suggestion !== 'object' || suggestion === null) {
-                        console.error('Suggestion is not an object:', suggestion);
+                        // console.error('Suggestion is not an object:', suggestion);
                         return true; // continue to next iteration
                     }
 

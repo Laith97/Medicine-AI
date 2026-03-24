@@ -106,13 +106,13 @@
         });
         
         // Debug information
-        console.log('Payment URL:', '{{ $paymentUrl }}');
-        console.log('Invoice ID:', '{{ $invoice->id }}');
-        console.log('URL Length:', '{{ $paymentUrl }}'.length);
+        // console.log('Payment URL:', '{{ $paymentUrl }}');
+        // console.log('Invoice ID:', '{{ $invoice->id }}');
+        // console.log('URL Length:', '{{ $paymentUrl }}'.length);
         
         // Check if URL is valid
         if ('{{ $paymentUrl }}'.indexOf('stripe.com') === -1) {
-            console.warn('Warning: This does not appear to be a Stripe URL');
+            // console.warn('Warning: This does not appear to be a Stripe URL');
         }
     </script>
 </body>

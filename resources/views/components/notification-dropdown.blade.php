@@ -159,9 +159,9 @@ function notificationDropdown() {
 
         async loadNotifications() {
             try {
-                console.log('📱 Loading notifications...');
-                console.log('🔍 User ID:', document.querySelector('meta[name="user-id"]')?.getAttribute('content'));
-                console.log('🔍 Auth token available:', !!document.querySelector('meta[name="csrf-token"]'));
+                // console.log('📱 Loading notifications...');
+                // console.log('🔍 User ID:', document.querySelector('meta[name="user-id"]')?.getAttribute('content'));
+                // console.log('🔍 Auth token available:', !!document.querySelector('meta[name="csrf-token"]'));
 
                 const response = await fetch('/api/notifications', {
                     headers: {
@@ -170,14 +170,14 @@ function notificationDropdown() {
                     }
                 });
 
-                console.log('🔍 Response status:', response.status);
-                console.log('🔍 Response content-type:', response.headers.get('content-type'));
+                // console.log('🔍 Response status:', response.status);
+                // console.log('🔍 Response content-type:', response.headers.get('content-type'));
 
                 // Check if response is HTML (error page)
                 const contentType = response.headers.get('content-type');
                 if (contentType && contentType.includes('text/html')) {
                     const errorText = await response.text();
-                    console.error('❌ Received HTML response instead of JSON:', errorText.substring(0, 200));
+                    // console.error('❌ Received HTML response instead of JSON:', errorText.substring(0, 200));
 
                     if (errorText.includes('login') || errorText.includes('authentication')) {
                         throw new Error('Authentication required. Please log in.');
@@ -191,21 +191,21 @@ function notificationDropdown() {
                 }
 
                 const data = await response.json();
-                console.log('📋 Notifications loaded:', data);
+                // console.log('📋 Notifications loaded:', data);
                 this.notifications = data.notifications || [];
                 this.unreadCount = data.unread_count || 0;
             } catch (error) {
-                console.error('❌ Failed to load notifications:', error);
+                // console.error('❌ Failed to load notifications:', error);
 
                 // Provide more specific error messages
                 if (error.message.includes('Authentication required')) {
-                    console.warn('⚠️ Authentication required for notifications');
+                    // console.warn('⚠️ Authentication required for notifications');
                     this.notifications = [];
                     this.unreadCount = 0;
                 } else if (error.message.includes('Network Error')) {
-                    console.error('❌ Network error. Please check your connection');
+                    // console.error('❌ Network error. Please check your connection');
                 } else {
-                    console.error('❌ Failed to load notifications');
+                    // console.error('❌ Failed to load notifications');
                 }
             }
         },
@@ -234,7 +234,7 @@ function notificationDropdown() {
                     this.closeDropdown();
                 }
             } catch (error) {
-                console.error('Failed to mark notification as read:', error);
+                // console.error('Failed to mark notification as read:', error);
             }
         },
 
@@ -254,7 +254,7 @@ function notificationDropdown() {
                 });
                 this.unreadCount = 0;
             } catch (error) {
-                console.error('Failed to mark all notifications as read:', error);
+                // console.error('Failed to mark all notifications as read:', error);
             }
         },
 

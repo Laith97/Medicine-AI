@@ -1436,7 +1436,7 @@ class VoiceAssistantController extends Controller
                 'phone' => $request->input('newPatientPhone'),
                 'primary_doctor_id' => Auth::id(),
                 'email_verified_at' => now(),
-                'date_of_birth' => now()->subYears($request->input('newPatientAge', 25)),
+                'date_of_birth' => now()->subYears(max(0, min(150, $request->input('newPatientAge', 25)))),
             ]);
 
             return response()->json([

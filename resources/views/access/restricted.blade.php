@@ -194,7 +194,7 @@ setInterval(function() {
             }
         })
         .catch(error => {
-            console.log('Status check failed:', error);
+            // console.log('Status check failed:', error);
         });
 }, 30000);
 </script>

@@ -191,7 +191,7 @@ function selectPlan(planType) {
         }
     })
     .catch(error => {
-        console.error('Checkout error:', error);
+        // console.error('Checkout error:', error);
         
         // Restore button state
         button.innerHTML = originalText;

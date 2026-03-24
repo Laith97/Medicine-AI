@@ -413,7 +413,7 @@ const maxConnectionAttempts = 5;
 // Initialize real-time broadcasting
 function initializeBroadcasting() {
     if (typeof Echo === 'undefined') {
-        console.warn('Laravel Echo not available, real-time updates disabled');
+        // console.warn('Laravel Echo not available, real-time updates disabled');
         return;
     }
 
@@ -430,10 +430,10 @@ function initializeBroadcasting() {
         connectionAttempts = 0;
         updateConnectionStatus('connected');
 
-        console.log('Real-time broadcasting initialized for appointments');
+        // console.log('Real-time broadcasting initialized for appointments');
 
     } catch (error) {
-        console.error('Failed to initialize broadcasting:', error);
+        // console.error('Failed to initialize broadcasting:', error);
         handleBroadcastingError(error);
     }
 }
@@ -445,7 +445,7 @@ function handleBroadcastingError(error) {
 
     if (connectionAttempts < maxConnectionAttempts) {
         connectionAttempts++;
-        console.log(`Broadcasting connection attempt ${connectionAttempts}/${maxConnectionAttempts}`);
+        // console.log(`Broadcasting connection attempt ${connectionAttempts}/${maxConnectionAttempts}`);
 
         setTimeout(() => {
             initializeBroadcasting();
@@ -483,7 +483,7 @@ function updateConnectionStatus(status) {
 
 // Handle appointment list updates
 function handleAppointmentListUpdate(event) {
-    console.log('Appointment list update received:', event);
+    // console.log('Appointment list update received:', event);
 
     // Show update notification
     showNotification('Appointment list updated', 'info');
@@ -498,7 +498,7 @@ function handleAppointmentListUpdate(event) {
 
 // Handle new appointment creation
 function handleAppointmentCreated(event) {
-    console.log('New appointment created:', event);
+    // console.log('New appointment created:', event);
 
     if (event.appointment) {
         showNotification(`New appointment scheduled for ${event.appointment.patient_name}`, 'success');
@@ -512,7 +512,7 @@ function handleAppointmentCreated(event) {
 
 // Handle appointment updates
 function handleAppointmentUpdated(event) {
-    console.log('Appointment updated:', event);
+    // console.log('Appointment updated:', event);
 
     if (event.appointment && event.changed_attributes) {
         const appointmentId = event.appointment.id;
@@ -533,7 +533,7 @@ function handleAppointmentUpdated(event) {
 
 // Handle appointment deletion
 function handleAppointmentDeleted(event) {
-    console.log('Appointment deleted:', event);
+    // console.log('Appointment deleted:', event);
 
     if (event.appointment_id) {
         removeAppointmentFromTable(event.appointment_id);
@@ -652,14 +652,14 @@ document.getElementById('auto_approve_toggle').addEventListener('change', functi
             }
         })
         .catch(error => {
-            console.error('Error updating auto-approve setting:', error);
+            // console.error('Error updating auto-approve setting:', error);
 
             if (error.name === 'TimeoutError') {
                 showNotification('Request timed out. Please check your connection and try again.', 'warning');
             } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
                 showNotification('Network error. Please check your connection.', 'error');
             } else if (retries > 0) {
-                console.log(`Retrying request (${retries} attempts left)...`);
+                // console.log(`Retrying request (${retries} attempts left)...`);
                 setTimeout(() => makeRequest(retries - 1), 1000);
                 return;
             } else {
@@ -823,7 +823,7 @@ function completeAppointment(appointmentId) {
             } else {
                 // Handle errors
                 return response.json().then(data => {
-                    console.error('Error completing appointment:', data);
+                    // console.error('Error completing appointment:', data);
                     showNotification(data.message || 'Failed to complete appointment. Please try again.', 'error');
                     // Reset button state
                     updatedSubmitBtn.disabled = false;
@@ -842,7 +842,7 @@ function completeAppointment(appointmentId) {
             }
         })
         .catch(error => {
-            console.error('Network error completing appointment:', error);
+            // console.error('Network error completing appointment:', error);
             showNotification('Network error. Please check your connection and try again.', 'error');
             updatedSubmitBtn.disabled = false;
             updatedSubmitBtn.innerHTML = originalText;
@@ -907,7 +907,7 @@ function cancelAppointment(appointmentId) {
             } else {
                 // Handle errors
                 return response.json().then(data => {
-                    console.error('Error cancelling appointment:', data);
+                    // console.error('Error cancelling appointment:', data);
                     showNotification(data.message || 'Failed to cancel appointment. Please try again.', 'error');
                     // Reset button state
                     updatedSubmitBtn.disabled = false;
@@ -926,7 +926,7 @@ function cancelAppointment(appointmentId) {
             }
         })
         .catch(error => {
-            console.error('Network error cancelling appointment:', error);
+            // console.error('Network error cancelling appointment:', error);
             showNotification('Network error. Please check your connection and try again.', 'error');
             updatedSubmitBtn.disabled = false;
             updatedSubmitBtn.innerHTML = originalText;
@@ -1056,7 +1056,7 @@ function markNoShow(appointmentId) {
             } else {
                 // Handle errors
                 response.json().then(data => {
-                    console.error('Error marking appointment as no-show:', data);
+                    // console.error('Error marking appointment as no-show:', data);
                     showNotification(data.message || 'Failed to mark appointment as no-show. Please try again.', 'error');
                 }).catch(() => {
                     showNotification('Failed to mark appointment as no-show. Please try again.', 'error');
@@ -1064,7 +1064,7 @@ function markNoShow(appointmentId) {
             }
         })
         .catch(error => {
-            console.error('Network error marking appointment as no-show:', error);
+            // console.error('Network error marking appointment as no-show:', error);
             showNotification('Network error. Please check your connection and try again.', 'error');
         })
         .finally(() => {
@@ -1128,12 +1128,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Error boundary for JavaScript errors
 window.addEventListener('error', function(e) {
-    console.error('JavaScript error:', e.error);
+    // console.error('JavaScript error:', e.error);
     showNotification('An unexpected error occurred. Please refresh the page.', 'error');
 });
 
 window.addEventListener('unhandledrejection', function(e) {
-    console.error('Unhandled promise rejection:', e.reason);
+    // console.error('Unhandled promise rejection:', e.reason);
     showNotification('A background process failed. Some features may not work correctly.', 'warning');
 });
 </script>

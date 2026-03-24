@@ -228,7 +228,7 @@ function loadDoctorInfo() {
             document.getElementById('doctorInfo').textContent = `${data.doctor.name} - ${data.doctor.specialty}`;
             document.title = `Manage Waitlist - ${data.doctor.name}`;
         })
-        .catch(error => console.error('Error loading doctor info:', error));
+        .catch(error => // console.error('Error loading doctor info:', error));
 }
 
 function loadWaitlistData(page = 1) {
@@ -253,7 +253,7 @@ function loadWaitlistData(page = 1) {
             updatePagination(data.pagination);
         })
         .catch(error => {
-            console.error('Error loading waitlist data:', error);
+            // console.error('Error loading waitlist data:', error);
             showAlert('Error loading waitlist data', 'danger');
         });
 }

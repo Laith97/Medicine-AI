@@ -1430,7 +1430,7 @@ body .dropdown .dropdown-menu.show,
         history.replaceState = function() {
             const url = arguments[2];
             if (url && url.includes('/api/notifications')) {
-                console.log('Blocking navigation to notification endpoint after login:', url);
+                // console.log('Blocking navigation to notification endpoint after login:', url);
                 return;
             }
             return originalReplaceState.apply(this, arguments);
@@ -2195,7 +2195,7 @@ function loadPageContent(url, route) {
                    $mainContent.html(response);
                }
            } catch (error) {
-               console.error('Error parsing AJAX response:', error);
+               // console.error('Error parsing AJAX response:', error);
                $mainContent.html(originalContent);
                showAjaxError('Failed to load page content. Please try again.');
            }
@@ -2204,7 +2204,7 @@ function loadPageContent(url, route) {
            // Hide loading overlay
            $loadingOverlay.removeClass('show');
 
-           console.error('AJAX Error:', error);
+           // console.error('AJAX Error:', error);
            $mainContent.html(originalContent);
 
            // Fallback to regular navigation for critical errors
@@ -2321,14 +2321,14 @@ function loadExternalScriptsSequentially(scripts, callback) {
         });
 
         newScript.onload = () => {
-            console.log('Loaded external script:', script.src);
+            // console.log('Loaded external script:', script.src);
             script.setAttribute('data-executed', 'true');
             index++;
             loadNext();
         };
 
         newScript.onerror = () => {
-            console.error('Failed to load external script:', script.src);
+            // console.error('Failed to load external script:', script.src);
             script.setAttribute('data-executed', 'true');
             index++;
             loadNext(); // Continue with next script even if one fails
@@ -2350,7 +2350,7 @@ function executeInlineScripts(scripts) {
             })();
             script.setAttribute('data-executed', 'true');
         } catch (error) {
-            console.error('Error executing inline script:', error);
+            // console.error('Error executing inline script:', error);
         }
     });
 }
@@ -2379,7 +2379,7 @@ function showAjaxError(message) {
     // Dropdown initialization
     document.addEventListener('DOMContentLoaded', function() {
         if (typeof bootstrap === 'undefined') {
-            console.error('Bootstrap not loaded, dropdowns will not work');
+            // console.error('Bootstrap not loaded, dropdowns will not work');
             return;
         }
 
@@ -2394,7 +2394,7 @@ function showAjaxError(message) {
                         });
                     }
                 } catch (e) {
-                    console.error('Error initializing dropdown:', e);
+                    // console.error('Error initializing dropdown:', e);
                 }
             });
 
@@ -2413,7 +2413,7 @@ function showAjaxError(message) {
                             });
                         }
                     } catch (e) {
-                        console.error('Error initializing notifications dropdown:', e);
+                        // console.error('Error initializing notifications dropdown:', e);
                     }
                 }
             }
@@ -2498,7 +2498,7 @@ function showAjaxError(message) {
                         new bootstrap.Dropdown(toggle);
                     }
                 } catch (e) {
-                    console.error('Fallback dropdown initialization error:', e);
+                    // console.error('Fallback dropdown initialization error:', e);
                 }
             });
         }, 500);
@@ -2516,30 +2516,30 @@ function showAjaxError(message) {
             }
 
             if (!mobileMenuTrigger) {
-                console.log('Hamburger button not found - checking all possible selectors');
-                console.log('Available hamburger buttons:', document.querySelectorAll('.cnvs-hamburger'));
-                console.log('Available primary-menu-trigger:', document.querySelectorAll('.primary-menu-trigger'));
+                // console.log('Hamburger button not found - checking all possible selectors');
+                // console.log('Available hamburger buttons:', document.querySelectorAll('.cnvs-hamburger'));
+                // console.log('Available primary-menu-trigger:', document.querySelectorAll('.primary-menu-trigger'));
                 return;
             }
 
-            console.log('Hamburger button found:', mobileMenuTrigger);
+            // console.log('Hamburger button found:', mobileMenuTrigger);
 
             // Find the navigation links container
             const navLinks = document.querySelector('.d-none.d-md-flex.align-items-center.gap-3.small');
 
             if (!navLinks) {
-                console.log('Navigation links container not found - checking all possible selectors');
-                console.log('Available navigation containers:', document.querySelectorAll('[class*="d-none"][class*="d-md-flex"]'));
-                console.log('All div elements:', document.querySelectorAll('div').length);
+                // console.log('Navigation links container not found - checking all possible selectors');
+                // console.log('Available navigation containers:', document.querySelectorAll('[class*="d-none"][class*="d-md-flex"]'));
+                // console.log('All div elements:', document.querySelectorAll('div').length);
                 return;
             }
 
-            console.log('Navigation links container found:', navLinks);
-            console.log('Navigation links HTML:', navLinks.innerHTML);
+            // console.log('Navigation links container found:', navLinks);
+            // console.log('Navigation links HTML:', navLinks.innerHTML);
 
             // Function to toggle navigation
             function toggleMobileNav() {
-                console.log('Toggling mobile navigation');
+                // console.log('Toggling mobile navigation');
 
                 if (navLinks.classList.contains('show-mobile-nav')) {
                     // Hide navigation - remove the dropdown and event listeners
@@ -2547,12 +2547,12 @@ function showAjaxError(message) {
                     if (navLinks._dropdown) {
                         navLinks._dropdown.remove();
                         navLinks._dropdown = null;
-                        console.log('Navigation dropdown removed');
+                        // console.log('Navigation dropdown removed');
                     }
                     // Remove any click outside listeners
                     document.removeEventListener('click', navLinks._closeHandler);
                     navLinks._closeHandler = null;
-                    console.log('Navigation hidden');
+                    // console.log('Navigation hidden');
                 } else {
                     // Create a professional dropdown matching site style
                     const dropdown = document.createElement('div');
@@ -2579,7 +2579,7 @@ function showAjaxError(message) {
                     `;
 
                     document.body.appendChild(dropdown);
-                    console.log('Created new visible dropdown element');
+                    // console.log('Created new visible dropdown element');
 
                     // Store reference to remove it later
                     navLinks._dropdown = dropdown;
@@ -2592,7 +2592,7 @@ function showAjaxError(message) {
                             navLinks._dropdown = null;
                             document.removeEventListener('click', closeDropdown);
                             navLinks._closeHandler = null;
-                            console.log('Dropdown closed by clicking outside');
+                            // console.log('Dropdown closed by clicking outside');
                         }
                     };
 
@@ -2605,20 +2605,20 @@ function showAjaxError(message) {
                     }, 100);
                 }
 
-                console.log('Navigation links classes:', navLinks.className);
-                console.log('Navigation links style display:', navLinks.style.display);
+                // console.log('Navigation links classes:', navLinks.className);
+                // console.log('Navigation links style display:', navLinks.style.display);
 
                 // Update hamburger animation
                 const hamburger = mobileMenuTrigger;
                 if (hamburger) {
                     hamburger.classList.toggle('active');
-                    console.log('Hamburger active class toggled');
+                    // console.log('Hamburger active class toggled');
                 }
             }
 
             // Function to close navigation
             function closeMobileNav() {
-                console.log('Closing mobile navigation');
+                // console.log('Closing mobile navigation');
                 navLinks.classList.remove('show-mobile-nav');
 
                 // Reset hamburger animation
@@ -2630,7 +2630,7 @@ function showAjaxError(message) {
 
             // Add click event to hamburger
             mobileMenuTrigger.addEventListener('click', function(e) {
-                console.log('Hamburger clicked');
+                // console.log('Hamburger clicked');
                 e.preventDefault();
                 e.stopPropagation();
                 toggleMobileNav();
@@ -2825,7 +2825,7 @@ function showAjaxError(message) {
                 }
             })
             .catch(error => {
-                console.error('Error loading notifications:', error);
+                // console.error('Error loading notifications:', error);
                 notificationList.innerHTML = `
                     <div class="text-center py-4 text-muted">
                         <i class="bi bi-exclamation-triangle display-6 d-block mb-2"></i>
@@ -2859,7 +2859,7 @@ function showAjaxError(message) {
             }
         })
         .catch(error => {
-            console.error('Error marking notification as read:', error);
+            // console.error('Error marking notification as read:', error);
         });
     }
 
@@ -2942,9 +2942,9 @@ function showAjaxError(message) {
 
                 // Check if it's an AbortError (timeout)
                 if (error.name === 'AbortError') {
-                    console.warn('Notification badge update timed out:', error);
+                    // console.warn('Notification badge update timed out:', error);
                 } else {
-                    console.error('Error updating notification badge:', error);
+                    // console.error('Error updating notification badge:', error);
                 }
 
                 // Ensure badge is hidden on error

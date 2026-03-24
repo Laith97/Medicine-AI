@@ -20,9 +20,9 @@
     // Use Daily.co public room (no API call needed)
     const roomUrl = 'https://{{ config('daily.domain') }}/appointment-{{ $appointment->id }}';
     
-    console.log('🎥 Joining room:', roomUrl);
-    console.log('👤 User role:', '{{ auth()->user()->role }}');
-    console.log('📋 Appointment ID:', '{{ $appointment->id }}');
+    // console.log('🎥 Joining room:', roomUrl);
+    // console.log('👤 User role:', '{{ auth()->user()->role }}');
+    // console.log('📋 Appointment ID:', '{{ $appointment->id }}');
     
     const callFrame = window.DailyIframe.createFrame(document.getElementById('video-container'), {
         showLeaveButton: true,
@@ -39,10 +39,10 @@
 
     callFrame.join({ url: roomUrl })
         .then(() => {
-            console.log('✅ Successfully joined video call');
+            // console.log('✅ Successfully joined video call');
         })
         .catch(error => {
-            console.error('❌ Failed to join video call:', error);
+            // console.error('❌ Failed to join video call:', error);
             document.getElementById('video-container').innerHTML = `
                 <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; height: 100vh; background: #1a1a1a; color: white; flex-direction: column; padding: 20px; box-sizing: border-box;">
                     <h2>Unable to Join Video Call</h2>

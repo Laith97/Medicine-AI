@@ -343,9 +343,9 @@ class OfflineNotificationsTest {
         const logEntry = `[${timestamp}] ${message}`;
 
         if (data) {
-            console.log(message, data);
+            // console.log(message, data);
         } else {
-            console.log(message);
+            // console.log(message);
         }
 
         // Add to debug console

@@ -272,7 +272,7 @@ function playVoice(diagnosisId) {
 
     // Play the audio
     audio.play().catch(error => {
-        console.error('Error playing audio:', error);
+        // console.error('Error playing audio:', error);
         if (playButton) {
             playButton.innerHTML = '<i class="fas fa-volume-up"></i>';
             playButton.disabled = false;

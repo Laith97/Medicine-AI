@@ -249,7 +249,7 @@ function loadReviews() {
                 updatePagination(data.pagination);
             }
         })
-        .catch(error => console.error('Error loading reviews:', error));
+        .catch(error => // console.error('Error loading reviews:', error));
 }
 
 function updateReviewsContainer(reviews) {

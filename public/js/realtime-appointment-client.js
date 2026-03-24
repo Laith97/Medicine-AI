@@ -1251,7 +1251,7 @@ class RealtimeAppointmentClient {
      */
     log(message, ...args) {
         if (this.config.debugMode || window.DEBUG_REALTIME) {
-            console.log(`[RealtimeAppointmentClient] ${message}`, ...args);
+            // console.log(`[RealtimeAppointmentClient] ${message}`, ...args);
         }
     }
 }

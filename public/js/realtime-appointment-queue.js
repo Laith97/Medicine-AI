@@ -39,7 +39,7 @@ class RealtimeAppointmentQueue {
      */
     async init() {
         if (!this.options.container) {
-            console.error('RealtimeAppointmentQueue: Container not found');
+            // console.error('RealtimeAppointmentQueue: Container not found');
             return;
         }
 
@@ -54,9 +54,9 @@ class RealtimeAppointmentQueue {
             await this.loadAppointments();
 
             this.isInitialized = true;
-            console.log('RealtimeAppointmentQueue initialized successfully');
+            // console.log('RealtimeAppointmentQueue initialized successfully');
         } catch (error) {
-            console.error('Failed to initialize RealtimeAppointmentQueue:', error);
+            // console.error('Failed to initialize RealtimeAppointmentQueue:', error);
         }
     }
 
@@ -377,7 +377,7 @@ class RealtimeAppointmentQueue {
             }
 
         } catch (error) {
-            console.error('Error updating appointment status:', error);
+            // console.error('Error updating appointment status:', error);
             this.showNotification('Failed to update status', 'error');
         }
     }
@@ -748,7 +748,7 @@ class RealtimeAppointmentQueue {
             await this.loadAppointments();
             this.showNotification('Queue refreshed', 'success');
         } catch (error) {
-            console.error('Error refreshing appointments:', error);
+            // console.error('Error refreshing appointments:', error);
             this.showNotification('Failed to refresh queue', 'error');
         } finally {
             if (refreshBtn) {
@@ -781,7 +781,7 @@ class RealtimeAppointmentQueue {
             }
 
         } catch (error) {
-            console.error('Error loading appointments:', error);
+            // console.error('Error loading appointments:', error);
             throw error;
         }
     }
@@ -905,7 +905,7 @@ class RealtimeAppointmentQueue {
             }
 
         } catch (error) {
-            console.error('Error updating appointment order:', error);
+            // console.error('Error updating appointment order:', error);
             this.showNotification('Failed to update appointment order', 'error');
         }
     }

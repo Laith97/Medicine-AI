@@ -393,7 +393,7 @@ function editAccount(accountId) {
             }
         })
         .catch(error => {
-            console.error('Error loading account:', error);
+            // console.error('Error loading account:', error);
             alert('Error loading account details');
         });
 }
@@ -421,7 +421,7 @@ function testConnection(accountId) {
         }
     })
     .catch(error => {
-        console.error('Error testing connection:', error);
+        // console.error('Error testing connection:', error);
         alert('Error testing connection');
     })
     .finally(() => {
@@ -451,7 +451,7 @@ function deleteAccount(accountId) {
         }
     })
     .catch(error => {
-        console.error('Error deleting account:', error);
+        // console.error('Error deleting account:', error);
         alert('Error deleting account');
     });
 }
@@ -468,7 +468,7 @@ function loadAccounts() {
             }
         })
         .catch(error => {
-            console.error('Error loading accounts:', error);
+            // console.error('Error loading accounts:', error);
         });
 }
 
@@ -512,7 +512,7 @@ document.getElementById('accountForm').addEventListener('submit', function(e) {
         }
     })
     .catch(error => {
-        console.error('Error saving account:', error);
+        // console.error('Error saving account:', error);
         alert('Error saving account');
     });
 });
