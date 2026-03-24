@@ -260,6 +260,7 @@ class MenuHelper
                 'header_class' => 'sidebar-header-business-tools',
                 'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => array_filter([
+                    self::getSmsConfigMenuItem('settings'),
                     // Only show billing for standalone doctors (not hospital doctors)
                     !$user->hospital_id ? [
                         'name' => 'Billing & Invoices',
@@ -515,6 +516,7 @@ class MenuHelper
                 'header_class' => 'sidebar-header-business-tools',
                 'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => array_filter([
+                    self::getSmsConfigMenuItem(),
                     // Only show billing for standalone doctors (not hospital doctors) - even during impersonation
                     !$user->hospital_id ? [
                         'name' => 'Billing & Invoices',
@@ -704,6 +706,7 @@ class MenuHelper
                 'dropdown' => true,
                 'href' => 'hospital-admin.subscription.manage', // Clickable parent header
                 'items' => [
+                    self::getSmsConfigMenuItem('settings'),
                     [
                         'name' => 'Subscription',
                         'route' => 'hospital-admin.subscription.manage',
@@ -728,6 +731,24 @@ class MenuHelper
 
         // Filter menu items based on permissions (hospital admins have all permissions by default)
         return $menuItems;
+    }
+
+    /**
+     * Get SMS Configuration menu item
+     */
+    private static function getSmsConfigMenuItem(?string $permission = null): array
+    {
+        $item = [
+            'name' => 'SMS Configuration',
+            'route' => 'sms.config.index',
+            'icon' => 'fas fa-sms',
+        ];
+
+        if ($permission !== null) {
+            $item['permission'] = $permission;
+        }
+
+        return $item;
     }
 
     /**

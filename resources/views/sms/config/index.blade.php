@@ -200,12 +200,20 @@
                                                     <div class="col-md-6">
                                                         <div class="mb-3">
                                                             <label for="smsgatewayhub_device_{{ $key }}" class="form-label">Device ID</label>
-                                                            <input type="text" class="form-control" 
-                                                                   name="provider_config[device]" 
+                                                            <input type="text" class="form-control"
+                                                                   name="provider_config[device]"
                                                                    id="smsgatewayhub_device_{{ $key }}"
                                                                    value="{{ old('provider_config.device', $userConfig ? ($userConfig->provider_config['device'] ?? '') : '') }}">
                                                         </div>
                                                     </div>
+                                                @elseif(in_array($key, ['msegat', 'taqnyat', 'smsala', 'connectsaudi']) && isset($providerRequirements[$key]))
+                                                    @php $prefix = $key; @endphp
+                                                    <x-sms.provider-fields
+                                                        :provider-key="$key"
+                                                        :prefix="$prefix"
+                                                        :requirements="$providerRequirements[$key]"
+                                                        :config="$userConfig"
+                                                    />
                                                 @endif
                                             </div>
                                         @endif
@@ -216,7 +224,7 @@
                                             </button>
 
                                             @if($userConfig)
-                                                <button type="button" class="btn btn-success" 
+                                                <button type="button" class="btn btn-success"
                                                         onclick="testSms('{{ $key }}', this)">
                                                     Test {{ $name }}
                                                 </button>
@@ -403,12 +411,19 @@
                                                         <div class="col-md-6">
                                                             <div class="mb-3">
                                                                 <label for="hospital_smsgatewayhub_device_{{ $key }}" class="form-label">Device ID</label>
-                                                                <input type="text" class="form-control" 
-                                                                       name="provider_config[device]" 
+                                                                <input type="text" class="form-control"
+                                                                       name="provider_config[device]"
                                                                        id="hospital_smsgatewayhub_device_{{ $key }}"
                                                                        value="{{ old('provider_config.device', $hospitalConfig ? ($hospitalConfig->provider_config['device'] ?? '') : '') }}">
                                                             </div>
                                                         </div>
+                                                    @elseif(in_array($key, ['msegat', 'taqnyat', 'smsala', 'connectsaudi']) && isset($providerRequirements[$key]))
+                                                        <x-sms.provider-fields
+                                                            :provider-key="$key"
+                                                            :prefix="'hospital_' . $key"
+                                                            :requirements="$providerRequirements[$key]"
+                                                            :config="$hospitalConfig"
+                                                        />
                                                     @endif
                                                 </div>
                                             @endif
@@ -419,7 +434,7 @@
                                                 </button>
 
                                                 @if($hospitalConfig)
-                                                    <button type="button" class="btn btn-success" 
+                                                    <button type="button" class="btn btn-success"
                                                             onclick="testSms('{{ $key }}', this, true)">
                                                         Test Hospital {{ $name }}
                                                     </button>

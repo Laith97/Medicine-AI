@@ -39,6 +39,9 @@ class UserSmsConfigurationController extends Controller
         // Get all available providers
         $availableProviders = config('sms.available_providers', []);
 
+        // Get provider requirements for dynamic field rendering
+        $providerRequirements = $this->smsService->getProviderRequirements();
+
         // Get user's current configurations
         $userConfigurations = UserSmsConfiguration::where('user_id', $user->id)->get();
         $userConfigMap = $userConfigurations->keyBy('provider_key');
@@ -52,6 +55,7 @@ class UserSmsConfigurationController extends Controller
 
         return view('sms.config.index', compact(
             'availableProviders',
+            'providerRequirements',
             'userConfigMap',
             'hospitalConfigMap',
             'user'
@@ -219,6 +223,10 @@ class UserSmsConfigurationController extends Controller
             'messagebird' => ['access_key', 'from_number'],
             'unifonic' => ['app_sid', 'sender_id'],
             'smsgatewayhub' => ['email', 'password', 'device'],
+            'msegat' => ['email', 'password', 'sender_name'],
+            'taqnyat' => ['bearer_token', 'sender_name'],
+            'smsala' => ['api_key', 'sender_id'],
+            'connectsaudi' => ['account_id', 'api_key', 'sender_name'],
         ];
 
         if (!isset($requiredFields[$providerKey])) {
