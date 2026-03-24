@@ -115,14 +115,14 @@ class MenuHelper
                     // AI Ask temporarily disabled - removed completely
                     [
                         'name' => 'Ambient Listening',
-                        'route' => 'ai.voice-assistant.index',
+                        'route' => 'ai.ambient-listening.index',
                         'icon' => 'fas fa-microphone',
                         'permission' => 'voice_assistant',
                         'restricted' => true,
                     ],
                     [
                         'name' => 'Session Recordings',
-                        'route' => 'ai.voice-assistant.recorded-voices',
+                        'route' => 'ai.ambient-listening.recorded-voices',
                         'icon' => 'fas fa-history',
                         'permission' => 'voice_assistant',
                         'restricted' => true,
@@ -393,12 +393,12 @@ class MenuHelper
                     // AI Ask temporarily disabled - removed completely
                     [
                         'name' => 'Ambient Listening',
-                        'route' => 'ai.voice-assistant.index',
+                        'route' => 'ai.ambient-listening.index',
                         'icon' => 'fas fa-microphone',
                     ],
                     [
                         'name' => 'Session Recordings',
-                        'route' => 'ai.voice-assistant.recorded-voices',
+                        'route' => 'ai.ambient-listening.recorded-voices',
                         'icon' => 'fas fa-history',
                     ],
                     [
@@ -857,7 +857,7 @@ class MenuHelper
                 ['name' => 'Edit Sub-User', 'route' => null]
             ],
             // 'ai.ask-ai' => [['name' => 'AI Assistant', 'route' => null]], // Temporarily disabled
-            'ai.voice-assistant.index' => [['name' => 'Ambient Listening', 'route' => null]],
+            'ai.ambient-listening.index' => [['name' => 'Ambient Listening', 'route' => null]],
             'diagnosis.index' => [['name' => 'Diagnoses', 'route' => null]],
         ];
 

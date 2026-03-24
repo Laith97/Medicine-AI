@@ -506,7 +506,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
             'can_access' => [
                 'dashboard' => $user->canAccessRoute('dashboard'),
                 // 'ai.ask-ai' => $user->canAccessRoute('ai.ask-ai'), // Temporarily disabled
-                'ai.voice-assistant.index' => $user->canAccessRoute('ai.voice-assistant.index'),
+                'ai.ambient-listening.index' => $user->canAccessRoute('ai.ambient-listening.index'),
                 'diagnosis.index' => $user->canAccessRoute('diagnosis.index'),
                 'doctor.cases.overview' => $user->canAccessRoute('doctor.cases.overview'),
                 'sub-users.index' => $user->canAccessRoute('sub-users.index'),

@@ -70,9 +70,9 @@ class CheckAccessRestrictions
             'appointments',
             'reviews',
             // Voice assistant
-            'ai.voice-assistant.index',
-            'ai.voice-assistant.history',
-            'ai.voice-assistant.show',
+            'ai.ambient-listening.index',
+            'ai.ambient-listening.history',
+            'ai.ambient-listening.show',
             // Diagnosis routes
             'diagnosis.index',
             'diagnosis.create',

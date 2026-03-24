@@ -350,7 +350,7 @@
                                         </div>
                                     </div>
                                     <div class="text-center mt-3">
-                                        <a href="{{ route('ai.voice-assistant.performance') }}" class="btn btn-primary">
+                                        <a href="{{ route('ai.ambient-listening.performance') }}" class="btn btn-primary">
                                             <i class="fas fa-chart-line me-2"></i>View Performance Analytics
                                         </a>
                                     </div>

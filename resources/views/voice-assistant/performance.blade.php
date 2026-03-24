@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Time range selector
     document.getElementById('timeRange').addEventListener('change', function() {
         const days = this.value;
-        window.location.href = '{{ route("ai.voice-assistant.performance") }}?days=' + days;
+        window.location.href = '{{ route("ai.ambient-listening.performance") }}?days=' + days;
     });
 });
 </script>
