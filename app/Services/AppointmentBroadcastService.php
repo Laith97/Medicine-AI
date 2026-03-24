@@ -370,6 +370,9 @@ class AppointmentBroadcastService
         }
 
         if (empty($userIds)) {
+            Log::debug('Appointment list update skipped - no subscribed users', [
+                'appointment_date' => $date ?? 'all'
+            ]);
             return true; // No users to broadcast to
         }
 

@@ -208,6 +208,7 @@ class DataSynchronizationService
         $connections = $this->connectionManager->getUserActiveConnections($user->id);
 
         if ($connections->isEmpty()) {
+            Log::debug('No active connections for sync broadcast', ['user_id' => $user->id]);
             return true; // No connections to broadcast to
         }
 
@@ -223,7 +224,17 @@ class DataSynchronizationService
             'event_id' => uniqid('sync_', true)
         ];
 
-        return app(PusherConnectionPool::class)->broadcast($channels, 'sync.updated', $eventData);
+        $success = app(PusherConnectionPool::class)->broadcast($channels, 'sync.updated', $eventData);
+
+        if (!$success) {
+            Log::error('Sync state broadcast failed', [
+                'user_id' => $user->id,
+                'channels' => $channels,
+                'event' => 'sync.updated'
+            ]);
+        }
+
+        return $success;
     }
 
     /**

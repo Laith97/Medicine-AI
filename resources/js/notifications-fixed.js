@@ -272,61 +272,22 @@ class EnhancedNotificationSystem {
                 this.userChannel.listen('App\\Events\\NotificationSent', (data) => {
                     // [DIRECT] NotificationSent event:
                     this.handleNewNotification(data, 'direct');
-                    this.showSystemNotification('Direct notification received', 'info');
-                    return false; // Explicitly return false to avoid async response issues
+                    return false;
                 });
 
                 // SECONDARY: BroadcastNotificationCreated events
                 this.userChannel.listen('Illuminate\\Notifications\\Events\\BroadcastNotificationCreated', (data) => {
                     // [SECONDARY] BroadcastNotificationCreated:
                     this.handleNewNotification(data, 'broadcast_event');
-                    return false; // Explicitly return false to avoid async response issues
+                    return false;
                 });
 
                 // TERTIARY: Generic notification events
                 this.userChannel.listen('.notification', (data) => {
                     // [TERTIARY] Generic notification event:
                     this.handleNewNotification(data, 'generic');
-                    return false; // Explicitly return false to avoid async response issues
+                    return false;
                 });
-
-                // Add a direct listener for the notification event
-                this.userChannel.listen('App\\Events\\NotificationSent', (data) => {
-                    // [DIRECT] NotificationSent event:
-                    // NotificationSent listener called, returning false
-                    this.handleNewNotification(data, 'direct');
-                    return false; // Explicitly return false to avoid async response issues
-                });
-
-                // QUATERNARY: Listen for all events on the channel for debugging
-                // Note: This approach may not work with all Echo versions, we'll use a more specific approach
-                // Checking if listenAny is available on userChannel:
-                // userChannel methods:
-
-                // Check if listenAny method exists (for newer Echo versions)
-                if (typeof this.userChannel.listenAny === 'function') {
-                    // Using listenAny on channel
-                    this.userChannel.listenAny((eventName, data) => {
-                        // [QUATERNARY] Raw event received:
-                        if (eventName.includes('notification') || data?.type === 'notification') {
-                            this.handleNewNotification(data, 'raw');
-                        }
-                        return false; // Explicitly return false to avoid async response issues
-                    });
-                } else {
-                    // listenAny not available on channel, using alternative approach
-                    // Alternative: Use Pusher's bind_global if available
-                    if (window.Echo && window.Echo.connector && window.Echo.connector.pusher) {
-                        const pusher = window.Echo.connector.pusher;
-                        pusher.bind_global((eventName, data) => {
-                            // [GLOBAL-ALT] Pusher event received:
-                            if (eventName.includes('notification') || eventName.includes('App.User.' + this.userId) || (data?.type === 'notification')) {
-                                this.handleNewNotification(data, 'global_alt');
-                            }
-                            return false;
-                        });
-                    }
-                }
 
                 // Add a global Pusher listener to catch all events
                 if (window.Echo && window.Echo.connector && window.Echo.connector.pusher) {
@@ -335,170 +296,62 @@ class EnhancedNotificationSystem {
                     // Listen to all events on the Pusher instance
                     pusher.bind_global((eventName, data) => {
                         // [GLOBAL] Pusher event received:
-                        // Second global bind listener called, returning false
-
-                        // Check if this is a notification event
                         if (eventName.includes('notification') ||
                             eventName.includes('App.User.') ||
                             (data && (data.type === 'notification' || data.title || data.message))) {
-                            // [GLOBAL] Processing notification event
                             this.handleNewNotification(data, 'global');
-                            this.showSystemNotification('Global notification received', 'info');
                         }
-                        return false; // Explicitly return false to avoid async response issues
+                        return false;
                     });
 
                     // Listen for connection events
                     pusher.connection.bind('connected', () => {
-                        // Pusher connected
-                        // Pusher connected event fired
                         this.showSystemNotification('Pusher connected', 'success');
                     });
 
                     pusher.connection.bind('disconnected', () => {
-                        // Pusher disconnected
-                        // Pusher disconnected event fired
                         this.showSystemNotification('Pusher disconnected', 'error');
                     });
 
                     pusher.connection.bind('error', (error) => {
-                        // Pusher connection error:
-                        // Pusher error event fired:
                         this.showSystemNotification(`Pusher error: ${error.message || 'Unknown error'}`, 'error');
                     });
                 }
 
-                // QUINTERNARY: Listen for all events using global listener
-                if (window.Echo.connector && window.Echo.connector.socket) {
-                    window.Echo.connector.socket.on('event', (data) => {
-                        // [QUINTERNARY] Socket event received:
-                        if (data.channel === userChannelName && data.event && data.event.includes('notification')) {
-                            this.handleNewNotification(data.event, 'socket');
-                        }
-                        return false; // Explicitly return false to avoid async response issues
-                    });
-                }
-
-                // 监听频道错误
+                // Listen for subscription errors
                 this.userChannel.error((error) => {
-                    // Error on user channel:
+                    console.error('User channel subscription error:', error);
                 });
             } else {
-                // Failed to create user channel:
+                console.error('Failed to create user channel');
             }
 
             // If user is a doctor, also listen to doctor-specific channel
             if (window.userRole === 'doctor') {
                 const doctorChannelName = `doctor.${this.userId}`;
-                // Doctor-specific channel created:
 
-                // 简化医生频道订阅
                 const doctorChannel = window.Echo.private(doctorChannelName);
 
                 if (doctorChannel) {
-                    // Connected to doctor channel:
-
                     // Listen for notifications on the doctor channel
                     doctorChannel.notification((notification) => {
-                        // [DOCTOR] Doctor notification received:
                         this.handleNewNotification(notification, 'doctor_notification');
                     });
 
                     // Listen for appointment booked notifications
                     doctorChannel.listen('appointment-booked', (data) => {
-                        // [DOCTOR] Appointment booked notification:
                         this.handleNewNotification(data, 'doctor_appointment');
                     });
 
                     // Listen for Laravel broadcast notification events
                     doctorChannel.listen('Illuminate\\Notifications\\Events\\BroadcastNotificationCreated', (data) => {
-                        // [DOCTOR] Laravel broadcast notification:
                         this.handleNewNotification(data, 'doctor_laravel_notification');
                     });
 
-                    // 监听频道错误
                     doctorChannel.error((error) => {
-                        // Error on doctor channel:
+                        console.error('Doctor channel error:', error);
                     });
-                } else {
-                    // Failed to create doctor channel:
                 }
-
-                // 监听所有频道上的通知
-                window.Echo.channel('doctor.' + this.userId)
-                    .listen('.notification', (data) => {
-                        // [DOCTOR] Wildcard notification:
-                        this.handleNewNotification(data, 'doctor_wildcard');
-                    })
-                    .error((error) => {
-                        // Error on doctor wildcard channel:
-                    });
-            }
-
-            // 监听所有用户频道上的通知
-            try {
-                const userWildcardChannel = window.Echo.channel('App.User.' + this.userId);
-
-                if (userWildcardChannel) {
-                    userWildcardChannel
-                        .listen('.notification', (notification) => {
-                            // [USER] User notification received:
-                            this.handleNewNotification(notification, 'user_notification');
-                        })
-                        .listen('appointment-booked', (data) => {
-                            // [USER] Appointment booked notification:
-                            this.handleNewNotification(data, 'user_appointment');
-                        })
-                        .error((error) => {
-                            // Error on user wildcard channel:
-                        });
-                } else {
-                    // Failed to create user wildcard channel
-                }
-            } catch (error) {
-                // Error creating user wildcard channel:
-            }
-
-            // DEBUG: Monitor all raw Pusher events for our channel
-            if (window.Echo.connector && window.Echo.connector.pusher) {
-                const pusher = window.Echo.connector.pusher;
-                // Pusher connection state:
-
-                pusher.bind_global((eventName, data) => {
-                    // Use the actual user channel name instead of undefined channelName
-                    const userChannelName = `App.User.${this.userId}`;
-                    if (eventName.includes(`private-${userChannelName}`) || eventName.includes(userChannelName)) {
-                        // [RAW] Pusher event for our channel:
-                        // Global bind listener called, returning false
-
-                        // Try to handle raw events too
-                        if (eventName.includes('notification') || eventName.includes('Notification')) {
-                            this.handleNewNotification(data, 'raw');
-                        }
-                        return false; // Explicitly return false to avoid async response issues
-                    }
-                });
-
-                // Monitor connection state changes
-                pusher.connection.bind('state_change', (states) => {
-                    // Pusher connection state changed:
-                    // State change event - potential async response window
-                });
-
-                pusher.connection.bind('connected', () => {
-                    // Pusher connected successfully
-                    // Second connected event fired
-                });
-
-                pusher.connection.bind('disconnected', () => {
-                    // Pusher disconnected
-                    // Second disconnected event fired
-                });
-
-                pusher.connection.bind('error', (error) => {
-                    // Pusher connection error:
-                    // Second error event fired:
-                });
             }
 
             // Channel status handlers

@@ -26,26 +26,20 @@ const userId = document.querySelector('meta[name="user-id"]')?.getAttribute('con
 
 // Proper Echo configuration with authentication
 try {
-    // 确保CSRF令牌存在
+    // Ensure CSRF token exists
     if (!csrfToken) {
         console.error('❌ CSRF token is missing');
-        // Don't return here, just log the error and continue
         console.log('⚠️ Continuing without Echo initialization due to missing CSRF token');
     } else {
         console.log('🔒 CSRF token found:', csrfToken.substring(0, 10) + '...');
     }
 
-    console.log('🔒 CSRF token found:', csrfToken.substring(0, 10) + '...');
     console.log('👤 User ID found:', userId);
 
     window.Echo = new Echo({
-        broadcaster: 'reverb',
-        key: import.meta.env.VITE_REVERB_APP_KEY,
-        wsHost: import.meta.env.VITE_REVERB_HOST,
-        wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
-        wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
-        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
-        enabledTransports: ['ws', 'wss'],
+        broadcaster: 'pusher',
+        key: import.meta.env.VITE_PUSHER_APP_KEY,
+        cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
         authEndpoint: '/broadcasting/auth',
         auth: {
             headers: {
