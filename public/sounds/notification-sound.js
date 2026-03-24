@@ -31,7 +31,7 @@ if (typeof NotificationSound === 'undefined') {
                 this.playAudioFile();
             }
         } catch (error) {
-            console.warn('Failed to play notification sound:', error);
+            // console.warn('Failed to play notification sound:', error);
         }
     }
 

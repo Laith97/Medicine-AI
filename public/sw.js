@@ -85,7 +85,7 @@ self.addEventListener('fetch', event => {
                                 caches.open(NOTIFICATION_CACHE)
                                     .then(cache => cache.put(event.request, responseClone))
                                     .catch(error => {
-                                        console.warn('⚠️ Failed to cache response:', error);
+                                        // console.warn('⚠️ Failed to cache response:', error);
                                     });
                             }
                             return response;
