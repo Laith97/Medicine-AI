@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Patient;
 
 use App\Http\Controllers\Controller;
 use App\Models\HealthJournal;
+use App\Models\HealthInsight;
 use App\Models\HealthMedicationSchedule;
 use App\Models\HealthMedicationLog;
 use Illuminate\Http\Request;
@@ -52,12 +53,14 @@ class HealthTrackingController extends Controller
             ]);
 
         $adherenceStreak = HealthMedicationLog::getAdherenceStreak($patient->id);
+        $latestHealthInsight = HealthInsight::getFreshForUser($patient->id);
 
         return view('patient.health.dashboard', compact(
             'todayJournal',
             'recentJournals',
             'todayMedications',
             'adherenceStreak',
+            'latestHealthInsight',
         ));
     }
 

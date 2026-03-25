@@ -1522,6 +1522,8 @@ Route::middleware(['auth', 'role:patient'])->prefix('patient/health')->name('pat
     Route::post('/medications/{log}/take', [App\Http\Controllers\Patient\HealthTrackingController::class, 'takeMedication'])->name('medications.take');
     Route::post('/medications/{log}/skip', [App\Http\Controllers\Patient\HealthTrackingController::class, 'skipMedication'])->name('medications.skip');
     Route::get('/history', [App\Http\Controllers\Patient\HealthTrackingController::class, 'history'])->name('history');
+    Route::get('/insights', [App\Http\Controllers\Patient\HealthInsightsController::class, 'index'])->name('insights');
+    Route::post('/insights/generate', [App\Http\Controllers\Patient\HealthInsightsController::class, 'generate'])->name('insights.generate');
 });
 
 Route::middleware(['auth', 'role:doctor'])->prefix('doctor/waitlist')->name('doctor.waitlist.')->group(function () {

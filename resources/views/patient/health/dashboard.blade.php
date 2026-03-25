@@ -59,6 +59,45 @@
             </div>
         </div>
 
+        <!-- AI Insights Panel -->
+        @if($latestHealthInsight)
+            <div class="card border-primary mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-robot me-2" aria-hidden="true"></i>
+                        AI Health Insight
+                    </h5>
+                    <a href="{{ route('patient.health.insights') }}" class="btn btn-sm btn-light">
+                        View Full Insights <i class="fas fa-arrow-right ms-1" aria-hidden="true"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-primary mb-2">{{ $latestHealthInsight->summary }}</h6>
+                            <p class="small text-muted mb-0">
+                                Generated {{ $latestHealthInsight->created_at->diffForHumans() }}
+                                @if($latestHealthInsight->expires_at && $latestHealthInsight->expires_at->isFuture())
+                                    — expires {{ $latestHealthInsight->expires_at->diffForHumans() }}
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @else
+            <div class="card border-dashed mb-4 text-center py-4">
+                <div class="card-body">
+                    <i class="fas fa-brain fa-2x text-muted mb-2" aria-hidden="true"></i>
+                    <h6 class="text-muted">Get AI Health Insights</h6>
+                    <p class="small text-muted mb-3">Personalized analysis of your health patterns</p>
+                    <a href="{{ route('patient.health.insights') }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-robot me-1" aria-hidden="true"></i>Generate Insights
+                    </a>
+                </div>
+            </div>
+        @endif
+
         <div class="row">
             <!-- Today's Medication Status -->
             <div class="col-lg-6 mb-4">
