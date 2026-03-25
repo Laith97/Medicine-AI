@@ -47,6 +47,13 @@ return [
             'report' => false,
         ],
 
+        'message_attachments' => [
+            'driver' => 'local',
+            'root' => storage_path('app/message_attachments'),
+            'url' => env('APP_URL').'/storage/message_attachments',
+            'visibility' => 'private',
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
