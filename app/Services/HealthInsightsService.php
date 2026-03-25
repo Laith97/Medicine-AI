@@ -29,8 +29,17 @@ class HealthInsightsService
                 return $cached;
             }
         } else {
-            // Delete expired/old insights on force-regenerate
-            HealthInsight::where('user_id', $patient->id)->delete();
+            // Delete only expired insights on force-regenerate
+            try {
+                HealthInsight::where('user_id', $patient->id)
+                    ->where('expires_at', '<=', now())
+                    ->delete();
+            } catch (\Exception $e) {
+                Log::error('Failed to delete expired insights', [
+                    'user_id' => $patient->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         $data = $this->gatherPatientData($patient);
@@ -40,16 +49,24 @@ class HealthInsightsService
         }
 
         $prompt = $this->buildPrompt($data);
-        $response = $this->callOpenAI($prompt);
+        $response = $this->callOpenAI($prompt, $patient->id);
         $content = $this->parseResponse($response);
 
-        $insight = HealthInsight::create([
-            'user_id' => $patient->id,
-            'insight_type' => 'combined',
-            'summary' => $content['summary'] ?? 'Health insights generated',
-            'content' => $content,
-            'expires_at' => now()->addHours(24),
-        ]);
+        try {
+            $insight = HealthInsight::create([
+                'user_id' => $patient->id,
+                'insight_type' => 'combined',
+                'summary' => $content['summary'] ?? 'Health insights generated',
+                'content' => $content,
+                'expires_at' => now()->addHours(24),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to save health insight', [
+                'user_id' => $patient->id,
+                'error' => $e->getMessage(),
+            ]);
+            throw new \RuntimeException('Failed to save insight. Please try again.');
+        }
 
         Log::info('Health insight generated', [
             'user_id' => $patient->id,
@@ -224,7 +241,7 @@ USER;
     /**
      * Call OpenAI with the built prompt.
      */
-    private function callOpenAI(array $prompt): string
+    private function callOpenAI(array $prompt, int $userId): string
     {
         if (!config('ai.enabled', true)) {
             throw new \RuntimeException('AI insights are currently disabled.');
@@ -249,7 +266,7 @@ USER;
         } catch (\Exception $e) {
             Log::error('OpenAI health insights error', [
                 'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
+                'user_id' => $userId,
             ]);
             throw $e;
         }
@@ -261,8 +278,8 @@ USER;
     private function parseResponse(string $raw): array
     {
         // Strip markdown code blocks if present
-        $raw = preg_replace('/^```json\s*/', '', trim($raw));
-        $raw = preg_replace('/```$/s', '', trim($raw));
+        $raw = preg_replace('/^```json\s*/', '', trim($raw)) ?? $raw;
+        $raw = preg_replace('/```$/s', '', trim($raw)) ?? $raw;
 
         $decoded = json_decode($raw, true);
 

@@ -280,18 +280,17 @@ async function generateInsights() {
         dynamicSection.classList.remove('d-none');
         dynamicSection.innerHTML = renderInsightCard(data.insight);
 
-        // Reload page after short delay to refresh past insights list
-        setTimeout(() => { window.location.reload(); }, 2000);
-
     } catch (err) {
         alertEl.className = 'alert alert-danger';
         alertEl.innerHTML = '<i class="fas fa-exclamation-circle me-2" aria-hidden="true"></i>' + esc(err.message);
         alertEl.classList.remove('d-none');
+        // Debounce button on failure to prevent rapid retries
+        btn.disabled = true;
+        setTimeout(() => { btn.disabled = false; }, 10000);
     } finally {
         isGenerating = false;
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-redo me-1" aria-hidden="true"></i>Regenerate Insights';
-        setTimeout(() => { btn.disabled = false; }, 10000);
     }
 }
 </script>
