@@ -1512,6 +1512,18 @@ Route::middleware(['auth', 'role:patient'])->prefix('patient/waitlist')->name('p
     Route::put('/preferences', [App\Http\Controllers\Patient\WaitlistController::class, 'updatePreferences'])->name('preferences.update');
 });
 
+// Patient Health Tracking Routes
+Route::middleware(['auth', 'role:patient'])->prefix('patient/health')->name('patient.health.')->group(function () {
+    Route::get('/', [App\Http\Controllers\Patient\HealthTrackingController::class, 'dashboard'])->name('dashboard');
+    Route::get('/journal', [App\Http\Controllers\Patient\HealthTrackingController::class, 'journalEntry'])->name('journal');
+    Route::post('/journal', [App\Http\Controllers\Patient\HealthTrackingController::class, 'storeJournal'])->name('journal.store');
+    Route::get('/medications', [App\Http\Controllers\Patient\HealthTrackingController::class, 'medications'])->name('medications');
+    Route::post('/medications', [App\Http\Controllers\Patient\HealthTrackingController::class, 'addMedication'])->name('medications.add');
+    Route::post('/medications/{log}/take', [App\Http\Controllers\Patient\HealthTrackingController::class, 'takeMedication'])->name('medications.take');
+    Route::post('/medications/{log}/skip', [App\Http\Controllers\Patient\HealthTrackingController::class, 'skipMedication'])->name('medications.skip');
+    Route::get('/history', [App\Http\Controllers\Patient\HealthTrackingController::class, 'history'])->name('history');
+});
+
 Route::middleware(['auth', 'role:doctor'])->prefix('doctor/waitlist')->name('doctor.waitlist.')->group(function () {
     Route::get('/', [App\Http\Controllers\Doctor\WaitlistController::class, 'dashboard'])->name('dashboard');
     Route::get('/manage', [App\Http\Controllers\Doctor\WaitlistController::class, 'manage'])->name('manage');
