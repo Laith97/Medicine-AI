@@ -939,6 +939,7 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
         Route::get('/', [DoctorMessagesController::class, 'index'])->name('index');
         Route::get('/{thread}', [DoctorMessagesController::class, 'show'])->name('show');
         Route::post('/{thread}/reply', [DoctorMessagesController::class, 'reply'])->name('reply');
+        Route::post('/{thread}/suggestion/generate', [DoctorMessagesController::class, 'generateSuggestion'])->name('generate-suggestion');
         Route::post('/{thread}/suggestion/{suggestion}/approve', [DoctorMessagesController::class, 'approveSuggestion'])->name('approve-suggestion');
         Route::post('/{thread}/suggestion/{suggestion}/reject', [DoctorMessagesController::class, 'rejectSuggestion'])->name('reject-suggestion');
         Route::get('/attachment/{attachment}', [DoctorMessagesController::class, 'attachment'])->name('attachment');

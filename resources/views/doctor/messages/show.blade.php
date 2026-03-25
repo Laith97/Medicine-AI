@@ -53,6 +53,21 @@
                     <p class="mb-0">{{ $pendingSuggestion->suggested_reply }}</p>
                 </div>
             </div>
+        @elseif(!$thread->isArchived() && $thread->messages()->byPatient()->exists())
+            <div class="card border-secondary mb-4">
+                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-robot me-2"></i>AI Reply Suggestion</h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="text-muted mb-3">Need help drafting a reply? Let AI generate a suggestion for you.</p>
+                    <form action="{{ route('doctor.messages.generate-suggestion', $thread) }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-secondary">
+                            <i class="fas fa-magic me-1"></i>Generate AI Suggestion
+                        </button>
+                    </form>
+                </div>
+            </div>
         @endif
 
         <div class="card mb-4">

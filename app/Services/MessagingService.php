@@ -9,6 +9,7 @@ use App\Models\MessageThread;
 use App\Models\User;
 use App\Notifications\NewMessageNotification;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -54,26 +55,38 @@ class MessagingService
 
     /**
      * Create a new message thread with an initial message.
+     *
+     * @throws \Exception
      */
     public function createThread(User $patient, User $doctor, string $subject, string $body, ?int $diagnosisId = null, ?array $attachments = []): MessageThread
     {
-        $type = $diagnosisId ? 'follow_up' : 'general';
+        return DB::transaction(function () use ($patient, $doctor, $subject, $body, $diagnosisId, $attachments) {
+            $type = $diagnosisId ? 'follow_up' : 'general';
 
-        $thread = MessageThread::create([
-            'patient_id' => $patient->id,
-            'doctor_id' => $doctor->id,
-            'type' => $type,
-            'diagnosis_id' => $diagnosisId,
-            'subject' => $subject,
-            'last_message_at' => now(),
-        ]);
+            $thread = MessageThread::create([
+                'patient_id' => $patient->id,
+                'doctor_id' => $doctor->id,
+                'type' => $type,
+                'diagnosis_id' => $diagnosisId,
+                'subject' => $subject,
+                'last_message_at' => now(),
+            ]);
 
-        $message = $this->addMessage($thread, $patient, 'patient', $body, $attachments);
+            $this->addMessage($thread, $patient, 'patient', $body, $attachments);
 
-        // Notify doctor of new thread
-        $doctor->notify(new NewMessageNotification($thread, $patient));
+            // Notify doctor of new thread (non-blocking)
+            try {
+                $doctor->notify(new NewMessageNotification($thread, $patient));
+            } catch (\Exception $e) {
+                Log::warning('Failed to notify doctor of new thread', [
+                    'thread_id' => $thread->id,
+                    'doctor_id' => $doctor->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
-        return $thread;
+            return $thread;
+        });
     }
 
     /**
@@ -96,9 +109,17 @@ class MessagingService
             $this->storeAttachments($message, $attachments);
         }
 
-        // Notify patient when doctor replies
+        // Notify patient when doctor replies (non-blocking)
         if ($senderType === 'doctor') {
-            $thread->patient->notify(new NewMessageNotification($thread, $sender));
+            try {
+                $thread->patient->notify(new NewMessageNotification($thread, $sender));
+            } catch (\Exception $e) {
+                Log::warning('Failed to notify patient of doctor reply', [
+                    'thread_id' => $thread->id,
+                    'patient_id' => $thread->patient_id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         return $message;
@@ -220,12 +241,26 @@ class MessagingService
 
     /**
      * Approve an AI suggestion and send it as a doctor message.
+     *
+     * @throws \Exception
      */
     public function approveSuggestion(AiMessageSuggestion $suggestion, User $doctor): Message
     {
-        $suggestion->update(['status' => 'approved']);
+        if ($suggestion->doctor_id !== $doctor->id) {
+            throw new \InvalidArgumentException('Unauthorized to approve this suggestion.');
+        }
 
-        return $this->addMessage($suggestion->thread, $doctor, 'doctor', $suggestion->suggested_reply);
+        if (!$suggestion->isPending()) {
+            throw new \InvalidArgumentException('Suggestion already processed.');
+        }
+
+        return DB::transaction(function () use ($suggestion, $doctor) {
+            $message = $this->addMessage($suggestion->thread, $doctor, 'doctor', $suggestion->suggested_reply);
+
+            $suggestion->update(['status' => 'approved']);
+
+            return $message;
+        });
     }
 
     /**
@@ -254,6 +289,11 @@ class MessagingService
         $resolvedPath = realpath($absolutePath);
 
         if ($resolvedPath === false || !str_starts_with($resolvedPath, $basePath)) {
+            Log::warning('Path traversal attempt in message attachment', [
+                'attachment_id' => $attachment->id,
+                'file_path' => $attachment->file_path,
+                'user_id' => $user->id,
+            ]);
             return null;
         }
 

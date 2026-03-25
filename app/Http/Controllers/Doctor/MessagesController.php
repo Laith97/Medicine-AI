@@ -37,16 +37,36 @@ class MessagesController extends Controller
 
         $thread->load('messages.attachments', 'doctor', 'patient');
 
-        // Generate AI suggestion if no pending one exists and there are patient messages
         $pendingSuggestion = $thread->aiSuggestions()->pending()->first();
-        if (!$pendingSuggestion && $thread->messages()->byPatient()->exists()) {
-            $suggestion = $this->messagingService->generateAiSuggestion($thread, Auth::user());
-            if ($suggestion) {
-                $pendingSuggestion = $suggestion;
-            }
-        }
 
         return view('doctor.messages.show', compact('thread', 'pendingSuggestion'));
+    }
+
+    public function generateSuggestion(MessageThread $thread): RedirectResponse
+    {
+        if ($thread->doctor_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($thread->isArchived()) {
+            return redirect()->back()->with('error', 'This conversation is archived.');
+        }
+
+        if (!$thread->messages()->byPatient()->exists()) {
+            return redirect()->back()->with('error', 'No patient messages to generate a suggestion for.');
+        }
+
+        if ($thread->aiSuggestions()->pending()->exists()) {
+            return redirect()->back()->with('error', 'A suggestion is already pending.');
+        }
+
+        $suggestion = $this->messagingService->generateAiSuggestion($thread, Auth::user());
+
+        if (!$suggestion) {
+            return redirect()->back()->with('error', 'Failed to generate suggestion. Please try again or write your own reply.');
+        }
+
+        return redirect()->back()->with('success', 'AI suggestion generated.');
     }
 
     public function reply(Request $request, MessageThread $thread): RedirectResponse
