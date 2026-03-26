@@ -616,3 +616,92 @@
         margin-bottom: var(--space-lg);
     }
 }
+
+/* === Comprehensive Mobile Optimization === */
+@media (max-width: 768px) {
+    /* Fix overflow */
+    .doctor-content,
+    .dashboard-container {
+        overflow-x: hidden;
+        width: 100%;
+    }
+
+    /* Stats cards - stack vertically */
+    .stats-grid,
+    .info-cards-grid,
+    .dashboard-stats {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+    }
+    .stat-card {
+        min-width: 0;
+        width: 100%;
+    }
+
+    /* Tables - horizontal scroll */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .data-table {
+        min-width: 600px;
+    }
+
+    /* Dashboard header */
+    .dashboard-header {
+        padding: 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .dashboard-header h1 {
+        font-size: 1.5rem !important;
+    }
+
+    /* Cards padding */
+    .card-body {
+        padding: 16px;
+    }
+
+    /* Buttons - min touch target 44px */
+    .btn {
+        min-height: 44px;
+        min-width: 44px;
+        font-size: 14px;
+    }
+
+    /* Forms - prevent iOS zoom */
+    .form-control,
+    .form-select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+
+    /* Workflow buttons */
+    .workflow-buttons {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Further small screen fixes */
+    .appointment-details {
+        padding: 0 8px;
+    }
+    .modal-dialog {
+        margin: 8px;
+        max-width: calc(100% - 16px);
+    }
+    .table-card {
+        padding: 12px;
+    }
+    h1, h2, h3 {
+        font-size: 1.25rem !important;
+    }
+    .stats-number {
+        font-size: 1.75rem !important;
+    }
+    .navbar-brand {
+        font-size: 1rem;
+    }
+}
