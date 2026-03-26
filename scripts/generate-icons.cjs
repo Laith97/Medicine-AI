@@ -57,6 +57,22 @@ function generatePatientIcon() {
 
   fs.writeFileSync(path.join(iconsDir, 'patient-icon.svg'), svg);
   console.log('Generated patient-icon.svg');
+
+  // Generate PNG files using sharp
+  const sizes = [192, 512];
+  const svgBuffer = Buffer.from(svg);
+
+  Promise.all(sizes.map(size => {
+    return sharp(svgBuffer)
+      .resize(size, size)
+      .png()
+      .toFile(path.join(iconsDir, `patient-icon-${size}.png`))
+      .then(() => console.log(`Generated patient-icon-${size}.png`));
+  })).then(() => {
+    console.log('All patient icon PNG files generated!');
+  }).catch(err => {
+    console.error('Error generating PNG files:', err);
+  });
 }
 
 // Run doctor icon generation (Task 1)
