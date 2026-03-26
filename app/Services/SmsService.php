@@ -8,6 +8,7 @@ use App\Services\SmsProviders\PlivoProvider;
 use App\Services\SmsProviders\MessageBirdProvider;
 use App\Services\SmsProviders\UnifonicProvider;
 use App\Services\SmsProviders\SmsGatewayHubProvider;
+use App\Services\SmsProviders\LogSmsProvider;
 use App\Models\SystemSetting;
 use App\Models\SmsProviderCountry;
 use App\Models\Doctor;
@@ -418,41 +419,7 @@ class SmsService
                 case 'smsgatewayhub':
                     return new SmsGatewayHubProvider();
                 case 'log':
-                return new class implements SmsProviderInterface {
-                    public function send(string $to, string $message): array
-                    {
-                        Log::info('SMS would be sent', [
-                            'to' => $to,
-                            'message' => $message,
-                            'provider' => 'log'
-                        ]);
-                        return [
-                            'success' => true,
-                            'message' => 'SMS logged successfully',
-                            'data' => ['logged_at' => now()->toISOString()]
-                        ];
-                    }
-
-                    public function getName(): string
-                    {
-                        return 'Log Only';
-                    }
-
-                    public function isConfigured(): bool
-                    {
-                        return true;
-                    }
-
-                    public function getConfigRequirements(): array
-                    {
-                        return [];
-                    }
-
-                    public function getKey(): string
-                    {
-                        return 'log';
-                    }
-                };
+                    return new LogSmsProvider();
                 default:
                     return null;
             }

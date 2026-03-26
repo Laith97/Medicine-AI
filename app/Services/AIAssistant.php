@@ -44,6 +44,9 @@ class AIAssistant
             'prescription_suggestions_enabled' => config('ai.prescription_suggestions.enabled', true),
         ]);
 
+        // Build symptoms text for clinical data tracking
+        $symptomsText = is_array($symptoms) ? implode(', ', $symptoms) : ($symptoms ?? '');
+
         // Check OpenAI configuration
         if (empty(config('openai.api_key'))) {
             Log::error('OpenAI API key not configured');
@@ -251,28 +254,28 @@ REQUIRED JSON FORMAT:
                 'error' => $e->getMessage(),
                 'appointment_id' => $appointment->id,
             ]);
-            return $this->generateFallbackSuggestions($symptoms, $allergies, $pastMeds, 'OpenAI authentication failed - check API key');
+            return $this->generateFallbackSuggestions($symptoms, $allergies, $pastMeds, 'OpenAI authentication failed - check API key', $additionalData);
 
         } catch (\OpenAI\Exceptions\RateLimitException $e) {
             Log::error('OpenAI Rate Limit Error', [
                 'error' => $e->getMessage(),
                 'appointment_id' => $appointment->id,
             ]);
-            return $this->generateFallbackSuggestions($symptoms, $allergies, $pastMeds, 'OpenAI rate limit exceeded');
+            return $this->generateFallbackSuggestions($symptoms, $allergies, $pastMeds, 'OpenAI rate limit exceeded', $additionalData);
 
         } catch (\OpenAI\Exceptions\InvalidArgumentException $e) {
             Log::error('OpenAI Invalid Argument Error', [
                 'error' => $e->getMessage(),
                 'appointment_id' => $appointment->id,
             ]);
-            return $this->generateFallbackSuggestions($symptoms, $allergies, $pastMeds, 'OpenAI invalid request parameters');
+            return $this->generateFallbackSuggestions($symptoms, $allergies, $pastMeds, 'OpenAI invalid request parameters', $additionalData);
 
         } catch (\OpenAI\Exceptions\TransporterException $e) {
             Log::error('OpenAI Transporter Error', [
                 'error' => $e->getMessage(),
                 'appointment_id' => $appointment->id,
             ]);
-            return $this->generateFallbackSuggestions($symptoms, $allergies, $pastMeds, 'OpenAI network/connection error');
+            return $this->generateFallbackSuggestions($symptoms, $allergies, $pastMeds, 'OpenAI network/connection error', $additionalData);
 
         } catch (\Exception $e) {
             Log::error('OpenAI General Error in aiSuggest', [
@@ -332,7 +335,7 @@ REQUIRED JSON FORMAT:
             }
 
             // Fallback to basic logic-based suggestions
-            return $this->generateFallbackSuggestions($symptoms, $allergies, $pastMeds, 'OpenAI API error: ' . $e->getMessage());
+            return $this->generateFallbackSuggestions($symptoms, $allergies, $pastMeds, 'OpenAI API error: ' . $e->getMessage(), $additionalData);
         }
     }
 
@@ -359,6 +362,9 @@ REQUIRED JSON FORMAT:
     private function buildMedicationPrompt($symptoms, $allergies, $pastMeds, Appointment $appointment, $additionalData = [])
     {
         $symptomsText = is_array($symptoms) ? implode(', ', $symptoms) : $symptoms;
+
+        // Initialize activeMeds for safety checks (will be populated from database later)
+        $activeMeds = [];
 
         // Get patient demographics from appointment
         $patient = $appointment->patient;
@@ -755,7 +761,7 @@ REQUIRED JSON FORMAT:
      * Generate safe fallback suggestions when AI is unavailable
      * Focus on general health advice rather than specific medications
      */
-    private function generateFallbackSuggestions($symptoms, $allergies, $pastMeds, $errorReason = null)
+    private function generateFallbackSuggestions($symptoms, $allergies, $pastMeds, $errorReason = null, $additionalData = [])
     {
         Log::warning('AI prescription suggestions unavailable, using safe fallback', [
             'reason' => $errorReason,

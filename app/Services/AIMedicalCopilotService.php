@@ -160,7 +160,7 @@ class AIMedicalCopilotService
 
         // Get previous diagnoses
         $previousDiagnoses = \App\Models\Diagnosis::where('patient_id', $patient->id)
-            ->where('id', '!=', $appointment->id)
+            ->where('appointment_id', '!=', $appointment->id)
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get()
@@ -481,8 +481,8 @@ SYS;
 
         // Chest pain + hypotension (shock)
         if (str_contains($chiefComplaint, 'chest') && isset($vitals['bp'])) {
-            list($systolic, $diastolic) = explode('/', $vitals['bp']);
-            if ($systolic < 90) {
+            $bp = $this->parseBloodPressure($vitals['bp']);
+            if ($bp && $bp['systolic'] < 90) {
                 $redFlags[] = "Chest pain with hypotension ({$vitals['bp']}) may indicate cardiogenic shock requiring immediate intervention";
             }
         }
@@ -506,9 +506,9 @@ SYS;
             $abnormalVitals = [];
             if ($vitals['hr'] > 100 || $vitals['hr'] < 50) $abnormalVitals[] = 'heart rate';
             if ($vitals['spo2'] < 90) $abnormalVitals[] = 'oxygen saturation';
-            if (isset($vitals['bp'])) {
-                list($systolic, $diastolic) = explode('/', $vitals['bp']);
-                if ($systolic > 180 || $systolic < 90) $abnormalVitals[] = 'blood pressure';
+            $bp = $this->parseBloodPressure($vitals['bp'] ?? '');
+            if ($bp && ($bp['systolic'] > 180 || $bp['systolic'] < 90)) {
+                $abnormalVitals[] = 'blood pressure';
             }
 
             if (!empty($abnormalVitals)) {
@@ -517,19 +517,17 @@ SYS;
         }
 
         // Abdominal pain + hypotension (peritonitis/shock)
-        if ((str_contains($chiefComplaint, 'abdominal') || str_contains($chiefComplaint, 'stomach')) &&
-            isset($vitals['bp'])) {
-            list($systolic, $diastolic) = explode('/', $vitals['bp']);
-            if ($systolic < 90) {
+        if ((str_contains($chiefComplaint, 'abdominal') || str_contains($chiefComplaint, 'stomach'))) {
+            $bp = $this->parseBloodPressure($vitals['bp'] ?? '');
+            if ($bp && $bp['systolic'] < 90) {
                 $redFlags[] = "Abdominal pain with hypotension ({$vitals['bp']}) may indicate intra-abdominal catastrophe requiring immediate surgical evaluation";
             }
         }
 
         // Headache + severe hypertension
-        if ((str_contains($chiefComplaint, 'headache') || in_array('headache', $associatedSymptoms)) &&
-            isset($vitals['bp'])) {
-            list($systolic, $diastolic) = explode('/', $vitals['bp']);
-            if ($systolic > 180) {
+        if ((str_contains($chiefComplaint, 'headache') || in_array('headache', $associatedSymptoms))) {
+            $bp = $this->parseBloodPressure($vitals['bp'] ?? '');
+            if ($bp && $bp['systolic'] > 180) {
                 $redFlags[] = "Severe headache with hypertension ({$vitals['bp']}) may indicate hypertensive emergency requiring immediate treatment";
             }
         }
@@ -543,11 +541,9 @@ SYS;
             $redFlags[] = "Severe hypoxemia ({$vitals['spo2']}%) - consider urgent evaluation if clinically indicated";
         }
 
-        if (strpos($vitals['bp'], '/') !== false) {
-            list($systolic, $diastolic) = explode('/', $vitals['bp']);
-            if ($systolic > 200 || $diastolic > 120) {
-                $redFlags[] = "Hypertensive crisis detected ({$vitals['bp']}) - consider urgent evaluation if clinically indicated";
-            }
+        $bp = $this->parseBloodPressure($vitals['bp'] ?? '');
+        if ($bp && ($bp['systolic'] > 200 || $bp['diastolic'] > 120)) {
+            $redFlags[] = "Hypertensive crisis detected ({$vitals['bp']}) - consider urgent evaluation if clinically indicated";
         }
 
         if ($vitals['temperature'] > 39.5) {
@@ -560,6 +556,23 @@ SYS;
 
         $response['red_flags'] = array_values($redFlags);
         return $response;
+    }
+
+    /**
+     * Parse blood pressure string into systolic and diastolic components
+     *
+     * @param string $bp Blood pressure in format "systolic/diastolic" (e.g., "120/80")
+     * @return array|null ['systolic' => int, 'diastolic' => int] or null if invalid format
+     */
+    private function parseBloodPressure(string $bp): ?array
+    {
+        if (preg_match('/^(\d+)\/(\d+)$/', $bp, $matches)) {
+            return [
+                'systolic' => (int)$matches[1],
+                'diastolic' => (int)$matches[2]
+            ];
+        }
+        return null;
     }
 
     /**

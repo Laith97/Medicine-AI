@@ -8,7 +8,12 @@ interface TableWidgetProps {
 }
 
 const TableWidget: React.FC<TableWidgetProps> = ({ widget, isEditMode, onUpdate }) => {
-  const { title } = widget;
+  const { title, config, data } = widget;
+
+  // Get columns from config or data, with defaults
+  const columns = config?.columns || data?.labels || [];
+  // Get row data from data.datasets or data.rows
+  const rows = data?.datasets?.[0]?.data || data?.rows || [];
 
   if (isEditMode) {
     return (
@@ -28,6 +33,19 @@ const TableWidget: React.FC<TableWidgetProps> = ({ widget, isEditMode, onUpdate 
     );
   }
 
+  // Handle empty state
+  if (columns.length === 0 || rows.length === 0) {
+    return (
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+          <p className="text-sm">No data available for this table.</p>
+          <p className="text-xs mt-1">Configure the widget to display data.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
@@ -35,23 +53,29 @@ const TableWidget: React.FC<TableWidgetProps> = ({ widget, isEditMode, onUpdate 
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Column 1
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Column 2
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Column 3
-              </th>
+              {columns.map((col: string, index: number) => (
+                <th key={index} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {col}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            <tr>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Data 1</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Data 2</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Data 3</td>
-            </tr>
+            {rows.map((row: any, rowIndex: number) => (
+              <tr key={rowIndex}>
+                {Array.isArray(row) ? (
+                  row.map((cell: any, cellIndex: number) => (
+                    <td key={cellIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {cell}
+                    </td>
+                  ))
+                ) : (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {row}
+                  </td>
+                )}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

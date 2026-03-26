@@ -34,7 +34,10 @@ class EnsureUserRole
             $effectiveRole = $user->parentUser->role;
         }
 
-        if ($effectiveRole !== $role) {
+        // Handle comma-separated roles (e.g., 'role:admin,hospital_admin')
+        $allowedRoles = array_map('trim', explode(',', $role));
+
+        if (!in_array($effectiveRole, $allowedRoles)) {
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,

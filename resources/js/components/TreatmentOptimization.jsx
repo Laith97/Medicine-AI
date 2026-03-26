@@ -19,6 +19,7 @@ const TreatmentOptimization = ({ patientId, appointmentId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   useEffect(() => {
     fetchRecommendations();
@@ -27,6 +28,7 @@ const TreatmentOptimization = ({ patientId, appointmentId }) => {
   const fetchRecommendations = async () => {
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
     try {
       const response = await axios.get(`/api/treatment-optimization/${patientId}/${appointmentId}`);
       
@@ -47,12 +49,33 @@ const TreatmentOptimization = ({ patientId, appointmentId }) => {
   const handleReanalyze = async () => {
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
     try {
+      const [patientRes, appointmentRes] = await Promise.all([
+        axios.get(`/api/patients/${patientId}`),
+        axios.get(`/api/appointments/${appointmentId}/details`)
+      ]);
+
+      const patient = patientRes.data;
+      const appointment = appointmentRes.data;
+
+      // Extract conditions from appointment diagnoses
+      const conditions = appointment?.diagnoses?.map(d => d.diagnosis_text) || [];
+
+      // Build demographics from patient data
+      const demographics = {
+        age: patient?.age || patient?.date_of_birth ?
+          Math.floor((new Date() - new Date(patient.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null,
+        gender: patient?.gender || null,
+        weight: patient?.weight || null,
+        height: patient?.height || null
+      };
+
       const response = await axios.post('/api/treatment-optimization/generate', {
         patient_id: patientId,
         appointment_id: appointmentId,
-        conditions: ['Hypertension', 'Type 2 Diabetes'], // This should ideally come from props or another API
-        demographics: { age: 45, gender: 'Male', weight: 85, height: 180 } // Mock demographics for now
+        conditions,
+        demographics
       });
       setRecommendation(response.data);
     } catch (err) {
@@ -66,13 +89,15 @@ const TreatmentOptimization = ({ patientId, appointmentId }) => {
   const handleValidate = async () => {
     if (!recommendation) return;
     setActionLoading(true);
+    setError(null);
+    setSuccessMessage(null);
     try {
       await axios.post(`/api/treatment-optimization/${recommendation.id}/validate`);
-      alert('Treatment plan validated and implemented successfully.');
+      setSuccessMessage('Treatment plan validated and implemented successfully.');
       fetchRecommendations(); // Refresh data
     } catch (err) {
       console.error('Error validating recommendation:', err);
-      alert('Failed to validate treatment plan.');
+      setError('Failed to validate treatment plan.');
     } finally {
       setActionLoading(false);
     }
@@ -81,15 +106,17 @@ const TreatmentOptimization = ({ patientId, appointmentId }) => {
   const handleReject = async () => {
     if (!recommendation) return;
     if (!confirm('Are you sure you want to reject this treatment plan?')) return;
-    
+
     setActionLoading(true);
+    setError(null);
+    setSuccessMessage(null);
     try {
       await axios.post(`/api/treatment-optimization/${recommendation.id}/reject`);
-      alert('Treatment plan rejected.');
+      setSuccessMessage('Treatment plan rejected.');
       fetchRecommendations(); // Refresh data
     } catch (err) {
       console.error('Error rejecting recommendation:', err);
-      alert('Failed to reject treatment plan.');
+      setError('Failed to reject treatment plan.');
     } finally {
       setActionLoading(false);
     }
@@ -121,6 +148,21 @@ const TreatmentOptimization = ({ patientId, appointmentId }) => {
       <div className="p-6 bg-red-900/20 border border-red-500/50 rounded-2xl flex items-center space-x-4 text-red-400">
         <AlertTriangle className="w-8 h-8" />
         <p>{error}</p>
+      </div>
+    );
+  }
+
+  if (successMessage) {
+    return (
+      <div className="p-6 bg-green-900/20 border border-green-500/50 rounded-2xl flex items-center space-x-4 text-green-400">
+        <CheckCircle className="w-8 h-8" />
+        <p>{successMessage}</p>
+        <button
+          onClick={() => setSuccessMessage(null)}
+          className="ml-auto px-3 py-1 bg-green-800/50 hover:bg-green-700/50 text-white rounded text-sm"
+        >
+          Dismiss
+        </button>
       </div>
     );
   }
