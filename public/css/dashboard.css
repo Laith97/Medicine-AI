@@ -950,3 +950,75 @@ footer {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+
+/* === Comprehensive Mobile Optimization === */
+@media (max-width: 768px) {
+    /* Fix overflow */
+    .admin-content {
+        overflow-x: hidden;
+        width: 100%;
+    }
+
+    /* Stats cards - stack vertically */
+    .stats-grid,
+    .dashboard-stats {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+    }
+    .stat-card {
+        min-width: 0;
+        width: 100%;
+    }
+
+    /* Tables - horizontal scroll */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .data-table {
+        min-width: 600px;
+    }
+
+    /* Dashboard header */
+    .admin-header {
+        padding: 12px 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    /* Cards padding */
+    .card-body {
+        padding: 16px;
+    }
+
+    /* Buttons - min touch target 44px */
+    .btn {
+        min-height: 44px;
+        min-width: 44px;
+        font-size: 14px;
+    }
+
+    /* Forms - prevent iOS zoom */
+    .form-control,
+    .form-select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 576px) {
+    h1, h2, h3 {
+        font-size: 1.25rem !important;
+    }
+    .stats-number {
+        font-size: 1.75rem !important;
+    }
+    .navbar-brand {
+        font-size: 1rem;
+    }
+    .modal-dialog {
+        margin: 8px;
+        max-width: calc(100% - 16px);
+    }
+}
