@@ -68,6 +68,26 @@
 @endpush
 
 @section('content')
+<!-- PWA Meta Tags - Dynamic based on portal -->
+<script>
+(function() {
+    var path = window.location.pathname;
+    var manifestHref = path.includes('/doctor') ? '/doctor-manifest.webmanifest' : '/patient-manifest.webmanifest';
+    var themeColor = path.includes('/doctor') ? '#0EA5E9' : '#10B981';
+    var link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = manifestHref;
+    document.head.appendChild(link);
+    var meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    meta.content = themeColor;
+    document.head.appendChild(meta);
+    // Detect standalone mode
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        document.documentElement.classList.add('is-installed-pwa');
+    }
+})();
+</script>
 <div class="auth-page">
     <div class="container-fluid">
         <div class="row min-vh-100">
