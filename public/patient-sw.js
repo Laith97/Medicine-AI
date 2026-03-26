@@ -5,6 +5,7 @@ const PATIENT_ASSETS = [
   '/login',
   '/register',
   '/register/patient',
+  '/offline',
   '/css/app.css',
   '/css/dashboard.css',
   '/css/custom.css',

@@ -4,6 +4,7 @@ const DOCTOR_ASSETS = [
   '/doctor/dashboard',
   '/login',
   '/register-doctor',
+  '/offline',
   '/css/doctor-dashboard.css',
   '/css/dashboard.css',
   '/css/app.css',
