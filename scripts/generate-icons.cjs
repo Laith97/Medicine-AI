@@ -43,15 +43,16 @@ function generateDoctorIcon() {
   });
 }
 
-// Patient icon SVG - patient figure/person
+// Patient icon SVG - heart with plus sign on green rounded square
 function generatePatientIcon() {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- Patient icon - person with medical symbol -->
-  <circle cx="32" cy="16" r="10" fill="none" stroke="#059669" stroke-width="3"/>
-  <path d="M16 52 Q16 34 32 34 Q48 34 48 52" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round"/>
-  <!-- Medical cross on chest -->
-  <rect x="30" y="38" width="4" height="10" rx="1" fill="#dc2626"/>
-  <rect x="27" y="41" width="10" height="4" rx="1" fill="#dc2626"/>
+  <!-- Green rounded square background -->
+  <rect x="4" y="4" width="56" height="56" rx="12" ry="12" fill="#10B981"/>
+  <!-- White heart shape -->
+  <path d="M32 52 C20 42 12 34 12 24 C12 18 16 14 22 14 C26 14 29 16 32 20 C35 16 38 14 42 14 C48 14 52 18 52 24 C52 34 44 42 32 52Z" fill="white"/>
+  <!-- Green plus sign in center of heart -->
+  <rect x="29" y="24" width="6" height="14" rx="1.5" fill="#10B981"/>
+  <rect x="24" y="28" width="16" height="6" rx="1.5" fill="#10B981"/>
 </svg>`;
 
   fs.writeFileSync(path.join(iconsDir, 'patient-icon.svg'), svg);
@@ -61,7 +62,7 @@ function generatePatientIcon() {
 // Run doctor icon generation (Task 1)
 generateDoctorIcon();
 
-// Patient icon generation will be called in Task 2
-// generatePatientIcon();
+// Patient icon generation (Task 2)
+generatePatientIcon();
 
 console.log('Icon generation complete!');
