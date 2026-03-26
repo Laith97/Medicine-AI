@@ -308,6 +308,13 @@
     </style>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/patient-manifest.webmanifest">
+    <meta name="theme-color" content="#10B981">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Patient App">
+    <link rel="apple-touch-icon" href="/icons/patient-icon-192.png">
     <title>@yield('title', 'Hospital Admin | MedCura AI')</title>
 </head>
 <body>
@@ -766,5 +773,135 @@
     </script>
 
     @stack('scripts')
+
+    <!-- PWA Install Banner -->
+    <div id="pwa-install-banner" class="pwa-install-banner" style="display:none;">
+        <div class="pwa-banner-content">
+            <div class="pwa-banner-icon">
+                <img src="/icons/patient-icon-192.png" alt="Patient App" width="32" height="32">
+            </div>
+            <div class="pwa-banner-text">
+                <strong>Install Patient App</strong>
+                <span>For a faster, app-like experience</span>
+            </div>
+            <div class="pwa-banner-buttons">
+                <button id="pwa-install-btn" class="btn btn-primary btn-sm">Install</button>
+                <button id="pwa-dismiss-btn" class="btn btn-secondary btn-sm">Not now</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    .pwa-install-banner {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #0c1929;
+        color: white;
+        padding: 12px 16px;
+        z-index: 9999;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+    }
+    .pwa-banner-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .pwa-banner-text {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    .pwa-banner-text span {
+        font-size: 12px;
+        opacity: 0.8;
+    }
+    .pwa-banner-buttons {
+        display: flex;
+        gap: 8px;
+    }
+    .pwa-banner-buttons .btn {
+        padding: 6px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        cursor: pointer;
+        border: none;
+    }
+    .pwa-banner-buttons .btn-primary {
+        background: #10B981;
+        color: white;
+    }
+    .pwa-banner-buttons .btn-secondary {
+        background: rgba(255,255,255,0.15);
+        color: white;
+    }
+    @media (max-width: 480px) {
+        .pwa-banner-content {
+            flex-wrap: wrap;
+        }
+        .pwa-banner-text {
+            flex: 1 1 calc(100% - 44px);
+        }
+        .pwa-banner-buttons {
+            flex: 1;
+            justify-content: flex-end;
+        }
+    }
+    </style>
+
+    <script>
+    (function() {
+        let deferredPrompt;
+        const banner = document.getElementById('pwa-install-banner');
+        const installBtn = document.getElementById('pwa-install-btn');
+        const dismissBtn = document.getElementById('pwa-dismiss-btn');
+
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        const isDismissed = localStorage.getItem('patientPwaDismissed') === 'true';
+
+        if (!isStandalone && !isDismissed && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/patient-sw.js')
+                .then(function() { console.log('Patient SW registered'); })
+                .catch(function(err) { console.log('Patient SW registration failed:', err); });
+
+            setTimeout(function() {
+                if (!isStandalone && !localStorage.getItem('patientPwaDismissed')) {
+                    banner.style.display = 'block';
+                }
+            }, 30000);
+        }
+
+        if (isStandalone) {
+            console.log('Patient PWA running in standalone mode');
+        }
+
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (!banner.style.display || banner.style.display === 'none') {
+                banner.style.display = 'block';
+            }
+        });
+
+        installBtn.addEventListener('click', async function() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const result = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            banner.style.display = 'none';
+            if (result.outcome === 'accepted') {
+                localStorage.setItem('patientPwaDismissed', 'true');
+            }
+        });
+
+        dismissBtn.addEventListener('click', function() {
+            banner.style.display = 'none';
+            localStorage.setItem('patientPwaDismissed', 'true');
+        });
+    })();
+    </script>
 </body>
 </html>
