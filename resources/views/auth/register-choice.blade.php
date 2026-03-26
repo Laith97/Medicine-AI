@@ -68,6 +68,22 @@
 @endpush
 
 @section('content')
+<!-- PWA Meta Tags -->
+<script>
+(function() {
+    var link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = '/patient-manifest.webmanifest';
+    document.head.appendChild(link);
+    var meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    meta.content = '#10B981';
+    document.head.appendChild(meta);
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        document.documentElement.classList.add('is-installed-pwa');
+    }
+})();
+</script>
 <div class="auth-page">
     <div class="container-fluid">
         <div class="row justify-content-center min-vh-100 align-items-center">
