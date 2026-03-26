@@ -1,0 +1,28 @@
+{
+  "name": "Medicine AI - Doctor Portal",
+  "short_name": "Doctor App",
+  "description": "Medicine AI Doctor Portal - Manage appointments, patients, and analytics",
+  "start_url": "/doctor/dashboard",
+  "scope": "/doctor",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0EA5E9",
+  "theme_color": "#0EA5E9",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/icons/doctor-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/doctor-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "productivity"],
+  "prefer_related_applications": false
+}

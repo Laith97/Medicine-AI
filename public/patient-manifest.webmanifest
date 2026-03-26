@@ -1,0 +1,28 @@
+{
+  "name": "Medicine AI - Patient Portal",
+  "short_name": "Patient App",
+  "description": "Medicine AI Patient Portal - Manage appointments and health records",
+  "start_url": "/dashboard",
+  "scope": "/patient",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#10B981",
+  "theme_color": "#10B981",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/icons/patient-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/patient-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "health"],
+  "prefer_related_applications": false
+}
