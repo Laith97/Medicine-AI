@@ -153,6 +153,34 @@
             .doctor-sidebar { transform: translateX(-100%); }
             .doctor-sidebar.show { transform: translateX(0); }
             .doctor-content { margin-left: 0; }
+            .sidebar-hamburger {
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                background: rgba(255,255,255,0.1);
+                border: none;
+                color: white;
+                width: 40px;
+                height: 40px;
+                border-radius: 8px;
+                cursor: pointer;
+                z-index: 1001;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        /* Sidebar overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        .sidebar-overlay.show {
+            display: block;
         }
 
         /* Active state for AI pages */
@@ -164,11 +192,25 @@
     </style>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/doctor-manifest.webmanifest">
+    <meta name="theme-color" content="#0EA5E9">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Doctor App">
+    <link rel="apple-touch-icon" href="/icons/doctor-icon-192.png">
     <title>@yield('title', 'Doctor Dashboard | MedCura AI')</title>
 </head>
 <body>
+    <!-- Sidebar overlay for mobile -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="document.querySelector('.doctor-sidebar').classList.remove('show')"></div>
+
     <div class="doctor-wrapper">
-        <nav class="doctor-sidebar">
+        <nav class="doctor-sidebar" id="doctor-sidebar">
+            <!-- Mobile hamburger toggle -->
+            <button class="sidebar-hamburger d-lg-none" onclick="document.getElementById('doctor-sidebar').classList.toggle('show');document.getElementById('sidebar-overlay').classList.toggle('show')">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="sidebar-brand">
                 <a href="{{ route('dashboard') }}">
                     <img src="{{ asset('demos/medical/images/logo-medical.png') }}" alt="MedCura AI">
@@ -310,5 +352,135 @@
         </main>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- PWA Install Banner -->
+    <div id="pwa-install-banner" class="pwa-install-banner" style="display:none;">
+        <div class="pwa-banner-content">
+            <div class="pwa-banner-icon">
+                <img src="/icons/doctor-icon-192.png" alt="Doctor App" width="32" height="32">
+            </div>
+            <div class="pwa-banner-text">
+                <strong>Install Doctor App</strong>
+                <span>For a faster, app-like experience</span>
+            </div>
+            <div class="pwa-banner-buttons">
+                <button id="pwa-install-btn" class="btn btn-primary btn-sm">Install</button>
+                <button id="pwa-dismiss-btn" class="btn btn-secondary btn-sm">Not now</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    .pwa-install-banner {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #0c1929;
+        color: white;
+        padding: 12px 16px;
+        z-index: 9999;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+    }
+    .pwa-banner-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .pwa-banner-text {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    .pwa-banner-text span {
+        font-size: 12px;
+        opacity: 0.8;
+    }
+    .pwa-banner-buttons {
+        display: flex;
+        gap: 8px;
+    }
+    .pwa-banner-buttons .btn {
+        padding: 6px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        cursor: pointer;
+        border: none;
+    }
+    .pwa-banner-buttons .btn-primary {
+        background: #0EA5E9;
+        color: white;
+    }
+    .pwa-banner-buttons .btn-secondary {
+        background: rgba(255,255,255,0.15);
+        color: white;
+    }
+    @media (max-width: 480px) {
+        .pwa-banner-content {
+            flex-wrap: wrap;
+        }
+        .pwa-banner-text {
+            flex: 1 1 calc(100% - 44px);
+        }
+        .pwa-banner-buttons {
+            flex: 1;
+            justify-content: flex-end;
+        }
+    }
+    </style>
+
+    <script>
+    (function() {
+        let deferredPrompt;
+        const banner = document.getElementById('pwa-install-banner');
+        const installBtn = document.getElementById('pwa-install-btn');
+        const dismissBtn = document.getElementById('pwa-dismiss-btn');
+
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        const isDismissed = localStorage.getItem('doctorPwaDismissed') === 'true';
+
+        if (!isStandalone && !isDismissed && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/doctor-sw.js')
+                .then(() => console.log('Doctor SW registered'))
+                .catch((err) => console.log('Doctor SW registration failed:', err));
+
+            setTimeout(function() {
+                if (!isStandalone && !localStorage.getItem('doctorPwaDismissed')) {
+                    banner.style.display = 'block';
+                }
+            }, 30000);
+        }
+
+        if (isStandalone) {
+            console.log('Doctor PWA running in standalone mode');
+        }
+
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (!banner.style.display || banner.style.display === 'none') {
+                banner.style.display = 'block';
+            }
+        });
+
+        installBtn.addEventListener('click', async function() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const result = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            banner.style.display = 'none';
+            if (result.outcome === 'accepted') {
+                localStorage.setItem('doctorPwaDismissed', 'true');
+            }
+        });
+
+        dismissBtn.addEventListener('click', function() {
+            banner.style.display = 'none';
+            localStorage.setItem('doctorPwaDismissed', 'true');
+        });
+    })();
+    </script>
 </body>
 </html>
