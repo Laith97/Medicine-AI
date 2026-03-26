@@ -1,3 +1,4 @@
+// CACHE VERSION: Update this when deploying new service worker assets
 const DOCTOR_CACHE = 'medicine-ai-doctor-v1';
 const DOCTOR_ASSETS = [
   '/',
@@ -18,6 +19,8 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(DOCTOR_CACHE).then((cache) => {
       return cache.addAll(DOCTOR_ASSETS);
+    }).catch((err) => {
+      console.error('Doctor SW install failed:', err);
     })
   );
   self.skipWaiting();
@@ -31,6 +34,8 @@ self.addEventListener('activate', (event) => {
         keys.filter((key) => key.startsWith('medicine-ai-doctor') && key !== DOCTOR_CACHE)
           .map((key) => caches.delete(key))
       );
+    }).catch((err) => {
+      console.error('Doctor SW activation failed:', err);
     })
   );
   self.clients.claim();
@@ -43,7 +48,7 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-GET and cross-origin requests
   if (request.method !== 'GET') return;
-  if (!url.origin.includes(self.location.origin)) return;
+  if (url.origin !== self.location.origin) return;
 
   // Network-first for HTML pages (login, dashboard)
   if (request.headers.get('accept')?.includes('text/html')) {
@@ -51,7 +56,11 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((response) => {
           const clone = response.clone();
-          caches.open(DOCTOR_CACHE).then((cache) => cache.put(request, clone));
+          caches.open(DOCTOR_CACHE).then((cache) => {
+            cache.put(request, clone).catch((err) => {
+              console.error('Doctor SW cache put failed:', err);
+            });
+          });
           return response;
         })
         .catch(() => {
@@ -69,9 +78,15 @@ self.addEventListener('fetch', (event) => {
       if (cached) return cached;
       return fetch(request).then((response) => {
         const clone = response.clone();
-        caches.open(DOCTOR_CACHE).then((cache) => cache.put(request, clone));
+        caches.open(DOCTOR_CACHE).then((cache) => {
+          cache.put(request, clone).catch((err) => {
+            console.error('Doctor SW cache put failed:', err);
+          });
+        });
         return response;
-      }).catch(() => cached);
+      });
+    }).catch(() => {
+      return new Response('Offline', { status: 503 });
     })
   );
 });

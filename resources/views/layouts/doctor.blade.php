@@ -193,12 +193,12 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- PWA Meta Tags -->
-    <link rel="manifest" href="/doctor-manifest.webmanifest">
+    <link rel="manifest" href="{{ asset('doctor-manifest.webmanifest') }}">
     <meta name="theme-color" content="#0EA5E9">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Doctor App">
-    <link rel="apple-touch-icon" href="/icons/doctor-icon-192.png">
+    <link rel="apple-touch-icon" href="{{ asset('icons/doctor-icon-192.png') }}">
     <title>@yield('title', 'Doctor Dashboard | MedCura AI')</title>
 </head>
 <body>
@@ -208,7 +208,7 @@
     <div class="doctor-wrapper">
         <nav class="doctor-sidebar" id="doctor-sidebar">
             <!-- Mobile hamburger toggle -->
-            <button class="sidebar-hamburger d-lg-none" onclick="document.getElementById('doctor-sidebar').classList.toggle('show');document.getElementById('sidebar-overlay').classList.toggle('show')">
+            <button id="sidebar-hamburger-btn" class="sidebar-hamburger d-lg-none" onclick="document.getElementById('doctor-sidebar').classList.toggle('show');document.getElementById('sidebar-overlay').classList.toggle('show')">
                 <i class="fas fa-bars"></i>
             </button>
             <div class="sidebar-brand">
@@ -357,7 +357,7 @@
     <div id="pwa-install-banner" class="pwa-install-banner" style="display:none;">
         <div class="pwa-banner-content">
             <div class="pwa-banner-icon">
-                <img src="/icons/doctor-icon-192.png" alt="Doctor App" width="32" height="32">
+                <img src="{{ asset('icons/doctor-icon-192.png') }}" alt="Doctor App" width="32" height="32">
             </div>
             <div class="pwa-banner-text">
                 <strong>Install Doctor App</strong>
@@ -439,16 +439,25 @@
         const dismissBtn = document.getElementById('pwa-dismiss-btn');
 
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-        const isDismissed = localStorage.getItem('doctorPwaDismissed') === 'true';
+        let isDismissed = false;
+        try {
+            isDismissed = localStorage.getItem('doctorPwaDismissed') === 'true';
+        } catch (e) {
+            // localStorage unavailable (private browsing)
+        }
 
         if (!isStandalone && !isDismissed && 'serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/doctor-sw.js')
+            navigator.serviceWorker.register('{{ asset("doctor-sw.js") }}')
                 .then(() => console.log('Doctor SW registered'))
-                .catch((err) => console.log('Doctor SW registration failed:', err));
+                .catch((err) => console.error('Doctor SW registration failed:', err));
 
             setTimeout(function() {
-                if (!isStandalone && !localStorage.getItem('doctorPwaDismissed')) {
-                    banner.style.display = 'block';
+                try {
+                    if (!isStandalone && !localStorage.getItem('doctorPwaDismissed')) {
+                        banner.style.display = 'block';
+                    }
+                } catch (e) {
+                    // localStorage unavailable
                 }
             }, 30000);
         }
@@ -467,18 +476,32 @@
 
         installBtn.addEventListener('click', async function() {
             if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            const result = await deferredPrompt.userChoice;
-            deferredPrompt = null;
-            banner.style.display = 'none';
-            if (result.outcome === 'accepted') {
-                localStorage.setItem('doctorPwaDismissed', 'true');
+            try {
+                deferredPrompt.prompt();
+                const result = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                banner.style.display = 'none';
+                if (result.outcome === 'accepted') {
+                    try {
+                        localStorage.setItem('doctorPwaDismissed', 'true');
+                    } catch (e) {
+                        // localStorage unavailable
+                    }
+                }
+            } catch (err) {
+                console.error('PWA install prompt failed:', err);
+                deferredPrompt = null;
+                banner.style.display = 'none';
             }
         });
 
         dismissBtn.addEventListener('click', function() {
             banner.style.display = 'none';
-            localStorage.setItem('doctorPwaDismissed', 'true');
+            try {
+                localStorage.setItem('doctorPwaDismissed', 'true');
+            } catch (e) {
+                // localStorage unavailable
+            }
         });
     })();
     </script>

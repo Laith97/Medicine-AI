@@ -1096,7 +1096,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 });
 
 // Offline fallback route for PWA
-Route::get('/offline', function () {
+Route::middleware(['web'])->get('/offline', function () {
     return view('offline');
 })->name('offline');
 

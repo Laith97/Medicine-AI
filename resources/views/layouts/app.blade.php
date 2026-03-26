@@ -309,12 +309,12 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- PWA Meta Tags -->
-    <link rel="manifest" href="/patient-manifest.webmanifest">
+    <link rel="manifest" href="{{ asset('patient-manifest.webmanifest') }}">
     <meta name="theme-color" content="#10B981">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patient App">
-    <link rel="apple-touch-icon" href="/icons/patient-icon-192.png">
+    <link rel="apple-touch-icon" href="{{ asset('icons/patient-icon-192.png') }}">
     <title>@yield('title', 'Hospital Admin | MedCura AI')</title>
 </head>
 <body>
@@ -778,7 +778,7 @@
     <div id="pwa-install-banner" class="pwa-install-banner" style="display:none;">
         <div class="pwa-banner-content">
             <div class="pwa-banner-icon">
-                <img src="/icons/patient-icon-192.png" alt="Patient App" width="32" height="32">
+                <img src="{{ asset('icons/patient-icon-192.png') }}" alt="Patient App" width="32" height="32">
             </div>
             <div class="pwa-banner-text">
                 <strong>Install Patient App</strong>
@@ -860,16 +860,25 @@
         const dismissBtn = document.getElementById('pwa-dismiss-btn');
 
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-        const isDismissed = localStorage.getItem('patientPwaDismissed') === 'true';
+        let isDismissed = false;
+        try {
+            isDismissed = localStorage.getItem('patientPwaDismissed') === 'true';
+        } catch (e) {
+            // localStorage unavailable (private browsing)
+        }
 
         if (!isStandalone && !isDismissed && 'serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/patient-sw.js')
+            navigator.serviceWorker.register('{{ asset("patient-sw.js") }}')
                 .then(function() { console.log('Patient SW registered'); })
-                .catch(function(err) { console.log('Patient SW registration failed:', err); });
+                .catch(function(err) { console.error('Patient SW registration failed:', err); });
 
             setTimeout(function() {
-                if (!isStandalone && !localStorage.getItem('patientPwaDismissed')) {
-                    banner.style.display = 'block';
+                try {
+                    if (!isStandalone && !localStorage.getItem('patientPwaDismissed')) {
+                        banner.style.display = 'block';
+                    }
+                } catch (e) {
+                    // localStorage unavailable
                 }
             }, 30000);
         }
@@ -888,18 +897,32 @@
 
         installBtn.addEventListener('click', async function() {
             if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            const result = await deferredPrompt.userChoice;
-            deferredPrompt = null;
-            banner.style.display = 'none';
-            if (result.outcome === 'accepted') {
-                localStorage.setItem('patientPwaDismissed', 'true');
+            try {
+                deferredPrompt.prompt();
+                const result = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                banner.style.display = 'none';
+                if (result.outcome === 'accepted') {
+                    try {
+                        localStorage.setItem('patientPwaDismissed', 'true');
+                    } catch (e) {
+                        // localStorage unavailable
+                    }
+                }
+            } catch (err) {
+                console.error('PWA install prompt failed:', err);
+                deferredPrompt = null;
+                banner.style.display = 'none';
             }
         });
 
         dismissBtn.addEventListener('click', function() {
             banner.style.display = 'none';
-            localStorage.setItem('patientPwaDismissed', 'true');
+            try {
+                localStorage.setItem('patientPwaDismissed', 'true');
+            } catch (e) {
+                // localStorage unavailable
+            }
         });
     })();
     </script>
