@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\Notification;
+use App\Models\WaitlistMatchOffer;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
@@ -687,6 +688,36 @@ class NotificationService
             Log::error('Failed to send waitlist expired notification', [
                 'user_id' => $user->id,
                 'waitlist_entry_id' => $waitlistEntry->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send waitlist offer notification (AI-matched offer to patient)
+     */
+    public function sendWaitlistOfferNotification(WaitlistMatchOffer $offer): bool
+    {
+        $user = $offer->patient;
+        $preferences = $user->notificationPreferences;
+
+        if (!$preferences || !$preferences->waitlist_slot_available) {
+            return false;
+        }
+
+        // Check quiet hours
+        if ($preferences->isQuietHoursActive()) {
+            return false;
+        }
+
+        try {
+            $user->notify(new \App\Notifications\WaitlistOfferNotification($offer));
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send waitlist offer notification', [
+                'user_id' => $user->id,
+                'offer_id' => $offer->id,
                 'error' => $e->getMessage(),
             ]);
             return false;
