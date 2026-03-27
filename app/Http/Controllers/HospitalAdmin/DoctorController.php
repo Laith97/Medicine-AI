@@ -374,6 +374,20 @@ class DoctorController extends Controller
         // Check if we're in an admin impersonation session (chain impersonation)
         $isAdminImpersonating = session()->has('impersonating_admin_id');
 
+        // Validate admin impersonation session is still valid before allowing chain impersonation
+        if ($isAdminImpersonating) {
+            $adminId = session('impersonating_admin_id');
+            $admin = \App\Models\Admin::find($adminId);
+            $startedAt = session('admin_impersonation_started_at');
+            $sessionIp = session('admin_impersonation_ip');
+
+            // Check if admin session is still valid
+            if (!$admin || !$startedAt || (now()->timestamp - $startedAt) > 86400 || $sessionIp !== request()->ip()) {
+                // Invalid admin session - reject chain impersonation
+                abort(403, 'Original admin impersonation session is invalid or expired.');
+            }
+        }
+
         if ($isAdminImpersonating) {
             // Chain impersonation: Admin -> Hospital Admin -> Doctor
             // Keep the original admin session and add hospital admin info

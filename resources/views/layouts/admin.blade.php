@@ -35,6 +35,8 @@
     <link rel="stylesheet" href="{{ asset('css/responsive-modals.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin-enhancements.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin-tables.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/custom-buttons.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/ui-consistency.css') }}">
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @stack('styles')
@@ -55,6 +57,27 @@
             font-variant: normal;
             text-rendering: auto;
             line-height: 1;
+        }
+
+        /* Skip Navigation Link for Accessibility */
+        .skip-nav-link {
+            position: absolute;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0d6efd;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0 0 8px 8px;
+            z-index: 10000;
+            text-decoration: none;
+            font-weight: 500;
+            transition: top 0.3s;
+        }
+
+        .skip-nav-link:focus {
+            top: 0;
+            outline: 3px solid #ffc107;
         }
 
         /* Admin Layout Styles */
@@ -195,6 +218,9 @@
     <title>@yield('title', 'Admin Panel | MedCura AI')</title>
 </head>
 <body>
+    <!-- Skip Navigation Link for Accessibility -->
+    <a href="#main-content" class="skip-nav-link">Skip to main content</a>
+
     <div class="admin-wrapper">
         <!-- Sidebar -->
         <nav class="admin-sidebar" id="adminSidebar">

@@ -61,8 +61,8 @@ class UnderpaymentDetectionService
             return null;
         }
 
-        // Check if alert already exists
-        $existingAlert = BillingUnderpaymentAlert::where('claim_id', $claim->claim_id)
+        // Check if alert already exists - use claim's primary key (id), not external claim_id
+        $existingAlert = BillingUnderpaymentAlert::where('claim_id', $claim->id)
             ->where('status', 'active')
             ->first();
 
@@ -72,7 +72,7 @@ class UnderpaymentDetectionService
 
         // Create new alert
         $alert = BillingUnderpaymentAlert::create([
-            'claim_id' => $claim->claim_id,
+            'claim_id' => $claim->id,
             'expected_amount' => $claim->expected_amount,
             'paid_amount' => $claim->paid_amount,
             'variance' => $this->calculateVariance($claim->expected_amount, $claim->paid_amount),
@@ -82,7 +82,8 @@ class UnderpaymentDetectionService
         ]);
 
         Log::info('Underpayment alert created', [
-            'claim_id' => $claim->claim_id,
+            'claim_id' => $claim->id,
+            'external_claim_id' => $claim->claim_id,
             'expected_amount' => $claim->expected_amount,
             'paid_amount' => $claim->paid_amount,
             'variance' => $alert->variance,

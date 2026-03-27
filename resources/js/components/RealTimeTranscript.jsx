@@ -41,7 +41,7 @@ const RealTimeTranscript = ({ language }) => {
                 <div style={{ marginBottom: '15px' }}>
                     <i className="fas fa-microphone-alt" style={{ fontSize: '56px', animation: 'pulse 1.5s ease-in-out infinite' }}></i>
                 </div>
-                <h4 style={{ marginBottom: '10px', fontWeight: '600' }}>🎙️ Recording Active</h4>
+                <h4 style={{ marginBottom: '10px', fontWeight: '600' }}>Recording Active</h4>
                 <p style={{ marginBottom: '5px', opacity: 0.9 }}>Real-time text is hidden for maximum quality</p>
                 <p style={{ fontSize: '14px', opacity: 0.8 }}>High-quality diarized transcript will appear after you click "Stop"</p>
             </div>
@@ -54,7 +54,7 @@ const RealTimeTranscript = ({ language }) => {
                 <div style={{ marginBottom: '15px' }}>
                     <i className="fas fa-cog fa-spin" style={{ fontSize: '56px' }}></i>
                 </div>
-                <h4 style={{ marginBottom: '10px', fontWeight: '600' }}>⚙️ Processing Audio</h4>
+                <h4 style={{ marginBottom: '10px', fontWeight: '600' }}>Processing Audio</h4>
                 <p style={{ marginBottom: '5px', opacity: 0.9 }}>Analyzing conversation with AI speaker diarization...</p>
                 <p style={{ fontSize: '14px', opacity: 0.8 }}>This may take a few seconds</p>
                 <div style={{ marginTop: '20px', background: 'rgba(255,255,255,0.2)', borderRadius: '10px', height: '6px', overflow: 'hidden' }}>

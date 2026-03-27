@@ -42,7 +42,9 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotRateLimited();
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+            // Use exponential backoff: 1min, 2min, 4min, 8min, 16min
+            $decayMinutes = pow(2, RateLimiter::attempts($this->throttleKey()) - 1);
+            RateLimiter::hit($this->throttleKey(), $decayMinutes * 60);
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
@@ -77,9 +79,10 @@ class LoginRequest extends FormRequest
 
     /**
      * Get the rate limiting throttle key for the request.
+     * Uses only email to prevent IP rotation bypass.
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return 'login_attempt_' . Str::transliterate(Str::lower($this->string('email')));
     }
 }

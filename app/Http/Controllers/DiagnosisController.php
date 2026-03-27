@@ -429,17 +429,22 @@ class DiagnosisController extends Controller
             // Get AI response for the follow-up question
             $aiResponse = $this->getAiFollowUpResponse($diagnosis, $request->question);
 
+            // Atomically increment follow-up count if under limit
+            // This prevents race conditions where two concurrent requests could both pass the check
+            if (!$diagnosis->incrementFollowUpCount()) {
+                return response()->json([
+                    'error' => 'You have reached the maximum number of follow-up questions (5) for this diagnosis.'
+                ], 400);
+            }
+
             // Create follow-up record
             $followUp = DiagnosisFollowUp::create([
                 'diagnosis_id' => $diagnosis->id,
-                'patient_id' => Auth::id(),
+                'patient_id' => $diagnosis->patient_id,
                 'question' => $request->question,
                 'ai_response' => $aiResponse['response'],
                 'usage_data' => $aiResponse['usage_data'],
             ]);
-
-            // Increment follow-up count
-            $diagnosis->incrementFollowUpCount();
 
             // Send follow-up notifications
             $this->sendFollowUpNotifications($diagnosis, $followUp);

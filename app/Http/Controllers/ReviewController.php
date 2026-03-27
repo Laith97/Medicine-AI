@@ -537,14 +537,14 @@ class ReviewController extends Controller
             ])->with('error', 'You have already reviewed this appointment.');
         }
 
-        // Create the review
+        // Create the review - sanitize inputs to prevent XSS
         $review = Review::create([
             'doctor_id' => $appointment->doctor_id,
             'patient_id' => null, // Guest review
             'appointment_id' => $appointment->id,
             'rating' => $request->rating,
-            'comment' => $request->comment,
-            'guest_name' => $request->is_anonymous ? null : $request->guest_name,
+            'comment' => $request->comment ? strip_tags($request->comment) : null,
+            'guest_name' => $request->is_anonymous ? null : strip_tags($request->guest_name),
             'guest_email' => $request->guest_email,
             'is_anonymous' => $request->boolean('is_anonymous'),
             'consent_google_posting' => $request->boolean('consent_google_posting'),

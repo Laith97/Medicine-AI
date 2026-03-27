@@ -28,11 +28,9 @@ class EnsureUserRole
 
         $user = auth()->user();
 
-        // Handle sub-users - they inherit their parent's role for access purposes
+        // Sub-users have their own role - don't inherit parent role
+        // This prevents privilege escalation if a sub-user account is compromised
         $effectiveRole = $user->role;
-        if ($user->isSubUser() && $user->parentUser) {
-            $effectiveRole = $user->parentUser->role;
-        }
 
         // Handle comma-separated roles (e.g., 'role:admin,hospital_admin')
         $allowedRoles = array_map('trim', explode(',', $role));

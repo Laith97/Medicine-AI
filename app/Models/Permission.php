@@ -48,9 +48,16 @@ class Permission extends Model
         }
 
         // Wildcard match (e.g., 'appointments.*' matches 'appointments.index')
+        // but NOT 'appointments.foo.bar' (nested routes)
         if (str_ends_with($this->route_pattern, '.*')) {
             $prefix = str_replace('.*', '', $this->route_pattern);
-            return str_starts_with($routeName, $prefix);
+
+            // Must match prefix exactly and either end there or be followed by a dot
+            // This prevents 'doctor.*' from matching 'doctor.foo.bar'
+            if (str_starts_with($routeName, $prefix)) {
+                $remaining = substr($routeName, strlen($prefix));
+                return $remaining === '' || str_starts_with($remaining, '.');
+            }
         }
 
         return false;

@@ -808,6 +808,36 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedDateTimeInput = document.getElementById('selectedDateTime');
     const submitButton = document.getElementById('submitButton');
 
+    // Progress indicator elements
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const step3 = document.getElementById('step3');
+
+    // Update progress indicator based on form completion
+    function updateProgressIndicator() {
+        const hasDateTime = selectedDateTimeInput.value !== '';
+
+        // Step 1: Always active initially
+        step1.classList.add('active');
+        step1.classList.remove('completed');
+
+        // Step 2: Active after booking type selected (guest/register)
+        step2.classList.add('active');
+        if (hasDateTime) {
+            step2.classList.add('completed');
+            step2.classList.remove('active');
+        }
+
+        // Step 3: Active when date/time is selected (ready to submit)
+        step3.classList.remove('active', 'completed');
+        if (hasDateTime) {
+            step3.classList.add('active');
+        }
+    }
+
+    // Initial update
+    updateProgressIndicator();
+
     // Summary elements
     const summaryDate = document.getElementById('summaryDate');
     const summaryTime = document.getElementById('summaryTime');
@@ -964,6 +994,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update summary
                 summaryTime.textContent = formatTime(selectedTime);
                 updateSubmitButton();
+                updateProgressIndicator();
             });
 
             timeSlots.appendChild(button);

@@ -103,10 +103,15 @@ const TreatmentOptimization = ({ patientId, appointmentId }) => {
     }
   };
 
+  const [showRejectModal, setShowRejectModal] = useState(false);
+
   const handleReject = async () => {
     if (!recommendation) return;
-    if (!confirm('Are you sure you want to reject this treatment plan?')) return;
+    setShowRejectModal(true);
+  };
 
+  const confirmReject = async () => {
+    setShowRejectModal(false);
     setActionLoading(true);
     setError(null);
     setSuccessMessage(null);
@@ -284,7 +289,7 @@ const TreatmentOptimization = ({ patientId, appointmentId }) => {
 
         {/* Action Bar */}
         <div className="pt-6 border-t border-slate-800 flex justify-end space-x-4">
-          <button 
+          <button
             onClick={handleReject}
             disabled={actionLoading || !recommendation}
             className="px-6 py-3 bg-slate-800 hover:bg-red-900/30 text-slate-300 hover:text-red-400 rounded-xl transition-all font-bold flex items-center disabled:opacity-50"
@@ -292,7 +297,7 @@ const TreatmentOptimization = ({ patientId, appointmentId }) => {
             <XCircle className="mr-2 w-5 h-5" />
             {actionLoading ? 'Processing...' : 'Reject All'}
           </button>
-          <button 
+          <button
             onClick={handleValidate}
             disabled={actionLoading || !recommendation}
             className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all font-bold shadow-lg shadow-blue-600/20 flex items-center disabled:opacity-50"
@@ -302,6 +307,37 @@ const TreatmentOptimization = ({ patientId, appointmentId }) => {
           </button>
         </div>
       </div>
+
+      {/* Reject Confirmation Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center mb-4">
+              <div className="p-3 bg-red-500/20 rounded-full mr-4">
+                <XCircle className="w-8 h-8 text-red-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Reject Treatment Plan</h3>
+            </div>
+            <p className="text-slate-300 mb-6">
+              Are you sure you want to reject this treatment plan? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowRejectModal(false)}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmReject}
+                className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors font-bold"
+              >
+                Reject Plan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

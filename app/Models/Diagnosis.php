@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\DB;
 
 class Diagnosis extends Model
 {
@@ -73,11 +74,18 @@ class Diagnosis extends Model
     }
 
     /**
-     * Increment follow-up count
+     * Increment follow-up count atomically if under limit
+     *
+     * @return bool True if increment was successful, false if limit reached
      */
-    public function incrementFollowUpCount()
+    public function incrementFollowUpCount(): bool
     {
-        $this->increment('follow_up_count');
+        // Use atomic update with WHERE clause to prevent race conditions
+        $affected = static::where('id', $this->id)
+            ->where('follow_up_count', '<', 5)
+            ->increment('follow_up_count');
+
+        return $affected > 0;
     }
 
     /**

@@ -341,6 +341,60 @@
         [class*="fab fa-"] {
             font-family: "Font Awesome 6 Free";
         }
+
+        /* Custom Confirmation Modal */
+        .confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .confirm-modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .confirm-modal-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .confirm-modal-icon.danger {
+            color: #ef4444;
+        }
+
+        .confirm-modal-content h2 {
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+        }
+
+        .confirm-modal-content p {
+            color: #64748b;
+            margin-bottom: 1.5rem;
+        }
+
+        .confirm-modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .confirm-modal-buttons .kiosk-btn {
+            min-width: 120px;
+        }
     </style>
 
     <!-- Font Imports -->
@@ -397,6 +451,25 @@
         <button class="kiosk-btn kiosk-btn-primary mt-3" onclick="extendSession()">
             Continue Session
         </button>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmModal" class="confirm-modal" style="display: none;">
+        <div class="confirm-modal-content">
+            <div class="confirm-modal-icon" id="confirmModalIcon">
+                <i class="fas fa-question-circle"></i>
+            </div>
+            <h2 id="confirmModalTitle">Confirm Action</h2>
+            <p id="confirmModalMessage">Are you sure you want to proceed?</p>
+            <div class="confirm-modal-buttons">
+                <button class="kiosk-btn kiosk-btn-secondary" onclick="closeConfirmModal(false)">
+                    Cancel
+                </button>
+                <button class="kiosk-btn kiosk-btn-danger" id="confirmModalConfirm" onclick="closeConfirmModal(true)">
+                    Confirm
+                </button>
+            </div>
+        </div>
     </div>
 
     <div class="kiosk-container">
@@ -462,6 +535,9 @@
 
         // Session timer
         function startSessionTimer() {
+            let warningShown5min = false;
+            let warningShown1min = false;
+
             sessionTimer = setInterval(() => {
                 const now = new Date();
                 const diff = now - sessionStartTime;
@@ -472,29 +548,51 @@
                 document.getElementById('sessionTime').textContent =
                     `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-                // Show timeout warning after 25 minutes
-                if (diff > 25 * 60 * 1000 && !timeoutTimer) {
-                    showTimeoutWarning();
+                // Show warning at 5 minutes remaining (35 minutes elapsed for 40-min session)
+                if (diff > 35 * 60 * 1000 && !warningShown5min && !timeoutTimer) {
+                    showTimeoutWarning(5);
+                    warningShown5min = true;
+                }
+
+                // Show warning at 1 minute remaining (39 minutes elapsed for 40-min session)
+                if (diff > 39 * 60 * 1000 && !warningShown1min && !timeoutTimer) {
+                    showTimeoutWarning(1);
+                    warningShown1min = true;
+                }
+
+                // Show final countdown if past 40 minutes
+                if (diff > 40 * 60 * 1000 && !timeoutTimer) {
+                    showTimeoutWarning(0);
                 }
             }, 1000);
         }
 
         // Timeout warning
-        function showTimeoutWarning() {
+        function showTimeoutWarning(minutesRemaining) {
             const warning = document.getElementById('timeoutWarning');
-            warning.style.display = 'block';
-            timeoutCountdown = 30;
+            const countdownSpan = document.getElementById('timeoutCountdown');
 
-            timeoutTimer = setInterval(() => {
-                document.getElementById('timeoutCountdown').textContent = timeoutCountdown;
-                timeoutCountdown--;
+            if (minutesRemaining === 0) {
+                // Final countdown mode
+                warning.style.display = 'block';
+                if (!timeoutTimer) {
+                    timeoutCountdown = 30;
+                    timeoutTimer = setInterval(() => {
+                        countdownSpan.textContent = timeoutCountdown;
+                        timeoutCountdown--;
 
-                if (timeoutCountdown < 0) {
-                    endSession();
+                        if (timeoutCountdown < 0) {
+                            endSession();
+                        }
+                    }, 1000);
                 }
-            }, 1000);
-
-            speakText('Your session will expire soon. Please touch continue to extend your session.');
+                speakText('Your session has expired.');
+            } else {
+                // Early warning mode
+                warning.style.display = 'block';
+                countdownSpan.textContent = minutesRemaining + ':00';
+                speakText('Your session will expire in ' + minutesRemaining + ' minutes. Please touch continue to extend your session.');
+            }
         }
 
         function extendSession() {
@@ -576,25 +674,83 @@
             }, 3000);
         }
 
+        // Custom confirmation modal
+        let confirmModalCallback = null;
+
+        function showConfirmModal(title, message, isDanger, callback) {
+            const modal = document.getElementById('confirmModal');
+            const modalTitle = document.getElementById('confirmModalTitle');
+            const modalMessage = document.getElementById('confirmModalMessage');
+            const modalIcon = document.getElementById('confirmModalIcon');
+            const confirmBtn = document.getElementById('confirmModalConfirm');
+
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            confirmModalCallback = callback;
+
+            // Clear and set icon class properly
+            modalIcon.className = 'confirm-modal-icon';
+            if (isDanger) {
+                modalIcon.classList.add('danger');
+                const dangerIcon = document.createElement('i');
+                dangerIcon.className = 'fas fa-exclamation-triangle';
+                modalIcon.appendChild(dangerIcon);
+                confirmBtn.classList.add('kiosk-btn-danger');
+                confirmBtn.classList.remove('kiosk-btn-primary');
+            } else {
+                const questionIcon = document.createElement('i');
+                questionIcon.className = 'fas fa-question-circle';
+                modalIcon.appendChild(questionIcon);
+                confirmBtn.classList.add('kiosk-btn-primary');
+                confirmBtn.classList.remove('kiosk-btn-danger');
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeConfirmModal(confirmed) {
+            const modal = document.getElementById('confirmModal');
+            modal.style.display = 'none';
+
+            if (confirmModalCallback) {
+                confirmModalCallback(confirmed);
+                confirmModalCallback = null;
+            }
+        }
+
         // Emergency call
         function callEmergency() {
-            if (confirm('Are you sure you want to call emergency services?')) {
-                speakText('Emergency services are being contacted. Please stay calm.');
-                // In a real implementation, this would call emergency services
-                alert('Emergency services contacted. Help is on the way.');
-            }
+            showConfirmModal(
+                'Call Emergency Services?',
+                'Are you sure you want to call emergency services? This will contact emergency responders.',
+                true,
+                function(confirmed) {
+                    if (confirmed) {
+                        speakText('Emergency services are being contacted. Please stay calm.');
+                        // In a real implementation, this would call emergency services
+                        showVoiceGuidance('Emergency services contacted. Help is on the way.');
+                    }
+                }
+            );
         }
 
         // End session
         function endSession() {
-            if (confirm('Are you sure you want to end this session?')) {
-                clearInterval(sessionTimer);
-                clearInterval(timeoutTimer);
-                speakText('Session ended. Thank you for using MedCura AI Kiosk.');
+            showConfirmModal(
+                'End Session?',
+                'Are you sure you want to end this session?',
+                false,
+                function(confirmed) {
+                    if (confirmed) {
+                        clearInterval(sessionTimer);
+                        clearInterval(timeoutTimer);
+                        speakText('Session ended. Thank you for using MedCura AI Kiosk.');
 
-                // Redirect to home or logout
-                window.location.href = '/kiosk/session/end';
-            }
+                        // Redirect to home or logout
+                        window.location.href = '/kiosk/session/end';
+                    }
+                }
+            );
         }
 
         // Setup accessibility

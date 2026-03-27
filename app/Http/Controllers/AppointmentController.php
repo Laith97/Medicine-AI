@@ -157,9 +157,9 @@ class AppointmentController extends Controller
                                 $patientId = Auth::id();
                                 $patient = Auth::user();
 
-                                // If patient doesn't have a primary doctor or is booking with a different doctor,
-                                // automatically assign them to this doctor
-                                if (is_null($patient->primary_doctor_id) || $patient->primary_doctor_id != $doctor->user_id) {
+                                // Only set primary doctor if patient doesn't have one already
+                                // Don't silently change primary doctor when booking with different doctor
+                                if (is_null($patient->primary_doctor_id)) {
                                     $patient->update(['primary_doctor_id' => $doctor->user_id]);
                                 }
                             }
@@ -522,7 +522,8 @@ class AppointmentController extends Controller
             ->get();
 
         if ($appointments->isEmpty()) {
-            return back()->withErrors(['email' => 'No appointments found for this email address.']);
+            // Return generic message to prevent email enumeration
+            return view('appointments.guest.list', ['appointments' => collect()]);
         }
 
         return view('appointments.guest.list', compact('appointments'));
@@ -574,12 +575,18 @@ class AppointmentController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
+            'token' => 'required|string',
             'cancellation_reason' => 'nullable|string|max:500',
         ]);
 
         $appointment = Appointment::where('appointment_number', $appointmentNumber)
             ->where('guest_email', $request->email)
             ->firstOrFail();
+
+        // Verify token to prevent IDOR attacks
+        if (!$appointment->verifyWithToken($request->token)) {
+            return back()->withErrors(['error' => 'Invalid or expired verification token. Please verify your appointment first.']);
+        }
 
         if (!$appointment->canBeCancelled()) {
             return back()->withErrors(['error' => 'This appointment cannot be cancelled.']);

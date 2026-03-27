@@ -231,22 +231,25 @@ class StripeInvoiceService
                 'paid_at' => now(),
             ]);
 
-            // Unrestrict user when their invoice is marked as paid
+            // Unrestrict user only for monthly subscription invoices
+            // Manual/excess cost invoices should not extend subscription
             $user = $invoice->user;
-            if ($user && $user->monthlyInvoiceSetting) {
+            if ($user && $user->monthlyInvoiceSetting && $invoice->isMonthlyInvoice()) {
                 $setting = $user->monthlyInvoiceSetting;
-                
-                // If user was restricted, unrestrict them
+
+                // If user was restricted due to non-payment, unrestrict them
+                // Only for monthly subscription invoices, not excess cost invoices
                 if ($setting->is_restricted) {
                     $setting->update([
                         'is_restricted' => false,
                         'subscription_starts_at' => $setting->subscription_starts_at ?: now(),
-                        'subscription_ends_at' => now()->addMonth(), // Extend subscription for one month
+                        'subscription_ends_at' => now()->addMonth(),
                     ]);
-                    
-                    Log::info('User unrestricted after manual payment marking', [
+
+                    Log::info('User unrestricted after monthly invoice payment marking', [
                         'user_id' => $user->id,
                         'invoice_id' => $invoice->id,
+                        'invoice_type' => $invoice->invoice_type,
                         'subscription_ends_at' => now()->addMonth()->toDateString(),
                     ]);
                 }

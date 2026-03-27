@@ -33,15 +33,11 @@ class AdminImpersonation
             // Verify the currently authenticated user matches the impersonation session
             $currentUser = auth('web')->user();
             if (!$currentUser || $currentUser->id != $userId) {
-                // User mismatch, re-authenticate the correct user
-                $user = User::find($userId);
-                if ($user && in_array($user->role, ['hospital_admin', 'doctor'])) {
-                    auth('web')->login($user);
-                } else {
-                    $this->clearImpersonationSession();
-                    auth('web')->logout();
-                    return redirect()->route('admin.login')->with('error', 'Invalid impersonated user.');
-                }
+                // User mismatch - clear impersonation and require re-authentication
+                // This prevents session manipulation attacks
+                $this->clearImpersonationSession();
+                auth('web')->logout();
+                return redirect()->route('admin.login')->with('error', 'Session mismatch. Please re-authenticate.');
             }
         }
 

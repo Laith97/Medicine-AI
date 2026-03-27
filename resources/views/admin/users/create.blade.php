@@ -128,12 +128,6 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleMedicalSpecialty();
     toggleHospitalField();
 
-    // Also call it immediately in case no role is selected yet
-    const roleElement = document.getElementById('role');
-    if (roleElement && roleElement.value) {
-        toggleMedicalSpecialty();
-    }
-
     const customInput = document.getElementById('custom_specialty_admin');
     const hiddenInput = document.getElementById('specialty_admin');
     const select = document.getElementById('specialty_select');
@@ -248,8 +242,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <!-- User Role -->
                         <div class="mb-4">
                             <label for="role" class="form-label fw-bold">User Role <span class="text-danger">*</span></label>
-                            <select id="role" name="role" class="form-control @error('role') is-invalid @enderror" 
-                                    onchange="toggleMedicalSpecialty(); toggleHospitalField();" required>
+                            <select id="role" name="role" class="form-control @error('role') is-invalid @enderror"
+                                    required>
                                 <option value="">-- Select Role --</option>
                                 <option value="doctor" {{ old('role') == 'doctor' ? 'selected' : '' }}>Doctor</option>
                                 <option value="hospital_admin" {{ old('role') == 'hospital_admin' ? 'selected' : '' }}>Hospital Admin</option>
