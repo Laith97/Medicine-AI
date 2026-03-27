@@ -216,17 +216,15 @@ class AdminPayerRuleController extends Controller
         }
 
         try {
-            // TODO: Implement actual rule testing logic
-            //       Evaluate $rule->conditions against $request->claim_data
-            //       Return 'approved', 'denied', or 'modified' based on rule evaluation
-            //       The mock below always approves - real implementation should check conditions
-            $result = [
-                'rule_applied' => true,
-                'conditions_met' => true,
-                'actions_taken' => $rule->actions,
-                'result' => 'approved', // Currently hardcoded - real implementation needed
-                'notes' => 'Rule test completed successfully'
-            ];
+            $claimData = $request->input('claim_data');
+            $conditions = $rule->conditions ?? [];
+            $actions = $rule->actions ?? [];
+
+            // Evaluate conditions
+            $conditionsMet = $this->evaluateConditions($conditions, $claimData);
+
+            // Determine result based on conditions and actions
+            $result = $this->determineResult($conditionsMet, $actions, $claimData);
 
             return response()->json([
                 'success' => true,
@@ -238,6 +236,291 @@ class AdminPayerRuleController extends Controller
                 'success' => false,
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Evaluate rule conditions against claim data
+     */
+    private function evaluateConditions(array $conditions, array $claimData): bool
+    {
+        if (empty($conditions)) {
+            return true; // No conditions means rule always applies
+        }
+
+        // Handle single condition
+        if (isset($conditions['field'])) {
+            return $this->evaluateSingleCondition($conditions, $claimData);
+        }
+
+        // Handle multiple conditions with AND/OR logic
+        $logic = $conditions['logic'] ?? 'and';
+        $conditionList = $conditions['conditions'] ?? [];
+
+        if (empty($conditionList)) {
+            return true;
+        }
+
+        foreach ($conditionList as $condition) {
+            $conditionResult = $this->evaluateConditions($condition, $claimData);
+
+            if ($logic === 'and' && !$conditionResult) {
+                return false;
+            }
+            if ($logic === 'or' && $conditionResult) {
+                return true;
+            }
+        }
+
+        return $logic === 'and';
+    }
+
+    /**
+     * Evaluate a single condition
+     */
+    private function evaluateSingleCondition(array $condition, array $claimData): bool
+    {
+        $field = $condition['field'] ?? null;
+        $operator = $condition['operator'] ?? 'equals';
+        $expectedValue = $condition['value'] ?? null;
+
+        if (!$field) {
+            return false;
+        }
+
+        // Get the actual value from claim data (supports nested fields like 'diagnosis_codes.0')
+        $actualValue = $this->getNestedValue($claimData, $field);
+
+        // Handle null values
+        if ($actualValue === null) {
+            return $operator === 'is_null';
+        }
+
+        // Evaluate based on operator
+        switch ($operator) {
+            case 'equals':
+            case '==':
+                return $actualValue == $expectedValue;
+
+            case 'not_equals':
+            case '!=':
+                return $actualValue != $expectedValue;
+
+            case 'greater_than':
+            case '>':
+                return is_numeric($actualValue) && is_numeric($expectedValue) && $actualValue > $expectedValue;
+
+            case 'greater_than_or_equal':
+            case '>=':
+                return is_numeric($actualValue) && is_numeric($expectedValue) && $actualValue >= $expectedValue;
+
+            case 'less_than':
+            case '<':
+                return is_numeric($actualValue) && is_numeric($expectedValue) && $actualValue < $expectedValue;
+
+            case 'less_than_or_equal':
+            case '<=':
+                return is_numeric($actualValue) && is_numeric($expectedValue) && $actualValue <= $expectedValue;
+
+            case 'contains':
+                return is_string($actualValue) && is_string($expectedValue)
+                    && str_contains(strtolower($actualValue), strtolower($expectedValue));
+
+            case 'in':
+                $values = is_array($expectedValue) ? $expectedValue : [$expectedValue];
+                return in_array($actualValue, $values);
+
+            case 'not_in':
+                $values = is_array($expectedValue) ? $expectedValue : [$expectedValue];
+                return !in_array($actualValue, $values);
+
+            case 'starts_with':
+                return is_string($actualValue) && is_string($expectedValue)
+                    && str_starts_with(strtolower($actualValue), strtolower($expectedValue));
+
+            case 'ends_with':
+                return is_string($actualValue) && is_string($expectedValue)
+                    && str_ends_with(strtolower($actualValue), strtolower($expectedValue));
+
+            case 'is_null':
+                return $actualValue === null;
+
+            case 'is_not_null':
+                return $actualValue !== null;
+
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Get nested value from array using dot notation
+     */
+    private function getNestedValue(array $data, string $field)
+    {
+        $keys = explode('.', $field);
+        $value = $data;
+
+        foreach ($keys as $key) {
+            if (is_array($value) && array_key_exists($key, $value)) {
+                $value = $value[$key];
+            } else {
+                return null;
+            }
+        }
+
+        return $value;
+    }
+
+    /**
+     * Determine the result based on conditions and actions
+     */
+    private function determineResult(bool $conditionsMet, array $actions, array $claimData): array
+    {
+        $resultAction = $actions['action'] ?? 'approve';
+        $modifications = $actions['modifications'] ?? [];
+
+        if (!$conditionsMet) {
+            return [
+                'rule_applied' => false,
+                'conditions_met' => false,
+                'actions_taken' => [],
+                'result' => 'pending_review',
+                'notes' => 'Rule conditions not met - requires manual review'
+            ];
+        }
+
+        // Apply result based on action
+        switch ($resultAction) {
+            case 'approve':
+            case 'auto_approve':
+                return [
+                    'rule_applied' => true,
+                    'conditions_met' => true,
+                    'actions_taken' => $actions,
+                    'result' => 'approved',
+                    'notes' => 'Rule conditions met - automatically approved'
+                ];
+
+            case 'deny':
+            case 'auto_deny':
+                return [
+                    'rule_applied' => true,
+                    'conditions_met' => true,
+                    'actions_taken' => $actions,
+                    'result' => 'denied',
+                    'reason' => $actions['denial_reason'] ?? 'Denied by payer rule',
+                    'notes' => 'Rule conditions met - automatically denied'
+                ];
+
+            case 'modify':
+                // Apply modifications to claim data
+                $modifiedClaimData = $this->applyModifications($claimData, $modifications);
+                return [
+                    'rule_applied' => true,
+                    'conditions_met' => true,
+                    'actions_taken' => $actions,
+                    'result' => 'modified',
+                    'original_data' => $claimData,
+                    'modified_data' => $modifiedClaimData,
+                    'modifications' => $modifications,
+                    'notes' => 'Rule conditions met - claim modified per rule'
+                ];
+
+            case 'pend':
+            case 'pending_review':
+            default:
+                return [
+                    'rule_applied' => true,
+                    'conditions_met' => true,
+                    'actions_taken' => $actions,
+                    'result' => 'pending_review',
+                    'notes' => 'Rule conditions met - flagged for pending review'
+                ];
+        }
+    }
+
+    /**
+     * Apply modifications to claim data
+     */
+    private function applyModifications(array $claimData, array $modifications): array
+    {
+        $modified = $claimData;
+
+        foreach ($modifications as $modification) {
+            $field = $modification['field'] ?? null;
+            $action = $modification['action'] ?? 'set';
+            $value = $modification['value'] ?? null;
+
+            if (!$field) {
+                continue;
+            }
+
+            switch ($action) {
+                case 'set':
+                    $this->setNestedValue($modified, $field, $value);
+                    break;
+
+                case 'remove':
+                    $this->removeNestedValue($modified, $field);
+                    break;
+
+                case 'multiply':
+                    $currentValue = $this->getNestedValue($modified, $field);
+                    if (is_numeric($currentValue)) {
+                        $this->setNestedValue($modified, $field, $currentValue * $value);
+                    }
+                    break;
+
+                case 'add':
+                    $currentValue = $this->getNestedValue($modified, $field);
+                    if (is_numeric($currentValue)) {
+                        $this->setNestedValue($modified, $field, $currentValue + $value);
+                    }
+                    break;
+            }
+        }
+
+        return $modified;
+    }
+
+    /**
+     * Set nested value in array using dot notation
+     */
+    private function setNestedValue(array &$data, string $field, $value): void
+    {
+        $keys = explode('.', $field);
+        $current = &$data;
+
+        foreach ($keys as $i => $key) {
+            if (!isset($current[$key]) && $i < count($keys) - 1) {
+                $current[$key] = [];
+            }
+            if ($i === count($keys) - 1) {
+                $current[$key] = $value;
+            } else {
+                $current = &$current[$key];
+            }
+        }
+    }
+
+    /**
+     * Remove nested value from array using dot notation
+     */
+    private function removeNestedValue(array &$data, string $field): void
+    {
+        $keys = explode('.', $field);
+        $current = &$data;
+
+        foreach ($keys as $i => $key) {
+            if (!isset($current[$key])) {
+                return;
+            }
+            if ($i === count($keys) - 1) {
+                unset($current[$key]);
+            } else {
+                $current = &$current[$key];
+            }
         }
     }
 
