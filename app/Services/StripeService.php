@@ -377,7 +377,8 @@ class StripeService
     public function cancelSubscription(Subscription $subscription): void
     {
         $stripeSubscription = StripeSubscription::retrieve($subscription->stripe_subscription_id);
-        $stripeSubscription->cancel();
+        // Use cancelAtPeriodEnd to cancel at end of billing period (preferred behavior)
+        $stripeSubscription->cancelAtPeriodEnd();
         
         $subscription->update([
             'status' => 'canceled',

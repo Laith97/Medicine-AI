@@ -72,11 +72,8 @@ class AppointmentStatusSynchronizationService
             return;
         }
 
-        // Check if a claim already exists for this appointment
-        // Since claims don't have appointment_id, we check by patient and date
-        $existingClaim = Claim::where('patient_id', $appointment->patient_id)
-            ->where('service_date', $appointment->appointment_date->toDateString())
-            ->first();
+        // Check if a claim already exists for this appointment using the new foreign key
+        $existingClaim = Claim::where('appointment_id', $appointment->id)->first();
 
         if ($existingClaim) {
             Log::info("Claim already exists for appointment {$appointment->id}");
@@ -111,6 +108,8 @@ class AppointmentStatusSynchronizationService
         $claimData = [
             'claim_id' => 'CLM-' . strtoupper(uniqid()),
             'patient_id' => $appointment->patient_id,
+            'doctor_id' => $appointment->doctor_id,
+            'appointment_id' => $appointment->id,
             'diagnosis_text' => $appointment->reason ?? 'Medical consultation',
             'procedure_text' => $appointment->appointment_type,
             'payer' => $insurance->insuranceProvider->name ?? 'Unknown',
@@ -137,23 +136,16 @@ class AppointmentStatusSynchronizationService
      */
     private function handleAppointmentCancelled(Appointment $appointment): void
     {
-        // Note: Claims table doesn't have appointment_id column
-        // Claims are linked to appointments through patient_id and service_date
-        // We'll update any pending claims for this patient on the appointment date
-        if ($appointment->patient_id && $appointment->appointment_date) {
-            $serviceDate = $appointment->appointment_date->toDateString();
-            
-            $updatedCount = Claim::where('patient_id', $appointment->patient_id)
-                ->where('service_date', $serviceDate)
-                ->where('claim_status', 'pending')
-                ->update([
-                    'claim_status' => 'cancelled',
-                    'denial_reason' => 'Appointment cancelled'
-                ]);
+        // Use the new appointment_id foreign key to find related claims
+        $updatedCount = Claim::where('appointment_id', $appointment->id)
+            ->where('claim_status', 'pending')
+            ->update([
+                'claim_status' => 'cancelled',
+                'denial_reason' => 'Appointment cancelled'
+            ]);
 
-            if ($updatedCount > 0) {
-                Log::info("Cancelled {$updatedCount} pending claim(s) for appointment {$appointment->id}");
-            }
+        if ($updatedCount > 0) {
+            Log::info("Cancelled {$updatedCount} pending claim(s) for appointment {$appointment->id}");
         }
     }
 
@@ -221,23 +213,16 @@ class AppointmentStatusSynchronizationService
      */
     private function handleAppointmentNoShow(Appointment $appointment): void
     {
-        // Note: Claims table doesn't have appointment_id column
-        // Claims are linked to appointments through patient_id and service_date
-        // We'll mark any pending claims for this patient on the appointment date as denied
-        if ($appointment->patient_id && $appointment->appointment_date) {
-            $serviceDate = $appointment->appointment_date->toDateString();
-            
-            $updatedCount = Claim::where('patient_id', $appointment->patient_id)
-                ->where('service_date', $serviceDate)
-                ->where('claim_status', 'pending')
-                ->update([
-                    'claim_status' => 'denied',
-                    'denial_reason' => 'Patient did not show up for appointment'
-                ]);
+        // Use the new appointment_id foreign key to find and mark related claims as denied
+        $updatedCount = Claim::where('appointment_id', $appointment->id)
+            ->where('claim_status', 'pending')
+            ->update([
+                'claim_status' => 'denied',
+                'denial_reason' => 'Patient did not show up for appointment'
+            ]);
 
-            if ($updatedCount > 0) {
-                Log::info("Marked {$updatedCount} claim(s) as denied for no-show appointment {$appointment->id}");
-            }
+        if ($updatedCount > 0) {
+            Log::info("Marked {$updatedCount} claim(s) as denied for no-show appointment {$appointment->id}");
         }
     }
 

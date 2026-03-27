@@ -254,7 +254,7 @@ class AppointmentBroadcastService
              'appointment_updates_unsubscribed',
              $subscription['filters'] ?? [],
              [
-                 'subscription_duration_seconds' => $subscription
+                 'subscription_duration_seconds' => ($subscription && isset($subscription['subscribed_at']) && $subscription['subscribed_at'])
                      ? now()->diffInSeconds($subscription['subscribed_at'])
                      : null,
                  'last_activity' => $subscription['last_activity'] ?? null

@@ -68,6 +68,11 @@ class Prescription extends Model
      */
     public function isActive()
     {
+        // If start_date is in the future, prescription is not yet active
+        if ($this->start_date && $this->start_date->isFuture()) {
+            return false;
+        }
+
         $endDate = $this->getEndDate();
         return $endDate && $endDate->isFuture();
     }
@@ -89,7 +94,7 @@ class Prescription extends Model
             $number = (int) $matches[1];
             $unit = $matches[2];
 
-            $carbon = $this->created_at->copy();
+            $carbon = $this->start_date ? $this->start_date->copy() : $this->created_at->copy();
 
             switch ($unit) {
                 case 'day':
@@ -104,7 +109,7 @@ class Prescription extends Model
         }
 
         // If duration format is not recognized, assume it's active for 30 days as fallback
-        return $this->created_at->copy()->addDays(30);
+        return ($this->start_date ? $this->start_date->copy() : $this->created_at->copy())->addDays(30);
     }
 
     /**

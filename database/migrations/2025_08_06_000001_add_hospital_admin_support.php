@@ -57,17 +57,57 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Check if foreign key exists before dropping it
+        $this->dropForeignKeyIfExists('users', 'users_hospital_id_foreign');
+
+        // Check if index exists before dropping it
+        $this->dropIndexIfExists('users', 'users_hospital_id_index');
+
         Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['hospital_id']);
-            $table->dropIndex(['hospital_id']);
-            $table->dropColumn(['hospital_id']);
-            $table->dropColumn('role');
+            // Drop columns if they exist
+            $columnsToDrop = [];
+            if (Schema::hasColumn('users', 'hospital_id')) {
+                $columnsToDrop[] = 'hospital_id';
+            }
+            if (Schema::hasColumn('users', 'role')) {
+                $columnsToDrop[] = 'role';
+            }
+
+            if (!empty($columnsToDrop)) {
+                $table->dropColumn($columnsToDrop);
+            }
         });
 
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['patient', 'doctor', 'admin'])->default('patient')->after('password');
+            if (!Schema::hasColumn('users', 'role')) {
+                $table->enum('role', ['patient', 'doctor', 'admin'])->default('patient');
+            }
         });
 
         Schema::dropIfExists('hospitals');
+    }
+
+    /**
+     * Drop a foreign key constraint if it exists
+     */
+    private function dropForeignKeyIfExists(string $table, string $foreignKeyName): void
+    {
+        try {
+            DB::statement("ALTER TABLE `{$table}` DROP FOREIGN KEY `{$foreignKeyName}`");
+        } catch (\Exception $e) {
+            // Foreign key doesn't exist or another error occurred, continue silently
+        }
+    }
+
+    /**
+     * Drop an index if it exists
+     */
+    private function dropIndexIfExists(string $table, string $indexName): void
+    {
+        try {
+            DB::statement("ALTER TABLE `{$table}` DROP INDEX `{$indexName}`");
+        } catch (\Exception $e) {
+            // Index doesn't exist or another error occurred, continue silently
+        }
     }
 };

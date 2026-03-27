@@ -358,9 +358,20 @@ class Appointment extends Model
      */
     public function cancel($reason = null, $cancelledBy = null)
     {
+        // Check if already cancelled to prevent double cancellation
+        if ($this->status === 'cancelled') {
+            return;
+        }
+
         DB::transaction(function () use ($reason, $cancelledBy) {
             $wasConfirmed = $this->isConfirmed();
             $oldStatus = $this->status;
+
+            // Re-check status inside transaction to prevent race conditions
+            $this->refresh();
+            if ($this->status === 'cancelled') {
+                return;
+            }
 
             $result = $this->update([
                 'status' => 'cancelled',
@@ -459,10 +470,15 @@ class Appointment extends Model
      */
     public function reschedule($newDate)
     {
+        // Recalculate fee based on doctor's current consultation fee
+        $doctor = $this->doctor;
+        $consultationFee = $doctor ? $doctor->consultation_fee : $this->consultation_fee;
+
         $this->update([
             'appointment_date' => $newDate,
             'status' => 'pending',
             'confirmed_at' => null,
+            'consultation_fee' => $consultationFee,
         ]);
     }
 

@@ -376,8 +376,7 @@ class KioskController extends Controller
      */
     private function generateQRCode($url)
     {
-        // This would integrate with a QR code service
-        // For now, return a placeholder
+        // Using qrserver.com API for QR code generation
         return "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . urlencode($url);
     }
 

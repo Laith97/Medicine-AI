@@ -12,9 +12,7 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    // Registration choice page - moved to web.php
-    // Route::get('register', [RegisteredUserController::class, 'create'])
-    //     ->name('register');
+    // Note: Registration routes are in web.php (patient.register, doctor registration flows)
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 

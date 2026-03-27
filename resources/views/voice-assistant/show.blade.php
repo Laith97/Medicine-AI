@@ -359,7 +359,7 @@
                             New Ambient Listening Session
                         </a>
                         @if($transcription->patient)
-                            <a href="#" class="btn btn-info" onclick="alert('Patient profile integration coming soon!')">
+                            <a href="#" class="btn btn-info disabled" title="Patient profile feature coming soon">
                                 <i class="fas fa-user me-2"></i>
                                 View Patient Profile
                             </a>

@@ -49,12 +49,18 @@ return new class extends Migration
             });
 
             // Only apply partitioning in non-testing environments
+            // Skip partitioning if it's not supported or causes issues
             if (app()->environment() !== 'testing') {
-                DB::statement('ALTER TABLE patient_satisfaction_fact PARTITION BY RANGE (YEAR(outcome_date)) (
-                    PARTITION p2024 VALUES LESS THAN (2025),
-                    PARTITION p2025 VALUES LESS THAN (2026),
-                    PARTITION p2026 VALUES LESS THAN (2027)
-                )');
+                try {
+                    DB::statement('ALTER TABLE patient_satisfaction_fact PARTITION BY RANGE (YEAR(outcome_date)) (
+                        PARTITION p2024 VALUES LESS THAN (2025),
+                        PARTITION p2025 VALUES LESS THAN (2026),
+                        PARTITION p2026 VALUES LESS THAN (2027)
+                    )');
+                } catch (\Exception $e) {
+                    // If partitioning fails, continue without it
+                    \Log::warning('Patient satisfaction fact table partitioning failed: ' . $e->getMessage());
+                }
             }
         }
     }

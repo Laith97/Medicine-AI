@@ -145,8 +145,16 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        // ALL users go to dashboard with trial notification
-        return redirect(route('doctor.dashboard', absolute: false))
+        // Redirect based on user role
+        $redirectRoute = match($user->role) {
+            'doctor' => 'doctor.dashboard',
+            'patient' => 'patient.dashboard',
+            'admin' => 'admin.dashboard',
+            'hospital_admin' => 'hospital_admin.dashboard',
+            default => 'dashboard',
+        };
+
+        return redirect(route($redirectRoute, absolute: false))
             ->with('success', 'Welcome! Your free trial has started - enjoy full access to all features!');
     }
 }

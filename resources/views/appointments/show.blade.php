@@ -699,6 +699,7 @@ function showCancelModal() {
 }
 
 function rescheduleAppointment() {
+    // TODO: Implement reschedule appointment feature
     showNotification('Reschedule feature coming soon!', 'info');
 }
 

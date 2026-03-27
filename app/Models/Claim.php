@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\User;
 use App\Models\ClearinghouseSubmission;
+use App\Models\Appointment;
 
 class Claim extends Model
 {
@@ -31,6 +32,7 @@ class Claim extends Model
         'claim_id',
         'doctor_id',
         'patient_id',
+        'appointment_id',
         'diagnosis_text',
         'procedure_text',
         'icd10_codes',
@@ -77,6 +79,14 @@ class Claim extends Model
     public function patient(): BelongsTo
     {
         return $this->belongsTo(User::class, 'patient_id');
+    }
+
+    /**
+     * Get the appointment this claim is associated with.
+     */
+    public function appointment(): BelongsTo
+    {
+        return $this->belongsTo(Appointment::class);
     }
 
     /**
@@ -138,10 +148,12 @@ class Claim extends Model
         $mappings = [
             // Documentation missing
             '16' => 'documentation_missing',
-            '18' => 'documentation_missing',
-            '19' => 'documentation_missing',
             '31' => 'documentation_missing',
             '96' => 'documentation_missing',
+
+            // Duplicate claim (takes precedence over documentation_missing for 18, 19)
+            '18' => 'duplicate_claim',
+            '19' => 'duplicate_claim',
 
             // Coding error
             '4' => 'coding_error',
@@ -168,10 +180,6 @@ class Claim extends Model
             '54' => 'timely_filing',
             '55' => 'timely_filing',
             '56' => 'timely_filing',
-
-            // Duplicate claim
-            '18' => 'duplicate_claim', // Can overlap with documentation
-            '19' => 'duplicate_claim',
         ];
 
         return $mappings[$code] ?? 'other';

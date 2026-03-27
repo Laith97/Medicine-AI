@@ -22,6 +22,8 @@
     <link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/custom-buttons.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/ui-consistency.css') }}">
     <link rel="stylesheet" href="{{ asset('favicon.ico') }}">
 
     <style>
@@ -32,6 +34,22 @@
             font-family: "Font Awesome 6 Free" !important;
             font-weight: 900 !important;
         }
+        /* Skip Navigation Link for Accessibility */
+        .skip-nav-link {
+            position: absolute;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0d6efd;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0 0 8px 8px;
+            z-index: 10000;
+            text-decoration: none;
+            font-weight: 500;
+            transition: top 0.3s;
+        }
+        .skip-nav-link:focus { top: 0; outline: 3px solid #ffc107; }
         .doctor-wrapper { display: flex; min-height: 100vh; }
         .doctor-sidebar {
             width: 280px;
@@ -153,6 +171,25 @@
             .doctor-sidebar { transform: translateX(-100%); }
             .doctor-sidebar.show { transform: translateX(0); }
             .doctor-content { margin-left: 0; }
+            .mobile-toggle { display: block !important; }
+        }
+
+        .mobile-toggle {
+            display: none;
+        }
+
+        .doctor-header {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .doctor-header {
+                display: flex;
+                align-items: center;
+                padding: 1rem;
+                background: #f1f5f9;
+                border-bottom: 1px solid #e2e8f0;
+            }
         }
 
         /* Active state for AI pages */
@@ -167,6 +204,9 @@
     <title>@yield('title', 'Doctor Dashboard | MedCura AI')</title>
 </head>
 <body>
+    <!-- Skip Navigation Link for Accessibility -->
+    <a href="#main-content" class="skip-nav-link">Skip to main content</a>
+
     <div class="doctor-wrapper">
         <nav class="doctor-sidebar">
             <div class="sidebar-brand">
@@ -305,10 +345,34 @@
                 </form>
             </div>
         </nav>
-        <main class="doctor-content">
+        <main class="doctor-content" id="main-content">
+            <div class="doctor-header">
+                <button class="btn btn-outline-secondary mobile-toggle me-3" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
             @yield('content')
         </main>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.doctor-sidebar');
+            sidebar.classList.toggle('show');
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.querySelector('.doctor-sidebar');
+            const toggle = document.querySelector('.mobile-toggle');
+
+            if (window.innerWidth <= 768 &&
+                !sidebar.contains(event.target) &&
+                !toggle.contains(event.target) &&
+                sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+            }
+        });
+    </script>
 </body>
 </html>

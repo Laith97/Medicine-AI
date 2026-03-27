@@ -195,54 +195,67 @@ abstract class EligibilityService implements EligibilityServiceInterface
     /**
      * Batch check multiple eligibility requests to prevent N+1 queries
      *
-     * @param array $patientInsurances Array of [PatientInsurance, serviceType] pairs
+     * @param array $eligibilityChecks Array of ['patient_insurance' => PatientInsurance, 'service_type' => string]
      * @return array Results indexed by patient insurance ID and service type
      */
-    public function batchCheckEligibility(array $patientInsurances): array
+    public function batchCheckEligibility(array $eligibilityChecks): array
     {
         $results = [];
         $cacheKeys = [];
 
-        // First, collect all cache keys to check cache in batch
-        foreach ($patientInsurances as $index => $item) {
-            if ($item instanceof PatientInsurance && isset($patientInsurances[$index + 1])) {
-                $patientInsurance = $item;
-                $serviceType = $patientInsurances[$index + 1];
-
-                $cacheKey = $this->getCacheKey($patientInsurance, $serviceType);
-                $cacheKeys[] = $cacheKey;
-                $results[$cacheKey] = null; // Initialize
+        // Validate and collect cache keys
+        foreach ($eligibilityChecks as $check) {
+            if (!isset($check['patient_insurance']) || !isset($check['service_type'])) {
+                continue; // Skip invalid entries
             }
+
+            $patientInsurance = $check['patient_insurance'];
+            $serviceType = $check['service_type'];
+
+            if (!$patientInsurance instanceof PatientInsurance) {
+                continue;
+            }
+
+            $cacheKey = $this->getCacheKey($patientInsurance, $serviceType);
+            $cacheKeys[] = $cacheKey;
+            $results[$cacheKey] = null; // Initialize
         }
 
         // Batch get from cache
         $cachedResults = Cache::getMultiple($cacheKeys);
 
         // Process each request
-        foreach ($patientInsurances as $index => $item) {
-            if ($item instanceof PatientInsurance && isset($patientInsurances[$index + 1])) {
-                $patientInsurance = $item;
-                $serviceType = $patientInsurances[$index + 1];
-                $cacheKey = $this->getCacheKey($patientInsurance, $serviceType);
+        foreach ($eligibilityChecks as $check) {
+            if (!isset($check['patient_insurance']) || !isset($check['service_type'])) {
+                continue;
+            }
 
-                // Check if result is already cached
-                if (isset($cachedResults[$cacheKey])) {
-                    $results[$cacheKey] = $cachedResults[$cacheKey];
-                    continue;
-                }
+            $patientInsurance = $check['patient_insurance'];
+            $serviceType = $check['service_type'];
 
-                // Check database for recent valid results
-                $recentCheck = $this->getRecentValidCheck($patientInsurance, $serviceType);
-                if ($recentCheck) {
-                    $result = [
-                        'status' => $recentCheck->eligibility_status,
-                        'data' => $recentCheck->response_data,
-                        'cached' => true,
-                        'check_id' => $recentCheck->id,
-                    ];
-                    $results[$cacheKey] = $result;
-                    Cache::put($cacheKey, $result, $this->cacheTtl);
-                }
+            if (!$patientInsurance instanceof PatientInsurance) {
+                continue;
+            }
+
+            $cacheKey = $this->getCacheKey($patientInsurance, $serviceType);
+
+            // Check if result is already cached
+            if (isset($cachedResults[$cacheKey])) {
+                $results[$cacheKey] = $cachedResults[$cacheKey];
+                continue;
+            }
+
+            // Check database for recent valid results
+            $recentCheck = $this->getRecentValidCheck($patientInsurance, $serviceType);
+            if ($recentCheck) {
+                $result = [
+                    'status' => $recentCheck->eligibility_status,
+                    'data' => $recentCheck->response_data,
+                    'cached' => true,
+                    'check_id' => $recentCheck->id,
+                ];
+                $results[$cacheKey] = $result;
+                Cache::put($cacheKey, $result, $this->cacheTtl);
             }
         }
 

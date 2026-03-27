@@ -267,31 +267,39 @@ class PushNotificationService
 
     /**
      * Send to Apple Push Notification Service
+     *
+     * NOTE: This method is not yet implemented.
+     * TODO: Requires APNS certificate setup and proper payload formatting for iOS devices.
+     *       When implementing, use apple push notification HTTP2 API with JWT authentication.
      */
     protected function sendToAPNS(string $token, array $payload): bool
     {
-        // APNS implementation would go here
+        // PLANNED: APNS implementation would go here
         // This requires specific APNS certificates and configuration
-        Log::info('APNS push notification (not implemented)', [
+        Log::warning('APNS push notification not implemented - falling back to FCM', [
             'token' => substr($token, 0, 10) . '...',
-            'title' => $payload['title'],
+            'title' => $payload['title'] ?? '',
         ]);
 
-        return true; // Placeholder
+        return false; // Not implemented - indicates failure
     }
 
     /**
      * Send to Web Push
+     *
+     * NOTE: This method is not yet implemented.
+     * TODO: Requires web push subscription endpoint and VAPID key configuration.
+     *       When implementing, use web-push library with VAPID authentication.
      */
     protected function sendToWebPush(string $subscription, array $payload): bool
     {
-        // Web Push implementation would go here
-        Log::info('Web Push notification (not implemented)', [
+        // PLANNED: Web Push implementation would go here
+        Log::warning('Web Push notification not implemented', [
             'subscription' => substr($subscription, 0, 50) . '...',
-            'title' => $payload['title'],
+            'title' => $payload['title'] ?? '',
         ]);
 
-        return true; // Placeholder
+        return false; // Not implemented - indicates failure
     }
 
     /**

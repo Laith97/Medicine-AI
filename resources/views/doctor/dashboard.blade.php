@@ -524,5 +524,39 @@ const records = @json($records ?? []);
     background-color: rgba(40, 167, 69, 0.1) !important;
     border-left: 4px solid #28a745 !important;
 }
+
+/* Consistent Empty State Styling */
+.empty-state,
+.empty-state-enhanced {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    color: #6c757d;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+.empty-state i,
+.empty-state-enhanced .empty-icon i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state h5,
+.empty-state-enhanced h5 {
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.empty-state p,
+.empty-state-enhanced p {
+    margin-bottom: 0;
+    opacity: 0.8;
+}
 </style>
 @endpush

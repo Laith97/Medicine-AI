@@ -4,9 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\AnalyticsPermissions;
+use App\Models\StripeInvoice;
+use App\Models\Subscription;
+use App\Models\Review;
+use App\Models\Appointment;
+use App\Models\Alert;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class AnalyticsController extends Controller
 {
@@ -35,54 +42,136 @@ class AnalyticsController extends Controller
         // Get data scope for filtering
         $dataScope = $this->analyticsPermissions->getDataScope($user, 'executive');
 
-        // Mock data - in real implementation, this would query the data warehouse
+        // Calculate revenue metrics
+        $currentMonth = Carbon::now();
+        $lastMonth = Carbon::now()->subMonth();
+
+        $currentRevenue = StripeInvoice::where('status', 'paid')
+            ->whereYear('paid_at', $currentMonth->year)
+            ->whereMonth('paid_at', $currentMonth->month)
+            ->sum('amount_paid');
+
+        $lastRevenue = StripeInvoice::where('status', 'paid')
+            ->whereYear('paid_at', $lastMonth->year)
+            ->whereMonth('paid_at', $lastMonth->month)
+            ->sum('amount_paid');
+
+        $revenueChange = $lastRevenue > 0 ? round((($currentRevenue - $lastRevenue) / $lastRevenue) * 100, 1) : 0;
+        $revenueTarget = 130000; // Configurable target
+
+        // Calculate patient satisfaction metrics
+        $currentSatisfaction = Review::approved()->avg('rating') ?? 0;
+        $lastMonthSatisfaction = Review::approved()
+            ->where('created_at', '<', $lastMonth->startOfMonth())
+            ->avg('rating') ?? 0;
+        $satisfactionChange = round($currentSatisfaction - $lastMonthSatisfaction, 1);
+        $satisfactionTarget = 4.9;
+
+        // Calculate operational efficiency (appointment completion rate)
+        $totalAppointments = Appointment::whereMonth('created_at', $currentMonth->month)->count();
+        $completedAppointments = Appointment::whereMonth('created_at', $currentMonth->month)
+            ->where('status', 'completed')
+            ->count();
+        $operationalEfficiency = $totalAppointments > 0
+            ? round(($completedAppointments / $totalAppointments) * 100, 1)
+            : 0;
+        $lastMonthEfficiency = Appointment::whereMonth('created_at', $lastMonth->month)->count() > 0
+            ? round((Appointment::whereMonth('created_at', $lastMonth->month)->where('status', 'completed')->count()
+                / Appointment::whereMonth('created_at', $lastMonth->month)->count()) * 100, 1)
+            : 0;
+        $efficiencyChange = round($operationalEfficiency - $lastMonthEfficiency, 1);
+        $efficiencyTarget = 95.0;
+
+        // Calculate clinical outcomes (positive review rate as proxy)
+        $positiveReviews = Review::approved()->where('rating', '>=', 4)->count();
+        $totalReviews = Review::approved()->count();
+        $clinicalOutcomes = $totalReviews > 0 ? round(($positiveReviews / $totalReviews) * 100, 1) : 0;
+        $lastMonthOutcomes = $totalReviews > 0 ? round(($positiveReviews / $totalReviews) * 100, 1) : 0;
+        $outcomesChange = round($clinicalOutcomes - $lastMonthOutcomes, 1);
+        $outcomesTarget = 90.0;
+
+        // Generate revenue trend for last 6 months
+        $revenueLabels = [];
+        $revenueData = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i);
+            $revenueLabels[] = $month->format('M');
+            $monthRevenue = StripeInvoice::where('status', 'paid')
+                ->whereYear('paid_at', $month->year)
+                ->whereMonth('paid_at', $month->month)
+                ->sum('amount_paid');
+            $revenueData[] = round($monthRevenue, 2);
+        }
+
+        // Patient satisfaction distribution
+        $ratingDistribution = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $ratingDistribution[] = Review::approved()->where('rating', $i)->count();
+        }
+
+        // Get active alerts
+        $alerts = Alert::where('is_active', true)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($alert) {
+                return [
+                    'id' => $alert->id,
+                    'type' => $alert->severity ?? 'info',
+                    'message' => $alert->message ?? $alert->title ?? 'System alert',
+                    'metric' => $alert->metric_type ?? 'general',
+                    'threshold' => $alert->threshold_value,
+                    'current_value' => $alert->current_value
+                ];
+            });
+
         $data = [
             'summary' => [
                 'revenue' => [
-                    'value' => 125430,
-                    'change' => 12.5,
-                    'trend' => 'up',
-                    'target' => 130000
+                    'value' => round($currentRevenue, 2),
+                    'change' => $revenueChange,
+                    'trend' => $revenueChange >= 0 ? 'up' : 'down',
+                    'target' => $revenueTarget
                 ],
                 'patient_satisfaction' => [
-                    'value' => 4.8,
-                    'change' => 0.3,
-                    'trend' => 'up',
-                    'target' => 4.9
+                    'value' => round($currentSatisfaction, 1),
+                    'change' => $satisfactionChange,
+                    'trend' => $satisfactionChange >= 0 ? 'up' : 'down',
+                    'target' => $satisfactionTarget
                 ],
                 'operational_efficiency' => [
-                    'value' => 94.2,
-                    'change' => -2.1,
-                    'trend' => 'down',
-                    'target' => 95.0
+                    'value' => $operationalEfficiency,
+                    'change' => $efficiencyChange,
+                    'trend' => $efficiencyChange >= 0 ? 'up' : 'down',
+                    'target' => $efficiencyTarget
                 ],
                 'clinical_outcomes' => [
-                    'value' => 87.3,
-                    'change' => 5.2,
-                    'trend' => 'up',
-                    'target' => 90.0
+                    'value' => $clinicalOutcomes,
+                    'change' => $outcomesChange,
+                    'trend' => $outcomesChange >= 0 ? 'up' : 'down',
+                    'target' => $outcomesTarget
                 ]
             ],
             'charts' => [
                 'revenue_trend' => [
-                    'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
-                    'data' => [95000, 105000, 115000, 120000, 125430]
+                    'labels' => $revenueLabels,
+                    'data' => $revenueData
                 ],
                 'patient_satisfaction_distribution' => [
                     'labels' => ['1★', '2★', '3★', '4★', '5★'],
-                    'data' => [5, 15, 25, 35, 20]
+                    'data' => $ratingDistribution
                 ]
             ],
-            'alerts' => [
+            'alerts' => $alerts->isEmpty() ? [
                 [
-                    'id' => 'alert_123',
-                    'type' => 'warning',
-                    'message' => 'Patient satisfaction below target',
-                    'metric' => 'patient_satisfaction',
-                    'threshold' => 4.9,
-                    'current_value' => 4.8
+                    'id' => 'alert_placeholder',
+                    'type' => 'info',
+                    'message' => 'All systems operating normally',
+                    'metric' => 'general',
+                    'threshold' => null,
+                    'current_value' => null
                 ]
-            ]
+            ] : $alerts->toArray()
         ];
 
         return response()->json([
@@ -121,25 +210,142 @@ class AnalyticsController extends Controller
             ], 403);
         }
 
-        // Mock revenue data
+        // Calculate MRR (Monthly Recurring Revenue) from active subscriptions
+        // Current MRR: active subscriptions that weren't canceled this month
+        $currentMRR = Subscription::where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('canceled_at')
+                    ->orWhere('canceled_at', '>', Carbon::now()->startOfMonth());
+            })
+            ->sum('amount');
+
+        // Last month MRR: subscriptions that were active at the start of last month
+        $lastMonthMRR = Subscription::where('status', 'active')
+            ->where(function ($q) {
+                $q->where('created_at', '<', Carbon::now()->subMonth()->startOfMonth())
+                    ->where(function ($inner) {
+                        $inner->whereNull('canceled_at')
+                            ->orWhere('canceled_at', '>', Carbon::now()->subMonth()->startOfMonth());
+                    });
+            })
+            ->sum('amount');
+
+        $mrrChange = $lastMonthMRR > 0 ? round((($currentMRR - $lastMonthMRR) / $lastMonthMRR) * 100, 1) : 0;
+
+        // Calculate ARPU (Average Revenue Per User)
+        $totalActiveUsers = Subscription::where('status', 'active')->count();
+        $arpu = $totalActiveUsers > 0 ? round($currentMRR / $totalActiveUsers, 2) : 0;
+
+        // Last month active users count
+        $lastMonthUsers = Subscription::where('status', 'active')
+            ->where(function ($q) {
+                $q->where('created_at', '<', Carbon::now()->subMonth()->startOfMonth())
+                    ->where(function ($inner) {
+                        $inner->whereNull('canceled_at')
+                            ->orWhere('canceled_at', '>', Carbon::now()->subMonth()->startOfMonth());
+                    });
+            })
+            ->count();
+
+        $lastMonthARPU = $lastMonthMRR > 0 && $lastMonthUsers > 0
+            ? round($lastMonthMRR / $lastMonthUsers, 2) : 0;
+        $arpuChange = $lastMonthARPU > 0 ? round((($arpu - $lastMonthARPU) / $lastMonthARPU) * 100, 1) : 0;
+
+        // Calculate churn rate
+        $totalSubscribers = Subscription::count();
+        $canceledThisMonth = Subscription::where('status', 'canceled')
+            ->whereMonth('canceled_at', Carbon::now()->month)
+            ->whereYear('canceled_at', Carbon::now()->year)
+            ->count();
+        $churnRate = $totalSubscribers > 0 ? round(($canceledThisMonth / $totalSubscribers) * 100, 1) : 0;
+
+        $canceledLastMonth = Subscription::where('status', 'canceled')
+            ->whereMonth('canceled_at', Carbon::now()->subMonth()->month)
+            ->whereYear('canceled_at', Carbon::now()->subMonth()->year)
+            ->count();
+        $lastMonthChurnRate = $totalSubscribers > 0 ? round(($canceledLastMonth / $totalSubscribers) * 100, 1) : 0;
+        $churnChange = round($churnRate - $lastMonthChurnRate, 1);
+
+        // Calculate CLV (Customer Lifetime Value) - simplified: ARPU * 12 * avg subscription length
+        $avgSubscriptionMonths = max(1, Subscription::where('status', 'canceled')
+            ->whereNotNull('canceled_at')
+            ->selectRaw('AVG(DATEDIFF(canceled_at, created_at)) as avg_months')
+            ->value('avg_months') ?? 12);
+        $clv = round($arpu * $avgSubscriptionMonths, 2);
+        $lastMonthCLV = round($lastMonthARPU * $avgSubscriptionMonths, 2);
+        $clvChange = $lastMonthCLV > 0 ? round((($clv - $lastMonthCLV) / $lastMonthCLV) * 100, 1) : 0;
+
+        // Revenue breakdown by plan
+        $breakdownByPlan = [];
+        $plans = Subscription::select('plan_name', DB::raw('SUM(amount) as total_revenue, COUNT(*) as count'))
+            ->where('status', 'active')
+            ->groupBy('plan_name')
+            ->get();
+
+        $planTotal = $breakdownByPlan && $breakdownByPlan->sum('total_revenue') > 0
+            ? $breakdownByPlan->sum('total_revenue') : 1;
+
+        foreach ($plans as $plan) {
+            $breakdownByPlan[] = [
+                'plan' => $plan->plan_name ?? 'Custom',
+                'revenue' => round($plan->total_revenue, 2),
+                'percentage' => $planTotal > 0 ? round(($plan->total_revenue / $planTotal) * 100, 1) : 0
+            ];
+        }
+
+        // Forecast next month based on trend
+        $last6MonthsRevenue = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i);
+            $last6MonthsRevenue[] = StripeInvoice::where('status', 'paid')
+                ->whereYear('paid_at', $month->year)
+                ->whereMonth('paid_at', $month->month)
+                ->sum('amount_paid');
+        }
+
+        // Simple linear forecast
+        $n = count($last6MonthsRevenue);
+        if ($n >= 2) {
+            $sumX = array_sum(array_keys($last6MonthsRevenue));
+            $sumY = array_sum($last6MonthsRevenue);
+            $sumXY = 0;
+            $sumX2 = 0;
+            foreach ($last6MonthsRevenue as $x => $y) {
+                $sumXY += $x * $y;
+                $sumX2 += $x * $x;
+            }
+            $slope = ($n * $sumXY - $sumX * $sumY) / ($n * $sumX2 - $sumX * $sumX);
+            $intercept = ($sumY - $slope * $sumX) / $n;
+            $nextMonthForecast = max(0, $intercept + $slope * $n);
+
+            // Calculate confidence based on variance
+            $mean = $sumY / $n;
+            $variance = array_reduce($last6MonthsRevenue, function($carry, $val) use ($mean) {
+                return $carry + pow($val - $mean, 2);
+            }, 0) / $n;
+            $stdDev = sqrt($variance);
+            $confidence = max(50, min(95, 100 - ($stdDev / max($mean, 1) * 100)));
+        } else {
+            $nextMonthForecast = $currentMRR;
+            $confidence = 50;
+        }
+
         $data = [
             'kpis' => [
-                'mrr' => ['value' => 125430, 'change' => 12.5],
-                'arpu' => ['value' => 89.50, 'change' => 8.2],
-                'churn_rate' => ['value' => 3.2, 'change' => -0.5],
-                'clv' => ['value' => 2340, 'change' => 15.3]
+                'mrr' => ['value' => round($currentMRR, 2), 'change' => $mrrChange],
+                'arpu' => ['value' => $arpu, 'change' => $arpuChange],
+                'churn_rate' => ['value' => $churnRate, 'change' => $churnChange],
+                'clv' => ['value' => $clv, 'change' => $clvChange]
             ],
             'breakdown' => [
-                'by_plan' => [
-                    ['plan' => 'Premium', 'revenue' => 75000, 'percentage' => 60],
-                    ['plan' => 'Standard', 'revenue' => 37500, 'percentage' => 30],
-                    ['plan' => 'Basic', 'revenue' => 12930, 'percentage' => 10]
+                'by_plan' => $breakdownByPlan ?: [
+                    ['plan' => 'No Active Plans', 'revenue' => 0, 'percentage' => 0]
                 ]
             ],
             'forecast' => [
-                'next_month' => 138000,
-                'confidence' => 85,
-                'trend' => 'up'
+                'next_month' => round($nextMonthForecast, 2),
+                'confidence' => round($confidence, 0),
+                'trend' => $mrrChange >= 0 ? 'up' : 'down'
             ]
         ];
 
@@ -163,28 +369,75 @@ class AnalyticsController extends Controller
             ], 403);
         }
 
-        // Mock patient satisfaction data
+        // Get overall satisfaction metrics
+        $totalReviews = Review::approved()->count();
+        $avgSatisfaction = Review::approved()->avg('rating') ?? 0;
+
+        // Calculate NPS (Net Promoter Score) - percentage of 5-star minus percentage of 1-2-star
+        $promoters = Review::approved()->where('rating', 5)->count();
+        $detractors = Review::approved()->whereIn('rating', [1, 2])->count();
+        $passives = Review::approved()->where('rating', 3)->count();
+
+        $nps = $totalReviews > 0
+            ? round((($promoters - $detractors) / $totalReviews) * 100, 1)
+            : 0;
+
+        // Response rate calculation (reviews received vs appointments completed)
+        $totalAppointments = Appointment::where('status', 'completed')->count();
+        $responseRate = $totalAppointments > 0
+            ? round(($totalReviews / $totalAppointments) * 100, 1)
+            : 0;
+
+        // Satisfaction by department (via doctors)
+        $byDepartment = [];
+        $departments = DB::table('reviews')
+            ->join('doctors', 'reviews.doctor_id', '=', 'doctors.id')
+            ->join('departments', 'doctors.department_id', '=', 'departments.id')
+            ->where('reviews.is_approved', true)
+            ->groupBy('departments.id', 'departments.name')
+            ->select(
+                'departments.name as department',
+                DB::raw('AVG(reviews.rating) as satisfaction'),
+                DB::raw('COUNT(reviews.id) as response_count')
+            )
+            ->orderBy('satisfaction', 'desc')
+            ->limit(10)
+            ->get();
+
+        foreach ($departments as $dept) {
+            $byDepartment[] = [
+                'department' => $dept->department,
+                'satisfaction' => round($dept->satisfaction, 1),
+                'response_count' => (int) $dept->response_count
+            ];
+        }
+
+        // Weekly satisfaction trends for last 4 weeks
+        $trendLabels = [];
+        $trendData = [];
+        for ($i = 3; $i >= 0; $i--) {
+            $weekStart = Carbon::now()->subWeeks($i)->startOfWeek();
+            $weekEnd = Carbon::now()->subWeeks($i)->endOfWeek();
+
+            $trendLabels[] = 'Week ' . (4 - $i);
+            $weekAvg = Review::approved()
+                ->whereBetween('created_at', [$weekStart, $weekEnd])
+                ->avg('rating');
+            $trendData[] = $weekAvg ? round($weekAvg, 1) : 0;
+        }
+
         $data = [
             'overall' => [
-                'nps' => 72,
-                'satisfaction_score' => 4.8,
-                'response_rate' => 85.5
+                'nps' => $nps,
+                'satisfaction_score' => round($avgSatisfaction, 1),
+                'response_rate' => $responseRate
             ],
-            'by_department' => [
-                [
-                    'department' => 'Cardiology',
-                    'satisfaction' => 4.9,
-                    'response_count' => 245
-                ],
-                [
-                    'department' => 'Orthopedics',
-                    'satisfaction' => 4.7,
-                    'response_count' => 189
-                ]
+            'by_department' => $byDepartment ?: [
+                ['department' => 'No Data', 'satisfaction' => 0, 'response_count' => 0]
             ],
             'trends' => [
-                'labels' => ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                'data' => [4.6, 4.7, 4.8, 4.8]
+                'labels' => $trendLabels,
+                'data' => $trendData
             ]
         ];
 

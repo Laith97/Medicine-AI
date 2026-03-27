@@ -68,6 +68,14 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
         };
     }, []); // Empty dependency array - only run once on mount
 
+    /**
+     * TODO: Refactor this complex fallback chain once voice assistant integration is complete.
+     *       Current implementation tries multiple approaches:
+     *       1. MedicalAmbientRecorder (primary)
+     *       2. window.voiceAssistant (secondary fallback)
+     *       3. Legacy DOM button clicking (last resort)
+     *       This should be simplified when voice assistant is properly integrated.
+     */
     const startRecording = async () => {
         setError(null);
         setIsConnecting(true);

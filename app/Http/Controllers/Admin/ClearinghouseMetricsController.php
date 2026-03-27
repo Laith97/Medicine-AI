@@ -90,12 +90,17 @@ class ClearinghouseMetricsController extends Controller
         // Get provider performance
         $providerPerformance = $this->getProviderPerformance($startDate, $endDate);
 
-        // Calculate uptime - this is a simplified version
-        $uptime = 99.9; // Default value
+        // Calculate uptime based on successful vs total submissions in the period
+        $totalInPeriod = ClearinghouseSubmission::whereBetween('created_at', [$startDate, $endDate])->count();
+        $successfulInPeriod = ClearinghouseSubmission::whereBetween('created_at', [$startDate, $endDate])
+            ->whereIn('status', ['completed', 'accepted'])
+            ->count();
+        $uptime = $totalInPeriod > 0 ? round(($successfulInPeriod / $totalInPeriod) * 100, 2) : 100;
 
         // Prepare the response
         $response = [
             'success' => true,
+            'is_placeholder' => [],
             'kpis' => [
                 'successRate' => $successRate . '%',
                 'avgProcessingTime' => $avgProcessingTime . 'm',
@@ -241,7 +246,16 @@ class ClearinghouseMetricsController extends Controller
             $failedSubmissions = $providerSubmissions->where('status', 'failed')->count();
 
             $successRate = $totalSubmissions > 0 ? round(($successfulSubmissions / $totalSubmissions) * 100, 2) : 100;
-            $avgResponseTime = 1; // Placeholder - in seconds
+
+            // Calculate average response time from submitted_at to response_received_at
+            $avgResponseTimeSeconds = ClearinghouseSubmission::where('clearinghouse_account_id', $account->id)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->whereNotNull('submitted_at')
+                ->whereNotNull('response_received_at')
+                ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, submitted_at, response_received_at)) as avg_seconds')
+                ->value('avg_seconds');
+
+            $avgResponseTime = $avgResponseTimeSeconds ? round($avgResponseTimeSeconds, 1) : 0;
 
             $providers[] = [
                 'id' => $account->id,
@@ -252,7 +266,8 @@ class ClearinghouseMetricsController extends Controller
                 'avgResponseTime' => $avgResponseTime,
                 'errorRate' => $totalSubmissions > 0 ? round(($failedSubmissions / $totalSubmissions) * 100, 2) : 0,
                 'status' => $account->is_active ? 'active' : 'inactive',
-                'lastUpdated' => now()->toISOString()
+                'lastUpdated' => now()->toISOString(),
+                'is_placeholder' => [],
             ];
         }
 
@@ -346,11 +361,11 @@ class ClearinghouseMetricsController extends Controller
         $successfulCount = ClearinghouseSubmission::whereBetween('created_at', [$startDate, $endDate])
             ->where('status', 'completed')
             ->count();
-            
+
         $failedCount = ClearinghouseSubmission::whereBetween('created_at', [$startDate, $endDate])
             ->where('status', 'failed')
             ->count();
-            
+
         $pendingCount = ClearinghouseSubmission::whereBetween('created_at', [$startDate, $endDate])
             ->whereIn('status', ['pending', 'processing'])
             ->count();
@@ -358,9 +373,21 @@ class ClearinghouseMetricsController extends Controller
         $totalSubmissions = $successfulCount + $failedCount + $pendingCount;
         $successRate = $totalSubmissions > 0 ? round(($successfulCount / $totalSubmissions) * 100, 2) : 100;
 
-        $avgProcessingTime = 2.3; // Placeholder
+        // Calculate average processing time from submitted_at to response_received_at
+        $avgProcessingTimeSeconds = ClearinghouseSubmission::whereBetween('created_at', [$startDate, $endDate])
+            ->whereNotNull('submitted_at')
+            ->whereNotNull('response_received_at')
+            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, submitted_at, response_received_at)) as avg_seconds')
+            ->value('avg_seconds');
 
-        $uptime = 99.9; // Placeholder
+        $avgProcessingTime = $avgProcessingTimeSeconds ? round($avgProcessingTimeSeconds / 60, 2) : 0;
+
+        // Calculate uptime from successful submissions ratio
+        $totalInPeriod = ClearinghouseSubmission::whereBetween('created_at', [$startDate, $endDate])->count();
+        $successfulInPeriod = ClearinghouseSubmission::whereBetween('created_at', [$startDate, $endDate])
+            ->whereIn('status', ['completed', 'accepted'])
+            ->count();
+        $uptime = $totalInPeriod > 0 ? round(($successfulInPeriod / $totalInPeriod) * 100, 2) : 100;
 
         return [
             'successRate' => $successRate . '%',

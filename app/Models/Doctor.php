@@ -71,6 +71,7 @@ class Doctor extends Model
         'appointment_type_preferences',
         'ai_chat_enabled',
         'ai_chat_settings',
+        'sms_provider',
     ];
 
     protected $casts = [

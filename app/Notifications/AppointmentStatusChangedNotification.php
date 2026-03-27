@@ -112,14 +112,24 @@ class AppointmentStatusChangedNotification extends Notification implements Shoul
     /**
      * Get the SMS representation of the notification.
      */
-    public function toSms(object $notifiable): string
+    public function toSms(object $notifiable): array
     {
         $doctorName = $this->appointment->doctor ? $this->appointment->doctor->user->name ?? 'Unknown Doctor' : 'Unknown Doctor';
         $patientName = $this->appointment->patient_name;
+        $doctorId = $this->appointment->doctor ? $this->appointment->doctor->id : 0;
+        $hospitalId = $this->appointment->doctor ? $this->appointment->doctor->hospital_id : 0;
 
         $message = $this->getStatusChangeMessage($doctorName, $patientName);
 
-        return $message . ' View details: ' . route('appointments.show', $this->appointment->id);
+        return [
+            'message' => $message . ' View details: ' . route('appointments.show', $this->appointment->id),
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'appointment_status_changed',
+                'context_id' => $this->appointment->id,
+            ]
+        ];
     }
 
     /**

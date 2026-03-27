@@ -54,11 +54,24 @@ class DailyService
      */
     public function getRoom($roomName)
     {
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->apiKey,
-        ])->get($this->baseUrl . '/rooms/' . $roomName);
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+            ])->get($this->baseUrl . '/rooms/' . $roomName);
 
-        return $response->json();
+            if ($response->failed()) {
+                \Log::error('Daily.co API getRoom failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+                throw new \Exception('Daily.co API error: ' . $response->body());
+            }
+
+            return $response->json();
+        } catch (\Exception $e) {
+            \Log::error('Daily.co getRoom error: ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     /**
@@ -66,11 +79,24 @@ class DailyService
      */
     public function deleteRoom($roomName)
     {
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->apiKey,
-        ])->delete($this->baseUrl . '/rooms/' . $roomName);
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+            ])->delete($this->baseUrl . '/rooms/' . $roomName);
 
-        return $response->json();
+            if ($response->failed()) {
+                \Log::error('Daily.co API deleteRoom failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+                throw new \Exception('Daily.co API error: ' . $response->body());
+            }
+
+            return $response->json();
+        } catch (\Exception $e) {
+            \Log::error('Daily.co deleteRoom error: ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     /**

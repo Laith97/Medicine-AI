@@ -21,6 +21,7 @@ class VoiceTranscription extends Model
         'audio_file_size',
         'extracted_data',
         'ai_analysis',
+        'clinical_doc',
         'structured_chart',
         'is_confirmed',
         'is_final',

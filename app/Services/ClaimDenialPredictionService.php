@@ -79,13 +79,17 @@ class ClaimDenialPredictionService
      */
     private function createTempDataFile(array $data): string
     {
-        $filename = 'claim_' . $data['claim_id'] . '_' . time() . '.json';
+        $filename = 'claim_' . $data['claim_id'] . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.json';
         $tempPath = storage_path('app/temp/' . $filename);
 
-        // Ensure temp directory exists
+        // Ensure temp directory exists with proper error handling
         $tempDir = dirname($tempPath);
         if (!is_dir($tempDir)) {
-            mkdir($tempDir, 0755, true);
+            // Use mkdir with recursive flag and suppress errors, then verify
+            @mkdir($tempDir, 0755, true);
+            if (!is_dir($tempDir)) {
+                throw new \RuntimeException("Failed to create temp directory: {$tempDir}");
+            }
         }
 
         file_put_contents($tempPath, json_encode($data));
@@ -99,7 +103,10 @@ class ClaimDenialPredictionService
     private function callPredictionScript(string $dataFile): array
     {
         $pythonScript = base_path('python/predict_denial.py');
-        $command = "python \"{$pythonScript}\" \"{$dataFile}\" 2>&1";
+        // Sanitize file paths to prevent command injection
+        $safeDataFile = escapeshellarg($dataFile);
+        $safeScript = escapeshellarg($pythonScript);
+        $command = "python {$safeScript} {$safeDataFile} 2>&1";
 
         Log::info('Executing Python prediction command: ' . $command);
 
@@ -125,8 +132,8 @@ class ClaimDenialPredictionService
      */
     private function cleanupTempFile(string $filePath): void
     {
-        if (file_exists($filePath)) {
-            unlink($filePath);
+        if (!@unlink($filePath)) {
+            Log::warning('Failed to delete temp file: ' . $filePath);
         }
     }
 
@@ -148,7 +155,9 @@ class ClaimDenialPredictionService
 
             // Call training script
             $pythonScript = base_path('python/train_denial_predictor.py');
-            $command = "python \"{$pythonScript}\" \"{$tempFile}\" 2>&1";
+            $safeScript = escapeshellarg($pythonScript);
+            $safeTempFile = escapeshellarg($tempFile);
+            $command = "python {$safeScript} {$safeTempFile} 2>&1";
 
             Log::info('Executing Python training command: ' . $command);
 
@@ -372,16 +381,25 @@ class ClaimDenialPredictionService
     private function callAppealPredictionScript(string $dataFile): array
     {
         $pythonScript = base_path('python/predict_appeal_success.py');
-        $command = "python \"{$pythonScript}\" \"{$dataFile}\" 2>&1";
+
+        // Check if script exists before attempting to run
+        if (!file_exists($pythonScript)) {
+            throw new \Exception('Appeal prediction script not found: ' . $pythonScript);
+        }
+
+        $safeScript = escapeshellarg($pythonScript);
+        $safeDataFile = escapeshellarg($dataFile);
+        $command = "python {$safeScript} {$safeDataFile} 2>&1";
 
         Log::info('Executing Python appeal prediction command: ' . $command);
 
-        $output = shell_exec($command);
+        exec($command, $outputLines, $returnCode);
 
-        if ($output === null) {
-            throw new \Exception('Appeal prediction script execution failed');
+        if ($returnCode !== 0) {
+            throw new \Exception('Appeal prediction script failed with code ' . $returnCode . ': ' . implode("\n", $outputLines));
         }
 
+        $output = implode("\n", $outputLines);
         Log::info('Appeal prediction script output: ' . $output);
 
         $result = json_decode($output, true);

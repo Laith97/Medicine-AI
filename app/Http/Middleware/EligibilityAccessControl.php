@@ -81,11 +81,8 @@ class EligibilityAccessControl
             return false;
         }
 
-        // Default: allow basic eligibility viewing for authenticated users
-        // In production, this should be more restrictive
-        return in_array('medical_staff', $userRoles ?? []) ||
-               in_array('admin', $userRoles ?? []) ||
-               in_array('doctor', $userRoles ?? []) ||
-               in_array('nurse', $userRoles ?? []);
+        // Default: deny access if permission is not explicitly defined
+        // This is more secure - explicit permissions are required
+        return false;
     }
 }
