@@ -232,9 +232,14 @@ class AdminPayerRuleController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            \Log::error('Rule test failed: ' . $e->getMessage(), [
+                'payer_id' => $payer->id,
+                'rule_id' => $rule->id,
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => 'An error occurred while testing the rule'
             ], 500);
         }
     }

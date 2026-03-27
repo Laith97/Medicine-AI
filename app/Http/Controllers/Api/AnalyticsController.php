@@ -211,20 +211,44 @@ class AnalyticsController extends Controller
         }
 
         // Calculate MRR (Monthly Recurring Revenue) from active subscriptions
-        $activeSubscriptions = Subscription::where('status', 'active');
-        $currentMRR = $activeSubscriptions->sum('amount');
+        // Current MRR: active subscriptions that weren't canceled this month
+        $currentMRR = Subscription::where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('canceled_at')
+                    ->orWhere('canceled_at', '>', Carbon::now()->startOfMonth());
+            })
+            ->sum('amount');
 
-        $lastMonthSubscriptions = Subscription::where('status', 'active')
-            ->where('created_at', '<', Carbon::now()->subMonth());
-        $lastMonthMRR = $lastMonthSubscriptions->sum('amount');
+        // Last month MRR: subscriptions that were active at the start of last month
+        $lastMonthMRR = Subscription::where('status', 'active')
+            ->where(function ($q) {
+                $q->where('created_at', '<', Carbon::now()->subMonth()->startOfMonth())
+                    ->where(function ($inner) {
+                        $inner->whereNull('canceled_at')
+                            ->orWhere('canceled_at', '>', Carbon::now()->subMonth()->startOfMonth());
+                    });
+            })
+            ->sum('amount');
 
         $mrrChange = $lastMonthMRR > 0 ? round((($currentMRR - $lastMonthMRR) / $lastMonthMRR) * 100, 1) : 0;
 
         // Calculate ARPU (Average Revenue Per User)
         $totalActiveUsers = Subscription::where('status', 'active')->count();
         $arpu = $totalActiveUsers > 0 ? round($currentMRR / $totalActiveUsers, 2) : 0;
-        $lastMonthARPU = $lastMonthMRR > 0 && $lastMonthSubscriptions->count() > 0
-            ? round($lastMonthMRR / $lastMonthSubscriptions->count(), 2) : 0;
+
+        // Last month active users count
+        $lastMonthUsers = Subscription::where('status', 'active')
+            ->where(function ($q) {
+                $q->where('created_at', '<', Carbon::now()->subMonth()->startOfMonth())
+                    ->where(function ($inner) {
+                        $inner->whereNull('canceled_at')
+                            ->orWhere('canceled_at', '>', Carbon::now()->subMonth()->startOfMonth());
+                    });
+            })
+            ->count();
+
+        $lastMonthARPU = $lastMonthMRR > 0 && $lastMonthUsers > 0
+            ? round($lastMonthMRR / $lastMonthUsers, 2) : 0;
         $arpuChange = $lastMonthARPU > 0 ? round((($arpu - $lastMonthARPU) / $lastMonthARPU) * 100, 1) : 0;
 
         // Calculate churn rate

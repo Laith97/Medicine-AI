@@ -358,9 +358,12 @@ class NotificationController extends Controller
 
             // Get notifications for this guest appointment
             // Notifications are stored with type and data containing appointment_id reference
+            $guestEmailPattern = '%"guest_email":"' . addcslashes($appointment->guest_email, '_') . '"%';
+            $appointmentIdPattern = '%"appointment_id":"' . $appointmentId . '"%';
+
             $notifications = Notification::where('type', 'like', '%Guest%')
-                ->orWhere('data', 'like', '%"appointment_id":"' . $appointmentId . '"%')
-                ->orWhere('data', 'like', '%"guest_email":"' . $appointment->guest_email . '"%')
+                ->orWhere('data', 'like', $appointmentIdPattern)
+                ->orWhere('data', 'like', $guestEmailPattern)
                 ->orderBy('created_at', 'desc')
                 ->limit(50)
                 ->get()

@@ -153,12 +153,18 @@ class MonitoringController extends Controller
 
         // Update alert status in database
         $alert = \App\Models\Alert::find($alertId);
-        if ($alert) {
-            $alert->update([
-                'acknowledged_at' => now(),
-                'acknowledged_by' => $user->id
-            ]);
+
+        if (!$alert) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Alert not found'
+            ], 404);
         }
+
+        $alert->update([
+            'acknowledged_at' => now(),
+            'acknowledged_by' => $user->id
+        ]);
 
         $acknowledgedAlerts = Cache::get('acknowledged_alerts', []);
         $acknowledgedAlerts[$alertId] = [
@@ -267,10 +273,10 @@ class MonitoringController extends Controller
                     ->selectRaw('AVG(metadata->>"$.duration") as avg_duration')
                     ->first();
 
-                return $recentResponses->avg_duration ?? (rand(100, 500)); // Fallback
-            });
+                return $recentResponses->avg_duration ?? null; // null indicates unavailable
+            }) ?? 0.0;
         } catch (\Exception $e) {
-            return (float) (rand(100, 500));
+            return 0.0;
         }
     }
 
@@ -460,7 +466,7 @@ class MonitoringController extends Controller
 
             return (float) ($result->avg_duration ?? 0);
         } catch (\Exception $e) {
-            return (float) (rand(100, 500) / 100); // Fallback
+            return 0.0;
         }
     }
 
@@ -553,16 +559,65 @@ class MonitoringController extends Controller
 
     private function getApplicationMetrics(string $timeRange): array
     {
+        $hours = $this->getTimeRangeHours($timeRange);
+        $percentiles = $this->getResponseTimePercentiles($hours);
+
         return [
             'http_requests_total' => $this->getMetricTrend('response_time', $timeRange),
-            'http_request_duration_seconds' => [
-                'p50' => $this->getMetricTrend('response_time', $timeRange),
-                'p95' => $this->getMetricTrend('response_time', $timeRange),
-                'p99' => $this->getMetricTrend('response_time', $timeRange)
-            ],
+            'http_request_duration_seconds' => $percentiles,
             'active_connections' => $this->getMetricTrend('active_users', $timeRange),
             'error_rate' => $this->getMetricTrend('error_rate', $timeRange)
         ];
+    }
+
+    /**
+     * Get response time percentiles from audit logs
+     */
+    private function getResponseTimePercentiles(int $hours): array
+    {
+        try {
+            $durations = AuditLog::where('action', 'response_time')
+                ->where('created_at', '>=', now()->subHours($hours))
+                ->selectRaw('CAST(metadata->>"$.duration" AS DECIMAL) as duration')
+                ->pluck('duration')
+                ->filter()
+                ->toArray();
+
+            if (empty($durations)) {
+                return ['p50' => 0.0, 'p95' => 0.0, 'p99' => 0.0];
+            }
+
+            sort($durations);
+            $count = count($durations);
+
+            return [
+                'p50' => round($this->percentile($durations, 50), 3),
+                'p95' => round($this->percentile($durations, 95), 3),
+                'p99' => round($this->percentile($durations, 99), 3)
+            ];
+        } catch (\Exception $e) {
+            return ['p50' => 0.0, 'p95' => 0.0, 'p99' => 0.0];
+        }
+    }
+
+    /**
+     * Calculate percentile value from sorted array
+     */
+    private function percentile(array $sortedValues, float $percentile): float
+    {
+        $count = count($sortedValues);
+        if ($count === 0) return 0.0;
+
+        $index = ($percentile / 100) * ($count - 1);
+        $lower = (int) floor($index);
+        $upper = (int) ceil($index);
+
+        if ($lower === $upper) {
+            return (float) $sortedValues[$lower];
+        }
+
+        $weight = $index - $lower;
+        return (float) ($sortedValues[$lower] * (1 - $weight) + $sortedValues[$upper] * $weight);
     }
 
     private function getDatabaseMetrics(string $timeRange): array
