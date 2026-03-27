@@ -25,14 +25,37 @@ class InvoiceOverdue extends Notification
      */
     public function via(object $notifiable): array
     {
-        $channels = ['mail', 'database'];
-        
-        // Add SMS channel if phone number is available and Twilio is configured
-        if ($notifiable->phone && config('services.twilio.sid')) {
-            $channels[] = TwilioChannel::class;
-        }
+        $channels = ['mail', 'database', 'sms'];
         
         return $channels;
+    }
+
+    /**
+     * Get the SMS representation of the notification.
+     */
+    public function toSms(object $notifiable): array
+    {
+        $amount = $this->invoice->getFormattedAmountDue();
+        $daysOverdue = $this->invoice->due_date->diffInDays(now());
+        $isRestricted = $notifiable->isRestricted();
+        $doctorId = $this->invoice->user_id ?? 0;
+        $hospitalId = 0;
+
+        $message = "URGENT: Invoice {$amount} is {$daysOverdue} days overdue.";
+        if ($isRestricted) {
+            $message .= " Account restricted.";
+        }
+        $message .= " Pay now: " . route('invoices.show', $this->invoice);
+
+        return [
+            'message' => $message,
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'invoice_notification',
+                'context_id' => $this->invoice->id,
+            ]
+        ];
     }
 
     /**

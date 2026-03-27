@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->timestamp('trial_ends_at')->nullable()->after('email_verified_at');
-            $table->boolean('trial_used')->default(false)->after('trial_ends_at');
+            if (!Schema::hasColumn('users', 'trial_ends_at')) {
+                $table->timestamp('trial_ends_at')->nullable()->after('email_verified_at');
+            }
+            if (!Schema::hasColumn('users', 'trial_used')) {
+                $table->boolean('trial_used')->default(false)->after('trial_ends_at');
+            }
         });
     }
 
@@ -23,7 +27,17 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['trial_ends_at', 'trial_used']);
+            $columnsToDrop = [];
+            if (Schema::hasColumn('users', 'trial_ends_at')) {
+                $columnsToDrop[] = 'trial_ends_at';
+            }
+            if (Schema::hasColumn('users', 'trial_used')) {
+                $columnsToDrop[] = 'trial_used';
+            }
+
+            if (!empty($columnsToDrop)) {
+                $table->dropColumn($columnsToDrop);
+            }
         });
     }
 };

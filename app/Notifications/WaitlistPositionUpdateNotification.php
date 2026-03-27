@@ -43,7 +43,28 @@ class WaitlistPositionUpdateNotification extends Notification implements ShouldB
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast'];
+        return ['database', 'broadcast', 'sms'];
+    }
+
+    /**
+     * Get the SMS representation of the notification.
+     */
+    public function toSms(object $notifiable): array
+    {
+        $doctorName = $this->waitlistEntry->waitlist->doctor->user->name ?? 'Unknown Doctor';
+        $doctorId = $this->waitlistEntry->waitlist->doctor->id ?? 0;
+        $hospitalId = $this->waitlistEntry->waitlist->doctor->hospital_id ?? 0;
+        $improvement = $this->oldPosition - $this->newPosition;
+
+        return [
+            'message' => "Your waitlist position with Dr. {$doctorName} improved from #{$this->oldPosition} to #{$this->newPosition} (+{$improvement}). View: " . route('waitlist.show', $this->waitlistEntry->id),
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'waitlist_slot',
+                'context_id' => $this->waitlistEntry->id,
+            ]
+        ];
     }
 
     /**

@@ -10,6 +10,8 @@ use App\Services\SmsProviders\UnifonicProvider;
 use App\Services\SmsProviders\SmsGatewayHubProvider;
 use App\Models\SystemSetting;
 use App\Models\SmsProviderCountry;
+use App\Models\Doctor;
+use App\Models\Hospital;
 use Illuminate\Support\Facades\Log;
 
 class SmsService
@@ -17,35 +19,30 @@ class SmsService
     protected $provider;
     protected $providerInstance;
 
-    public function __construct()
+    public function __construct($providerInstance = null)
     {
-        $this->provider = $this->getActiveProvider();
-        $this->providerInstance = $this->createProviderInstance($this->provider);
+        if ($providerInstance) {
+            $this->providerInstance = $providerInstance;
+            $this->provider = 'mock';
+        } else {
+            $this->provider = $this->getSystemProvider();
+            $this->providerInstance = $this->createProviderInstance($this->provider);
+        }
     }
 
     /**
-     * Send SMS message with country-based provider routing
+     * Send SMS message with hierarchical provider routing
      *
      * @param string $to
      * @param string $message
+     * @param array $options Optional: ['doctor_id', 'hospital_id', 'context', 'context_id']
      * @return array ['success' => bool, 'message' => string, 'data' => array]
      */
-    public function send(string $to, string $message): array
+    public function send(string $to, string $message, array $options = []): array
     {
         try {
-            // Extract country code from phone number
-            $countryCode = $this->extractCountryCode($to);
-
-            // Get provider for this country
-            $providerKey = null;
-            if ($countryCode) {
-                $providerKey = SmsProviderCountry::getProviderForCountry($countryCode);
-            }
-
-            // If no country-specific provider found, use fallback provider
-            if (!$providerKey) {
-                $providerKey = $this->getFallbackProvider();
-            }
+            // Determine provider using hierarchy
+            $providerKey = $this->determineProvider($to, $options);
 
             // Create provider instance
             $providerInstance = $this->createProviderInstance($providerKey);
@@ -60,21 +57,22 @@ class SmsService
 
             $result = $providerInstance->send($to, $message);
 
-            // Log the routing decision
-            Log::info('SMS sent via country-based routing', [
-                'to' => $to,
-                'country_code' => $countryCode,
-                'provider_used' => $providerKey,
-                'success' => $result['success']
-            ]);
+            // Log the send
+            $this->logSend($to, $message, $providerKey, $result['success'], $options);
 
-            return $result;
+            if ($result['success']) {
+                return $result;
+            }
+
+            // If primary provider failed, try fallback
+            return $this->fallbackSend($to, $message, $options, $providerKey);
 
         } catch (\Exception $e) {
             Log::error('SMS sending failed: ' . $e->getMessage(), [
                 'to' => $to,
                 'message' => $message,
-                'provider' => $providerKey ?? 'unknown'
+                'provider' => $providerKey ?? 'unknown',
+                'options' => $options
             ]);
 
             return [
@@ -83,6 +81,242 @@ class SmsService
                 'data' => []
             ];
         }
+    }
+
+    /**
+     * Determine provider using hierarchical overrides: doctor > hospital > system/country-based
+     *
+     * @param string $to
+     * @param array $options
+     * @return string
+     */
+    protected function determineProvider(string $to, array $options): string
+    {
+        // Doctor level override
+        if (isset($options['doctor_id'])) {
+            $provider = $this->getDoctorProvider($options['doctor_id']);
+            if ($provider) {
+                return $provider;
+            }
+        }
+
+        // Hospital level override
+        if (isset($options['hospital_id'])) {
+            $provider = $this->getHospitalProvider($options['hospital_id']);
+            if ($provider) {
+                return $provider;
+            }
+        }
+
+        // System level with country-based routing
+        return $this->getSystemProviderForCountry($to);
+    }
+
+    /**
+     * Get doctor's SMS provider
+     *
+     * @param int $doctorId
+     * @return string|null
+     */
+    protected function getDoctorProvider(int $doctorId): ?string
+    {
+        try {
+            $doctor = Doctor::find($doctorId);
+            return $doctor && $doctor->sms_provider ? $doctor->sms_provider : null;
+        } catch (\Exception $e) {
+            Log::warning('Failed to get doctor SMS provider', [
+                'doctor_id' => $doctorId,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Get hospital's SMS provider
+     *
+     * @param int $hospitalId
+     * @return string|null
+     */
+    protected function getHospitalProvider(int $hospitalId): ?string
+    {
+        try {
+            $hospital = Hospital::find($hospitalId);
+            return $hospital && $hospital->sms_provider ? $hospital->sms_provider : null;
+        } catch (\Exception $e) {
+            Log::warning('Failed to get hospital SMS provider', [
+                'hospital_id' => $hospitalId,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Get system provider with country-based routing
+     *
+     * @param string $to
+     * @return string
+     */
+    protected function getSystemProviderForCountry(string $to): string
+    {
+        // Extract country code from phone number
+        $countryCode = $this->extractCountryCode($to);
+
+        // Get provider for this country
+        $providerKey = null;
+        if ($countryCode) {
+            $providerKey = SmsProviderCountry::getProviderForCountry($countryCode);
+        }
+
+        // If no country-specific provider found, use fallback provider
+        if (!$providerKey) {
+            $providerKey = $this->getFallbackProvider();
+        }
+
+        return $providerKey ?: $this->getSystemProvider();
+    }
+
+    /**
+     * Handle fallback sending when primary provider fails
+     *
+     * @param string $to
+     * @param string $message
+     * @param array $options
+     * @param string $failedProvider
+     * @return array
+     */
+    protected function fallbackSend(string $to, string $message, array $options, string $failedProvider): array
+    {
+        $fallbackProviders = $this->getFallbackProviders($options, $failedProvider, $to);
+
+        foreach ($fallbackProviders as $providerKey) {
+            try {
+                $providerInstance = $this->createProviderInstance($providerKey);
+                if ($providerInstance) {
+                    $result = $providerInstance->send($to, $message);
+
+                    // Log the fallback attempt
+                    $this->logSend($to, $message, $providerKey, $result['success'], array_merge($options, [
+                        'fallback_from' => $failedProvider,
+                        'is_fallback' => true
+                    ]));
+
+                    if ($result['success']) {
+                        return $result;
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Fallback SMS provider failed', [
+                    'to' => $to,
+                    'provider' => $providerKey,
+                    'fallback_from' => $failedProvider,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
+        // All providers failed
+        return [
+            'success' => false,
+            'message' => 'All SMS providers failed, including fallbacks',
+            'data' => ['fallback_attempted' => true]
+        ];
+    }
+
+    /**
+     * Get provider hierarchy for given options
+     *
+     * @param array $options
+     * @param string $to
+     * @return array
+     */
+    protected function getProviderHierarchy(array $options, string $to): array
+    {
+        $providers = [];
+
+        // Doctor level
+        if (isset($options['doctor_id'])) {
+            $provider = $this->getDoctorProvider($options['doctor_id']);
+            if ($provider) {
+                $providers[] = $provider;
+            }
+        }
+
+        // Hospital level
+        if (isset($options['hospital_id'])) {
+            $provider = $this->getHospitalProvider($options['hospital_id']);
+            if ($provider) {
+                $providers[] = $provider;
+            }
+        }
+
+        // System level
+        $systemProvider = $this->getSystemProviderForCountry($to);
+        if ($systemProvider) {
+            $providers[] = $systemProvider;
+        }
+
+        return array_unique($providers);
+    }
+
+    /**
+     * Get fallback providers in hierarchy order
+     *
+     * @param array $options
+     * @param string $failedProvider
+     * @param string $to
+     * @return array
+     */
+    protected function getFallbackProviders(array $options, string $failedProvider, string $to): array
+    {
+        $hierarchy = $this->getProviderHierarchy($options, $to);
+        $failedIndex = array_search($failedProvider, $hierarchy);
+
+        if ($failedIndex !== false) {
+            return array_slice($hierarchy, $failedIndex + 1);
+        }
+
+        return [];
+    }
+
+    /**
+     * Log SMS send attempt
+     *
+     * @param string $to
+     * @param string $message
+     * @param string $provider
+     * @param bool $success
+     * @param array $options
+     */
+    protected function logSend(string $to, string $message, string $provider, bool $success, array $options = []): void
+    {
+        Log::info('SMS send attempt', [
+            'to' => $to,
+            'provider' => $provider,
+            'success' => $success,
+            'context' => $options['context'] ?? null,
+            'context_id' => $options['context_id'] ?? null,
+            'doctor_id' => $options['doctor_id'] ?? null,
+            'hospital_id' => $options['hospital_id'] ?? null,
+            'is_fallback' => $options['is_fallback'] ?? false,
+            'fallback_from' => $options['fallback_from'] ?? null,
+            'timestamp' => now()->toISOString()
+        ]);
+    }
+
+    /**
+     * Log configuration changes
+     *
+     * @param string $changeType
+     * @param array $details
+     */
+    public function logConfigurationChange(string $changeType, array $details): void
+    {
+        Log::info('SMS configuration change', array_merge([
+            'change_type' => $changeType,
+            'timestamp' => now()->toISOString()
+        ], $details));
     }
 
     /**
@@ -99,6 +333,18 @@ class SmsService
     }
 
     /**
+     * Send SMS message
+     *
+     * @param string $to
+     * @param string $message
+     * @return array
+     */
+    public function sendSms(string $to, string $message): array
+    {
+        return $this->providerInstance->send($to, $message);
+    }
+
+    /**
      * Send test SMS
      *
      * @param string $to
@@ -111,11 +357,11 @@ class SmsService
     }
 
     /**
-     * Get active provider name
+     * Get system provider name
      *
      * @return string
      */
-    protected function getActiveProvider(): string
+    protected function getSystemProvider(): string
     {
         // First check system settings (database)
         $provider = SystemSetting::get('sms_provider');
@@ -128,6 +374,16 @@ class SmsService
         $provider = config('sms.default_provider', 'log');
 
         return $this->isValidProvider($provider) ? $provider : 'log';
+    }
+
+    /**
+     * Get system provider name (public method)
+     *
+     * @return string
+     */
+    public function getSystemProviderPublic(): string
+    {
+        return $this->getSystemProvider();
     }
 
     /**
@@ -195,6 +451,38 @@ class SmsService
                     public function getKey(): string
                     {
                         return 'log';
+                    }
+
+                    public function getMessageStatus(string $messageId): array
+                    {
+                        return [
+                            'success' => true,
+                            'message' => 'Message logged',
+                            'data' => ['message_id' => $messageId, 'status' => 'logged']
+                        ];
+                    }
+
+                    public function sendBulkSms(array $recipients, string $message): array
+                    {
+                        Log::info('Bulk SMS would be sent', [
+                            'recipients' => $recipients,
+                            'message' => $message,
+                            'provider' => 'log'
+                        ]);
+                        return [
+                            'success' => true,
+                            'message' => 'Bulk SMS logged successfully',
+                            'data' => ['logged_at' => now()->toISOString(), 'recipient_count' => count($recipients)]
+                        ];
+                    }
+
+                    public function getDeliveryReport(string $messageId): array
+                    {
+                        return [
+                            'success' => true,
+                            'message' => 'Delivery report logged',
+                            'data' => ['message_id' => $messageId, 'status' => 'delivered']
+                        ];
                     }
                 };
                 default:
@@ -275,6 +563,8 @@ class SmsService
             return false;
         }
 
+        $oldProvider = $this->provider;
+
         SystemSetting::set(
             'sms_provider',
             $provider,
@@ -285,6 +575,12 @@ class SmsService
         // Update current instance
         $this->provider = $provider;
         $this->providerInstance = $this->createProviderInstance($provider);
+
+        // Log configuration change
+        $this->logConfigurationChange('system_provider_changed', [
+            'old_provider' => $oldProvider,
+            'new_provider' => $provider
+        ]);
 
         return true;
     }
@@ -402,7 +698,7 @@ class SmsService
         }
 
         // If no fallback provider available, use the default from config
-        return $this->getActiveProvider();
+        return $this->getSystemProvider();
     }
 
     /**
@@ -474,6 +770,150 @@ class SmsService
             ]);
             return false;
         }
+    }
+
+    /**
+     * Send appointment reminder
+     *
+     * @param object $user
+     * @param array $appointmentData
+     * @return array
+     */
+    public function sendAppointmentReminder($user, array $appointmentData): array
+    {
+        $message = "Reminder: You have an appointment with {$appointmentData['doctor_name']} on {$appointmentData['appointment_date']} at {$appointmentData['appointment_time']} at {$appointmentData['clinic_name']}. Please arrive 15 minutes early.";
+        return $this->sendSms($user->phone, $message);
+    }
+
+    /**
+     * Send prescription notification
+     *
+     * @param object $user
+     * @param array $prescriptionData
+     * @return array
+     */
+    public function sendPrescriptionNotification($user, array $prescriptionData): array
+    {
+        $message = "Your prescription for {$prescriptionData['medication_name']} {$prescriptionData['dosage']} ({$prescriptionData['frequency']} for {$prescriptionData['duration']}) is ready for pickup at {$prescriptionData['pharmacy_name']}.";
+        return $this->sendSms($user->phone, $message);
+    }
+
+    /**
+     * Send test results notification
+     *
+     * @param object $user
+     * @param array $testData
+     * @return array
+     */
+    public function sendTestResultsNotification($user, array $testData): array
+    {
+        $message = "Your {$testData['test_name']} results are now available. Please contact {$testData['doctor_name']} or visit {$testData['portal_url']} to view your results.";
+        return $this->sendSms($user->phone, $message);
+    }
+
+    /**
+     * Send emergency alert
+     *
+     * @param object $user
+     * @param array $alertData
+     * @return array
+     */
+    public function sendEmergencyAlert($user, array $alertData): array
+    {
+        $message = "URGENT: {$alertData['message']} Doctor: {$alertData['doctor_phone']}";
+        return $this->sendSms($user->phone, $message);
+    }
+
+    /**
+     * Send medication reminder
+     *
+     * @param object $user
+     * @param array $medicationData
+     * @return array
+     */
+    public function sendMedicationReminder($user, array $medicationData): array
+    {
+        $message = "Medication Reminder: Time to take your {$medicationData['medication_name']} {$medicationData['dosage']}. Instructions: {$medicationData['instructions']}";
+        return $this->sendSms($user->phone, $message);
+    }
+
+    /**
+     * Send follow-up reminder
+     *
+     * @param object $user
+     * @param array $followUpData
+     * @return array
+     */
+    public function sendFollowUpReminder($user, array $followUpData): array
+    {
+        $message = "Follow-up Reminder: Please schedule your follow-up appointment with {$followUpData['doctor_name']} by {$followUpData['follow_up_date']} for: {$followUpData['reason']}. Call: {$followUpData['phone_number']}";
+        return $this->sendSms($user->phone, $message);
+    }
+
+    /**
+     * Validate phone number
+     *
+     * @param string $phoneNumber
+     * @return bool
+     */
+    public function validatePhoneNumber(string $phoneNumber): bool
+    {
+        return preg_match('/^\+?[1-9]\d{6,14}$/', $phoneNumber);
+    }
+
+    /**
+     * Format phone number
+     *
+     * @param string $phoneNumber
+     * @return string
+     */
+    public function formatPhoneNumber(string $phoneNumber): string
+    {
+        $clean = preg_replace('/\D/', '', $phoneNumber);
+        if (strlen($clean) == 10) {
+            if (str_contains($phoneNumber, '(') || str_contains($phoneNumber, '-')) {
+                return '+1' . $clean;
+            }
+            return '+' . $clean;
+        }
+        if (strlen($clean) == 11 && str_starts_with($clean, '1')) {
+            return '+' . $clean;
+        }
+        return '+' . $clean;
+    }
+
+    /**
+     * Get SMS status
+     *
+     * @param string $messageId
+     * @return array
+     */
+    public function getSmsStatus(string $messageId): array
+    {
+        return $this->providerInstance->getMessageStatus($messageId);
+    }
+
+    /**
+     * Send bulk SMS
+     *
+     * @param array $recipients
+     * @param string $message
+     * @return array
+     */
+    public function sendBulkSms(array $recipients, string $message): array
+    {
+        return $this->providerInstance->sendBulkSms($recipients, $message);
+    }
+
+    /**
+     * Get delivery report
+     *
+     * @param string $messageId
+     * @return array
+     */
+    public function getDeliveryReport(string $messageId): array
+    {
+        return $this->providerInstance->getDeliveryReport($messageId);
     }
 
     /**

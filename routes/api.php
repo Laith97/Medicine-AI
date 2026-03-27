@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\NotificationTestController;
 use App\Http\Controllers\Api\BillingController;
 use App\Http\Controllers\Api\EligibilityController;
+use App\Http\Controllers\Api\SmsSettingsController;
 use App\Http\Controllers\UserSettingsController;
 
 /*
@@ -68,6 +69,93 @@ Route::middleware(['auth', 'web'])->group(function () {
     // AI-powered claims features
     Route::middleware('billing.rate:suggestions')->post('/ai/code-suggestions', [BillingController::class, 'getCodeSuggestions']);
     Route::middleware('billing.rate:prediction')->post('/ai/denial-prediction', [BillingController::class, 'getDenialPrediction']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Compensation Management Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsDoctor::class])->group(function () {
+        // Compensation Plans
+        Route::get('/compensation/plans', [App\Http\Controllers\Api\CompensationController::class, 'indexPlans']);
+        Route::post('/compensation/plans', [App\Http\Controllers\Api\CompensationController::class, 'storePlan']);
+        Route::put('/compensation/plans/{id}', [App\Http\Controllers\Api\CompensationController::class, 'updatePlan']);
+        Route::delete('/compensation/plans/{id}', [App\Http\Controllers\Api\CompensationController::class, 'destroyPlan']);
+
+        // Compensations
+        Route::get('/compensation/compensations', [App\Http\Controllers\Api\CompensationController::class, 'indexCompensations']);
+        Route::post('/compensation/compensations', [App\Http\Controllers\Api\CompensationController::class, 'storeCompensation']);
+        Route::post('/compensation/compensations/{id}/approve', [App\Http\Controllers\Api\CompensationController::class, 'approveCompensation']);
+        Route::post('/compensation/compensations/{id}/mark-paid', [App\Http\Controllers\Api\CompensationController::class, 'markPaidCompensation']);
+
+        // Bonuses
+        Route::get('/compensation/bonuses', [App\Http\Controllers\Api\CompensationController::class, 'indexBonuses']);
+        Route::post('/compensation/bonuses', [App\Http\Controllers\Api\CompensationController::class, 'storeBonus']);
+        Route::post('/compensation/bonuses/{id}/approve', [App\Http\Controllers\Api\CompensationController::class, 'approveBonus']);
+
+        // Summary
+        Route::get('/compensation/summary', [App\Http\Controllers\Api\CompensationController::class, 'getSummary']);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Remote Therapeutic Monitoring (RTM) Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsDoctor::class])->group(function () {
+        // RTM Sessions
+        Route::get('/rtm/sessions', [App\Http\Controllers\Api\RtmController::class, 'indexSessions']);
+        Route::post('/rtm/sessions', [App\Http\Controllers\Api\RtmController::class, 'storeSession']);
+        Route::get('/rtm/sessions/{id}', [App\Http\Controllers\Api\RtmController::class, 'showSession']);
+        Route::patch('/rtm/sessions/{id}/status', [App\Http\Controllers\Api\RtmController::class, 'updateSessionStatus']);
+
+        // RTM Metrics
+        Route::post('/rtm/metrics', [App\Http\Controllers\Api\RtmController::class, 'storeMetric']);
+        Route::get('/rtm/sessions/{sessionId}/metrics', [App\Http\Controllers\Api\RtmController::class, 'getMetrics']);
+
+        // RTM Alerts
+        Route::get('/rtm/alerts', [App\Http\Controllers\Api\RtmController::class, 'indexAlerts']);
+        Route::post('/rtm/alerts/{id}/acknowledge', [App\Http\Controllers\Api\RtmController::class, 'acknowledgeAlert']);
+        Route::post('/rtm/alerts/{id}/resolve', [App\Http\Controllers\Api\RtmController::class, 'resolveAlert']);
+
+        // RTM Dashboard
+        Route::get('/rtm/dashboard', [App\Http\Controllers\Api\RtmController::class, 'getDashboard']);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google Review AI Response Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsDoctor::class])->group(function () {
+        Route::get('/review-ai/settings', [App\Http\Controllers\Api\GoogleReviewController::class, 'getSettings']);
+        Route::put('/review-ai/settings', [App\Http\Controllers\Api\GoogleReviewController::class, 'updateSettings']);
+        Route::get('/review-ai/pending', [App\Http\Controllers\Api\GoogleReviewController::class, 'indexPendingResponses']);
+        Route::post('/review-ai/generate', [App\Http\Controllers\Api\GoogleReviewController::class, 'generateResponse']);
+        Route::post('/review-ai/responses/{id}/approve', [App\Http\Controllers\Api\GoogleReviewController::class, 'approveResponse']);
+        Route::post('/review-ai/responses/{id}/reject', [App\Http\Controllers\Api\GoogleReviewController::class, 'rejectResponse']);
+        Route::post('/review-ai/responses/{id}/mark-posted', [App\Http\Controllers\Api\GoogleReviewController::class, 'markAsPosted']);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | AI-Powered Waitlist Filler Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsDoctor::class])->group(function () {
+        Route::get('/waitlist-filler/settings', [App\Http\Controllers\Api\WaitlistFillerController::class, 'getSettings']);
+        Route::put('/waitlist-filler/settings', [App\Http\Controllers\Api\WaitlistFillerController::class, 'updateSettings']);
+        Route::post('/waitlist-filler/find-matches', [App\Http\Controllers\Api\WaitlistFillerController::class, 'findMatches']);
+        Route::post('/waitlist-filler/send-offer', [App\Http\Controllers\Api\WaitlistFillerController::class, 'sendOffer']);
+        Route::get('/waitlist-filler/pending-offers', [App\Http\Controllers\Api\WaitlistFillerController::class, 'indexPendingOffers']);
+        Route::get('/waitlist-filler/analytics', [App\Http\Controllers\Api\WaitlistFillerController::class, 'getAnalytics']);
+    });
+
+    // Waitlist offer acceptance/decline (for patients)
+    Route::middleware('auth')->group(function () {
+        Route::post('/waitlist-filler/offers/{id}/accept', [App\Http\Controllers\Api\WaitlistFillerController::class, 'acceptOffer']);
+        Route::post('/waitlist-filler/offers/{id}/decline', [App\Http\Controllers\Api\WaitlistFillerController::class, 'declineOffer']);
+    });
 
     // Payer rules checking
     Route::post('/hospital-admin/claims/check-rules', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'checkRules']);
@@ -327,6 +415,24 @@ Route::middleware(['auth', 'web'])->group(function () {
         Route::post('generate', [App\Http\Controllers\Api\TreatmentOptimizationController::class, 'store']);
         Route::post('{id}/validate', [App\Http\Controllers\Api\TreatmentOptimizationController::class, 'validateRecommendation']);
         Route::post('{id}/reject', [App\Http\Controllers\Api\TreatmentOptimizationController::class, 'rejectRecommendation']);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | SMS Settings API Routes
+    |--------------------------------------------------------------------------
+    */
+
+    // Doctor SMS settings (protected by auth and EnsureUserIsDoctor middleware)
+    Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsDoctor::class])->group(function () {
+        Route::get('/doctor/sms-settings', [SmsSettingsController::class, 'getDoctorSettings']);
+        Route::put('/doctor/sms-settings', [SmsSettingsController::class, 'updateDoctorSettings']);
+    });
+
+    // Hospital SMS settings (protected by auth and HospitalAdminMiddleware)
+    Route::middleware(['auth', \App\Http\Middleware\HospitalAdminMiddleware::class])->group(function () {
+        Route::get('/hospital/{hospital}/sms-settings', [SmsSettingsController::class, 'getHospitalSettings']);
+        Route::put('/hospital/{hospital}/sms-settings', [SmsSettingsController::class, 'updateHospitalSettings']);
     });
 });
 

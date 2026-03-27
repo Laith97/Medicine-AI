@@ -39,7 +39,27 @@ class WaitlistExpiredNotification extends Notification implements ShouldBroadcas
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast', 'mail'];
+        return ['database', 'broadcast', 'mail', 'sms'];
+    }
+
+    /**
+     * Get the SMS representation of the notification.
+     */
+    public function toSms(object $notifiable): array
+    {
+        $doctorName = $this->waitlistEntry->waitlist->doctor->user->name ?? 'Unknown Doctor';
+        $doctorId = $this->waitlistEntry->waitlist->doctor->id ?? 0;
+        $hospitalId = $this->waitlistEntry->waitlist->doctor->hospital_id ?? 0;
+
+        return [
+            'message' => "Your waitlist entry for Dr. {$doctorName} has expired. Position was #{$this->waitlistEntry->position}. Rejoin: " . route('waitlist.index'),
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'waitlist_slot',
+                'context_id' => $this->waitlistEntry->id,
+            ]
+        ];
     }
 
     /**

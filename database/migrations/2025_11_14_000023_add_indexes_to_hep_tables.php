@@ -62,45 +62,49 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Drop indexes in reverse order
-        Schema::table('hep_progress', function (Blueprint $table) {
-            $table->dropIndex(['hep_exercise_id', 'date']);
-            $table->dropIndex(['hep_assignment_id', 'date']);
-            $table->dropIndex('date');
-            $table->dropIndex('hep_exercise_id');
-            $table->dropIndex('hep_assignment_id');
-        });
+        // Drop indexes in reverse order with error handling
+        $this->dropIndexIfExists('hep_progress', 'hep_progress_hep_exercise_id_date_index');
+        $this->dropIndexIfExists('hep_progress', 'hep_progress_hep_assignment_id_date_index');
+        $this->dropIndexIfExists('hep_progress', 'hep_progress_date_index');
+        $this->dropIndexIfExists('hep_progress', 'hep_progress_hep_exercise_id_index');
+        $this->dropIndexIfExists('hep_progress', 'hep_progress_hep_assignment_id_index');
 
-        Schema::table('hep_assignments', function (Blueprint $table) {
-            $table->dropIndex(['due_date', 'completion_status']);
-            $table->dropIndex(['patient_id', 'completion_status']);
-            $table->dropIndex('due_date');
-            $table->dropIndex('completion_status');
-            $table->dropIndex('assigned_by');
-            $table->dropIndex('patient_id');
-            $table->dropIndex('hep_program_id');
-        });
+        $this->dropIndexIfExists('hep_assignments', 'hep_assignments_due_date_completion_status_index');
+        $this->dropIndexIfExists('hep_assignments', 'hep_assignments_patient_id_completion_status_index');
+        $this->dropIndexIfExists('hep_assignments', 'hep_assignments_due_date_index');
+        $this->dropIndexIfExists('hep_assignments', 'hep_assignments_completion_status_index');
+        $this->dropIndexIfExists('hep_assignments', 'hep_assignments_assigned_by_index');
+        $this->dropIndexIfExists('hep_assignments', 'hep_assignments_patient_id_index');
+        $this->dropIndexIfExists('hep_assignments', 'hep_assignments_hep_program_id_index');
 
-        Schema::table('hep_exercises', function (Blueprint $table) {
-            $table->dropIndex(['hep_program_id', 'week_number']);
-            $table->dropIndex('week_number');
-            $table->dropIndex('exercise_id');
-            $table->dropIndex('hep_program_id');
-        });
+        $this->dropIndexIfExists('hep_exercises', 'hep_exercises_hep_program_id_week_number_index');
+        $this->dropIndexIfExists('hep_exercises', 'hep_exercises_week_number_index');
+        $this->dropIndexIfExists('hep_exercises', 'hep_exercises_exercise_id_index');
+        $this->dropIndexIfExists('hep_exercises', 'hep_exercises_hep_program_id_index');
 
-        Schema::table('hep_programs', function (Blueprint $table) {
-            $table->dropIndex(['doctor_id', 'status']);
-            $table->dropIndex(['patient_id', 'status']);
-            $table->dropIndex('status');
-            $table->dropIndex('appointment_id');
-            $table->dropIndex('diagnosis_id');
-            $table->dropIndex('patient_id');
-            $table->dropIndex('doctor_id');
-        });
+        $this->dropIndexIfExists('hep_programs', 'hep_programs_doctor_id_status_index');
+        $this->dropIndexIfExists('hep_programs', 'hep_programs_patient_id_status_index');
+        $this->dropIndexIfExists('hep_programs', 'hep_programs_status_index');
+        $this->dropIndexIfExists('hep_programs', 'hep_programs_appointment_id_index');
+        $this->dropIndexIfExists('hep_programs', 'hep_programs_diagnosis_id_index');
+        $this->dropIndexIfExists('hep_programs', 'hep_programs_patient_id_index');
+        $this->dropIndexIfExists('hep_programs', 'hep_programs_doctor_id_index');
 
-        Schema::table('exercises', function (Blueprint $table) {
-            $table->dropIndex('difficulty_level');
-            $table->dropIndex('category');
-        });
+        $this->dropIndexIfExists('exercises', 'exercises_difficulty_level_index');
+        $this->dropIndexIfExists('exercises', 'exercises_category_index');
+    }
+
+    /**
+     * Drop an index if it exists
+     */
+    private function dropIndexIfExists(string $table, string $indexName): void
+    {
+        try {
+            Schema::table($table, function ($table) use ($indexName) {
+                $table->dropIndex($indexName);
+            });
+        } catch (\Exception $e) {
+            // Index doesn't exist, continue silently
+        }
     }
 };

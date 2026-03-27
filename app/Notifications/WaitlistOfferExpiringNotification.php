@@ -94,14 +94,24 @@ class WaitlistOfferExpiringNotification extends Notification implements ShouldBr
     /**
      * Get the SMS representation of the notification.
      */
-    public function toSms(object $notifiable): string
+    public function toSms(object $notifiable): array
     {
         $doctorName = $this->waitlistEntry->waitlist->doctor->user->name ?? 'Unknown Doctor';
+        $doctorId = $this->waitlistEntry->waitlist->doctor->id ?? 0;
+        $hospitalId = $this->waitlistEntry->waitlist->doctor->hospital_id ?? 0;
         $expiresAt = $this->waitlistEntry->expires_at;
 
         $expiresText = $expiresAt ? 'Expires: ' . $expiresAt->format('M j, g:i A') : '';
 
-        return "URGENT: Your appointment offer with Dr. {$doctorName} expires soon! {$expiresText} Book now: " . route('waitlist.show', $this->waitlistEntry->id);
+        return [
+            'message' => "URGENT: Your appointment offer with Dr. {$doctorName} expires soon! {$expiresText} Book now: " . route('waitlist.show', $this->waitlistEntry->id),
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'waitlist_slot',
+                'context_id' => $this->waitlistEntry->id,
+            ]
+        ];
     }
 
     /**
