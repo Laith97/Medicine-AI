@@ -216,13 +216,15 @@ class AdminPayerRuleController extends Controller
         }
 
         try {
-            // Here you would implement the actual rule testing logic
-            // For now, return a mock response
+            // TODO: Implement actual rule testing logic
+            //       Evaluate $rule->conditions against $request->claim_data
+            //       Return 'approved', 'denied', or 'modified' based on rule evaluation
+            //       The mock below always approves - real implementation should check conditions
             $result = [
                 'rule_applied' => true,
                 'conditions_met' => true,
                 'actions_taken' => $rule->actions,
-                'result' => 'approved', // or 'denied', 'modified', etc.
+                'result' => 'approved', // Currently hardcoded - real implementation needed
                 'notes' => 'Rule test completed successfully'
             ];
 

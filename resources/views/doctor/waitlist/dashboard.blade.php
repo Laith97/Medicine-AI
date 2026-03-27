@@ -697,8 +697,8 @@ function sendManualOffer() {
 }
 
 function bulkOperations() {
-    // Implementation for bulk operations
-    alert('Bulk operations feature coming soon!');
+    // TODO: Implement bulk operations feature
+    showNotification('Bulk operations feature coming soon', 'info');
 }
 
 function viewAnalytics() {

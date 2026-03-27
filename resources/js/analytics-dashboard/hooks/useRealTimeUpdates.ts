@@ -10,6 +10,9 @@ export const useRealTimeUpdates = (
 
   const connect = useCallback(() => {
     if (!socketRef.current) {
+      // TODO: Implement backend WebSocket handler for /analytics namespace
+      //       Currently no websocket route exists for this namespace.
+      //       The connect_error handler will catch this failure gracefully.
       socketRef.current = io('/analytics', {
         auth: {
           token: localStorage.getItem('auth_token'),

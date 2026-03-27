@@ -359,7 +359,7 @@ function showInsuranceModal() {
 }
 
 function showEligibilityHistory() {
-    // This would show eligibility history
+    // TODO: Implement eligibility history feature
     showErrorMessage('Eligibility history feature coming soon');
 }
 

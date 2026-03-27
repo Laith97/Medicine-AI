@@ -381,18 +381,25 @@ class ClaimDenialPredictionService
     private function callAppealPredictionScript(string $dataFile): array
     {
         $pythonScript = base_path('python/predict_appeal_success.py');
+
+        // Check if script exists before attempting to run
+        if (!file_exists($pythonScript)) {
+            throw new \Exception('Appeal prediction script not found: ' . $pythonScript);
+        }
+
         $safeScript = escapeshellarg($pythonScript);
         $safeDataFile = escapeshellarg($dataFile);
         $command = "python {$safeScript} {$safeDataFile} 2>&1";
 
         Log::info('Executing Python appeal prediction command: ' . $command);
 
-        $output = shell_exec($command);
+        exec($command, $outputLines, $returnCode);
 
-        if ($output === null) {
-            throw new \Exception('Appeal prediction script execution failed');
+        if ($returnCode !== 0) {
+            throw new \Exception('Appeal prediction script failed with code ' . $returnCode . ': ' . implode("\n", $outputLines));
         }
 
+        $output = implode("\n", $outputLines);
         Log::info('Appeal prediction script output: ' . $output);
 
         $result = json_decode($output, true);

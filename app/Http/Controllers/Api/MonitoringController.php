@@ -174,9 +174,18 @@ class MonitoringController extends Controller
      */
     private function getDashboardMetrics(string $timeRange): array
     {
-        // In a real implementation, this would query Prometheus or a time-series database
-        // For now, return mock data based on the time range
+        // TODO: Replace with actual Prometheus/time-series queries
+        //       Install promphp/prometheus_client_php and query actual metrics:
+        //       - total_requests: Counter from nginx/laravel requests
+        //       - error_rate: Error counter / total requests
+        //       - avg_response_time: Histogram from request duration
+        //       - active_users: Gauge from session data
+        //       - database_connections: Query SHOW STATUS
+        //       - cache_hit_rate: Redis INFO stats
+        //       - memory_usage: PHP memory_get_usage()
+        //       - cpu_usage: sys_getloadavg() or /proc/stat
 
+        // For now, return mock data based on the time range
         $multiplier = match($timeRange) {
             '1h' => 1,
             '6h' => 6,

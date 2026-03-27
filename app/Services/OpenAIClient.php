@@ -239,7 +239,7 @@ IMPORTANT: Return ONLY the JSON array, no other text.'
                 ]);
             
             // Log the response for debugging
-            \Log::error('Upload Response', [
+            \Log::info('Upload Response', [
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
@@ -248,21 +248,21 @@ IMPORTANT: Return ONLY the JSON array, no other text.'
             if ($response->successful()) {
                 // Clean up the temporary file
                 unlink($jsonlFilePath); // Delete the temporary .jsonl file
-                
+
                 // Return the file ID for further processing
                 return $response->json('id');
             } else {
                 // Return error details if the upload fails
-                return response()->json([
+                return [
                     'error' => 'Upload failed',
                     'status' => $response->status(),
                     'response' => $response->json(),
-                ], $response->status());
+                ];
             }
-    
+
         } catch (\Exception $e) {
             \Log::error('Upload Exception', ['error' => $e->getMessage()]);
-            return response()->json(['error' => 'File upload failed.'], 500);
+            return ['error' => 'File upload failed.'];
         }
     }
     
@@ -291,16 +291,16 @@ IMPORTANT: Return ONLY the JSON array, no other text.'
                 return $response->json('id');
             } else {
                 // Return or log full details including raw response
-                \Log::error('OpenAI upload error', [
+                \Log::error('OpenAI createThread error', [
                     'status' => $response->status(),
-                    'body' => $response->body(), // This will show the actual error message
+                    'body' => $response->body(),
                 ]);
-                
-                return response()->json([
-                    'error' => 'Upload failed',
+
+                return [
+                    'error' => 'createThread failed',
                     'status' => $response->status(),
-                    'body' => $response->body(), // 👈 Return raw body directly
-                ], $response->status());
+                    'body' => $response->body(),
+                ];
             }
             
         } catch (\Exception $e) {
@@ -318,7 +318,7 @@ IMPORTANT: Return ONLY the JSON array, no other text.'
         try {
             // Ensure $fileIds are provided (they should be passed from the controller)
             if (empty($fileIds)) {
-                return response()->json(['error' => 'No file IDs provided.'], 422);
+                return ['error' => 'No file IDs provided.', 'status' => 422];
             }
     
             // Prepare the request data
@@ -337,11 +337,18 @@ IMPORTANT: Return ONLY the JSON array, no other text.'
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
-                return null;
+                return [
+                    'error' => 'Start run failed',
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ];
             }
         } catch (\Exception $e) {
             Log::error('Start run exception', ['error' => $e->getMessage()]);
-            return null;
+            return [
+                'error' => 'Start run exception',
+                'message' => $e->getMessage(),
+            ];
         }
     }
     

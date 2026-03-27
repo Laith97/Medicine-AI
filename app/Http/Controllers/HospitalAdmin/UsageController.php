@@ -29,19 +29,23 @@ class UsageController extends Controller
             ->get();
 
         // Get usage statistics
+        // TODO: Query Diagnosis model for count filtered by hospital's doctors
+        // TODO: Query Appointment model for count filtered by hospital's doctors/patients
         $usageStats = [
             'total_doctors' => $doctors->count(),
             'active_doctors' => $doctors->where('is_active', true)->count(),
-            'total_diagnoses' => 0, // This would need to be calculated based on your diagnosis model
-            'total_appointments' => 0, // This would need to be calculated based on your appointment model
+            'total_diagnoses' => 0, // TODO: Count diagnoses from doctors in this hospital
+            'total_appointments' => 0, // TODO: Count appointments for this hospital
         ];
 
         // Get monthly usage data (placeholder - you'd implement based on your actual data)
+        // TODO: Query actual monthly aggregates from diagnoses/appointments tables
+        //       Group by MONTH(created_at) and hospital_id
         $monthlyUsage = collect(range(1, 12))->map(function ($month) {
             return [
                 'month' => date('M', mktime(0, 0, 0, $month, 1)),
-                'diagnoses' => rand(10, 100), // Replace with actual data
-                'appointments' => rand(20, 200), // Replace with actual data
+                'diagnoses' => rand(10, 100), // TODO: Replace with actual count
+                'appointments' => rand(20, 200), // TODO: Replace with actual count
             ];
         });
 

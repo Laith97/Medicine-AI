@@ -35,7 +35,9 @@ class AnalyticsController extends Controller
         // Get data scope for filtering
         $dataScope = $this->analyticsPermissions->getDataScope($user, 'executive');
 
-        // Mock data - in real implementation, this would query the data warehouse
+        // TODO: Replace with actual data warehouse queries using KPIAnalyticsService::getAnalyticsDashboard()
+        //       or direct DataWarehouse\KPICalculationService queries for each metric.
+        //       The frontend expects this exact structure - preserve it when implementing.
         $data = [
             'summary' => [
                 'revenue' => [
@@ -121,7 +123,8 @@ class AnalyticsController extends Controller
             ], 403);
         }
 
-        // Mock revenue data
+        // TODO: Replace with actual Stripe/subscription revenue queries
+        //       Query StripeService for actual MRR, ARPU, churn_rate, CLV metrics
         $data = [
             'kpis' => [
                 'mrr' => ['value' => 125430, 'change' => 12.5],
@@ -163,7 +166,8 @@ class AnalyticsController extends Controller
             ], 403);
         }
 
-        // Mock patient satisfaction data
+        // TODO: Replace with actual patient satisfaction queries
+        //       Query Review model for actual NPS, satisfaction scores by department
         $data = [
             'overall' => [
                 'nps' => 72,

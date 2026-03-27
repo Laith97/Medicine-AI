@@ -96,6 +96,10 @@ class ClearinghouseMetricsController extends Controller
         // Prepare the response
         $response = [
             'success' => true,
+            'is_placeholder' => [
+                'uptime' => true,
+                'avgProcessingTime' => true,
+            ],
             'kpis' => [
                 'successRate' => $successRate . '%',
                 'avgProcessingTime' => $avgProcessingTime . 'm',
@@ -241,6 +245,8 @@ class ClearinghouseMetricsController extends Controller
             $failedSubmissions = $providerSubmissions->where('status', 'failed')->count();
 
             $successRate = $totalSubmissions > 0 ? round(($successfulSubmissions / $totalSubmissions) * 100, 2) : 100;
+            // TODO: Calculate actual average response time from submission timing data
+            //       If clearinghouse API returns response_time, use AVG(response_time)
             $avgResponseTime = 1; // Placeholder - in seconds
 
             $providers[] = [
@@ -249,10 +255,11 @@ class ClearinghouseMetricsController extends Controller
                 'code' => $account->provider,
                 'successRate' => $successRate,
                 'totalSubmissions' => $totalSubmissions,
-                'avgResponseTime' => $avgResponseTime,
+                'avgResponseTime' => $avgResponseTime, // Placeholder
                 'errorRate' => $totalSubmissions > 0 ? round(($failedSubmissions / $totalSubmissions) * 100, 2) : 0,
                 'status' => $account->is_active ? 'active' : 'inactive',
-                'lastUpdated' => now()->toISOString()
+                'lastUpdated' => now()->toISOString(),
+                'is_placeholder' => ['avgResponseTime' => true],
             ];
         }
 
@@ -358,8 +365,10 @@ class ClearinghouseMetricsController extends Controller
         $totalSubmissions = $successfulCount + $failedCount + $pendingCount;
         $successRate = $totalSubmissions > 0 ? round(($successfulCount / $totalSubmissions) * 100, 2) : 100;
 
+        // TODO: Calculate from actual processing_time field if available in submissions table
         $avgProcessingTime = 2.3; // Placeholder
 
+        // TODO: Calculate from clearinghouse API health endpoint or track actual uptime
         $uptime = 99.9; // Placeholder
 
         return [

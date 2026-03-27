@@ -754,20 +754,20 @@ class HEPController extends Controller
                 'exercise_count' => count($programData['exercises'] ?? []),
             ]);
 
-            // Create a mock program object for the frontend
-            $mockProgram = [
+            // Create program object for the frontend
+            $program = [
                 'id' => 'temp_' . time(),
                 'title' => $programData['program_title'] ?? 'AI-Generated Home Exercise Program',
                 'description' => $this->hepGenerator->generateProgramDescription($programData),
                 'duration_weeks' => $programData['duration_weeks'] ?? 6,
-                'hep_exercises' => $this->convertExercisesToMockFormat($programData['exercises'] ?? []),
+                'hep_exercises' => $this->convertAiExercisesToProgramFormat($programData['exercises'] ?? []),
                 'patient' => $diagnosis->patient,
                 'diagnosis' => $diagnosis,
             ];
 
             return response()->json([
                 'success' => true,
-                'program' => $mockProgram,
+                'program' => $program,
                 'message' => 'HEP program generated successfully.',
             ]);
 
@@ -799,11 +799,11 @@ class HEPController extends Controller
         }
     }
     /**
-     * Convert AI exercise recommendations to mock format for frontend
+     * Convert AI exercise recommendations to program format for frontend
      */
-    protected function convertExercisesToMockFormat(array $exercises): array
+    protected function convertAiExercisesToProgramFormat(array $exercises): array
     {
-        $mockExercises = [];
+        $programExercises = [];
         $order = 1;
 
         foreach ($exercises as $exerciseData) {
@@ -820,7 +820,7 @@ class HEPController extends Controller
                 ]
             );
 
-            $mockExercises[] = [
+            $programExercises[] = [
                 'exercise_id' => $exercise->id,
                 'week_number' => 1, // Default to week 1
                 'sets' => $exerciseData['sets'] ?? 3,
@@ -834,7 +834,7 @@ class HEPController extends Controller
             $order++;
         }
 
-        return $mockExercises;
+        return $programExercises;
     }
 
     /**

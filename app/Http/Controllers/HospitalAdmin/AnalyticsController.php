@@ -78,7 +78,9 @@ class AnalyticsController extends Controller
             'specialty_data' => array_column($departmentStats, 'doctors_count'),
         ];
         
-        // Get recent activity (placeholder)
+        // TODO: Replace with actual audit log queries
+        //       Query AuditLoggingService or activity_logs table for recent hospital activity
+        //       Filter by hospital_id and sort by created_at DESC
         $recentActivity = [
             [
                 'date' => now()->format('M d, Y'),

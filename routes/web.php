@@ -288,8 +288,6 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     Route::post('/appointments/{appointment}/reschedule', [AppointmentController::class, 'reschedule'])->name('appointments.reschedule');
     Route::get('/appointments/calendar/events', [AppointmentController::class, 'getCalendarEvents'])->name('appointments.calendar.events');
 
-    // Diagnosis creation from appointment page (for doctors) - DUPLICATE REMOVED - kept in doctor group only
-    // Route::post('/appointments/{appointment}/create-diagnosis', [DiagnosisController::class, 'createFromAppointment'])->name('appointments.create-diagnosis');
 
     // Review routes for patients
     Route::resource('reviews', ReviewController::class);

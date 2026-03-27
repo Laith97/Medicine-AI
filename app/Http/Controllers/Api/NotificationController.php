@@ -106,11 +106,11 @@ class NotificationController extends Controller
             // Log the error for debugging
             Log::error('Error in API unreadCount:' . $e->getMessage());
 
-            // Always return valid JSON
+            // Always return valid JSON - don't expose internal error details
             return response()->json([
                 'success' => false,
                 'count' => 0,
-                'error' => $e->getMessage(),
+                'error' => 'Failed to retrieve unread count',
                 'authenticated' => false
             ]);
         }
@@ -230,7 +230,7 @@ class NotificationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to sync notification',
-                'error' => $e->getMessage(),
+                'error' => 'Sync operation failed',
             ], 500);
         }
     }
@@ -286,23 +286,30 @@ class NotificationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to check notifications',
-                'error' => $e->getMessage(),
+                'error' => 'Check operation failed',
             ], 500);
         }
     }
 
     /**
-     * Get guest notifications (for non-authenticated access)
+     * Get guest notifications (for non-authenticated access via token)
+     *
+     * TODO: Implement guest notification lookup using token
+     *       - Token should reference a guest_appointment or similar record
+     *       - Return notifications associated with that guest appointment
+     *       - Consider rate limiting since this is public-facing
      */
     public function guestNotifications(Request $request, string $token): JsonResponse
     {
-        // This could be used for guest appointment notifications
-        // Implementation depends on your guest notification system
+        // TODO: Implement guest notification lookup
+        // 1. Validate token format/prefix (e.g., guest_appt_xxx)
+        // 2. Look up associated appointment/notification records
+        // 3. Return matching notifications
 
         return response()->json([
-            'success' => true,
+            'success' => false,
             'notifications' => [],
             'message' => 'Guest notifications feature not implemented yet',
-        ]);
+        ], 501);
     }
 }
