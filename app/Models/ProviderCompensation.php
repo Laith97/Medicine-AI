@@ -10,6 +10,8 @@ class ProviderCompensation extends Model
 {
     use HasFactory;
 
+    protected $table = 'provider_compensations';
+
     protected $fillable = [
         'doctor_id',
         'compensation_plan_id',
