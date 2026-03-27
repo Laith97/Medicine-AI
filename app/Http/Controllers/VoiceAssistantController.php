@@ -507,6 +507,7 @@ class VoiceAssistantController extends Controller
                 }
             } catch (\Exception $e) {
                 \Log::error('Failed to generate AssemblyAI token for direct streaming: ' . $e->getMessage());
+                // AssemblyAI is optional - continue without streaming config but flag the issue
             }
         } else {
             \Log::info('Non-English language selected, skipping AssemblyAI (will use GPT-4o post-processing)', [
@@ -518,6 +519,7 @@ class VoiceAssistantController extends Controller
             'success' => true,
             'sessionId' => $sessionId,
             'assemblyConfig' => $assemblyConfig,
+            'assemblyConfigFailed' => $assemblyConfig === null && $lang === 'en',
             'transcriptionId' => $transcription->id,
             'message' => 'Session started successfully.'
         ]);
@@ -1051,16 +1053,33 @@ class VoiceAssistantController extends Controller
                 'gender' => $patientGender ?? 'N/A',
             ];
 
-            // OPTIMIZATION: Check cache for similar AI analysis requests
-            $analysisCacheKey = 'voice_ai_analysis_' . md5($transcription . $criterion);
+            // Determine type parameter with validation
+            $validTypes = ['ai_analysis', 'clinical_doc'];
+            $type = $request->input('type', 'ai_analysis');
+
+            // Validate type parameter against allowlist
+            if (!in_array($type, $validTypes, true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid type parameter. Must be one of: ' . implode(', ', $validTypes)
+                ], 400);
+            }
+
+            // OPTIMIZATION: Check cache for similar AI analysis requests (include type in cache key)
+            $analysisCacheKey = 'voice_ai_analysis_' . md5($transcription . $criterion . $type);
             $cachedAnalysis = Cache::get($analysisCacheKey);
 
-            if ($cachedAnalysis) {
+            if ($cachedAnalysis && !empty($cachedAnalysis)) {
                 \Log::info('Voice Assistant - Using cached AI analysis result');
                 $aiAnalysis = $cachedAnalysis;
             } else {
-                // Use improved prompt that analyzes raw transcript
-                $prompt = $this->prepareVoicePromptFromTranscript($transcription, $patientData, $criterion);
+                // Determine prompt based on type parameter
+                if ($type === 'clinical_doc') {
+                    $prompt = $this->prepareClinicalDocPrompt($transcription, $patientData);
+                } else {
+                    // Use improved prompt that analyzes raw transcript for AI analysis
+                    $prompt = $this->prepareVoicePromptFromTranscript($transcription, $patientData, $criterion);
+                }
 
                 $response = OpenAI::chat()->create([
                     'model' => 'gpt-4o',
@@ -1075,33 +1094,56 @@ class VoiceAssistantController extends Controller
 
                 $aiAnalysis = $response['choices'][0]['message']['content'] ?? '';
 
-                // Cache successful analysis for 2 hours
-                if (!empty($aiAnalysis)) {
-                    Cache::put($analysisCacheKey, $aiAnalysis, 7200);
+                // Validate AI analysis is not empty before storing
+                if (empty($aiAnalysis)) {
+                    \Log::error('AI analysis returned empty content', [
+                        'session_id' => $sessionId,
+                        'response_keys' => array_keys($response),
+                        'type' => $type
+                    ]);
+                    throw new \Exception('AI analysis returned empty result. Please try again.');
                 }
+
+                // Cache successful analysis for 2 hours
+                Cache::put($analysisCacheKey, $aiAnalysis, 7200);
             }
 
             // Update database - ensure only the owner can update
-            VoiceTranscription::where('session_id', $sessionId)
-                ->where('doctor_id', Auth::id()) // Ensure only the owner can update
-                ->update([
-                    'ai_analysis' => $aiAnalysis,
-                    'structured_chart' => [
-                        'symptoms' => $extractedData['symptoms'] ?? '',
-                        'medical_history' => $extractedData['medical_history'] ?? '',
-                        'physical_findings' => $extractedData['physical_findings'] ?? '',
-                        'medications' => $extractedData['medications'] ?? '',
-                        'vital_signs' => $extractedData['vital_signs'] ?? '',
-                        'diagnosis' => $extractedData['diagnosis'] ?? '',
-                        'care_plan' => $extractedData['care_plan'] ?? '',
-                    ]
-                ]);
+            // Store in separate fields to avoid overwriting different content types
+            $isClinicalDoc = ($type === 'clinical_doc');
+            $updateData = [];
 
-            return response()->json([
+            if ($isClinicalDoc) {
+                $updateData['clinical_doc'] = $aiAnalysis;
+            } else {
+                $updateData['ai_analysis'] = $aiAnalysis;
+                // Only update structured_chart for AI analysis, not clinical documentation
+                $updateData['structured_chart'] = [
+                    'symptoms' => $extractedData['symptoms'] ?? '',
+                    'medical_history' => $extractedData['medical_history'] ?? '',
+                    'physical_findings' => $extractedData['physical_findings'] ?? '',
+                    'medications' => $extractedData['medications'] ?? '',
+                    'vital_signs' => $extractedData['vital_signs'] ?? '',
+                    'diagnosis' => $extractedData['diagnosis'] ?? '',
+                    'care_plan' => $extractedData['care_plan'] ?? '',
+                ];
+            }
+
+            VoiceTranscription::where('session_id', $sessionId)
+                ->where('doctor_id', Auth::id())
+                ->update($updateData);
+
+            // Return response with appropriate key based on type
+            $responseData = [
                 'success' => true,
-                'aiAnalysis' => $aiAnalysis,
-                'message' => 'AI analysis generated successfully.'
-            ]);
+                'type' => $type,
+                'message' => $isClinicalDoc
+                    ? 'Clinical documentation generated successfully.'
+                    : 'AI analysis generated successfully.',
+                $isClinicalDoc ? 'clinicalDoc' : 'aiAnalysis' => $aiAnalysis,
+            ];
+
+            return response()->json($responseData);
         } catch (\Exception $e) {
             \Log::error('AI analysis error: ' . $e->getMessage(), [
                 'session_id' => $sessionId,
@@ -1235,9 +1277,15 @@ class VoiceAssistantController extends Controller
                 'message' => 'AI analysis completed! Now write your professional diagnosis.'
             ]);
         } catch (\Exception $e) {
+            \Log::error('createAiAssistantResult failed', [
+                'error' => $e->getMessage(),
+                'session_id' => $sessionId,
+                'user_id' => Auth::id(),
+                'selected_patient' => $selectedPatient
+            ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create AI result: ' . $e->getMessage()
+                'message' => 'Failed to create AI result. Please try again.'
             ]);
         }
     }
@@ -1452,9 +1500,15 @@ class VoiceAssistantController extends Controller
                 'message' => 'New patient created successfully! Temporary password is "' . $temporaryPassword . '" - please inform the patient to change it on first login. Start a voice session to create an appointment.'
             ]);
         } catch (\Exception $e) {
+            \Log::error('createPatient failed', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+                'patient_name' => $request->input('name'),
+                'patient_email' => $request->input('email')
+            ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create patient: ' . $e->getMessage()
+                'message' => 'Failed to create patient. Please try again.'
             ]);
         }
     }
@@ -3556,10 +3610,10 @@ INSTRUCTIONS:
                     return trim($formatted);
                 }
 
-                return null;
+                throw new \Exception('GPT-4o diarization returned invalid segments format');
             } catch (\Exception $e) {
                 \Log::error('GPT-4o diarization failed', ['error' => $e->getMessage()]);
-                return null;
+                throw new \Exception('Speaker diarization failed: ' . $e->getMessage());
             }
         }
 
