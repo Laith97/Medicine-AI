@@ -177,6 +177,12 @@ $('#aiSuggestBtn').click(function(e) {
             symptoms = currentDiagnosis.patient_data.symptoms;
             console.log('🔍 Using patient_data.symptoms as symptoms:', symptoms);
         }
+
+        // If still no symptoms, use diagnosis_text as symptoms (this IS the clinical presentation)
+        if ((!symptoms || symptoms.trim() === '') && currentDiagnosis.diagnosis_text) {
+            symptoms = currentDiagnosis.diagnosis_text;
+            console.log('🔍 Using diagnosis_text as symptoms:', symptoms);
+        }
     }
 
     // Include past diagnosis history (all except most recent, limit to last 10)
@@ -238,7 +244,10 @@ $('#aiSuggestBtn').click(function(e) {
     
     var hasClinicalAssessment = !!(symptoms || currentDiagnosis);
     console.log('Has Clinical Assessment:', hasClinicalAssessment, 'Symptoms:', symptoms, 'Diagnosis:', !!currentDiagnosis);
-    
+
+    // Check if symptoms from patient_data.symptoms is populated
+    var hasPatientDataSymptoms = !!(currentDiagnosis && currentDiagnosis.patient_data && currentDiagnosis.patient_data.symptoms && currentDiagnosis.patient_data.symptoms.trim() !== '');
+
     // Only add to missing if truly missing
     if (!hasAllergies) {
         missingData.push('Patient Allergies');
@@ -246,8 +255,9 @@ $('#aiSuggestBtn').click(function(e) {
     if (!hasMedications) {
         missingData.push('Current Medications');
     }
-    if (!hasClinicalAssessment) {
-        missingData.push('Doctor Clinical Assessment');
+    // Note: If patient_data.symptoms is empty but diagnosis_text exists, diagnosis_text is used as symptoms fallback
+    if (!hasPatientDataSymptoms) {
+        missingData.push('Symptoms (empty - diagnosis text will be used)');
     }
     
     console.log('Missing Data:', missingData);
