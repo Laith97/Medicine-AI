@@ -8,17 +8,41 @@
 @endpush
 
 @section('content')
-<div class="container-fluid">
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;">
+    <div class="container">
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0">Edit Insurance Claim</h1>
-                <a href="{{ route('doctor.claims.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Back to Claims
-                </a>
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-edit me-2"></i>Edit Insurance Claim</h2>
+                        <p class="text-muted mb-0">Update the claim details below</p>
+                    </div>
+                    <a href="{{ route('doctor.claims.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Claims
+                    </a>
+                </div>
             </div>
+        </div>
+    </div>
+    </div>
+</div>
 
-            @if($errors->any())
+@if($errors->any())
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     <h6><i class="fas fa-exclamation-triangle me-2"></i>Please fix the following errors:</h6>
                     <ul class="mb-0">
@@ -28,9 +52,12 @@
                     </ul>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-            @endif
+            </div>
+        </div>
+    </div>
+@endif
 
-            <form action="{{ route('doctor.claims.update', $claim) }}" method="POST">
+<form action="{{ route('doctor.claims.update', $claim) }}" method="POST">
                 @csrf
                 @method('PUT')
                 <div class="row">
@@ -256,6 +283,7 @@
         </div>
     </div>
 </div>
+    </div></div>
 @endsection
 
 @push('scripts')

@@ -1,6 +1,34 @@
 @extends('master')
 
 @section('content')
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;">
+    <div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-user-plus me-2"></i>Add New Patient</h2>
+                        <p class="text-muted mb-0">Create a new patient account in the system</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -84,4 +112,5 @@
         </div>
     </div>
 </div>
+    </div></div>
 @endsection

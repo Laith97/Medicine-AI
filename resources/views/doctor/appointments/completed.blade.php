@@ -8,48 +8,35 @@
 @endpush
 
 @section('content')
-<div class="dashboard-container">
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;">
     <div class="container">
-        <!-- Breadcrumbs -->
-        <nav aria-label="breadcrumb" class="mb-4">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item">
-                    <a href="{{ route('doctor.dashboard') }}" class="text-decoration-none">
-                        <i class="fas fa-home me-1"></i>Dashboard
-                    </a>
-                </li>
-                <li class="breadcrumb-item">
-                    <a href="{{ route('doctor.appointments.index') }}" class="text-decoration-none">
-                        Appointments
-                    </a>
-                </li>
-                <li class="breadcrumb-item active" aria-current="page">Appointment Completed</li>
-            </ol>
-        </nav>
-
-        <!-- Header -->
-        <div class="dashboard-header py-3 border-bottom mb-4" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border-radius: 10px 10px 0 0;">
+        <div class="dashboard-header">
             <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                    <a href="{{ route('doctor.appointments.index') }}" class="btn btn-light me-3 shadow-sm">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Appointments
-                    </a>
-                    <div>
-                        <h1 class="h2 mb-1 fw-bold" style="color: white;">
-                            <i class="fas fa-check-circle me-2"></i>Appointment Completed Successfully
-                        </h1>
-                        <p class="mb-0 opacity-75">ID: #{{ $appointment->id }} • {{ $appointment->appointment_date->format('M j, Y \a\t g:i A') }}</p>
-                    </div>
+                <div>
+                    <h2><i class="fas fa-check-circle me-2"></i>Appointment Completed</h2>
+                    <p class="text-muted mb-0">ID: #{{ $appointment->id }} • {{ $appointment->appointment_date->format('M j, Y \a\t g:i A') }}</p>
                 </div>
-                <div class="text-end">
-                    <div class="bg-white bg-opacity-20 rounded p-3">
-                        <div class="h3 mb-0 fw-bold">{{ $appointment->appointment_duration ?? 30 }}</div>
-                        <small class="opacity-90">minutes completed</small>
-                    </div>
-                </div>
+                <a href="{{ route('doctor.appointments.index') }}" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Appointments
+                </a>
             </div>
         </div>
+    </div>
+</div>
 
+<div class="container-fluid">
+    <div class="container">
         <div class="row">
             <!-- Main Content -->
             <div class="col-lg-8">

@@ -196,6 +196,22 @@ class Appointment extends Model
     }
 
     /**
+     * Get the diagnosis for this appointment
+     */
+    public function diagnosis()
+    {
+        return $this->hasOne(Diagnosis::class);
+    }
+
+    /**
+     * Get all diagnoses for this appointment
+     */
+    public function diagnoses()
+    {
+        return $this->hasMany(Diagnosis::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
      * Scope for upcoming appointments
      */
     public function scopeUpcoming($query)

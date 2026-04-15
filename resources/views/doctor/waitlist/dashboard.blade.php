@@ -260,7 +260,19 @@
 @endsection
 
 @section('content')
-<div class="container-fluid py-4">
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;">
+    <div class="container">
     <!-- Page Header -->
     <div class="row mb-4">
         <div class="col">
@@ -280,6 +292,8 @@
             </div>
         </div>
     </div>
+    </div>
+</div>
 
     <!-- Statistics Cards -->
     <div class="row mb-4">
@@ -520,6 +534,8 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
     </div>
 </div>
 

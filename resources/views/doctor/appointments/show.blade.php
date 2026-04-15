@@ -178,325 +178,325 @@
 @endpush
 
 @section('content')
-<div class="dashboard-container">
-    <div class="container appointment-details">
-        <!-- Header -->
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;">
+    <div class="container">
         <div class="dashboard-header">
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-                <div class="d-flex align-items-center">
-                    <a href="{{ route('doctor.appointments.index') }}" class="btn btn-light me-3 shadow-sm">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Appointments
-                    </a>
-                    <div>
-                        <h1 class="h2 mb-1 fw-bold">Appointment Details</h1>
-                        <p class="mb-0 opacity-75">ID: #{{ $appointment->id }} • {{ $appointment->appointment_date->format('M j, Y \a\t g:i A') }}</p>
-                    </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-calendar-check me-2"></i>Appointment Details</h2>
+                    <p class="text-muted mb-0">ID: #{{ $appointment->id }} • {{ $appointment->appointment_date->format('M j, Y \a\t g:i A') }}</p>
                 </div>
-
-                <div class="text-end">
-                    <div class="d-flex flex-column align-items-end gap-2">
-                        <span class="status-badge status-{{ $appointment->status }}">
-                            <i class="fas fa-{{ $appointment->status == 'pending' ? 'clock' : ($appointment->status == 'confirmed' ? 'check-circle' : ($appointment->status == 'completed' ? 'check-double' : ($appointment->status == 'cancelled' ? 'times-circle' : 'user-times'))) }}"></i>
-                            {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
-                        </span>
-                        @if($appointment->status == 'completed')
-                        <div class="bg-success bg-opacity-25 px-3 py-1 rounded-pill">
-                            <small class="text-white fw-semibold">
-                                <i class="fas fa-trophy me-1"></i>Successfully Completed
-                            </small>
-                        </div>
-                        @endif
-                        <small class="text-white-50">
-                            <i class="fas fa-calendar-alt me-1"></i>{{ $appointment->appointment_date->format('l, F j, Y') }}
-                        </small>
-                    </div>
-                </div>
+                <a href="{{ route('doctor.appointments.index') }}" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Appointments
+                </a>
             </div>
         </div>
+    </div>
+</div>
 
+<div class="dashboard-container">
+    <div class="container appointment-details">
         <div class="row">
             <!-- Main Content -->
             <div class="col-lg-12">
-                <!-- Information Cards Grid -->
-                <div class="info-cards-grid">
-                    <!-- Call/Video Buttons -->
-                @if($appointment->status === 'confirmed')
-                    @include('components.appointment-call-buttons', ['appointment' => $appointment])
-                @endif
-
-                <!-- Appointment Overview Card -->
-                    <div class="table-card">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div>
-                                <h5 class="mb-1 fw-bold text-primary">
-                                    <i class="fas fa-calendar-check me-2"></i>Appointment Overview
-                                </h5>
-                                <small class="text-muted">{{ $appointment->appointment_date->format('l, F j, Y') }}</small>
-                            </div>
-                            <div class="text-end">
-                                <div class="h4 mb-0 fw-bold text-primary">{{ $appointment->appointment_duration ?? 30 }}</div>
-                                <small class="text-muted">minutes</small>
-                            </div>
+                <!-- Main Consultation Summary -->
+                <div class="table-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="mb-1 fw-bold text-primary">
+                                <i class="fas fa-user-injured me-2"></i>{{ $appointment->patient_name }}
+                            </h4>
+                            <p class="mb-0 text-muted">{{ $appointment->patient_email }} • {{ $appointment->patient_phone ?? 'No phone' }}</p>
                         </div>
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-primary bg-opacity-15 rounded p-2 me-3">
-                                        <i class="fas fa-calendar-alt text-primary"></i>
-                                    </div>
-                                    <div>
-                                        <small class="text-muted d-block">Type</small>
-                                        <span class="badge bg-primary">{{ ucfirst(str_replace('_', ' ', $appointment->appointment_type)) }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-success bg-opacity-15 rounded p-2 me-3">
-                                        <i class="fas fa-dollar-sign text-success"></i>
-                                    </div>
-                                    <div>
-                                        <small class="text-muted d-block">Fee</small>
-                                        <span class="h6 text-success fw-bold">${{ number_format($appointment->consultation_fee / 100, 2) }}</span>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="text-end">
+                            <span class="badge bg-success fs-6 px-3 py-2">
+                                <i class="fas fa-check-circle me-1"></i>Consultation Completed
+                            </span>
+                            <div class="small text-muted mt-1">{{ $appointment->appointment_date->format('M j, Y g:i A') }}</div>
                         </div>
                     </div>
 
-                    <!-- Patient Information Card -->
-                    <div class="table-card">
-                        <h5 class="mb-3 fw-bold text-primary">
-                            <i class="fas fa-user-injured me-2"></i>Patient Information
-                        </h5>
-                        <div class="row g-2">
-                            <div class="col-12">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-user text-muted me-2"></i>
-                                    <span class="fw-semibold">{{ e($appointment->patient_name) }}</span>
+                    @if($appointment->patient)
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="fas fa-birthday-cake text-primary mb-2"></i>
+                                <div class="fw-bold">{{ $appointment->patient->age ?? 'N/A' }}</div>
+                                <small class="text-muted">Years Old</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="fas fa-venus-mars text-info mb-2"></i>
+                                <div class="fw-bold">{{ ucfirst($appointment->patient->gender ?? 'N/A') }}</div>
+                                <small class="text-muted">Gender</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="fas fa-clock text-warning mb-2"></i>
+                                <div class="fw-bold">{{ $appointment->appointment_duration ?? 30 }} min</div>
+                                <small class="text-muted">Duration</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="fas fa-dollar-sign text-success mb-2"></i>
+                                <div class="fw-bold">${{ number_format($appointment->consultation_fee / 100, 2) }}</div>
+                                <small class="text-muted">Fee</small>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if($appointment->diagnoses && $appointment->diagnoses->count() > 0)
+                    <!-- Clinical Summary - All Diagnoses -->
+                    <div class="border-top pt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0 fw-bold text-primary">
+                                <i class="fas fa-stethoscope me-2"></i>Clinical Summary
+                                <span class="badge bg-primary ms-2">{{ $appointment->diagnoses->count() }}</span>
+                            </h5>
+                            <button onclick="toggleDiagnosisForm()" class="btn btn-sm btn-success">
+                                <i class="fas fa-plus me-1"></i>New Diagnosis
+                            </button>
+                        </div>
+
+                        <!-- Diagnoses Cards -->
+                        @foreach($appointment->diagnoses as $index => $diagnosis)
+                        <div class="diagnosis-card border rounded mb-3 p-3 {{ $index > 0 ? 'bg-light' : 'bg-white' }}" id="diagnosisCard{{ $index }}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <span class="badge bg-primary mb-2">
+                                        <i class="fas fa-file-medical-alt me-1"></i>Diagnosis {{ $index + 1 }}
+                                    </span>
+                                    @if($index == 0)
+                                        <span class="badge bg-success mb-2 ms-1">Most Recent</span>
+                                    @endif
+                                    @if($diagnosis->type == 'voice_assistant')
+                                        <span class="badge bg-info mb-2 ms-1"><i class="fas fa-microphone me-1"></i>Voice</span>
+                                    @elseif($diagnosis->type == 'manual')
+                                        <span class="badge bg-secondary mb-2 ms-1"><i class="fas fa-edit me-1"></i>Manual</span>
+                                    @endif
+                                    <span class="text-muted ms-2 small">
+                                        {{ $diagnosis->created_at->format('M d, Y h:i A') }}
+                                    </span>
+                                </div>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="toggleDiagnosisDetails({{ $index }})" id="toggleBtn{{ $index }}">
+                                        <i class="fas fa-chevron-down me-1" id="toggleIcon{{ $index }}"></i>
+                                        <span id="toggleText{{ $index }}">Details</span>
+                                    </button>
+                                    <a href="{{ route('diagnosis.show', $diagnosis) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
                                 </div>
                             </div>
-                            <div class="col-12">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-envelope text-muted me-2"></i>
-                                    <span>{{ e($appointment->patient_email) }}</span>
+
+                            <!-- Summary (always visible) -->
+                            <div class="mt-2">
+                                <p class="mb-0 text-dark" id="diagnosisSummary{{ $index }}">
+                                    {{ Str::limit($diagnosis->diagnosis_text, 150) }}
+                                    @if(strlen($diagnosis->diagnosis_text) > 150)
+                                        <span class="text-muted">Click "Details" to see full diagnosis...</span>
+                                    @endif
+                                </p>
+                            </div>
+
+                            <!-- Full Details (hidden by default) -->
+                            <div id="diagnosisDetails{{ $index }}" class="mt-3" style="display: none;">
+                                <hr>
+
+                                <!-- Full Diagnosis Text -->
+                                <div class="mb-3">
+                                    <h6 class="fw-bold text-dark mb-2">
+                                        <i class="fas fa-stethoscope me-2 text-primary"></i>Diagnosis & Treatment Plan
+                                    </h6>
+                                    <div class="bg-primary bg-opacity-10 p-3 rounded border-start border-primary border-4">
+                                        <p class="mb-0">{{ $diagnosis->diagnosis_text }}</p>
+                                    </div>
+                                </div>
+
+                                <!-- Patient Data Fields -->
+                                @if($diagnosis->patient_data && is_array($diagnosis->patient_data))
+                                @php
+                                    $excludedKeys = ['transcription', 'session_id', 'completion_type'];
+                                    $hasPatientData = false;
+                                    foreach($diagnosis->patient_data as $key => $value) {
+                                        if(!empty($value) && !in_array($key, $excludedKeys)) {
+                                            $hasPatientData = true;
+                                            break;
+                                        }
+                                    }
+                                @endphp
+                                @if($hasPatientData)
+                                <div class="row g-3 mb-3">
+                                    @foreach($diagnosis->patient_data as $key => $value)
+                                        @if(!empty($value) && !in_array($key, $excludedKeys))
+                                        <div class="col-md-6">
+                                            <div class="border rounded p-3 h-100">
+                                                <h6 class="text-primary mb-2">
+                                                    <i class="fas fa-{{ $key == 'symptoms' ? 'thermometer-half' : ($key == 'allergies' ? 'exclamation-triangle' : ($key == 'medications' ? 'pills' : 'notes-medical')) }} me-2"></i>
+                                                    {{ ucwords(str_replace('_', ' ', $key)) }}
+                                                </h6>
+                                                <p class="mb-0 text-dark">{{ $value }}</p>
+                                            </div>
+                                        </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                                @endif
+                                @endif
+
+                                <!-- Voice Transcript -->
+                                @if($diagnosis->voice_transcript)
+                                <div class="mb-3">
+                                    <h6 class="fw-bold text-dark mb-2">
+                                        <i class="fas fa-microphone me-2 text-success"></i>Consultation Recording
+                                    </h6>
+                                    <div class="bg-success bg-opacity-10 p-3 rounded border-start border-success border-4">
+                                        <p class="mb-0 small">{{ Str::limit($diagnosis->voice_transcript, 500) }}</p>
+                                        @if(strlen($diagnosis->voice_transcript) > 500)
+                                        <button class="btn btn-link btn-sm p-0 mt-2" onclick="toggleFullTranscript({{ $index }})">
+                                            <i class="fas fa-expand me-1" id="transcriptIcon{{ $index }}"></i>
+                                            <span id="transcriptText{{ $index }}">View Full Transcript</span>
+                                        </button>
+                                        <div id="fullTranscript{{ $index }}" style="display: none;" class="mt-2">
+                                            <hr>
+                                            <p class="mb-0">{{ $diagnosis->voice_transcript }}</p>
+                                        </div>
+                                        @endif
+                                    </div>
+                                </div>
+                                @endif
+
+                                <!-- Actions -->
+                                <div class="d-flex gap-2 mt-3 pt-3 border-top">
+                                    <a href="{{ route('diagnosis.show', $diagnosis) }}" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-file-medical me-1"></i>View Full Report
+                                    </a>
+                                    <a href="#prescriptions" class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-prescription me-1"></i>Add Prescription
+                                    </a>
                                 </div>
                             </div>
-                            @if($appointment->patient_phone)
-                            <div class="col-12">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-phone text-muted me-2"></i>
-                                    <span>{{ e($appointment->patient_phone) }}</span>
-                                </div>
+                        </div>
+                        @endforeach
+
+                        <script>
+                        function toggleDiagnosisDetails(index) {
+                            var details = document.getElementById('diagnosisDetails' + index);
+                            var icon = document.getElementById('toggleIcon' + index);
+                            var text = document.getElementById('toggleText' + index);
+                            var card = document.getElementById('diagnosisCard' + index);
+
+                            if (details.style.display === 'none') {
+                                details.style.display = 'block';
+                                icon.classList.remove('fa-chevron-down');
+                                icon.classList.add('fa-chevron-up');
+                                text.textContent = 'Hide';
+                                card.classList.remove('bg-light');
+                                card.classList.add('bg-white');
+                            } else {
+                                details.style.display = 'none';
+                                icon.classList.remove('fa-chevron-up');
+                                icon.classList.add('fa-chevron-down');
+                                text.textContent = 'Details';
+                                if (index > 0) {
+                                    card.classList.remove('bg-white');
+                                    card.classList.add('bg-light');
+                                }
+                            }
+                        }
+
+                        function toggleFullTranscript(index) {
+                            var full = document.getElementById('fullTranscript' + index);
+                            var icon = document.getElementById('transcriptIcon' + index);
+                            var text = document.getElementById('transcriptText' + index);
+
+                            if (full.style.display === 'none') {
+                                full.style.display = 'block';
+                                icon.classList.remove('fa-expand');
+                                icon.classList.add('fa-compress');
+                                text.textContent = 'Hide Transcript';
+                            } else {
+                                full.style.display = 'none';
+                                icon.classList.remove('fa-compress');
+                                icon.classList.add('fa-expand');
+                                text.textContent = 'View Full Transcript';
+                            }
+                        }
+                        </script>
+
+                        <!-- Risk Score Badge (if available) -->
+                        @php
+                            $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
+                            $maxRisk = $riskScore ? max($riskScore->no_show_risk, $riskScore->hospitalization_risk) : 0;
+                        @endphp
+                        @if($riskScore)
+                        <div class="mt-3 pt-3 border-top">
+                            <div class="d-flex align-items-center">
+                                @if($maxRisk < 0.3)
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-shield-alt me-1"></i>Low Risk
+                                    </span>
+                                @elseif($maxRisk < 0.7)
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Medium Risk
+                                    </span>
+                                @else
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-exclamation-circle me-1"></i>High Risk
+                                    </span>
+                                @endif
+                                <small class="text-muted ms-3">
+                                    No-show: {{ number_format($riskScore->no_show_risk * 100, 1) }}% |
+                                    Hospitalization: {{ number_format($riskScore->hospitalization_risk * 100, 1) }}%
+                                </small>
+                                @if(auth()->check() && auth()->user()->isDoctor())
+                                <button type="button" class="btn btn-outline-info btn-sm ms-auto" onclick="toggleAIMedicalCopilotForm()">
+                                    <i class="fas fa-brain me-1"></i>AI Medical Copilot
+                                </button>
+                                @endif
                             </div>
+                        </div>
+                        @endif
+                    </div>
+                    @else
+                    <!-- No Diagnoses -->
+                    <div class="text-center py-4 border-top">
+                        <i class="fas fa-stethoscope fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted mb-2">No Clinical Summary Available</h5>
+                        <p class="text-muted mb-3">Create a diagnosis to document this consultation</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button onclick="toggleDiagnosisForm()" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Create Diagnosis
+                            </button>
+                            @if(auth()->check() && auth()->user()->isDoctor())
+                            <button type="button" class="btn btn-outline-info" onclick="toggleAIMedicalCopilotForm()">
+                                <i class="fas fa-brain me-1"></i>AI Medical Copilot
+                            </button>
                             @endif
                         </div>
                     </div>
-                </div>
-
-                <!-- Next Steps Section for Completed Appointments -->
-                @if($appointment->status == 'completed')
-                <div class="table-card mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <h4 class="mb-1 fw-bold text-success">
-                                <i class="fas fa-check-double me-2"></i>Appointment Completed Successfully
-                            </h4>
-                            <p class="mb-0 text-muted">What would you like to do next?</p>
-                        </div>
-                        <div class="text-end">
-                            <i class="fas fa-rocket fa-3x text-success opacity-75"></i>
-                        </div>
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <button onclick="toggleAIMedicalCopilotForm()" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
-                                <i class="fas fa-brain fa-2x mb-2 text-primary"></i>
-                                AI Copilot
-                                <small class="text-muted">Clinical Decision Support</small>
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <button onclick="viewPatientAIAnalyses({{ $appointment->patient_id }})" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
-                                <i class="fas fa-history fa-2x mb-2 text-info"></i>
-                                View AI History
-                                <small class="text-muted">Patient's Saved Analyses</small>
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <a href="#ai-analytics" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
-                                <i class="fas fa-brain fa-2x mb-2 text-primary"></i>
-                                <span class="fw-bold">AI Analytics</span>
-                                <small class="text-muted">View risk predictions & insights</small>
-                            </a>
-                        </div>
-                        <div class="col-md-3">
-                            <button onclick="toggleDiagnosisForm()" class="btn btn-outline-warning btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
-                                <i class="fas fa-stethoscope fa-2x mb-2 text-warning"></i>
-                                <span class="fw-bold">Diagnosis</span>
-                                <small class="text-muted">Create medical diagnosis</small>
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <a href="#prescriptions" class="btn btn-outline-success btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
-                                <i class="fas fa-prescription-bottle fa-2x mb-2 text-success"></i>
-                                <span class="fw-bold">Prescriptions</span>
-                                <small class="text-muted">Manage medications</small>
-                            </a>
-                        </div>
-                        <div class="col-md-3">
-                            <a href="{{ route('doctor.follow-ups.create', $appointment) }}" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
-                                <i class="fas fa-calendar-plus fa-2x mb-2 text-info"></i>
-                                <span class="fw-bold">Follow-ups</span>
-                                <small class="text-muted">Schedule next appointment</small>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                @endif
-
-
-                <!-- Risk Assessment Section -->
-                <div class="table-card">
-                    <h5 class="section-header">
-                        <i class="fas fa-shield-alt me-2"></i>AI Risk Assessment
-                    </h5>
-                    @php
-                        $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
-                    @endphp
-                    @if($riskScore)
-                        @php
-                            $noShowRisk = $riskScore->no_show_risk;
-                            $hospitalizationRisk = $riskScore->hospitalization_risk;
-                            $maxRisk = max($noShowRisk, $hospitalizationRisk);
-                        @endphp
-                        <div class="risk-card {{ $maxRisk < 0.3 ? 'low-risk' : ($maxRisk < 0.7 ? 'medium-risk' : 'high-risk') }}">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1 fw-bold">
-                                        @if($maxRisk < 0.3)
-                                            <i class="fas fa-shield-alt me-2"></i>Low Risk Patient
-                                        @elseif($maxRisk < 0.7)
-                                            <i class="fas fa-exclamation-triangle me-2"></i>Medium Risk Patient
-                                        @else
-                                            <i class="fas fa-exclamation-circle me-2"></i>High Risk Patient
-                                        @endif
-                                    </h6>
-                                    <small class="text-muted">Based on patient history and patterns</small>
-                                </div>
-                                <div class="text-end">
-                                    <div class="mb-1">
-                                        <small class="d-block">No-show: <strong>{{ number_format($noShowRisk * 100, 1) }}%</strong></small>
-                                        <small class="d-block">Hospitalization: <strong>{{ number_format($hospitalizationRisk * 100, 1) }}%</strong></small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @else
-                        <div class="text-center py-4">
-                            <i class="fas fa-spinner fa-spin text-info me-2"></i>
-                            <span class="text-muted">Calculating risk assessment...</span>
-                        </div>
                     @endif
                 </div>
 
-                <!-- AI Predictive Analytics Section -->
-                <div id="ai-analytics" class="table-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <h4 class="mb-0 fw-bold text-primary">
-                                <i class="fas fa-brain me-2"></i>AI Predictive Analytics
-                            </h4>
-                            <p class="mb-0 text-muted small">Machine Learning Risk Assessment</p>
-                        </div>
-                        @if($appointment->status == 'completed')
-                        <span class="badge bg-success">
-                            <i class="fas fa-check-circle me-1"></i>Analysis Complete
-                        </span>
-                        @endif
-                    </div>
 
-                    @php
-                        $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
-                    @endphp
-                    @if($riskScore)
-                        <div class="row g-4 mb-4">
-                            <div class="col-md-6">
-                                <div class="text-center p-4 bg-light rounded">
-                                    <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                        <i class="fas fa-user-times text-warning fa-2x"></i>
-                                    </div>
-                                    <h5 class="text-warning fw-bold mb-2">No-Show Risk</h5>
-                                    <div class="h2 fw-bold text-warning mb-2">{{ number_format($riskScore->no_show_risk * 100, 1) }}<span class="h4">%</span></div>
-                                    <p class="text-muted small mb-0">Probability of patient missing appointment</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="text-center p-4 bg-light rounded">
-                                    <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                        <i class="fas fa-hospital text-danger fa-2x"></i>
-                                    </div>
-                                    <h5 class="text-danger fw-bold mb-2">Hospitalization Risk</h5>
-                                    <div class="h2 fw-bold text-danger mb-2">{{ number_format($riskScore->hospitalization_risk * 100, 1) }}<span class="h4">%</span></div>
-                                    <p class="text-muted small mb-0">Probability of requiring hospitalization</p>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- Risk Level Summary -->
-                        <div class="bg-light p-3 rounded">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    @php
-                                        $maxRisk = max($riskScore->no_show_risk, $riskScore->hospitalization_risk);
-                                    @endphp
-                                    @if($maxRisk < 0.3)
-                                        <span class="badge bg-success fs-6 px-3 py-2">
-                                            <i class="fas fa-shield-alt me-1"></i>Low Risk Patient
-                                        </span>
-                                        <small class="text-muted d-block mt-1">Strong compliance patterns detected</small>
-                                    @elseif($maxRisk < 0.7)
-                                        <span class="badge bg-warning fs-6 px-3 py-2 text-dark">
-                                            <i class="fas fa-exclamation-triangle me-1"></i>Medium Risk Patient
-                                        </span>
-                                        <small class="text-muted d-block mt-1">Consider follow-up reminders</small>
-                                    @else
-                                        <span class="badge bg-danger fs-6 px-3 py-2">
-                                            <i class="fas fa-exclamation-circle me-1"></i>High Risk Patient
-                                        </span>
-                                        <small class="text-muted d-block mt-1">Immediate attention recommended</small>
-                                    @endif
-                                </div>
-                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#mlExplanationModal">
-                                    <i class="fas fa-info-circle me-1"></i>How is this calculated?
-                                </button>
-                            </div>
-                        </div>
-                    @else
-                        <div class="text-center py-4">
-                            <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                <i class="fas fa-brain text-info fa-2x"></i>
-                            </div>
-                            <h5 class="text-muted mb-2">AI Analysis in Progress</h5>
-                            <p class="text-muted">Risk predictions are being calculated...</p>
-                            <div class="spinner-border text-info" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                    @endif
-                </div>
 
-                <!-- Reason for Visit -->
-                <div class="table-card mb-4 shadow-sm">
-                    <div class="p-4">
-                        <h5 class="mb-4 text-primary fw-bold">
-                            <i class="fas fa-clipboard-list me-2"></i>Reason for Visit
-                        </h5>
-                        <div class="bg-light p-4 rounded" style="border-left: 4px solid #007bff;">
-                            <p class="mb-0 fs-6 lh-base">{{ e($appointment->reason) }}</p>
-                        </div>
-                    </div>
-                </div>
+
 
                 <!-- Prescriptions Section -->
                 @if(auth()->check() && auth()->user()->isDoctor())

@@ -128,10 +128,10 @@ class MenuHelper
                         'restricted' => true,
                     ],
                     [
-                        'name' => 'Diagnoses',
-                        'route' => 'diagnosis.index',
-                        'icon' => 'fas fa-stethoscope',
-                        'permission' => 'diagnosis',
+                        'name' => 'Cases Overview',
+                        'route' => 'doctor.cases.overview',
+                        'icon' => 'fas fa-folder',
+                        'permission' => 'cases',
                     ],
                     [
                         'name' => 'Clinical Monitoring',
@@ -167,12 +167,6 @@ class MenuHelper
                         'route' => 'doctor.chat.index',
                         'icon' => 'fas fa-comments',
                         'permission' => 'chat',
-                    ],
-                    [
-                        'name' => 'Cases Overview',
-                        'route' => 'doctor.cases.overview',
-                        'icon' => 'fas fa-folder',
-                        'permission' => 'cases',
                     ],
                 ]
             ],
@@ -401,9 +395,9 @@ class MenuHelper
                         'icon' => 'fas fa-history',
                     ],
                     [
-                        'name' => 'Diagnoses',
-                        'route' => 'diagnosis.index',
-                        'icon' => 'fas fa-stethoscope',
+                        'name' => 'Cases Overview',
+                        'route' => 'doctor.cases.overview',
+                        'icon' => 'fas fa-folder',
                     ],
                     [
                         'name' => 'Clinical Monitoring',
@@ -430,11 +424,6 @@ class MenuHelper
                         'name' => 'Communications',
                         'route' => 'doctor.chat.index',
                         'icon' => 'fas fa-comments',
-                    ],
-                    [
-                        'name' => 'Cases Overview',
-                        'route' => 'doctor.cases.overview',
-                        'icon' => 'fas fa-folder',
                     ],
                 ]
             ],

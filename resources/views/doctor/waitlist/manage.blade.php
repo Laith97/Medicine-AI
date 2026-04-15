@@ -282,7 +282,8 @@
 @endsection
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid" style="background-color: #f8f9fa;">
+    <div class="container">
     <!-- Page Header -->
     <div class="page-header">
         <div class="row align-items-center">
@@ -297,6 +298,8 @@
             </div>
         </div>
     </div>
+    </div>
+</div>
 
     <!-- Quick Stats -->
     <div class="quick-stats">
@@ -554,6 +557,10 @@
         </div>
     @endif
 </div>
+    </div>
+</div>
+
+@endsection
 
 <!-- Offer Slot Modal -->
 <div class="modal fade" id="offerSlotModal" tabindex="-1">

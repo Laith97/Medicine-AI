@@ -406,8 +406,9 @@ body .dropdown .dropdown-menu.show,
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
     <link rel="stylesheet" href="{{ asset('css/responsive-modals.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom-buttons.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     @stack('styles')
+    <!-- Dashboard header styles - MUST load last to override page-specific styles -->
+    <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 
     <!-- Global Font Styling -->
     <style>
@@ -1852,6 +1853,11 @@ body .dropdown .dropdown-menu.show,
                 @yield('content')
             </div>
         </main>
+
+        <!-- Floating Assistant -->
+        @auth
+            @include('components.floating-assistant')
+        @endauth
 
     </div><!-- #wrapper end -->
 		<!-- Footer -->

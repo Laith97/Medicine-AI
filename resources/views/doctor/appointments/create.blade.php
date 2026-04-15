@@ -251,56 +251,31 @@
 @endpush
 
 @section('content')
-<div class="container-fluid">
-    <!-- Back Navigation -->
-    <div class="container mb-3">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item">
-                    <a href="{{ route('doctor.appointments.index') }}" class="text-decoration-none">
-                        <i class="fas fa-arrow-left me-2"></i>Appointments
-                    </a>
-                </li>
-                <li class="breadcrumb-item active">Book Appointment</li>
-            </ol>
-        </nav>
-    </div>
-
-    <!-- Booking Hero Section -->
-    <div class="booking-hero">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <div class="d-flex align-items-center text-white">
-                        <div class="me-4">
-                            @if($doctor->profile_image)
-                                <img src="{{ asset('storage/' . $doctor->profile_image) }}"
-                                     alt="{{ $doctor->user->name }}"
-                                     class="doctor-avatar"
-                                     style="object-fit: cover;">
-                            @else
-                                <div class="doctor-avatar bg-white d-flex align-items-center justify-content-center">
-                                    <i class="fas fa-user-md text-primary fs-4"></i>
-                                </div>
-                            @endif
-                        </div>
-                        <div>
-                            <h1 class="mb-2">Book Appointment</h1>
-                            <h2 class="h4 mb-1 text-white-75">Schedule for Dr. {{ $doctor->user->name }}</h2>
-                            <p class="mb-0 text-white-50">{{ $doctor->specialty->name }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 text-end">
-                    <div class="text-white">
-                        <div class="h3 mb-1">${{ number_format($doctor->consultation_fee / 100, 2) }}</div>
-                        <div class="text-white-75">Consultation Fee</div>
-                    </div>
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;">
+    <div class="container">
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-calendar-plus me-2"></i>Book Appointment</h2>
+                    <p class="text-muted mb-0">Schedule a new appointment for your patient</p>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
+<div class="container-fluid">
     <div class="container">
         <!-- Progress Indicator -->
         <div class="progress-indicator">

@@ -3,23 +3,36 @@
 @section('title', 'Create Note')
 
 @section('content')
-<div class="dashboard-container">
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;">
     <div class="container">
-        <!-- Header -->
         <div class="dashboard-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2>Create New Note</h2>
-                    <p>Add a text note or record a voice note</p>
+                    <h2><i class="fas fa-plus-circle me-2"></i>Create New Note</h2>
+                    <p class="text-muted mb-0">Add a text note or record a voice note</p>
                 </div>
-                <a href="{{ route('doctor.notes.index') }}" class="btn btn-outline-secondary">
+                <a href="{{ route('doctor.notes.index') }}" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
                     <i class="fas fa-arrow-left me-2"></i>Back to Notes
                 </a>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Note Form -->
-        <div class="table-card">
+<!-- Note Form -->
+<div class="dashboard-container">
+    <div class="table-card">
             <form id="noteForm">
                 @csrf
 

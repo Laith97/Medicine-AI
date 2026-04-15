@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Patient Summary Modal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Professional Modal Styling */
+        .modal-content {
+            border: none;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            border-bottom: none;
+        }
+
+        .modal-body {
+            padding: 0;
+        }
+
+        /* AI Analysis Styling */
+        .ai-analysis-container {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .ai-section {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .ai-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .section-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .section-content {
+            line-height: 1.7;
+        }
+
+        .bullet-point {
+            padding-left: 1rem;
+            position: relative;
+        }
+
+        .bullet-point i {
+            position: absolute;
+            left: 0;
+            top: 0.2rem;
+            font-size: 0.8rem;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Test Patient Summary Modal</h1>
+        <p>Click the button below to test the improved patient summary modal:</p>
+        
+        <button type="button" 
+                class="btn btn-primary" 
+                data-bs-toggle="modal" 
+                data-bs-target="#summaryModal"
+                data-patient-name="John Doe"
+                data-patient-age="45"
+                data-patient-gender="male"
+                data-patient-key="test-patient-123"
+                data-patient-id="1">
+            <i class="fas fa-user-md me-2"></i>View Patient Summary
+        </button>
+    </div>
+
+    <!-- Patient Summary Modal -->
+    <div class="modal fade" id="summaryModal" tabindex="-1" aria-labelledby="summaryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header text-white position-relative" style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); border-radius: 0.5rem 0.5rem 0 0;">
+                    <div class="position-absolute top-0 start-0 w-100 h-100" style="background: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><pattern id=\"grid\" width=\"10\" height=\"10\" patternUnits=\"userSpaceOnUse\"><path d=\"M 10 0 L 0 0 0 10\" fill=\"none\" stroke=\"rgba(255,255,255,0.1)\" stroke-width=\"0.5\"/></pattern></defs><rect width=\"100\" height=\"100\" fill=\"url(%23grid)\"/></svg>'); opacity: 0.3;"></div>
+                    <h5 class="modal-title position-relative" id="summaryModalLabel">
+                        <i class="fas fa-user-md me-2"></i><span id="patientSummaryTitle">Patient Medical Summary</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white position-relative" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="max-height: 75vh; overflow-y: auto;">
+                    <!-- Patient Info Header -->
+                    <div class="patient-info-header p-4 border-bottom" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                        <div class="row g-4">
+                            <div class="col-lg-3 col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);">
+                                        <i class="fas fa-user text-white fs-4"></i>
+                                    </div>
+                                    <div>
+                                        <p class="mb-1 text-muted small fw-medium">Patient Name</p>
+                                        <h6 class="mb-0 fw-bold text-dark" id="summaryPatientName">John Doe</h6>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-2 col-md-6">
+                                <div class="text-center">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 50px; height: 50px; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);">
+                                        <i class="fas fa-birthday-cake text-white"></i>
+                                    </div>
+                                    <p class="mb-1 text-muted small fw-medium">Age</p>
+                                    <h6 class="mb-0 fw-bold text-dark" id="summaryPatientAge">45</h6>
+                                </div>
+                            </div>
+                            <div class="col-lg-2 col-md-6">
+                                <div class="text-center">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 50px; height: 50px; background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); box-shadow: 0 4px 15px rgba(155, 89, 182, 0.3);">
+                                        <i class="fas fa-venus-mars text-white"></i>
+                                    </div>
+                                    <p class="mb-1 text-muted small fw-medium">Gender</p>
+                                    <h6 class="mb-0 fw-bold text-dark" id="summaryPatientGender">Male</h6>
+                                </div>
+                            </div>
+                            <div class="col-lg-2 col-md-6">
+                                <div class="text-center">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 50px; height: 50px; background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);">
+                                        <i class="fas fa-calendar-check text-white"></i>
+                                    </div>
+                                    <p class="mb-1 text-muted small fw-medium">Total Visits</p>
+                                    <h6 class="mb-0 fw-bold"><span id="totalVisitsCount" class="badge bg-primary px-3 py-2 fs-6">3</span></h6>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-12">
+                                <div class="d-flex justify-content-center justify-content-lg-end align-items-center h-100">
+                                    <button type="button" class="btn btn-outline-primary btn-sm me-2" id="printSummaryBtn">
+                                        <i class="fas fa-print me-1"></i>Print Summary
+                                    </button>
+                                    <button type="button" class="btn btn-primary btn-sm" id="exportSummaryBtn">
+                                        <i class="fas fa-download me-1"></i>Export
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Medical History Cards -->
+                    <div class="p-4">
+                        <div class="row g-4 mb-4">
+                            <!-- Symptoms -->
+                            <div class="col-lg-6">
+                                <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #17a2b8 !important;">
+                                    <div class="card-header border-0" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                                        <h6 class="mb-0 text-white fw-semibold"><i class="fas fa-thermometer-half me-2"></i>Current Symptoms</h6>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <div id="modalSymptoms" class="text-muted">
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <span class="badge bg-info text-dark">Headache</span>
+                                                <span class="badge bg-info text-dark">Fatigue</span>
+                                                <span class="badge bg-info text-dark">Nausea</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Medical History -->
+                            <div class="col-lg-6">
+                                <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #007bff !important;">
+                                    <div class="card-header border-0" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);">
+                                        <h6 class="mb-0 text-white fw-semibold"><i class="fas fa-history me-2"></i>Medical History</h6>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <div id="modalMedicalHistory" class="text-muted">
+                                            <span class="text-muted">No medical history available</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Current Medications -->
+                            <div class="col-lg-6">
+                                <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #ffc107 !important;">
+                                    <div class="card-header border-0" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);">
+                                        <h6 class="mb-0 text-dark fw-semibold"><i class="fas fa-pills me-2"></i>Current Medications</h6>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <div id="modalMedications" class="text-muted">
+                                            <span class="text-muted">No medications recorded</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Allergies -->
+                            <div class="col-lg-6">
+                                <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #dc3545 !important;">
+                                    <div class="card-header border-0" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+                                        <h6 class="mb-0 text-white fw-semibold"><i class="fas fa-exclamation-triangle me-2"></i>Allergies</h6>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <div id="modalAllergies" class="text-muted">
+                                            <span class="text-muted">No allergies recorded</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visit History -->
+                    <div class="visit-summary-section mb-4 px-4">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                                <i class="fas fa-clipboard-list text-white"></i>
+                            </div>
+                            <h5 class="mb-0 fw-bold text-dark">Visit History</h5>
+                            <hr class="flex-grow-1 ms-3" style="border-top: 2px solid #e9ecef;">
+                        </div>
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body p-0">
+                                <div id="visitSummaryContainer">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th class="border-0"><i class="fas fa-calendar me-1"></i>Date</th>
+                                                    <th class="border-0"><i class="fas fa-tag me-1"></i>Type</th>
+                                                    <th class="border-0"><i class="fas fa-stethoscope me-1"></i>Diagnosis Summary</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="border-0">Dec 15, 2023</td>
+                                                    <td class="border-0"><span class="badge bg-primary">Diagnosis</span></td>
+                                                    <td class="border-0 small">Patient presents with symptoms of viral infection...</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="border-0">Nov 28, 2023</td>
+                                                    <td class="border-0"><span class="badge bg-success">Analysis</span></td>
+                                                    <td class="border-0 small">Follow-up visit showing improvement in condition...</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Summary -->
+                    <div class="patient-summary-section px-4 pb-4">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);">
+                                <i class="fas fa-brain text-white"></i>
+                            </div>
+                            <h5 class="mb-0 fw-bold text-dark">AI Medical Summary</h5>
+                            <hr class="flex-grow-1 ms-3" style="border-top: 2px solid #e9ecef;">
+                        </div>
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header border-0" style="background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-robot text-white me-2"></i>
+                                    <h6 class="mb-0 text-white fw-semibold">AI-Powered Analysis</h6>
+                                    <div class="ms-auto">
+                                        <span class="badge bg-light text-dark">GPT-4</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div id="aiSummaryContainer">
+                                    <div class="p-4">
+                                        <div class="ai-analysis-container">
+                                            <div class="ai-section patient-summary mb-4">
+                                                <div class="section-header p-3 rounded-top" style="background: linear-gradient(135deg, #3498db 0%, #3498dbdd 100%); color: white;">
+                                                    <h6 class="mb-0 fw-semibold">
+                                                        <span class="me-2" style="font-size: 1.2em;">📋</span>
+                                                        PATIENT CASE SUMMARY
+                                                    </h6>
+                                                </div>
+                                                <div class="section-content p-3 border border-top-0 rounded-bottom bg-white">
+                                                    <p class="mb-2">This 45-year-old male patient has been experiencing recurring symptoms over multiple visits, showing a pattern of viral infections with gradual improvement following treatment.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Close
+                    </button>
+                    <a href="#" id="viewFullDetailsBtn" class="btn btn-primary">
+                        <i class="fas fa-external-link-alt me-1"></i>View Full Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

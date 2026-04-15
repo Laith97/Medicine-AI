@@ -9,7 +9,7 @@
         min-height: 100vh;
         padding: 2rem 0;
     }
-    
+
     .pricing-card {
         background: white;
         border-radius: 20px;
@@ -21,16 +21,16 @@
         overflow: hidden;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    
+
     .pricing-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
     }
-    
+
     .pricing-card.featured {
         border: 2px solid #DE6262;
     }
-    
+
     .pricing-card.featured::before {
         content: '';
         position: absolute;
@@ -40,13 +40,13 @@
         height: 4px;
         background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
     }
-    
+
     .price-display {
         font-size: 3rem;
         font-weight: 700;
         color: #DE6262;
     }
-    
+
     .btn-select-plan {
         background: linear-gradient(135deg, #2c3e50 0%, #DE6262 100%);
         border: none;
@@ -57,83 +57,33 @@
         letter-spacing: 1px;
         transition: all 0.3s ease;
     }
-    
+
     .btn-select-plan:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(222, 98, 98, 0.3);
     }
-    
+
     .feature-icon {
         color: #28a745;
         font-size: 1.2rem;
     }
-
-/* Professional Dashboard Header Styling */
-.dashboard-header {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    border-radius: 15px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(222, 98, 98, 0.2);
-    position: relative;
-    overflow: hidden;
-}
-
-.dashboard-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
-}
-
-.dashboard-header h2 {
-    color: #ffffff;
-    font-weight: 700;
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.dashboard-header h2::before {
-    content: '💰';
-    font-size: 2rem;
-}
-
-.dashboard-header p {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 1.1rem;
-    font-weight: 500;
-    margin-bottom: 0;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .dashboard-header {
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .dashboard-header h2 {
-        font-size: 2rem;
-    }
-
-    .dashboard-header p {
-        font-size: 1rem;
-    }
-}
 </style>
 @endpush
 
 @section('content')
-<div class="dashboard-header">
-    <h2>Pricing</h2>
-    <p>View pricing plans</p>
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-dollar-sign me-2"></i>Pricing</h2>
+                        <p class="text-muted mb-0">View pricing plans</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <div class="dashboard-container">
     <div class="container-fluid">

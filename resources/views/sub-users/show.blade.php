@@ -8,13 +8,6 @@
         <div class="col-lg-8">
             <!-- Header -->
             <div class="mb-4">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('sub-users.index') }}">Sub-Users</a></li>
-                        <li class="breadcrumb-item active">{{ $subUser->name }}</li>
-                    </ol>
-                </nav>
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h1 class="h3 mb-1">{{ $subUser->name }}</h1>

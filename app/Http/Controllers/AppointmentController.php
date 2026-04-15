@@ -881,6 +881,14 @@ class AppointmentController extends Controller
         // Decode JSON data
         $allergies = json_decode($request->allergies, true) ?? [];
         $past_meds = json_decode($request->past_meds, true) ?? [];
+        
+        // Ensure allergies and past_meds are arrays
+        if (!is_array($allergies)) {
+            $allergies = is_string($allergies) && !empty(trim($allergies)) ? [trim($allergies)] : [];
+        }
+        if (!is_array($past_meds)) {
+            $past_meds = is_string($past_meds) && !empty(trim($past_meds)) ? [trim($past_meds)] : [];
+        }
 
         // Handle symptoms fallback
         $symptoms = $request->symptoms ?: 'No symptoms provided';
@@ -920,6 +928,13 @@ class AppointmentController extends Controller
         // Add reason for visit if available
         if ($request->reason_for_visit) {
             $additionalData['reason_for_visit'] = $request->reason_for_visit;
+        }
+
+        // Add clinical notes if available (from Quick Entry)
+        if ($request->clinical_notes) {
+            $additionalData['doctor_notes'] = $request->clinical_notes;
+        } elseif ($request->doctor_notes) {
+            $additionalData['doctor_notes'] = $request->doctor_notes;
         }
 
         // Debug logging
@@ -1070,33 +1085,98 @@ class AppointmentController extends Controller
     }
 
     /**
-     * Review and update AI copilot analysis
+     * Save quick data for AI prescription suggestions
      */
-    public function reviewAIAnalysis(Request $request, $analysisId)
+    public function saveQuickData(Request $request, Appointment $appointment)
     {
-        $request->validate([
-            'doctor_notes' => 'nullable|string|max:1000',
-        ]);
+        try {
+            // Validate doctor access to this appointment
+            if (!Auth::user()->isDoctor() || $appointment->doctor->user_id !== Auth::id()) {
+                abort(403, 'Unauthorized access to appointment.');
+            }
 
-        // Find the analysis
-        $analysis = \App\Models\AICopilotAnalysis::findOrFail($analysisId);
+            $request->validate([
+                'allergies' => 'nullable|string|max:1000',
+                'medications' => 'nullable|string|max:1000',
+                'clinical_notes' => 'nullable|string|max:2000',
+            ]);
 
-        // Validate doctor access
-        if (!Auth::user()->isDoctor()) {
-            abort(403, 'Unauthorized access.');
+            Log::info('Saving quick data', [
+                'appointment_id' => $appointment->id,
+                'patient_id' => $appointment->patient_id,
+                'allergies' => $request->allergies,
+                'medications' => $request->medications,
+                'clinical_notes' => $request->clinical_notes,
+            ]);
+
+            // Create or update diagnosis with the quick data
+            $diagnosis = $appointment->patient ? 
+                \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->latest()->first() : null;
+
+            if (!$diagnosis) {
+                // Create a new diagnosis record
+                $diagnosis = \App\Models\Diagnosis::create([
+                    'doctor_id' => Auth::id(),
+                    'patient_id' => $appointment->patient_id,
+                    'appointment_id' => $appointment->id,
+                    'diagnosis_text' => 'Quick data entry for AI prescription support',
+                    'patient_data' => [
+                        'allergies' => $request->allergies ?: '',
+                        'medications' => $request->medications ?: '',
+                        'clinical_notes' => $request->clinical_notes ?: '',
+                        'quick_entry' => true,
+                        'created_at' => now()->toISOString()
+                    ]
+                ]);
+                
+                Log::info('Created new diagnosis for quick data', [
+                    'diagnosis_id' => $diagnosis->id,
+                    'patient_data' => $diagnosis->patient_data
+                ]);
+            } else {
+                // Update existing diagnosis with quick data
+                $patientData = $diagnosis->patient_data ?? [];
+                if ($request->allergies) {
+                    $patientData['allergies'] = $request->allergies;
+                }
+                if ($request->medications) {
+                    $patientData['medications'] = $request->medications;
+                }
+                if ($request->clinical_notes) {
+                    $patientData['clinical_notes'] = $request->clinical_notes;
+                }
+                $patientData['quick_entry_updated'] = now()->toISOString();
+                
+                $diagnosis->update(['patient_data' => $patientData]);
+                
+                Log::info('Updated existing diagnosis with quick data', [
+                    'diagnosis_id' => $diagnosis->id,
+                    'patient_data' => $patientData
+                ]);
+            }
+
+            // Also update appointment doctor notes if clinical notes provided
+            if ($request->clinical_notes) {
+                $appointment->update(['doctor_notes' => $request->clinical_notes]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Quick data saved successfully',
+                'diagnosis_id' => $diagnosis->id,
+                'patient_data' => $diagnosis->patient_data
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error saving quick data', [
+                'appointment_id' => $appointment->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save quick data: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Mark as reviewed
-        $analysis->markAsReviewed(Auth::id(), $request->doctor_notes);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'AI analysis reviewed successfully',
-            'analysis' => $analysis
-        ]);
-    }
-
-
-
-
-}
+    }}

@@ -1,6 +1,6 @@
 @if(count($patients) > 0)
 <div class="table-responsive mb-4">
-    <table class="table table-custom mb-0" id="patients-table-{{ $category }}">
+    <table class="doctor-table mb-0" id="patients-table-{{ $category }}">
         <thead>
             <tr>
                 <th><a href="#" class="sort-link text-white" data-sort="name">Patient Name <i class="fas fa-sort"></i></a></th>
@@ -23,26 +23,26 @@
                     if ($category === 'diagnosed') {
                         $showInTab = $group['category'] === 'diagnosed';
                         $categoryClass = 'table-success';
-                        $statusBadge = '<span class="badge badge-diagnosed"><i class="fas fa-check-circle me-1"></i>Diagnosed</span>';
+                        $statusBadge = '<span class="doctor-badge doctor-badge-success"><i class="fas fa-check-circle"></i>Diagnosed</span>';
                     } elseif ($category === 'pending') {
                         $showInTab = $group['category'] === 'pending';
                         $categoryClass = 'table-warning';
-                        $statusBadge = '<span class="badge badge-pending"><i class="fas fa-clock me-1"></i>Pending</span>';
+                        $statusBadge = '<span class="doctor-badge doctor-badge-warning"><i class="fas fa-clock"></i>Pending</span>';
                     } elseif ($category === 'scheduled') {
                         $showInTab = $group['category'] === 'scheduled';
                         $categoryClass = 'table-info';
-                        $statusBadge = '<span class="badge badge-scheduled"><i class="fas fa-calendar me-1"></i>Scheduled</span>';
+                        $statusBadge = '<span class="doctor-badge doctor-badge-info"><i class="fas fa-calendar"></i>Scheduled</span>';
                     } else {
                         // All patients tab - show all with appropriate styling
                         if ($group['category'] === 'diagnosed') {
                             $categoryClass = 'table-success';
-                            $statusBadge = '<span class="badge badge-diagnosed"><i class="fas fa-check-circle me-1"></i>Diagnosed</span>';
+                            $statusBadge = '<span class="doctor-badge doctor-badge-success"><i class="fas fa-check-circle"></i>Diagnosed</span>';
                         } elseif ($group['category'] === 'pending') {
                             $categoryClass = 'table-warning';
-                            $statusBadge = '<span class="badge badge-pending"><i class="fas fa-clock me-1"></i>Pending</span>';
+                            $statusBadge = '<span class="doctor-badge doctor-badge-warning"><i class="fas fa-clock"></i>Pending</span>';
                         } elseif ($group['category'] === 'scheduled') {
                             $categoryClass = 'table-info';
-                            $statusBadge = '<span class="badge badge-scheduled"><i class="fas fa-calendar me-1"></i>Scheduled</span>';
+                            $statusBadge = '<span class="doctor-badge doctor-badge-info"><i class="fas fa-calendar"></i>Scheduled</span>';
                         }
                     }
                 @endphp
@@ -61,41 +61,37 @@
                     </td>
                     <td>{{ $patient->age ?? 'N/A' }}</td>
                     <td>
-                        <span class="badge" style="background-color: {{ $patient->gender == 'male' ? '#3498db' : '#e74c3c' }}; color: white; border-radius: 15px; padding: 0.4rem 0.8rem;">
+                        <span class="doctor-badge {{ $patient->gender == 'male' ? 'doctor-badge-primary' : 'doctor-badge-danger' }}">
                             {{ ucfirst($patient->gender ?? 'N/A') }}
                         </span>
                     </td>
                     <td>
-                        <span class="badge bg-primary">{{ $group['visit_count'] }}</span>
+                        <span class="doctor-badge doctor-badge-secondary">{{ $group['visit_count'] }}</span>
                     </td>
                     <td data-date="{{ $group['last_visit']->timestamp }}">{{ $group['last_visit'] ? $group['last_visit']->format('M d, Y') : 'N/A' }}</td>
                     <td>
                         <div class="btn-group">
                             @if($group['category'] === 'diagnosed')
-                                <button type="button" class="btn btn-sm btn-expand-visits btn-custom-primary"
-                                        data-patient-key="{{ $key }}"
-                                        data-patient-name="{{ $patient->name }}"
-                                        data-patient-age="{{ $patient->age }}"
-                                        data-patient-gender="{{ $patient->gender }}">
-                                    <i class="fas fa-chevron-down me-1 expand-icon"></i><span class="btn-text">View Details</span>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-show-summary btn-custom-secondary"
+                                <button type="button"
+                                        class="doctor-btn doctor-btn-primary doctor-btn-sm btn-patient-summary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#summaryModal"
                                         data-patient-name="{{ $patient->name }}"
                                         data-patient-age="{{ $patient->age }}"
                                         data-patient-gender="{{ $patient->gender }}"
                                         data-patient-key="{{ $key }}"
-                                        title="View Patient Summary">
-                                    <i class="fas fa-file-medical"></i>
+                                        data-patient-id="{{ $patient->id }}">
+                                    <i class="fas fa-brain"></i><span class="btn-text">Patient Summary</span>
                                 </button>
                             @elseif($group['category'] === 'pending')
-                                <button type="button" class="btn btn-sm btn-expand-visits btn-outline-warning"
+                                <button type="button" class="doctor-btn doctor-btn-warning doctor-btn-sm btn-expand-visits"
                                         data-patient-key="{{ $key }}"
                                         data-patient-name="{{ $patient->name }}"
                                         data-patient-age="{{ $patient->age }}"
                                         data-patient-gender="{{ $patient->gender }}">
-                                    <i class="fas fa-clock me-1 expand-icon"></i>Review Case
+                                    <i class="fas fa-clock expand-icon"></i>Review Case
                                 </button>
-                                <button type="button" class="btn btn-sm btn-schedule-appointment btn-outline-info"
+                                <button type="button" class="doctor-btn doctor-btn-secondary doctor-btn-sm btn-schedule-appointment"
                                         data-patient-name="{{ $patient->name }}"
                                         data-patient-age="{{ $patient->age }}"
                                         data-patient-gender="{{ $patient->gender }}"
@@ -104,15 +100,15 @@
                                     <i class="fas fa-calendar-plus"></i>
                                 </button>
                             @elseif($group['category'] === 'scheduled')
-                                <button type="button" class="btn btn-sm btn-view-appointment btn-outline-primary"
+                                <button type="button" class="doctor-btn doctor-btn-secondary doctor-btn-sm btn-view-appointment"
                                         data-patient-name="{{ $patient->name }}"
                                         data-patient-age="{{ $patient->age }}"
                                         data-patient-gender="{{ $patient->gender }}"
                                         data-patient-key="{{ $key }}"
                                         title="View Appointment Details">
-                                    <i class="fas fa-calendar-check me-1"></i>View Appointment
+                                    <i class="fas fa-calendar-check"></i>View Appointment
                                 </button>
-                                <button type="button" class="btn btn-sm btn-reschedule btn-outline-secondary"
+                                <button type="button" class="doctor-btn doctor-btn-outline doctor-btn-sm btn-reschedule"
                                         data-patient-name="{{ $patient->name }}"
                                         data-patient-age="{{ $patient->age }}"
                                         data-patient-gender="{{ $patient->gender }}"
@@ -191,7 +187,7 @@
     </div>
 </div>
 @else
-<div class="empty-state">
+<div class="doctor-empty-state">
     <i class="fas fa-user-injured"></i>
     <h5>No {{ ucfirst($category) }} Patients Found</h5>
     <p>
@@ -206,8 +202,8 @@
         @endif
     </p>
     @if($category === 'all')
-        <a href="{{ route('openai.form') }}" class="btn-custom-primary">
-            <i class="fas fa-plus me-2"></i>Add New Patient
+        <a href="{{ route('openai.form') }}" class="doctor-btn doctor-btn-primary">
+            <i class="fas fa-plus"></i>Add New Patient
         </a>
     @endif
 </div>

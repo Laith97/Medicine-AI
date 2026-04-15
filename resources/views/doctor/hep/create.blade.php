@@ -3,24 +3,36 @@
 @section('title', 'Create Physical Therapy - HEP Program')
 
 @section('content')
-<div class="dashboard-container">
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;">
     <div class="container">
-        <!-- Header -->
-        <div class="dashboard-header py-2 border-bottom">
+        <div class="dashboard-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2>Create Physical Therapy (Home Exercise Program)</h2>
-                    <p class="mb-0">Design a personalized exercise program for your patient</p>
+                    <h2><i class="fas fa-plus me-2"></i>Create Physical Therapy (Home Exercise Program)</h2>
+                    <p class="text-muted mb-0">Design a personalized exercise program for your patient</p>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="header-actions">
                     <a href="{{ route('doctor.hep.index') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-2"></i>Back to Programs
                     </a>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Progress Steps -->
+<!-- Progress Steps -->
         <div class="row mt-4">
             <div class="col-12">
                 <div class="progress-steps">

@@ -3,24 +3,40 @@
 @section('title', 'Physical Therapy - HEP Programs')
 
 @section('content')
-<div class="dashboard-container">
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;">
     <div class="container">
-        <!-- Header -->
-        <div class="dashboard-header py-2 border-bottom">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2>Physical Therapy (Home Exercise Programs)</h2>
-                    <p class="mb-0">Create and manage HEP programs for your patients</p>
-                </div>
-                <div class="d-flex gap-2">
-                    <a href="{{ route('doctor.hep.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus me-2"></i>Create HEP Program
-                    </a>
+    <div class="row">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-dumbbell me-2"></i>Physical Therapy (Home Exercise Programs)</h2>
+                        <p class="text-muted mb-0">Create and manage HEP programs for your patients</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('doctor.hep.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Create HEP Program
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
+    </div>
+</div>
 
-        <!-- Stats Cards -->
+<!-- Stats Cards -->
         <div class="row mt-4">
             <div class="col-lg-3 col-md-6 mb-4">
                 <div class="stats-card">
@@ -181,6 +197,8 @@
         </div>
     </div>
 </div>
+    </div></div>
+@endsection
 
 <!-- Assign Program Modal -->
 <div class="modal fade" id="assignProgramModal" tabindex="-1">

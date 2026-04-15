@@ -155,24 +155,28 @@
 
 @section('content')
 <div class="performance-dashboard">
-    <div class="container-fluid">
-        <!-- Dashboard Header -->
-        <div class="dashboard-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1><i class="fas fa-chart-line me-3"></i>Real-time Performance Dashboard</h1>
-                    <p class="text-muted mb-0">Monitor real-time appointment broadcasting performance</p>
-                </div>
-                <div>
-                    <span class="status-indicator {{ $healthStatus['status'] }}"></span>
-                    <span class="fw-bold">Status: {{ ucfirst($healthStatus['status']) }}</span>
-                    <button class="refresh-btn" onclick="refreshDashboard()">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="dashboard-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1><i class="fas fa-chart-line me-2"></i>Real-time Performance Dashboard</h1>
+                            <p class="text-muted mb-0">Monitor real-time appointment broadcasting performance</p>
+                        </div>
+                        <div>
+                            <span class="status-indicator {{ $healthStatus['status'] }}"></span>
+                            <span class="fw-bold">Status: {{ ucfirst($healthStatus['status']) }}</span>
+                            <button class="refresh-btn" onclick="refreshDashboard()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-
+    </div>
+    <div class="container-fluid">
         <!-- Performance Issues Alert -->
         @if(!empty($healthStatus['issues']))
         <div class="alert alert-warning">

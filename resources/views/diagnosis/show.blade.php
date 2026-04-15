@@ -12,8 +12,8 @@
                     <h2><i class="fas fa-clipboard-check me-2"></i>Diagnosis Details</h2>
                     <p class="text-muted">Created on {{ $diagnosis->created_at->format('F j, Y \a\t g:i A') }}</p>
                 </div>
-                <a href="{{ route('diagnosis.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Back to List
+                <a href="{{ route('doctor.cases.overview') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Cases
                 </a>
             </div>
 
@@ -334,8 +334,8 @@
             <div class="card">
                 <div class="card-body text-center">
                     <div class="btn-group" role="group">
-                        <a href="{{ route('diagnosis.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>Back to List
+                        <a href="{{ route('doctor.cases.overview') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Cases
                         </a>
                         @if(!$diagnosis->patient_notified && $diagnosis->patient->email)
                             <button class="btn btn-info" onclick="resendNotification()">

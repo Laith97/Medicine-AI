@@ -351,7 +351,10 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
         // Doctor routes
         Route::middleware('role:doctor')->group(function () {
-            Route::get('/', [DiagnosisController::class, 'index'])->name('index');
+            // Redirect index to cases-overview (consolidated page)
+            Route::get('/', function() {
+                return redirect()->route('doctor.cases.overview');
+            })->name('index');
             Route::get('/create', [DiagnosisController::class, 'create'])->name('create');
             Route::post('/', [DiagnosisController::class, 'store'])->name('store');
 
@@ -796,8 +799,6 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
     Route::get('/appointments/{appointment}/follow-ups/create', [DoctorDashboardController::class, 'createFollowUp'])->name('follow-ups.create');
     Route::post('/appointments/{appointment}/follow-ups', [DoctorDashboardController::class, 'storeFollowUp'])->name('follow-ups.store');
 
-    // On-Deck Dashboard for real-time appointment tracking
-    Route::get('/on-deck', [DoctorDashboardController::class, 'onDeck'])->name('on-deck');
     Route::post('/appointments/{appointment}/status', [DoctorDashboardController::class, 'updateAppointmentStatus'])->name('appointments.status');
     Route::post('/appointments/reorder', [DoctorDashboardController::class, 'reorderAppointments'])->name('appointments.reorder');
 
@@ -1489,6 +1490,17 @@ Route::middleware(['auth', 'role:patient'])->prefix('patient/hep')->name('patien
     Route::get('/assignment/{assignment}/exercise/{exercise}', [App\Http\Controllers\Patient\HEPController::class, 'showExercise'])->name('exercise');
     Route::post('/assignment/{assignment}/progress', [App\Http\Controllers\Patient\HEPController::class, 'logProgress'])->name('log-progress');
     Route::get('/assignment/{assignment}/progress-data', [App\Http\Controllers\Patient\HEPController::class, 'getProgressData'])->name('progress-data');
+});
+
+// AI routes for appointments
+Route::middleware(['auth', 'role:doctor'])->group(function () {
+    Route::post('/ai/appointments/{appointment}/suggest', [AppointmentController::class, 'aiSuggest'])->name('ai.appointments.suggest');
+    Route::post('/ai/appointments/{appointment}/medical-copilot', [AppointmentController::class, 'aiMedicalCopilot'])->name('ai.appointments.medical-copilot');
+    Route::post('/ai/appointments/{appointment}/save-quick-data', [AppointmentController::class, 'saveQuickData'])->name('doctor.appointments.save-quick-data');
+    Route::get('/ai/patients/{patient}/ai-analyses', [AppointmentController::class, 'getPatientAIAnalyses'])->name('ai.patients.ai-analyses');
+    Route::get('/ai/ai-analyses/{analysis}', [AppointmentController::class, 'showAIAnalysis'])->name('ai.analysis.show');
+    Route::post('/ai/appointments/{appointment}/ai-analyses/save', [AppointmentController::class, 'saveAICopilotAnalysis'])->name('ai.appointments.ai-analyses.save');
+    Route::post('/ai/ai-analyses/{analysis}/review', [AppointmentController::class, 'reviewAIAnalysis'])->name('ai.analysis.review');
 });
 
 // Include AI routes

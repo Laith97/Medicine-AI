@@ -12,6 +12,7 @@ class Diagnosis extends Model
     protected $fillable = [
         'doctor_id',
         'patient_id',
+        'appointment_id',
         'diagnosis_text',
         'voice_transcripts',
         'voice_files',
@@ -46,6 +47,14 @@ class Diagnosis extends Model
     public function patient()
     {
         return $this->belongsTo(User::class, 'patient_id');
+    }
+
+    /**
+     * Get the appointment for this diagnosis
+     */
+    public function appointment()
+    {
+        return $this->belongsTo(Appointment::class);
     }
 
     /**

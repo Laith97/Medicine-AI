@@ -1,0 +1,26 @@
+[     221ms] [ERROR] ❌ Echo initialization failed: You must pass your app key when you instantiate Pusher. @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:7
+[     222ms] [WARNING] Echo not found on window, initializing fallback Echo @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:91
+[    1297ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[    1298ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/login:3465:27 @ http://127.0.0.1:8000/login:3504
+[   31298ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[   31298ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/login:3465:27 @ http://127.0.0.1:8000/login:3504
+[   76343ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[   76343ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/login:3465:27 @ http://127.0.0.1:8000/login:3504
+[  143879ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[  143879ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/login:3465:27 @ http://127.0.0.1:8000/login:3504
+[  245170ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[  245171ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/login:3465:27 @ http://127.0.0.1:8000/login:3504
+[  397089ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[  397089ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/login:3465:27 @ http://127.0.0.1:8000/login:3504
+[  624942ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[  624942ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/login:3465:27 @ http://127.0.0.1:8000/login:3504
+[  924985ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[  924985ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/login:3465:27 @ http://127.0.0.1:8000/login:3504

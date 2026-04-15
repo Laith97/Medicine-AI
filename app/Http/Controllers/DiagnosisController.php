@@ -89,7 +89,18 @@ class DiagnosisController extends Controller
         // Merge registered patients with guest patients, removing duplicates by email
         $allPatients = $patients->concat($guestPatients)->unique('email')->values();
 
-        return view('diagnosis.create', compact('allPatients'));
+        // Get doctor's confirmed/completed appointments for optional linking
+        $doctorAppointments = collect([]);
+        if ($user->doctor) {
+            $doctorAppointments = \App\Models\Appointment::where('doctor_id', $user->doctor->id)
+                ->whereIn('status', ['confirmed', 'completed'])
+                ->with('patient')
+                ->orderBy('appointment_date', 'desc')
+                ->take(20)
+                ->get();
+        }
+
+        return view('diagnosis.create', compact('allPatients', 'doctorAppointments'));
     }
 
     /**
@@ -262,6 +273,7 @@ class DiagnosisController extends Controller
             $diagnosis = Diagnosis::create([
                 'doctor_id' => Auth::id(),
                 'patient_id' => $patient->id,
+                'appointment_id' => $request->input('appointment_id'), // Optional appointment link
                 'type' => 'manual',
                 'diagnosis_text' => $diagnosisText,
                 'voice_transcripts' => $voiceTranscripts,
@@ -1048,6 +1060,7 @@ class DiagnosisController extends Controller
             $diagnosis = Diagnosis::create([
                 'doctor_id' => Auth::id(),
                 'patient_id' => $appointment->patient_id,
+                'appointment_id' => $appointment->id,
                 'type' => 'appointment',
                 'diagnosis_text' => $diagnosisText,
                 'voice_transcripts' => $voiceTranscripts,

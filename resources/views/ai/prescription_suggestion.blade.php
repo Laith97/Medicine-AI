@@ -63,11 +63,48 @@
 
 @push('scripts')
 <script>
+// Function to save quick data to appointment for persistence
+function saveQuickDataToAppointment(allergies, medications, notes) {
+    console.log('Saving quick data:', { allergies, medications, notes });
+    
+    return $.ajax({
+        url: "{{ route('doctor.appointments.save-quick-data', $appointment->id) }}",
+        method: 'POST',
+        data: {
+            _token: $('meta[name="csrf-token"]').attr('content'),
+            allergies: allergies,
+            medications: medications,
+            clinical_notes: notes
+        },
+        success: function(response) {
+            console.log('Quick data saved successfully:', response);
+        },
+        error: function(xhr, status, error) {
+            console.error('Failed to save quick data:', {
+                status: xhr.status,
+                statusText: xhr.statusText,
+                responseText: xhr.responseText,
+                error: error
+            });
+            
+            let errorMessage = 'Failed to save quick data';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            } else if (xhr.responseText) {
+                errorMessage = xhr.responseText;
+            }
+            
+            showNotification('Error saving data: ' + errorMessage, 'error');
+        }
+    });
+}
+
 // Function to show clinical data summary
 function showClinicalDataSummary(clinicalData) {
     var summaryHtml = '';
 
-    if (clinicalData && Object.keys(clinicalData).length > 0) {
+    // Handle edge cases: null, undefined, empty array, or empty object all mean no data
+    if (clinicalData && typeof clinicalData === 'object' && Object.keys(clinicalData).length > 0) {
         summaryHtml += '<div class="row g-2">';
 
         if (clinicalData.symptoms) {
@@ -103,11 +140,44 @@ $('#aiSuggestBtn').click(function(e) {
     // CRITICAL SAFETY: Only use doctor-verified clinical data for AI medication suggestions
     // Patient-reported symptoms are excluded due to unreliability
     var symptoms = @json($appointment->doctor_notes ?? '');
-    var allergies = @json(data_get($appointment->patient, 'patient_data.allergies', []));
-    var pastMeds = @json(data_get($appointment->patient, 'patient_data.past_medications', []));
 
     // Include current (most recent) diagnosis data if available
     var currentDiagnosis = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->latest()->first() : null);
+
+    // Get allergies and medications from the most recent diagnosis patient_data
+    var allergies = [];
+    var pastMeds = [];
+
+    if (currentDiagnosis && currentDiagnosis.patient_data) {
+        // Handle allergies - can be string or array
+        var diagnosisAllergies = currentDiagnosis.patient_data.allergies || [];
+        if (typeof diagnosisAllergies === 'string' && diagnosisAllergies.trim().length > 0) {
+            allergies = [diagnosisAllergies.trim()];
+        } else if (Array.isArray(diagnosisAllergies)) {
+            allergies = diagnosisAllergies;
+        }
+
+        // Handle medications - can be string or array
+        var diagnosisMeds = currentDiagnosis.patient_data.medications || currentDiagnosis.patient_data.past_medications || [];
+        if (typeof diagnosisMeds === 'string' && diagnosisMeds.trim().length > 0) {
+            pastMeds = [diagnosisMeds.trim()];
+        } else if (Array.isArray(diagnosisMeds)) {
+            pastMeds = diagnosisMeds;
+        }
+
+        // CRITICAL FIX: Include clinical_notes as symptoms if doctor_notes is empty
+        // This is where Quick Entry symptoms are stored (e.g., "Chest pain, shortness of breath")
+        if ((!symptoms || symptoms.trim() === '') && currentDiagnosis.patient_data.clinical_notes) {
+            symptoms = currentDiagnosis.patient_data.clinical_notes;
+            console.log('🔍 Using clinical_notes as symptoms:', symptoms);
+        }
+
+        // Also check patient_data.symptoms as another fallback
+        if ((!symptoms || symptoms.trim() === '') && currentDiagnosis.patient_data.symptoms) {
+            symptoms = currentDiagnosis.patient_data.symptoms;
+            console.log('🔍 Using patient_data.symptoms as symptoms:', symptoms);
+        }
+    }
 
     // Include past diagnosis history (all except most recent, limit to last 10)
     var pastDiagnoses = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->orderBy('created_at', 'desc')->skip(1)->take(10)->get() : collect());
@@ -115,18 +185,72 @@ $('#aiSuggestBtn').click(function(e) {
     // Include voice assistant diagnosis if available
     var voiceDiagnosis = @json($appointment->patient ? \App\Models\AiAssistantResult::where('patient_id', $appointment->patient->id)->where('source', 'voice_assistant')->latest()->first() : null);
 
+    // Debug logging to see what data we actually have
+    console.log('🔍 DEBUG: Checking AI prescription data availability');
+    console.log('Current Diagnosis:', currentDiagnosis);
+    console.log('Patient Data:', currentDiagnosis ? currentDiagnosis.patient_data : 'No diagnosis');
+    console.log('Extracted Allergies:', allergies);
+    console.log('Extracted Medications:', pastMeds);
+    console.log('Doctor Notes:', symptoms);
+    
     // Check for missing critical data
     var missingData = [];
-    if (!allergies || (Array.isArray(allergies) && allergies.length === 0)) {
+    
+    // Check allergies - should be a non-empty string or non-empty array
+    // Accept "No known allergies", "None", "N/A" as valid entries
+    var hasAllergies = false;
+    if (allergies) {
+        if (Array.isArray(allergies) && allergies.length > 0) {
+            hasAllergies = true;
+        } else if (typeof allergies === 'string' && allergies.trim().length > 0) {
+            const allergyText = allergies.trim().toLowerCase();
+            // Accept explicit "no allergies" statements as valid
+            if (allergyText === 'none' || allergyText === 'n/a' || 
+                allergyText.includes('no known') || allergyText.includes('no allergies') ||
+                allergyText === 'nka' || allergyText === 'nkda') {
+                hasAllergies = true;
+            } else if (allergies.trim().length > 0) {
+                hasAllergies = true;
+            }
+        }
+    }
+    console.log('Has Allergies:', hasAllergies, 'Value:', allergies);
+    
+    // Check medications - should be a non-empty string or non-empty array
+    // Accept "No current medications", "None", "N/A" as valid entries
+    var hasMedications = false;
+    if (pastMeds) {
+        if (Array.isArray(pastMeds) && pastMeds.length > 0) {
+            hasMedications = true;
+        } else if (typeof pastMeds === 'string' && pastMeds.trim().length > 0) {
+            const medText = pastMeds.trim().toLowerCase();
+            // Accept explicit "no medications" statements as valid
+            if (medText === 'none' || medText === 'n/a' || 
+                medText.includes('no current') || medText.includes('no medications') ||
+                medText.includes('no meds')) {
+                hasMedications = true;
+            } else if (pastMeds.trim().length > 0) {
+                hasMedications = true;
+            }
+        }
+    }
+    console.log('Has Medications:', hasMedications, 'Value:', pastMeds);
+    
+    var hasClinicalAssessment = !!(symptoms || currentDiagnosis);
+    console.log('Has Clinical Assessment:', hasClinicalAssessment, 'Symptoms:', symptoms, 'Diagnosis:', !!currentDiagnosis);
+    
+    // Only add to missing if truly missing
+    if (!hasAllergies) {
         missingData.push('Patient Allergies');
     }
-    if ((!pastMeds || (Array.isArray(pastMeds) && pastMeds.length === 0)) && 
-        (!currentDiagnosis || !currentDiagnosis.patient_data || !currentDiagnosis.patient_data.medications)) {
+    if (!hasMedications) {
         missingData.push('Current Medications');
     }
-    if (!symptoms && !currentDiagnosis) {
+    if (!hasClinicalAssessment) {
         missingData.push('Doctor Clinical Assessment');
     }
+    
+    console.log('Missing Data:', missingData);
 
     // Show warning modal if critical data is missing
     if (missingData.length > 0) {
@@ -149,6 +273,50 @@ $('#aiSuggestBtn').click(function(e) {
                                 <li><strong>Without current medications:</strong> Cannot check drug interactions (dangerous)</li>
                                 <li><strong>Without clinical assessment:</strong> No basis for medication recommendations</li>
                             </ul>
+                            
+                            <!-- Quick Data Entry Form -->
+                            <div id="quickDataEntry" style="display: none;" class="mt-4 p-3 bg-light rounded">
+                                <h6 class="text-primary mb-3"><i class="fas fa-edit me-2"></i>Quick Data Entry</h6>
+                                <form id="quickDataForm">
+                                    <div id="quickAllergyField" style="display: none;" class="mb-3">
+                                        <label class="form-label fw-semibold">Patient Allergies *</label>
+                                        <input type="text" id="quickAllergies" class="form-control" placeholder="Enter allergies or 'None' if no known allergies">
+                                        <div class="form-text">Examples: Penicillin, Sulfa, None, No known allergies</div>
+                                    </div>
+                                    <div id="quickMedicationField" style="display: none;" class="mb-3">
+                                        <label class="form-label fw-semibold">Current Medications *</label>
+                                        <input type="text" id="quickMedications" class="form-control" placeholder="Enter current medications or 'None' if no current medications">
+                                        <div class="form-text">Examples: Lisinopril 10mg daily, Metformin 500mg twice daily, None</div>
+                                    </div>
+                                    <div id="quickNotesField" style="display: none;" class="mb-3">
+                                        <label class="form-label fw-semibold">Clinical Notes *</label>
+                                        <textarea id="quickNotes" class="form-control" rows="3" placeholder="Brief clinical assessment or symptoms"></textarea>
+                                        <div class="form-text">Brief description of patient's condition or symptoms</div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-success" id="saveQuickDataBtn">
+                                            <i class="fas fa-save me-1"></i>Save & Continue with AI
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" id="cancelQuickDataBtn">
+                                            <i class="fas fa-times me-1"></i>Cancel
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <div class="alert alert-info mt-3" id="optionsAlert">
+                                <h6><i class="fas fa-lightbulb me-2"></i>Options Available:</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>1. Quick Entry</strong><br>
+                                        <small>Fill missing data right here (recommended)</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>2. Continue with Limited Data</strong><br>
+                                        <small>AI will provide general guidance only</small>
+                                    </div>
+                                </div>
+                            </div>
                             <hr>
                             <p class="mb-0"><strong>What would you like to do?</strong></p>
                         </div>
@@ -156,11 +324,11 @@ $('#aiSuggestBtn').click(function(e) {
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                 <i class="fas fa-times me-1"></i>Cancel
                             </button>
-                            <a href="/diagnosis/create" class="btn btn-primary">
-                                <i class="fas fa-plus me-1"></i>Add Missing Data
-                            </a>
+                            <button type="button" class="btn btn-primary" id="quickEntryBtn">
+                                <i class="fas fa-edit me-1"></i>Quick Entry
+                            </button>
                             <button type="button" class="btn btn-warning" id="continueAnywayBtn">
-                                <i class="fas fa-exclamation-triangle me-1"></i>Continue Anyway (Not Recommended)
+                                <i class="fas fa-exclamation-triangle me-1"></i>Continue with Limited Data
                             </button>
                         </div>
                     </div>
@@ -177,6 +345,128 @@ $('#aiSuggestBtn').click(function(e) {
         // Show modal
         var modal = new bootstrap.Modal(document.getElementById('aiWarningModal'));
         modal.show();
+        
+        // Handle quick entry button
+        $('#quickEntryBtn').click(function() {
+            // Hide options alert and show quick data entry form
+            $('#optionsAlert').hide();
+            $('#quickDataEntry').show();
+            
+            // Show relevant fields based on missing data
+            if (missingData.includes('Patient Allergies')) {
+                $('#quickAllergyField').show();
+            }
+            if (missingData.includes('Current Medications')) {
+                $('#quickMedicationField').show();
+            }
+            if (missingData.includes('Doctor Clinical Assessment')) {
+                $('#quickNotesField').show();
+            }
+            
+            // Hide the footer buttons
+            $(this).closest('.modal-footer').hide();
+            
+            // Focus on first visible field
+            setTimeout(() => {
+                if ($('#quickAllergyField').is(':visible')) {
+                    $('#quickAllergies').focus();
+                } else if ($('#quickMedicationField').is(':visible')) {
+                    $('#quickMedications').focus();
+                } else if ($('#quickNotesField').is(':visible')) {
+                    $('#quickNotes').focus();
+                }
+            }, 100);
+        });
+        
+        // Handle save quick data button
+        $('#saveQuickDataBtn').click(function() {
+            var quickAllergies = $('#quickAllergies').val().trim();
+            var quickMedications = $('#quickMedications').val().trim();
+            var quickNotes = $('#quickNotes').val().trim();
+            
+            // Validate required fields
+            var hasError = false;
+            if (missingData.includes('Patient Allergies') && !quickAllergies) {
+                $('#quickAllergies').addClass('is-invalid');
+                hasError = true;
+            } else {
+                $('#quickAllergies').removeClass('is-invalid');
+            }
+            
+            if (missingData.includes('Current Medications') && !quickMedications) {
+                $('#quickMedications').addClass('is-invalid');
+                hasError = true;
+            } else {
+                $('#quickMedications').removeClass('is-invalid');
+            }
+            
+            if (missingData.includes('Doctor Clinical Assessment') && !quickNotes) {
+                $('#quickNotes').addClass('is-invalid');
+                hasError = true;
+            } else {
+                $('#quickNotes').removeClass('is-invalid');
+            }
+            
+            if (hasError) {
+                showNotification('Please fill all required fields', 'error');
+                return;
+            }
+            
+            // Save the data temporarily and update our variables
+            if (quickAllergies) {
+                allergies = [quickAllergies];
+            }
+            if (quickMedications) {
+                pastMeds = [quickMedications];
+            }
+            if (quickNotes) {
+                symptoms = quickNotes;
+            }
+            
+            // Save to appointment (for persistence) and wait for completion
+            var savePromise = saveQuickDataToAppointment(quickAllergies, quickMedications, quickNotes);
+            
+            savePromise.done(function(response) {
+                console.log('Quick data save completed successfully:', response);
+                
+                // Update the current diagnosis data to reflect the saved data
+                if (currentDiagnosis) {
+                    if (!currentDiagnosis.patient_data) {
+                        currentDiagnosis.patient_data = {};
+                    }
+                    if (quickAllergies) {
+                        currentDiagnosis.patient_data.allergies = quickAllergies;
+                    }
+                    if (quickMedications) {
+                        currentDiagnosis.patient_data.medications = quickMedications;
+                    }
+                    if (quickNotes) {
+                        currentDiagnosis.patient_data.clinical_notes = quickNotes;
+                    }
+                }
+                
+                // Close modal and proceed with AI suggestion
+                modal.hide();
+                proceedWithAISuggestion();
+            }).fail(function(xhr, status, error) {
+                console.error('Quick data save failed:', error);
+                showNotification('Failed to save data to database. Proceeding with temporary data only.', 'warning');
+                
+                // Still proceed with AI suggestion using temporary data
+                modal.hide();
+                proceedWithAISuggestion();
+            });
+        });
+        
+        // Handle cancel quick data button
+        $('#cancelQuickDataBtn').click(function() {
+            // Show options alert and hide quick data entry form
+            $('#quickDataEntry').hide();
+            $('#optionsAlert').show();
+            
+            // Show the footer buttons
+            $('.modal-footer').show();
+        });
         
         // Handle continue anyway button
         $('#continueAnywayBtn').click(function() {
@@ -205,7 +495,8 @@ $('#aiSuggestBtn').click(function(e) {
             current_diagnosis: JSON.stringify(currentDiagnosis),
             past_diagnoses: JSON.stringify(pastDiagnoses),
             voice_diagnosis: JSON.stringify(voiceDiagnosis),
-            doctor_notes: @json($appointment->doctor_notes)
+            doctor_notes: @json($appointment->doctor_notes),
+            clinical_notes: currentDiagnosis && currentDiagnosis.patient_data ? currentDiagnosis.patient_data.clinical_notes : null
         },
         success: function(response) {
             button.prop('disabled', false).html('<i class="fas fa-magic me-1"></i>Suggest with AI');
@@ -420,31 +711,33 @@ window.resetPrescriptionForm = window.resetPrescriptionForm || function() {
 function populateDataSourcesModal() {
     const appointment = @json($appointment);
     const patient = @json($appointment->patient);
-    const patientData = @json($appointment->patient ? $appointment->patient->patientData : null);
     const currentDiagnosis = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->latest()->first() : null);
     const pastDiagnoses = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->orderBy('created_at', 'desc')->skip(1)->take(10)->get() : collect());
     const voiceDiagnosis = @json($appointment->patient ? \App\Models\AiAssistantResult::where('patient_id', $appointment->patient->id)->where('source', 'voice_assistant')->latest()->first() : null);
 
+    // Get patient data from the most recent diagnosis
+    const patientData = currentDiagnosis ? currentDiagnosis.patient_data : null;
+
     const dataSources = [
         {
             name: 'Patient Allergies',
-            status: patientData && patientData.allergies && (Array.isArray(patientData.allergies) ? patientData.allergies.length > 0 : patientData.allergies.toString().trim().length > 0) ? 'available' : 'missing',
+            status: patientData && patientData.allergies && (Array.isArray(patientData.allergies) ? patientData.allergies.length > 0 : (typeof patientData.allergies === 'string' && patientData.allergies.trim().length > 0)) ? 'available' : 'missing',
             example: patientData && patientData.allergies ? (Array.isArray(patientData.allergies) ? patientData.allergies.join(', ') : patientData.allergies.toString()) : 'No allergies recorded',
             location: 'Diagnosis creation form (Doctor-verified)',
             reliability: 'Doctor-verified',
             icon: 'fas fa-allergies',
             importance: 'critical',
-            reason: 'Prevents prescribing medications patient is allergic to (life-threatening)'
+            reason: 'Prevents prescribing medications patient is allergic to (life-threatening). "None" or "No known allergies" are acceptable entries.'
         },
         {
             name: 'Current Medications',
-            status: patientData && patientData.past_medications && (Array.isArray(patientData.past_medications) ? patientData.past_medications.length > 0 : patientData.past_medications.toString().trim().length > 0) ? 'available' : 'missing',
-            example: patientData && patientData.past_medications ? (Array.isArray(patientData.past_medications) ? patientData.past_medications.join(', ') : patientData.past_medications.toString()) : 'No medications recorded',
+            status: patientData && (patientData.medications || patientData.past_medications) && (Array.isArray(patientData.medications || patientData.past_medications) ? (patientData.medications || patientData.past_medications).length > 0 : (typeof (patientData.medications || patientData.past_medications) === 'string' && (patientData.medications || patientData.past_medications).trim().length > 0)) ? 'available' : 'missing',
+            example: patientData && (patientData.medications || patientData.past_medications) ? (Array.isArray(patientData.medications || patientData.past_medications) ? (patientData.medications || patientData.past_medications).join(', ') : (patientData.medications || patientData.past_medications).toString()) : 'No medications recorded',
             location: 'Diagnosis creation form (Doctor-verified)',
             reliability: 'Doctor-verified',
             icon: 'fas fa-pills',
             importance: 'critical',
-            reason: 'Required to check drug-drug interactions (dangerous without this)'
+            reason: 'Required to check drug-drug interactions (dangerous without this). "None" or "No current medications" are acceptable entries.'
         },
         {
             name: 'Doctor Notes',

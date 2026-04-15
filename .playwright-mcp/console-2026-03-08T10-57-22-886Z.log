@@ -1,0 +1,5 @@
+[     880ms] [ERROR] ❌ Echo initialization failed: You must pass your app key when you instantiate Pusher. @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:7
+[     881ms] [WARNING] Echo not found on window, initializing fallback Echo @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:91
+[    1934ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[    1934ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/login:3465:27 @ http://127.0.0.1:8000/login:3504

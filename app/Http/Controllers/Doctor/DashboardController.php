@@ -129,7 +129,7 @@ class DashboardController extends Controller
             });
         }
 
-        $appointments = $query->orderBy('appointment_date', 'desc')->paginate(15);
+        $appointments = $query->orderBy('created_at', 'desc')->paginate(15);
 
         return view('doctor.appointments.index', compact('appointments'));
     }
@@ -155,7 +155,9 @@ class DashboardController extends Controller
             );
         }
 
-        $appointment->load(['patient', 'review']);
+        $appointment->load(['patient', 'review', 'diagnoses' => function($query) {
+            $query->with('aiAssistantResults')->orderBy('created_at', 'desc');
+        }]);
 
         // Generate risk predictions if they don't exist for this appointment
         $this->ensureRiskPredictions($appointment);
@@ -584,20 +586,25 @@ class DashboardController extends Controller
             }
         }
 
+        // Determine appointment status based on patient type
+        // Existing patients: auto-confirmed
+        // New patients: pending (require manual confirmation)
+        $status = $request->patient_type === 'existing' ? 'confirmed' : 'pending';
+
         // Create appointment
         $appointment = Appointment::create([
             'doctor_id' => $doctor->id,
             'patient_id' => $patient->id,
             'appointment_date' => $appointmentDate,
             'appointment_end' => $appointmentDate->copy()->addMinutes($doctor->appointment_duration),
-            'status' => $doctor->auto_approve_appointments ? 'confirmed' : 'pending',
+            'status' => $status,
             'appointment_type' => $request->appointment_type,
             'reason' => $request->reason,
             'consultation_fee' => $doctor->consultation_fee,
         ]);
 
-        // Confirm appointment if auto-approve is enabled (same as patient booking)
-        if ($doctor->auto_approve_appointments) {
+        // Confirm appointment only for existing patients
+        if ($request->patient_type === 'existing') {
             $appointment->confirm();
         }
 
@@ -616,8 +623,12 @@ class DashboardController extends Controller
         // Send notifications (same as patient booking flow)
         $this->sendAppointmentNotifications($appointment);
 
+        $message = $request->patient_type === 'existing'
+            ? 'Appointment booked and confirmed successfully!'
+            : 'Appointment created and pending confirmation!';
+
         return redirect()->route('doctor.appointments.show', $appointment)
-            ->with('success', 'Appointment booked successfully!');
+            ->with('success', $message);
     }
 
     /**
@@ -884,70 +895,6 @@ class DashboardController extends Controller
     }
 
     /**
-     * Display the on-deck dashboard for real-time appointment tracking
-     */
-    public function onDeck(Request $request)
-    {
-        $doctor = $this->getEffectiveDoctor();
-
-        // Get appointments for on-deck display (today and upcoming)
-        $query = $doctor->appointments()
-            ->with(['patient.patientRiskScores'])
-            ->whereIn('status', ['check_in', 'in_progress', 'confirmed'])
-            ->whereDate('appointment_date', '>=', today())
-            ->whereDate('appointment_date', '<=', today()->addDays(1)); // Today and tomorrow
-
-        // Filter by status if specified
-        if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
-
-        // Order by appointment time and priority
-        $appointments = $query->orderBy('appointment_date')
-            ->orderByRaw("CASE
-                WHEN status = 'in_progress' THEN 1
-                WHEN status = 'check_in' THEN 2
-                WHEN status = 'confirmed' THEN 3
-                ELSE 4
-            END")
-            ->get();
-
-        // Add priority based on risk scores and appointment time
-        $appointments->transform(function ($appointment) {
-            $riskScore = $appointment->patient->patientRiskScores
-                ->where('appointment_id', $appointment->id)
-                ->first();
-
-            $priority = 'low';
-            if ($riskScore) {
-                $maxRisk = max($riskScore->no_show_risk, $riskScore->hospitalization_risk);
-                if ($maxRisk >= 0.7) {
-                    $priority = 'high';
-                } elseif ($maxRisk >= 0.3) {
-                    $priority = 'medium';
-                }
-            }
-
-            $appointment->priority = $priority;
-            return $appointment;
-        });
-
-        // Sort by priority and time
-        $appointments = $appointments->sort(function ($a, $b) {
-            $priorityOrder = ['high' => 3, 'medium' => 2, 'low' => 1];
-            $priorityDiff = $priorityOrder[$b->priority] - $priorityOrder[$a->priority];
-
-            if ($priorityDiff !== 0) {
-                return $priorityDiff;
-            }
-
-            return $a->appointment_date <=> $b->appointment_date;
-        })->values();
-
-        return view('doctor.on-deck', compact('appointments'));
-    }
-
-    /**
      * Update appointment status via AJAX
      */
     public function updateAppointmentStatus(Request $request, Appointment $appointment)
@@ -1164,7 +1111,7 @@ class DashboardController extends Controller
             'duration' => 'nullable|integer|min:15|max:240',
         ]);
 
-        // Create new appointment as follow-up
+        // Create new appointment as follow-up - always confirmed when created by doctor
         $followUpAppointment = new Appointment();
         $followUpAppointment->doctor_id = $doctor->id;
         $followUpAppointment->patient_id = $appointment->patient_id;
@@ -1176,10 +1123,13 @@ class DashboardController extends Controller
         $followUpAppointment->consultation_fee = $request->consultation_fee * 100; // Convert to cents
         $followUpAppointment->appointment_duration = $request->duration ?? 30;
         $followUpAppointment->reason = $request->reason;
-        $followUpAppointment->status = 'pending';
+        $followUpAppointment->status = 'confirmed';
         $followUpAppointment->is_follow_up = true;
         $followUpAppointment->original_appointment_id = $appointment->id;
         $followUpAppointment->save();
+
+        // Confirm follow-up appointment
+        $followUpAppointment->confirm();
 
         // Load the patient relationship for email sending
         $followUpAppointment->load('patient');

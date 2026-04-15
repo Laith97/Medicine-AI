@@ -1,7 +1,12 @@
 @extends('master')
 
 @section('content')
-<div class="container-fluid py-4">
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+</style>
+<div class="container-fluid">
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">

@@ -88,6 +88,7 @@ Route::middleware(['auth', 'web'])->group(function () {
     // Patient cases and visit history API routes
     Route::get('/doctor/patient-management/patient-visits/{patientKey}', [\App\Http\Controllers\OpenAIController::class, 'getPatientVisits']);
     Route::get('/doctor/patient-management/visit-history/{id}', [\App\Http\Controllers\OpenAIController::class, 'getVisitDetails']);
+    Route::get('/doctor/patient-management/patient-diagnoses/{patientId}', [\App\Http\Controllers\OpenAIController::class, 'getPatientDiagnoses']);
 
     /*
     |--------------------------------------------------------------------------

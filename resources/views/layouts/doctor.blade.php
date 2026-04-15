@@ -196,21 +196,6 @@
                 <div class="nav-divider"></div>
                 <div class="nav-section">Today's Work</div>
                 <div class="nav-item">
-                    <a href="{{ route('doctor.on-deck') }}" class="nav-link {{ request()->routeIs('doctor.on-deck') ? 'active' : '' }}">
-                        <i class="fas fa-clipboard-list"></i>
-                        <span>Today's Queue</span>
-                        @php
-                            $todayAppointments = \App\Models\Appointment::where('doctor_id', auth()->id())
-                                ->whereDate('appointment_date', now()->toDateString())
-                                ->whereIn('status', ['confirmed', 'pending'])
-                                ->count();
-                        @endphp
-                        @if($todayAppointments > 0)
-                            <span class="nav-badge">{{ $todayAppointments }}</span>
-                        @endif
-                    </a>
-                </div>
-                <div class="nav-item">
                     <a href="{{ route('ai.ambient-listening.index') }}" class="nav-link {{ request()->routeIs('ai.ambient-listening.index') ? 'active' : '' }}">
                         <i class="fas fa-microphone-alt"></i>
                         <span>Start Consultation</span>

@@ -240,16 +240,6 @@
 <div class="container-fluid">
     <!-- Back Navigation -->
     <div class="container mb-3">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item">
-                    <a href="{{ route('doctors.show', $doctor) }}" class="text-decoration-none">
-                        <i class="fas fa-arrow-left me-2"></i>Dr. {{ $doctor->user->name }}
-                    </a>
-                </li>
-                <li class="breadcrumb-item active">Book Appointment</li>
-            </ol>
-        </nav>
     </div>
 
     <!-- Booking Hero Section -->

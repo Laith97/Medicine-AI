@@ -3,6 +3,11 @@
 @section('title', 'Ambient Listening Performance')
 
 @section('content')
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+</style>
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">

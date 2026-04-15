@@ -85,20 +85,37 @@
 @endpush
 
 @section('content')
-<div class="dashboard-container">
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;">
     <div class="container">
-        <!-- Header -->
-        <div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
-            <div class="d-flex align-items-center">
-                <a href="{{ route('doctor.dashboard') }}" class="btn btn-secondary-custom me-3">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
-                </a>
-                <div>
-                    <h2 class="h1 mb-1">Appointment Settings</h2>
-                    <p class="text-muted mb-0">Manage your appointment type preferences</p>
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <a href="{{ route('doctor.dashboard') }}" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; margin-right: 1rem;">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                    <div>
+                        <h2 class="h1 mb-1">Appointment Settings</h2>
+                        <p class="text-muted mb-0">Manage your appointment type preferences</p>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="container-fluid" style="background-color: #f8f9fa;">
+    <div class="container">
 
         <div class="row">
             <div class="col-lg-8">

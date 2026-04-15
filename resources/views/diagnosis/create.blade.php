@@ -72,6 +72,36 @@
                             </div>
                         </div>
 
+                        <!-- Appointment Linking (Optional) -->
+                        @if($doctorAppointments && $doctorAppointments->count() > 0)
+                        <div class="mb-4">
+                            <div class="card bg-light border">
+                                <div class="card-body py-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <label for="appointment_id" class="form-label mb-0 fw-semibold">
+                                                <i class="fas fa-calendar-check me-2 text-primary"></i>Link to Appointment (Optional)
+                                            </label>
+                                            <div class="form-text">
+                                                Select an appointment to associate this diagnosis with
+                                            </div>
+                                        </div>
+                                        <select class="form-select" id="appointment_id" name="appointment_id" style="width: auto; min-width: 250px;">
+                                            <option value="">-- No appointment link --</option>
+                                            @foreach($doctorAppointments as $apt)
+                                                <option value="{{ $apt->id }}" {{ request('appointment') == $apt->id ? 'selected' : '' }}>
+                                                    {{ $apt->appointment_date->format('M d, Y h:i A') }}
+                                                    - {{ $apt->patient->name ?? 'Guest' }}
+                                                    ({{ ucfirst($apt->status) }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         <!-- New Patient Form (shown by default, hidden when existing patient selected) -->
                         <div id="new_patient_form">
                             <div class="alert alert-info">
@@ -229,7 +259,7 @@
                         <button type="submit" class="btn btn-primary btn-lg me-3">
                             <i class="fas fa-save me-2"></i>Create Diagnosis
                         </button>
-                        <a href="{{ route('diagnosis.index') }}" class="btn btn-secondary btn-lg">
+                        <a href="{{ route('doctor.cases.overview') }}" class="btn btn-secondary btn-lg">
                             <i class="fas fa-times me-2"></i>Cancel
                         </a>
                     </div>

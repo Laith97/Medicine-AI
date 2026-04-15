@@ -8,21 +8,25 @@
 @endpush
 
 @section('content')
-<div class="container-fluid">
+<div class="container">
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-cogs mr-2"></i>
-                        Kiosk Management Dashboard
-                    </h3>
-                    <div class="card-tools">
-                        <a href="{{ route('doctor.kiosk.setup') }}" class="btn btn-primary btn-sm">
-                            <i class="fas fa-cog"></i> Setup Configuration
-                        </a>
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-cogs me-2"></i>Kiosk Management Dashboard</h2>
+                        <p class="text-muted mb-0">Manage your kiosk settings and status</p>
                     </div>
+                    <a href="{{ route('doctor.kiosk.setup') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-cog"></i> Setup Configuration
+                    </a>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
                 <div class="card-body">
                     @if(session('success'))
                         <div class="alert alert-success alert-dismissible">

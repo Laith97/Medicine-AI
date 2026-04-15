@@ -3,22 +3,43 @@
 @section('title', $post->title)
 
 @section('content')
-<div class="container-fluid">
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;">
+    <div class="container">
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0">{{ $post->title }}</h1>
-                <div>
-                    <a href="{{ route('doctor.blog.edit', $post) }}" class="btn btn-primary me-2">
-                        <i class="fas fa-edit"></i> Edit Post
-                    </a>
-                    <a href="{{ route('doctor.blog.index') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Back to Blog
-                    </a>
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-blog me-2"></i>{{ $post->title }}</h2>
+                        <p class="text-muted mb-0">View and manage your blog post</p>
+                    </div>
+                    <div class="header-actions">
+                        <a href="{{ route('doctor.blog.edit', $post) }}" class="btn btn-primary me-2">
+                            <i class="fas fa-edit"></i> Edit Post
+                        </a>
+                        <a href="{{ route('doctor.blog.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Blog
+                        </a>
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
+    </div>
+</div>
 
-            <div class="row">
+<div class="container-fluid">
                 <div class="col-lg-8">
                     <div class="card">
                         <div class="card-body">
@@ -193,6 +214,7 @@
         </div>
     </div>
 </div>
+    </div></div>
 @endsection
 
 @push('styles')

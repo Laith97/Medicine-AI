@@ -9,13 +9,6 @@
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="{{ route('hospital-admin.dashboard') }}">Dashboard</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('hospital-admin.invoices.index') }}">Invoices</a></li>
-                            <li class="breadcrumb-item active">Invoice #{{ $invoice->stripe_invoice_id ?? $invoice->id }}</li>
-                        </ol>
-                    </nav>
                     <h1 class="h3 mb-0">Invoice Details</h1>
                     <p class="text-muted">Complete invoice information and payment history</p>
                 </div>

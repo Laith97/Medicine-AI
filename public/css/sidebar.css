@@ -1,4 +1,16 @@
-:root{--sidebar-width:260px;--sidebar-collapsed:72px;--sidebar-bg:#ffffff;--sidebar-border:#e9ecef;--sidebar-active:#DE6262;--sidebar-text:#6C757D;--sidebar-hover:#f8f9fa}
+:root{
+    --sidebar-width: 260px;
+    --sidebar-collapsed: 72px;
+    --dark-primary: #2c3e50;
+    --dark-secondary: #34495e;
+    --sidebar-bg: linear-gradient(135deg, var(--dark-primary) 0%, var(--dark-secondary) 100%);
+    --sidebar-border: rgba(255, 255, 255, 0.1);
+    --sidebar-active: #DE6262;
+    --sidebar-text: rgba(255, 255, 255, 0.8);
+    --sidebar-text-muted: rgba(255, 255, 255, 0.6);
+    --sidebar-hover: rgba(255, 255, 255, 0.1);
+    --sidebar-header-text: rgba(222, 98, 98, 0.9);
+}
 
 /* Top-bar positioning to appear above sidebar and alerts */
 #top-bar {
@@ -17,19 +29,115 @@
 }
 
 
-.sidebar{position:fixed;top:84px;left:0;height:calc(100vh - 84px);width:var(--sidebar-width);background:var(--sidebar-bg);border-right:1px solid var(--sidebar-border);z-index:1050;transform:translateX(0);transition:width .25s ease,transform .25s ease,box-shadow .25s ease;box-shadow:0 4px 6px rgba(0,0,0,0.05)}
-.sidebar-header{display:flex;align-items:center;justify-content:space-between;padding:1rem .75rem;border-bottom:1px solid var(--sidebar-border)}
-.sidebar-brand{display:flex;align-items:center;gap:.5rem;color:var(--sidebar-text);text-decoration:none;font-weight:600}
-.sidebar-brand i{color:var(--sidebar-active)}
-.sidebar-nav{padding:.5rem;overflow-y:auto;height:calc(100vh - 105px)}
-.sidebar-footer{border-top:1px solid var(--sidebar-border);padding:.5rem}
-.nav-link{display:flex;align-items:center;gap:.75rem;padding:.5rem .75rem;color:var(--sidebar-text) !important;border-radius:.5rem;transition:all .2s ease;border:1px solid transparent}
-.sidebar-header-clinical,.sidebar-header-patients,.sidebar-header-practice,.sidebar-header-analytics,.sidebar-header-account,.sidebar-header-business-tools{display:flex;align-items:center;gap:.5rem;padding:.75rem .75rem .5rem;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#DE6262;margin-top:1rem;border-bottom:2px solid rgba(222,98,98,0.2)}
-.sidebar-header-clinical i,.sidebar-header-patients i,.sidebar-header-practice i,.sidebar-header-analytics i,.sidebar-header-account i,.sidebar-header-business-tools i{color:#DE6262;font-size:.875rem}
-.nav-link i{width:1.25rem;text-align:center;font-size:1rem}
-.nav-link:hover{background:var(--sidebar-hover) !important;color:var(--sidebar-active) !important;transform:translateX(2px);border-color:#dee2e6}
-.nav-link.active{color:#ffffff !important;background:var(--sidebar-active) !important;font-weight:600;box-shadow:0 2px 8px rgba(222,98,98,0.2)}
-.sidebar .nav .nav-item+.nav-item{margin-top:.125rem}
+.sidebar{
+    position: fixed;
+    top: 84px;
+    left: 0;
+    height: calc(100vh - 84px);
+    width: var(--sidebar-width);
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    z-index: 1050;
+    transform: translateX(0);
+    transition: width .25s ease, transform .25s ease, box-shadow .25s ease;
+    box-shadow: 0 8px 32px rgba(44, 62, 80, 0.3);
+}
+.sidebar-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem .75rem;
+    border-bottom: 1px solid var(--sidebar-border);
+}
+
+.sidebar-brand{
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.sidebar-brand i{
+    color: var(--sidebar-active);
+}
+
+.sidebar-nav{
+    padding: .5rem;
+    overflow-y: auto;
+    height: calc(100vh - 105px);
+}
+
+.sidebar-footer{
+    border-top: 1px solid var(--sidebar-border);
+    padding: .5rem;
+}
+
+.nav-link{
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .5rem .75rem;
+    color: var(--sidebar-text) !important;
+    border-radius: .5rem;
+    transition: all .2s ease;
+    border: 1px solid transparent;
+}
+
+.sidebar-header-clinical,
+.sidebar-header-patients,
+.sidebar-header-practice,
+.sidebar-header-analytics,
+.sidebar-header-account,
+.sidebar-header-business-tools{
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .75rem .75rem .5rem;
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--sidebar-header-text);
+    margin-top: 1rem;
+    border-bottom: 2px solid rgba(222, 98, 98, 0.3);
+}
+
+.sidebar-header-clinical i,
+.sidebar-header-patients i,
+.sidebar-header-practice i,
+.sidebar-header-analytics i,
+.sidebar-header-account i,
+.sidebar-header-business-tools i{
+    color: var(--sidebar-header-text);
+    font-size: .875rem;
+}
+.nav-link i{
+    width: 1.25rem;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.nav-link:hover{
+    background: var(--sidebar-hover) !important;
+    color: #ffffff !important;
+    transform: translateX(2px);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.nav-link.active{
+    color: #ffffff !important;
+    background: var(--sidebar-active) !important;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(222, 98, 98, 0.4);
+    border-color: rgba(222, 98, 98, 0.3);
+}
+
+.sidebar .nav .nav-item + .nav-item{
+    margin-top: .125rem;
+}
 .sidebar.collapsed,body.sidebar-collapsed .sidebar{width:var(--sidebar-collapsed)}
 .sidebar.collapsed .nav-link span,body.sidebar-collapsed .nav-link span,.sidebar.collapsed .sidebar-brand .brand-text,body.sidebar-collapsed .sidebar-brand .brand-text{opacity:0;width:0;overflow:hidden}
 @media (min-width:992px){.app-main{margin-left:var(--sidebar-width);transition:margin-left .25s ease}body.sidebar-collapsed .app-main{margin-left:var(--sidebar-collapsed)}}

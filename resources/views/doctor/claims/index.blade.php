@@ -8,27 +8,38 @@
 @endpush
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <!-- Page Header -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h3 class="card-title mb-0"><i class="fas fa-file-medical me-2"></i>Claims Management</h3>
-                            <p class="text-muted mb-0">Track and manage insurance claims and billing information</p>
-                        </div>
-                        <a href="{{ route('doctor.claims.create') }}" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>Create New Claim
-                        </a>
-                    </div>
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;">
+    <div class="container">
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-file-medical me-2"></i>Claims Management</h2>
+                    <p class="text-muted mb-0">Track and manage insurance claims and billing information</p>
                 </div>
+                <a href="{{ route('doctor.claims.create') }}" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                    <i class="fas fa-plus me-2"></i>Create New Claim
+                </a>
             </div>
+        </div>
+    </div>
+</div>
 
-            <!-- Claims Statistics -->
-            <div class="row mt-3">
-                <div class="col-md-3">
+<!-- Claims Statistics -->
+<div class="container-fluid" style="background-color: #f8f9fa;">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
                     <div class="card bg-primary text-white">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">

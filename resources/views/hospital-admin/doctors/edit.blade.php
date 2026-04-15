@@ -9,14 +9,6 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="h3 mb-0">Edit Doctor</h1>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="{{ route('hospital-admin.dashboard') }}">Dashboard</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('hospital-admin.doctors.index') }}">Doctors</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('hospital-admin.doctors.show', $doctor) }}">{{ $doctor->name }}</a></li>
-                            <li class="breadcrumb-item active">Edit</li>
-                        </ol>
-                    </nav>
                 </div>
                 <a href="{{ route('hospital-admin.doctors.show', $doctor) }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-2"></i>Back to Doctor

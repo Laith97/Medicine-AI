@@ -192,12 +192,6 @@
 @section('content')
 <div class="container-fluid py-4">
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ route('patient.waitlist.dashboard') }}">Waitlist Dashboard</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Waitlist Status</li>
-        </ol>
-    </nav>
 
     <!-- Status Header -->
     <div class="status-header">

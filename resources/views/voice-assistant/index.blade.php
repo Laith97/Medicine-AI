@@ -1,65 +1,58 @@
 @extends('master')
 
 @section('content')
-<div class="container-fluid py-4" data-session-id="{{ $sessionId }}">
-
-    <!-- Header -->
-    <div class="row mb-4">
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+.dashboard-header h2 {
+    color: #ffffff;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 0;
+}
+.dashboard-header .btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-weight: 500;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+.dashboard-header .btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;" data-session-id="{{ $sessionId }}">
+    <div class="container">
+    <div class="row">
         <div class="col-12">
-            <!-- Breadcrumb Navigation -->
-            <nav aria-label="breadcrumb" class="mb-3">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Ambient Listening</li>
-                </ol>
-            </nav>
-
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="card-title h3 mb-2"><i class="fas fa-ear-listen me-2"></i>Ambient Listening</h1>
-                            <p class="card-text mb-0">AI-powered consultation recording with real-time transcription</p>
-                        </div>
-                        <a href="{{ route('ai.ambient-listening.recorded-voices') }}" class="btn btn-light">
-                            <i class="fas fa-history me-2"></i>View History
-                        </a>
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-microphone-alt me-2"></i>Ambient Listening</h2>
+                        <p class="text-muted mb-0">AI-powered consultation recording with real-time transcription</p>
                     </div>
+                    <a href="{{ route('ai.ambient-listening.recorded-voices') }}" class="btn">
+                        <i class="fas fa-clock-rotate-left me-2"></i>View History
+                    </a>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Privacy & Keyboard Shortcuts -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <!-- Privacy Notice -->
-            <div class="alert alert-warning" role="alert">
-                        <div class="d-flex align-items-start">
-                            <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
-                            <div>
-                                <strong>Privacy & Security Notice</strong>
-                                <p class="mb-0 mt-1 small">Ambient listening recordings are processed securely and stored encrypted. All transcriptions are HIPAA-compliant and only accessible to authorized medical personnel. By using this feature, you consent to ambient listening for medical documentation purposes.</p>
-                            </div>
-                        </div>
-                    </div>
-
-            <!-- Keyboard Shortcuts -->
-            <div class="alert alert-info" role="alert">
-                        <div class="d-flex align-items-start">
-                            <i class="fas fa-keyboard me-2 mt-1"></i>
-                            <div>
-                                <strong>Keyboard Shortcuts</strong>
-                                <ul class="mb-0 small">
-                                    <li><kbd>Ctrl + Enter</kbd> - Start/Stop Ambient Listening</li>
-                                    <li><kbd>Ctrl + H</kbd> - Toggle Hands-Free Mode (if available)</li>
-                                    <li><kbd>Alt + T</kbd> - Focus on Transcript Area</li>
-                                </ul>
-                            </div>
-                        </div>
-            </div>
-        </div>
     </div>
+    <div class="container">
 
     <!-- Patient Selection -->
     <div class="row mb-4">
@@ -189,6 +182,16 @@
                             <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#ambientListeningHelpModal">
                                 <i class="fas fa-question-circle me-1"></i>Help
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Direct Write Option -->
+                    <div class="mt-3 pt-3 border-top">
+                        <button id="writeDirectlyBtn" class="btn btn-success btn-sm w-100" type="button" disabled>
+                            <i class="fas fa-edit me-1"></i> Write Diagnosis Directly
+                        </button>
+                        <div class="form-text text-center mt-1">
+                            Skip recording and write your diagnosis directly for quick consultations
                         </div>
                     </div>
 
@@ -540,15 +543,7 @@
         }
     </style>
 
-    <!-- Tabs Navigation -->
-    <ul class="nav nav-pills mb-4 p-2 bg-light rounded-3" id="voiceAssistantTabs" role="tablist" style="box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active px-4 py-3 fw-bold" id="transcription-tab" data-bs-toggle="tab" data-bs-target="#transcription-pane" type="button" role="tab" aria-controls="transcription-pane" aria-selected="true">
-                <i class="fas fa-microphone-alt me-2"></i>Live Session
-            </button>
-        </li>
 
-    </ul>
     
     <style>
         #voiceAssistantTabs .nav-link {
@@ -822,7 +817,7 @@
                             id="diagnosisText"
                             class="form-control"
                             rows="6"
-                            placeholder="Write your professional diagnosis based on the ambient listening session and your clinical judgment..."
+                            placeholder="Write your professional diagnosis based on your clinical judgment..."
                             required
                         ></textarea>
                         <div class="form-text">
@@ -1037,6 +1032,7 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Make PHP variables available to JavaScript -->
@@ -1658,6 +1654,57 @@
     if (cancelNewPatientBtn && newPatientForm) {
         cancelNewPatientBtn.addEventListener('click', () => {
             newPatientForm.style.display = 'none';
+        });
+    }
+
+    // Write Directly button - enable when patient is selected
+    const writeDirectlyBtn = document.getElementById('writeDirectlyBtn');
+    const patientSelect = document.getElementById('patientSelect');
+
+    if (writeDirectlyBtn && patientSelect) {
+        // Enable/disable button based on patient selection
+        patientSelect.addEventListener('change', function() {
+            writeDirectlyBtn.disabled = !this.value;
+        });
+
+        // Initial state - disable if no patient selected
+        writeDirectlyBtn.disabled = !patientSelect.value;
+
+        // Click handler - show diagnosis entry form directly
+        writeDirectlyBtn.addEventListener('click', function() {
+            if (!patientSelect.value) {
+                alert('Please select a patient first');
+                return;
+            }
+
+            const diagnosisForm = document.getElementById('diagnosisEntryForm');
+            if (diagnosisForm) {
+                diagnosisForm.style.display = 'block';
+                diagnosisForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Focus on the diagnosis text area
+                setTimeout(() => {
+                    const diagnosisText = document.getElementById('diagnosisText');
+                    if (diagnosisText) {
+                        diagnosisText.focus();
+                    }
+                }, 300);
+            }
+        });
+    }
+
+    // Cancel diagnosis button - hide form when cancelled
+    const cancelDiagnosisBtn = document.getElementById('cancelDiagnosisBtn');
+    if (cancelDiagnosisBtn) {
+        cancelDiagnosisBtn.addEventListener('click', function() {
+            const diagnosisForm = document.getElementById('diagnosisEntryForm');
+            if (diagnosisForm) {
+                diagnosisForm.style.display = 'none';
+                // Clear the diagnosis text
+                const diagnosisText = document.getElementById('diagnosisText');
+                if (diagnosisText) {
+                    diagnosisText.value = '';
+                }
+            }
         });
     }
 

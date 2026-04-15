@@ -9,13 +9,6 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="h3 mb-0">Department Details</h1>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="{{ route('hospital-admin.dashboard') }}">Dashboard</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('hospital-admin.departments.index') }}">Departments</a></li>
-                            <li class="breadcrumb-item active">{{ $department->name }}</li>
-                        </ol>
-                    </nav>
                 </div>
                 <div>
                     <a href="{{ route('hospital-admin.departments.edit', $department) }}" class="btn btn-primary">

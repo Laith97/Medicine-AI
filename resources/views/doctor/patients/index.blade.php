@@ -138,31 +138,36 @@
 @endpush
 
 @section('content')
-<div class="dashboard-container">
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;">
     <div class="container">
-        <!-- Breadcrumb Navigation -->
-        <nav aria-label="breadcrumb" class="mb-3">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                <li class="breadcrumb-item active" aria-current="page">My Patients</li>
-            </ol>
-        </nav>
-
-        <!-- Dashboard Header -->
         <div class="dashboard-header">
             <div class="d-flex justify-content-between align-items-center flex-wrap">
                 <div>
-                    <h2>My Patients</h2>
-                    <p>Your assigned patient profiles and records</p>
+                    <h2><i class="fas fa-users me-2"></i>My Patients</h2>
+                    <p class="text-muted mb-0">Your assigned patient profiles and records</p>
                 </div>
-                <a href="{{ route('doctor.appointments.create') }}" class="btn btn-light btn-lg mt-3 mt-md-0">
+                <a href="{{ route('doctor.appointments.create') }}" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
                     <i class="fas fa-user-plus me-2"></i>New Appointment
                 </a>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Stats Cards -->
-        <div class="row mb-4">
+<div class="container-fluid">
+    <div class="container">
+    <div class="row mb-4">
             <div class="col-lg-3 col-md-6 mb-3">
                 <div class="stats-card">
                     <div class="stats-icon" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);">
@@ -413,6 +418,8 @@
             </div>
         </div>
     </div>
+</div>
+</div>
 </div>
 
 <script>

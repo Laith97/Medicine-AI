@@ -372,12 +372,63 @@ class OpenAIController extends Controller
             $user = auth()->user();
             $allCases = collect();
 
-            // Get PatientAnalysis records
+            // Debug: Log all available patient keys for this user
+            $allAnalysisKeys = PatientAnalysis::where('user_id', $user->id)->pluck('patient_key')->filter()->unique();
+            $allDataKeys = \App\Models\PatientData::where('user_id', $user->id)->pluck('patient_key')->filter()->unique();
+            \Log::info('Available PatientAnalysis keys: ' . $allAnalysisKeys->implode(', '));
+            \Log::info('Available PatientData keys: ' . $allDataKeys->implode(', '));
+
+            // Try multiple matching strategies
+            $patientAnalysisRecords = collect();
+            $patientDataRecords = collect();
+
+            // Strategy 1: Exact patient_key match
             $patientAnalysisRecords = PatientAnalysis::with('user')
                 ->where('user_id', $user->id)
                 ->where('patient_key', $patientKey)
                 ->orderBy('created_at', 'desc')
                 ->get();
+
+            $patientDataRecords = \App\Models\PatientData::where('user_id', $user->id)
+                ->where('patient_key', $patientKey)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Strategy 2: If no exact match and key looks like diagnosis_X, try patient_id match
+            if ($patientAnalysisRecords->isEmpty() && $patientDataRecords->isEmpty() && str_starts_with($patientKey, 'diagnosis_')) {
+                $patientId = str_replace('diagnosis_', '', $patientKey);
+                \Log::info('Trying patient_id match for: ' . $patientId);
+                
+                // Try to find records by patient name from diagnosis
+                if ($user->isDoctor()) {
+                    $diagnosis = Diagnosis::where('doctor_id', $user->id)
+                        ->where('patient_id', $patientId)
+                        ->with('patient')
+                        ->first();
+                    
+                    if ($diagnosis && $diagnosis->patient) {
+                        \Log::info('Found diagnosis patient: ' . $diagnosis->patient->name);
+                        
+                        // Try to find PatientAnalysis by name/age/gender
+                        $patientAnalysisRecords = PatientAnalysis::where('user_id', $user->id)
+                            ->where('name', $diagnosis->patient->name)
+                            ->where('age', $diagnosis->patient->age)
+                            ->where('gender', $diagnosis->patient->gender)
+                            ->orderBy('created_at', 'desc')
+                            ->get();
+                            
+                        $patientDataRecords = \App\Models\PatientData::where('user_id', $user->id)
+                            ->where('name', $diagnosis->patient->name)
+                            ->where('age', $diagnosis->patient->age)
+                            ->where('gender', $diagnosis->patient->gender)
+                            ->orderBy('created_at', 'desc')
+                            ->get();
+                    }
+                }
+            }
+
+            \Log::info('Found ' . $patientAnalysisRecords->count() . ' PatientAnalysis records');
+            \Log::info('Found ' . $patientDataRecords->count() . ' PatientData records');
 
             // Get Diagnosis records
             if ($user->isDoctor()) {
@@ -419,15 +470,31 @@ class OpenAIController extends Controller
                 ]);
             }
 
+            // Transform PatientData records
+            foreach ($patientDataRecords as $record) {
+                $symptomsString = $this->extractPatientDataSymptoms($record);
+
+                $allCases->push((object)[
+                    'id' => $record->id,
+                    'visit_number' => $record->visit_number ?? 1,
+                    'date' => $record->created_at->format('M d, Y'),
+                    'symptoms' => $symptomsString,
+                    'diagnosis' => $record->ai_response ? substr($record->ai_response, 0, 100) . (strlen($record->ai_response) > 100 ? '...' : '') : 'No diagnosis available',
+                    'source_model' => 'PatientData',
+                ]);
+            }
+
             foreach ($diagnosisRecords as $record) {
                 $symptomsString = $this->extractDiagnosisSymptoms($record);
 
                 $allCases->push((object)[
                     'id' => $record->id,
-                    'visit_number' => 1, // Diagnosis records don't have visit numbers yet
+                    'visit_number' => 1,
                     'date' => $record->created_at->format('M d, Y'),
                     'symptoms' => $symptomsString,
-                    'diagnosis' => $record->diagnosis_text ? substr($record->diagnosis_text, 0, 100) . (strlen($record->diagnosis_text) > 100 ? '...' : '') : 'No diagnosis available',
+                    'diagnosis' => $record->diagnosis_text,
+                    'diagnosis_preview' => $record->diagnosis_text ? substr($record->diagnosis_text, 0, 100) . (strlen($record->diagnosis_text) > 100 ? '...' : '') : 'No diagnosis available',
+                    'type' => $record->type ?? 'manual',
                     'source_model' => 'Diagnosis',
                 ]);
             }
@@ -435,11 +502,71 @@ class OpenAIController extends Controller
             // Sort by date (newest first)
             $visits = $allCases->sortByDesc('date')->values();
 
+            // Get medical info from the most recent record found
+            $latestAnalysis = $patientAnalysisRecords->first();
+            $latestPatientData = $patientDataRecords->first();
+            $latestDiagnosis = $diagnosisRecords->first();
+
+            // Merge data from all sources, prioritizing PatientData > PatientAnalysis > Diagnosis
+            $patientMedicalInfo = [
+                'symptoms' => [],
+                'past_medical_history' => [],
+                'allergies' => [],
+                'past_medications' => []
+            ];
+
+            // Get symptoms from the best available source
+            if ($latestPatientData && $latestPatientData->symptoms) {
+                $symptoms = is_string($latestPatientData->symptoms) ? json_decode($latestPatientData->symptoms, true) : $latestPatientData->symptoms;
+                $patientMedicalInfo['symptoms'] = is_array($symptoms) ? $symptoms : [$symptoms];
+            } elseif ($latestAnalysis && $latestAnalysis->symptoms) {
+                $symptoms = is_string($latestAnalysis->symptoms) ? json_decode($latestAnalysis->symptoms, true) : $latestAnalysis->symptoms;
+                $patientMedicalInfo['symptoms'] = is_array($symptoms) ? $symptoms : [$symptoms];
+            } elseif ($latestDiagnosis && isset($latestDiagnosis->patient_data['symptoms'])) {
+                $symptoms = $latestDiagnosis->patient_data['symptoms'];
+                $patientMedicalInfo['symptoms'] = is_array($symptoms) ? $symptoms : [$symptoms];
+            }
+
+            // Get past medical history
+            if ($latestPatientData && $latestPatientData->past_medical_history) {
+                $history = is_string($latestPatientData->past_medical_history) ? json_decode($latestPatientData->past_medical_history, true) : $latestPatientData->past_medical_history;
+                $patientMedicalInfo['past_medical_history'] = is_array($history) ? $history : [$history];
+            } elseif ($latestAnalysis && $latestAnalysis->past_medical_history) {
+                $history = is_string($latestAnalysis->past_medical_history) ? json_decode($latestAnalysis->past_medical_history, true) : $latestAnalysis->past_medical_history;
+                $patientMedicalInfo['past_medical_history'] = is_array($history) ? $history : [$history];
+            }
+
+            // Get allergies
+            if ($latestPatientData && $latestPatientData->allergies) {
+                $allergies = is_string($latestPatientData->allergies) ? json_decode($latestPatientData->allergies, true) : $latestPatientData->allergies;
+                $patientMedicalInfo['allergies'] = is_array($allergies) ? $allergies : [$allergies];
+            } elseif ($latestAnalysis && $latestAnalysis->allergies) {
+                $allergies = is_string($latestAnalysis->allergies) ? json_decode($latestAnalysis->allergies, true) : $latestAnalysis->allergies;
+                $patientMedicalInfo['allergies'] = is_array($allergies) ? $allergies : [$allergies];
+            }
+
+            // Get past medications
+            if ($latestPatientData && $latestPatientData->past_medications) {
+                $medications = is_string($latestPatientData->past_medications) ? json_decode($latestPatientData->past_medications, true) : $latestPatientData->past_medications;
+                $patientMedicalInfo['past_medications'] = is_array($medications) ? $medications : [$medications];
+            } elseif ($latestAnalysis && $latestAnalysis->past_medications) {
+                $medications = is_string($latestAnalysis->past_medications) ? json_decode($latestAnalysis->past_medications, true) : $latestAnalysis->past_medications;
+                $patientMedicalInfo['past_medications'] = is_array($medications) ? $medications : [$medications];
+            }
+
+            \Log::info('Final medical info: ' . json_encode($patientMedicalInfo));
             \Log::info('Found ' . $visits->count() . ' visits for patient key: ' . $patientKey);
 
             return response()->json([
                 'success' => true,
-                'visits' => $visits
+                'visits' => $visits,
+                'patient_medical_info' => $patientMedicalInfo,
+                'debug' => [
+                    'patient_key' => $patientKey,
+                    'analysis_records' => $patientAnalysisRecords->count(),
+                    'data_records' => $patientDataRecords->count(),
+                    'diagnosis_records' => $diagnosisRecords->count()
+                ]
             ]);
 
         } catch (\Exception $e) {
@@ -555,6 +682,114 @@ class OpenAIController extends Controller
     }
 
     /**
+     * Get all diagnoses for a patient (for modal display)
+     */
+    public function getPatientDiagnoses($patientId)
+    {
+        try {
+            $user = auth()->user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required'
+                ], 401);
+            }
+
+            // Get all diagnoses for this patient
+            $diagnoses = Diagnosis::with(['doctor', 'followUps', 'aiAssistantResults'])
+                ->where('patient_id', $patientId)
+                ->where('doctor_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Get patient info
+            $patient = \App\Models\User::find($patientId);
+
+            if (!$patient) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Patient not found'
+                ], 404);
+            }
+
+            // Transform diagnoses data
+            $diagnosesData = $diagnoses->map(function($diagnosis) {
+                $patientData = is_array($diagnosis->patient_data) ? $diagnosis->patient_data : [];
+
+                return [
+                    'id' => $diagnosis->id,
+                    'type' => $diagnosis->type,
+                    'diagnosis_text' => $diagnosis->diagnosis_text,
+                    'patient_data' => $patientData,
+                    'symptoms' => $patientData['symptoms'] ?? [],
+                    'created_at' => $diagnosis->created_at->format('M d, Y g:i A'),
+                    'doctor' => [
+                        'name' => $diagnosis->doctor->name ?? 'N/A'
+                    ],
+                    'follow_ups' => $diagnosis->followUps->map(function($followUp) {
+                        return [
+                            'id' => $followUp->id,
+                            'question' => $followUp->question,
+                            'answer' => $followUp->answer,
+                            'created_at' => $followUp->created_at->format('M d, Y')
+                        ];
+                    }),
+                    'ai_results' => $diagnosis->aiAssistantResults->map(function($result) {
+                        return [
+                            'id' => $result->id,
+                            'result_type' => $result->result_type,
+                            'result_data' => is_array($result->result_data) ? $result->result_data : [],
+                            'created_at' => $result->created_at->format('M d, Y')
+                        ];
+                    })
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'patient' => [
+                    'id' => $patient->id,
+                    'name' => $patient->name,
+                    'age' => $patient->age,
+                    'gender' => $patient->gender,
+                    'email' => $patient->email,
+                    'phone' => $patient->phone
+                ],
+                'diagnoses' => $diagnosesData,
+                'total_diagnoses' => $diagnoses->count()
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error in getPatientDiagnoses: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving diagnoses',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Helper method to extract symptoms from PatientData record
+     */
+    private function extractPatientDataSymptoms($record)
+    {
+        if ($record->symptoms) {
+            if (is_string($record->symptoms)) {
+                $decoded = json_decode($record->symptoms, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    return implode(', ', $decoded);
+                }
+                return $record->symptoms;
+            } elseif (is_array($record->symptoms)) {
+                return implode(', ', $record->symptoms);
+            }
+        }
+        return 'N/A';
+    }
+
+    /**
      * Helper method to extract symptoms from record
      */
     private function extractSymptoms($record)
@@ -635,7 +870,7 @@ class OpenAIController extends Controller
     public function dashboard()
     {
         $user = auth()->user();
-        
+
         // Patients see a different dashboard
         if ($user->isPatient()) {
             return $this->patientDashboard($user);
@@ -649,32 +884,59 @@ class OpenAIController extends Controller
             'trial_days_remaining' => $user->getTrialDaysRemaining(),
         ];
 
-        // Get records similar to getCases method
+        // Get all cases (diagnoses)
         $allCases = collect();
 
-        // Get PatientAnalysis records (legacy format)
+        // Get Diagnosis records
+        if ($user->isDoctor()) {
+            $diagnosisRecords = Diagnosis::with(['patient', 'doctor'])
+                ->where('doctor_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            foreach ($diagnosisRecords as $record) {
+                $patientData = is_array($record->patient_data) ? $record->patient_data : [];
+                $patientKey = $record->patient_key;
+
+                if (!$patientKey && $record->patient) {
+                    $patientKey = Diagnosis::generatePatientKey(
+                        $record->patient->name,
+                        $record->patient->age,
+                        $record->patient->gender,
+                        $record->doctor_id
+                    );
+                }
+
+                $allCases->push((object)[
+                    'id' => $record->id,
+                    'name' => $record->patient->name ?? 'Unknown Patient',
+                    'age' => $patientData['patient_age'] ?? $record->patient->age ?? 'N/A',
+                    'gender' => $patientData['patient_gender'] ?? $record->patient->gender ?? 'N/A',
+                    'symptoms' => $patientData['symptoms'] ?? 'N/A',
+                    'diagnosis_text' => $record->diagnosis_text ?? 'No diagnosis',
+                    'created_at' => $record->created_at,
+                    'patient_key' => $patientKey,
+                    'source_model' => 'Diagnosis',
+                    'patient_id' => $record->patient_id,
+                ]);
+            }
+        }
+
+        // Get PatientAnalysis records (legacy)
         $patientAnalysisRecords = PatientAnalysis::with('user')
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Transform PatientAnalysis records to unified format
         foreach ($patientAnalysisRecords as $record) {
-            // Convert symptoms from JSON array to comma-separated string for consistency
             $symptomsString = '';
             if ($record->symptoms) {
                 if (is_string($record->symptoms)) {
-                    // Try to decode if it's JSON
-                    $decodedSymptoms = json_decode($record->symptoms, true);
-                    if (json_last_error() === JSON_ERROR_NONE && is_array($decodedSymptoms)) {
-                        // Convert array to comma-separated string
-                        $symptomsString = implode(', ', $decodedSymptoms);
-                    } else {
-                        // It's already a string
-                        $symptomsString = $record->symptoms;
-                    }
+                    $decoded = json_decode($record->symptoms, true);
+                    $symptomsString = json_last_error() === JSON_ERROR_NONE && is_array($decoded)
+                        ? implode(', ', $decoded)
+                        : $record->symptoms;
                 } elseif (is_array($record->symptoms)) {
-                    // Convert array to comma-separated string
                     $symptomsString = implode(', ', $record->symptoms);
                 }
             }
@@ -684,157 +946,179 @@ class OpenAIController extends Controller
                 'name' => $record->name,
                 'age' => $record->age,
                 'gender' => $record->gender,
-                'height' => $record->height,
-                'weight' => $record->weight,
                 'symptoms' => $symptomsString,
-                'type' => 'legacy',
-                'ai_response' => $record->ai_response ?? 'No diagnosis available',
+                'diagnosis_text' => $record->ai_response ?? 'No diagnosis',
                 'created_at' => $record->created_at,
-                'updated_at' => $record->updated_at,
-                'visit_number' => $record->visit_number ?? 1,
-                'total_visits' => 1,
                 'patient_key' => $record->patient_key,
                 'source_model' => 'PatientAnalysis',
-                'source_id' => $record->id,
+                'patient_id' => null,
             ]);
         }
 
-        // Get Diagnosis records (new format) - doctor's manual diagnoses
-        if ($user->isDoctor()) {
-            $diagnosisRecords = Diagnosis::with(['patient', 'doctor', 'aiAssistantResults'])
-                ->where('doctor_id', $user->id)
-                ->orderBy('created_at', 'desc')
-                ->get();
+        $records = $allCases->sortByDesc('created_at')->values();
 
-            // Transform Diagnosis records to unified format
-            foreach ($diagnosisRecords as $record) {
-                $patientData = is_array($record->patient_data) ? $record->patient_data : [];
-
-                // Ensure symptoms are in string format for consistency
-                $symptomsString = '';
-                if (isset($patientData['symptoms'])) {
-                    if (is_array($patientData['symptoms'])) {
-                        // Convert array to comma-separated string
-                        $symptomsString = implode(', ', $patientData['symptoms']);
-                    } else {
-                        // Already a string
-                        $symptomsString = $patientData['symptoms'];
-                    }
-                }
-
-                // Generate patient_key for Diagnosis records if not set
-                $patientKey = $record->patient_key;
-                if (!$patientKey && $record->patient) {
-                    $patientKey = Diagnosis::generatePatientKey(
-                        $record->patient->name,
-                        $record->patient->age,
-                        $record->patient->gender,
-                        $record->doctor_id
-                    );
-                    // Update the record with the generated patient_key
-                    $record->update(['patient_key' => $patientKey]);
-                }
-
-                $allCases->push((object)[
-                    'id' => $record->id,
-                    'name' => $record->patient->name ?? 'Unknown Patient',
-                    'age' => $patientData['patient_age'] ?? $record->patient->age ?? 'N/A',
-                    'gender' => $patientData['patient_gender'] ?? $record->patient->gender ?? 'N/A',
-                    'height' => $patientData['height'] ?? 'N/A',
-                    'weight' => $patientData['weight'] ?? 'N/A',
-                    'symptoms' => $symptomsString,
-                    'type' => 'manual',
-                    'ai_response' => $record->diagnosis_text ?? 'No diagnosis available',
-                    'ai_assistant_results' => $record->aiAssistantResults,
-                    'created_at' => $record->created_at,
-                    'updated_at' => $record->updated_at,
-                    'visit_number' => 1,
-                    'total_visits' => 1,
-                    'patient_key' => $patientKey,
-                    'source_model' => 'Diagnosis',
-                    'source_id' => $record->id,
-                    'patient_id' => $record->patient_id,
-                    'patient_data' => $record->patient_data,
-                ]);
-            }
-        }
-
-        // Sort all cases by creation date (newest first)
-        $allCases = $allCases->sortByDesc('created_at');
-        $records = $allCases->values();
-
-        // Doctor-specific data
-        $doctorData = null;
+        // Doctor-specific metrics
+        $doctorMetrics = null;
         if ($user->isDoctor() && $user->doctor) {
+            $doctorId = $user->doctor->id;
+
             // Today's appointments
-            $todayAppointments = Appointment::with(['patient', 'doctor'])
-                ->where('doctor_id', $user->doctor->id)
+            $todayAppointments = Appointment::with(['patient'])
+                ->where('doctor_id', $doctorId)
                 ->whereDate('appointment_date', today())
                 ->orderBy('appointment_date')
                 ->get();
 
-            // Pending appointments
-            $pendingAppointments = Appointment::with(['patient', 'doctor'])
-                ->where('doctor_id', $user->doctor->id)
+            // Pending appointments count
+            $pendingCount = Appointment::where('doctor_id', $doctorId)
                 ->where('status', 'pending')
-                ->orderBy('appointment_date')
-                ->get();
+                ->count();
+
+            // This week's appointments
+            $weekAppointments = Appointment::where('doctor_id', $doctorId)
+                ->whereBetween('appointment_date', [now()->startOfWeek(), now()->endOfWeek()])
+                ->count();
+
+            // This month's completed appointments
+            $monthCompleted = Appointment::where('doctor_id', $doctorId)
+                ->whereMonth('appointment_date', now()->month)
+                ->whereYear('appointment_date', now()->year)
+                ->where('status', 'completed')
+                ->count();
+
+            // Revenue this month
+            $monthRevenue = Appointment::where('doctor_id', $doctorId)
+                ->whereMonth('appointment_date', now()->month)
+                ->whereYear('appointment_date', now()->year)
+                ->where('status', 'completed')
+                ->sum('fee');
+
+            // Total patients (unique)
+            $totalPatients = Diagnosis::where('doctor_id', $user->id)
+                ->distinct('patient_id')
+                ->count('patient_id');
+
+            // New patients this month
+            $newPatientsThisMonth = Diagnosis::where('doctor_id', $user->id)
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->distinct('patient_id')
+                ->count('patient_id');
+
+            // Average rating
+            $avgRating = $user->doctor->reviews()->avg('rating') ?? 0;
+            $totalReviews = $user->doctor->reviews()->count();
 
             // Recent reviews
-            $recentReviews = Review::with('patient')
-                ->where('doctor_id', $user->doctor->id)
+            $recentReviews = Review::with(['patient', 'appointment'])
+                ->where('doctor_id', $doctorId)
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get();
 
-            // Doctor statistics
-            $stats = [
-                'today_appointments' => $todayAppointments->count(),
-                'pending_appointments' => $pendingAppointments->count(),
-                'average_rating' => $user->doctor->reviews()->avg('rating') ?? 0,
-                'revenue_this_month' => $user->doctor->appointments()
-                    ->whereMonth('appointment_date', now()->month)
-                    ->whereYear('appointment_date', now()->year)
+            // Upcoming appointments (next 7 days)
+            $upcomingAppointments = Appointment::with(['patient'])
+                ->where('doctor_id', $doctorId)
+                ->whereDate('appointment_date', '>=', today())
+                ->whereDate('appointment_date', '<=', now()->addDays(7))
+                ->whereIn('status', ['pending', 'confirmed'])
+                ->orderBy('appointment_date')
+                ->limit(10)
+                ->get();
+
+            // Pending diagnoses (completed appointments without diagnosis)
+            $completedWithoutDiagnosis = Appointment::where('doctor_id', $doctorId)
+                ->where('status', 'completed')
+                ->whereDoesntHave('diagnosis')
+                ->count();
+
+            // Recent diagnoses
+            $recentDiagnoses = Diagnosis::with(['patient'])
+                ->where('doctor_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+
+            // Chart 1: Appointments trend (last 14 days)
+            $appointmentsTrendLabels = [];
+            $appointmentsTrendData = [];
+            for ($i = 13; $i >= 0; $i--) {
+                $date = now()->subDays($i);
+                $appointmentsTrendLabels[] = $date->format('M d');
+                $appointmentsTrendData[] = Appointment::where('doctor_id', $doctorId)
+                    ->whereDate('appointment_date', $date)
+                    ->count();
+            }
+
+            // Chart 2: Appointment status breakdown (all time)
+            $statusCounts = Appointment::where('doctor_id', $doctorId)
+                ->selectRaw('status, count(*) as count')
+                ->groupBy('status')
+                ->pluck('count', 'status')
+                ->toArray();
+
+            $statusBreakdown = [
+                'pending' => $statusCounts['pending'] ?? 0,
+                'confirmed' => $statusCounts['confirmed'] ?? 0,
+                'completed' => $statusCounts['completed'] ?? 0,
+                'cancelled' => $statusCounts['cancelled'] ?? 0,
+                'no_show' => $statusCounts['no_show'] ?? 0,
+            ];
+
+            // Chart 3: Revenue by month (last 6 months)
+            $revenueLabels = [];
+            $revenueData = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $month = now()->subMonths($i);
+                $revenueLabels[] = $month->format('M');
+                $revenueData[] = Appointment::where('doctor_id', $doctorId)
+                    ->whereMonth('appointment_date', $month->month)
+                    ->whereYear('appointment_date', $month->year)
                     ->where('status', 'completed')
-                    ->sum('fee') ?? 0,
+                    ->sum('fee');
+            }
+
+            // Chart 4: Diagnoses trend (last 14 days)
+            $diagnosisTrendLabels = [];
+            $diagnosisTrendData = [];
+            for ($i = 13; $i >= 0; $i--) {
+                $date = now()->subDays($i);
+                $diagnosisTrendLabels[] = $date->format('M d');
+                $diagnosisTrendData[] = Diagnosis::where('doctor_id', $user->id)
+                    ->whereDate('created_at', $date)
+                    ->count();
+            }
+
+            $doctorMetrics = [
+                'today_appointments' => $todayAppointments->count(),
+                'today_appointments_list' => $todayAppointments,
+                'pending_count' => $pendingCount,
+                'week_appointments' => $weekAppointments,
+                'month_completed' => $monthCompleted,
+                'month_revenue' => $monthRevenue,
+                'total_patients' => $totalPatients,
+                'new_patients_this_month' => $newPatientsThisMonth,
+                'avg_rating' => round($avgRating, 1),
+                'total_reviews' => $totalReviews,
+                'recent_reviews' => $recentReviews,
+                'upcoming_appointments' => $upcomingAppointments,
+                'completed_without_diagnosis' => $completedWithoutDiagnosis,
+                'recent_diagnoses' => $recentDiagnoses,
+                // Chart data
+                'appointments_trend_labels' => $appointmentsTrendLabels,
+                'appointments_trend_data' => $appointmentsTrendData,
+                'status_breakdown' => $statusBreakdown,
+                'revenue_labels' => $revenueLabels,
+                'revenue_data' => $revenueData,
+                'diagnosis_trend_labels' => $diagnosisTrendLabels,
+                'diagnosis_trend_data' => $diagnosisTrendData,
             ];
-
-            $doctorData = [
-                'todayAppointments' => $todayAppointments,
-                'pendingAppointments' => $pendingAppointments,
-                'recentReviews' => $recentReviews,
-                'stats' => $stats,
-            ];
-        }
-
-        // User's appointments
-        $appointments = Appointment::with(['doctor.user', 'patient'])
-            ->where('patient_id', $user->id)
-            ->orderBy('appointment_date', 'desc')
-            ->get();
-
-        // Weekly count calculation
-        $weeklyCount = $records->where('created_at', '>=', now()->startOfWeek())->count();
-
-        // Chart data - cases over time (last 7 days)
-        $chartLabels = [];
-        $chartData = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = now()->subDays($i);
-            $chartLabels[] = $date->format('M d');
-            $chartData[] = $records->where('created_at', '>=', $date->startOfDay())
-                                  ->where('created_at', '<=', $date->endOfDay())
-                                  ->count();
         }
 
         return view('dashboard', compact(
             'trialInfo',
             'records',
-            'doctorData',
-            'appointments',
-            'weeklyCount',
-            'chartLabels',
-            'chartData'
+            'doctorMetrics'
         ));
     }
 

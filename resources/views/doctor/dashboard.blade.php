@@ -4,71 +4,34 @@
 
 @push('styles')
 @vite(['resources/css/dashboard-enhancements.css'])
-<style>
-/* Professional Dashboard Header Styling */
-.dashboard-header {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    border-radius: 15px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(222, 98, 98, 0.2);
-    position: relative;
-    overflow: hidden;
-}
-
-.dashboard-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
-}
-
-.dashboard-header h2 {
-    color: #ffffff;
-    font-weight: 700;
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.dashboard-header h2::before {
-    content: '🏥';
-    font-size: 2rem;
-}
-
-.dashboard-header p {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 1.1rem;
-    font-weight: 500;
-    margin-bottom: 0;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .dashboard-header {
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .dashboard-header h2 {
-        font-size: 2rem;
-    }
-
-    .dashboard-header p {
-        font-size: 1rem;
-    }
-}
-</style>
+<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 @endpush
 
 @section('content')
-<div class="dashboard-container">
+<style>
+.app-main {
+    background-color: #f8f9fa;
+}
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+<div class="container-fluid" style="background-color: #f8f9fa;">
+    <div class="container">
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-home me-2"></i>Doctor Dashboard</h2>
+                    <p class="text-muted mb-0">Here's what's happening with your practice today</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-fluid" style="background-color: #f8f9fa;">
     <div class="container">
         <!-- Chain Impersonation Notice -->
         @if(session('impersonating_admin_id') && session('impersonating_hospital_admin_id') && session('hospital_admin_impersonation_started_at') && !empty(session('hospital_admin_impersonation_started_at')))
@@ -123,11 +86,70 @@
         @endif
 
         <!-- Dashboard Header -->
-        <div class="dashboard-header">
-            <div>
-                <h2>Welcome back, Dr. {{ explode(' ', $doctor->user->name)[1] ?? $doctor->user->name }}</h2>
-                <p>Here's what's happening with your practice today</p>
+        <div class="row">
+            <div class="col-12">
+                <div class="dashboard-header" data-icon="default">
+                    <div>
+                        <h2>Welcome back, Dr. {{ explode(' ', $doctor->user->name)[1] ?? $doctor->user->name }}</h2>
+                        <p class="text-muted mb-0">Here's what's happening with your practice today</p>
+                    </div>
+                </div>
             </div>
+        </div>
+
+        <!-- Smart Contextual Guidance -->
+        <div class="next-actions mb-4">
+            @if($stats['today_appointments'] == 0)
+                <div class="action-card primary">
+                    <div class="action-content">
+                        <h4>🩺 Ready for Walk-ins</h4>
+                        <p>Start AI consultation for any patient</p>
+                        <a href="{{ route('ai.ambient-listening') }}" class="btn btn-primary">
+                            <i class="fas fa-microphone me-2"></i>Start Consultation
+                        </a>
+                    </div>
+                </div>
+            @elseif($stats['pending_appointments'] > 0)
+                <div class="action-card urgent">
+                    <div class="action-content">
+                        <h4>⏰ {{ $stats['pending_appointments'] }} Appointment{{ $stats['pending_appointments'] > 1 ? 's' : '' }} Need{{ $stats['pending_appointments'] == 1 ? 's' : '' }} Approval</h4>
+                        <p>Review and confirm pending appointments</p>
+                        <a href="{{ route('doctor.appointments.index', ['status' => 'pending']) }}" class="btn btn-warning">
+                            <i class="fas fa-check me-2"></i>Review Pending
+                        </a>
+                    </div>
+                </div>
+            @elseif($todayAppointments->count() > 0)
+                @php
+                    $nextAppointment = $todayAppointments->where('appointment_date', '>', now())->first();
+                @endphp
+                @if($nextAppointment)
+                    <div class="action-card info">
+                        <div class="action-content">
+                            <h4>📅 Next: {{ $nextAppointment->patient_name }}</h4>
+                            <p>{{ $nextAppointment->appointment_date->format('g:i A') }} - {{ $nextAppointment->reason }}</p>
+                            <a href="{{ route('doctor.appointments.show', $nextAppointment) }}" class="btn btn-info">
+                                <i class="fas fa-eye me-2"></i>Prepare
+                            </a>
+                        </div>
+                    </div>
+                @endif
+            @else
+                <div class="action-card success">
+                    <div class="action-content">
+                        <h4>✅ All Caught Up!</h4>
+                        <p>Review completed cases or start new consultations</p>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('doctor.cases-overview') }}" class="btn btn-success">
+                                <i class="fas fa-folder-open me-2"></i>Review Cases
+                            </a>
+                            <a href="{{ route('ai.ambient-listening') }}" class="btn btn-outline-success">
+                                <i class="fas fa-microphone me-2"></i>New Consultation
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <!-- Stats Cards -->
@@ -496,6 +518,7 @@
         </div>
     </div>
 </div>
+</div>
 <script>
 const chartLabels = @json($chartLabels ?? []);
 const chartData = @json($chartData ?? []);
@@ -523,6 +546,64 @@ const records = @json($records ?? []);
 .bg-light-success {
     background-color: rgba(40, 167, 69, 0.1) !important;
     border-left: 4px solid #28a745 !important;
+}
+
+/* Smart Contextual Guidance Styles */
+.next-actions {
+    margin-bottom: 2rem;
+}
+
+.action-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.action-card.primary {
+    border-left-color: #007bff;
+    background: linear-gradient(135deg, rgba(0, 123, 255, 0.05) 0%, rgba(0, 123, 255, 0.02) 100%);
+}
+
+.action-card.urgent {
+    border-left-color: #dc3545;
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.05) 0%, rgba(220, 53, 69, 0.02) 100%);
+}
+
+.action-card.info {
+    border-left-color: #17a2b8;
+    background: linear-gradient(135deg, rgba(23, 162, 184, 0.05) 0%, rgba(23, 162, 184, 0.02) 100%);
+}
+
+.action-card.success {
+    border-left-color: #28a745;
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(40, 167, 69, 0.02) 100%);
+}
+
+.action-card h4 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.action-card p {
+    color: #6c757d;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+
+.action-card .btn {
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
 }
 </style>
 @endpush
