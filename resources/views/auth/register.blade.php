@@ -223,10 +223,23 @@
                                     class="form-control auth-input @error('password') is-invalid @enderror"
                                     required
                                     placeholder="Create a strong password"
+                                    onkeyup="checkPasswordStrength(this.value)"
                                 >
                                 <button type="button" class="password-toggle" onclick="togglePassword('password')">
                                     <i class="bi bi-eye" id="password-eye"></i>
                                 </button>
+                            </div>
+                            <!-- Password Strength Meter -->
+                            <div class="password-strength-meter mt-2">
+                                <div class="strength-bars">
+                                    <div class="strength-bar"></div>
+                                    <div class="strength-bar"></div>
+                                    <div class="strength-bar"></div>
+                                    <div class="strength-bar"></div>
+                                </div>
+                                <div class="strength-text">
+                                    <small id="password-strength-text">Enter a password</small>
+                                </div>
                             </div>
                             @error('password')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -518,6 +531,19 @@
     background: white;
 }
 
+.auth-input.is-valid {
+    border-color: #28a745;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2328a745'%3E%3Cpath d='M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+.auth-input.is-invalid {
+    border-color: #dc3545;
+}
+
 select.form-control.auth-input {
     -webkit-appearance: menulist;
     -moz-appearance: menulist;
@@ -646,6 +672,62 @@ select.form-control.auth-input {
     box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.25);
 }
 
+/* Password Strength Meter */
+.password-strength-meter {
+    margin-top: 0.5rem;
+}
+
+.strength-bars {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 0.25rem;
+}
+
+.strength-bar {
+    height: 4px;
+    flex: 1;
+    background: #e9ecef;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.strength-bar.weak {
+    background: #dc3545;
+}
+
+.strength-bar.fair {
+    background: #ffc107;
+}
+
+.strength-bar.good {
+    background: #28a745;
+}
+
+.strength-bar.strong {
+    background: #198754;
+}
+
+.strength-text small {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.strength-text small.weak {
+    color: #dc3545;
+}
+
+.strength-text small.fair {
+    color: #ffc107;
+}
+
+.strength-text small.good {
+    color: #28a745;
+}
+
+.strength-text small.strong {
+    color: #198754;
+}
+
 @media (max-width: 768px) {
     .auth-card {
         padding: 2rem;
@@ -670,6 +752,31 @@ function togglePassword(inputId) {
         input.type = 'password';
         eye.className = 'bi bi-eye';
     }
+}
+
+function checkPasswordStrength(password) {
+    const bars = document.querySelectorAll('.strength-bar');
+    const text = document.getElementById('password-strength-text');
+
+    let strength = 0;
+
+    if (password.length >= 8) strength++;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+    if (password.match(/[0-9]/)) strength++;
+    if (password.match(/[^a-zA-Z0-9]/)) strength++;
+
+    const labels = ['Enter a password', 'Weak', 'Fair', 'Good', 'Strong'];
+    const classes = ['', 'weak', 'fair', 'good', 'strong'];
+
+    bars.forEach((bar, index) => {
+        bar.className = 'strength-bar';
+        if (index < strength) {
+            bar.classList.add(classes[strength]);
+        }
+    });
+
+    text.className = classes[strength];
+    text.textContent = labels[strength];
 }
 
 function toggleCustomSpecialty() {
@@ -747,6 +854,30 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('custom_specialty').value = oldSpecialty;
         }
         document.getElementById('specialty').value = oldSpecialty;
+    }
+
+    // Inline validation for email
+    const emailInput = document.getElementById('email');
+    if (emailInput) {
+        emailInput.addEventListener('blur', function() {
+            if (this.value && this.validity.valid) {
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+            }
+        });
+    }
+
+    // Inline validation for phone
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('blur', function() {
+            if (this.value && this.validity.valid) {
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+            }
+        });
     }
 
     // Plan Selection Functions

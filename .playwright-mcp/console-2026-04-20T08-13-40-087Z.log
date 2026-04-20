@@ -1,0 +1,34 @@
+[     175ms] [LOG] 🔑 VITE_PUSHER_APP_KEY:  @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:7
+[     175ms] [LOG] 🌍 VITE_PUSHER_APP_CLUSTER: mt1 @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:7
+[     175ms] [LOG] 🔒 CSRF token found: s1QXSV1br7... @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:7
+[     175ms] [LOG] 🔒 CSRF token found: s1QXSV1br7... @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:7
+[     175ms] [LOG] 👤 User ID found: undefined @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:7
+[     175ms] [ERROR] ❌ Echo initialization failed: You must pass your app key when you instantiate Pusher. @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:7
+[     175ms] [LOG] 🚀 Initializing enhanced notification system (DOM already ready) @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:87
+[     175ms] [WARNING] Echo not found on window, initializing fallback Echo @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:91
+[     190ms] [LOG] Hamburger button found: JSHandle@node @ http://127.0.0.1:8000/register/patient:2868
+[     191ms] [LOG] Navigation links container found: JSHandle@node @ http://127.0.0.1:8000/register/patient:2880
+[     191ms] [LOG] Navigation links HTML: 
+                                                        <a href="http://127.0.0.1:8000" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Home</a>
+                            <a href="http://127.0.0.1:8000/about" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">About Us</a>
+                            <a href="http://127.0.0.1:8000/contact" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Contact</a>
+                            <a href="http://127.0.0.1:8000/doctors" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">For Patients</a>
+                                                     @ http://127.0.0.1:8000/register/patient:2881
+[     191ms] [LOG] 🚀 Initializing enhanced notification system on DOMContentLoaded @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:87
+[     197ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ http://127.0.0.1:8000/register/patient:0
+[     198ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ http://127.0.0.1:8000/register/patient:0
+[     198ms] [LOG] Hamburger button found: JSHandle@node @ http://127.0.0.1:8000/register/patient:2868
+[     198ms] [LOG] Navigation links container found: JSHandle@node @ http://127.0.0.1:8000/register/patient:2880
+[     198ms] [LOG] Navigation links HTML: 
+                                                        <a href="http://127.0.0.1:8000" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Home</a>
+                            <a href="http://127.0.0.1:8000/about" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">About Us</a>
+                            <a href="http://127.0.0.1:8000/contact" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Contact</a>
+                            <a href="http://127.0.0.1:8000/doctors" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">For Patients</a>
+                                                     @ http://127.0.0.1:8000/register/patient:2881
+[    1225ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[    1225ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/register/patient:3251:27 @ http://127.0.0.1:8000/register/patient:3290
+[    7617ms] [LOG] Closing mobile navigation @ http://127.0.0.1:8000/register/patient:2964
+[    7618ms] [LOG] Closing mobile navigation @ http://127.0.0.1:8000/register/patient:2964
+[    7635ms] [LOG] Closing mobile navigation @ http://127.0.0.1:8000/register/patient:2964
+[    7635ms] [LOG] Closing mobile navigation @ http://127.0.0.1:8000/register/patient:2964

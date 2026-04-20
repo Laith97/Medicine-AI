@@ -909,16 +909,12 @@ public function getTotalUnpaidMonthlyAmount(): float
 
 /**
  * Check if user is currently restricted
+ * Always returns false - billing is disabled so no one is restricted
  */
 public function isRestricted(): bool
 {
-    // If user is in trial period, they are not restricted
-    if ($this->isInTrialPeriod()) {
-        return false;
-    }
-
-    $setting = $this->monthlyInvoiceSetting;
-    return $setting && $setting->is_restricted;
+    // Billing is disabled - no one is restricted
+    return false;
 }
 
 /**
@@ -970,11 +966,12 @@ public function getOrCreateMonthlyInvoiceSetting(): MonthlyInvoiceSetting
 
 /**
  * Check if user is in grace period
+ * Always returns false - billing is disabled
  */
 public function isInGracePeriod(): bool
 {
-    $setting = $this->monthlyInvoiceSetting;
-    return $setting && $setting->isInGracePeriod();
+    // Billing is disabled - no grace period
+    return false;
 }
 
 /**
@@ -982,8 +979,8 @@ public function isInGracePeriod(): bool
  */
 public function isInWarningPeriod(): bool
 {
-    $setting = $this->monthlyInvoiceSetting;
-    return $setting && $setting->isInWarningPeriod();
+    // Billing is disabled - no warning period
+    return false;
 }
 
 /**

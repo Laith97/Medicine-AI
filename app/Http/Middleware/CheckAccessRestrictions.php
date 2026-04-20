@@ -21,6 +21,9 @@ class CheckAccessRestrictions
             return $next($request);
         }
 
+        // Skip restriction checks - billing is disabled, all users have full access
+        return $next($request);
+
         $user = Auth::user();
         $currentRoute = $request->route() ? $request->route()->getName() : null;
 

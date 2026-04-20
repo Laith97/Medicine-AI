@@ -268,29 +268,6 @@
     </div>
 
     <div class="container">
-        {{-- Subscription Alerts --}}
-        @if(isset($trialInfo))
-            @if($trialInfo['is_in_trial'] && $trialInfo['trial_days_remaining'] <= 3)
-                <div class="alert-banner warning">
-                    <i class="fas fa-clock text-warning"></i>
-                    <div class="content">
-                        <h6>Trial Ending Soon</h6>
-                        <p>Your trial ends in {{ $trialInfo['trial_days_remaining'] }} day(s). Subscribe to continue using AI features.</p>
-                    </div>
-                    <a href="{{ route('subscription.pricing') }}" class="btn btn-sm" style="background: #f59e0b; color: white; border: none;">Subscribe</a>
-                </div>
-            @elseif(!$trialInfo['has_active_subscription'] && !$trialInfo['is_in_trial'])
-                <div class="alert-banner danger">
-                    <i class="fas fa-exclamation-circle text-danger"></i>
-                    <div class="content">
-                        <h6>Subscription Required</h6>
-                        <p>Your trial has ended. Subscribe to continue using all features.</p>
-                    </div>
-                    <a href="{{ route('subscription.pricing') }}" class="btn btn-sm" style="background: #dc2626; color: white; border: none;">Subscribe Now</a>
-                </div>
-            @endif
-        @endif
-
         {{-- Doctor Dashboard Metrics --}}
         @if(auth()->user()->isDoctor() && isset($doctorMetrics))
             {{-- Main Stats Row --}}

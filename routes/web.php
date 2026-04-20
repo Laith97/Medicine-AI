@@ -91,7 +91,8 @@ Route::get('/', function () {
     }
 
     // Show homepage for guests only
-    $showPricingSection = SystemSetting::get('show_pricing_section', true);
+    // Billing is disabled - hide pricing section
+    $showPricingSection = false;
 
     // Get dynamic pricing from system settings
     $professionalMonthly = SystemSetting::get('saas_professional_monthly', 30);
@@ -1302,6 +1303,21 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     // Waitlist Management
     Route::get('/waitlist/dashboard', [AdminWaitlistController::class, 'dashboard'])->name('waitlist.dashboard');
     Route::get('/waitlist/analytics', [AdminWaitlistController::class, 'analytics'])->name('waitlist.analytics');
+
+    // Data Migration Management
+    Route::prefix('data-migration')->name('data-migration.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\DataMigrationController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\DataMigrationController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\DataMigrationController::class, 'store'])->name('store');
+        Route::get('/{dataMigration}', [App\Http\Controllers\Admin\DataMigrationController::class, 'show'])->name('show');
+        Route::get('/{dataMigration}/preview', [App\Http\Controllers\Admin\DataMigrationController::class, 'preview'])->name('preview');
+        Route::post('/{dataMigration}/start', [App\Http\Controllers\Admin\DataMigrationController::class, 'start'])->name('start');
+        Route::post('/{dataMigration}/cancel', [App\Http\Controllers\Admin\DataMigrationController::class, 'cancel'])->name('cancel');
+        Route::delete('/{dataMigration}', [App\Http\Controllers\Admin\DataMigrationController::class, 'destroy'])->name('destroy');
+        Route::get('/{dataMigration}/export-errors', [App\Http\Controllers\Admin\DataMigrationController::class, 'exportErrors'])->name('export-errors');
+        Route::get('/download-template/{entityType}', [App\Http\Controllers\Admin\DataMigrationController::class, 'downloadTemplate'])->name('download-template');
+        Route::get('/field-options/{entityType}', [App\Http\Controllers\Admin\DataMigrationController::class, 'getFieldOptions'])->name('field-options');
+    });
 });
 
 Route::middleware('auth')->group(function () {

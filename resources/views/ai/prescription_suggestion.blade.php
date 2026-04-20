@@ -299,7 +299,7 @@ $('#aiSuggestBtn').click(function(e) {
                                         <div class="form-text">Examples: Lisinopril 10mg daily, Metformin 500mg twice daily, None</div>
                                     </div>
                                     <div id="quickNotesField" style="display: none;" class="mb-3">
-                                        <label class="form-label fw-semibold">Clinical Notes *</label>
+                                        <label class="form-label fw-semibold">Symptoms *</label>
                                         <textarea id="quickNotes" class="form-control" rows="3" placeholder="Brief clinical assessment or symptoms"></textarea>
                                         <div class="form-text">Brief description of patient's condition or symptoms</div>
                                     </div>
@@ -369,7 +369,7 @@ $('#aiSuggestBtn').click(function(e) {
             if (missingData.includes('Current Medications')) {
                 $('#quickMedicationField').show();
             }
-            if (missingData.includes('Doctor Clinical Assessment')) {
+            if (missingData.includes('Symptoms')) {
                 $('#quickNotesField').show();
             }
             
@@ -410,7 +410,7 @@ $('#aiSuggestBtn').click(function(e) {
                 $('#quickMedications').removeClass('is-invalid');
             }
             
-            if (missingData.includes('Doctor Clinical Assessment') && !quickNotes) {
+            if (missingData.includes('Symptoms') && !quickNotes) {
                 $('#quickNotes').addClass('is-invalid');
                 hasError = true;
             } else {

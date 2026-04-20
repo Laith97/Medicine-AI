@@ -52,6 +52,108 @@
     max-width: 450px;
 }
 
+/* Trust Badges */
+.trust-badges {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.trust-badge {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.4rem 0.75rem;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.trust-badge i {
+    color: #28a745;
+}
+
+/* Password Strength Meter */
+.password-strength-meter {
+    margin-top: 0.5rem;
+}
+
+.strength-bars {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 0.25rem;
+}
+
+.strength-bar {
+    height: 4px;
+    flex: 1;
+    background: #e9ecef;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.strength-bar.weak {
+    background: #dc3545;
+}
+
+.strength-bar.fair {
+    background: #ffc107;
+}
+
+.strength-bar.good {
+    background: #28a745;
+}
+
+.strength-bar.strong {
+    background: #198754;
+}
+
+.strength-text small {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.strength-text small.weak {
+    color: #dc3545;
+}
+
+.strength-text small.fair {
+    color: #ffc107;
+}
+
+.strength-text small.good {
+    color: #28a745;
+}
+
+.strength-text small.strong {
+    color: #198754;
+}
+
+/* Terms Checkbox Styling */
+.terms-check .form-check-input {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+}
+
+.terms-check .form-check-input:checked {
+    background-color: #DE6262;
+    border-color: #DE6262;
+}
+
+.terms-check .form-check-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.25);
+}
+
+.terms-check .form-check-label {
+    font-size: 0.9rem;
+    color: #495057;
+    margin-left: 0.25rem;
+}
+
 .auth-card {
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px);
@@ -136,6 +238,16 @@
                     <form method="POST" action="{{ route('patient.register.store') }}">
                         @csrf
 
+                        <!-- Trust Badges -->
+                        <div class="trust-badges mb-3 text-center">
+                            <span class="badge trust-badge me-2">
+                                <i class="fas fa-shield-halved me-1"></i> HIPAA Compliant
+                            </span>
+                            <span class="badge trust-badge">
+                                <i class="fas fa-lock me-1"></i> Secure
+                            </span>
+                        </div>
+
                         <!-- Full Name -->
                         <div class="mb-3">
                             <label for="name" class="form-label">Full Name</label>
@@ -199,7 +311,20 @@
                             <label for="password" class="form-label">Password</label>
                             <input id="password" name="password" type="password" required
                                    class="form-control @error('password') is-invalid @enderror"
-                                   placeholder="Create a secure password">
+                                   placeholder="Create a secure password"
+                                   onkeyup="checkPasswordStrength(this.value)">
+                            <!-- Password Strength Meter -->
+                            <div class="password-strength-meter mt-2">
+                                <div class="strength-bars">
+                                    <div class="strength-bar"></div>
+                                    <div class="strength-bar"></div>
+                                    <div class="strength-bar"></div>
+                                    <div class="strength-bar"></div>
+                                </div>
+                                <div class="strength-text">
+                                    <small id="password-strength-text">Enter a password</small>
+                                </div>
+                            </div>
                             @error('password')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -213,7 +338,7 @@
                         </div>
 
                         <!-- Terms and Privacy -->
-                        <div class="mb-3 form-check">
+                        <div class="mb-3 form-check terms-check">
                             <input id="terms" name="terms" type="checkbox" required class="form-check-input">
                             <label for="terms" class="form-check-label">
                                 I agree to the <a href="#" class="text-primary">Terms of Service</a>
@@ -251,4 +376,31 @@
         </div>
     </div>
 </div>
+
+<script>
+function checkPasswordStrength(password) {
+    const bars = document.querySelectorAll('.strength-bar');
+    const text = document.getElementById('password-strength-text');
+
+    let strength = 0;
+
+    if (password.length >= 8) strength++;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+    if (password.match(/[0-9]/)) strength++;
+    if (password.match(/[^a-zA-Z0-9]/)) strength++;
+
+    const labels = ['Enter a password', 'Weak', 'Fair', 'Good', 'Strong'];
+    const classes = ['', 'weak', 'fair', 'good', 'strong'];
+
+    bars.forEach((bar, index) => {
+        bar.className = 'strength-bar';
+        if (index < strength) {
+            bar.classList.add(classes[strength]);
+        }
+    });
+
+    text.className = classes[strength];
+    text.textContent = labels[strength];
+}
+</script>
 @endsection

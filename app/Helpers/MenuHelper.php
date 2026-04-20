@@ -254,25 +254,7 @@ class MenuHelper
                 'header_class' => 'sidebar-header-business-tools',
                 'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => array_filter([
-                    // Only show billing for standalone doctors (not hospital doctors)
-                    !$user->hospital_id ? [
-                        'name' => 'Billing & Invoices',
-                        'route' => 'invoices.index',
-                        'icon' => 'fas fa-file-invoice',
-                        'permission' => 'invoices',
-                    ] : null,
-                    !$user->hospital_id ? [
-                        'name' => 'Subscription',
-                        'route' => 'subscription.manage',
-                        'icon' => 'fas fa-credit-card',
-                        'permission' => 'subscription',
-                    ] : null,
-                    !$user->hospital_id ? [
-                        'name' => 'Pricing',
-                        'route' => 'subscription.pricing',
-                        'icon' => 'fas fa-tags',
-                        'permission' => 'subscription',
-                    ] : null,
+                    // Billing items hidden - system not dependent on billing
                     [
                         'name' => 'Landing Page',
                         'route' => 'doctor.landing-page.index',
@@ -504,22 +486,7 @@ class MenuHelper
                 'header_class' => 'sidebar-header-business-tools',
                 'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => array_filter([
-                    // Only show billing for standalone doctors (not hospital doctors) - even during impersonation
-                    !$user->hospital_id ? [
-                        'name' => 'Billing & Invoices',
-                        'route' => 'invoices.index',
-                        'icon' => 'fas fa-file-invoice',
-                    ] : null,
-                    !$user->hospital_id ? [
-                        'name' => 'Subscription',
-                        'route' => 'subscription.manage',
-                        'icon' => 'fas fa-credit-card',
-                    ] : null,
-                    !$user->hospital_id ? [
-                        'name' => 'Pricing',
-                        'route' => 'subscription.pricing',
-                        'icon' => 'fas fa-tags',
-                    ] : null,
+                    // Billing items hidden - system not dependent on billing
                     [
                         'name' => 'Landing Page',
                         'route' => 'doctor.landing-page.index',
@@ -686,30 +653,24 @@ class MenuHelper
                 ]
             ],
 
-            // Administration Section
+            // Administration Section - billing hidden
             [
                 'name' => 'Administration',
                 'icon' => 'fas fa-cogs',
                 'dropdown' => true,
-                'href' => 'hospital-admin.subscription.manage', // Clickable parent header
+                'href' => 'hospital-admin.dashboard',
                 'items' => [
                     [
-                        'name' => 'Subscription',
-                        'route' => 'hospital-admin.subscription.manage',
-                        'icon' => 'fas fa-credit-card',
-                        'permission' => 'billing',
+                        'name' => 'Hospital Profile',
+                        'route' => 'hospital-admin.hospital.profile',
+                        'icon' => 'fas fa-building',
+                        'permission' => 'hospital_settings',
                     ],
                     [
-                        'name' => 'Pricing',
-                        'route' => 'subscription.pricing',
-                        'icon' => 'fas fa-tags',
-                        'permission' => 'billing',
-                    ],
-                    [
-                        'name' => 'Invoices',
-                        'route' => 'hospital-admin.invoices.index',
-                        'icon' => 'fas fa-file-invoice',
-                        'permission' => 'billing',
+                        'name' => 'Departments',
+                        'route' => 'hospital-admin.departments.index',
+                        'icon' => 'fas fa-sitemap',
+                        'permission' => 'hospital_settings',
                     ],
                 ]
             ],

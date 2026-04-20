@@ -1,0 +1,241 @@
+- generic [ref=e1]:
+  - img [ref=e5]
+  - link "Skip to main content" [ref=e7] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e11]:
+    - generic [ref=e12]:
+      - link "Medcura Logo" [ref=e14] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000
+        - img "Medcura Logo" [ref=e15]
+      - generic [ref=e16]:
+        - link "Home" [ref=e17] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000
+        - link "About Us" [ref=e18] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/about
+        - link "Contact" [ref=e19] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/contact
+        - link "For Patients" [ref=e20] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/doctors
+    - generic [ref=e22]:
+      - link "Login" [ref=e23] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/login
+        - generic [ref=e24]: 
+        - generic [ref=e25]: Login
+      - link "Register" [ref=e26] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/register
+        - generic [ref=e27]: 
+        - generic [ref=e28]: Register
+      - button "Toggle navigation menu" [ref=e29] [cursor=pointer]
+  - main [ref=e34]:
+    - generic [ref=e37]:
+      - text:     
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - generic [ref=e41]: 
+          - heading "Welcome to AI Medical Diagnosis" [level=2] [ref=e42]
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - heading "Create Account" [level=2] [ref=e45]
+            - paragraph [ref=e46]: Join our healthcare platform today
+          - generic [ref=e47]:
+            - generic [ref=e48]:
+              - generic [ref=e49]:
+                - generic [ref=e50]: 
+                - text: Full Name
+              - textbox " Full Name" [active] [ref=e51]:
+                - /placeholder: Enter your full name
+            - generic [ref=e52]:
+              - generic [ref=e53]:
+                - generic [ref=e54]: 
+                - text: Email Address
+              - textbox " Email Address" [ref=e55]:
+                - /placeholder: Enter your email
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - generic [ref=e58]: 
+                - text: Phone Number *
+              - textbox " Phone Number *" [ref=e59]:
+                - /placeholder: Enter your phone number (e.g., +1234567890)
+              - generic [ref=e61]:
+                - generic [ref=e62]: 
+                - text: Required for SMS invoice reminders. Include country code (e.g., +1 for US)
+            - generic [ref=e63]:
+              - generic [ref=e64]:
+                - generic [ref=e65]: 
+                - text: Password
+              - generic [ref=e66]:
+                - textbox " Password" [ref=e67]:
+                  - /placeholder: Create a strong password
+                - button "" [ref=e68] [cursor=pointer]:
+                  - generic [ref=e69]: 
+            - generic [ref=e70]:
+              - generic [ref=e71]:
+                - generic [ref=e72]: 
+                - text: Confirm Password
+              - generic [ref=e73]:
+                - textbox " Confirm Password" [ref=e74]:
+                  - /placeholder: Confirm your password
+                - button "" [ref=e75] [cursor=pointer]:
+                  - generic [ref=e76]: 
+            - generic [ref=e77]:
+              - generic [ref=e78]:
+                - generic [ref=e79]: 
+                - text: Medical Specialty *
+              - combobox [ref=e80]:
+                - option "-- Select Your Specialty --" [selected]
+                - option "General Practitioner (GP) / Family Medicine"
+                - option "Internal Medicine (Internist)"
+                - option "Cardiology (Heart)"
+                - option "Pulmonology (Lungs)"
+                - option "Gastroenterology (Digestive system)"
+                - option "Nephrology (Kidneys)"
+                - option "Endocrinology (Hormones & glands)"
+                - option "Hematology (Blood)"
+                - option "Hematology-Oncology (Blood cancers)"
+                - option "Rheumatology (Joints & autoimmune diseases)"
+                - option "Infectious Disease"
+                - option "Dermatology (Skin, hair, nails)"
+                - option "Allergy & Immunology"
+                - option "Reproductive Endocrinology (Fertility hormones)"
+                - option "Emergency Medicine"
+                - option "Critical Care / Intensive Care Medicine"
+                - option "Anesthesiology"
+                - option "Pain Management / Interventional Pain Medicine"
+                - option "Neurology (Brain & nerves)"
+                - option "Neurosurgery (Brain & spine surgery)"
+                - option "Psychiatry (Mental health)"
+                - option "Child & Adolescent Psychiatry"
+                - option "Behavioral & Developmental Pediatrics"
+                - option "General Surgery"
+                - option "Orthopedic Surgery (Bones & joints)"
+                - option "Cardiothoracic Surgery (Heart & lungs)"
+                - option "Vascular Surgery (Blood vessels)"
+                - option "Pediatric Vascular Surgery"
+                - option "Plastic & Reconstructive Surgery"
+                - option "Oral & Maxillofacial Surgery"
+                - option "Surgical Oncology (Cancer surgery)"
+                - option "Colorectal Surgery"
+                - option "Urology (Urinary & male reproductive system)"
+                - option "ENT / Otolaryngology (Ear, Nose, Throat)"
+                - option "Ophthalmic Surgery (Eye surgery)"
+                - option "Pediatric Surgery"
+                - option "Hand Surgery"
+                - option "Pediatrics"
+                - option "Neonatology (Newborn care)"
+                - option "Pediatric Behavioral Medicine"
+                - option "Obstetrics & Gynecology (OB/GYN)"
+                - option "Gynecologic Oncology"
+                - option "Reproductive Endocrinology & Infertility"
+                - option "Maternal–Fetal Medicine"
+                - option "Pathology (Laboratory medicine)"
+                - option "Radiology (Medical imaging)"
+                - option "Interventional Radiology"
+                - option "Nuclear Medicine"
+                - option "Endoscopy / GI Endoscopy"
+                - option "Electrodiagnostic Medicine (EMG, EEG)"
+                - option "Oncology (Medical cancer care)"
+                - option "Hepatology (Liver diseases)"
+                - option "Genetic Hematology"
+                - option "Geriatrics (Elderly care)"
+                - option "Physical Medicine & Rehabilitation"
+                - option "Occupational & Environmental Medicine"
+                - option "Sports Medicine"
+                - option "Other (Please specify)"
+            - generic [ref=e81]:
+              - checkbox "I agree to the Terms of Service and Privacy Policy" [ref=e82]
+              - generic [ref=e83]:
+                - text: I agree to the
+                - link "Terms of Service" [ref=e84] [cursor=pointer]:
+                  - /url: "#"
+                - text: and
+                - link "Privacy Policy" [ref=e85] [cursor=pointer]:
+                  - /url: "#"
+            - button " Create Account" [ref=e86] [cursor=pointer]:
+              - generic [ref=e87]: 
+              - text: Create Account
+            - generic [ref=e88]: or
+            - generic [ref=e89]:
+              - paragraph [ref=e90]: Already have an account?
+              - link "Sign in here " [ref=e91] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/login
+                - text: Sign in here
+                - generic [ref=e92]: 
+        - generic [ref=e94]:
+          - text: Need help?
+          - link "Contact Support" [ref=e95] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/contact
+  - contentinfo [ref=e96]:
+    - generic [ref=e97]:
+      - generic [ref=e98]:
+        - generic [ref=e100]:
+          - heading " Clinical Decision Support" [level=4] [ref=e101]:
+            - generic [ref=e102]: 
+            - text: Clinical Decision Support
+          - paragraph [ref=e103]: Revolutionizing healthcare with cutting-edge clinical technology. Empowering medical professionals with advanced decision support tools for superior patient care and outcomes.
+          - generic [ref=e104]:
+            - link "" [ref=e105] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e106]: 
+            - link "" [ref=e107] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e108]: 
+            - link "" [ref=e109] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e110]: 
+            - link "" [ref=e111] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e112]: 
+        - generic [ref=e113]:
+          - heading "Platform" [level=6] [ref=e114]
+          - list [ref=e115]:
+            - listitem [ref=e116]:
+              - link "Home" [ref=e117] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000
+            - listitem [ref=e118]:
+              - link "About Us" [ref=e119] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/about
+            - listitem [ref=e120]:
+              - link "Contact" [ref=e121] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/contact
+            - listitem [ref=e122]:
+              - link "Login" [ref=e123] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/login
+        - generic [ref=e124]:
+          - heading "Support" [level=6] [ref=e125]
+          - list [ref=e126]:
+            - listitem [ref=e127]:
+              - link "About Platform" [ref=e128] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/about
+            - listitem [ref=e129]:
+              - link "Contact Support" [ref=e130] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/contact
+        - generic [ref=e131]:
+          - heading "Contact & Support" [level=6] [ref=e132]
+          - generic [ref=e133] [cursor=pointer]: 
+          - generic [ref=e134]:
+            - generic [ref=e136]: 
+            - generic [ref=e137]:
+              - generic [ref=e138]: 24/7 Support
+              - text: AI-Powered Help Available
+          - generic [ref=e139]:
+            - generic [ref=e141]: 
+            - generic [ref=e142]:
+              - generic [ref=e143]: Security & Privacy
+              - text: HIPAA Compliant Platform
+          - generic [ref=e144]:
+            - heading "Need Help?" [level=6] [ref=e145]
+            - paragraph [ref=e146]: Our AI-powered support is here to assist you
+            - link " Contact Support" [ref=e147] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/contact
+              - generic [ref=e148]: 
+              - text: Contact Support
+      - separator [ref=e149]
+      - generic [ref=e150]:
+        - paragraph [ref=e152]: © 2026 MedCura Clinical Platform. All rights reserved.
+        - generic [ref=e154]:
+          - text: Secure & HIPAA Compliant
+          - link "Contact Us" [ref=e155] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/contact
+          - link "Admin" [ref=e156] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/login
+  - generic [ref=e157] [cursor=pointer]: 

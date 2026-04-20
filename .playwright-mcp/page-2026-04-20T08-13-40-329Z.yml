@@ -1,0 +1,163 @@
+- generic [active] [ref=e1]:
+  - img [ref=e5]
+  - link "Skip to main content" [ref=e7] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e11]:
+    - generic [ref=e12]:
+      - link "Medcura Logo" [ref=e14] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000
+        - img "Medcura Logo" [ref=e15]
+      - generic [ref=e16]:
+        - link "Home" [ref=e17] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000
+        - link "About Us" [ref=e18] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/about
+        - link "Contact" [ref=e19] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/contact
+        - link "For Patients" [ref=e20] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/doctors
+    - generic [ref=e22]:
+      - link "Login" [ref=e23] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/login
+        - generic [ref=e24]: 
+        - generic [ref=e25]: Login
+      - link "Register" [ref=e26] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/register
+        - generic [ref=e27]: 
+        - generic [ref=e28]: Register
+      - button "Toggle navigation menu" [ref=e29] [cursor=pointer]
+  - main [ref=e34]:
+    - generic [ref=e37]:
+      - text:     
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - generic [ref=e41]: 
+          - heading "Join Our Patient Portal" [level=2] [ref=e42]
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - generic [ref=e45]:
+              - generic [ref=e46]: Full Name
+              - textbox "Full Name" [ref=e47]:
+                - /placeholder: Enter your full name
+            - generic [ref=e48]:
+              - generic [ref=e49]: Email Address
+              - textbox "Email Address" [ref=e50]:
+                - /placeholder: Enter your email address
+            - generic [ref=e51]:
+              - generic [ref=e52]: Phone Number
+              - textbox "Phone Number" [ref=e53]:
+                - /placeholder: Enter your phone number
+            - generic [ref=e54]:
+              - generic [ref=e55]: Date of Birth
+              - textbox "Date of Birth" [ref=e56]
+            - generic [ref=e57]:
+              - generic [ref=e58]: Gender
+              - combobox "Gender" [ref=e59]:
+                - option "Select gender" [selected]
+                - option "Male"
+                - option "Female"
+                - option "Other"
+            - generic [ref=e60]:
+              - generic [ref=e61]: Password
+              - textbox "Password" [ref=e62]:
+                - /placeholder: Create a secure password
+            - generic [ref=e63]:
+              - generic [ref=e64]: Confirm Password
+              - textbox "Confirm Password" [ref=e65]:
+                - /placeholder: Confirm your password
+            - generic [ref=e66]:
+              - checkbox "I agree to the Terms of Service and Privacy Policy" [ref=e67]
+              - generic [ref=e68]:
+                - text: I agree to the
+                - link "Terms of Service" [ref=e69] [cursor=pointer]:
+                  - /url: "#"
+                - text: and
+                - link "Privacy Policy" [ref=e70] [cursor=pointer]:
+                  - /url: "#"
+            - button " Create Account" [ref=e72] [cursor=pointer]:
+              - generic [ref=e73]: 
+              - text: Create Account
+          - generic [ref=e74]:
+            - separator [ref=e75]
+            - paragraph [ref=e76]: Already have an account?
+            - link "Sign in to your account" [ref=e77] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/login
+        - generic [ref=e79]:
+          - text: Need help?
+          - link "Contact Support" [ref=e80] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/contact
+  - contentinfo [ref=e81]:
+    - generic [ref=e82]:
+      - generic [ref=e83]:
+        - generic [ref=e85]:
+          - heading " Clinical Decision Support" [level=4] [ref=e86]:
+            - generic [ref=e87]: 
+            - text: Clinical Decision Support
+          - paragraph [ref=e88]: Revolutionizing healthcare with cutting-edge clinical technology. Empowering medical professionals with advanced decision support tools for superior patient care and outcomes.
+          - generic [ref=e89]:
+            - link "" [ref=e90] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e91]: 
+            - link "" [ref=e92] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e93]: 
+            - link "" [ref=e94] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e95]: 
+            - link "" [ref=e96] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e97]: 
+        - generic [ref=e98]:
+          - heading "Platform" [level=6] [ref=e99]
+          - list [ref=e100]:
+            - listitem [ref=e101]:
+              - link "Home" [ref=e102] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000
+            - listitem [ref=e103]:
+              - link "About Us" [ref=e104] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/about
+            - listitem [ref=e105]:
+              - link "Contact" [ref=e106] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/contact
+            - listitem [ref=e107]:
+              - link "Login" [ref=e108] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/login
+        - generic [ref=e109]:
+          - heading "Support" [level=6] [ref=e110]
+          - list [ref=e111]:
+            - listitem [ref=e112]:
+              - link "About Platform" [ref=e113] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/about
+            - listitem [ref=e114]:
+              - link "Contact Support" [ref=e115] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/contact
+        - generic [ref=e116]:
+          - heading "Contact & Support" [level=6] [ref=e117]
+          - generic [ref=e118] [cursor=pointer]: 
+          - generic [ref=e119]:
+            - generic [ref=e121]: 
+            - generic [ref=e122]:
+              - generic [ref=e123]: 24/7 Support
+              - text: AI-Powered Help Available
+          - generic [ref=e124]:
+            - generic [ref=e126]: 
+            - generic [ref=e127]:
+              - generic [ref=e128]: Security & Privacy
+              - text: HIPAA Compliant Platform
+          - generic [ref=e129]:
+            - heading "Need Help?" [level=6] [ref=e130]
+            - paragraph [ref=e131]: Our AI-powered support is here to assist you
+            - link " Contact Support" [ref=e132] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/contact
+              - generic [ref=e133]: 
+              - text: Contact Support
+      - separator [ref=e134]
+      - generic [ref=e135]:
+        - paragraph [ref=e137]: © 2026 MedCura Clinical Platform. All rights reserved.
+        - generic [ref=e139]:
+          - text: Secure & HIPAA Compliant
+          - link "Contact Us" [ref=e140] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/contact
+          - link "Admin" [ref=e141] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/login
+  - generic [ref=e142] [cursor=pointer]: 

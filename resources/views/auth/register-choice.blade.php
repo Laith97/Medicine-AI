@@ -76,9 +76,21 @@
                 <!-- Main form card -->
                 <div class="auth-card">
                     <!-- Header -->
-                    <div class="auth-header text-center mb-5">
-                                            <i class="bi bi-heart-pulse text-primary mb-3" style="font-size: 3rem;"></i>
-
+                    <div class="auth-header text-center mb-4">
+                        <div class="trust-badges mb-3">
+                            <span class="badge trust-badge me-2">
+                                <i class="fas fa-shield-halved me-1"></i> HIPAA Compliant
+                            </span>
+                            <span class="badge trust-badge">
+                                <i class="fas fa-lock me-1"></i> Secure
+                            </span>
+                        </div>
+                        <div class="step-indicator mb-3">
+                            <span class="step active">1</span>
+                            <span class="step-line"></span>
+                            <span class="step">2</span>
+                        </div>
+                        <i class="bi bi-heart-pulse text-primary mb-3" style="font-size: 3rem;"></i>
                         <h2 class="auth-title">Join Our Platform</h2>
                         <p class="auth-subtitle">Select the account type that best describes you</p>
                     </div>
@@ -446,6 +458,63 @@
     border-color: #6c757d;
     color: white;
     transform: translateY(-2px);
+}
+
+/* Trust Badges */
+.trust-badges {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.trust-badge {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.4rem 0.75rem;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.trust-badge i {
+    color: #28a745;
+}
+
+/* Step Indicator */
+.step-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.step-indicator .step {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e9ecef;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.step-indicator .step.active {
+    background: linear-gradient(135deg, #DE6262 0%, #FFB88C 100%);
+    color: white;
+}
+
+.step-indicator .step-line {
+    width: 40px;
+    height: 2px;
+    background: #dee2e6;
 }
 
 @media (max-width: 768px) {

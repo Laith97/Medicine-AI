@@ -240,6 +240,15 @@
                     </a>
                 </div>
 
+                <!-- Data Management Section -->
+                <div class="nav-section">Data Management</div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.data-migration.index') }}" class="nav-link {{ request()->routeIs('admin.data-migration.*') ? 'active' : '' }}">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Data Migration</span>
+                    </a>
+                </div>
+
                 <!-- Billing & Finance Section -->
                 <div class="nav-section">Billing & Finance</div>
                 <div class="nav-item">

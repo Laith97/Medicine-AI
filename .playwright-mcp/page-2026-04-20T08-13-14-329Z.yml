@@ -1,0 +1,168 @@
+- generic [active] [ref=e1]:
+  - img [ref=e5]
+  - link "Skip to main content" [ref=e7] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e11]:
+    - generic [ref=e12]:
+      - link "Medcura Logo" [ref=e14] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000
+        - img "Medcura Logo" [ref=e15]
+      - generic [ref=e16]:
+        - link "Home" [ref=e17] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000
+        - link "About Us" [ref=e18] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/about
+        - link "Contact" [ref=e19] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/contact
+        - link "For Patients" [ref=e20] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/doctors
+    - generic [ref=e22]:
+      - link "Login" [ref=e23] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/login
+        - generic [ref=e24]: 
+        - generic [ref=e25]: Login
+      - link "Register" [ref=e26] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/register
+        - generic [ref=e27]: 
+        - generic [ref=e28]: Register
+      - button "Toggle navigation menu" [ref=e29] [cursor=pointer]
+  - main [ref=e34]:
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - generic [ref=e41]: 
+          - heading "Join Our Platform" [level=2] [ref=e42]
+          - paragraph [ref=e43]: Select the account type that best describes you
+        - generic [ref=e44]:
+          - generic [ref=e47] [cursor=pointer]:
+            - generic [ref=e49]: 
+            - heading "Healthcare Professional" [level=4] [ref=e50]
+            - paragraph [ref=e51]: Register as a doctor, nurse, or healthcare provider to access clinical decision support tools, patient management, and professional features.
+            - generic [ref=e53]:
+              - generic [ref=e54]:
+                - generic [ref=e55]: 
+                - text: Clinical Decision Support
+              - generic [ref=e56]:
+                - generic [ref=e57]: 
+                - text: Voice Assistant
+              - generic [ref=e58]:
+                - generic [ref=e59]: 
+                - text: Patient Management
+              - generic [ref=e60]:
+                - generic [ref=e61]: 
+                - text: Professional Landing Page
+            - button " Register as Healthcare Professional" [ref=e62]:
+              - generic [ref=e63]: 
+              - text: Register as Healthcare Professional
+          - generic [ref=e66] [cursor=pointer]:
+            - generic [ref=e68]: 
+            - heading "Patient" [level=4] [ref=e69]
+            - paragraph [ref=e70]: Create a patient account to easily book appointments, manage your health records, and access personalized healthcare services.
+            - generic [ref=e72]:
+              - generic [ref=e73]:
+                - generic [ref=e74]: 
+                - text: Easy Booking
+              - generic [ref=e75]:
+                - generic [ref=e76]: 
+                - text: Health Records
+              - generic [ref=e77]:
+                - generic [ref=e78]: 
+                - text: Appointment History
+              - generic [ref=e79]:
+                - generic [ref=e80]: 
+                - text: Email Reminders
+            - button " Register as Patient" [ref=e81]:
+              - generic [ref=e82]: 
+              - text: Register as Patient
+        - generic [ref=e83]:
+          - generic [ref=e84]: or
+          - paragraph [ref=e85]: Don't want to create an account?
+          - link " Browse Doctors as Guest" [ref=e86] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/doctors
+            - generic [ref=e87]: 
+            - text: Browse Doctors as Guest
+        - generic [ref=e88]:
+          - paragraph [ref=e89]: Already have an account?
+          - link "Sign in here " [ref=e90] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/login
+            - text: Sign in here
+            - generic [ref=e91]: 
+      - generic [ref=e93]:
+        - text: Need help?
+        - link "Contact Support" [ref=e94] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/contact
+  - contentinfo [ref=e95]:
+    - generic [ref=e96]:
+      - generic [ref=e97]:
+        - generic [ref=e99]:
+          - heading " Clinical Decision Support" [level=4] [ref=e100]:
+            - generic [ref=e101]: 
+            - text: Clinical Decision Support
+          - paragraph [ref=e102]: Revolutionizing healthcare with cutting-edge clinical technology. Empowering medical professionals with advanced decision support tools for superior patient care and outcomes.
+          - generic [ref=e103]:
+            - link "" [ref=e104] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e105]: 
+            - link "" [ref=e106] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e107]: 
+            - link "" [ref=e108] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e109]: 
+            - link "" [ref=e110] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e111]: 
+        - generic [ref=e112]:
+          - heading "Platform" [level=6] [ref=e113]
+          - list [ref=e114]:
+            - listitem [ref=e115]:
+              - link "Home" [ref=e116] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000
+            - listitem [ref=e117]:
+              - link "About Us" [ref=e118] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/about
+            - listitem [ref=e119]:
+              - link "Contact" [ref=e120] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/contact
+            - listitem [ref=e121]:
+              - link "Login" [ref=e122] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/login
+        - generic [ref=e123]:
+          - heading "Support" [level=6] [ref=e124]
+          - list [ref=e125]:
+            - listitem [ref=e126]:
+              - link "About Platform" [ref=e127] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/about
+            - listitem [ref=e128]:
+              - link "Contact Support" [ref=e129] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/contact
+        - generic [ref=e130]:
+          - heading "Contact & Support" [level=6] [ref=e131]
+          - generic [ref=e132] [cursor=pointer]: 
+          - generic [ref=e133]:
+            - generic [ref=e135]: 
+            - generic [ref=e136]:
+              - generic [ref=e137]: 24/7 Support
+              - text: AI-Powered Help Available
+          - generic [ref=e138]:
+            - generic [ref=e140]: 
+            - generic [ref=e141]:
+              - generic [ref=e142]: Security & Privacy
+              - text: HIPAA Compliant Platform
+          - generic [ref=e143]:
+            - heading "Need Help?" [level=6] [ref=e144]
+            - paragraph [ref=e145]: Our AI-powered support is here to assist you
+            - link " Contact Support" [ref=e146] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/contact
+              - generic [ref=e147]: 
+              - text: Contact Support
+      - separator [ref=e148]
+      - generic [ref=e149]:
+        - paragraph [ref=e151]: © 2026 MedCura Clinical Platform. All rights reserved.
+        - generic [ref=e153]:
+          - text: Secure & HIPAA Compliant
+          - link "Contact Us" [ref=e154] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/contact
+          - link "Admin" [ref=e155] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/login
+  - generic [ref=e156] [cursor=pointer]: 
