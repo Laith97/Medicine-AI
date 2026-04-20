@@ -1,0 +1,49 @@
+[     232ms] [LOG] 🔑 VITE_PUSHER_APP_KEY:  @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:7
+[     232ms] [LOG] 🌍 VITE_PUSHER_APP_CLUSTER: mt1 @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:7
+[     232ms] [LOG] 🔒 CSRF token found: CXoeG62sf3... @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:7
+[     232ms] [LOG] 🔒 CSRF token found: CXoeG62sf3... @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:7
+[     232ms] [LOG] 👤 User ID found: undefined @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:7
+[     233ms] [ERROR] ❌ Echo initialization failed: You must pass your app key when you instantiate Pusher. @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:7
+[     233ms] [LOG] 🚀 Initializing enhanced notification system (DOM already ready) @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:87
+[     235ms] [WARNING] Echo not found on window, initializing fallback Echo @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:91
+[     261ms] [LOG] Hamburger button found: JSHandle@node @ http://127.0.0.1:8000/:3223
+[     261ms] [LOG] Navigation links container found: JSHandle@node @ http://127.0.0.1:8000/:3235
+[     261ms] [LOG] Navigation links HTML: 
+                                                        <a href="http://127.0.0.1:8000" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Home</a>
+                            <a href="http://127.0.0.1:8000/about" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">About Us</a>
+                            <a href="http://127.0.0.1:8000/contact" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Contact</a>
+                            <a href="http://127.0.0.1:8000/doctors" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">For Patients</a>
+                                                     @ http://127.0.0.1:8000/:3236
+[     261ms] [LOG] 🚀 Initializing enhanced notification system on DOMContentLoaded @ http://127.0.0.1:8000/build/assets/app-DlnSTeEd.js:87
+[     266ms] [LOG] Hamburger button found: JSHandle@node @ http://127.0.0.1:8000/:3223
+[     266ms] [LOG] Navigation links container found: JSHandle@node @ http://127.0.0.1:8000/:3235
+[     266ms] [LOG] Navigation links HTML: 
+                                                        <a href="http://127.0.0.1:8000" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Home</a>
+                            <a href="http://127.0.0.1:8000/about" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">About Us</a>
+                            <a href="http://127.0.0.1:8000/contact" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Contact</a>
+                            <a href="http://127.0.0.1:8000/doctors" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">For Patients</a>
+                                                     @ http://127.0.0.1:8000/:3236
+[    1292ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[    1292ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/:3606:27 @ http://127.0.0.1:8000/:3645
+[   31309ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[   31309ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/:3606:27 @ http://127.0.0.1:8000/:3645
+[   76358ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[   76358ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/:3606:27 @ http://127.0.0.1:8000/:3645
+[  143899ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[  143899ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/:3606:27 @ http://127.0.0.1:8000/:3645
+[  245194ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[  245194ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/:3606:27 @ http://127.0.0.1:8000/:3645
+[  397089ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[  397089ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/:3606:27 @ http://127.0.0.1:8000/:3645
+[  624939ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[  624939ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/:3606:27 @ http://127.0.0.1:8000/:3645
+[  924984ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:8000/api/notifications/unread-count:0
+[  924985ms] [ERROR] Error updating notification badge: Error: HTTP error! Status: 401
+    at http://127.0.0.1:8000/:3606:27 @ http://127.0.0.1:8000/:3645

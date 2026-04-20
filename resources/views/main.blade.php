@@ -354,8 +354,8 @@
                                 </div>
                             </div>
                             <div class="flex-grow-1 ms-3">
-                                <h4 class="mb-2">Voice Assistant</h4>
-                                <p class="text-muted mb-0">Hands-free clinical documentation with real-time voice transcription and automatic note generation powered by advanced AI.</p>
+                                <h4 class="mb-2">Ambient Listening</h4>
+                                <p class="text-muted mb-0">Real-time consultation recording with automatic transcription, speaker identification, and clinical chart population.</p>
                             </div>
                         </div>
                         <div class="d-flex align-items-start mb-4">
@@ -532,8 +532,6 @@
         </div>
     </div>
 </section>
-    <div class="container">
-
 
 <!-- CTA Section -->
 <section class="py-5" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); position: relative; overflow: hidden;">

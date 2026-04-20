@@ -1452,7 +1452,7 @@ body .dropdown .dropdown-menu.show,
 
         <!-- Top Bar Start -->
         <div id="top-bar" class="py-1 border-bottom"
-            style="background: white; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            style="background: white; color: #333; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
             <div class="container">
                 <div class="row justify-content-between align-items-center">
 

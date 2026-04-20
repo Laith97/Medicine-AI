@@ -1,0 +1,269 @@
+- generic [active] [ref=e1]:
+  - img [ref=e5]
+  - link "Skip to main content" [ref=e7] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e11]:
+    - generic [ref=e12]:
+      - link "Medcura Logo" [ref=e14] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000
+        - img "Medcura Logo" [ref=e15]
+      - generic [ref=e16]:
+        - link "Home" [ref=e17] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000
+        - link "About Us" [ref=e18] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/about
+        - link "Contact" [ref=e19] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/contact
+        - link "For Patients" [ref=e20] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/doctors
+    - generic [ref=e22]:
+      - link "Login" [ref=e23] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/login
+        - generic [ref=e24]: 
+        - generic [ref=e25]: Login
+      - link "Register" [ref=e26] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/register
+        - generic [ref=e27]: 
+        - generic [ref=e28]: Register
+      - button "Toggle navigation menu" [ref=e29] [cursor=pointer]
+  - main [ref=e34]:
+    - generic [ref=e37]:
+      - generic [ref=e39]:
+        - heading "Modern EMR System for Healthcare Practices" [level=1] [ref=e40]:
+          - text: Modern EMR System
+          - text: for Healthcare Practices
+        - paragraph [ref=e41]: Complete patient management, appointment scheduling, voice transcription, and billing in one secure platform.
+        - generic [ref=e42]:
+          - link " Start Free Trial" [ref=e43] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/register-doctor
+            - generic [ref=e44]: 
+            - text: Start Free Trial
+          - link " See Features" [ref=e45] [cursor=pointer]:
+            - /url: "#features"
+            - generic [ref=e46]: 
+            - text: See Features
+        - generic [ref=e48]:
+          - generic [ref=e49]: 
+          - text: No credit card required
+          - generic [ref=e50]: 
+          - text: Cancel anytime
+      - generic [ref=e55]: 
+    - generic [ref=e57]:
+      - generic [ref=e58]:
+        - heading "Core Features" [level=2] [ref=e59]
+        - paragraph [ref=e60]: Everything you need to run a modern medical practice
+      - generic [ref=e61]:
+        - generic [ref=e63]:
+          - generic [ref=e65]: 
+          - heading "Patient Management" [level=4] [ref=e66]
+          - paragraph [ref=e67]: Complete patient records, medical history, and treatment tracking in one place.
+        - generic [ref=e69]:
+          - generic [ref=e71]: 
+          - heading "Smart Scheduling" [level=4] [ref=e72]
+          - paragraph [ref=e73]: Automated appointment booking with reminders and calendar integration.
+        - generic [ref=e75]:
+          - generic [ref=e77]: 
+          - heading "Voice Transcription" [level=4] [ref=e78]
+          - paragraph [ref=e79]: Real-time speech-to-text for clinical notes and documentation.
+        - generic [ref=e81]:
+          - generic [ref=e83]: 
+          - heading "Digital Prescriptions" [level=4] [ref=e84]
+          - paragraph [ref=e85]: Create and manage prescriptions digitally with patient history.
+        - generic [ref=e87]:
+          - generic [ref=e89]: 
+          - heading "Billing & Invoicing" [level=4] [ref=e90]
+          - paragraph [ref=e91]: Automated billing, payment tracking, and financial reporting.
+        - generic [ref=e93]:
+          - generic [ref=e95]: 
+          - heading "Analytics Dashboard" [level=4] [ref=e96]
+          - paragraph [ref=e97]: Track appointments, revenue, and practice performance metrics.
+    - generic [ref=e99]:
+      - generic [ref=e100]:
+        - generic [ref=e101]:
+          - generic [ref=e102]: 
+          - text: AI-POWERED FEATURES
+        - heading "Intelligent Healthcare Technology" [level=2] [ref=e103]
+        - paragraph [ref=e104]: Advanced AI features that transform your practice
+      - generic [ref=e105]:
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - generic [ref=e112]: 
+            - generic [ref=e113]:
+              - heading "AI Medical Copilot" [level=4] [ref=e114]
+              - paragraph [ref=e115]: Intelligent assistant that helps with diagnosis suggestions, treatment recommendations, and clinical decision support based on patient data.
+          - generic [ref=e116]:
+            - generic [ref=e119]: 
+            - generic [ref=e120]:
+              - heading "Ambient Listening" [level=4] [ref=e121]
+              - paragraph [ref=e122]: Real-time consultation recording with automatic transcription, speaker identification, and clinical chart population.
+          - generic [ref=e123]:
+            - generic [ref=e126]: 
+            - generic [ref=e127]:
+              - heading "Smart Prescription Suggestions" [level=4] [ref=e128]
+              - paragraph [ref=e129]: AI-powered medication recommendations based on diagnosis, patient history, and drug interactions analysis.
+          - generic [ref=e133]:
+            - heading "Predictive Analytics" [level=4] [ref=e134]
+            - paragraph [ref=e135]: Advanced analytics for risk assessment, patient outcome predictions, and practice performance optimization.
+        - generic [ref=e138]:
+          - generic [ref=e139]: 
+          - heading "AI-Powered Healthcare" [level=3] [ref=e140]
+          - paragraph [ref=e141]: Experience the future of medical practice management with cutting-edge artificial intelligence
+          - generic [ref=e142]:
+            - generic [ref=e143]:
+              - generic [ref=e144]: 24/7
+              - text: AI Availability
+            - generic [ref=e145]:
+              - generic [ref=e146]: 95%
+              - text: Accuracy Rate
+            - generic [ref=e147]:
+              - generic [ref=e148]: 50%
+              - text: Time Saved
+    - generic [ref=e150]:
+      - generic [ref=e151]:
+        - heading "How It Works" [level=2] [ref=e152]
+        - paragraph [ref=e153]: Get started in three simple steps
+      - generic [ref=e154]:
+        - generic [ref=e156]:
+          - generic [ref=e157]: "1"
+          - generic [ref=e158]:
+            - generic [ref=e159]: 
+            - heading "Create Account" [level=4] [ref=e160]
+            - paragraph [ref=e161]: Sign up and set up your practice profile in minutes.
+        - generic [ref=e163]:
+          - generic [ref=e164]: "2"
+          - generic [ref=e165]:
+            - generic [ref=e166]: 
+            - heading "Configure Settings" [level=4] [ref=e167]
+            - paragraph [ref=e168]: Set your availability, appointment types, and preferences.
+        - generic [ref=e170]:
+          - generic [ref=e171]: "3"
+          - generic [ref=e172]:
+            - generic [ref=e173]: 
+            - heading "Start Managing" [level=4] [ref=e174]
+            - paragraph [ref=e175]: Begin accepting appointments and managing patients.
+    - generic [ref=e178]:
+      - generic [ref=e180]:
+        - generic [ref=e181]: 500+
+        - generic [ref=e182]: Active Doctors
+      - generic [ref=e184]:
+        - generic [ref=e185]: 10K+
+        - generic [ref=e186]: Appointments Booked
+      - generic [ref=e188]:
+        - generic [ref=e189]: 25K+
+        - generic [ref=e190]: Patients Served
+      - generic [ref=e192]:
+        - generic [ref=e193]: 4.8★
+        - generic [ref=e194]: Average Rating
+    - generic [ref=e196]:
+      - generic [ref=e197]:
+        - heading "Why Choose MedCura AI" [level=2] [ref=e198]
+        - paragraph [ref=e199]: Built for modern healthcare professionals
+      - generic [ref=e200]:
+        - generic [ref=e202]:
+          - generic [ref=e204]: 
+          - heading "Save Time" [level=5] [ref=e205]
+          - paragraph [ref=e206]: Reduce documentation time with voice transcription and automated workflows
+        - generic [ref=e208]:
+          - generic [ref=e210]: 
+          - heading "Secure & Reliable" [level=5] [ref=e211]
+          - paragraph [ref=e212]: Enterprise-grade security with encrypted data storage and backups
+        - generic [ref=e214]:
+          - generic [ref=e216]: 
+          - heading "Access Anywhere" [level=5] [ref=e217]
+          - paragraph [ref=e218]: Cloud-based platform accessible from any device, anytime
+        - generic [ref=e220]:
+          - generic [ref=e222]: 
+          - heading "Expert Support" [level=5] [ref=e223]
+          - paragraph [ref=e224]: Dedicated support team to help you get the most from the platform
+    - generic [ref=e227]:
+      - heading "Ready to Transform Your Practice?" [level=2] [ref=e228]
+      - paragraph [ref=e229]: Join healthcare professionals using modern EMR technology
+      - generic [ref=e230]:
+        - link " Start Free Trial" [ref=e231] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/register-doctor
+          - generic [ref=e232]: 
+          - text: Start Free Trial
+        - link " Contact Sales" [ref=e233] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/contact
+          - generic [ref=e234]: 
+          - text: Contact Sales
+      - paragraph [ref=e236]:
+        - generic [ref=e237]: 
+        - text: No credit card required
+        - generic [ref=e238]: 
+        - text: Cancel anytime
+  - contentinfo [ref=e239]:
+    - generic [ref=e240]:
+      - generic [ref=e241]:
+        - generic [ref=e243]:
+          - heading " Clinical Decision Support" [level=4] [ref=e244]:
+            - generic [ref=e245]: 
+            - text: Clinical Decision Support
+          - paragraph [ref=e246]: Revolutionizing healthcare with cutting-edge clinical technology. Empowering medical professionals with advanced decision support tools for superior patient care and outcomes.
+          - generic [ref=e247]:
+            - link "" [ref=e248] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e249]: 
+            - link "" [ref=e250] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e251]: 
+            - link "" [ref=e252] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e253]: 
+            - link "" [ref=e254] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e255]: 
+        - generic [ref=e256]:
+          - heading "Platform" [level=6] [ref=e257]
+          - list [ref=e258]:
+            - listitem [ref=e259]:
+              - link "Home" [ref=e260] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000
+            - listitem [ref=e261]:
+              - link "About Us" [ref=e262] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/about
+            - listitem [ref=e263]:
+              - link "Contact" [ref=e264] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/contact
+            - listitem [ref=e265]:
+              - link "Login" [ref=e266] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/login
+        - generic [ref=e267]:
+          - heading "Support" [level=6] [ref=e268]
+          - list [ref=e269]:
+            - listitem [ref=e270]:
+              - link "About Platform" [ref=e271] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/about
+            - listitem [ref=e272]:
+              - link "Contact Support" [ref=e273] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/contact
+        - generic [ref=e274]:
+          - heading "Contact & Support" [level=6] [ref=e275]
+          - generic [ref=e276] [cursor=pointer]: 
+          - generic [ref=e277]:
+            - generic [ref=e279]: 
+            - generic [ref=e280]:
+              - generic [ref=e281]: 24/7 Support
+              - text: AI-Powered Help Available
+          - generic [ref=e282]:
+            - generic [ref=e284]: 
+            - generic [ref=e285]:
+              - generic [ref=e286]: Security & Privacy
+              - text: HIPAA Compliant Platform
+          - generic [ref=e287]:
+            - heading "Need Help?" [level=6] [ref=e288]
+            - paragraph [ref=e289]: Our AI-powered support is here to assist you
+            - link " Contact Support" [ref=e290] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/contact
+              - generic [ref=e291]: 
+              - text: Contact Support
+      - separator [ref=e292]
+      - generic [ref=e293]:
+        - paragraph [ref=e295]: © 2026 MedCura Clinical Platform. All rights reserved.
+        - generic [ref=e297]:
+          - text: Secure & HIPAA Compliant
+          - link "Contact Us" [ref=e298] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/contact
+          - link "Admin" [ref=e299] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/login
+  - generic [ref=e300] [cursor=pointer]: 
