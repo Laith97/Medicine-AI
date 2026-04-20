@@ -134,6 +134,14 @@
                             @endforeach
                         </div>
                     @endif
+
+                    <!-- Ask Follow-up Question Button -->
+                    <div class="mt-4 pt-3 border-top">
+                        <a href="{{ route('patient.messages.index') }}?diagnosis_id={{ $diagnosis->id }}&doctor_id={{ $diagnosis->doctor_id }}&subject={{ urlencode('Follow-up: ' . Str::limit($diagnosis->diagnosis_text, 40)) }}"
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-question-circle me-1"></i>Ask Follow-up Question
+                        </a>
+                    </div>
                 </div>
             </div>
 

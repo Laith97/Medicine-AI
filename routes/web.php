@@ -13,6 +13,8 @@ use App\Http\Controllers\UserSettingsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Doctor\DashboardController as DoctorDashboardController;
 use App\Http\Controllers\Doctor\AvailabilityController;
+use App\Http\Controllers\Doctor\MessagesController as DoctorMessagesController;
+use App\Http\Controllers\Patient\MessagesController as PatientMessagesController;
 use App\Http\Controllers\Auth\PatientRegistrationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\SubscriptionController;
@@ -373,6 +375,15 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     // Prescription routes
     Route::get('/prescriptions/{prescription}', [PrescriptionController::class, 'show'])->name('prescriptions.show');
     Route::delete('/prescriptions/{prescription}', [PrescriptionController::class, 'destroy'])->name('prescriptions.destroy');
+
+    // Patient Messages routes
+    Route::middleware('role:patient')->prefix('patient')->name('patient.')->group(function () {
+        Route::get('/messages', [PatientMessagesController::class, 'index'])->name('messages.index');
+        Route::get('/messages/{thread}', [PatientMessagesController::class, 'show'])->name('messages.show');
+        Route::post('/messages', [PatientMessagesController::class, 'store'])->name('messages.store');
+        Route::post('/messages/{thread}/reply', [PatientMessagesController::class, 'reply'])->name('messages.reply');
+        Route::get('/messages/attachment/{attachment}', [PatientMessagesController::class, 'attachment'])->name('messages.attachment');
+    });
 
     // Notification routes
     Route::prefix('notifications')->name('notifications.')->group(function () {
@@ -834,6 +845,9 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
     Route::get('/settings/appointments', [App\Http\Controllers\Doctor\AppointmentSettingsController::class, 'index'])->name('settings.appointments');
     Route::put('/settings/appointments', [App\Http\Controllers\Doctor\AppointmentSettingsController::class, 'updateAppointmentTypes'])->name('settings.appointments.update');
 
+    // SMS Provider Settings
+    Route::get('/sms-settings', [App\Http\Controllers\Doctor\DashboardController::class, 'smsSettings'])->name('sms-settings');
+
     // Google integration
     Route::prefix('google')->name('google.')->group(function () {
         Route::get('/redirect', [GoogleController::class, 'redirectToGoogle'])->name('redirect');
@@ -920,6 +934,17 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
         Route::post('/activate', [App\Http\Controllers\Doctor\KioskController::class, 'activate'])->name('activate');
         Route::post('/deactivate', [App\Http\Controllers\Doctor\KioskController::class, 'deactivate'])->name('deactivate');
         Route::post('/regenerate-token', [App\Http\Controllers\Doctor\KioskController::class, 'regenerateToken'])->name('regenerate-token');
+    });
+
+    // Doctor Messages routes
+    Route::prefix('messages')->name('messages.')->group(function () {
+        Route::get('/', [DoctorMessagesController::class, 'index'])->name('index');
+        Route::get('/{thread}', [DoctorMessagesController::class, 'show'])->name('show');
+        Route::post('/{thread}/reply', [DoctorMessagesController::class, 'reply'])->name('reply');
+        Route::post('/{thread}/suggestion/generate', [DoctorMessagesController::class, 'generateSuggestion'])->name('generate-suggestion');
+        Route::post('/{thread}/suggestion/{suggestion}/approve', [DoctorMessagesController::class, 'approveSuggestion'])->name('approve-suggestion');
+        Route::post('/{thread}/suggestion/{suggestion}/reject', [DoctorMessagesController::class, 'rejectSuggestion'])->name('reject-suggestion');
+        Route::get('/attachment/{attachment}', [DoctorMessagesController::class, 'attachment'])->name('attachment');
     });
 });
 
@@ -1535,6 +1560,20 @@ Route::middleware(['auth', 'role:patient'])->prefix('patient/waitlist')->name('p
     Route::get('/offer/{entry}', [App\Http\Controllers\Patient\WaitlistController::class, 'viewOffer'])->name('offer');
     Route::get('/preferences', [App\Http\Controllers\Patient\WaitlistController::class, 'preferences'])->name('preferences');
     Route::put('/preferences', [App\Http\Controllers\Patient\WaitlistController::class, 'updatePreferences'])->name('preferences.update');
+});
+
+// Patient Health Tracking Routes
+Route::middleware(['auth', 'role:patient'])->prefix('patient/health')->name('patient.health.')->group(function () {
+    Route::get('/', [App\Http\Controllers\Patient\HealthTrackingController::class, 'dashboard'])->name('dashboard');
+    Route::get('/journal', [App\Http\Controllers\Patient\HealthTrackingController::class, 'journalEntry'])->name('journal');
+    Route::post('/journal', [App\Http\Controllers\Patient\HealthTrackingController::class, 'storeJournal'])->name('journal.store');
+    Route::get('/medications', [App\Http\Controllers\Patient\HealthTrackingController::class, 'medications'])->name('medications');
+    Route::post('/medications', [App\Http\Controllers\Patient\HealthTrackingController::class, 'addMedication'])->name('medications.add');
+    Route::post('/medications/{log}/take', [App\Http\Controllers\Patient\HealthTrackingController::class, 'takeMedication'])->name('medications.take');
+    Route::post('/medications/{log}/skip', [App\Http\Controllers\Patient\HealthTrackingController::class, 'skipMedication'])->name('medications.skip');
+    Route::get('/history', [App\Http\Controllers\Patient\HealthTrackingController::class, 'history'])->name('history');
+    Route::get('/insights', [App\Http\Controllers\Patient\HealthInsightsController::class, 'index'])->name('insights');
+    Route::post('/insights/generate', [App\Http\Controllers\Patient\HealthInsightsController::class, 'generate'])->name('insights.generate');
 });
 
 Route::middleware(['auth', 'role:doctor'])->prefix('doctor/waitlist')->name('doctor.waitlist.')->group(function () {

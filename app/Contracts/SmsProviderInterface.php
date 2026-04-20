@@ -40,4 +40,29 @@ interface SmsProviderInterface
      * @return string
      */
     public function getKey(): string;
+
+    /**
+     * Get message status by ID
+     *
+     * @param string $messageId Message ID
+     * @return array Response array with status information
+     */
+    public function getMessageStatus(string $messageId): array;
+
+    /**
+     * Send bulk SMS messages
+     *
+     * @param array $recipients Array of recipient phone numbers
+     * @param string $message Message content
+     * @return array Response array with success status and results
+     */
+    public function sendBulkSms(array $recipients, string $message): array;
+
+    /**
+     * Get delivery report for a message
+     *
+     * @param string $messageId Message ID
+     * @return array Delivery report data
+     */
+    public function getDeliveryReport(string $messageId): array;
 }

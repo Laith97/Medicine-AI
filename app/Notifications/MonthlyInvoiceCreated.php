@@ -25,14 +25,31 @@ class MonthlyInvoiceCreated extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels = ['mail'];
-        
-        // Add SMS if user has phone number and Twilio is configured
-        if ($notifiable->phone && config('services.twilio.sid')) {
-            $channels[] = TwilioChannel::class;
-        }
+        $channels = ['mail', 'sms'];
         
         return $channels;
+    }
+
+    /**
+     * Get the SMS representation of the notification.
+     */
+    public function toSms(object $notifiable): array
+    {
+        $doctorId = $this->invoice->user_id ?? 0;
+        $hospitalId = 0;
+
+        $message = "New monthly invoice for {$this->invoice->getFormattedPeriod()}: {$this->invoice->getFormattedAmountDue()} due {$this->invoice->due_date->format('M j')}. ";
+        $message .= "Pay online: " . route('invoices.show', $this->invoice);
+
+        return [
+            'message' => $message,
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'invoice_notification',
+                'context_id' => $this->invoice->id,
+            ]
+        ];
     }
 
     /**

@@ -115,6 +115,114 @@ class UnifonicProvider implements SmsProviderInterface
         return 'unifonic';
     }
 
+    /**
+     * Get message status by ID
+     *
+     * @param string $messageId Message ID
+     * @return array Response array with status information
+     */
+    public function getMessageStatus(string $messageId): array
+    {
+        try {
+            if (!$this->isConfigured()) {
+                return [
+                    'success' => false,
+                    'message' => 'Unifonic provider not configured',
+                    'data' => []
+                ];
+            }
+
+            $response = Http::get($this->baseUrl . '/Messages/GetStatus', [
+                'AppSid' => $this->appSid,
+                'MessageID' => $messageId,
+            ]);
+
+            $responseData = $response->json();
+
+            if ($response->successful() && isset($responseData['success']) && $responseData['success']) {
+                return [
+                    'success' => true,
+                    'message' => 'Message status retrieved successfully',
+                    'data' => $responseData['data'] ?? []
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve message status',
+                'data' => []
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Unifonic message status check failed', [
+                'message_id' => $messageId,
+                'error' => $e->getMessage()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve message status: ' . $e->getMessage(),
+                'data' => []
+            ];
+        }
+    }
+
+    /**
+     * Send bulk SMS messages
+     *
+     * @param array $recipients Array of recipient phone numbers
+     * @param string $message Message content
+     * @return array Response array with success status and results
+     */
+    public function sendBulkSms(array $recipients, string $message): array
+    {
+        $results = [];
+        $successCount = 0;
+        $failureCount = 0;
+
+        foreach ($recipients as $recipient) {
+            $result = $this->send($recipient, $message);
+            $results[] = [
+                'recipient' => $recipient,
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data']
+            ];
+
+            if ($result['success']) {
+                $successCount++;
+            } else {
+                $failureCount++;
+            }
+        }
+
+        return [
+            'success' => $failureCount === 0,
+            'message' => "Bulk SMS sent: {$successCount} successful, {$failureCount} failed",
+            'data' => [
+                'results' => $results,
+                'success_count' => $successCount,
+                'failure_count' => $failureCount
+            ]
+        ];
+    }
+
+    /**
+     * Get delivery report for a message
+     *
+     * @param string $messageId Message ID
+     * @return array Delivery report data
+     */
+    public function getDeliveryReport(string $messageId): array
+    {
+        return $this->getMessageStatus($messageId);
+    }
+
+    /**
+     * Get Unifonic account balance
+     *
+     * @return array|null Balance information or null on failure
+     */
     public function getBalance(): ?array
     {
         try {

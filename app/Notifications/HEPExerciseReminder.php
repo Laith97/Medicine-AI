@@ -40,7 +40,31 @@ class HEPExerciseReminder extends Notification implements ShouldQueue
      */
     public function via($notifiable)
     {
-        return ['mail', 'database', 'broadcast'];
+        return ['mail', 'database', 'broadcast', 'sms'];
+    }
+
+    /**
+     * Get the SMS representation of the notification.
+     *
+     * @param mixed $notifiable
+     * @return array
+     */
+    public function toSms($notifiable): array
+    {
+        $program = $this->assignment->hepProgram;
+        $doctor = $program->doctor;
+        $doctorId = $doctor->id ?? 0;
+        $hospitalId = $doctor->hospital_id ?? 0;
+
+        return [
+            'message' => $this->buildMessage() . ' View: ' . route('patient.hep.show', $this->assignment),
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'hep_reminder',
+                'context_id' => $this->assignment->id,
+            ]
+        ];
     }
 
     /**

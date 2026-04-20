@@ -1581,6 +1581,12 @@ body .dropdown .dropdown-menu.show,
                                         </li>
                                         <li>
                                             <a class="dropdown-item d-flex align-items-center gap-2"
+                                                href="{{ route('doctor.sms-settings') }}">
+                                                <i class="fas fa-sms"></i> SMS Provider Settings
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2"
                                                 href="{{ route('doctor.profile.edit') }}">
                                                 <i class="fas fa-user-edit"></i>Edit Profile
                                             </a>
@@ -1851,8 +1857,8 @@ body .dropdown .dropdown-menu.show,
             <div style="position: absolute; top: -5px; left: 0; right: 0; height: 15px; background: linear-gradient(to bottom, rgba(222, 98, 98, 0.2), transparent); pointer-events: none;"></div>
             <main class="app-main">
                 @yield('content')
-            </div>
-        </main>
+            </main>
+        </div>
 
         <!-- Floating Assistant -->
         @auth

@@ -88,11 +88,21 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
     /**
      * Get the SMS representation of the notification.
      */
-    public function toSms(object $notifiable): string
+    public function toSms(object $notifiable): array
     {
         $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
+        $doctorId = $this->appointment->doctor->id ?? 0;
+        $hospitalId = $this->appointment->doctor->hospital_id ?? 0;
 
-        return "New appointment booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}. View details: " . route('appointments.show', $this->appointment->id);
+        return [
+            'message' => "New appointment booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}. View details: " . route('appointments.show', $this->appointment->id),
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'appointment_booked',
+                'context_id' => $this->appointment->id,
+            ]
+        ];
     }
 
     /**
