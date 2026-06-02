@@ -46,13 +46,8 @@ class UsageController extends Controller
             'total_appointments' => $totalAppointments,
         ];
 
-        // Get hospital doctor IDs once (outside loop) for monthly usage
-        $hospitalDoctorIds = $hospital->id ? User::where('hospital_id', $hospital->id)
-            ->where('role', 'doctor')
-            ->pluck('id')
-            : collect();
-
         // Get monthly usage data - real queries for last 12 months
+        // $hospitalDoctorIds was already resolved above (line 30) and is reused here.
         $monthlyUsage = collect(range(11, 0))->map(function ($monthsAgo) use ($hospitalDoctorIds) {
             $month = Carbon::now()->subMonths($monthsAgo);
             $startOfMonth = $month->copy()->startOfMonth();

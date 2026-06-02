@@ -224,7 +224,12 @@ class VoiceAssistantController extends Controller
 
         // Load available appointments for each patient (for appointment completion)
         $patientAppointments = [];
-        $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
+        // Use getEffectiveDoctorUser() to properly handle sub-user / impersonation:
+        // a sub-user acting on behalf of a parent doctor must be treated as the
+        // parent doctor. The previous `parent_user_id ?: Auth::id()` shortcut
+        // failed for hospital admins (no parent_user_id) and gave Auth::id()
+        // for sub-users (which is the sub-user's own user id, not the parent's).
+        $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
         $loggedInUserId = Auth::id();
 
         // Define appointment collections before using them
@@ -2202,7 +2207,12 @@ INSTRUCTIONS:
             $patient = User::findOrFail($request->selectedPatient);
 
             // Debug logging
-            $effectiveDoctorId = Auth::user()->parent_user_id ? Auth::user()->parent_user_id : Auth::id();
+            // Use getEffectiveDoctorUser() so sub-user / impersonation cases
+            // resolve to the parent doctor's user id. The previous
+            // `parent_user_id ?: Auth::id()` form broke for hospital admins
+            // (no parent_user_id) and was inconsistent with every other
+            // call site in this file.
+            $effectiveDoctorId = Auth::user()->getEffectiveDoctorUser()->id ?? Auth::id();
             Log::info('Voice Assistant - Complete consultation debug', [
                 'patient_id' => $patient->id,
                 'patient_name' => $patient->name,

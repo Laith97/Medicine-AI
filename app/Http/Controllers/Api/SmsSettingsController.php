@@ -8,7 +8,6 @@ use App\Models\Hospital;
 use App\Services\SmsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class SmsSettingsController extends Controller
 {

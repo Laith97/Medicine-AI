@@ -1,4 +1,4 @@
-@extends('layouts.patient')
+@extends('master')
 
 @section('title', 'Join Waitlist')
 
