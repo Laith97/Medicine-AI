@@ -202,6 +202,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Doctor Dashboard | MedCura AI')</title>
+    @yield('styles')
 </head>
 <body>
     <!-- Skip Navigation Link for Accessibility -->
@@ -374,5 +375,6 @@
             }
         });
     </script>
+    @yield('scripts')
 </body>
 </html>

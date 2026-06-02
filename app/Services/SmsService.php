@@ -19,16 +19,55 @@ class SmsService
 {
     protected $provider;
     protected $providerInstance;
+    /**
+     * Lazy-init flag: providers and system settings are not guaranteed to
+     * exist during the boot phase (e.g. before migrations have run, or on
+     * a fresh install with a missing `system_settings` table). Resolving
+     * them eagerly in the constructor caused a boot crash that the a3bcd0c
+     * commit previously fixed; we restore the deferred-init behaviour here.
+     */
+    private bool $initialized = false;
 
     public function __construct($providerInstance = null)
     {
         if ($providerInstance) {
             $this->providerInstance = $providerInstance;
             $this->provider = 'mock';
-        } else {
+            $this->initialized = true;
+        }
+        // Otherwise: defer resolution to first use via ensureInitialized().
+    }
+
+    /**
+     * Resolve the system provider on first use, with a try/catch fallback
+     * to the log provider. Safe to call repeatedly; no-op after first success.
+     */
+    private function ensureInitialized(): void
+    {
+        if ($this->initialized) {
+            return;
+        }
+        try {
             $this->provider = $this->getSystemProvider();
             $this->providerInstance = $this->createProviderInstance($this->provider);
+        } catch (\Exception $e) {
+            // Don't crash boot if the SMS system isn't reachable yet.
+            Log::warning('SmsService: lazy init failed, falling back to log provider', [
+                'error' => $e->getMessage(),
+            ]);
+            $this->provider = 'log';
+            try {
+                $this->providerInstance = new LogSmsProvider();
+            } catch (\Exception $inner) {
+                // Last-resort: leave providerInstance null. Every public
+                // method guards on it and returns a structured error.
+                Log::error('SmsService: failed to construct log provider fallback', [
+                    'error' => $inner->getMessage(),
+                ]);
+                $this->providerInstance = null;
+            }
         }
+        $this->initialized = true;
     }
 
     /**
@@ -41,6 +80,7 @@ class SmsService
      */
     public function send(string $to, string $message, array $options = []): array
     {
+        $this->ensureInitialized();
         try {
             // Determine provider using hierarchy
             $providerKey = $this->determineProvider($to, $options);
@@ -342,6 +382,10 @@ class SmsService
      */
     public function sendSms(string $to, string $message): array
     {
+        $this->ensureInitialized();
+        if (!$this->providerInstance) {
+            return ['success' => false, 'message' => 'No SMS provider available', 'data' => []];
+        }
         return $this->providerInstance->send($to, $message);
     }
 
@@ -439,6 +483,7 @@ class SmsService
      */
     public function getProviderName(): string
     {
+        $this->ensureInitialized();
         return $this->providerInstance ? $this->providerInstance->getName() : 'Unknown';
     }
 
@@ -449,6 +494,7 @@ class SmsService
      */
     public function isProviderConfigured(): bool
     {
+        $this->ensureInitialized();
         return $this->providerInstance ? $this->providerInstance->isConfigured() : false;
     }
 
@@ -494,6 +540,7 @@ class SmsService
      */
     public function setActiveProvider(string $provider): bool
     {
+        $this->ensureInitialized();
         if (!$this->isValidProvider($provider)) {
             return false;
         }
@@ -825,6 +872,10 @@ class SmsService
      */
     public function getSmsStatus(string $messageId): array
     {
+        $this->ensureInitialized();
+        if (!$this->providerInstance) {
+            return ['success' => false, 'message' => 'No SMS provider available', 'data' => []];
+        }
         return $this->providerInstance->getMessageStatus($messageId);
     }
 
@@ -837,6 +888,10 @@ class SmsService
      */
     public function sendBulkSms(array $recipients, string $message): array
     {
+        $this->ensureInitialized();
+        if (!$this->providerInstance) {
+            return ['success' => false, 'message' => 'No SMS provider available', 'data' => []];
+        }
         return $this->providerInstance->sendBulkSms($recipients, $message);
     }
 
@@ -848,6 +903,10 @@ class SmsService
      */
     public function getDeliveryReport(string $messageId): array
     {
+        $this->ensureInitialized();
+        if (!$this->providerInstance) {
+            return ['success' => false, 'message' => 'No SMS provider available', 'data' => []];
+        }
         return $this->providerInstance->getDeliveryReport($messageId);
     }
 

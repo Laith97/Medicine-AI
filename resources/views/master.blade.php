@@ -408,6 +408,7 @@ body .dropdown .dropdown-menu.show,
     <link rel="stylesheet" href="{{ asset('css/custom-buttons.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     @stack('styles')
+    @yield('styles')
 
     <!-- Global Font Styling -->
     <style>
@@ -2069,6 +2070,7 @@ body .dropdown .dropdown-menu.show,
 
 {{-- Extra scripts --}}
 @stack('scripts')
+@yield('scripts')
 
 {{-- AJAX Navigation Script --}}
 <script>

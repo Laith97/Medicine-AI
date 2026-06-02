@@ -1,4 +1,4 @@
-@extends('layouts.patient')
+@extends('master')
 
 @section('title', 'Waitlist Dashboard')
 
@@ -346,7 +346,7 @@ document.querySelectorAll('[data-action]').forEach(button => {
 });
 
 function leaveWaitlist(waitlistId) {
-    fetch(`/api/patient/waitlist/leave/${waitlistId}`, {
+    fetch(`/patient/waitlist/leave/${waitlistId}`, {
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
