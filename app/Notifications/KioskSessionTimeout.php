@@ -5,10 +5,13 @@ namespace App\Notifications;
 use App\Models\KioskSession;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 
-class KioskSessionTimeout extends Notification implements ShouldQueue
+class KioskSessionTimeout extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
@@ -23,7 +26,25 @@ class KioskSessionTimeout extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database', 'mail', 'broadcast'];
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'kiosk_session_timeout',
+            'session_id' => $this->session->session_id,
+            'kiosk_id' => $this->session->kiosk_id,
+            'kiosk_name' => $this->session->kiosk->name,
+            'title' => 'Kiosk Session Timeout',
+            'message' => "Session {$this->session->session_id} on kiosk {$this->session->kiosk->name} has timed out.",
+            'link' => "/admin/kiosks/{$this->session->kiosk->id}",
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     /**
@@ -71,5 +92,25 @@ class KioskSessionTimeout extends Notification implements ShouldQueue
             'action_url' => "/admin/kiosks/{$this->session->kiosk->id}",
             'action_text' => 'View Kiosk',
         ];
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'kiosk-session-timeout';
     }
 }

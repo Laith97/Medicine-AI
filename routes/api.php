@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\NotificationTestController;
 use App\Http\Controllers\Api\BillingController;
 use App\Http\Controllers\Api\EligibilityController;
+use App\Http\Controllers\Api\SmsSettingsController;
 use App\Http\Controllers\UserSettingsController;
 
 /*
@@ -31,7 +32,7 @@ Route::middleware('auth')->post('/predictions', [App\Http\Controllers\Api\Predic
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'web'])->group(function () {
+Route::middleware(['auth:web'])->group(function () {
     // User settings
     Route::get('/user/settings', [UserSettingsController::class, 'getSettings']);
 
@@ -328,6 +329,24 @@ Route::middleware(['auth', 'web'])->group(function () {
         Route::post('generate', [App\Http\Controllers\Api\TreatmentOptimizationController::class, 'store']);
         Route::post('{id}/validate', [App\Http\Controllers\Api\TreatmentOptimizationController::class, 'validateRecommendation']);
         Route::post('{id}/reject', [App\Http\Controllers\Api\TreatmentOptimizationController::class, 'rejectRecommendation']);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | SMS Settings API Routes
+    |--------------------------------------------------------------------------
+    */
+
+    // Doctor SMS settings (protected by auth and EnsureUserIsDoctor middleware)
+    Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsDoctor::class])->group(function () {
+        Route::get('/doctor/sms-settings', [SmsSettingsController::class, 'getDoctorSettings']);
+        Route::put('/doctor/sms-settings', [SmsSettingsController::class, 'updateDoctorSettings']);
+    });
+
+    // Hospital SMS settings (protected by auth and HospitalAdminMiddleware)
+    Route::middleware(['auth', \App\Http\Middleware\HospitalAdminMiddleware::class])->group(function () {
+        Route::get('/hospital/{hospital}/sms-settings', [SmsSettingsController::class, 'getHospitalSettings']);
+        Route::put('/hospital/{hospital}/sms-settings', [SmsSettingsController::class, 'updateHospitalSettings']);
     });
 });
 

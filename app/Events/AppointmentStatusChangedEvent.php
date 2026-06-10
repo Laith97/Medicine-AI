@@ -2,12 +2,14 @@
 
 namespace App\Events;
 
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use App\Models\Appointment;
 
-class AppointmentStatusChangedEvent
+class AppointmentStatusChangedEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -28,30 +30,31 @@ class AppointmentStatusChangedEvent
     {
         $channels = [];
 
-        // Broadcast to doctor's channel
+        // Broadcast to doctor's channel - use doctor.user_id for App.User channel
         if ($this->appointment->doctor) {
-            $channels[] = new \Illuminate\Broadcasting\Channel('doctor.' . $this->appointment->doctor->id);
-            $channels[] = new \Illuminate\Broadcasting\Channel('App.User.' . $this->appointment->doctor->id);
+            $channels[] = new PrivateChannel('doctor.' . $this->appointment->doctor->id);
+            // Use doctor->user_id (the user account ID) for App.User channel, not doctor->id
+            $channels[] = new PrivateChannel('App.User.' . $this->appointment->doctor->user_id);
         }
 
         // Broadcast to patient's channel if registered patient
         if ($this->appointment->patient_id) {
-            $channels[] = new \Illuminate\Broadcasting\Channel('App.User.' . $this->appointment->patient_id);
+            $channels[] = new PrivateChannel('App.User.' . $this->appointment->patient_id);
         }
 
         // Broadcast to clinic staff channels (admin, hospital_admin, manager, supervisor)
-        $channels[] = new \Illuminate\Broadcasting\Channel('admin');
-        $channels[] = new \Illuminate\Broadcasting\Channel('clinic-staff');
+        $channels[] = new PrivateChannel('admin');
+        $channels[] = new PrivateChannel('clinic-staff');
 
         // Broadcast to appointment-specific channel
-        $channels[] = new \Illuminate\Broadcasting\Channel('appointment.' . $this->appointment->id);
+        $channels[] = new PrivateChannel('appointment.' . $this->appointment->id);
 
         return $channels;
     }
 
     public function broadcastAs()
     {
-        return 'appointment.status-changed';
+        return 'appointment-status-changed';
     }
 
     public function broadcastWith()

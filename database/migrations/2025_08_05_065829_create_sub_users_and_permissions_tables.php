@@ -58,11 +58,36 @@ return new class extends Migration
     {
         Schema::dropIfExists('user_permissions');
         Schema::dropIfExists('permissions');
-        
+
+        // Drop foreign key constraint and index using direct SQL statements
+        try {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE `users` DROP FOREIGN KEY `users_parent_user_id_foreign`");
+        } catch (\Exception $e) {
+            // Foreign key doesn't exist, continue silently
+        }
+
+        try {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE `users` DROP INDEX `users_parent_user_id_is_sub_user_index`");
+        } catch (\Exception $e) {
+            // Index doesn't exist, continue silently
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['parent_user_id']);
-            $table->dropIndex(['parent_user_id', 'is_sub_user']);
-            $table->dropColumn(['parent_user_id', 'sub_user_role', 'is_sub_user']);
+            // Drop columns if they exist
+            $columnsToDrop = [];
+            if (Schema::hasColumn('users', 'parent_user_id')) {
+                $columnsToDrop[] = 'parent_user_id';
+            }
+            if (Schema::hasColumn('users', 'sub_user_role')) {
+                $columnsToDrop[] = 'sub_user_role';
+            }
+            if (Schema::hasColumn('users', 'is_sub_user')) {
+                $columnsToDrop[] = 'is_sub_user';
+            }
+
+            if (!empty($columnsToDrop)) {
+                $table->dropColumn($columnsToDrop);
+            }
         });
     }
 };

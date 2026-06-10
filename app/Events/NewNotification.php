@@ -2,10 +2,8 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -15,22 +13,40 @@ class NewNotification implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $message;
+    protected $userId;
 
     /**
      * Create a new event instance.
      */
-    public function __construct($message)
+    public function __construct($message, ?int $userId = null)
     {
         $this->message = $message;
+        $this->userId = $userId ?? ($message['user_id'] ?? null);
     }
 
     /**
      * Get the channels the event should broadcast on.
+     *
+     * @throws \RuntimeException if userId is not provided
      */
     public function broadcastOn(): array
     {
+        if (!$this->userId) {
+            throw new \RuntimeException('Cannot broadcast notification without userId');
+        }
+
         return [
-            new Channel('notifications'),
+            new PrivateChannel('App.User.' . $this->userId),
         ];
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'NewNotification';
+    }
+
+    public function broadcastWith(): array
+    {
+        return $this->message;
     }
 }

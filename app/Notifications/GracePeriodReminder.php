@@ -6,11 +6,14 @@ use App\Models\MonthlyInvoiceSetting;
 use App\Services\SmsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Support\Facades\Log;
 
-class GracePeriodReminder extends Notification
+class GracePeriodReminder extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
@@ -20,14 +23,31 @@ class GracePeriodReminder extends Notification
 
     public function via($notifiable): array
     {
-        $channels = ['mail'];
-        
+        $channels = ['mail', 'database', 'broadcast'];
+
         // Add SMS if user has phone number
         if ($notifiable->phone) {
             $channels[] = 'sms';
         }
-        
+
         return $channels;
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        $daysRemaining = $this->setting->getDaysRemainingInCurrentPeriod();
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'grace_period_reminder',
+            'days_remaining' => $daysRemaining,
+            'title' => 'Subscription Expired - Grace Period Active',
+            'message' => "You have {$daysRemaining} days remaining in your grace period. Renew now!",
+            'link' => route('subscription.manage'),
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     public function toMail($notifiable): MailMessage
@@ -78,5 +98,25 @@ class GracePeriodReminder extends Notification
                 'data' => []
             ];
         }
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'grace-period-reminder';
     }
 }

@@ -765,6 +765,8 @@
     }
     </script>
 
+    <!-- Unified Notification System is now handled by Vite in app.js -->
+    
     @stack('scripts')
 </body>
 </html>

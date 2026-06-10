@@ -5,10 +5,13 @@ namespace App\Notifications;
 use App\Models\PatientInsurance;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 
-class EligibilityExpiringNotification extends Notification implements ShouldQueue
+class EligibilityExpiringNotification extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
@@ -22,6 +25,8 @@ class EligibilityExpiringNotification extends Notification implements ShouldQueu
     {
         $this->patientInsurance = $patientInsurance;
         $this->daysUntilExpiry = $daysUntilExpiry;
+        $this->onQueue('realtime');
+        $this->delay(0);
     }
 
     /**
@@ -31,7 +36,26 @@ class EligibilityExpiringNotification extends Notification implements ShouldQueu
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'broadcast'];
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'eligibility_expiring',
+            'patient_insurance_id' => $this->patientInsurance->id,
+            'insurance_provider' => $this->patientInsurance->insuranceProvider->name,
+            'policy_number' => $this->patientInsurance->policy_number,
+            'days_until_expiry' => $this->daysUntilExpiry,
+            'title' => 'Insurance Eligibility Expiring',
+            'message' => "Your {$this->patientInsurance->insuranceProvider->name} eligibility expires in {$this->daysUntilExpiry} days",
+            'link' => '/patient/insurance',
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     /**
@@ -65,5 +89,25 @@ class EligibilityExpiringNotification extends Notification implements ShouldQueu
             'related_type' => 'patient_insurance',
             'related_id' => $this->patientInsurance->id,
         ];
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'eligibility-expiring';
     }
 }

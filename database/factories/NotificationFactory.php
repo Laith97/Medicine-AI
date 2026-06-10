@@ -2,13 +2,17 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Notifications\DatabaseNotification;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Notification>
  */
 class NotificationFactory extends Factory
 {
+    protected $model = DatabaseNotification::class;
+
     /**
      * Define the model's default state.
      *
@@ -16,18 +20,20 @@ class NotificationFactory extends Factory
      */
     public function definition(): array
     {
+        static $sequence = 0;
+        $sequence++;
         return [
-            'user_id' => \App\Models\User::factory(),
-            'title' => $this->faker->sentence(3),
-            'message' => $this->faker->paragraph(),
-            'type' => $this->faker->randomElement(['info', 'success', 'warning', 'error']),
-            'action_url' => $this->faker->optional()->url(),
-            'is_read' => $this->faker->boolean(30), // 30% chance of being read
-            'data' => $this->faker->optional()->randomElement([
-                ['key' => 'value'],
-                ['appointment_id' => $this->faker->numberBetween(1, 100)],
-                ['payment_amount' => $this->faker->randomFloat(2, 10, 500)],
-            ]),
+            'id' => $this->faker->uuid(),
+            'type' => 'App\\Notifications\\TestNotification',
+            'notifiable_type' => User::class,
+            'notifiable_id' => 1, // Will be overridden in tests
+            'data' => [
+                'title' => 'Test Notification ' . $sequence,
+                'message' => $this->faker->paragraph(),
+                'icon' => 'bell',
+                'link' => '/notifications',
+            ],
+            'read_at' => null,
         ];
     }
 
@@ -37,7 +43,7 @@ class NotificationFactory extends Factory
     public function unread(): static
     {
         return $this->state(fn (array $attributes) => [
-            'is_read' => false,
+            'read_at' => null,
         ]);
     }
 
@@ -47,7 +53,7 @@ class NotificationFactory extends Factory
     public function read(): static
     {
         return $this->state(fn (array $attributes) => [
-            'is_read' => true,
+            'read_at' => now(),
         ]);
     }
 

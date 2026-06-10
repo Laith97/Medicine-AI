@@ -6,28 +6,49 @@ use App\Models\MonthlyInvoiceSetting;
 use App\Services\SmsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Support\Facades\Log;
 
-class AccountRestricted extends Notification implements ShouldQueue
+class AccountRestricted extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
     public function __construct(
         private MonthlyInvoiceSetting $setting
-    ) {}
+    ) {
+        $this->onQueue('realtime');
+        $this->delay(0);
+    }
 
     public function via($notifiable): array
     {
-        $channels = ['mail'];
-        
+        $channels = ['mail', 'database', 'broadcast'];
+
         // Add SMS if user has phone number
         if ($notifiable->phone) {
             $channels[] = 'sms';
         }
-        
+
         return $channels;
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'account_restricted',
+            'title' => 'Account Restricted',
+            'message' => 'Your account has been restricted due to expired subscription.',
+            'link' => route('subscription.manage'),
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     public function toMail($notifiable): MailMessage
@@ -88,5 +109,25 @@ class AccountRestricted extends Notification implements ShouldQueue
                 'data' => []
             ];
         }
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'account-restricted';
     }
 }

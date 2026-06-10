@@ -175,9 +175,15 @@ class PusherConnectionPool
     {
         $driver = config('broadcasting.default');
         if ($driver !== 'pusher') {
-            Log::info('Broadcasting skipped because driver is ' . $driver, compact('channels', 'event'));
-            return true;
+            Log::warning('Broadcasting skipped because driver is ' . $driver, compact('channels', 'event'));
+            return false;
         }
+
+        if (empty($channels)) {
+            Log::warning('Broadcast called with empty channels', ['event' => $event]);
+            return false;
+        }
+
         // Get optimal server for load balancing
         $server = $this->loadBalancer->getOptimalServer($channels, $event);
         $serverId = $server['id'] ?? 'primary';
@@ -230,7 +236,8 @@ class PusherConnectionPool
                 'channels' => $channels,
                 'event' => $event,
                 'server_id' => $serverId,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'exception_type' => get_class($e)
             ]);
             return false;
         }

@@ -5,10 +5,13 @@ namespace App\Notifications;
 use App\Models\WorkflowTask;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 
-class UrgentTaskAlert extends Notification implements ShouldQueue
+class UrgentTaskAlert extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
@@ -27,7 +30,28 @@ class UrgentTaskAlert extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'broadcast'];
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'urgent_task_escalation',
+            'task_id' => $this->task->id,
+            'task_title' => $this->task->title,
+            'task_type' => $this->task->task_type,
+            'assigned_to' => $this->task->assigned_to,
+            'due_date' => $this->task->due_date,
+            'days_overdue' => abs($this->task->daysUntilDue()),
+            'title' => 'URGENT: Task Escalated',
+            'message' => "URGENT ESCALATION: {$this->task->title} is critically overdue",
+            'link' => "/admin/tasks/{$this->task->id}",
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     /**
@@ -92,5 +116,27 @@ class UrgentTaskAlert extends Notification implements ShouldQueue
             'App\Models\AppealWorkflow' => "Appeal for Claim #{$this->task->taskable->claim->claim_id}",
             default => null,
         };
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        // Use the task's assigned_to directly since notifiable may be null during queue processing
+        $userId = $this->task->assigned_to ?? $this->notifiable?->id ?? 'default';
+        return [new PrivateChannel('App.User.' . $userId)];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'urgent-task-escalation';
     }
 }

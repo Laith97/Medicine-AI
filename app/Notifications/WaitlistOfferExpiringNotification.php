@@ -49,22 +49,22 @@ class WaitlistOfferExpiringNotification extends Notification implements ShouldBr
      */
     public function toArray(object $notifiable): array
     {
-        $doctorName = $this->waitlistEntry->waitlist->doctor->user->name ?? 'Unknown Doctor';
-        $expiresAt = $this->waitlistEntry->expires_at;
+        $doctorName = $this->waitlistEntry?->waitlist?->doctor?->user?->name ?? 'Unknown Doctor';
+        $expiresAt = $this->waitlistEntry?->expires_at;
 
         return [
             'type' => 'waitlist_offer_expiring',
             'title' => 'Appointment Offer Expiring Soon',
             'message' => "Your appointment offer with Dr. {$doctorName} expires in 1 hour",
             'icon' => 'clock',
-            'link' => route('waitlist.show', $this->waitlistEntry->id),
+            'link' => $this->waitlistEntry?->id ? route('waitlist.show', $this->waitlistEntry->id) : '#',
             'link_text' => 'Book Now',
             'related_type' => 'waitlist_entry',
-            'related_id' => $this->waitlistEntry->id,
+            'related_id' => $this->waitlistEntry?->id,
             'data' => [
-                'waitlist_entry_id' => $this->waitlistEntry->id,
+                'waitlist_entry_id' => $this->waitlistEntry?->id,
                 'doctor_name' => $doctorName,
-                'position' => $this->waitlistEntry->position,
+                'position' => $this->waitlistEntry?->position,
                 'expires_at' => $expiresAt?->format('Y-m-d H:i:s'),
                 'time_remaining' => $expiresAt ? now()->diffInMinutes($expiresAt) : null,
             ]
@@ -76,32 +76,42 @@ class WaitlistOfferExpiringNotification extends Notification implements ShouldBr
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $doctorName = $this->waitlistEntry->waitlist->doctor->user->name ?? 'Unknown Doctor';
-        $expiresAt = $this->waitlistEntry->expires_at;
+        $doctorName = $this->waitlistEntry?->waitlist?->doctor?->user?->name ?? 'Unknown Doctor';
+        $expiresAt = $this->waitlistEntry?->expires_at;
 
         return (new MailMessage)
             ->subject('Appointment Offer Expiring Soon')
             ->greeting('Hello ' . $notifiable->name . ',')
             ->line("Your appointment offer with Dr. {$doctorName} is expiring soon!")
-            ->line('Your position in the waitlist: #' . $this->waitlistEntry->position)
+            ->line('Your position in the waitlist: #' . ($this->waitlistEntry?->position ?? 'N/A'))
             ->when($expiresAt, function ($mail) use ($expiresAt) {
                 return $mail->line('Offer expires on: ' . $expiresAt->format('M j, Y g:i A'));
             })
-            ->action('Book Now', route('waitlist.show', $this->waitlistEntry->id))
+            ->action('Book Now', $this->waitlistEntry?->id ? route('waitlist.show', $this->waitlistEntry->id) : '#')
             ->line('Don\'t let this opportunity slip away!');
     }
 
     /**
      * Get the SMS representation of the notification.
      */
-    public function toSms(object $notifiable): string
+    public function toSms(object $notifiable): array
     {
-        $doctorName = $this->waitlistEntry->waitlist->doctor->user->name ?? 'Unknown Doctor';
-        $expiresAt = $this->waitlistEntry->expires_at;
+        $doctorName = $this->waitlistEntry?->waitlist?->doctor?->user?->name ?? 'Unknown Doctor';
+        $doctorId = $this->waitlistEntry?->waitlist?->doctor?->id ?? 0;
+        $hospitalId = $this->waitlistEntry?->waitlist?->doctor?->hospital_id ?? 0;
+        $expiresAt = $this->waitlistEntry?->expires_at;
 
         $expiresText = $expiresAt ? 'Expires: ' . $expiresAt->format('M j, g:i A') : '';
 
-        return "URGENT: Your appointment offer with Dr. {$doctorName} expires soon! {$expiresText} Book now: " . route('waitlist.show', $this->waitlistEntry->id);
+        return [
+            'message' => "URGENT: Your appointment offer with Dr. {$doctorName} expires soon! {$expiresText} Book now: " . ($this->waitlistEntry?->id ? route('waitlist.show', $this->waitlistEntry->id) : '#'),
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'waitlist_slot',
+                'context_id' => $this->waitlistEntry?->id,
+            ]
+        ];
     }
 
     /**
@@ -109,9 +119,9 @@ class WaitlistOfferExpiringNotification extends Notification implements ShouldBr
      */
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
-        $doctorName = $this->waitlistEntry->waitlist->doctor->user->name ?? 'Unknown Doctor';
-        $doctorId = $this->waitlistEntry->waitlist->doctor->id ?? 0;
-        $expiresAt = $this->waitlistEntry->expires_at;
+        $doctorName = $this->waitlistEntry?->waitlist?->doctor?->user?->name ?? 'Unknown Doctor';
+        $doctorId = $this->waitlistEntry?->waitlist?->doctor?->id ?? 0;
+        $expiresAt = $this->waitlistEntry?->expires_at;
 
         $payload = [
             'id' => $this->id,
@@ -120,13 +130,13 @@ class WaitlistOfferExpiringNotification extends Notification implements ShouldBr
             'message' => "Your appointment offer with Dr. {$doctorName} expires in 1 hour",
             'body' => "Your appointment offer with Dr. {$doctorName} expires in 1 hour",
             'icon' => 'clock',
-            'link' => route('waitlist.show', $this->waitlistEntry->id),
+            'link' => $this->waitlistEntry?->id ? route('waitlist.show', $this->waitlistEntry->id) : '#',
             'link_text' => 'Book Now',
             'data' => [
-                'waitlist_entry_id' => $this->waitlistEntry->id,
+                'waitlist_entry_id' => $this->waitlistEntry?->id,
                 'doctor_name' => $doctorName,
                 'doctor_id' => $doctorId,
-                'position' => $this->waitlistEntry->position,
+                'position' => $this->waitlistEntry?->position,
                 'expires_at' => $expiresAt?->format('Y-m-d H:i:s'),
                 'time_remaining' => $expiresAt ? now()->diffInMinutes($expiresAt) : null,
             ],
@@ -147,7 +157,7 @@ class WaitlistOfferExpiringNotification extends Notification implements ShouldBr
      */
     public function broadcastOn()
     {
-        $userId = $this->waitlistEntry->user_id;
+        $userId = $this->waitlistEntry?->user_id;
         return [
             new PrivateChannel('App.User.' . $userId)
         ];

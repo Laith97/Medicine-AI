@@ -4,15 +4,11 @@ namespace Tests\Unit\Services;
 
 use App\Services\SmsService;
 use App\Contracts\SmsProviderInterface;
-use App\Models\User;
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 
 class SmsServiceTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected $smsService;
     protected $smsProviderMock;
     protected $user;
@@ -24,11 +20,9 @@ class SmsServiceTest extends TestCase
         $this->smsProviderMock = Mockery::mock(SmsProviderInterface::class);
         $this->smsService = new SmsService($this->smsProviderMock);
 
-        $this->user = User::factory()->create([
-            'name' => 'Test User',
-            'phone' => '+1234567890',
-            'email' => 'test@example.com'
-        ]);
+        $this->user = (object) [
+            'phone' => '+1234567890'
+        ];
     }
 
     protected function tearDown(): void
@@ -43,7 +37,7 @@ class SmsServiceTest extends TestCase
         $message = 'Your appointment is confirmed for tomorrow at 2 PM.';
 
         $this->smsProviderMock
-            ->shouldReceive('sendSms')
+            ->shouldReceive('send')
             ->once()
             ->with($phoneNumber, $message)
             ->andReturn([
@@ -65,7 +59,7 @@ class SmsServiceTest extends TestCase
         $message = 'Test message';
 
         $this->smsProviderMock
-            ->shouldReceive('sendSms')
+            ->shouldReceive('send')
             ->once()
             ->with($phoneNumber, $message)
             ->andReturn([
@@ -94,7 +88,7 @@ class SmsServiceTest extends TestCase
         $expectedMessage = "Reminder: You have an appointment with Dr. Smith on 2024-01-15 at 14:00 at Medical Center. Please arrive 15 minutes early.";
 
         $this->smsProviderMock
-            ->shouldReceive('sendSms')
+            ->shouldReceive('send')
             ->once()
             ->with($this->user->phone, $expectedMessage)
             ->andReturn(['success' => true, 'message_id' => 'reminder_123']);
@@ -118,7 +112,7 @@ class SmsServiceTest extends TestCase
         $expectedMessage = "Your prescription for Amoxicillin 500mg (twice daily for 7 days) is ready for pickup at City Pharmacy.";
 
         $this->smsProviderMock
-            ->shouldReceive('sendSms')
+            ->shouldReceive('send')
             ->once()
             ->with($this->user->phone, $expectedMessage)
             ->andReturn(['success' => true, 'message_id' => 'prescription_456']);
@@ -141,7 +135,7 @@ class SmsServiceTest extends TestCase
         $expectedMessage = "Your Blood Test results are now available. Please contact Dr. Johnson or visit https://portal.example.com to view your results.";
 
         $this->smsProviderMock
-            ->shouldReceive('sendSms')
+            ->shouldReceive('send')
             ->once()
             ->with($this->user->phone, $expectedMessage)
             ->andReturn(['success' => true, 'message_id' => 'test_789']);
@@ -164,7 +158,7 @@ class SmsServiceTest extends TestCase
         $expectedMessage = "URGENT: Please contact your doctor immediately regarding your recent test results. Doctor: +1987654321";
 
         $this->smsProviderMock
-            ->shouldReceive('sendSms')
+            ->shouldReceive('send')
             ->once()
             ->with($this->user->phone, $expectedMessage)
             ->andReturn(['success' => true, 'message_id' => 'emergency_999']);
@@ -278,7 +272,7 @@ class SmsServiceTest extends TestCase
         $expectedMessage = "Medication Reminder: Time to take your Lisinopril 10mg. Instructions: Take with food";
 
         $this->smsProviderMock
-            ->shouldReceive('sendSms')
+            ->shouldReceive('send')
             ->once()
             ->with($this->user->phone, $expectedMessage)
             ->andReturn(['success' => true, 'message_id' => 'med_reminder_555']);
@@ -301,7 +295,7 @@ class SmsServiceTest extends TestCase
         $expectedMessage = "Follow-up Reminder: Please schedule your follow-up appointment with Dr. Brown by 2024-02-01 for: Check blood pressure. Call: +1555123456";
 
         $this->smsProviderMock
-            ->shouldReceive('sendSms')
+            ->shouldReceive('send')
             ->once()
             ->with($this->user->phone, $expectedMessage)
             ->andReturn(['success' => true, 'message_id' => 'followup_777']);

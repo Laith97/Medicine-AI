@@ -8,6 +8,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 use App\Models\Review;
 
 class ReviewSubmittedNotification extends Notification implements ShouldBroadcast
@@ -115,5 +116,25 @@ class ReviewSubmittedNotification extends Notification implements ShouldBroadcas
             ],
             'created_at' => now()->toISOString()
         ]);
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'review-submitted';
     }
 }

@@ -5,12 +5,15 @@ namespace App\Notifications;
 use App\Models\StripeInvoice;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 use NotificationChannels\Twilio\TwilioChannel;
 use NotificationChannels\Twilio\TwilioSmsMessage;
 
-class InvoiceOverdue extends Notification
+class InvoiceOverdue extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
@@ -25,14 +28,56 @@ class InvoiceOverdue extends Notification
      */
     public function via(object $notifiable): array
     {
-        $channels = ['mail', 'database'];
-        
-        // Add SMS channel if phone number is available and Twilio is configured
-        if ($notifiable->phone && config('services.twilio.sid')) {
-            $channels[] = TwilioChannel::class;
-        }
-        
+        $channels = ['mail', 'database', 'broadcast', 'sms'];
+
         return $channels;
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'invoice_overdue',
+            'invoice_id' => $this->invoice->id,
+            'stripe_invoice_id' => $this->invoice->stripe_invoice_id,
+            'amount_due' => $this->invoice->amount_due,
+            'due_date' => $this->invoice->due_date,
+            'title' => 'Invoice Overdue',
+            'message' => 'OVERDUE: Invoice ' . $this->invoice->getFormattedAmountDue() . ' was due on ' . $this->invoice->due_date->format('M d, Y'),
+            'link' => route('invoices.show', $this->invoice),
+            'created_at' => now()->toISOString(),
+        ]);
+    }
+
+    /**
+     * Get the SMS representation of the notification.
+     */
+    public function toSms(object $notifiable): array
+    {
+        $amount = $this->invoice->getFormattedAmountDue();
+        $daysOverdue = $this->invoice->due_date->diffInDays(now());
+        $isRestricted = $notifiable->isRestricted();
+        $doctorId = $this->invoice->user_id ?? 0;
+        $hospitalId = 0;
+
+        $message = "URGENT: Invoice {$amount} is {$daysOverdue} days overdue.";
+        if ($isRestricted) {
+            $message .= " Account restricted.";
+        }
+        $message .= " Pay now: " . route('invoices.show', $this->invoice);
+
+        return [
+            'message' => $message,
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'invoice_notification',
+                'context_id' => $this->invoice->id,
+            ]
+        ];
     }
 
     /**
@@ -104,5 +149,27 @@ class InvoiceOverdue extends Notification
             'due_date' => $this->invoice->due_date,
             'message' => 'OVERDUE: Invoice ' . $this->invoice->getFormattedAmountDue() . ' was due on ' . $this->invoice->due_date->format('M d, Y'),
         ];
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        // Use invoice's user_id directly since notifiable may be null during queue processing
+        $userId = $this->invoice->user_id ?? $this->notifiable?->id ?? 'default';
+        return [new PrivateChannel('App.User.' . $userId)];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'invoice-overdue';
     }
 }

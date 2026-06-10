@@ -18,11 +18,23 @@ use Illuminate\Support\Facades\Log;
 // Private user channel - allows users to listen to their own notifications
 Broadcast::channel('App.User.{id}', function ($user, $id) {
     try {
+        \Log::info('Broadcasting auth attempt', [
+            'channel' => 'App.User.' . $id,
+            'user_id' => $user ? $user->id : null,
+            'requested_id' => $id,
+            'user_authenticated' => $user ? true : false
+        ]);
+        
         // User can only listen to their own channel
         if (!$user) {
+            \Log::warning('Broadcasting auth failed: No user');
             return false;
         }
-        return (int) $user->id === (int) $id;
+        
+        $result = (int) $user->id === (int) $id;
+        \Log::info('Broadcasting auth result: ' . ($result ? 'ALLOWED' : 'DENIED'));
+        
+        return $result;
     } catch (\Exception $e) {
         Log::error('Broadcasting auth error for App.User.' . $id, [
             'error' => $e->getMessage(),
@@ -87,7 +99,7 @@ Broadcast::channel('private-user.{id}', function ($user, $id) {
 // Doctor-specific channels
 Broadcast::channel('doctor.{doctorId}', function ($user, $doctorId) {
     try {
-        // Check if user is a doctor and matches the doctor ID
+        // Check if user is a doctor
         if (!$user || $user->role !== 'doctor') {
             return false;
         }
@@ -97,7 +109,13 @@ Broadcast::channel('doctor.{doctorId}', function ($user, $doctorId) {
             $user->load('doctor');
         }
 
-        return $user->doctor && (int) $user->doctor->id === (int) $doctorId;
+        // The doctorId from JS is the doctor's user_id or doctor->id
+        // We need to check if it matches either the user's doctor.id or user.id
+        $userDoctorId = $user->doctor ? (int) $user->doctor->id : null;
+        $userId = (int) $user->id;
+
+        // Accept if doctorId matches either the doctor's id (doctors table) or user's id
+        return ($userDoctorId && (int) $doctorId === $userDoctorId) || ((int) $doctorId === $userId);
     } catch (\Exception $e) {
         Log::error('Broadcasting auth error for doctor.' . $doctorId, [
             'error' => $e->getMessage(),

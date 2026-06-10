@@ -39,7 +39,27 @@ class WaitlistAutoBookedNotification extends Notification implements ShouldBroad
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast', 'mail'];
+        return ['database', 'broadcast', 'mail', 'sms'];
+    }
+
+    /**
+     * Get the SMS representation of the notification.
+     */
+    public function toSms(object $notifiable): array
+    {
+        $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
+        $doctorId = $this->appointment->doctor->id ?? 0;
+        $hospitalId = $this->appointment->doctor->hospital_id ?? 0;
+
+        return [
+            'message' => "Your waitlisted appointment with Dr. {$doctorName} has been auto-booked for {$this->appointment->appointment_date->format('M j, Y g:i A')}. View: " . route('appointments.show', $this->appointment->id),
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'appointment_booked',
+                'context_id' => $this->appointment->id,
+            ]
+        ];
     }
 
     /**
@@ -51,12 +71,19 @@ class WaitlistAutoBookedNotification extends Notification implements ShouldBroad
     {
         $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
 
+        // Use doctor route if notifiable is a doctor, otherwise use patient route
+        if ($notifiable->isDoctor()) {
+            $link = route('doctor.appointments.show', $this->appointment->id);
+        } else {
+            $link = route('appointments.show', $this->appointment->id);
+        }
+
         return [
             'type' => 'waitlist_auto_booked',
             'title' => 'Appointment Auto-Booked',
             'message' => "Your waitlisted appointment with Dr. {$doctorName} has been automatically booked",
             'icon' => 'magic',
-            'link' => route('appointments.show', $this->appointment->id),
+            'link' => $link,
             'link_text' => 'View Appointment',
             'related_type' => 'appointment',
             'related_id' => $this->appointment->id,

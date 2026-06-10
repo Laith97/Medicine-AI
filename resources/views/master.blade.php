@@ -343,23 +343,7 @@ body .dropdown .dropdown-menu.show,
             padding: 0 !important;
         }
 
-        /* Specific dropdown fixes */
-        .notifications-dropdown .dropdown-menu {
-            width: 350px !important;
-            max-height: 400px !important;
-            overflow-y: auto !important;
-            z-index: 9999999 !important;
-            position: absolute !important;
-            top: 100% !important;
-            left: auto !important;
-            right: 0 !important;
-            transform: none !important;
-        }
-
-        .notifications-dropdown {
-            position: relative !important;
-            z-index: 10004 !important;
-        }
+        /* Specific dropdown fixes - Let notifications-dropdown.css handle styling */
 
         .user-dropdown .dropdown-menu {
             min-width: 200px !important;
@@ -1496,47 +1480,7 @@ body .dropdown .dropdown-menu.show,
                             </button>
 
                             <!-- Notifications Bell -->
-                            <div class="dropdown notifications-dropdown">
-                                <button class="btn btn-sm position-relative notification-bell dropdown-toggle d-flex align-items-center justify-content-center" type="button"
-                                    data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true"
-                                    aria-label="Notifications menu" title="Notifications"
-                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; border-radius: 50%; min-width: 44px; min-height: 44px; width: 44px; height: 44px;">
-                                    <i class="bi bi-bell" aria-hidden="true"></i>
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-count"
-                                        id="notification-count" aria-label="unread notifications count"
-                                        style="font-size: 10px; padding: 2px 6px; display: none; font-weight: 600;">
-                                        0
-                                    </span>
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-end shadow notifications-dropdown-menu"
-                                    role="menu"
-                                    aria-labelledby="notification-bell"
-                                    style="width: 320px; max-height: 350px; overflow-y: auto;">
-                                    <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom" role="presentation">
-                                        <h6 class="mb-0" id="notification-header">Notifications</h6>
-                                        <div class="btn-group btn-group-sm" role="group" aria-label="Notification actions">
-                                            <button type="button" class="btn btn-outline-secondary mark-all-read-btn"
-                                                title="Mark all as read"
-                                                aria-label="Mark all notifications as read"
-                                                style="min-width: 44px; min-height: 44px;">
-                                                <i class="bi bi-check-all" aria-hidden="true"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-outline-secondary view-all-btn"
-                                                title="View all notifications"
-                                                aria-label="View all notifications"
-                                                style="min-width: 44px; min-height: 44px;">
-                                                <i class="bi bi-list-ul" aria-hidden="true"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="notification-list" id="notification-list" role="list" aria-label="Notification list">
-                                        <div class="text-center py-4 text-muted" role="status" aria-live="polite">
-                                            <i class="bi bi-bell-slash display-6 d-block mb-2" aria-hidden="true"></i>
-                                            <small>Loading notifications...</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            @include('components.notification-dropdown')
 
                             <!-- User Dropdown -->
                             <div class="dropdown">
@@ -1577,6 +1521,12 @@ body .dropdown .dropdown-menu.show,
                                             <a class="dropdown-item d-flex align-items-center gap-2"
                                                 href="{{ route('settings') }}">
                                                 <i class="bi bi-gear"></i> Settings
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2"
+                                                href="{{ route('doctor.sms-settings') }}">
+                                                <i class="fas fa-sms"></i> SMS Provider Settings
                                             </a>
                                         </li>
                                         <li>
@@ -1851,8 +1801,8 @@ body .dropdown .dropdown-menu.show,
             <div style="position: absolute; top: -5px; left: 0; right: 0; height: 15px; background: linear-gradient(to bottom, rgba(222, 98, 98, 0.2), transparent); pointer-events: none;"></div>
             <main class="app-main">
                 @yield('content')
-            </div>
-        </main>
+            </main>
+        </div>
 
         <!-- Floating Assistant -->
         @auth
@@ -2046,6 +1996,8 @@ body .dropdown .dropdown-menu.show,
     <script src="{{ asset('js/sidebar.js') }}" defer></script>
     @endauth
 
+    <!-- Unified Notification System is now handled by Vite in app.js -->
+
     <!-- Vite Assets (Laravel Echo & Pusher) -->
     @viteReactRefresh
     @vite(['resources/js/app.js', 'resources/css/app.css'])
@@ -2061,8 +2013,6 @@ body .dropdown .dropdown-menu.show,
 
     <!-- Notification Accessibility Test Script -->
     <script src="{{ asset('js/notification-accessibility-test.js?v=' . time()) }}"></script>
-
-    <!-- Remove conflicting notification scripts - now handled by Vite -->
 
 {{-- Modals --}}
 @stack('modals')
@@ -2424,7 +2374,7 @@ function showAjaxError(message) {
                     loadNotifications();
                     // Focus first focusable element in dropdown for keyboard navigation
                     setTimeout(() => {
-                        const firstFocusable = notificationsDropdown.querySelector('.mark-all-read-btn, .view-all-btn, .notification-item');
+                        const firstFocusable = notificationsDropdown.querySelector('.mark-all-read-btn, .view-all-btn, .notif-item');
                         if (firstFocusable) {
                             firstFocusable.focus();
                         }
@@ -2437,7 +2387,7 @@ function showAjaxError(message) {
                     if (!dropdownMenu) return;
 
                     const focusableElements = dropdownMenu.querySelectorAll(
-                        '.mark-all-read-btn, .view-all-btn, .notification-item, .dropdown-item'
+                        '.mark-all-read-btn, .view-all-btn, .notif-item, .notif-footer-btn, .dropdown-item'
                     );
                     const firstElement = focusableElements[0];
                     const lastElement = focusableElements[focusableElements.length - 1];
@@ -2472,6 +2422,26 @@ function showAjaxError(message) {
                             break;
                     }
                 });
+
+                // Click handlers for mark-all-read and view-all buttons
+                const markAllReadBtn = notificationsDropdown.querySelector('.mark-all-read-btn');
+                const viewAllBtn = notificationsDropdown.querySelector('.view-all-btn');
+
+                if (markAllReadBtn) {
+                    markAllReadBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        markAllAsRead();
+                    });
+                }
+
+                if (viewAllBtn) {
+                    viewAllBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.location.href = '/notifications';
+                    });
+                }
             }
 
             // Fix dropdown click handling - Bootstrap's data-bs-toggle auto-handling not working
@@ -2727,17 +2697,41 @@ function showAjaxError(message) {
         const notificationList = document.getElementById('notification-list');
         if (!notificationList) return;
 
-        // Only log in debug mode
-        if (window.location.search.includes('debug=true')) {
-        }
+        // Check if real-time items already exist (added via WebSocket)
+        const existingItems = notificationList.querySelectorAll('.notif-item');
+        const hasRealTimeItems = existingItems.length > 0;
 
-        // Show loading state
-        notificationList.innerHTML = `
-            <div class="text-center py-4 text-muted">
-                <i class="bi bi-hourglass-split display-6 d-block mb-2"></i>
-                <small>Loading notifications...</small>
-            </div>
-        `;
+        // Only show skeleton if no existing items, otherwise preserve real-time items
+        if (!hasRealTimeItems) {
+            notificationList.innerHTML = `
+                <div class="notif-skeleton" role="status" aria-live="polite">
+                    <div class="notif-skeleton-item">
+                        <div class="skeleton-icon"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-line title"></div>
+                            <div class="skeleton-line message"></div>
+                            <div class="skeleton-line meta"></div>
+                        </div>
+                    </div>
+                    <div class="notif-skeleton-item">
+                        <div class="skeleton-icon"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-line title"></div>
+                            <div class="skeleton-line message"></div>
+                            <div class="skeleton-line meta"></div>
+                        </div>
+                    </div>
+                    <div class="notif-skeleton-item">
+                        <div class="skeleton-icon"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-line title"></div>
+                            <div class="skeleton-line message"></div>
+                            <div class="skeleton-line meta"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
 
         // Fetch notifications from the server
         fetch('/api/notifications')
@@ -2748,44 +2742,83 @@ function showAjaxError(message) {
                 return response.json();
             })
             .then(data => {
+                console.log('Notifications API response:', data);
 
                 if (data.notifications && data.notifications.length > 0) {
-                    // Render notifications
+                    console.log('Rendering', data.notifications.length, 'notifications');
+                    // Render notifications with new professional styling
                     let html = '';
                     data.notifications.forEach(notification => {
-                        const date = new Date(notification.created_at).toLocaleDateString();
-                        const time = new Date(notification.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        const date = new Date(notification.created_at);
+                        const timeAgo = formatTimeAgo(date);
+                        const isUnread = !notification.read_at;
+
+                        // Determine icon and color based on notification type
+                        const type = notification.data?.type || '';
+                        let iconClass = 'default';
+                        let iconHtml = '<i class="bi bi-bell-fill"></i>';
+
+                        if (type.includes('Appointment')) {
+                            iconClass = 'info';
+                            iconHtml = '<i class="bi bi-calendar-check"></i>';
+                        } else if (type.includes('Task') || type.includes('Reminder')) {
+                            iconClass = 'warning';
+                            iconHtml = '<i class="bi bi-list-task"></i>';
+                        } else if (type.includes('Alert') || type.includes('Emergency') || type.includes('HighRisk')) {
+                            iconClass = 'danger';
+                            iconHtml = '<i class="bi bi-exclamation-triangle"></i>';
+                        } else if (type.includes('Success') || type.includes('Complete') || type.includes('AutoBooked')) {
+                            iconClass = 'success';
+                            iconHtml = '<i class="bi bi-check-circle"></i>';
+                        } else if (type.includes('Invoice') || type.includes('Payment') || type.includes('Underpayment')) {
+                            iconClass = 'warning';
+                            iconHtml = '<i class="bi bi-receipt"></i>';
+                        } else if (type.includes('Message') || type.includes('Chat')) {
+                            iconClass = 'info';
+                            iconHtml = '<i class="bi bi-chat-dots"></i>';
+                        }
 
                         html += `
-                            <div class="notification-item ${notification.read_at ? 'read' : 'unread'}" data-id="${notification.id}" data-link="${notification.data?.link || ''}" data-message="${notification.data?.message || ''}">
-                                <div class="d-flex align-items-start gap-3 p-3 border-bottom">
-                                    <div class="notification-icon">
-                                        <i class="bi ${notification.data?.icon || 'bi-bell'} text-${notification.data?.color || 'primary'}"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="d-flex justify-content-between align-items-start mb-1">
-                                            <h6 class="mb-0 small">${notification.data?.title || 'Notification'}</h6>
-                                            <small class="text-muted">${time}</small>
-                                        </div>
-                                        <p class="mb-0 small text-muted">${notification.data?.message || 'You have a new notification'}</p>
-                                        ${notification.data?.link ? `
-                                            <div class="mt-2">
-                                                <a href="${notification.data.link}" class="btn btn-sm btn-outline-primary">
-                                                    ${notification.data?.link_text || 'View Details'}
-                                                </a>
-                                            </div>
-                                        ` : ''}
+                            <div class="notif-item ${isUnread ? 'unread' : ''}"
+                                 data-id="${notification.id}"
+                                 data-link="${notification.data?.link || ''}"
+                                 data-message="${notification.data?.message || ''}">
+                                <div class="notif-icon-wrap ${iconClass}">
+                                    ${iconHtml}
+                                </div>
+                                <div class="notif-content">
+                                    <h6 class="notif-title">
+                                        ${isUnread ? '<span class="notif-dot"></span>' : ''}
+                                        ${escapeHtml(notification.data?.title || 'Notification')}
+                                    </h6>
+                                    <p class="notif-message">${escapeHtml(notification.data?.message || 'You have a new notification')}</p>
+                                    <div class="notif-meta">
+                                        <span class="notif-time">
+                                            <i class="bi bi-clock" aria-hidden="true"></i>
+                                            ${timeAgo}
+                                        </span>
                                     </div>
                                 </div>
+                                <button class="notif-mark-read"
+                                        title="Mark as read"
+                                        aria-label="Mark this notification as read"
+                                        onclick="event.stopPropagation(); markAsRead('${notification.id}')">
+                                    <i class="bi bi-check2" aria-hidden="true"></i>
+                                </button>
                             </div>
                         `;
                     });
 
                     notificationList.innerHTML = html;
+                    console.log('Notification HTML rendered:', html.length, 'chars');
 
-                    // Add click handlers to mark as read and redirect
-                    document.querySelectorAll('.notification-item.unread').forEach(item => {
+                    // Add click handlers for UNREAD notifications
+                    console.log('Attaching click handlers to', document.querySelectorAll('.notif-item.unread').length, 'unread items');
+                    document.querySelectorAll('.notif-item.unread').forEach(item => {
                         item.addEventListener('click', function(e) {
+                            console.log('Unread notification clicked:', this.dataset.id, 'link:', this.dataset.link);
+                            if (e.target.closest('.notif-mark-read')) return;
+
                             e.preventDefault();
                             e.stopPropagation();
 
@@ -2801,13 +2834,39 @@ function showAjaxError(message) {
 
                             // Small delay to ensure dropdown closes before redirect
                             setTimeout(() => {
-                                // Redirect based on notification type
                                 if (link) {
                                     window.location.href = link;
                                 } else if (message && message.toLowerCase().includes('appointment')) {
                                     window.location.href = '/appointments';
                                 } else {
-                                    // Default fallback to dashboard
+                                    window.location.href = '/dashboard';
+                                }
+                            }, 100);
+                        });
+                    });
+
+                    // Add click handlers for READ notifications
+                    document.querySelectorAll('.notif-item:not(.unread)').forEach(item => {
+                        item.addEventListener('click', function(e) {
+                            console.log('Read notification clicked:', this.dataset.id, 'link:', this.dataset.link);
+                            if (e.target.closest('.notif-mark-read')) return;
+
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            const link = this.dataset.link;
+                            const message = this.dataset.message;
+
+                            // Close the dropdown
+                            const dropdown = bootstrap.Dropdown.getInstance(document.querySelector('.notifications-dropdown .dropdown-toggle'));
+                            if (dropdown) dropdown.hide();
+
+                            setTimeout(() => {
+                                if (link) {
+                                    window.location.href = link;
+                                } else if (message && message.toLowerCase().includes('appointment')) {
+                                    window.location.href = '/appointments';
+                                } else {
                                     window.location.href = '/dashboard';
                                 }
                             }, 100);
@@ -2815,11 +2874,15 @@ function showAjaxError(message) {
                     });
 
                 } else {
-                    // No notifications
+                    console.log('No notifications in API response');
+                    // No notifications - empty state
                     notificationList.innerHTML = `
-                        <div class="text-center py-4 text-muted">
-                            <i class="bi bi-bell-slash display-6 d-block mb-2"></i>
-                            <small>No notifications</small>
+                        <div class="notif-empty">
+                            <div class="notif-empty-icon">
+                                <i class="bi bi-bell-slash"></i>
+                            </div>
+                            <h6 class="notif-empty-title">All caught up!</h6>
+                            <p class="notif-empty-text">You have no notifications at the moment</p>
                         </div>
                     `;
                 }
@@ -2827,12 +2890,39 @@ function showAjaxError(message) {
             .catch(error => {
                 console.error('Error loading notifications:', error);
                 notificationList.innerHTML = `
-                    <div class="text-center py-4 text-muted">
-                        <i class="bi bi-exclamation-triangle display-6 d-block mb-2"></i>
-                        <small>Error loading notifications</small>
+                    <div class="notif-empty">
+                        <div class="notif-empty-icon" style="background: var(--notif-danger-bg); color: var(--notif-danger);">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                        <h6 class="notif-empty-title">Something went wrong</h6>
+                        <p class="notif-empty-text">Unable to load notifications</p>
                     </div>
                 `;
             });
+                
+    }
+
+    // Helper function to format time ago
+    function formatTimeAgo(date) {
+        if (!date) return 'Just now';
+
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+
+        if (seconds < 60) return 'Just now';
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+        if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+
+        return date.toLocaleDateString();
+    }
+
+    // Helper function to escape HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     // Function to mark notification as read
@@ -2863,9 +2953,69 @@ function showAjaxError(message) {
         });
     }
 
+    // Function to mark all notifications as read
+    function markAllAsRead() {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (!csrfToken) {
+            console.error('CSRF token not found');
+            return;
+        }
+
+        fetch('/api/notifications/mark-all-read', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            },
+            credentials: 'include'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP error! status: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Update all unread items
+                document.querySelectorAll('.notif-item.unread').forEach(item => {
+                    item.classList.remove('unread');
+                });
+                // Update badge count
+                updateNotificationBadge();
+                // Update unread count to 0
+                const badge = document.getElementById('notification-count');
+                if (badge) {
+                    badge.textContent = '0';
+                    badge.style.display = 'none';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error marking all notifications as read:', error);
+        });
+    }
+
     // Function to update notification badge
-    function updateNotificationBadge() {
+    function updateNotificationBadge(forceCount = null) {
         return new Promise((resolve) => {
+            // If forceCount is provided, use it directly without fetching
+            if (forceCount !== null && forceCount !== undefined) {
+                const badge = document.getElementById('notification-count');
+                if (badge) {
+                    if (forceCount > 0) {
+                        badge.textContent = forceCount > 99 ? '99+' : forceCount;
+                        badge.style.display = 'block';
+                    } else {
+                        badge.textContent = '0';
+                        badge.style.display = 'none';
+                    }
+                }
+                resolve(true);
+                return;
+            }
+
             // Use a timeout to prevent hanging requests
             const controller = new AbortController();
             const timeoutId = setTimeout(() => {
@@ -3036,7 +3186,6 @@ function showAjaxError(message) {
 
 <!-- Notification Scripts -->
 <script src="{{ asset('sounds/notification-sound.js') }}"></script>
-<!-- Unified notifications now handled by Vite/Enhanced system -->
 
 <!-- Debug Tools (only in development) -->
 @if(config('app.debug'))

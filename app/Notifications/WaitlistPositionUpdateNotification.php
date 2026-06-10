@@ -43,7 +43,29 @@ class WaitlistPositionUpdateNotification extends Notification implements ShouldB
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast'];
+        return ['database', 'broadcast', 'sms'];
+    }
+
+    /**
+     * Get the SMS representation of the notification.
+     */
+    public function toSms(object $notifiable): array
+    {
+        $doctorName = $this->waitlistEntry?->waitlist?->doctor?->user?->name ?? 'Unknown Doctor';
+        $doctorId = $this->waitlistEntry?->waitlist?->doctor?->id ?? 0;
+        $hospitalId = $this->waitlistEntry?->waitlist?->doctor?->hospital_id ?? 0;
+        $improvement = $this->oldPosition - $this->newPosition;
+        $waitlistEntryId = $this->waitlistEntry?->id ?? 0;
+
+        return [
+            'message' => "Your waitlist position with Dr. {$doctorName} improved from #{$this->oldPosition} to #{$this->newPosition} (+{$improvement}). View: " . ($waitlistEntryId > 0 ? route('patient.waitlist.status', ['waitlist' => $waitlistEntryId]) : '#'),
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'waitlist_position',
+                'context_id' => $waitlistEntryId,
+            ]
+        ];
     }
 
     /**
@@ -53,20 +75,21 @@ class WaitlistPositionUpdateNotification extends Notification implements ShouldB
      */
     public function toArray(object $notifiable): array
     {
-        $doctorName = $this->waitlistEntry->waitlist->doctor->user->name ?? 'Unknown Doctor';
+        $doctorName = $this->waitlistEntry?->waitlist?->doctor?->user?->name ?? 'Unknown Doctor';
         $improvement = $this->oldPosition - $this->newPosition;
+        $waitlistEntryId = $this->waitlistEntry?->id ?? 0;
 
         return [
             'type' => 'waitlist_position_update',
             'title' => 'Waitlist Position Updated',
             'message' => "Your position with Dr. {$doctorName} has improved from #{$this->oldPosition} to #{$this->newPosition}",
             'icon' => 'list-ol',
-            'link' => route('waitlist.show', $this->waitlistEntry->id),
+            'link' => $waitlistEntryId > 0 ? route('patient.waitlist.status', ['waitlist' => $waitlistEntryId]) : '#',
             'link_text' => 'View Details',
             'related_type' => 'waitlist_entry',
-            'related_id' => $this->waitlistEntry->id,
+            'related_id' => $waitlistEntryId,
             'data' => [
-                'waitlist_entry_id' => $this->waitlistEntry->id,
+                'waitlist_entry_id' => $waitlistEntryId,
                 'doctor_name' => $doctorName,
                 'old_position' => $this->oldPosition,
                 'new_position' => $this->newPosition,
@@ -80,9 +103,10 @@ class WaitlistPositionUpdateNotification extends Notification implements ShouldB
      */
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
-        $doctorName = $this->waitlistEntry->waitlist->doctor->user->name ?? 'Unknown Doctor';
-        $doctorId = $this->waitlistEntry->waitlist->doctor->id ?? 0;
+        $doctorName = $this->waitlistEntry?->waitlist?->doctor?->user?->name ?? 'Unknown Doctor';
+        $doctorId = $this->waitlistEntry?->waitlist?->doctor?->id ?? 0;
         $improvement = $this->oldPosition - $this->newPosition;
+        $waitlistEntryId = $this->waitlistEntry?->id ?? 0;
 
         $payload = [
             'id' => $this->id,
@@ -91,10 +115,10 @@ class WaitlistPositionUpdateNotification extends Notification implements ShouldB
             'message' => "Your position with Dr. {$doctorName} has improved from #{$this->oldPosition} to #{$this->newPosition}",
             'body' => "Your position with Dr. {$doctorName} has improved from #{$this->oldPosition} to #{$this->newPosition}",
             'icon' => 'list-ol',
-            'link' => route('waitlist.show', $this->waitlistEntry->id),
+            'link' => $waitlistEntryId > 0 ? route('patient.waitlist.status', ['waitlist' => $waitlistEntryId]) : '#',
             'link_text' => 'View Details',
             'data' => [
-                'waitlist_entry_id' => $this->waitlistEntry->id,
+                'waitlist_entry_id' => $waitlistEntryId,
                 'doctor_name' => $doctorName,
                 'doctor_id' => $doctorId,
                 'old_position' => $this->oldPosition,
@@ -105,10 +129,13 @@ class WaitlistPositionUpdateNotification extends Notification implements ShouldB
         ];
 
         // Compress payload if beneficial
-        $compressionService = app(NotificationCompressionService::class);
-        $compressedPayload = $compressionService->compressPayload($payload);
+        if (class_exists('App\Services\NotificationCompressionService')) {
+            $compressionService = app(\App\Services\NotificationCompressionService::class);
+            $compressedPayload = $compressionService->compressPayload($payload);
+            return new BroadcastMessage($compressedPayload);
+        }
 
-        return new BroadcastMessage($compressedPayload);
+        return new BroadcastMessage($payload);
     }
 
     /**
@@ -118,7 +145,7 @@ class WaitlistPositionUpdateNotification extends Notification implements ShouldB
      */
     public function broadcastOn()
     {
-        $userId = $this->waitlistEntry->user_id;
+        $userId = $this->waitlistEntry?->user_id ?? 0;
         return [
             new PrivateChannel('App.User.' . $userId)
         ];

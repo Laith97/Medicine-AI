@@ -5,10 +5,13 @@ namespace App\Notifications;
 use App\Models\WorkflowTask;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Notifications\Notification;
 
-class TaskReminderNotification extends Notification implements ShouldQueue
+class TaskReminderNotification extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
@@ -27,7 +30,27 @@ class TaskReminderNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'broadcast'];
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'task_reminder',
+            'task_id' => $this->task->id,
+            'task_title' => $this->task->title,
+            'task_type' => $this->task->task_type,
+            'priority' => $this->task->priority,
+            'due_date' => $this->task->due_date,
+            'title' => 'Task Reminder',
+            'message' => "Reminder: {$this->task->title} is due soon",
+            'link' => "/admin/tasks/{$this->task->id}",
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     /**
@@ -67,5 +90,25 @@ class TaskReminderNotification extends Notification implements ShouldQueue
             'due_date' => $this->task->due_date,
             'message' => "Reminder: {$this->task->title} is due soon",
         ];
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'task-reminder';
     }
 }

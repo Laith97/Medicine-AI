@@ -171,174 +171,77 @@ class DashboardController extends Controller
     }
 
     /**
-     * Confirm an appointment
+     * Confirm an appointment - Optimized for speed
      */
     public function confirmAppointment(Appointment $appointment)
     {
         $doctor = $this->getEffectiveDoctor();
 
-        // Check if effective doctor exists
-        if (!$doctor) {
-            Log::error('No effective doctor found for user during appointment confirmation', [
-                'user_id' => Auth::id(),
-                'appointment_id' => $appointment->id,
-                'user_role' => Auth::user()->role,
-                'is_sub_user' => Auth::user()->isSubUser(),
-                'parent_user_id' => Auth::user()->parent_user_id,
-            ]);
-
-            return redirect()->route('dashboard')
-                ->with('error', 'No doctor profile found. Please contact support if you believe this is an error.');
-        }
-
-        // Check if this appointment belongs to the doctor
-        if ($appointment->doctor_id !== $doctor->id) {
-            abort(403);
+        // Quick validation checks
+        if (!$doctor || $appointment->doctor_id !== $doctor->id) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
         if ($appointment->status !== 'pending') {
-            return back()->withErrors(['error' => 'Only pending appointments can be confirmed.']);
+            return response()->json(['success' => false, 'message' => 'Only pending appointments can be confirmed'], 400);
         }
 
+        // Confirm appointment - NO EMAIL DURING REQUEST
         $appointment->confirm();
 
-        // Load patient relationship for email sending
-        $appointment->load('patient');
-
-        // Send confirmation email to patient
-        if ($appointment->patient && $appointment->patient->email) {
-            Log::info('Sending appointment confirmation email', [
-                'appointment_id' => $appointment->id,
-                'patient_id' => $appointment->patient->id,
-                'patient_email' => $appointment->patient->email,
-                'doctor_id' => $appointment->doctor_id,
-                'appointment_date' => $appointment->appointment_date,
-                'status' => $appointment->status
-            ]);
-
-            try {
-                Mail::to($appointment->patient->email)->send(new AppointmentConfirmationMail($appointment));
-                Log::info('Appointment confirmation email sent successfully', [
-                    'appointment_id' => $appointment->id,
-                    'patient_email' => $appointment->patient->email
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Failed to send appointment confirmation email', [
-                    'appointment_id' => $appointment->id,
-                    'patient_email' => $appointment->patient->email,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                // Continue with the process even if email fails
-            }
-        } else {
-            Log::warning('Cannot send appointment confirmation email - missing patient or email', [
-                'appointment_id' => $appointment->id,
-                'has_patient' => $appointment->patient ? true : false,
-                'patient_id' => $appointment->patient ? $appointment->patient->id : null,
-                'has_email' => $appointment->patient && $appointment->patient->email ? true : false,
-                'guest_appointment' => $appointment->isGuestAppointment(),
-                'guest_email' => $appointment->guest_email
-            ]);
+        // Return success immediately
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Appointment confirmed successfully']);
         }
 
         return back()->with('success', 'Appointment confirmed successfully.');
     }
 
     /**
-     * Cancel an appointment
+     * Cancel an appointment - Optimized for speed
      */
     public function cancelAppointment(Request $request, Appointment $appointment)
     {
         $doctor = $this->getEffectiveDoctor();
 
-        // Check if effective doctor exists
-        if (!$doctor) {
-            Log::error('No effective doctor found for user during appointment cancellation', [
-                'user_id' => Auth::id(),
-                'appointment_id' => $appointment->id,
-                'user_role' => Auth::user()->role,
-                'is_sub_user' => Auth::user()->isSubUser(),
-                'parent_user_id' => Auth::user()->parent_user_id,
-            ]);
-
-            return redirect()->route('dashboard')
-                ->with('error', 'No doctor profile found. Please contact support if you believe this is an error.');
-        }
-
-        // Check if this appointment belongs to the doctor
-        if ($appointment->doctor_id !== $doctor->id) {
-            abort(403);
+        // Quick validation checks
+        if (!$doctor || $appointment->doctor_id !== $doctor->id) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
         if (in_array($appointment->status, ['cancelled', 'completed'])) {
-            return back()->withErrors(['error' => 'This appointment cannot be cancelled.']);
+            return response()->json(['success' => false, 'message' => 'This appointment cannot be cancelled'], 400);
         }
 
         $request->validate([
-            'cancellation_reason' => 'required|string|max:500'
+            'cancellation_reason' => 'nullable|string|max:500'
         ]);
 
+        // Cancel appointment - NO EMAIL DURING REQUEST
         $appointment->cancel('doctor', $request->cancellation_reason);
 
-        // Load patient relationship for email sending
-        $appointment->load('patient');
-
-        // Send cancellation email to patient
-        if ($appointment->patient && $appointment->patient->email) {
-            Log::info('Sending appointment cancellation email', [
-                'appointment_id' => $appointment->id,
-                'patient_id' => $appointment->patient->id,
-                'patient_email' => $appointment->patient->email,
-                'doctor_id' => $appointment->doctor_id,
-                'appointment_date' => $appointment->appointment_date,
-                'status' => $appointment->status,
-                'cancellation_reason' => $request->cancellation_reason
-            ]);
-
-            try {
-                Mail::to($appointment->patient->email)->send(new AppointmentCancellationMail($appointment, $request->cancellation_reason));
-                Log::info('Appointment cancellation email sent successfully', [
-                    'appointment_id' => $appointment->id,
-                    'patient_email' => $appointment->patient->email
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Failed to send appointment cancellation email', [
-                    'appointment_id' => $appointment->id,
-                    'patient_email' => $appointment->patient->email,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                // Continue with the process even if email fails
-            }
-        } else {
-            Log::warning('Cannot send appointment cancellation email - missing patient or email', [
-                'appointment_id' => $appointment->id,
-                'has_patient' => $appointment->patient ? true : false,
-                'patient_id' => $appointment->patient ? $appointment->patient->id : null,
-                'has_email' => $appointment->patient && $appointment->patient->email ? true : false,
-                'guest_appointment' => $appointment->isGuestAppointment(),
-                'guest_email' => $appointment->guest_email
-            ]);
+        // Return success immediately
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Appointment cancelled successfully']);
         }
 
         return back()->with('success', 'Appointment cancelled successfully.');
     }
 
     /**
-     * Complete an appointment
+     * Complete an appointment - Optimized for speed
      */
     public function completeAppointment(Request $request, Appointment $appointment)
     {
         $doctor = $this->getEffectiveDoctor();
 
-        // Check if this appointment belongs to the doctor
-        if ($appointment->doctor_id !== $doctor->id) {
-            abort(403);
+        // Quick validation checks
+        if (!$doctor || $appointment->doctor_id !== $doctor->id) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
         if ($appointment->status !== 'confirmed') {
-            return back()->withErrors(['error' => 'Only confirmed appointments can be completed.']);
+            return response()->json(['success' => false, 'message' => 'Only confirmed appointments can be completed'], 400);
         }
 
         $request->validate([
@@ -346,75 +249,44 @@ class DashboardController extends Controller
             'follow_up_required' => 'nullable'
         ]);
 
+        // Complete appointment - NO EMAIL DURING REQUEST
         $appointment->update([
             'doctor_notes' => $request->doctor_notes,
             'follow_up_required' => $request->boolean('follow_up_required'),
         ]);
-
         $appointment->complete();
 
-        // Load patient relationship for email sending
-        $appointment->load('patient');
-
-        // Send completion email to patient with review request
-        if ($appointment->patient && $appointment->patient->email) {
-            Log::info('Sending appointment completion email', [
-                'appointment_id' => $appointment->id,
-                'patient_id' => $appointment->patient->id,
-                'patient_email' => $appointment->patient->email,
-                'doctor_id' => $appointment->doctor_id,
-                'appointment_date' => $appointment->appointment_date,
-                'status' => $appointment->status,
-                'diagnosis_id' => $appointment->diagnosis_id
-            ]);
-
-            try {
-                $diagnosis = $appointment->diagnosis_id ? \App\Models\Diagnosis::find($appointment->diagnosis_id) : null;
-                Mail::to($appointment->patient->email)->send(new AppointmentCompletionMail($appointment, $diagnosis));
-                Log::info('Appointment completion email sent successfully', [
-                    'appointment_id' => $appointment->id,
-                    'patient_email' => $appointment->patient->email
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Failed to send appointment completion email', [
-                    'appointment_id' => $appointment->id,
-                    'patient_email' => $appointment->patient->email,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                // Continue with the process even if email fails
-            }
-        } else {
-            Log::warning('Cannot send appointment completion email - missing patient or email', [
-                'appointment_id' => $appointment->id,
-                'has_patient' => $appointment->patient ? true : false,
-                'patient_id' => $appointment->patient ? $appointment->patient->id : null,
-                'has_email' => $appointment->patient && $appointment->patient->email ? true : false,
-                'guest_appointment' => $appointment->isGuestAppointment(),
-                'guest_email' => $appointment->guest_email
-            ]);
+        // Return success immediately
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Appointment completed successfully']);
         }
 
         return back()->with('success', 'Appointment completed successfully.');
     }
 
     /**
-     * Mark appointment as no show
+     * Mark appointment as no show - Optimized for speed
      */
     public function markNoShow(Appointment $appointment)
     {
         $doctor = $this->getEffectiveDoctor();
 
-        // Check if this appointment belongs to the doctor
-        if ($appointment->doctor_id !== $doctor->id) {
-            abort(403);
+        // Quick validation checks
+        if (!$doctor || $appointment->doctor_id !== $doctor->id) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
         if ($appointment->status !== 'confirmed') {
-            return back()->withErrors(['error' => 'Only confirmed appointments can be marked as no show.']);
+            return response()->json(['success' => false, 'message' => 'Only confirmed appointments can be marked as no show'], 400);
         }
 
+        // Mark as no show quickly
         $appointment->markAsNoShow();
+
+        // Return success immediately
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Appointment marked as no show successfully']);
+        }
 
         return back()->with('success', 'Appointment marked as no show.');
     }
@@ -637,40 +509,72 @@ class DashboardController extends Controller
     private function sendAppointmentNotifications(Appointment $appointment)
     {
         try {
+            \Log::info('🔔 Doctor Dashboard: Starting appointment notifications', [
+                'appointment_id' => $appointment->id,
+                'doctor_id' => $appointment->doctor_id,
+                'patient_id' => $appointment->patient_id,
+            ]);
+
+            // Eager load relationships to prevent N+1 queries
+            if (!$appointment->relationLoaded('doctor.user')) {
+                $appointment->load('doctor.user');
+            }
+
+            if ($appointment->patient_id && !$appointment->relationLoaded('patient')) {
+                $appointment->load('patient');
+            }
+
             // Send notification to doctor about new appointment
             if ($appointment->doctor && $appointment->doctor->user) {
                 $doctor = $appointment->doctor->user;
+                \Log::info('📧 Doctor Dashboard: Checking doctor notification', [
+                    'doctor_id' => $doctor->id,
+                    'wants_notification' => $doctor->wantsNotification('appointment_booked'),
+                ]);
 
                 // Check if doctor wants appointment notifications
                 if ($doctor->wantsNotification('appointment_booked')) {
                     // Send notification directly, not using queue
+                    // NOTE: AppointmentBookedNotification implements ShouldBroadcast so it handles its own broadcasting
+                    // We do NOT call event() separately to avoid duplicate WebSocket events
                     $notification = new \App\Notifications\AppointmentBookedNotification($appointment);
                     $doctor->notify($notification);
-
-                    // Broadcast event immediately, not using queue
-                    event(new \App\Events\AppointmentBookedEvent($appointment));
+                    \Log::info('✅ Doctor Dashboard: Doctor notification sent', ['doctor_id' => $doctor->id]);
+                } else {
+                    \Log::info('❌ Doctor Dashboard: Doctor notification skipped - preferences', ['doctor_id' => $doctor->id]);
                 }
+            } else {
+                \Log::warning('❌ Doctor Dashboard: No doctor found for appointment', ['appointment_id' => $appointment->id]);
             }
 
             // Send notification to patient about appointment confirmation
-            if ($appointment->patient && $appointment->status === 'confirmed') {
+            if ($appointment->patient) {
                 $patient = $appointment->patient;
+                \Log::info('📧 Doctor Dashboard: Checking patient notification', [
+                    'patient_id' => $patient->id,
+                    'wants_notification' => $patient->wantsNotification('appointment_booked'),
+                    'appointment_status' => $appointment->status,
+                ]);
 
-                // Check if patient wants appointment notifications
+                // Send notification to patient regardless of status (like main controller)
                 if ($patient->wantsNotification('appointment_booked')) {
-                    $patient->notifyIfWants(new \App\Notifications\AppointmentBookedNotification($appointment), 'appointment_booked');
+                    $notification = new \App\Notifications\AppointmentBookedNotification($appointment);
+                    $patient->notify($notification);
+                    \Log::info('✅ Doctor Dashboard: Patient notification sent', ['patient_id' => $patient->id]);
+                } else {
+                    \Log::info('❌ Doctor Dashboard: Patient notification skipped - preferences', ['patient_id' => $patient->id]);
                 }
-            }
-
-            // Send notification to guest about appointment confirmation
-            if ($appointment->isGuestAppointment() && $appointment->status === 'confirmed') {
-                // For guest appointments, we'll handle notifications differently
-                // This could be handled through email notifications
+            } else {
+                \Log::warning('❌ Doctor Dashboard: No patient found for appointment', ['appointment_id' => $appointment->id]);
             }
 
         } catch (\Exception $e) {
             // Log notification errors but don't break the appointment process
-            Log::error('Failed to send appointment notifications: ' . $e->getMessage());
+            \Log::error('❌ Doctor Dashboard: Failed to send appointment notifications: ' . $e->getMessage(), [
+                'appointment_id' => $appointment->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
     }
 
@@ -1175,6 +1079,56 @@ class DashboardController extends Controller
 
         return redirect()->route('doctor.appointments.show', $appointment)
             ->with('success', 'Follow-up appointment created successfully!');
+    }
+
+    /**
+     * Display SMS provider settings page for doctors
+     */
+    public function smsSettings()
+    {
+        $doctor = $this->getEffectiveDoctor();
+
+        // Get current doctor provider setting
+        $doctorProvider = $doctor->sms_provider;
+
+        // Get system provider
+        $systemProvider = app(\App\Services\SmsService::class)->getSystemProviderPublic();
+
+        // Get hospital information if doctor belongs to a hospital
+        $user = $this->getEffectiveDoctorUser();
+        $hospital = $user->hospital;
+
+        $hospitalProvider = $hospital ? $hospital->sms_provider : null;
+        $hospitalName = $hospital ? $hospital->name : null;
+
+        // Determine effective provider using the same logic as the API
+        if ($doctorProvider) {
+            $effectiveProvider = [
+                'provider' => $doctorProvider,
+                'source' => 'doctor',
+                'inherited_from' => null
+            ];
+        } elseif ($hospitalProvider) {
+            $effectiveProvider = [
+                'provider' => $hospitalProvider,
+                'source' => 'hospital',
+                'inherited_from' => $hospitalName
+            ];
+        } else {
+            $effectiveProvider = [
+                'provider' => $systemProvider,
+                'source' => 'system',
+                'inherited_from' => null
+            ];
+        }
+
+        return view('doctor.sms-settings', compact(
+            'doctorProvider',
+            'systemProvider',
+            'hospitalProvider',
+            'hospitalName',
+            'effectiveProvider'
+        ));
     }
 
 }

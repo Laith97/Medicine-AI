@@ -52,6 +52,7 @@ class EventServiceProvider extends ServiceProvider
         parent::boot();
 
         // Register the AppointmentObserver
-        \App\Models\Appointment::observe(\App\Observers\AppointmentObserver::class);
+        // NOTE: Observer is already registered in AppServiceProvider to avoid duplicate
+        // \App\Models\Appointment::observe(\App\Observers\AppointmentObserver::class);
     }
 }

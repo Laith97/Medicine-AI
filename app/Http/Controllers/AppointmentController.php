@@ -384,8 +384,9 @@ class AppointmentController extends Controller
             $cancelledBy = $user->isPatient() ? 'patient' : 'doctor';
             $lockedAppointment->cancel($cancelledBy, $request->cancellation_reason);
 
-            // Send cancellation notifications
-            $this->sendAppointmentCancellationNotifications($lockedAppointment, $request->cancellation_reason);
+            // NOTE: Database notifications are sent via AppointmentObserver -> broadcastService
+            // -> AppointmentStatusChangedEvent -> SendAppointmentStatusChangeNotification listener
+            // No additional notification sending needed here to avoid duplicates.
         });
 
         return $redirect->with('success', 'Appointment cancelled successfully.');
@@ -599,6 +600,12 @@ class AppointmentController extends Controller
     private function sendAppointmentNotifications(Appointment $appointment)
     {
         try {
+            \Log::info('🔔 Starting appointment notifications', [
+                'appointment_id' => $appointment->id,
+                'doctor_id' => $appointment->doctor_id,
+                'patient_id' => $appointment->patient_id,
+            ]);
+
             // Eager load relationships to prevent N+1 queries
             if (!$appointment->relationLoaded('doctor.user')) {
                 $appointment->load('doctor.user');
@@ -609,29 +616,51 @@ class AppointmentController extends Controller
             }
 
             // Send notification to doctor about new appointment
+            // NOTE: The notification itself handles broadcasting via ShouldBroadcast
+            // We do NOT need to call event() separately to avoid duplicates
             if ($appointment->doctor && $appointment->doctor->user) {
                 $doctor = $appointment->doctor->user;
+                \Log::info('📧 Checking doctor notification', [
+                    'doctor_id' => $doctor->id,
+                    'wants_notification' => $doctor->wantsNotification('appointment_booked'),
+                ]);
 
                 // Check if doctor wants appointment notifications
                 if ($doctor->wantsNotification('appointment_booked')) {
-                    // 直接发送通知，不使用队列
-                    $notification = new \App\Notifications\AppointmentBookedNotification($appointment);
+                    $notification = new \App\Notifications\ReliableAppointmentBookedNotification($appointment);
                     $doctor->notify($notification);
-
-                    // 立即广播事件，不使用队列
-                    event(new \App\Events\AppointmentBookedEvent($appointment));
+                    \Log::info('✅ Doctor notification sent', ['doctor_id' => $doctor->id]);
+                } else {
+                    \Log::info('❌ Doctor notification skipped - preferences', ['doctor_id' => $doctor->id]);
                 }
+            } else {
+                \Log::warning('❌ No doctor found for appointment', ['appointment_id' => $appointment->id]);
             }
 
-            // Send notification to patient about appointment confirmation
-            if ($appointment->patient && $appointment->status === 'confirmed') {
+            // Send notification to patient about appointment booking (always for registered patients)
+            // NOTE: The notification itself handles broadcasting via ShouldBroadcast
+            if ($appointment->patient) {
                 $patient = $appointment->patient;
-
-                // Check if patient wants appointment notifications
+                \Log::info('📧 Checking patient notification', [
+                    'patient_id' => $patient->id,
+                    'wants_notification' => $patient->wantsNotification('appointment_booked'),
+                ]);
+                
+                // Send notification to patient regardless of status
                 if ($patient->wantsNotification('appointment_booked')) {
-                    $patient->notifyIfWants(new \App\Notifications\AppointmentBookedNotification($appointment), 'appointment_booked');
+                    $notification = new \App\Notifications\ReliableAppointmentBookedNotification($appointment);
+                    $patient->notify($notification);
+                    \Log::info('✅ Patient notification sent', ['patient_id' => $patient->id]);
+                } else {
+                    \Log::info('❌ Patient notification skipped - preferences', ['patient_id' => $patient->id]);
                 }
+            } else {
+                \Log::warning('❌ No patient found for appointment', ['appointment_id' => $appointment->id]);
             }
+
+            // NOTE: The AppointmentBookedEvent is NOT broadcast separately here because
+            // ReliableAppointmentBookedNotification already implements ShouldBroadcast
+            // and handles the broadcasting. Broadcasting twice would cause duplicate notifications.
 
             // Send notification to guest about appointment confirmation
             if ($appointment->isGuestAppointment() && $appointment->status === 'confirmed') {
@@ -641,7 +670,11 @@ class AppointmentController extends Controller
 
         } catch (\Exception $e) {
             // Log notification errors but don't break the appointment process
-            \Log::error('Failed to send appointment notifications: ' . $e->getMessage());
+            \Log::error('❌ Failed to send appointment notifications: ' . $e->getMessage(), [
+                'appointment_id' => $appointment->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
     }
 
@@ -657,17 +690,13 @@ class AppointmentController extends Controller
 
                 // Check if doctor wants appointment notifications
                 if ($doctor->wantsNotification('appointment_booked')) {
-                    $doctor->notifyIfWants(new \App\Notifications\SystemAlertNotification(
-                        'Appointment Cancelled',
-                        "Appointment #{$appointment->appointment_number} has been cancelled by patient. Reason: " . ($reason ?: 'Not specified'),
-                        'warning',
-                        [
-                            'link' => route('appointments.index'),
-                            'link_text' => 'View Appointments',
-                            'related_type' => 'appointment',
-                            'related_id' => $appointment->id
-                        ]
-                    ));
+                    $notification = new \App\Notifications\AppointmentStatusChangedNotification(
+                        $appointment, 
+                        'confirmed', // old status
+                        'cancelled', // new status
+                        'patient'    // changed by
+                    );
+                    $doctor->notify($notification);
                 }
             }
 
@@ -677,17 +706,13 @@ class AppointmentController extends Controller
 
                 // Check if patient wants appointment notifications
                 if ($patient->wantsNotification('appointment_booked')) {
-                    $patient->notifyIfWants(new \App\Notifications\SystemAlertNotification(
-                        'Appointment Cancelled',
-                        "Your appointment #{$appointment->appointment_number} has been cancelled successfully.",
-                        'info',
-                        [
-                            'link' => route('appointments.index'),
-                            'link_text' => 'View Appointments',
-                            'related_type' => 'appointment',
-                            'related_id' => $appointment->id
-                        ]
-                    ));
+                    $notification = new \App\Notifications\AppointmentStatusChangedNotification(
+                        $appointment, 
+                        'confirmed', // old status
+                        'cancelled', // new status
+                        'patient'    // changed by
+                    );
+                    $patient->notify($notification);
                 }
             }
 

@@ -23,6 +23,7 @@ class Hospital extends Model
         'website',
         'logo_path',
         'is_active',
+        'sms_provider',
     ];
 
     protected $casts = [

@@ -4,10 +4,13 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 
-class HighRiskClaimAlert extends Notification implements ShouldQueue
+class HighRiskClaimAlert extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
@@ -29,7 +32,27 @@ class HighRiskClaimAlert extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'broadcast'];
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'high_risk_claim',
+            'claim_id' => $this->claimData['claim_id'] ?? null,
+            'claim_number' => $this->claimData['claim_number'] ?? 'N/A',
+            'denial_risk' => $this->claimData['denial_risk'] ?? 0,
+            'top_factors' => $this->claimData['top_factors'] ?? [],
+            'expected_amount' => $this->claimData['expected_amount'] ?? 0,
+            'title' => 'High Risk Claim Alert',
+            'message' => "Claim {$this->claimData['claim_number']} has high denial risk",
+            'link' => "/admin/claims/{$this->claimData['claim_id']}",
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     /**
@@ -37,20 +60,23 @@ class HighRiskClaimAlert extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $claimNumber = $this->claimData['claim_number'];
-        $denialRisk = number_format($this->claimData['denial_risk'] * 100, 1);
-        $expectedAmount = number_format($this->claimData['expected_amount'], 2);
+        $claimNumber = $this->claimData['claim_number'] ?? 'N/A';
+        $denialRisk = number_format(($this->claimData['denial_risk'] ?? 0) * 100, 1);
+        $expectedAmount = number_format($this->claimData['expected_amount'] ?? 0, 2);
+        $claimId = $this->claimData['claim_id'] ?? '';
 
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject("High Risk Claim Alert: {$claimNumber}")
             ->greeting('High Risk Claim Alert')
             ->line("Claim {$claimNumber} has been flagged with a high denial risk of {$denialRisk}%.")
-            ->line("Expected Amount: \${$expectedAmount}")
-            ->when(!empty($this->claimData['top_factors']), function ($mail) {
-                $factors = implode(', ', $this->claimData['top_factors']);
-                return $mail->line("Top risk factors: {$factors}");
-            })
-            ->action('Review Claim', url("/admin/claims/{$this->claimData['claim_id']}"))
+            ->line("Expected Amount: \${$expectedAmount}");
+
+        if (!empty($this->claimData['top_factors'])) {
+            $factors = implode(', ', $this->claimData['top_factors']);
+            $mail->line("Top risk factors: {$factors}");
+        }
+
+        return $mail->action('Review Claim', url("/admin/claims/{$claimId}"))
             ->line('Please review this claim promptly to prevent potential denial.');
     }
 
@@ -61,12 +87,37 @@ class HighRiskClaimAlert extends Notification implements ShouldQueue
     {
         return [
             'type' => 'high_risk_claim',
-            'claim_id' => $this->claimData['claim_id'],
-            'claim_number' => $this->claimData['claim_number'],
-            'denial_risk' => $this->claimData['denial_risk'],
+            'claim_id' => $this->claimData['claim_id'] ?? null,
+            'claim_number' => $this->claimData['claim_number'] ?? 'N/A',
+            'denial_risk' => $this->claimData['denial_risk'] ?? 0,
             'top_factors' => $this->claimData['top_factors'] ?? [],
-            'expected_amount' => $this->claimData['expected_amount'],
+            'expected_amount' => $this->claimData['expected_amount'] ?? 0,
             'message' => "Claim {$this->claimData['claim_number']} has high denial risk ({$this->claimData['denial_risk']})",
         ];
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        // Use user_id from claimData since notifiable may be null during queue processing
+        $notifiableId = isset($this->notifiable) ? $this->notifiable->id : null;
+        if (!$notifiableId && isset($this->claimData['user_id'])) {
+            $notifiableId = $this->claimData['user_id'];
+        }
+        return [new PrivateChannel('App.User.' . ($notifiableId ?? 'default'))];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'high-risk-claim';
     }
 }

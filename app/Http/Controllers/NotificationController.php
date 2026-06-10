@@ -79,19 +79,15 @@ class NotificationController extends Controller
 
     /**
      * Get notifications for API (used by notification dropdown).
+     * Note: We intentionally don't cache here because notifications must be real-time.
+     * The cache is only used for page loads, not for dropdown/API updates.
      */
     public function apiIndex()
     {
         $user = Auth::user();
 
-        // Try to get cached data first
-        $cachedData = $this->cacheService->getCachedNotifications($user->id, 'api', 15);
-
-        if ($cachedData) {
-            return response()->json($cachedData);
-        }
-
-        // Get fresh notifications data
+        // Always get fresh notifications - no cache for dropdown/API
+        // Caching is only for page loads (notifications.index), not real-time dropdown
         $notifications = $user->notifications()
             ->orderBy('created_at', 'desc')
             ->take(15)
@@ -115,8 +111,8 @@ class NotificationController extends Controller
             'unread_count' => $unreadCount
         ];
 
-        // Cache the response
-        $this->cacheService->cacheNotifications($user->id, 'api', 15, $responseData);
+        // IMPORTANT: Don't cache here - notifications must be real-time
+        // Cache is only used for page loads (notifications.index), not dropdown/API
 
         return response()->json($responseData);
     }
@@ -168,8 +164,12 @@ class NotificationController extends Controller
             $notification->markAsRead();
             event(new \App\Events\NotificationRead($userId, $notification->id));
 
-            // Invalidate cache since notification status changed
-            $this->cacheService->invalidateUserCache($userId);
+            // Invalidate cache since notification status changed (wrapped in try-catch to prevent 500)
+            try {
+                $this->cacheService->invalidateUserCache($userId);
+            } catch (\Exception $e) {
+                Log::warning('Cache invalidation failed in markAsRead: ' . $e->getMessage());
+            }
 
             return response()->json(['success' => true]);
         }
@@ -185,8 +185,12 @@ class NotificationController extends Controller
         $user = Auth::user();
         $user->unreadNotifications()->update(['read_at' => now()]);
 
-        // Invalidate cache since notification status changed
-        $this->cacheService->invalidateUserCache($user->id);
+        // Invalidate cache since notification status changed (wrapped in try-catch to prevent 500)
+        try {
+            $this->cacheService->invalidateUserCache($user->id);
+        } catch (\Exception $e) {
+            Log::warning('Cache invalidation failed in markAllAsRead: ' . $e->getMessage());
+        }
 
         return response()->json(['success' => true]);
     }

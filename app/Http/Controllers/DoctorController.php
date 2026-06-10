@@ -24,8 +24,7 @@ class DoctorController extends Controller
         ]);
 
         $query = Doctor::with(['user', 'specialty'])
-            ->active()
-            ->verified();
+            ->active();
 
         // Search by name or specialty
         if ($request->filled('search')) {
@@ -195,8 +194,7 @@ Log::info('Available slots for next 7 days:', $availableSlots);
     public function search(Request $request)
     {
         $query = Doctor::with(['user', 'specialty'])
-            ->active()
-            ->verified();
+            ->active();
 
         if ($request->filled('q')) {
             $search = $request->q;

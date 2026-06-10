@@ -5,10 +5,13 @@ namespace App\Notifications;
 use App\Models\HepProgram;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 
-class HEPProgramGenerated extends Notification implements ShouldQueue
+class HEPProgramGenerated extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
@@ -31,7 +34,40 @@ class HEPProgramGenerated extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'broadcast'];
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        $patientName = $this->program?->patient?->name ?? 'Patient';
+        $programTitle = $this->program?->title ?? 'Program';
+
+        if ($this->status === 'completed') {
+            return new BroadcastMessage([
+                'id' => $this->id,
+                'type' => 'hep_program_generated',
+                'program_id' => $this->program?->id ?? 0,
+                'program_title' => $programTitle,
+                'patient_name' => $patientName,
+                'title' => 'HEP Program Generated',
+                'message' => 'A Home Exercise Program has been generated for ' . $patientName,
+                'link' => '/hep/programs/' . ($this->program?->id ?? 0),
+                'created_at' => now()->toISOString(),
+            ]);
+        } else {
+            return new BroadcastMessage([
+                'id' => $this->id,
+                'type' => 'hep_program_failed',
+                'error_message' => $this->errorMessage,
+                'title' => 'HEP Program Generation Failed',
+                'message' => 'Failed to generate HEP program: ' . ($this->errorMessage ?? 'Unknown error'),
+                'link' => '/hep/generate',
+                'created_at' => now()->toISOString(),
+            ]);
+        }
     }
 
     /**
@@ -68,24 +104,49 @@ class HEPProgramGenerated extends Notification implements ShouldQueue
      */
     public function toArray(object $notifiable): array
     {
+        $patientName = $this->program?->patient?->name ?? 'Patient';
+        $programTitle = $this->program?->title ?? 'Program';
+
         if ($this->status === 'completed') {
             return [
                 'type' => 'hep_program_generated',
                 'title' => 'HEP Program Generated',
-                'message' => 'A Home Exercise Program has been generated for ' . $this->program->patient->name,
-                'program_id' => $this->program->id,
-                'program_title' => $this->program->title,
-                'patient_name' => $this->program->patient->name,
-                'action_url' => '/hep/programs/' . $this->program->id,
+                'message' => 'A Home Exercise Program has been generated for ' . $patientName,
+                'program_id' => $this->program?->id ?? 0,
+                'program_title' => $programTitle,
+                'patient_name' => $patientName,
+                'action_url' => '/hep/programs/' . ($this->program?->id ?? 0),
             ];
         } else {
             return [
                 'type' => 'hep_program_failed',
                 'title' => 'HEP Program Generation Failed',
-                'message' => 'Failed to generate HEP program: ' . $this->errorMessage,
+                'message' => 'Failed to generate HEP program: ' . ($this->errorMessage ?? 'Unknown error'),
                 'error_message' => $this->errorMessage,
                 'action_url' => '/hep/generate',
             ];
         }
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        // Use program's patient_id directly since notifiable may be null during queue processing
+        $userId = $this->program->patient_id ?? $this->notifiable?->id ?? 'default';
+        return [new PrivateChannel('App.User.' . $userId)];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'hep-program-generated';
     }
 }

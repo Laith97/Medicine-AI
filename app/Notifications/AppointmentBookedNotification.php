@@ -50,19 +50,36 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
     public function toArray(object $notifiable): array
     {
         $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
+        $patientName = $this->appointment->patient->name ?? 'Patient';
+        $isDoctor = $notifiable->isDoctor();
+
+        // Customize message based on notifiable type
+        if ($isDoctor) {
+            $message = "{$patientName} has booked a new appointment with you on {$this->appointment->appointment_date->format('M j, Y g:i A')}";
+            $title = 'New Appointment Booked';
+        } else {
+            $message = "Your appointment with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')} has been confirmed";
+            $title = 'Appointment Confirmed';
+        }
+
+        // Use doctor route if notifiable is a doctor, otherwise use patient route
+        $link = $isDoctor
+            ? route('doctor.appointments.show', $this->appointment->id)
+            : route('appointments.show', $this->appointment->id);
 
         return [
             'type' => 'appointment_booked',
-            'title' => 'New Appointment Booked',
-            'message' => "A new appointment has been booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}",
+            'title' => $title,
+            'message' => $message,
             'icon' => 'calendar',
-            'link' => route('appointments.show', $this->appointment->id),
+            'link' => $link,
             'link_text' => 'View Appointment',
             'related_type' => 'appointment',
             'related_id' => $this->appointment->id,
             'data' => [
                 'appointment_id' => $this->appointment->id,
                 'doctor_name' => $doctorName,
+                'patient_name' => $patientName,
                 'appointment_date' => $this->appointment->appointment_date->format('Y-m-d H:i:s'),
                 'appointment_type' => $this->appointment->appointment_type,
             ]
@@ -75,24 +92,54 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
     public function toMail(object $notifiable): MailMessage
     {
         $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
+        $patientName = $this->appointment->patient->name ?? 'Patient';
+        $isDoctor = $notifiable->isDoctor();
+
+        if ($isDoctor) {
+            $subject = 'New Appointment Booked';
+            $message = "{$patientName} has booked a new appointment with you on {$this->appointment->appointment_date->format('M j, Y g:i A')}";
+            $actionUrl = route('doctor.appointments.show', $this->appointment->id);
+        } else {
+            $subject = 'Appointment Confirmed';
+            $message = "Your appointment with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')} has been confirmed";
+            $actionUrl = route('appointments.show', $this->appointment->id);
+        }
 
         return (new MailMessage)
-            ->subject('New Appointment Booked')
+            ->subject($subject)
             ->greeting('Hello ' . $notifiable->name . ',')
-            ->line("A new appointment has been booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}")
+            ->line($message)
             ->line('Appointment Type: ' . $this->appointment->appointment_type)
-            ->action('View Appointment', route('appointments.show', $this->appointment->id))
+            ->action('View Appointment', $actionUrl)
             ->line('Thank you for using our platform!');
     }
 
     /**
      * Get the SMS representation of the notification.
      */
-    public function toSms(object $notifiable): string
+    public function toSms(object $notifiable): array
     {
         $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
+        $patientName = $this->appointment->patient->name ?? 'Patient';
+        $doctorId = $this->appointment->doctor->id ?? 0;
+        $hospitalId = $this->appointment->doctor->hospital_id ?? 0;
+        $isDoctor = $notifiable->isDoctor();
 
-        return "New appointment booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}. View details: " . route('appointments.show', $this->appointment->id);
+        if ($isDoctor) {
+            $message = "{$patientName} has booked a new appointment with you on {$this->appointment->appointment_date->format('M j, Y g:i A')}. View: " . route('doctor.appointments.show', $this->appointment->id);
+        } else {
+            $message = "Your appointment with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')} has been confirmed. View: " . route('appointments.show', $this->appointment->id);
+        }
+
+        return [
+            'message' => $message,
+            'options' => [
+                'doctor_id' => $doctorId,
+                'hospital_id' => $hospitalId,
+                'context' => 'appointment_booked',
+                'context_id' => $this->appointment->id,
+            ]
+        ];
     }
 
     /**
@@ -101,20 +148,36 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
         $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
+        $patientName = $this->appointment->patient->name ?? 'Patient';
         $doctorId = $this->appointment->doctor->id ?? 0;
+        $isDoctor = $notifiable->isDoctor();
+
+        // Customize message based on notifiable type
+        if ($isDoctor) {
+            $title = 'New Appointment Booked';
+            $message = "{$patientName} has booked a new appointment with you on {$this->appointment->appointment_date->format('M j, Y g:i A')}";
+            $body = $message;
+            $link = route('doctor.appointments.show', $this->appointment->id);
+        } else {
+            $title = 'Appointment Confirmed';
+            $message = "Your appointment with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')} has been confirmed";
+            $body = $message;
+            $link = route('appointments.show', $this->appointment->id);
+        }
 
         $payload = [
             'id' => $this->id,
             'type' => 'appointment_booked',
-            'title' => 'New Appointment Booked',
-            'message' => "A new appointment has been booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}",
-            'body' => "A new appointment has been booked with Dr. {$doctorName} on {$this->appointment->appointment_date->format('M j, Y g:i A')}",
+            'title' => $title,
+            'message' => $message,
+            'body' => $body,
             'icon' => 'calendar',
-            'link' => route('appointments.show', $this->appointment->id),
+            'link' => $link,
             'link_text' => 'View Appointment',
             'data' => [
                 'appointment_id' => $this->appointment->id,
                 'doctor_name' => $doctorName,
+                'patient_name' => $patientName,
                 'doctor_id' => $doctorId,
                 'appointment_date' => $this->appointment->appointment_date->format('Y-m-d H:i:s'),
                 'appointment_type' => $this->appointment->appointment_type,
@@ -134,14 +197,9 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
      *
      * @return array
      */
-    public function broadcastOn()
+    public function broadcastOn(): array
     {
-        $doctorId = $this->appointment->doctor->id;
-        // 确保使用正确的频道名称格式
-        return [
-            new PrivateChannel('doctor.' . $doctorId),
-            new PrivateChannel('App.User.' . $doctorId)
-        ];
+        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
     }
 
     /**
@@ -151,6 +209,7 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
      */
     public function broadcastAs()
     {
+        // Using dot notation for Echo to listen with .listen('.appointment-booked')
         return 'appointment-booked';
     }
 }
