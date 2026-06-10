@@ -6,9 +6,10 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use App\Models\Appointment;
 
-class AppointmentStatusChangedEvent
+class AppointmentStatusChangedEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -29,10 +30,11 @@ class AppointmentStatusChangedEvent
     {
         $channels = [];
 
-        // Broadcast to doctor's channel
+        // Broadcast to doctor's channel - use doctor.user_id for App.User channel
         if ($this->appointment->doctor) {
             $channels[] = new PrivateChannel('doctor.' . $this->appointment->doctor->id);
-            $channels[] = new PrivateChannel('App.User.' . $this->appointment->doctor->id);
+            // Use doctor->user_id (the user account ID) for App.User channel, not doctor->id
+            $channels[] = new PrivateChannel('App.User.' . $this->appointment->doctor->user_id);
         }
 
         // Broadcast to patient's channel if registered patient
@@ -52,7 +54,7 @@ class AppointmentStatusChangedEvent
 
     public function broadcastAs()
     {
-        return 'appointment.status-changed';
+        return 'appointment-status-changed';
     }
 
     public function broadcastWith()

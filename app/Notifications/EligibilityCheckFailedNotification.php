@@ -5,10 +5,13 @@ namespace App\Notifications;
 use App\Models\PatientInsurance;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 
-class EligibilityCheckFailedNotification extends Notification implements ShouldQueue
+class EligibilityCheckFailedNotification extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
@@ -24,6 +27,8 @@ class EligibilityCheckFailedNotification extends Notification implements ShouldQ
         $this->patientInsurance = $patientInsurance;
         $this->serviceType = $serviceType;
         $this->errorMessage = $errorMessage;
+        $this->onQueue('realtime');
+        $this->delay(0);
     }
 
     /**
@@ -33,7 +38,27 @@ class EligibilityCheckFailedNotification extends Notification implements ShouldQ
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'broadcast'];
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'eligibility_check_failed',
+            'patient_insurance_id' => $this->patientInsurance->id,
+            'insurance_provider' => $this->patientInsurance->insuranceProvider->name,
+            'policy_number' => $this->patientInsurance->policy_number,
+            'service_type' => $this->serviceType,
+            'error_message' => $this->errorMessage,
+            'title' => 'Eligibility Check Failed',
+            'message' => "Unable to verify eligibility for {$this->patientInsurance->insuranceProvider->name} - {$this->serviceType}",
+            'link' => '/patient/eligibility',
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     /**
@@ -69,5 +94,25 @@ class EligibilityCheckFailedNotification extends Notification implements ShouldQ
             'related_type' => 'patient_insurance',
             'related_id' => $this->patientInsurance->id,
         ];
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'eligibility-check-failed';
     }
 }

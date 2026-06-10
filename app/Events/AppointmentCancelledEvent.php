@@ -5,9 +5,10 @@ namespace App\Events;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use App\Models\Appointment;
 
-class AppointmentCancelledEvent
+class AppointmentCancelledEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -25,8 +26,8 @@ class AppointmentCancelledEvent
     public function broadcastOn()
     {
         return [
-            new \Illuminate\Broadcasting\Channel('doctor.' . $this->appointment->doctor->id),
-            new \Illuminate\Broadcasting\Channel('App.User.' . $this->appointment->doctor->id)
+            new \Illuminate\Broadcasting\PrivateChannel('App.User.' . $this->appointment->doctor->user_id),
+            new \Illuminate\Broadcasting\PrivateChannel('doctor.' . $this->appointment->doctor->id)
         ];
     }
 

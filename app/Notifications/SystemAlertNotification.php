@@ -8,6 +8,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 use App\Services\NotificationCompressionService;
 
 class SystemAlertNotification extends Notification implements ShouldBroadcast
@@ -37,7 +38,7 @@ class SystemAlertNotification extends Notification implements ShouldBroadcast
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast', 'mail'];
+        return ['database', 'broadcast']; // Remove 'mail' to avoid rate limits
     }
 
     /**
@@ -124,5 +125,27 @@ class SystemAlertNotification extends Notification implements ShouldBroadcast
         $compressedPayload = $compressionService->compressPayload($payload);
 
         return new BroadcastMessage($compressedPayload);
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn()
+    {
+        return [
+            new PrivateChannel('App.User.' . ($this->data['user_id'] ?? 'default')),
+        ];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs()
+    {
+        return 'system-alert';
     }
 }

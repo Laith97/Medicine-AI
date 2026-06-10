@@ -452,6 +452,24 @@ class SmsService
                     {
                         return 'log';
                     }
+
+                    public function getMessageStatus(string $messageId): array
+                    {
+                        return ['status' => 'unknown', 'message_id' => $messageId];
+                    }
+
+                    public function sendBulkSms(array $recipients, string $message): array
+                    {
+                        foreach ($recipients as $to) {
+                            $this->send($to, $message);
+                        }
+                        return ['success' => true, 'sent' => count($recipients)];
+                    }
+
+                    public function getDeliveryReport(string $messageId): array
+                    {
+                        return ['message_id' => $messageId, 'status' => 'delivered'];
+                    }
                 };
                 default:
                     return null;

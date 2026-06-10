@@ -32,7 +32,7 @@ Route::middleware('auth')->post('/predictions', [App\Http\Controllers\Api\Predic
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'web'])->group(function () {
+Route::middleware(['auth:web'])->group(function () {
     // User settings
     Route::get('/user/settings', [UserSettingsController::class, 'getSettings']);
 

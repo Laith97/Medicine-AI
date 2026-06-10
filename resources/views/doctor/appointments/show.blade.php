@@ -195,10 +195,38 @@
 
                 <div class="text-end">
                     <div class="d-flex flex-column align-items-end gap-2">
-                        <span class="status-badge status-{{ $appointment->status }}">
-                            <i class="fas fa-{{ $appointment->status == 'pending' ? 'clock' : ($appointment->status == 'confirmed' ? 'check-circle' : ($appointment->status == 'completed' ? 'check-double' : ($appointment->status == 'cancelled' ? 'times-circle' : 'user-times'))) }}"></i>
-                            {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
-                        </span>
+                        <div class="d-flex align-items-center gap-3">
+                            <!-- Quick Action Buttons -->
+                            @if(auth()->check() && auth()->user()->isDoctor())
+                                <div class="btn-group" role="group">
+                                    @if($appointment->status == 'pending')
+                                        <button onclick="confirmAppointment({{ $appointment->id }})" class="btn btn-success btn-sm" title="Confirm Appointment">
+                                            <i class="fas fa-check me-1"></i>Confirm
+                                        </button>
+                                    @endif
+
+                                    @if($appointment->status == 'confirmed')
+                                        <button onclick="completeAppointment({{ $appointment->id }})" class="btn btn-primary btn-sm" title="Complete Appointment">
+                                            <i class="fas fa-check-circle me-1"></i>Complete
+                                        </button>
+                                        <button onclick="markNoShow({{ $appointment->id }})" class="btn btn-secondary btn-sm" title="Mark as No Show">
+                                            <i class="fas fa-user-times me-1"></i>No Show
+                                        </button>
+                                    @endif
+
+                                    @if(in_array($appointment->status, ['pending', 'confirmed']))
+                                        <button onclick="cancelAppointment({{ $appointment->id }})" class="btn btn-danger btn-sm" title="Cancel Appointment">
+                                            <i class="fas fa-times me-1"></i>Cancel
+                                        </button>
+                                    @endif
+                                </div>
+                            @endif
+                            
+                            <span class="status-badge status-{{ $appointment->status }}">
+                                <i class="fas fa-{{ $appointment->status == 'pending' ? 'clock' : ($appointment->status == 'confirmed' ? 'check-circle' : ($appointment->status == 'completed' ? 'check-double' : ($appointment->status == 'cancelled' ? 'times-circle' : 'user-times'))) }}"></i>
+                                {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
+                            </span>
+                        </div>
                         @if($appointment->status == 'completed')
                         <div class="bg-success bg-opacity-25 px-3 py-1 rounded-pill">
                             <small class="text-white fw-semibold">
@@ -1213,6 +1241,38 @@
     </div>
 </div>
 
+<!-- Complete Appointment Modal -->
+<div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="completeModalLabel">Complete Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="completeForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="doctor_notes" class="form-label">Doctor's Notes (optional)</label>
+                        <textarea name="doctor_notes" id="doctor_notes" rows="4" class="form-control"
+                                  placeholder="Add any notes about the appointment..."></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="follow_up_required" class="form-check-input" id="follow_up_required">
+                        <label class="form-check-label" for="follow_up_required">
+                            Follow-up appointment recommended
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Complete Appointment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Delete Prescription Modal -->
 <div class="modal fade" id="deletePrescriptionModal" tabindex="-1">
     <div class="modal-dialog">
@@ -1680,58 +1740,310 @@
 
 @push('scripts')
 <script>
+// Enhanced appointment action functions with proper timeout and error handling
+function createTimeoutPromise(promise, timeoutMs = 30000) { // Increased to 30 seconds
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Request timeout - server may be slow, please try again')), timeoutMs)
+        )
+    ]);
+}
+
+function resetButtonState(button, originalHTML) {
+    if (button) {
+        button.disabled = false;
+        button.innerHTML = originalHTML;
+    }
+}
+
+function confirmAppointment(appointmentId) {
+    if (!confirm('Are you sure you want to confirm this appointment?')) {
+        return;
+    }
+
+    const btn = event.target.closest('button');
+    if (!btn) return;
+
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Confirming...';
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/doctor/appointments/${appointmentId}/confirm`;
+
+    const csrfToken = document.createElement('input');
+    csrfToken.type = 'hidden';
+    csrfToken.name = '_token';
+    csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    form.appendChild(csrfToken);
+    document.body.appendChild(form);
+
+    const fetchPromise = fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    });
+
+    createTimeoutPromise(fetchPromise)
+    .then(response => {
+        if (response.ok) {
+            // Try to parse JSON response first
+            return response.json().then(data => {
+                if (data.success !== false) {
+                    showNotification('Appointment confirmed successfully!', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    throw new Error(data.message || 'Failed to confirm appointment');
+                }
+            }).catch(() => {
+                // Fallback if response is not JSON
+                showNotification('Appointment confirmed successfully!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            });
+        } else {
+            throw new Error('Server returned error status: ' + response.status);
+        }
+    })
+    .catch(error => {
+        resetButtonState(btn, originalHTML);
+        showNotification('Failed to confirm appointment. Please try again.', 'error');
+        console.error('Confirm appointment error:', error);
+    })
+    .finally(() => {
+        if (document.body.contains(form)) {
+            document.body.removeChild(form);
+        }
+    });
+}
+
 function cancelAppointment(appointmentId) {
     const form = document.getElementById('cancelForm');
-    form.action = `/appointments/${appointmentId}/cancel`;
+    form.action = `/doctor/appointments/${appointmentId}/cancel`;
     new bootstrap.Modal(document.getElementById('cancelModal')).show();
 }
 
 function submitCancellation() {
     const form = document.getElementById('cancelForm');
-    const submitBtn = document.querySelector('#cancelModal button[type="button"][onclick="submitCancellation()"]');
-    const originalText = submitBtn.textContent;
-
-    // Update button to show loading state
+    const submitBtn = document.querySelector('#cancelModal .btn-danger');
+    if (!submitBtn) return;
+    
+    const originalText = submitBtn.innerHTML;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Cancellation...';
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Cancelling...';
 
-    // Submit via AJAX to properly handle errors
-    const formData = new FormData(form);
-    fetch(form.action, {
+    const fetchPromise = fetch(form.action, {
         method: 'POST',
-        body: formData,
+        body: new FormData(form),
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
-    })
+    });
+
+    createTimeoutPromise(fetchPromise)
     .then(response => {
         if (response.ok) {
-            // Success - reload the page to update the appointment status
-            window.location.reload();
-        } else {
-            // Handle errors
+            // Try to parse JSON response first
             return response.json().then(data => {
-                console.error('Error cancelling appointment:', data);
-                // Show error notification
-                alert(data.message || 'Failed to cancel appointment. Please try again.');
-                // Reset button state
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
+                if (data.success !== false) {
+                    showNotification('Appointment cancelled successfully!', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    throw new Error(data.message || 'Failed to cancel appointment');
+                }
             }).catch(() => {
-                // If response isn't JSON, show generic error
-                alert('Failed to cancel appointment. Please try again.');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
+                // Fallback if response is not JSON
+                showNotification('Appointment cancelled successfully!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
             });
+        } else {
+            throw new Error('Server returned error status: ' + response.status);
         }
     })
     .catch(error => {
-        console.error('Network error cancelling appointment:', error);
-        alert('Network error. Please check your connection and try again.');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
+        resetButtonState(submitBtn, originalText);
+        showNotification('Failed to cancel appointment. Please try again.', 'error');
+        console.error('Cancel appointment error:', error);
     });
+}
+
+function completeAppointment(appointmentId) {
+    const form = document.getElementById('completeForm');
+    form.action = `/doctor/appointments/${appointmentId}/complete`;
+    form.reset();
+
+    const modal = new bootstrap.Modal(document.getElementById('completeModal'));
+    modal.show();
+
+    // Remove existing handlers
+    const newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+    const updatedForm = document.getElementById('completeForm');
+    const submitBtn = updatedForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+
+    updatedForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Completing...';
+
+        const fetchPromise = fetch(updatedForm.action, {
+            method: 'POST',
+            body: new FormData(updatedForm),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+
+        createTimeoutPromise(fetchPromise)
+        .then(response => {
+            if (response.ok) {
+                // Try to parse JSON response first
+                return response.json().then(data => {
+                    if (data.success !== false) {
+                        showNotification('Appointment completed successfully!', 'success');
+                        modal.hide();
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        throw new Error(data.message || 'Failed to complete appointment');
+                    }
+                }).catch(() => {
+                    // Fallback if response is not JSON
+                    showNotification('Appointment completed successfully!', 'success');
+                    modal.hide();
+                    setTimeout(() => window.location.reload(), 1000);
+                });
+            } else {
+                throw new Error('Server returned error status: ' + response.status);
+            }
+        })
+        .catch(error => {
+            resetButtonState(submitBtn, originalText);
+            showNotification('Failed to complete appointment. Please try again.', 'error');
+            console.error('Complete appointment error:', error);
+        });
+    });
+}
+
+function markNoShow(appointmentId) {
+    if (!confirm('Are you sure you want to mark this appointment as no show? This action cannot be undone.')) {
+        return;
+    }
+
+    const btn = event.target.closest('button');
+    if (!btn) return;
+
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/doctor/appointments/${appointmentId}/no-show`;
+
+    const csrfToken = document.createElement('input');
+    csrfToken.type = 'hidden';
+    csrfToken.name = '_token';
+    csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    form.appendChild(csrfToken);
+    document.body.appendChild(form);
+
+    const fetchPromise = fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    });
+
+    createTimeoutPromise(fetchPromise)
+    .then(response => {
+        if (response.ok) {
+            // Try to parse JSON response first
+            return response.json().then(data => {
+                if (data.success !== false) {
+                    showNotification('Appointment marked as no show successfully!', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    throw new Error(data.message || 'Failed to mark appointment as no show');
+                }
+            }).catch(() => {
+                // Fallback if response is not JSON
+                showNotification('Appointment marked as no show successfully!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            });
+        } else {
+            throw new Error('Server returned error status: ' + response.status);
+        }
+    })
+    .catch(error => {
+        resetButtonState(btn, originalHTML);
+        showNotification('Failed to mark appointment as no show. Please try again.', 'error');
+        console.error('Mark no-show error:', error);
+    })
+    .finally(() => {
+        if (document.body.contains(form)) {
+            document.body.removeChild(form);
+        }
+    });
+}
+
+// Notification System
+function showNotification(message, type = 'info') {
+    const alertTypes = {
+        success: 'alert-success',
+        info: 'alert-info',
+        warning: 'alert-warning',
+        error: 'alert-danger'
+    };
+
+    const icons = {
+        success: 'fas fa-check-circle',
+        info: 'fas fa-info-circle',
+        warning: 'fas fa-exclamation-triangle',
+        error: 'fas fa-times-circle'
+    };
+
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertTypes[type]} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 100px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px; margin-top: 10px;';
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'd-flex align-items-center';
+
+    const icon = document.createElement('i');
+    icon.className = `${icons[type]} me-2`;
+
+    const span = document.createElement('span');
+    span.textContent = message;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn-close';
+    button.setAttribute('data-bs-dismiss', 'alert');
+    button.setAttribute('aria-label', 'Close');
+
+    contentDiv.appendChild(icon);
+    contentDiv.appendChild(span);
+    contentDiv.appendChild(button);
+    notification.appendChild(contentDiv);
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
 }
 
 // Prescription delete functionality

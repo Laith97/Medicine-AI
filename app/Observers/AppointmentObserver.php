@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Appointment;
+use App\Events\AppointmentBookedEvent;
 use App\Events\AppointmentCompletedEvent;
 use App\Events\AppointmentCancelledEvent;
 use App\Events\AppointmentStatusChangedEvent;
@@ -46,6 +47,9 @@ class AppointmentObserver
 
         // Broadcast appointment creation
         $this->broadcastService->broadcastAppointmentCreated($appointment);
+
+        // Fire AppointmentBookedEvent for real-time notifications
+        event(new AppointmentBookedEvent($appointment));
     }
 
     /**
@@ -76,11 +80,10 @@ class AppointmentObserver
             $this->cacheService->invalidateAppointmentCache($appointment);
             $this->cacheService->updateAppointmentInCache($appointment);
 
-            // Handle status synchronization with related entities
-            $this->syncService->handleAppointmentStatusChange($appointment, $oldStatus, $newStatus);
-
-            // Fire specific events for certain status changes
-            $this->fireStatusSpecificEvents($appointment, $oldStatus, $newStatus);
+            // NOTE: AppointmentStatusChangedEvent is already fired by broadcastService->broadcastStatusChange()
+            // So we do NOT fire additional status-specific events to avoid duplicate notifications.
+            // The AppointmentStatusChangedEvent already handles the status-specific messaging.
+            // $this->fireStatusSpecificEvents($appointment, $oldStatus, $newStatus);
         }
 
         // Handle other attribute changes that might affect real-time data
@@ -110,6 +113,8 @@ class AppointmentObserver
 
     /**
      * Fire status-specific events for important status transitions
+     * Both AppointmentStatusChangedEvent AND the specific events (AppointmentCancelledEvent, etc.)
+     * can fire - the JS deduplicates by event type + appointment ID.
      */
     protected function fireStatusSpecificEvents(Appointment $appointment, string $oldStatus, string $newStatus): void
     {
@@ -123,8 +128,7 @@ class AppointmentObserver
             event(new AppointmentCancelledEvent($appointment, null, $appointment->cancellation_reason));
         }
 
-        // Fire general status change event
-        event(new AppointmentStatusChangedEvent($appointment, $oldStatus, $newStatus));
+        // NOTE: AppointmentStatusChangedEvent is already fired by broadcastService->broadcastStatusChange().
     }
 
     /**

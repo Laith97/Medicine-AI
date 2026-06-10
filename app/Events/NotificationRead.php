@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Auth;
-
 namespace App\Events;
+
+use Illuminate\Support\Facades\Auth;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;

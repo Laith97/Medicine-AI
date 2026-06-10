@@ -5,10 +5,13 @@ namespace App\Notifications;
 use App\Models\WorkflowTask;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 
-class TaskOverdueNotification extends Notification implements ShouldQueue
+class TaskOverdueNotification extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
@@ -27,7 +30,28 @@ class TaskOverdueNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'broadcast'];
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'task_overdue',
+            'task_id' => $this->task->id,
+            'task_title' => $this->task->title,
+            'task_type' => $this->task->task_type,
+            'priority' => $this->task->priority,
+            'due_date' => $this->task->due_date,
+            'days_overdue' => abs($this->task->daysUntilDue()),
+            'title' => 'Task Overdue',
+            'message' => "OVERDUE: {$this->task->title} is past due",
+            'link' => "/admin/tasks/{$this->task->id}",
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     /**
@@ -70,5 +94,25 @@ class TaskOverdueNotification extends Notification implements ShouldQueue
             'days_overdue' => abs($this->task->daysUntilDue()),
             'message' => "OVERDUE: {$this->task->title} is past due",
         ];
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'task-overdue';
     }
 }

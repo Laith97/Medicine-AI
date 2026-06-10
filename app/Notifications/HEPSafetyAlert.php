@@ -4,11 +4,14 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 use App\Models\User;
 
-class HEPSafetyAlert extends Notification implements ShouldQueue
+class HEPSafetyAlert extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
@@ -24,6 +27,8 @@ class HEPSafetyAlert extends Notification implements ShouldQueue
         $this->patient = $patient;
         $this->alerts = $alerts;
         $this->alertType = $alertType;
+        $this->onQueue('realtime');
+        $this->delay(0);
     }
 
     /**
@@ -31,7 +36,27 @@ class HEPSafetyAlert extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'broadcast'];
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'hep_safety_alert',
+            'alert_type' => $this->alertType,
+            'patient_id' => $this->patient->id,
+            'patient_name' => $this->patient->name,
+            'alerts' => $this->alerts,
+            'title' => 'HEP Safety Alert',
+            'message' => $this->buildMessage(),
+            'severity' => $this->getHighestSeverity(),
+            'link' => "/admin/patients/{$this->patient->id}/hep",
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     /**
@@ -120,5 +145,25 @@ class HEPSafetyAlert extends Notification implements ShouldQueue
         }
 
         return $maxSeverity;
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'hep-safety-alert';
     }
 }

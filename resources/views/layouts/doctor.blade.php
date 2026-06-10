@@ -8,6 +8,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="user-id" content="{{ Auth::id() }}">
     <meta name="user-role" content="{{ Auth::user()->role ?? 'user' }}">
+    @if(Auth::user()->doctor)
+    <meta name="doctor-id" content="{{ Auth::user()->doctor->id }}">
+    @endif
+    <meta name="notification-sound-enabled" content="true">
+    <meta name="notification-toast-enabled" content="true">
 
     <!-- Font Imports -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

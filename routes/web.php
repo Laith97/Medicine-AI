@@ -38,8 +38,8 @@ use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
-// Broadcasting authentication route - simplified
-Broadcast::routes(['middleware' => ['web']]);
+// Broadcasting authentication route - handled by BroadcastServiceProvider
+// DO NOT duplicate Broadcast::routes() here as it causes duplicate route registration
 
 // Debug authentication routes (temporary)
 if (config('app.debug')) {
@@ -180,6 +180,16 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureJsonResponse::class])->gro
     // Login redirect check API
     Route::get('/api/auth/check-redirect', [\App\Http\Controllers\Auth\LoginRedirectController::class, 'checkRedirect'])->name('api.auth.check-redirect');
 });
+
+// Test all notification types page
+Route::get('/test-all-notifications', [App\Http\Controllers\TestAllNotificationsController::class, 'index'])
+    ->name('test.all.notifications')
+    ->middleware(['auth']);
+
+// Send test notification of specific type
+Route::post('/test-all-notifications/send', [App\Http\Controllers\TestAllNotificationsController::class, 'send'])
+    ->name('test.all.notifications.send')
+    ->middleware(['auth']);
 
 // Enhanced notification testing page
 Route::get('/test-enhanced-notifications', function () {
@@ -1355,6 +1365,46 @@ Route::get('/test-dropdown-fix', function () {
 })->name('test.dropdown.fix');
 
 require __DIR__.'/auth.php';
+
+// Authenticated Pusher test
+Route::get('/pusher-auth-test', function () {
+    return view('pusher-auth-test');
+})->middleware('auth');
+
+// Test notification route
+Route::get('/test-notifications', function () {
+    return view('test-notifications');
+})->middleware('auth');
+
+Route::post('/api/test-notification', function () {
+    try {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+        
+        \Log::info('Sending test notification to user: ' . $user->id);
+        
+        $user->notify(new \App\Notifications\SystemAlertNotification(
+            'API Test Notification',
+            'This is a test notification sent via API at ' . now()->format('H:i:s'),
+            'info',
+            ['user_id' => $user->id] // Add user_id for broadcasting
+        ));
+        
+        \Log::info('Test notification sent successfully');
+        
+        return response()->json(['success' => true, 'message' => 'Notification sent']);
+    } catch (\Exception $e) {
+        \Log::error('Test notification error: ' . $e->getMessage());
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+})->middleware('auth');
+
+// Broadcasting test route
+Route::get('/test-broadcasting-auth', function () {
+    return view('test-broadcasting-auth');
+})->middleware('auth')->name('test.broadcasting.auth');
 
 // Broadcasting test route
 Route::get('/test-broadcasting', function () {

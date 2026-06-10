@@ -39,4 +39,14 @@ class NewNotification implements ShouldBroadcast
             new PrivateChannel('App.User.' . $this->userId),
         ];
     }
+
+    public function broadcastAs(): string
+    {
+        return 'NewNotification';
+    }
+
+    public function broadcastWith(): array
+    {
+        return $this->message;
+    }
 }

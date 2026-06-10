@@ -38,13 +38,13 @@ return [
             'options' => [
                 'cluster' => env('PUSHER_APP_CLUSTER'),
                 'useTLS' => true,
-                'host' => env('PUSHER_HOST'),
-                'port' => env('PUSHER_PORT', 443),
+                'timeout' => 30,
+                'connect_timeout' => 30,
             ],
             'client_options' => [
                 // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
                 'timeout' => env('PUSHER_TIMEOUT', 30),
-                'connect_timeout' => env('PUSHER_CONNECT_TIMEOUT', 10),
+                'connect_timeout' => env('PUSHER_CONNECT_TIMEOUT', 30),
             ],
         ],
 

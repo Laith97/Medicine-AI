@@ -147,18 +147,10 @@ class Appointment extends Model
                 // Increment version for optimistic locking
                 $appointment->version = $appointment->version + 1;
 
-                if ($appointment->isDirty('status')) {
-                    $oldStatus = $appointment->getOriginal('status');
-                    $newStatus = $appointment->status;
-
-                    // Only broadcast if status actually changed
-                    if ($oldStatus !== $newStatus) {
-                        // Use queue to avoid blocking the update
-                        dispatch(function () use ($appointment, $oldStatus, $newStatus) {
-                            app(AppointmentBroadcastService::class)->broadcastStatusChange($appointment->fresh(), $oldStatus, $newStatus);
-                        })->afterCommit();
-                    }
-                }
+                // NOTE: Status change broadcasting is handled by AppointmentObserver::updated()
+                // to avoid duplicate broadcasts from both model callbacks and observer.
+                // The model-level broadcast in methods like cancel(), confirm(), complete()
+                // has been removed to prevent duplicates.
             }
         });
     }
@@ -373,15 +365,8 @@ class Appointment extends Model
                 throw new \Exception('Concurrent update detected - appointment was modified by another process');
             }
 
-            // Fire status change event
-            if ($oldStatus !== 'cancelled') {
-                app(AppointmentBroadcastService::class)->broadcastStatusChange($this, $oldStatus, 'cancelled', $cancelledBy);
-            }
-
-            // Fire cancellation event if appointment was previously confirmed
-            if ($wasConfirmed) {
-                event(new \App\Events\AppointmentCancelledEvent($this, $cancelledBy, $reason));
-            }
+            // NOTE: Status change broadcasting is handled by AppointmentObserver::updated()
+            // to avoid duplicate broadcasts from model methods
         });
     }
 
@@ -413,10 +398,7 @@ class Appointment extends Model
                 $this->patient->update(['primary_doctor_id' => $this->doctor->user_id]);
             }
 
-            // Fire status change event
-            if ($oldStatus !== 'confirmed') {
-                app(AppointmentBroadcastService::class)->broadcastStatusChange($this, $oldStatus, 'confirmed');
-            }
+            // NOTE: Status change broadcasting is handled by AppointmentObserver::updated()
         });
     }
 
@@ -444,11 +426,7 @@ class Appointment extends Model
                 throw new \Exception('Concurrent update detected - appointment was modified by another process');
             }
 
-            // Fire status change event
-            if ($oldStatus !== 'completed') {
-                app(AppointmentBroadcastService::class)->broadcastStatusChange($this, $oldStatus, 'completed');
-            }
-
+            // NOTE: Status change broadcasting is handled by AppointmentObserver::updated()
             // Fire completion event for slot availability monitoring
             event(new \App\Events\AppointmentCompletedEvent($this));
         });
@@ -482,6 +460,15 @@ class Appointment extends Model
         if ($this->duration) {
             return $this->appointment_date->copy()->addMinutes($this->duration);
         }
+
+        // If appointment_end is missing or appears corrupted (far in the future),
+        // fall back to using the doctor's appointment_duration
+        if (!$this->appointment_end || $this->appointment_end->gt(now()->addDays(2))) {
+            if ($this->doctor && $this->doctor->appointment_duration) {
+                return $this->appointment_date->copy()->addMinutes($this->doctor->appointment_duration);
+            }
+        }
+
         return $this->appointment_end;
     }
 
@@ -521,10 +508,7 @@ class Appointment extends Model
                 throw new \Exception('Concurrent update detected - appointment was modified by another process');
             }
 
-            // Fire status change event
-            if ($oldStatus !== 'no_show') {
-                app(AppointmentBroadcastService::class)->broadcastStatusChange($this, $oldStatus, 'no_show');
-            }
+            // NOTE: Status change broadcasting is handled by AppointmentObserver::updated()
         });
     }
 

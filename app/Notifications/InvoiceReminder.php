@@ -5,12 +5,15 @@ namespace App\Notifications;
 use App\Models\StripeInvoice;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 use NotificationChannels\Twilio\TwilioChannel;
 use NotificationChannels\Twilio\TwilioSmsMessage;
 
-class InvoiceReminder extends Notification implements ShouldQueue
+class InvoiceReminder extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
@@ -26,9 +29,29 @@ class InvoiceReminder extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels = ['mail', 'sms'];
-        
+        $channels = ['mail', 'database', 'broadcast', 'sms'];
+
         return $channels;
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        $urgencyLevel = $this->getUrgencyLevel();
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'invoice_reminder',
+            'invoice_id' => $this->invoice->id,
+            'reminder_number' => $this->reminderNumber,
+            'amount_due' => $this->invoice->amount_due,
+            'days_overdue' => $this->invoice->due_date->diffInDays(now()),
+            'title' => $urgencyLevel['subject'],
+            'message' => "Reminder #{$this->reminderNumber}: Invoice {$this->invoice->getFormattedAmountDue()} is overdue",
+            'link' => route('invoices.show', $this->invoice),
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     /**
@@ -139,5 +162,27 @@ class InvoiceReminder extends Notification implements ShouldQueue
             'amount_due' => $this->invoice->amount_due,
             'days_overdue' => $this->invoice->due_date->diffInDays(now()),
         ];
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        // Use invoice's user_id directly since notifiable may be null during queue processing
+        $userId = $this->invoice->user_id ?? $this->notifiable?->id ?? 'default';
+        return [new PrivateChannel('App.User.' . $userId)];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'invoice-reminder';
     }
 }

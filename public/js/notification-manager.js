@@ -136,11 +136,44 @@ class NotificationManager {
         const notificationList = document.getElementById('notification-list');
         if (!notificationList) return;
 
+        // Show skeleton loading state
+        notificationList.innerHTML = `
+            <div class="notif-skeleton" role="status" aria-live="polite">
+                <div class="notif-skeleton-item">
+                    <div class="skeleton-icon"></div>
+                    <div class="skeleton-content">
+                        <div class="skeleton-line title"></div>
+                        <div class="skeleton-line message"></div>
+                        <div class="skeleton-line meta"></div>
+                    </div>
+                </div>
+                <div class="notif-skeleton-item">
+                    <div class="skeleton-icon"></div>
+                    <div class="skeleton-content">
+                        <div class="skeleton-line title"></div>
+                        <div class="skeleton-line message"></div>
+                        <div class="skeleton-line meta"></div>
+                    </div>
+                </div>
+                <div class="notif-skeleton-item">
+                    <div class="skeleton-icon"></div>
+                    <div class="skeleton-content">
+                        <div class="skeleton-line title"></div>
+                        <div class="skeleton-line message"></div>
+                        <div class="skeleton-line meta"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+
         if (this.notifications.length === 0) {
             notificationList.innerHTML = `
-                <div class="text-center py-4 text-muted">
-                    <i class="bi bi-bell-slash display-6 d-block mb-2"></i>
-                    <small>No notifications</small>
+                <div class="notif-empty">
+                    <div class="notif-empty-icon">
+                        <i class="bi bi-bell-slash"></i>
+                    </div>
+                    <h6 class="notif-empty-title">All caught up!</h6>
+                    <p class="notif-empty-text">You have no notifications at the moment</p>
                 </div>
             `;
             return;
@@ -148,37 +181,63 @@ class NotificationManager {
 
         let html = '';
         this.notifications.forEach(notification => {
-            const time = this.formatTime(notification.created_at);
-            const icon = this.getNotificationIcon(notification.type);
-            const color = this.getNotificationColor(notification.type);
+            const date = new Date(notification.created_at);
+            const timeAgo = this.formatTimeAgo(date);
+            const isUnread = !notification.read_at;
+            const type = notification.data?.type || '';
+            
+            let iconClass = 'default';
+            let iconHtml = '<i class="bi bi-bell-fill"></i>';
+            
+            if (type.includes('Appointment')) {
+                iconClass = 'info';
+                iconHtml = '<i class="bi bi-calendar-check"></i>';
+            } else if (type.includes('Task') || type.includes('Reminder')) {
+                iconClass = 'warning';
+                iconHtml = '<i class="bi bi-list-task"></i>';
+            } else if (type.includes('Alert') || type.includes('Emergency') || type.includes('HighRisk')) {
+                iconClass = 'danger';
+                iconHtml = '<i class="bi bi-exclamation-triangle"></i>';
+            } else if (type.includes('Success') || type.includes('Complete') || type.includes('AutoBooked')) {
+                iconClass = 'success';
+                iconHtml = '<i class="bi bi-check-circle"></i>';
+            } else if (type.includes('Invoice') || type.includes('Payment') || type.includes('Underpayment')) {
+                iconClass = 'warning';
+                iconHtml = '<i class="bi bi-receipt"></i>';
+            } else if (type.includes('Message') || type.includes('Chat')) {
+                iconClass = 'info';
+                iconHtml = '<i class="bi bi-chat-dots"></i>';
+            }
 
             html += `
-                <div class="notification-item ${notification.read_at ? 'read' : 'unread'}"
-                     data-id="${notification.id}"
-                     data-href="${notification.data?.link || ''}"
+                <div class="notif-item \${isUnread ? 'unread' : ''}"
+                     data-id="\${notification.id}"
+                     data-link="\${notification.data?.link || ''}"
                      role="listitem"
                      tabindex="0"
-                     aria-label="${notification.data?.title || 'Notification'}, ${notification.data?.message || 'You have a new notification'}, ${time}${!notification.read_at ? ', New notification' : ''}"
-                     aria-describedby="notification-${notification.id}-details">
-                    <div class="d-flex align-items-start gap-3 p-3 border-bottom">
-                        <div class="notification-icon" style="background: ${this.getNotificationBgColor(notification.type)};" aria-hidden="true">
-                            <i class="bi ${icon} text-${color}" aria-hidden="true"></i>
-                        </div>
-                        <div class="flex-grow-1" id="notification-${notification.id}-details">
-                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                <h6 class="mb-0 small">${notification.data?.title || 'Notification'}</h6>
-                                <small class="text-muted" aria-label="Received ${time}">${time}</small>
-                            </div>
-                            <p class="mb-0 small text-muted">${notification.data?.message || 'You have a new notification'}</p>
-                            ${notification.data?.link ? `
-                                <div class="mt-2">
-                                    <a href="${notification.data.link}" class="btn btn-sm btn-outline-primary" aria-label="${notification.data?.link_text || 'View Details'}">
-                                        ${notification.data?.link_text || 'View Details'}
-                                    </a>
-                                </div>
-                            ` : ''}
+                     aria-label="\${notification.data?.title || 'Notification'}, \${notification.data?.message || 'You have a new notification'}, \${timeAgo}\${!notification.read_at ? ', New notification' : ''}">
+                    <div class="notif-icon-wrap \${iconClass}">
+                        \${iconHtml}
+                    </div>
+                    <div class="notif-content">
+                        <h6 class="notif-title">
+                            \${isUnread ? '<span class="notif-dot"></span>' : ''}
+                            \${this.escapeHtml(notification.data?.title || 'Notification')}
+                        </h6>
+                        <p class="notif-message">\${this.escapeHtml(notification.data?.message || 'You have a new notification')}</p>
+                        <div class="notif-meta">
+                            <span class="notif-time">
+                                <i class="bi bi-clock" aria-hidden="true"></i>
+                                \${timeAgo}
+                            </span>
                         </div>
                     </div>
+                    <button class="notif-mark-read"
+                            title="Mark as read"
+                            aria-label="Mark this notification as read"
+                            onclick="event.stopPropagation(); this.closest('.notif-item').click();">
+                        <i class="bi bi-check2" aria-hidden="true"></i>
+                    </button>
                 </div>
             `;
         });
@@ -186,13 +245,35 @@ class NotificationManager {
         notificationList.innerHTML = html;
 
         // Add click handlers to mark as read
-        document.querySelectorAll('.notification-item.unread').forEach(item => {
+        document.querySelectorAll('.notif-item.unread').forEach(item => {
             item.addEventListener('click', () => {
                 const notificationId = item.dataset.id;
                 this.markAsRead(notificationId);
             });
         });
     }
+
+    formatTimeAgo(date) {
+        if (!date) return 'Just now';
+
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+
+        if (seconds < 60) return 'Just now';
+        if (seconds < 3600) return `\${Math.floor(seconds / 60)}m ago`;
+        if (seconds < 86400) return `\${Math.floor(seconds / 3600)}h ago`;
+        if (seconds < 604800) return `\${Math.floor(seconds / 86400)}d ago`;
+
+        return date.toLocaleDateString();
+    }
+
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
 
     async markAsRead(notificationId) {
         try {
@@ -511,21 +592,43 @@ class NotificationManager {
     }
 
     showNotificationToast(notification) {
-        
-        // Implementation for toast notifications
+        // Handle both formats: { data: { title, message } } and { title, message }
+        const title = notification.data?.title || notification.title || 'Notification';
+        const message = notification.data?.message || notification.message || 'You have a new notification';
+        const type = notification.data?.type || notification.type || 'default';
+        const link = notification.data?.link || notification.link || '';
+
+        // Create toast elements
         const toast = document.createElement('div');
-        toast.className = 'notification-toast';
-        toast.innerHTML = `
-            <div class="toast-content">
-                <div class="toast-icon" style="background: ${this.getNotificationBgColor(notification.type)};">
-                    <i class="bi ${this.getNotificationIcon(notification.type)} text-${this.getNotificationColor(notification.type)}"></i>
-                </div>
-                <div class="toast-message">
-                    <div class="toast-title">${notification.data?.title || 'Notification'}</div>
-                    <div class="toast-text">${notification.data?.message || 'You have a new notification'}</div>
-                </div>
-            </div>
-        `;
+        toast.className = 'enhanced-notification-toast';
+
+        const content = document.createElement('div');
+        content.className = 'toast-content';
+
+        const iconWrapper = document.createElement('div');
+        iconWrapper.className = 'toast-icon';
+        iconWrapper.style.background = this.getNotificationBgColor(type);
+
+        const icon = document.createElement('i');
+        icon.className = 'bi ' + this.getNotificationIcon(type) + ' text-' + this.getNotificationColor(type);
+
+        const msgWrapper = document.createElement('div');
+        msgWrapper.className = 'toast-message';
+
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'toast-title';
+        titleDiv.textContent = title;
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'toast-text';
+        textDiv.textContent = message;
+
+        msgWrapper.appendChild(titleDiv);
+        msgWrapper.appendChild(textDiv);
+        iconWrapper.appendChild(icon);
+        content.appendChild(iconWrapper);
+        content.appendChild(msgWrapper);
+        toast.appendChild(content);
 
         document.body.appendChild(toast);
 

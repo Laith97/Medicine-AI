@@ -5,12 +5,15 @@ namespace App\Notifications;
 use App\Models\StripeInvoice;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 use NotificationChannels\Twilio\TwilioChannel;
 use NotificationChannels\Twilio\TwilioSmsMessage;
 
-class MonthlyInvoiceCreated extends Notification implements ShouldQueue
+class MonthlyInvoiceCreated extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
@@ -25,9 +28,28 @@ class MonthlyInvoiceCreated extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels = ['mail', 'sms'];
-        
+        $channels = ['mail', 'database', 'broadcast', 'sms'];
+
         return $channels;
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'monthly_invoice_created',
+            'invoice_id' => $this->invoice->id,
+            'amount_due' => $this->invoice->amount_due,
+            'due_date' => $this->invoice->due_date,
+            'period' => $this->invoice->getFormattedPeriod(),
+            'title' => 'Monthly Invoice Created',
+            'message' => 'New monthly invoice for ' . $this->invoice->getFormattedPeriod() . ': ' . $this->invoice->getFormattedAmountDue(),
+            'link' => route('invoices.show', $this->invoice),
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     /**
@@ -96,5 +118,27 @@ class MonthlyInvoiceCreated extends Notification implements ShouldQueue
             'due_date' => $this->invoice->due_date,
             'period' => $this->invoice->getFormattedPeriod(),
         ];
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        // Use invoice's user_id directly since notifiable may be null during queue processing
+        $userId = $this->invoice->user_id ?? $this->notifiable?->id ?? 'default';
+        return [new PrivateChannel('App.User.' . $userId)];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'monthly-invoice-created';
     }
 }

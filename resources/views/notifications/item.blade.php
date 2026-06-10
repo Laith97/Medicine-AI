@@ -1,18 +1,23 @@
-<div class="notification-item {{ $notification->is_read ? 'read' : 'unread' }} border-bottom py-3 cursor-pointer"
+<div class="notification-item {{ !$notification->read_at ? 'unread' : 'read' }} border-bottom py-3 cursor-pointer"
      data-notification-id="{{ $notification->id }}"
-     data-href="{{ $notification->link }}">
+     data-href="{{ $notification->data['link'] ?? '#' }}">
     <div class="d-flex align-items-start">
         <!-- Notification Icon -->
         <div class="notification-icon me-3 mt-1">
-            @if($notification->type === 'appointment_booked')
+            @php
+                $type = $notification->data['type'] ?? '';
+            @endphp
+            @if($type === 'appointment_booked')
                 <i class="fas fa-calendar-check text-primary"></i>
-            @elseif($notification->type === 'diagnosis_submitted')
+            @elseif($type === 'appointment_status_changed')
+                <i class="fas fa-calendar-alt text-warning"></i>
+            @elseif($type === 'diagnosis_submitted')
                 <i class="fas fa-stethoscope text-success"></i>
-            @elseif($notification->type === 'review_submitted')
+            @elseif($type === 'review_submitted')
                 <i class="fas fa-star text-warning"></i>
-            @elseif($notification->type === 'voice_transcription_completed')
+            @elseif($type === 'voice_transcription_completed')
                 <i class="fas fa-microphone text-info"></i>
-            @elseif($notification->type === 'system_alert')
+            @elseif($type === 'system_alert')
                 <i class="fas fa-exclamation-triangle text-danger"></i>
             @else
                 <i class="fas fa-bell text-secondary"></i>
@@ -23,7 +28,7 @@
         <div class="flex-grow-1">
             <div class="d-flex justify-content-between align-items-start mb-1">
                 <h6 class="mb-0 notification-title" style="font-size: 15px; font-weight: 500; color: #333;">
-                    {{ $notification->title }}
+                    {{ $notification->data['title'] ?? 'Notification' }}
                 </h6>
                 <small class="text-muted notification-time">
                     {{ $notification->created_at->diffForHumans() }}
@@ -31,11 +36,11 @@
             </div>
 
             <p class="mb-0 notification-message" style="font-size: 14px; color: #6c757d; line-height: 1.5;">
-                {{ $notification->message }}
+                {{ $notification->data['message'] ?? '' }}
             </p>
 
             <!-- Additional Info -->
-            @if($notification->data && isset($notification->data['appointment_date']))
+            @if(isset($notification->data['appointment_date']))
                 <div class="mt-2">
                     <small class="text-muted">
                         <i class="fas fa-calendar me-1"></i>
@@ -44,7 +49,7 @@
                 </div>
             @endif
 
-            @if($notification->data && isset($notification->data['doctor_name']))
+            @if(isset($notification->data['doctor_name']))
                 <div class="mt-1">
                     <small class="text-muted">
                         <i class="fas fa-user-md me-1"></i>
@@ -53,7 +58,7 @@
                 </div>
             @endif
 
-            @if($notification->data && isset($notification->data['patient_name']))
+            @if(isset($notification->data['patient_name']))
                 <div class="mt-1">
                     <small class="text-muted">
                         <i class="fas fa-user me-1"></i>
@@ -63,7 +68,7 @@
             @endif
 
             <!-- Status Badge -->
-            @if(!$notification->is_read)
+            @if(!$notification->read_at)
                 <div class="mt-2">
                     <span class="badge bg-primary rounded-pill" style="font-size: 11px;">
                         <i class="fas fa-circle me-1" style="font-size: 8px;"></i>
@@ -74,13 +79,13 @@
         </div>
 
         <!-- Actions -->
-        <div class="ms-3">
-            @if($notification->link)
-                <a href="{{ $notification->link }}" class="btn btn-sm btn-outline-primary">
+        @if(isset($notification->data['link']))
+            <div class="ms-3">
+                <a href="{{ $notification->data['link'] }}" class="btn btn-sm btn-outline-primary">
                     <i class="fas fa-external-link-alt"></i>
                 </a>
-            @endif
-        </div>
+            </div>
+        @endif
     </div>
 
     <!-- Hover Effect -->

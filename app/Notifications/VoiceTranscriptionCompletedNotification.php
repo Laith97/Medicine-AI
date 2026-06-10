@@ -8,6 +8,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 use App\Models\VoiceTranscription;
 
 class VoiceTranscriptionCompletedNotification extends Notification implements ShouldBroadcast
@@ -107,5 +108,25 @@ class VoiceTranscriptionCompletedNotification extends Notification implements Sh
                 'completed_at' => $this->transcription->session_ended_at ? $this->transcription->session_ended_at->toISOString() : null,
             ]
         ]);
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'voice-transcription-completed';
     }
 }

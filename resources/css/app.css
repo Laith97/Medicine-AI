@@ -1,3 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Application-specific UI enhancements */
+@import 'dashboard-enhancements.css';
+@import 'notifications-dropdown.css';

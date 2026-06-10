@@ -5,10 +5,13 @@ namespace App\Notifications;
 use App\Models\Kiosk;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 
-class KioskOffline extends Notification implements ShouldQueue
+class KioskOffline extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
@@ -23,7 +26,26 @@ class KioskOffline extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database', 'mail', 'broadcast'];
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'kiosk_offline',
+            'kiosk_id' => $this->kiosk->id,
+            'kiosk_name' => $this->kiosk->name,
+            'kiosk_serial' => $this->kiosk->serial_number,
+            'kiosk_location' => $this->kiosk->location,
+            'title' => 'Kiosk Offline',
+            'message' => "Kiosk {$this->kiosk->name} ({$this->kiosk->serial_number}) is offline.",
+            'link' => "/admin/kiosks/{$this->kiosk->id}",
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     /**
@@ -69,5 +91,25 @@ class KioskOffline extends Notification implements ShouldQueue
             'action_url' => "/admin/kiosks/{$this->kiosk->id}",
             'action_text' => 'View Kiosk',
         ];
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'kiosk-offline';
     }
 }

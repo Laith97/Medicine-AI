@@ -4,10 +4,13 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 
-class VoiceAssistantPerformanceAlert extends Notification implements ShouldQueue
+class VoiceAssistantPerformanceAlert extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
@@ -30,7 +33,24 @@ class VoiceAssistantPerformanceAlert extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'broadcast'];
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'performance_alert',
+            'title' => 'Voice Assistant Performance Alert',
+            'message' => 'Performance issues detected with the Voice Assistant system.',
+            'alerts' => $this->alerts,
+            'metrics' => $this->metrics,
+            'link' => '/admin/voice-assistant/performance',
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     /**
@@ -39,7 +59,7 @@ class VoiceAssistantPerformanceAlert extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $mail = (new MailMessage)
-            ->subject('🚨 Voice Assistant Performance Alert - ' . config('app.name'))
+            ->subject('Voice Assistant Performance Alert - ' . config('app.name'))
             ->greeting('Voice Assistant Performance Alert')
             ->line('The automated monitoring system has detected performance issues with the Voice Assistant system.');
 
@@ -48,13 +68,13 @@ class VoiceAssistantPerformanceAlert extends Notification implements ShouldQueue
         }
 
         $mail->line('**System Metrics:**')
-            ->line('• Total Sessions: ' . $this->metrics['total_sessions'])
-            ->line('• Average Processing Time: ' . round($this->metrics['avg_processing_time'], 2) . 's')
-            ->line('• Success Rate: ' . round($this->metrics['success_rate'], 1) . '%')
-            ->line('• Error Rate: ' . round($this->metrics['error_rate'], 1) . '%')
+            ->line('• Total Sessions: ' . ($this->metrics['total_sessions'] ?? 'N/A'))
+            ->line('• Average Processing Time: ' . round($this->metrics['avg_processing_time'] ?? 0, 2) . 's')
+            ->line('• Success Rate: ' . round($this->metrics['success_rate'] ?? 0, 1) . '%')
+            ->line('• Error Rate: ' . round($this->metrics['error_rate'] ?? 0, 1) . '%')
             ->line('• Timestamp: ' . now()->format('Y-m-d H:i:s'));
 
-        return $mail->action('View Performance Dashboard', route('voice-assistant.performance'))
+        return $mail->action('View Performance Dashboard', url('/admin/voice-assistant/performance'))
             ->line('Please investigate and resolve the issues to ensure optimal Voice Assistant performance.')
             ->salutation('Regards, ' . config('app.name') . ' Monitoring System');
     }
@@ -72,9 +92,29 @@ class VoiceAssistantPerformanceAlert extends Notification implements ShouldQueue
             'alerts' => $this->alerts,
             'metrics' => $this->metrics,
             'type' => 'performance_alert',
-            'action_url' => route('voice-assistant.performance'),
+            'action_url' => url('/admin/voice-assistant/performance'),
             'action_text' => 'View Performance Dashboard',
             'severity' => 'warning',
         ];
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'voice-performance-issue';
     }
 }

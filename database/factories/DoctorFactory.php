@@ -26,11 +26,8 @@ class DoctorFactory extends Factory
      */
     public function definition(): array
     {
-        // Use an existing user or create one
-        $user = User::first() ?? User::factory()->create();
-
         return [
-            'user_id' => $user->id,
+            'user_id' => User::factory()->create()->id,
             'specialty_id' => Specialty::factory(),
             'license_number' => $this->faker->unique()->regexify('[A-Z]{2}[0-9]{6}'),
             'phone' => $this->faker->phoneNumber(),

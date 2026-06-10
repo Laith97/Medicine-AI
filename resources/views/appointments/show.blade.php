@@ -642,6 +642,64 @@
     </div>
 </div>
 
+<!-- Reschedule Appointment Modal -->
+<div class="modal fade" id="rescheduleModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <div class="d-flex align-items-center">
+                    <div class="bg-warning bg-opacity-10 rounded-3 p-2 me-3">
+                        <i class="fas fa-calendar-alt text-warning"></i>
+                    </div>
+                    <h5 class="modal-title fw-bold" id="rescheduleModalLabel">Reschedule Appointment</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <strong>Select a new date and time for your appointment.</strong><br>
+                    <small>Appointments can only be rescheduled once.</small>
+                </div>
+
+                <form method="POST" action="{{ route('appointments.reschedule', $appointment) }}" id="rescheduleForm">
+                    @csrf
+                    <div class="mb-3">
+                        <label for="reschedule_date" class="form-label fw-semibold">
+                            Select Date
+                        </label>
+                        <input type="date" name="reschedule_date" id="reschedule_date"
+                               class="form-control" min="{{ date('Y-m-d', strtotime('+1 day')) }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_appointment_date" class="form-label fw-semibold">
+                            Available Time Slots
+                        </label>
+                        <select name="new_appointment_date" id="new_appointment_date" class="form-control" required>
+                            <option value="">Select a date first</option>
+                        </select>
+                        <small class="text-muted" id="slotsLoading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin me-1"></i>Loading available slots...
+                        </small>
+                        <small class="text-muted" id="noSlotsMessage" style="display: none;">
+                            No available slots on this date. Please select another date.
+                        </small>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Keep Current Time
+                </button>
+                <button type="submit" form="rescheduleForm" class="btn btn-warning" id="rescheduleSubmitBtn" disabled>
+                    <i class="fas fa-calendar-alt me-2"></i>Reschedule
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Cancel Appointment Modal -->
 <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -699,8 +757,78 @@ function showCancelModal() {
 }
 
 function rescheduleAppointment() {
-    showNotification('Reschedule feature coming soon!', 'info');
+    const modal = new bootstrap.Modal(document.getElementById('rescheduleModal'));
+    modal.show();
 }
+
+// Fetch available slots when date changes
+document.getElementById('reschedule_date').addEventListener('change', function() {
+    const date = this.value;
+    const timeSelect = document.getElementById('new_appointment_date');
+    const loadingMsg = document.getElementById('slotsLoading');
+    const noSlotsMsg = document.getElementById('noSlotsMessage');
+    const submitBtn = document.getElementById('rescheduleSubmitBtn');
+
+    if (!date) {
+        timeSelect.innerHTML = '';
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = 'Select a date first';
+        timeSelect.appendChild(defaultOpt);
+        submitBtn.disabled = true;
+        return;
+    }
+
+    // Show loading
+    loadingMsg.style.display = 'block';
+    noSlotsMsg.style.display = 'none';
+    timeSelect.innerHTML = '';
+    const loadingOpt = document.createElement('option');
+    loadingOpt.value = '';
+    loadingOpt.textContent = 'Loading...';
+    timeSelect.appendChild(loadingOpt);
+    submitBtn.disabled = true;
+
+    // Fetch available slots - use correct route for doctor slots
+    fetch(`/doctors/{{ $appointment->doctor->id }}/slots?date=${date}`)
+        .then(response => response.json())
+        .then(data => {
+            loadingMsg.style.display = 'none';
+            timeSelect.innerHTML = '';
+
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = 'Select a time slot';
+            timeSelect.appendChild(defaultOpt);
+
+            if (data.slots && data.slots.length > 0) {
+                data.slots.forEach(slot => {
+                    const time = slot.datetime.split(' ')[1];
+                    const [hours, minutes] = time.split(':');
+                    const period = parseInt(hours) >= 12 ? 'PM' : 'AM';
+                    const displayHour = parseInt(hours) > 12 ? parseInt(hours) - 12 : (parseInt(hours) === 0 ? 12 : parseInt(hours));
+                    const displayTime = displayHour + ':' + minutes + ' ' + period;
+
+                    const option = document.createElement('option');
+                    option.value = slot.datetime;
+                    option.textContent = displayTime;
+                    timeSelect.appendChild(option);
+                });
+                submitBtn.disabled = false;
+            } else {
+                noSlotsMsg.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            loadingMsg.style.display = 'none';
+            timeSelect.innerHTML = '';
+            const errorOpt = document.createElement('option');
+            errorOpt.value = '';
+            errorOpt.textContent = 'Error loading slots';
+            timeSelect.appendChild(errorOpt);
+            console.error('Error fetching slots:', error);
+        });
+});
 
 function joinVideoCall() {
     const appointmentId = {{ $appointment->id }};

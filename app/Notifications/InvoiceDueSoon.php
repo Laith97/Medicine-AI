@@ -5,10 +5,13 @@ namespace App\Notifications;
 use App\Models\StripeInvoice;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Notifications\Notification;
 
-class InvoiceDueSoon extends Notification implements ShouldQueue
+class InvoiceDueSoon extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
@@ -23,8 +26,27 @@ class InvoiceDueSoon extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels = ['mail', 'database', 'sms'];
+        $channels = ['mail', 'database', 'broadcast', 'sms'];
         return $channels;
+    }
+
+    /**
+     * Get the broadcast representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'id' => $this->id,
+            'type' => 'invoice_due_soon',
+            'invoice_id' => $this->invoice->id,
+            'stripe_invoice_id' => $this->invoice->stripe_invoice_id,
+            'amount_due' => $this->invoice->amount_due,
+            'due_date' => $this->invoice->due_date,
+            'title' => 'Invoice Due Soon',
+            'message' => 'Invoice due soon: ' . $this->invoice->getFormattedAmountDue() . ' due on ' . $this->invoice->due_date->format('M d, Y'),
+            'link' => route('invoices.show', $this->invoice),
+            'created_at' => now()->toISOString(),
+        ]);
     }
 
     /**
@@ -85,5 +107,27 @@ class InvoiceDueSoon extends Notification implements ShouldQueue
             'due_date' => $this->invoice->due_date,
             'message' => 'Invoice due soon: ' . $this->invoice->getFormattedAmountDue() . ' due on ' . $this->invoice->due_date->format('M d, Y'),
         ];
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array
+     */
+    public function broadcastOn(): array
+    {
+        // Use invoice's user_id directly since notifiable may be null during queue processing
+        $userId = $this->invoice->user_id ?? $this->notifiable?->id ?? 'default';
+        return [new PrivateChannel('App.User.' . $userId)];
+    }
+
+    /**
+     * Get the broadcast event name.
+     *
+     * @return string
+     */
+    public function broadcastAs(): string
+    {
+        return 'invoice-due-soon';
     }
 }

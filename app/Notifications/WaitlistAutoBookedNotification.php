@@ -71,12 +71,19 @@ class WaitlistAutoBookedNotification extends Notification implements ShouldBroad
     {
         $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
 
+        // Use doctor route if notifiable is a doctor, otherwise use patient route
+        if ($notifiable->isDoctor()) {
+            $link = route('doctor.appointments.show', $this->appointment->id);
+        } else {
+            $link = route('appointments.show', $this->appointment->id);
+        }
+
         return [
             'type' => 'waitlist_auto_booked',
             'title' => 'Appointment Auto-Booked',
             'message' => "Your waitlisted appointment with Dr. {$doctorName} has been automatically booked",
             'icon' => 'magic',
-            'link' => route('appointments.show', $this->appointment->id),
+            'link' => $link,
             'link_text' => 'View Appointment',
             'related_type' => 'appointment',
             'related_id' => $this->appointment->id,

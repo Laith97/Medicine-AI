@@ -105,6 +105,37 @@ class AppointmentBroadcastService
             // Fire the event which handles broadcasting
             event(new AppointmentStatusChangedEvent($appointment, $oldStatus, $newStatus, $changedBy));
 
+            // For completed appointments, broadcast synchronously so the toast
+            // arrives before the page reloads (the queued broadcast may arrive too late)
+            if ($newStatus === 'completed') {
+                $userChannels = [];
+                if ($appointment->doctor && $appointment->doctor->user) {
+                    $userChannels[] = 'private-App.User.' . $appointment->doctor->user_id;
+                }
+                if ($appointment->patient_id) {
+                    $userChannels[] = 'private-App.User.' . $appointment->patient_id;
+                }
+                if (!empty($userChannels)) {
+                    $doctorName = $appointment->doctor->user->name ?? 'Doctor';
+                    $patientName = $appointment->patient_name;
+                    $eventData = [
+                        'id' => $appointment->id,
+                        'type' => 'appointment_completed',
+                        'title' => 'Appointment Completed',
+                        'message' => "An appointment with {$patientName} has been completed with Dr. {$doctorName}",
+                        'icon' => 'calendar-check',
+                        'data' => [
+                            'appointment_id' => $appointment->id,
+                            'doctor_name' => $doctorName,
+                            'patient_name' => $patientName,
+                            'appointment_date' => $appointment->appointment_date->format('Y-m-d H:i:s'),
+                        ],
+                        'created_at' => now()->toISOString()
+                    ];
+                    $this->pusherPool->broadcast($userChannels, 'appointment-completed', $eventData);
+                }
+            }
+
             // Trigger multi-device synchronization if user context is available
             if ($changedBy && $changedBy instanceof \App\Models\User) {
                 $this->triggerMultiDeviceSync($appointment, $changedBy, [

@@ -337,26 +337,23 @@ class Doctor extends Model
             return $this->hasPatientAppointmentConflict($startTime, $endTime, $patientId);
         }
 
-        // Otherwise, check only this doctor's appointments (legacy behavior)
-        $conflictingAppointments = $this->appointments()
+        // Get all non-cancelled/completed/no-show appointments for this doctor
+        $appointments = $this->appointments()
             ->whereNotIn('status', ['cancelled', 'completed', 'no_show'])
-            ->where(function ($query) use ($startTime, $endTime) {
-                // Case 1: Existing appointment starts within the new slot
-                $query->whereBetween('appointment_date', [$startTime, $endTime->copy()->subSecond()])
-                      // Case 2: Existing appointment ends within the new slot
-                      ->orWhere(function ($subQuery) use ($startTime, $endTime) {
-                          $subQuery->where('appointment_end', '>', $startTime)
-                                   ->where('appointment_end', '<=', $endTime);
-                      })
-                      // Case 3: Existing appointment completely encompasses the new slot
-                      ->orWhere(function ($subQuery) use ($startTime, $endTime) {
-                          $subQuery->where('appointment_date', '<=', $startTime)
-                                   ->where('appointment_end', '>=', $endTime);
-                      });
-            })
-            ->exists();
+            ->get();
 
-        return $conflictingAppointments;
+        // Check each appointment individually using computed end time
+        foreach ($appointments as $appointment) {
+            $aptStart = $appointment->appointment_date;
+            $aptEnd = $appointment->getEndTime(); // Use computed end time, not potentially corrupted appointment_end
+
+            // Check for any overlap between the slots
+            if ($aptStart->lt($endTime) && $aptEnd->gt($startTime)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -365,25 +362,22 @@ class Doctor extends Model
     public function hasPatientAppointmentConflict(Carbon $startTime, Carbon $endTime, $patientId)
     {
         // Check for any overlapping appointments for this patient across ALL doctors
-        $conflictingAppointments = \App\Models\Appointment::where('patient_id', $patientId)
+        $appointments = \App\Models\Appointment::where('patient_id', $patientId)
             ->whereNotIn('status', ['cancelled', 'completed', 'no_show'])
-            ->where(function ($query) use ($startTime, $endTime) {
-                // Case 1: Existing appointment starts within the new slot
-                $query->whereBetween('appointment_date', [$startTime, $endTime->copy()->subSecond()])
-                      // Case 2: Existing appointment ends within the new slot
-                      ->orWhere(function ($subQuery) use ($startTime, $endTime) {
-                          $subQuery->where('appointment_end', '>', $startTime)
-                                   ->where('appointment_end', '<=', $endTime);
-                      })
-                      // Case 3: Existing appointment completely encompasses the new slot
-                      ->orWhere(function ($subQuery) use ($startTime, $endTime) {
-                          $subQuery->where('appointment_date', '<=', $startTime)
-                                   ->where('appointment_end', '>=', $endTime);
-                      });
-            })
-            ->exists();
+            ->get();
 
-        return $conflictingAppointments;
+        // Check each appointment individually using computed end time
+        foreach ($appointments as $appointment) {
+            $aptStart = $appointment->appointment_date;
+            $aptEnd = $appointment->getEndTime(); // Use computed end time, not potentially corrupted appointment_end
+
+            // Check for any overlap between the slots
+            if ($aptStart->lt($endTime) && $aptEnd->gt($startTime)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
