@@ -1,15 +1,12 @@
 #!/bin/bash
 
 # MedCura AI Queue Worker Startup Script
-# This script starts the Laravel queue worker to process jobs
+# Uses systemd user service for persistent queue processing
 
 echo "🚀 Starting MedCura AI Queue Worker..."
 echo "📍 Working Directory: $(pwd)"
 echo "⏰ Started at: $(date)"
 echo ""
-
-# Change to the correct directory
-cd /home/laith/Documents/Medicine
 
 # Check if Laravel is accessible
 if ! php artisan --version > /dev/null 2>&1; then
@@ -19,11 +16,8 @@ fi
 
 echo "✅ Laravel found: $(php artisan --version)"
 
-# Check queue connection
-echo "📊 Queue Status:"
-php artisan queue:monitor --once 2>/dev/null || echo "   No active queue workers"
-
 # Show current queue stats
+echo "📊 Queue Status:"
 JOBS_COUNT=$(php artisan tinker --execute="echo DB::table('jobs')->count();" 2>/dev/null | tail -1)
 FAILED_COUNT=$(php artisan tinker --execute="echo DB::table('failed_jobs')->count();" 2>/dev/null | tail -1)
 
@@ -33,23 +27,19 @@ echo ""
 
 # Clear any failed jobs older than 24 hours
 echo "🧹 Cleaning up old failed jobs..."
-php artisan queue:prune-failed --hours=24
+php artisan queue:prune-failed --hours=24 2>/dev/null || true
 
 echo ""
-echo "🔄 Starting queue worker with the following settings:"
-echo "   - Tries: 3 attempts per job"
-echo "   - Timeout: 60 seconds per job"
-echo "   - Sleep: 3 seconds between jobs"
-echo "   - Max Jobs: 1000 before restart"
+echo "🔄 Queue worker is managed by systemd user service."
+echo "   Service name: medcura-queue.service"
 echo ""
-echo "💡 To stop the worker, press Ctrl+C"
-echo "📝 Logs will appear below:"
-echo "----------------------------------------"
 
-# Start the queue worker
-php artisan queue:work \
-    --tries=3 \
-    --timeout=60 \
-    --sleep=3 \
-    --max-jobs=1000 \
-    --verbose
+# Check if service is running
+if systemctl --user is-active medcura-queue.service > /dev/null 2>&1; then
+    echo "✅ Queue worker is running!"
+    systemctl --user status medcura-queue.service --no-pager | head -10
+else
+    echo "⚠️  Queue worker is NOT running. Starting it..."
+    systemctl --user start medcura-queue.service
+    echo "✅ Started! Check status with: systemctl --user status medcura-queue.service"
+fi

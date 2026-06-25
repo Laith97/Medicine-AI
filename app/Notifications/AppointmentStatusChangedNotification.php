@@ -44,7 +44,7 @@ class AppointmentStatusChangedNotification extends Notification implements Shoul
      */
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
-        $doctorName = $this->appointment->doctor ? $this->appointment->doctor->user->name ?? 'Unknown Doctor' : 'Unknown Doctor';
+        $doctorName = $this->appointment->doctor?->user?->name ?? 'Unknown Doctor';
         $patientName = $this->appointment->patient_name;
         $isDoctor = $notifiable->isDoctor();
         $title = $this->getStatusChangeTitle($isDoctor);
@@ -82,7 +82,7 @@ class AppointmentStatusChangedNotification extends Notification implements Shoul
      */
     public function toArray(object $notifiable): array
     {
-        $doctorName = $this->appointment->doctor ? $this->appointment->doctor->user->name ?? 'Unknown Doctor' : 'Unknown Doctor';
+        $doctorName = $this->appointment->doctor?->user?->name ?? 'Unknown Doctor';
         $patientName = $this->appointment->patient_name;
         $isDoctor = $notifiable->isDoctor();
 
@@ -124,7 +124,7 @@ class AppointmentStatusChangedNotification extends Notification implements Shoul
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $doctorName = $this->appointment->doctor ? $this->appointment->doctor->user->name ?? 'Unknown Doctor' : 'Unknown Doctor';
+        $doctorName = $this->appointment->doctor?->user?->name ?? 'Unknown Doctor';
         $patientName = $this->appointment->patient_name;
         $isDoctor = $notifiable->isDoctor();
 
@@ -208,8 +208,12 @@ class AppointmentStatusChangedNotification extends Notification implements Shoul
      */
     public function broadcastOn(): array
     {
-        // Broadcast to the notifiable user
-        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
+        $userId = $this->notifiable?->id
+            ?? $this->appointment->doctor?->user_id
+            ?? $this->appointment->patient_id
+            ?? 'default';
+
+        return [new PrivateChannel('App.User.' . $userId)];
     }
 
     /**

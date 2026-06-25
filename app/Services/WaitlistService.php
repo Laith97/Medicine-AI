@@ -83,27 +83,49 @@ class WaitlistService
     public function findAvailableSlots(int $doctorId, int $daysAhead = 30): array
     {
         $endDate = now()->addDays($daysAhead);
+        $availableSlots = [];
 
-        // Get doctor's availability slots that don't have appointments
-        $availableSlots = AvailabilitySlot::where('doctor_id', $doctorId)
-            ->where('is_available', true)
-            ->where('date', '>=', now()->toDateString())
-            ->where('date', '<=', $endDate->toDateString())
-            ->whereDoesntHave('appointments', function ($query) {
-                $query->whereIn('status', ['confirmed', 'pending']);
+        // Get doctor's active weekly availability templates
+        $templates = AvailabilitySlot::where('doctor_id', $doctorId)
+            ->where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('effective_until')
+                  ->orWhere('effective_until', '>=', now()->toDateString());
             })
-            ->orderBy('date')
-            ->orderBy('start_time')
             ->get();
 
-        return $availableSlots->map(function ($slot) {
-            return [
-                'date' => $slot->date,
-                'time' => $slot->start_time,
-                'duration' => $slot->duration,
-                'slot_id' => $slot->id,
-            ];
-        })->toArray();
+        // Iterate through each day and check availability
+        $date = now();
+        while ($date <= $endDate) {
+            $dayName = strtolower($date->format('l'));
+
+            foreach ($templates as $template) {
+                if ($template->day_of_week !== $dayName) {
+                    continue;
+                }
+
+                // Count existing appointments for this doctor on this day/time range
+                $bookingCount = Appointment::where('doctor_id', $doctorId)
+                    ->whereDate('appointment_date', $date->toDateString())
+                    ->whereTime('appointment_date', '>=', $template->start_time)
+                    ->whereTime('appointment_date', '<', $template->end_time)
+                    ->whereIn('status', ['confirmed', 'pending'])
+                    ->count();
+
+                if ($bookingCount < ($template->max_bookings_per_slot ?: 1)) {
+                    $availableSlots[] = [
+                        'date' => $date->toDateString(),
+                        'time' => $template->start_time,
+                        'duration' => $template->slot_duration,
+                        'slot_id' => $template->id,
+                    ];
+                }
+            }
+
+            $date->addDay();
+        }
+
+        return $availableSlots;
     }
 
     /**

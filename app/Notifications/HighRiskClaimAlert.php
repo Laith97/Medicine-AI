@@ -103,12 +103,8 @@ class HighRiskClaimAlert extends Notification implements ShouldQueue, ShouldBroa
      */
     public function broadcastOn(): array
     {
-        // Use user_id from claimData since notifiable may be null during queue processing
-        $notifiableId = isset($this->notifiable) ? $this->notifiable->id : null;
-        if (!$notifiableId && isset($this->claimData['user_id'])) {
-            $notifiableId = $this->claimData['user_id'];
-        }
-        return [new PrivateChannel('App.User.' . ($notifiableId ?? 'default'))];
+        $notifiableId = $this->notifiable?->id ?? $this->claimData['user_id'] ?? 'default';
+        return [new PrivateChannel('App.User.' . $notifiableId)];
     }
 
     /**

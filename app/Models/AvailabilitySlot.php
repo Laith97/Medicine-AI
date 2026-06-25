@@ -38,6 +38,18 @@ class AvailabilitySlot extends Model
     }
 
     /**
+     * Get the appointments for this availability slot.
+     * Matches on doctor_id, day of week, and time range.
+     */
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class, 'doctor_id', 'doctor_id')
+            ->whereRaw('LCASE(DAYNAME(appointment_date)) = availability_slots.day_of_week')
+            ->whereRaw('TIME(appointment_date) >= availability_slots.start_time')
+            ->whereRaw('TIME(appointment_date) <= availability_slots.end_time');
+    }
+
+    /**
      * Scope for active slots
      */
     public function scopeActive($query)

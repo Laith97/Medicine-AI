@@ -26,7 +26,7 @@ class NotificationService
         $notification = new \App\Models\Notification();
         $notification->fill([
             'id' => \Illuminate\Support\Str::uuid(),
-            'type' => get_class($this) . '@' . $data['type'] ?? 'general',
+            'type' => $data['type'] ?? 'general',
             'notifiable_type' => get_class($user),
             'notifiable_id' => $user->id,
             'data' => [

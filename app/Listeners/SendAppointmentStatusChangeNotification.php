@@ -5,15 +5,14 @@ namespace App\Listeners;
 use App\Events\AppointmentStatusChangedEvent;
 use App\Notifications\AppointmentStatusChangedNotification;
 use App\Services\NotificationService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class SendAppointmentStatusChangeNotification
 {
     protected $notificationService;
 
-    // Track recently processed events to prevent duplicate notifications
-    protected static array $processedEvents = [];
-    protected static int $dedupeWindowSeconds = 2;
+    protected int $dedupeWindowSeconds = 2;
 
     /**
      * Create the event listener.
@@ -28,28 +27,20 @@ class SendAppointmentStatusChangeNotification
      */
     public function handle(AppointmentStatusChangedEvent $event): void
     {
-        // Deduplication: Create a unique key for this event
-        $eventKey = $event->appointment->id . '-' . $event->oldStatus . '-' . $event->newStatus;
-        $now = time();
+        // Deduplication: Create a unique cache key for this event
+        $cacheKey = 'appointment_status_change_' . $event->appointment->id . '_' . $event->oldStatus . '_' . $event->newStatus;
 
-        // Clean old entries
-        foreach (self::$processedEvents as $key => $timestamp) {
-            if (($now - $timestamp) > self::$dedupeWindowSeconds) {
-                unset(self::$processedEvents[$key]);
-            }
-        }
-
-        // Skip if already processed recently
-        if (isset(self::$processedEvents[$eventKey])) {
+        // Skip if already processed recently (shared across processes/workers via cache)
+        if (Cache::has($cacheKey)) {
             Log::info('Duplicate event detected, skipping', [
                 'appointment_id' => $event->appointment->id,
-                'event_key' => $eventKey,
+                'cache_key' => $cacheKey,
             ]);
             return;
         }
 
-        // Mark as processed
-        self::$processedEvents[$eventKey] = $now;
+        // Mark as processed with TTL
+        Cache::put($cacheKey, true, now()->addSeconds($this->dedupeWindowSeconds));
 
         try {
             // Get users who should be notified

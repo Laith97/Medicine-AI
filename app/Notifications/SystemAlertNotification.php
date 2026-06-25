@@ -3,9 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -76,27 +74,6 @@ class SystemAlertNotification extends Notification implements ShouldBroadcast
             'info' => 'info-circle',
             default => 'bell',
         };
-    }
-
-    /**
-     * Get the mail representation of the notification.
-     */
-    public function toMail(object $notifiable): MailMessage
-    {
-        return (new MailMessage)
-            ->subject($this->title)
-            ->greeting('Hello ' . $notifiable->name . ',')
-            ->line($this->message)
-            ->action('View Details', $this->data['link'] ?? route('notifications.index'))
-            ->line('This is an important system alert.');
-    }
-
-    /**
-     * Get the SMS representation of the notification.
-     */
-    public function toSms(object $notifiable): string
-    {
-        return "System Alert: {$this->title}. {$this->message}. View details: " . ($this->data['link'] ?? route('notifications.index'));
     }
 
     /**

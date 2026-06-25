@@ -49,8 +49,8 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
      */
     public function toArray(object $notifiable): array
     {
-        $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
-        $patientName = $this->appointment->patient->name ?? 'Patient';
+        $doctorName = $this->appointment->doctor?->user?->name ?? 'Unknown Doctor';
+        $patientName = $this->appointment->patient->name ?? $this->appointment->guest_name ?? 'Patient';
         $isDoctor = $notifiable->isDoctor();
 
         // Customize message based on notifiable type
@@ -91,8 +91,8 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
-        $patientName = $this->appointment->patient->name ?? 'Patient';
+        $doctorName = $this->appointment->doctor?->user?->name ?? 'Unknown Doctor';
+        $patientName = $this->appointment->patient->name ?? $this->appointment->guest_name ?? 'Patient';
         $isDoctor = $notifiable->isDoctor();
 
         if ($isDoctor) {
@@ -119,8 +119,8 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
      */
     public function toSms(object $notifiable): array
     {
-        $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
-        $patientName = $this->appointment->patient->name ?? 'Patient';
+        $doctorName = $this->appointment->doctor?->user?->name ?? 'Unknown Doctor';
+        $patientName = $this->appointment->patient->name ?? $this->appointment->guest_name ?? 'Patient';
         $doctorId = $this->appointment->doctor->id ?? 0;
         $hospitalId = $this->appointment->doctor->hospital_id ?? 0;
         $isDoctor = $notifiable->isDoctor();
@@ -147,8 +147,8 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
      */
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
-        $doctorName = $this->appointment->doctor->user->name ?? 'Unknown Doctor';
-        $patientName = $this->appointment->patient->name ?? 'Patient';
+        $doctorName = $this->appointment->doctor?->user?->name ?? 'Unknown Doctor';
+        $patientName = $this->appointment->patient->name ?? $this->appointment->guest_name ?? 'Patient';
         $doctorId = $this->appointment->doctor->id ?? 0;
         $isDoctor = $notifiable->isDoctor();
 
@@ -199,7 +199,12 @@ class AppointmentBookedNotification extends Notification implements ShouldBroadc
      */
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('App.User.' . ($this->notifiable?->id ?? 'default'))];
+        $userId = $this->notifiable?->id
+            ?? $this->appointment->doctor?->user_id
+            ?? $this->appointment->patient_id
+            ?? 'default';
+
+        return [new PrivateChannel('App.User.' . $userId)];
     }
 
     /**

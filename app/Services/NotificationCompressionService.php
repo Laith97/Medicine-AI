@@ -2,10 +2,17 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class NotificationCompressionService
 {
+    protected ?Request $request;
+
+    public function __construct(?Request $request = null)
+    {
+        $this->request = $request;
+    }
     private const COMPRESSION_LEVEL = 6; // Balance between speed and compression ratio
     private const MIN_PAYLOAD_SIZE = 1024; // Only compress payloads larger than 1KB
 
@@ -108,7 +115,11 @@ class NotificationCompressionService
      */
     public function clientSupportsGzip(): bool
     {
-        $acceptEncoding = request()->header('Accept-Encoding', '');
+        if (!$this->request) {
+            return false;
+        }
+
+        $acceptEncoding = $this->request->header('Accept-Encoding', '');
 
         return str_contains(strtolower($acceptEncoding), 'gzip');
     }
