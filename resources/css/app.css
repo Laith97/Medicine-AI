@@ -4,4 +4,4 @@
 
 /* Application-specific UI enhancements */
 @import 'dashboard-enhancements.css';
-@import 'notifications-dropdown.css';
+/* @import 'notifications-dropdown.css'; — file missing, styles injected by JS */
