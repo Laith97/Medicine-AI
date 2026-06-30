@@ -40,8 +40,8 @@ class UnifiedNotificationSystem {
         this.initialized = true;
         
         // Create Pusher instance
-        this.pusher = new Pusher("57bd15962a354114cb5e", {
-            cluster: "ap2",
+        this.pusher = new Pusher(import.meta.env.VITE_PUSHER_APP_KEY, {
+            cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
             authEndpoint: "/broadcasting/auth",
             auth: {
                 headers: {
