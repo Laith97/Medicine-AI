@@ -765,8 +765,10 @@
     }
     </script>
 
-    <!-- Unified Notification System is now handled by Vite in app.js -->
-    
+    <!-- Vite Assets (Laravel Echo & Pusher) -->
+    @viteReactRefresh
+    @vite(['resources/js/app.js', 'resources/css/app.css'])
+
     @stack('scripts')
 </body>
 </html>

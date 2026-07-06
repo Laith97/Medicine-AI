@@ -34,9 +34,9 @@ class AppointmentStatusChangedNotification extends Notification implements Shoul
      */
     public function via(object $notifiable): array
     {
-        // Writes to database for the notification dropdown.
-        // WebSocket broadcasting via Observer for real-time toast/sound.
-        return ['database', 'broadcast'];
+        // Only database channel - broadcasting is handled by AppointmentStatusChangedEvent
+        // to avoid duplicate WebSocket events with different IDs.
+        return ['database'];
     }
 
     /**

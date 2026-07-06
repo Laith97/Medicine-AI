@@ -300,5 +300,11 @@
         </main>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Vite Assets (Laravel Echo & Pusher) -->
+    @viteReactRefresh
+    @vite(['resources/js/app.js', 'resources/css/app.css'])
+
+    @stack('scripts')
 </body>
 </html>

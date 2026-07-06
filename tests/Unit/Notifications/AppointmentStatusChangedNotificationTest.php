@@ -56,7 +56,9 @@ class AppointmentStatusChangedNotificationTest extends TestCase
 
         $channels = $notification->via($this->doctor);
 
-        $this->assertEquals(['database', 'broadcast'], $channels);
+        // Only database channel - broadcasting is handled by AppointmentStatusChangedEvent
+        $this->assertEquals(['database'], $channels);
+        $this->assertNotContains('broadcast', $channels);
     }
 
     /** @test */

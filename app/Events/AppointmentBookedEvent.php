@@ -21,10 +21,16 @@ class AppointmentBookedEvent implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return [
+        $channels = [
             new \Illuminate\Broadcasting\PrivateChannel('App.User.' . $this->appointment->doctor->user_id),
             new \Illuminate\Broadcasting\Channel('doctor.' . $this->appointment->doctor->id)
         ];
+
+        if ($this->appointment->patient) {
+            $channels[] = new \Illuminate\Broadcasting\PrivateChannel('App.User.' . $this->appointment->patient_id);
+        }
+
+        return $channels;
     }
 
     public function broadcastAs()

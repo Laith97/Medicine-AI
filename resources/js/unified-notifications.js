@@ -138,11 +138,11 @@ class UnifiedNotificationSystem {
 
         eventTypes.forEach(eventType => {
             this.channel.bind(eventType, (data) => {
-                // Deduplicate using BOTH event type AND appointment ID (data.id)
-                // This allows the same appointment to trigger different event types (e.g., booked then cancelled)
-                // while preventing the exact same event from being processed twice
-                const appointmentId = data.id || data.data?.appointment_id || 'no-id';
-                const dedupKey = `${eventType}-${appointmentId}`;
+                // Deduplicate using event type + entity ID (prefer data.appointment_id or data.id)
+                // This prevents the same event from different sources (event vs notification) creating duplicates.
+                // The entity ID must be meaningful (appointment ID, etc.), not a notification UUID.
+                const entityId = data.data?.appointment_id || data.data?.task_id || data.data?.invoice_id || data.id || 'no-id';
+                const dedupKey = `${eventType}-${entityId}`;
 
                 if (this.processedEventIds.has(dedupKey)) {
                     console.log(`🚫 Preventing duplicate event: ${dedupKey}`);

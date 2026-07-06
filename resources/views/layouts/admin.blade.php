@@ -496,6 +496,10 @@
         });
     </script>
 
+    <!-- Vite Assets (Laravel Echo & Pusher) -->
+    @viteReactRefresh
+    @vite(['resources/js/app.js', 'resources/css/app.css'])
+
     @stack('scripts')
     @yield('scripts')
 </body>
