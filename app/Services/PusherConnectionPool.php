@@ -205,32 +205,22 @@ class PusherConnectionPool
                 $compressedSize = $originalSize;
             }
 
-            $result = $pusher->trigger($channels, $event, $payload);
+            $pusher->trigger($channels, $event, $payload);
 
-            if ($result === true) {
-                // Update load balancer with successful broadcast
-                $this->loadBalancer->updateServerLoad($serverId, count($this->connections));
+            // Update load balancer with successful broadcast
+            $this->loadBalancer->updateServerLoad($serverId, count($this->connections));
 
-                Log::info('Successfully broadcast event via pooled connection', [
-                    'channels' => $channels,
-                    'event' => $event,
-                    'server_id' => $serverId,
-                    'original_size' => $originalSize,
-                    'compressed_size' => $compressedSize,
-                    'compression_ratio' => $originalSize > 0 ? round($compressedSize / $originalSize, 3) : 1.0,
-                    'compressed' => $isCompressed,
-                    'active_connections' => count($this->connections)
-                ]);
-                return true;
-            } else {
-                Log::warning('Failed to broadcast event via pooled connection', [
-                    'channels' => $channels,
-                    'event' => $event,
-                    'server_id' => $serverId,
-                    'result' => $result
-                ]);
-                return false;
-            }
+            Log::info('Successfully broadcast event via pooled connection', [
+                'channels' => $channels,
+                'event' => $event,
+                'server_id' => $serverId,
+                'original_size' => $originalSize,
+                'compressed_size' => $compressedSize,
+                'compression_ratio' => $originalSize > 0 ? round($compressedSize / $originalSize, 3) : 1.0,
+                'compressed' => $isCompressed,
+                'active_connections' => count($this->connections)
+            ]);
+            return true;
         } catch (Exception $e) {
             Log::error('Exception during broadcast via pooled connection', [
                 'channels' => $channels,
