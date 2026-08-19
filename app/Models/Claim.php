@@ -25,6 +25,12 @@ class Claim extends Model
                 $claim->version = $claim->version + 1;
             }
         });
+
+        static::creating(function ($claim) {
+            if (empty($claim->claim_id)) {
+                $claim->claim_id = 'CLM-' . strtoupper(uniqid());
+            }
+        });
     }
 
     protected $fillable = [
@@ -49,6 +55,7 @@ class Claim extends Model
         'payment_date',
         'eligibility_warning',
         'version',
+        'clearinghouse_submission_id',
     ];
 
     protected $casts = [

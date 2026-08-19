@@ -609,16 +609,26 @@
                                             @endif
 
                                             @if($appointment->status == 'confirmed')
-                                                <button onclick="completeAppointment({{ $appointment->id }})" 
-                                                        class="btn btn-sm btn-primary-professional" 
-                                                        title="Complete">
-                                                    <i class="fas fa-check-circle"></i>
-                                                </button>
-                                                <button onclick="markNoShow({{ $appointment->id }})" 
-                                                        class="btn btn-sm btn-secondary-professional" 
-                                                        title="No Show">
-                                                    <i class="fas fa-user-times"></i>
-                                                </button>
+                                                @if($appointment->appointment_type == 'video_call')
+                                                    <a href="{{ route('video.room', $appointment->id) }}" 
+                                                       target="_blank"
+                                                       class="btn btn-sm btn-info" 
+                                                       title="Start Video Call">
+                                                        <i class="fas fa-video"></i>
+                                                    </a>
+                                                @endif
+                                @if(!$appointment->appointment_date || !$appointment->appointment_date->isFuture())
+                                <button onclick="completeAppointment({{ $appointment->id }})" 
+                                        class="btn btn-sm btn-primary-professional" 
+                                        title="Complete">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                                <button onclick="markNoShow({{ $appointment->id }})" 
+                                        class="btn btn-sm btn-secondary-professional" 
+                                        title="No Show">
+                                    <i class="fas fa-user-times"></i>
+                                </button>
+                                @endif
                                             @endif
 
                                             @if(in_array($appointment->status, ['pending', 'confirmed']))

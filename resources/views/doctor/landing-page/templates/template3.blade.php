@@ -261,7 +261,7 @@ h1, h2, h3, h4, h5, h6 {
     <div class="container{{ ($landingPage->page_layout ?? 'default') === 'fullwidth' ? '-fluid' : '' }}">
         <a class="navbar-brand" href="#home">
             @if($doctor->user->profile_photo_path)
-                <img src="{{ Storage::url($doctor->user->profile_photo_path) }}"
+                <img src="{{ Storage::disk('public')->url($doctor->user->profile_photo_path) }}"
                      alt="{{ $doctor->user->name }}"
                      class="rounded-circle me-2"
                      style="width: 40px; height: 40px; object-fit: cover;">

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Doctor;
 
 use App\Http\Controllers\Controller;
 use App\Models\LandingPageVisit;
-use App\Models\BlogPost;
+use App\Models\DoctorBlogPost;
 use App\Models\ChatSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -77,9 +77,9 @@ class AnalyticsController extends Controller
 
         // Blog views (with table check)
         $blogViews = 0;
-        if (\Schema::hasTable('blog_posts')) {
+        if (\Schema::hasTable('doctor_blog_posts')) {
             try {
-                $blogViews = BlogPost::where('doctor_id', $doctorId)
+                $blogViews = DoctorBlogPost::where('doctor_id', $doctorId)
                     ->sum('views_count');
             } catch (\Exception $e) {
                 // Silently handle missing columns
@@ -149,12 +149,12 @@ class AnalyticsController extends Controller
 
     private function getTopBlogPosts($doctorId)
     {
-        if (!\Schema::hasTable('blog_posts')) {
+        if (!\Schema::hasTable('doctor_blog_posts')) {
             return collect();
         }
 
         try {
-            return BlogPost::where('doctor_id', $doctorId)
+            return DoctorBlogPost::where('doctor_id', $doctorId)
                 ->where('is_published', true)
                 ->orderByDesc('views_count')
                 ->limit(5)

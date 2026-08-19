@@ -30,13 +30,13 @@ class AvailabilityServiceTest extends TestCase
         // Create an availability slot
         $slot = AvailabilitySlot::create([
             'doctor_id' => $doctor->id,
-            'day_of_week' => 'monday',
+            'day_of_week' => strtolower(now()->format('l')),
             'start_time' => '09:00:00',
             'end_time' => '10:00:00',
             'slot_duration' => 30,
             'max_bookings_per_slot' => 1,
             'is_active' => true,
-            'date' => now()->toDateString(),
+            'effective_from' => now()->toDateString(),
         ]);
 
         $isAvailable = $this->availabilityService->checkSlotAvailability(
@@ -56,13 +56,13 @@ class AvailabilityServiceTest extends TestCase
         // Create availability slots
         AvailabilitySlot::create([
             'doctor_id' => $doctor->id,
-            'day_of_week' => now()->format('l'),
+            'day_of_week' => strtolower(now()->format('l')),
             'start_time' => '09:00:00',
             'end_time' => '10:00:00',
             'slot_duration' => 30,
             'max_bookings_per_slot' => 1,
             'is_active' => true,
-            'date' => now()->toDateString(),
+            'effective_from' => now()->toDateString(),
         ]);
 
         $slots = $this->availabilityService->getAvailableSlots(
@@ -83,13 +83,13 @@ class AvailabilityServiceTest extends TestCase
         // Create availability slots
         AvailabilitySlot::create([
             'doctor_id' => $doctor->id,
-            'day_of_week' => now()->format('l'),
+            'day_of_week' => strtolower(now()->format('l')),
             'start_time' => '09:00:00',
             'end_time' => '10:00:00',
             'slot_duration' => 30,
             'max_bookings_per_slot' => 1,
             'is_active' => true,
-            'date' => now()->toDateString(),
+            'effective_from' => now()->toDateString(),
         ]);
 
         $utilization = $this->availabilityService->calculateSlotUtilization(
@@ -112,13 +112,13 @@ class AvailabilityServiceTest extends TestCase
         // Create availability slots
         AvailabilitySlot::create([
             'doctor_id' => $doctor->id,
-            'day_of_week' => now()->format('l'),
+            'day_of_week' => strtolower(now()->format('l')),
             'start_time' => '09:00:00',
             'end_time' => '10:00:00',
             'slot_duration' => 30,
             'max_bookings_per_slot' => 1,
             'is_active' => true,
-            'date' => now()->toDateString(),
+            'effective_from' => now()->toDateString(),
         ]);
 
         $nextSlots = $this->availabilityService->getNextAvailableSlots($doctor->id, 3);

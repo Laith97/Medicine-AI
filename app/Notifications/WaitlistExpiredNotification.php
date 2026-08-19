@@ -52,7 +52,7 @@ class WaitlistExpiredNotification extends Notification implements ShouldBroadcas
         $hospitalId = $this->waitlistEntry->waitlist->doctor->hospital_id ?? 0;
 
         return [
-            'message' => "Your waitlist entry for Dr. {$doctorName} has expired. Position was #{$this->waitlistEntry->position}. Rejoin: " . route('waitlist.index'),
+            'message' => "Your waitlist entry for Dr. {$doctorName} has expired. Position was #{$this->waitlistEntry->position}. Rejoin: " . route('patient.waitlist.dashboard'),
             'options' => [
                 'doctor_id' => $doctorId,
                 'hospital_id' => $hospitalId,
@@ -76,7 +76,7 @@ class WaitlistExpiredNotification extends Notification implements ShouldBroadcas
             'title' => 'Waitlist Entry Expired',
             'message' => "Your waitlist entry for Dr. {$doctorName} has expired without booking",
             'icon' => 'times-circle',
-            'link' => route('waitlist.index'),
+            'link' => route('patient.waitlist.dashboard'),
             'link_text' => 'Join Waitlist Again',
             'related_type' => 'waitlist_entry',
             'related_id' => $this->waitlistEntry->id,
@@ -104,7 +104,7 @@ class WaitlistExpiredNotification extends Notification implements ShouldBroadcas
             ->when($this->waitlistEntry->expires_at, function ($mail) {
                 return $mail->line('Expired on: ' . $this->waitlistEntry->expires_at->format('M j, Y g:i A'));
             })
-            ->action('Join Waitlist Again', route('waitlist.index'))
+            ->action('Join Waitlist Again', route('patient.waitlist.dashboard'))
             ->line('You can join the waitlist again if you\'d like to try booking with this doctor.');
     }
 
@@ -123,7 +123,7 @@ class WaitlistExpiredNotification extends Notification implements ShouldBroadcas
             'message' => "Your waitlist entry for Dr. {$doctorName} has expired without booking",
             'body' => "Your waitlist entry for Dr. {$doctorName} has expired without booking",
             'icon' => 'times-circle',
-            'link' => route('waitlist.index'),
+            'link' => route('patient.waitlist.dashboard'),
             'link_text' => 'Join Waitlist Again',
             'data' => [
                 'waitlist_entry_id' => $this->waitlistEntry->id,

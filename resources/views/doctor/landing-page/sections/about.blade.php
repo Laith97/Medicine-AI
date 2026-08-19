@@ -19,11 +19,11 @@ $doctor = $doctor ?? auth()->user()->doctor ?? null;
             <div class="col-lg-5 mb-4 mb-lg-0">
                 <div class="about-image-wrapper position-relative">
                     @if(isset($config['image']) && $config['image'])
-                        <img src="{{ Storage::url($config['image']) }}"
+                        <img src="{{ Storage::disk('public')->url($config['image']) }}"
                              alt="Doctor Photo"
                              class="img-fluid rounded-3 shadow-lg">
                     @elseif($doctor && $doctor->user->profile_photo_path)
-                        <img src="{{ Storage::url($doctor->user->profile_photo_path) }}"
+                        <img src="{{ Storage::disk('public')->url($doctor->user->profile_photo_path) }}"
                              alt="{{ $doctor->user->name }}"
                              class="img-fluid rounded-3 shadow-lg">
                     @else
@@ -136,11 +136,11 @@ $doctor = $doctor ?? auth()->user()->doctor ?? null;
             <div class="col-lg-5 mb-4 mb-lg-0">
                 <div class="about-image-wrapper position-relative">
                     @if(isset($config['image']) && $config['image'])
-                        <img src="{{ Storage::url($config['image']) }}"
+                        <img src="{{ Storage::disk('public')->url($config['image']) }}"
                              alt="Doctor Photo"
                              class="img-fluid rounded-3 shadow-lg">
                     @elseif($doctor && $doctor->user->profile_photo_path)
-                        <img src="{{ Storage::url($doctor->user->profile_photo_path) }}"
+                        <img src="{{ Storage::disk('public')->url($doctor->user->profile_photo_path) }}"
                              alt="{{ $doctor->user->name }}"
                              class="img-fluid rounded-3 shadow-lg">
                     @else

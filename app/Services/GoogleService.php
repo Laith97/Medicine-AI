@@ -20,7 +20,9 @@ class GoogleService
         $this->client = new Client();
         $this->client->setClientId(config('services.google.client_id'));
         $this->client->setClientSecret(config('services.google.client_secret'));
-        $this->client->setRedirectUri(config('services.google.redirect_uri'));
+        $this->client->setRedirectUri(
+            config('services.google.redirect_uri') ?: route('doctor.google.callback')
+        );
         $this->client->setAccessType('offline');
         $this->client->setPrompt('consent');
 

@@ -6,7 +6,6 @@ use Tests\TestCase;
 use App\Models\User;
 use App\Models\Claim;
 use App\Models\Doctor;
-use App\Models\Patient;
 use App\Models\InsuranceProvider;
 use App\Models\PatientInsurance;
 use App\Models\ClearinghouseAccount;
@@ -38,7 +37,8 @@ class ClaimSystemTest extends TestCase
         ]);
 
         // Create a patient user
-        $this->patient = Patient::factory()->create([
+        $this->patient = User::factory()->create([
+            'role' => 'patient',
             'name' => 'Test Patient',
             'email' => 'patient@example.com',
             'phone' => '1234567890',
@@ -47,74 +47,65 @@ class ClaimSystemTest extends TestCase
         // Create an insurance provider
         $this->insuranceProvider = InsuranceProvider::factory()->create([
             'name' => 'Test Insurance',
-            'provider_code' => 'TEST',
         ]);
     }
 
     public function test_claim_can_be_created()
     {
-        $claimData = [
-            'patient_name' => 'Test Patient',
-            'patient_dob' => '1980-01-01',
-            'patient_gender' => 'male',
-            'provider_name' => 'Dr. Test',
+        $claim = Claim::create([
+            'patient_id' => $this->patient->id,
+            'diagnosis_text' => 'Test diagnosis',
+            'procedure_text' => 'Test procedure',
+            'icd10_codes' => ['A00.0'],
+            'cpt_codes' => ['99213'],
+            'payer' => $this->insuranceProvider->name,
+            'claim_status' => 'submitted',
+            'expected_amount' => 100.00,
             'service_date' => '2023-01-01',
-            'diagnosis_description' => 'Test diagnosis',
-            'total_amount' => 100.00,
-            'hospital_id' => $this->hospitalAdmin->hospital_id,
-            'user_id' => $this->hospitalAdmin->id,
-        ];
-
-        $claim = Claim::create($claimData);
+        ]);
 
         $this->assertDatabaseHas('claims', [
-            'patient_name' => 'Test Patient',
-            'provider_name' => 'Dr. Test',
-            'total_amount' => 100.00,
-            'hospital_id' => $this->hospitalAdmin->hospital_id,
+            'id' => $claim->id,
+            'patient_id' => $this->patient->id,
+            'claim_status' => 'submitted',
         ]);
+        $this->assertEquals('Test diagnosis', $claim->diagnosis_text);
+        $this->assertEquals(['A00.0'], $claim->icd10_codes);
+        $this->assertNotNull($claim->claim_id);
     }
 
     public function test_claim_can_be_updated()
     {
         $claim = Claim::create([
-            'patient_name' => 'Old Name',
-            'patient_dob' => '1980-01-01',
-            'provider_name' => 'Old Provider',
+            'patient_id' => $this->patient->id,
+            'diagnosis_text' => 'Old diagnosis',
+            'claim_status' => 'submitted',
+            'expected_amount' => 50.00,
             'service_date' => '2023-01-01',
-            'diagnosis_description' => 'Old diagnosis',
-            'total_amount' => 50.00,
-            'hospital_id' => $this->hospitalAdmin->hospital_id,
-            'user_id' => $this->hospitalAdmin->id,
         ]);
 
         $claim->update([
-            'patient_name' => 'New Name',
-            'provider_name' => 'New Provider',
-            'total_amount' => 150.00,
-            'status' => 'approved',
+            'diagnosis_text' => 'New diagnosis',
+            'expected_amount' => 150.00,
+            'claim_status' => 'approved',
         ]);
 
         $this->assertDatabaseHas('claims', [
             'id' => $claim->id,
-            'patient_name' => 'New Name',
-            'provider_name' => 'New Provider',
-            'total_amount' => 150.00,
-            'status' => 'approved',
+            'diagnosis_text' => 'New diagnosis',
+            'expected_amount' => 150.00,
+            'claim_status' => 'approved',
         ]);
     }
 
     public function test_claim_can_be_deleted()
     {
         $claim = Claim::create([
-            'patient_name' => 'Test Patient',
-            'patient_dob' => '1980-01-01',
-            'provider_name' => 'Dr. Test',
+            'patient_id' => $this->patient->id,
+            'diagnosis_text' => 'Test diagnosis',
+            'claim_status' => 'submitted',
+            'expected_amount' => 100.00,
             'service_date' => '2023-01-01',
-            'diagnosis_description' => 'Test diagnosis',
-            'total_amount' => 100.00,
-            'hospital_id' => $this->hospitalAdmin->hospital_id,
-            'user_id' => $this->hospitalAdmin->id,
         ]);
 
         $claim->delete();
@@ -127,45 +118,55 @@ class ClaimSystemTest extends TestCase
     public function test_claim_status_workflow()
     {
         $claim = Claim::create([
-            'patient_name' => 'Test Patient',
-            'patient_dob' => '1980-01-01',
-            'provider_name' => 'Dr. Test',
+            'patient_id' => $this->patient->id,
+            'diagnosis_text' => 'Test diagnosis',
+            'claim_status' => 'submitted',
+            'expected_amount' => 100.00,
             'service_date' => '2023-01-01',
-            'diagnosis_description' => 'Test diagnosis',
-            'total_amount' => 100.00,
-            'hospital_id' => $this->hospitalAdmin->hospital_id,
-            'user_id' => $this->hospitalAdmin->id,
         ]);
 
         // Test status transitions
-        $claim->update(['status' => 'pending']);
-        $this->assertEquals('pending', $claim->fresh()->status);
+        $claim->update(['claim_status' => 'pending']);
+        $this->assertEquals('pending', $claim->fresh()->claim_status);
 
-        $claim->update(['status' => 'approved']);
-        $this->assertEquals('approved', $claim->fresh()->status);
+        $claim->update(['claim_status' => 'approved']);
+        $this->assertEquals('approved', $claim->fresh()->claim_status);
 
-        $claim->update(['status' => 'denied']);
-        $this->assertEquals('denied', $claim->fresh()->status);
+        $claim->update(['claim_status' => 'denied']);
+        $this->assertEquals('denied', $claim->fresh()->claim_status);
 
-        $claim->update(['status' => 'paid']);
-        $this->assertEquals('paid', $claim->fresh()->status);
+        $claim->update(['claim_status' => 'paid']);
+        $this->assertEquals('paid', $claim->fresh()->claim_status);
+
+        // Scopes
+        $deniedClaim = Claim::create([
+            'patient_id' => $this->patient->id,
+            'diagnosis_text' => 'Denied diagnosis',
+            'claim_status' => 'denied',
+            'expected_amount' => 50.00,
+            'service_date' => '2023-01-01',
+        ]);
+        $this->assertTrue(Claim::denied()->where('id', $deniedClaim->id)->exists());
+        $this->assertTrue(Claim::paid()->where('id', $claim->id)->exists());
     }
 
-    public function test_claim_denial_risk_probability()
+    public function test_claim_denial_code_normalization()
     {
         $claim = Claim::create([
-            'patient_name' => 'Test Patient',
-            'patient_dob' => '1980-01-01',
-            'provider_name' => 'Dr. Test',
+            'patient_id' => $this->patient->id,
+            'diagnosis_text' => 'Test diagnosis',
+            'claim_status' => 'denied',
+            'raw_denial_code' => '16',
+            'expected_amount' => 100.00,
             'service_date' => '2023-01-01',
-            'diagnosis_description' => 'Test diagnosis',
-            'total_amount' => 100.00,
-            'hospital_id' => $this->hospitalAdmin->hospital_id,
-            'user_id' => $this->hospitalAdmin->id,
-            'denial_risk_probability' => 0.8, // High risk
         ]);
 
-        $this->assertGreaterThanOrEqual(0.7, $claim->denial_risk_probability);
+        $this->assertEquals('documentation_missing', Claim::normalizeDenialCode('16'));
+        $this->assertEquals('coding_error', Claim::normalizeDenialCode('4'));
+        $this->assertEquals('coverage_issue', Claim::normalizeDenialCode('1'));
+        $this->assertEquals('medical_necessity', Claim::normalizeDenialCode('50'));
+        $this->assertEquals('timely_filing', Claim::normalizeDenialCode('54'));
+        $this->assertEquals('other', Claim::normalizeDenialCode('999'));
     }
 
     public function test_clearinghouse_submission_creation()
@@ -174,19 +175,6 @@ class ClaimSystemTest extends TestCase
             'name' => 'Test Account',
             'provider' => 'Availity',
             'is_active' => true,
-            'hospital_id' => $this->hospitalAdmin->hospital_id,
-        ]);
-
-        $claim = Claim::create([
-            'patient_name' => 'Test Patient',
-            'patient_dob' => '1980-01-01',
-            'provider_name' => 'Dr. Test',
-            'service_date' => '2023-01-01',
-            'diagnosis_description' => 'Test diagnosis',
-            'total_amount' => 100.00,
-            'status' => 'pending',
-            'hospital_id' => $this->hospitalAdmin->hospital_id,
-            'user_id' => $this->hospitalAdmin->id,
         ]);
 
         $submission = ClearinghouseSubmission::create([
@@ -196,10 +184,17 @@ class ClaimSystemTest extends TestCase
             'total_amount' => 100.00,
             'status' => 'pending',
             'submission_type' => '837P',
+            'edi_content' => 'ISA*00*...',
         ]);
 
-        // Associate the claim with the submission
-        $submission->claims()->attach($claim->id);
+        $claim = Claim::create([
+            'patient_id' => $this->patient->id,
+            'diagnosis_text' => 'Test diagnosis',
+            'claim_status' => 'pending',
+            'expected_amount' => 100.00,
+            'service_date' => '2023-01-01',
+            'clearinghouse_submission_id' => $submission->id,
+        ]);
 
         $this->assertDatabaseHas('clearinghouse_submissions', [
             'clearinghouse_account_id' => $account->id,
@@ -212,51 +207,49 @@ class ClaimSystemTest extends TestCase
 
     public function test_claim_with_insurance_information()
     {
-        $insurance = PatientInsurance::factory()->create([
-            'patient_id' => $this->patient->id,
+        $patientData = \App\Models\PatientData::factory()->create([
+            'user_id' => $this->patient->id,
+        ]);
+
+        $insurance = PatientInsurance::create([
+            'patient_id' => $patientData->id,
             'insurance_provider_id' => $this->insuranceProvider->id,
             'policy_number' => 'POL123456',
             'group_number' => 'GRP123',
+            'subscriber_id' => 'SUB123456',
+            'relationship_to_subscriber' => 'self',
+            'effective_date' => '2023-01-01',
         ]);
 
         $claim = Claim::create([
-            'patient_name' => 'Test Patient',
-            'patient_dob' => '1980-01-01',
-            'patient_gender' => 'male',
-            'patient_insurance_id' => $insurance->policy_number,
-            'patient_insurance_provider' => $this->insuranceProvider->name,
-            'provider_name' => 'Dr. Test',
+            'patient_id' => $this->patient->id,
+            'diagnosis_text' => 'Test diagnosis',
+            'payer' => $this->insuranceProvider->name,
+            'claim_status' => 'submitted',
+            'expected_amount' => 100.00,
             'service_date' => '2023-01-01',
-            'diagnosis_description' => 'Test diagnosis',
-            'total_amount' => 100.00,
-            'hospital_id' => $this->hospitalAdmin->hospital_id,
-            'user_id' => $this->hospitalAdmin->id,
         ]);
 
         $this->assertDatabaseHas('claims', [
-            'patient_insurance_id' => 'POL123456',
-            'patient_insurance_provider' => 'Test Insurance',
+            'id' => $claim->id,
+            'payer' => 'Test Insurance',
         ]);
+        $this->assertEquals($insurance->policy_number, 'POL123456');
     }
 
-    public function test_claim_underpayment_detection()
+    public function test_claim_payment_difference_detection()
     {
         $claim = Claim::create([
-            'patient_name' => 'Test Patient',
-            'patient_dob' => '1980-01-01',
-            'provider_name' => 'Dr. Test',
-            'service_date' => '2023-01-01',
-            'diagnosis_description' => 'Test diagnosis',
-            'total_amount' => 100.00,
-            'allowed_amount' => 80.00,
+            'patient_id' => $this->patient->id,
+            'diagnosis_text' => 'Test diagnosis',
+            'claim_status' => 'partially_paid',
+            'expected_amount' => 100.00,
             'paid_amount' => 60.00,
-            'hospital_id' => $this->hospitalAdmin->hospital_id,
-            'user_id' => $this->hospitalAdmin->id,
-            'underpayment_alert' => true, // Simulate underpayment
+            'service_date' => '2023-01-01',
         ]);
 
         $this->assertEquals(60.00, $claim->paid_amount);
-        $this->assertEquals(80.00, $claim->allowed_amount);
-        $this->assertTrue($claim->underpayment_alert);
+        $this->assertEquals(100.00, $claim->expected_amount);
+        $this->assertEquals(40.00, $claim->calculatePaymentDifference());
     }
 }

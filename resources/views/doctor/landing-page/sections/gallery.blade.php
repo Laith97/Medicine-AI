@@ -40,7 +40,7 @@ $images = $config['images'] ?? [];
                  data-aos-delay="{{ $index * 100 }}"
                  @endif>
                 <div class="gallery-card position-relative overflow-hidden rounded-3 shadow-sm">
-                    <img src="{{ Storage::url($image['url']) }}"
+                    <img src="{{ Storage::disk('public')->url($image['url']) }}"
                          alt="{{ $image['caption'] ?? 'Gallery Image' }}"
                          class="img-fluid gallery-image">
 
@@ -121,7 +121,7 @@ $images = $config['images'] ?? [];
                      data-aos-delay="{{ $index * 100 }}"
                      @endif>
                     <div class="gallery-card position-relative overflow-hidden rounded-3 shadow-sm h-100">
-                        <img src="{{ Storage::url($image['url']) }}"
+                        <img src="{{ Storage::disk('public')->url($image['url']) }}"
                              alt="{{ $image['caption'] ?? 'Gallery Image' }}"
                              class="img-fluid gallery-image w-100 h-100 object-fit-cover">
 

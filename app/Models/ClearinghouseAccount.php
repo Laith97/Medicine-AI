@@ -21,7 +21,6 @@ class ClearinghouseAccount extends Model
     ];
 
     protected $casts = [
-        'credentials' => 'encrypted',
         'settings' => 'json',
         'is_active' => 'boolean',
         'last_used_at' => 'datetime',
@@ -64,7 +63,7 @@ class ClearinghouseAccount extends Model
      */
     public function getDecryptedCredentials(): array
     {
-        $decrypted = Crypt::decryptString($this->credentials);
+        $decrypted = Crypt::decryptString(json_decode($this->credentials, true));
         return json_decode($decrypted, true) ?? [];
     }
 
@@ -73,7 +72,7 @@ class ClearinghouseAccount extends Model
      */
     public function setCredentials(array $credentials): void
     {
-        $this->credentials = Crypt::encryptString(json_encode($credentials));
+        $this->credentials = json_encode(Crypt::encryptString(json_encode($credentials)));
     }
 
     /**

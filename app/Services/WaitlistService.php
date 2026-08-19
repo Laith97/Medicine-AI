@@ -189,7 +189,7 @@ class WaitlistService
             ->where('doctor_id', $waitlist->doctor_id)
             ->first();
 
-        $daysUntilSlot = now()->diffInDays(Carbon::parse($entry->slot_date . ' ' . $entry->slot_time));
+        $daysUntilSlot = now()->diffInDays(Carbon::parse($entry->formatted_slot));
 
         if ($preferences && $preferences->shouldAutoAccept($daysUntilSlot)) {
             $this->acceptSlotOffer($entry->id);
@@ -222,12 +222,14 @@ class WaitlistService
             $waitlist = $entry->waitlist;
 
             // Create appointment from the slot
+            $appointmentStart = Carbon::parse($entry->formatted_slot);
             $appointment = Appointment::create([
                 'patient_id' => $waitlist->patient_id,
                 'doctor_id' => $waitlist->doctor_id,
-                'appointment_date' => Carbon::parse($entry->slot_date . ' ' . $entry->slot_time),
+                'appointment_date' => $appointmentStart,
+                'appointment_end' => $appointmentStart->copy()->addMinutes(30),
                 'status' => 'confirmed',
-                'appointment_type' => $waitlist->service_type,
+                'appointment_type' => 'in_person',
                 'duration' => 30, // Default duration, can be made configurable
             ]);
 
@@ -458,7 +460,7 @@ class WaitlistService
         $count = 0;
 
         foreach ($waitlists as $waitlist) {
-            $waitDays = now()->diffInDays($waitlist->created_at);
+            $waitDays = abs(now()->diffInDays($waitlist->created_at));
             $totalWaitDays += $waitDays;
             $count++;
         }

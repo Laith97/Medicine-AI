@@ -76,6 +76,7 @@ class WaitlistPatientPreferenceTest extends TestCase
         $preference = new WaitlistPatientPreference();
 
         $expectedCasts = [
+            'id' => 'int',
             'preferred_times' => 'array',
             'preferred_days' => 'array',
             'service_priorities' => 'array',

@@ -4,8 +4,6 @@ namespace App\Services;
 
 use App\Models\AvailabilitySlot;
 use App\Models\Appointment;
-use App\Models\Doctor;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
@@ -13,30 +11,66 @@ class AvailabilityService
 {
     /**
      * Get available slots for a doctor within a date range
+     *
+     * Weekly availability templates are expanded into concrete
+     * date/time slots within the requested range.
      */
     public function getAvailableSlots(int $doctorId, Carbon $startDate, Carbon $endDate): array
     {
-        // Get doctor's availability slots that don't have appointments
-        $availableSlots = AvailabilitySlot::where('doctor_id', $doctorId)
+        $templates = AvailabilitySlot::where('doctor_id', $doctorId)
             ->where('is_active', true)
-            ->where('date', '>=', $startDate->toDateString())
-            ->where('date', '<=', $endDate->toDateString())
-            ->whereDoesntHave('appointments', function ($query) {
-                $query->whereIn('status', ['confirmed', 'pending']);
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereNull('effective_from')
+                  ->orWhere('effective_from', '<=', $endDate->toDateString());
             })
-            ->orderBy('date')
-            ->orderBy('start_time')
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereNull('effective_until')
+                  ->orWhere('effective_until', '>=', $startDate->toDateString());
+            })
             ->get();
 
-        return $availableSlots->map(function ($slot) {
-            return [
-                'date' => $slot->date,
-                'time' => $slot->start_time,
-                'duration' => $slot->duration ?? 30,
-                'slot_id' => $slot->id,
-                'doctor_id' => $slot->doctor_id,
-            ];
-        })->toArray();
+        $availableSlots = [];
+        $date = $startDate->copy()->startOfDay();
+
+        while ($date->lte($endDate->copy()->startOfDay())) {
+            $dayName = strtolower($date->format('l'));
+            $dateString = $date->toDateString();
+
+            foreach ($templates as $template) {
+                if ($template->day_of_week !== $dayName) {
+                    continue;
+                }
+
+                if ($template->effective_from && $template->effective_from > $dateString) {
+                    continue;
+                }
+
+                if ($template->effective_until && $template->effective_until < $dateString) {
+                    continue;
+                }
+
+                $hasAppointment = Appointment::where('doctor_id', $doctorId)
+                    ->whereDate('appointment_date', $dateString)
+                    ->whereTime('appointment_date', '>=', $template->start_time)
+                    ->whereTime('appointment_date', '<', $template->end_time)
+                    ->whereIn('status', ['confirmed', 'pending'])
+                    ->exists();
+
+                if (!$hasAppointment) {
+                    $availableSlots[] = [
+                        'date' => $dateString,
+                        'time' => $template->start_time,
+                        'duration' => $template->slot_duration ?? 30,
+                        'slot_id' => $template->id,
+                        'doctor_id' => $template->doctor_id,
+                    ];
+                }
+            }
+
+            $date->addDay();
+        }
+
+        return $availableSlots;
     }
 
     /**
@@ -44,18 +78,27 @@ class AvailabilityService
      */
     public function checkSlotAvailability(int $doctorId, string $date, string $time): bool
     {
-        // Check if there's an availability slot for this doctor at this time
+        $dayName = strtolower(Carbon::parse($date)->format('l'));
+
         $slotExists = AvailabilitySlot::where('doctor_id', $doctorId)
             ->where('is_active', true)
-            ->where('date', $date)
-            ->where('start_time', $time)
+            ->where('day_of_week', $dayName)
+            ->whereTime('start_time', '<=', $time)
+            ->whereTime('end_time', '>', $time)
+            ->where(function ($q) use ($date) {
+                $q->whereNull('effective_from')
+                  ->orWhere('effective_from', '<=', $date);
+            })
+            ->where(function ($q) use ($date) {
+                $q->whereNull('effective_until')
+                  ->orWhere('effective_until', '>=', $date);
+            })
             ->exists();
 
         if (!$slotExists) {
             return false;
         }
 
-        // Check if there's a confirmed or pending appointment for this slot
         $hasAppointment = Appointment::where('doctor_id', $doctorId)
             ->where('appointment_date', $date . ' ' . $time)
             ->whereIn('status', ['confirmed', 'pending'])
@@ -69,9 +112,6 @@ class AvailabilityService
      */
     public function getNextAvailableSlots(int $doctorId, int $limit = 5): array
     {
-        $startDate = now()->toDateString();
-        $endDate = now()->addDays(30)->toDateString();
-
         $availableSlots = $this->getAvailableSlots($doctorId, now(), now()->addDays(30));
 
         return array_slice($availableSlots, 0, $limit);
@@ -82,14 +122,27 @@ class AvailabilityService
      */
     public function calculateSlotUtilization(int $doctorId, Carbon $startDate, Carbon $endDate): array
     {
-        // Get total available slots
-        $totalSlots = AvailabilitySlot::where('doctor_id', $doctorId)
+        $templates = AvailabilitySlot::where('doctor_id', $doctorId)
             ->where('is_active', true)
-            ->where('date', '>=', $startDate->toDateString())
-            ->where('date', '<=', $endDate->toDateString())
-            ->count();
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereNull('effective_from')
+                  ->orWhere('effective_from', '<=', $endDate->toDateString());
+            })
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereNull('effective_until')
+                  ->orWhere('effective_until', '>=', $startDate->toDateString());
+            })
+            ->get();
 
-        // Get booked slots
+        $totalSlots = 0;
+        $date = $startDate->copy()->startOfDay();
+
+        while ($date->lte($endDate->copy()->startOfDay())) {
+            $dayName = strtolower($date->format('l'));
+            $totalSlots += $templates->where('day_of_week', $dayName)->count();
+            $date->addDay();
+        }
+
         $bookedSlots = Appointment::where('doctor_id', $doctorId)
             ->where('appointment_date', '>=', $startDate)
             ->where('appointment_date', '<=', $endDate)
@@ -115,7 +168,6 @@ class AvailabilityService
     {
         $since = now()->subHours($hoursBack);
 
-        // Find appointments that were cancelled or completed recently
         $changedAppointments = Appointment::where('doctor_id', $doctorId)
             ->where(function ($query) use ($since) {
                 $query->where('cancelled_at', '>=', $since)
@@ -161,8 +213,6 @@ class AvailabilityService
      */
     public function findOptimalSlotsForWaitlist(int $waitlistId): array
     {
-        // This would integrate with waitlist preferences
-        // For now, return next available slots
         $waitlist = \App\Models\Waitlist::find($waitlistId);
 
         if (!$waitlist) {

@@ -18,6 +18,58 @@
     padding: 2.5rem;
     margin-bottom: 2rem;
 }
+.claim-stat-card {
+    border: none;
+    border-left: 5px solid #e9ecef;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    margin-bottom: 1rem;
+}
+.claim-stat-card .card-body {
+    padding: 1.5rem;
+}
+.claim-stat-card h4 {
+    font-weight: 700;
+}
+.claim-stat-icon {
+    opacity: 0.55;
+}
+.claim-stat-total {
+    border-left-color: #cfd8e3;
+    background: #f5f7fa;
+    color: #4b5565;
+}
+.claim-stat-total h4,
+.claim-stat-total small {
+    color: #4b5565;
+}
+.claim-stat-draft {
+    border-left-color: #e9d8a6;
+    background: #fbf6e9;
+    color: #96701a;
+}
+.claim-stat-draft h4,
+.claim-stat-draft small {
+    color: #96701a;
+}
+.claim-stat-approved {
+    border-left-color: #bfe3c1;
+    background: #f0faf1;
+    color: #2f6b33;
+}
+.claim-stat-approved h4,
+.claim-stat-approved small {
+    color: #2f6b33;
+}
+.claim-stat-denied {
+    border-left-color: #f0c4c0;
+    background: #fdf2f1;
+    color: #a54845;
+}
+.claim-stat-denied h4,
+.claim-stat-denied small {
+    color: #a54845;
+}
 </style>
 <div class="container-fluid" style="background-color: #f8f9fa;">
     <div class="container">
@@ -40,53 +92,53 @@
     <div class="container">
         <div class="row">
             <div class="col-md-3">
-                    <div class="card bg-primary text-white">
+                    <div class="card claim-stat-card claim-stat-total">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h4 class="mb-0">{{ $claims->total() }}</h4>
                                     <small>Total Claims</small>
                                 </div>
-                                <i class="fas fa-file-medical fa-2x opacity-50"></i>
+                                <i class="fas fa-file-medical fa-2x claim-stat-icon"></i>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card bg-warning text-white">
+                    <div class="card claim-stat-card claim-stat-draft">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h4 class="mb-0">{{ $claims->where('claim_status', 'pending')->count() }}</h4>
                                     <small>Draft</small>
                                 </div>
-                                <i class="fas fa-clock fa-2x opacity-50"></i>
+                                <i class="fas fa-clock fa-2x claim-stat-icon"></i>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card bg-success text-white">
+                    <div class="card claim-stat-card claim-stat-approved">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h4 class="mb-0">{{ $claims->where('claim_status', 'approved')->count() }}</h4>
                                     <small>Approved</small>
                                 </div>
-                                <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                                <i class="fas fa-check-circle fa-2x claim-stat-icon"></i>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card bg-danger text-white">
+                    <div class="card claim-stat-card claim-stat-denied">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h4 class="mb-0">{{ $claims->where('claim_status', 'denied')->count() }}</h4>
                                     <small>Denied</small>
                                 </div>
-                                <i class="fas fa-times-circle fa-2x opacity-50"></i>
+                                <i class="fas fa-times-circle fa-2x claim-stat-icon"></i>
                             </div>
                         </div>
                     </div>

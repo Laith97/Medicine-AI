@@ -22,23 +22,33 @@ class DailyService
     public function createRoom($roomName, $expiresInMinutes = 60)
     {
         try {
-            $response = Http::timeout(30)->withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Content-Type' => 'application/json',
-            ])->post($this->baseUrl . '/rooms', [
-                'name' => $roomName,
-                'properties' => [
-                    'exp' => time() + ($expiresInMinutes * 60),
-                    'max_participants' => 2,
-                    'enable_screenshare' => true,
-                    'enable_chat' => false,
-                    'enable_knocking' => false,
-                    'start_video_off' => false,
-                    'start_audio_off' => false,
-                ]
-            ]);
+            $response = Http::timeout(30)
+                ->withOptions([
+                    // Force IPv4 to avoid hanging on IPv6 (AAAA) DNS lookups
+                    'curl' => [CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4],
+                ])
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Content-Type' => 'application/json',
+                ])->post($this->baseUrl . '/rooms', [
+                    'name' => $roomName,
+                    'properties' => [
+                        'exp' => time() + ($expiresInMinutes * 60),
+                        'max_participants' => 2,
+                        'enable_screenshare' => true,
+                        'enable_chat' => false,
+                        'enable_knocking' => false,
+                        'start_video_off' => false,
+                        'start_audio_off' => false,
+                    ]
+                ]);
 
             if ($response->failed()) {
+                // If a room with this name already exists on Daily.co, we can
+                // safely reuse it instead of treating this as a fatal error.
+                if (str_contains($response->body(), 'already exists')) {
+                    return $this->getRoom($roomName);
+                }
                 throw new \Exception('Daily.co API error: ' . $response->body());
             }
 
@@ -54,7 +64,10 @@ class DailyService
      */
     public function getRoom($roomName)
     {
-        $response = Http::withHeaders([
+        $response = Http::withOptions([
+            // Force IPv4 to avoid hanging on IPv6 (AAAA) DNS lookups
+            'curl' => [CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4],
+        ])->withHeaders([
             'Authorization' => 'Bearer ' . $this->apiKey,
         ])->get($this->baseUrl . '/rooms/' . $roomName);
 
@@ -66,7 +79,10 @@ class DailyService
      */
     public function deleteRoom($roomName)
     {
-        $response = Http::withHeaders([
+        $response = Http::withOptions([
+            // Force IPv4 to avoid hanging on IPv6 (AAAA) DNS lookups
+            'curl' => [CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4],
+        ])->withHeaders([
             'Authorization' => 'Bearer ' . $this->apiKey,
         ])->delete($this->baseUrl . '/rooms/' . $roomName);
 
@@ -81,6 +97,10 @@ class DailyService
         try {
             $response = Http::timeout(30)
                 ->retry(2, 100)
+                ->withOptions([
+                    // Force IPv4 to avoid hanging on IPv6 (AAAA) DNS lookups
+                    'curl' => [CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4],
+                ])
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $this->apiKey,
                     'Content-Type' => 'application/json',

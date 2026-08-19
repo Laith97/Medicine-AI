@@ -98,13 +98,15 @@
                         <label class="form-label">Profile Image</label>
                         <div class="d-flex align-items-center gap-4">
                             <div>
-                                @if($doctor->profile_image)
-                                    <img src="{{ asset('storage/' . $doctor->profile_image) }}"
+                                @if($doctor->profile_image_url)
+                                    <img src="{{ $doctor->profile_image_url }}"
                                          alt="Current profile image"
                                          class="rounded-circle border"
+                                         id="profileImagePreview"
                                          style="width: 80px; height: 80px; object-fit: cover;">
                                 @else
-                                    <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center"
+                                    <div id="profileImagePlaceholder"
+                                         class="rounded-circle bg-light border d-flex align-items-center justify-content-center"
                                          style="width: 80px; height: 80px;">
                                         <i class="fas fa-user-md fs-2 text-muted"></i>
                                     </div>
@@ -525,8 +527,8 @@
 
             <div class="border rounded p-4 bg-light">
                 <div class="d-flex align-items-center mb-4">
-                    @if($doctor->profile_image)
-                        <img src="{{ asset('storage/' . $doctor->profile_image) }}"
+                    @if($doctor->profile_image_url)
+                        <img src="{{ $doctor->profile_image_url }}"
                              alt="Doctor profile"
                              class="rounded-circle me-4"
                              style="width: 64px; height: 64px; object-fit: cover;">
@@ -823,6 +825,52 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return notification;
     }
+});
+
+// Live preview for the profile image upload
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('profile_image');
+    if (!fileInput) {
+        return;
+    }
+
+    fileInput.addEventListener('change', function(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) {
+            return;
+        }
+
+        if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+            alert('Please select a valid image file (JPG, PNG, or GIF).');
+            fileInput.value = '';
+            return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Image must be under 2MB.');
+            fileInput.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('profileImagePreview');
+            const placeholder = document.getElementById('profileImagePlaceholder');
+
+            if (preview) {
+                preview.src = e.target.result;
+            } else if (placeholder) {
+                const img = document.createElement('img');
+                img.id = 'profileImagePreview';
+                img.src = e.target.result;
+                img.alt = 'Current profile image';
+                img.className = 'rounded-circle border';
+                img.style.cssText = 'width: 80px; height: 80px; object-fit: cover;';
+                placeholder.replaceWith(img);
+            }
+        };
+        reader.readAsDataURL(file);
+    });
 });
 </script>
 @endpush

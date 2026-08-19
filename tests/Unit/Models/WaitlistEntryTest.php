@@ -57,6 +57,7 @@ class WaitlistEntryTest extends TestCase
         $entry = new WaitlistEntry();
 
         $expectedCasts = [
+            'id' => 'int',
             'slot_date' => 'date',
             'slot_time' => 'datetime',
             'offered_at' => 'datetime',

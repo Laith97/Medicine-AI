@@ -166,7 +166,7 @@ class WaitlistPreferenceService
      */
     private function calculateWaitTimeOptimizationScore(array $slot, WaitlistPatientPreference $preferences): float
     {
-        $daysUntilSlot = Carbon::parse($slot['date'])->diffInDays(now());
+        $daysUntilSlot = abs(Carbon::parse($slot['date'])->diffInDays(now()));
 
         // Prefer slots that are not too far in the future
         if ($daysUntilSlot <= 7) {
@@ -242,7 +242,7 @@ class WaitlistPreferenceService
         }
 
         // Wait time
-        $daysUntilSlot = Carbon::parse($slot['date'])->diffInDays(now());
+        $daysUntilSlot = abs(Carbon::parse($slot['date'])->diffInDays(now()));
         if ($daysUntilSlot <= 7) {
             $reasons[] = 'Available soon';
         }

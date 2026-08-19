@@ -5,10 +5,96 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 <link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+<style>
+    /* Fluid responsive layout - expand to available screen width */
+    .dashboard-container {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    .kiosk-dashboard-wrap {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* small-box card styling (AdminLTE-style, restyled for breathing room) */
+    .small-box {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        border-radius: 12px;
+        padding: 1.5rem 1.5rem 0 1.5rem;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .small-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    .small-box .inner {
+        flex: 1;
+        padding-bottom: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .small-box .inner h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem 0;
+        color: #ffffff;
+    }
+
+    .small-box .inner p {
+        margin: 0;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9);
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+
+    .small-box .icon {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        font-size: 2.2rem;
+        color: rgba(255, 255, 255, 0.35);
+        z-index: 0;
+    }
+
+    .small-box-loader {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .small-box-footer {
+        display: block;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        text-align: center;
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 600;
+        background: rgba(0, 0, 0, 0.12);
+        color: #ffffff;
+        transition: background 0.2s ease;
+        margin-left: -1.5rem;
+        margin-right: -1.5rem;
+    }
+
+    .small-box-footer:hover {
+        background: rgba(0, 0, 0, 0.2);
+        color: #ffffff;
+    }
+</style>
 @endpush
 
 @section('content')
-<div class="container">
+<div class="container-fluid kiosk-dashboard-wrap px-3 px-lg-4">
     <div class="row">
         <div class="col-12">
             <div class="dashboard-header">

@@ -198,7 +198,7 @@
                                         <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                                             <div>
                                                 <h6 class="mb-1">{{ Str::limit($post->title, 40) }}</h6>
-                                                <small class="text-muted">{{ $post->published_at->format('M j, Y') }}</small>
+                                                <small class="text-muted">{{ $post->published_at ? $post->published_at->format('M j, Y') : 'Recently published' }}</small>
                                             </div>
                                             <span class="badge bg-primary rounded-pill">{{ $post->views_count }} views</span>
                                         </div>

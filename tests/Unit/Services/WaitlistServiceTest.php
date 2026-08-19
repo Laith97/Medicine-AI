@@ -85,42 +85,57 @@ class WaitlistServiceTest extends TestCase
         $result = $this->waitlistService->removeFromWaitlist($waitlist->id);
 
         $this->assertTrue($result);
-        $this->assertDatabaseMissing('waitlists', ['id' => $waitlist->id]);
         $this->assertDatabaseMissing('waitlist_entries', ['waitlist_id' => $waitlist->id]);
+        $this->assertDatabaseHas('waitlists', [
+            'id' => $waitlist->id,
+            'status' => 'cancelled',
+        ]);
     }
 
     /** @test */
     public function it_can_find_available_slots_for_doctor()
     {
-        // Create availability slots
+        // Create availability slot templates
         AvailabilitySlot::factory()->create([
             'doctor_id' => $this->doctor->id,
-            'date' => now()->addDays(1)->toDateString(),
+            'day_of_week' => strtolower(now()->addDays(1)->format('l')),
             'start_time' => '09:00:00',
-            'duration' => 30,
-            'is_available' => true,
+            'end_time' => '10:00:00',
+            'slot_duration' => 30,
+            'max_bookings_per_slot' => 1,
+            'is_active' => true,
+            'effective_from' => now()->toDateString(),
+            'effective_until' => null,
         ]);
 
         AvailabilitySlot::factory()->create([
             'doctor_id' => $this->doctor->id,
-            'date' => now()->addDays(2)->toDateString(),
+            'day_of_week' => strtolower(now()->addDays(2)->format('l')),
             'start_time' => '14:00:00',
-            'duration' => 30,
-            'is_available' => true,
+            'end_time' => '15:00:00',
+            'slot_duration' => 30,
+            'max_bookings_per_slot' => 1,
+            'is_active' => true,
+            'effective_from' => now()->toDateString(),
+            'effective_until' => null,
         ]);
 
-        // Create slot with appointment (should not be returned)
+        // Create slot template with appointment (should not be returned)
         $slotWithAppointment = AvailabilitySlot::factory()->create([
             'doctor_id' => $this->doctor->id,
-            'date' => now()->addDays(3)->toDateString(),
+            'day_of_week' => strtolower(now()->addDays(3)->format('l')),
             'start_time' => '10:00:00',
-            'duration' => 30,
-            'is_available' => true,
+            'end_time' => '11:00:00',
+            'slot_duration' => 30,
+            'max_bookings_per_slot' => 1,
+            'is_active' => true,
+            'effective_from' => now()->toDateString(),
+            'effective_until' => null,
         ]);
 
         Appointment::factory()->create([
             'doctor_id' => $this->doctor->id,
-            'appointment_date' => Carbon::parse($slotWithAppointment->date . ' ' . $slotWithAppointment->start_time),
+            'appointment_date' => now()->addDays(3)->setTime(10, 0),
             'status' => 'confirmed',
         ]);
 
@@ -138,6 +153,7 @@ class WaitlistServiceTest extends TestCase
         $waitlist = Waitlist::factory()->create([
             'patient_id' => $this->user->id,
             'doctor_id' => $this->doctor->id,
+            'status' => 'active',
         ]);
 
         // Create cancelled appointment
@@ -145,14 +161,6 @@ class WaitlistServiceTest extends TestCase
             'doctor_id' => $this->doctor->id,
             'appointment_date' => now()->addDays(1)->setTime(10, 0),
             'status' => 'cancelled',
-        ]);
-
-        // Create availability slot for the cancelled appointment
-        AvailabilitySlot::factory()->create([
-            'doctor_id' => $this->doctor->id,
-            'date' => $cancelledAppointment->appointment_date->toDateString(),
-            'start_time' => $cancelledAppointment->appointment_date->format('H:i:s'),
-            'is_available' => true,
         ]);
 
         $this->waitlistService->processSlotOpening($cancelledAppointment);
@@ -192,6 +200,17 @@ class WaitlistServiceTest extends TestCase
             'status' => 'confirmed',
         ]);
 
+        // Check appointment_end was set (NOT NULL column, was a production bug)
+        $appointment = \App\Models\Appointment::where('patient_id', $this->user->id)
+            ->where('doctor_id', $this->doctor->id)
+            ->first();
+        $this->assertNotNull($appointment->appointment_end);
+        $this->assertEquals(
+            \Carbon\Carbon::parse($entry->formatted_slot)->addMinutes(30)->format('Y-m-d H:i:s'),
+            $appointment->appointment_end->format('Y-m-d H:i:s')
+        );
+        $this->assertEquals('in_person', $appointment->appointment_type);
+
         // Check waitlist was fulfilled
         $waitlist->refresh();
         $this->assertEquals('fulfilled', $waitlist->status);
@@ -220,17 +239,20 @@ class WaitlistServiceTest extends TestCase
         // Create multiple waitlists for the doctor
         $waitlist1 = Waitlist::factory()->create([
             'doctor_id' => $this->doctor->id,
+            'status' => 'active',
             'created_at' => now()->subDays(2),
         ]);
 
         $waitlist2 = Waitlist::factory()->create([
             'doctor_id' => $this->doctor->id,
+            'status' => 'active',
             'created_at' => now()->subDay(),
         ]);
 
         $waitlist3 = Waitlist::factory()->create([
             'patient_id' => $this->user->id,
             'doctor_id' => $this->doctor->id,
+            'status' => 'active',
             'created_at' => now(),
         ]);
 
@@ -248,16 +270,22 @@ class WaitlistServiceTest extends TestCase
         Waitlist::factory()->count(2)->create([
             'doctor_id' => $this->doctor->id,
             'priority_level' => 'urgent',
+            'status' => 'active',
+            'created_at' => now()->subDays(3),
         ]);
 
         Waitlist::factory()->count(3)->create([
             'doctor_id' => $this->doctor->id,
             'priority_level' => 'high',
+            'status' => 'active',
+            'created_at' => now()->subDays(2),
         ]);
 
         Waitlist::factory()->count(5)->create([
             'doctor_id' => $this->doctor->id,
             'priority_level' => 'medium',
+            'status' => 'active',
+            'created_at' => now()->subDay(),
         ]);
 
         $stats = $this->waitlistService->getWaitlistStatistics($this->doctor->id);
@@ -304,22 +332,20 @@ class WaitlistServiceTest extends TestCase
     /** @test */
     public function it_processes_batch_slot_openings()
     {
+        // Create an active waitlist for the doctor so slots can be offered
+        Waitlist::factory()->create([
+            'patient_id' => $this->user->id,
+            'doctor_id' => $this->doctor->id,
+            'status' => 'active',
+        ]);
+
         $appointments = Appointment::factory()->count(3)->create([
             'doctor_id' => $this->doctor->id,
             'status' => 'cancelled',
+            'appointment_date' => now()->addDays(1)->setTime(10, 0),
         ]);
 
-        // Create corresponding availability slots
-        foreach ($appointments as $appointment) {
-            AvailabilitySlot::factory()->create([
-                'doctor_id' => $this->doctor->id,
-                'date' => $appointment->appointment_date->toDateString(),
-                'start_time' => $appointment->appointment_date->format('H:i:s'),
-                'is_available' => true,
-            ]);
-        }
-
-        $results = $this->waitlistService->processBatchSlotOpenings($appointments);
+        $results = $this->waitlistService->processBatchSlotOpenings($appointments->all());
 
         $this->assertEquals(3, $results['processed']);
         $this->assertEquals(3, $results['slots_offered']);

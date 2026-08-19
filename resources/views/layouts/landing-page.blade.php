@@ -17,7 +17,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ request()->url() }}">
     @if($landingPage->hero_image)
-    <meta property="og:image" content="{{ Storage::url($landingPage->hero_image) }}">
+    <meta property="og:image" content="{{ Storage::disk('public')->url($landingPage->hero_image) }}">
     @endif
 
     <!-- Twitter Card Meta Tags -->
@@ -25,7 +25,7 @@
     <meta name="twitter:title" content="@yield('title', 'Medical Professional')">
     <meta name="twitter:description" content="@yield('description', 'Professional medical services')">
     @if($landingPage->hero_image)
-    <meta name="twitter:image" content="{{ Storage::url($landingPage->hero_image) }}">
+    <meta name="twitter:image" content="{{ Storage::disk('public')->url($landingPage->hero_image) }}">
     @endif
 
     <!-- Favicon -->
@@ -57,7 +57,7 @@
         "medicalSpecialty": "{{ $doctor->specialty->name }}",
         @endif
         @if($doctor->user->profile_photo_path)
-        "image": "{{ Storage::url($doctor->user->profile_photo_path) }}",
+        "image": "{{ Storage::disk('public')->url($doctor->user->profile_photo_path) }}",
         @endif
         "url": "{{ request()->url() }}",
         "telephone": "{{ $doctor->phone ?? '' }}",

@@ -7,12 +7,6 @@
 .app-main {
     background-color: #f8f9fa;
 }
-.dashboard-header {
-    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
-    border-radius: 12px;
-    padding: 2.5rem;
-    margin-bottom: 2rem;
-}
 </style>
 <div class="container-fluid" style="background-color: #f8f9fa;">
     <div class="container">
@@ -32,45 +26,74 @@
 
 <!-- Note Form -->
 <div class="dashboard-container">
-    <div class="table-card">
-            <form id="noteForm">
-                @csrf
+    <div class="table-card note-form-card">
+        <form id="noteForm" class="note-form-body">
+            @csrf
 
-                <!-- Note Type Selection -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <label class="form-label fw-bold">Note Type</label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="note_type" id="text_note" value="text" checked>
-                            <label class="btn btn-outline-primary" for="text_note">
-                                <i class="fas fa-file-text me-2"></i>Text Note
-                            </label>
-
-                            <input type="radio" class="btn-check" name="note_type" id="voice_note" value="voice">
-                            <label class="btn btn-outline-info" for="voice_note">
-                                <i class="fas fa-microphone me-2"></i>Voice Note
-                            </label>
-                        </div>
+            <!-- Note Type Selection -->
+            <div class="form-section mb-4">
+                <div class="form-section-header">
+                    <div class="form-section-icon">
+                        <i class="fas fa-pen-nib"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">Note Type</h6>
+                        <small class="text-muted">Choose how you'd like to create this note</small>
                     </div>
                 </div>
+                <div class="d-flex flex-column flex-md-row gap-3 note-type-group">
+                    <input type="radio" class="btn-check" name="note_type" id="text_note" value="text" checked>
+                    <label class="btn note-type-option flex-grow-1" for="text_note">
+                        <i class="fas fa-file-text me-2"></i>Text Note
+                        <small class="d-block mt-1">Type your note manually</small>
+                    </label>
 
-                <!-- Basic Information -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="title" class="form-label">Title (Optional)</label>
-                        <input type="text" class="form-control" id="title" name="title" placeholder="Enter note title">
+                    <input type="radio" class="btn-check" name="note_type" id="voice_note" value="voice">
+                    <label class="btn note-type-option flex-grow-1" for="voice_note">
+                        <i class="fas fa-microphone me-2"></i>Voice Note
+                        <small class="d-block mt-1">Record and auto-transcribe</small>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Basic Information -->
+            <div class="form-section mb-4">
+                <div class="form-section-header">
+                    <div class="form-section-icon">
+                        <i class="fas fa-clipboard-list"></i>
                     </div>
-                    <div class="col-md-6">
-                        <label for="appointment_date" class="form-label">Appointment Date (Optional)</label>
-                        <input type="date" class="form-control" id="appointment_date" name="appointment_date">
+                    <div>
+                        <h6 class="mb-0">Basic Information</h6>
+                        <small class="text-muted">Optional details for this note</small>
                     </div>
                 </div>
-
-                <!-- Patient Selection -->
-                <div class="row mb-3">
+                <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="patient_id" class="form-label">Patient (Optional)</label>
-                        <select class="form-select" id="patient_id" name="patient_id">
+                        <label for="title" class="form-label note-label">Title (Optional)</label>
+                        <input type="text" class="form-control note-input" id="title" name="title" placeholder="Enter note title">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="appointment_date" class="form-label note-label">Appointment Date (Optional)</label>
+                        <input type="date" class="form-control note-input" id="appointment_date" name="appointment_date">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient & Appointment -->
+            <div class="form-section mb-4">
+                <div class="form-section-header">
+                    <div class="form-section-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">Patient & Appointment</h6>
+                        <small class="text-muted">Link this note to a patient record</small>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="patient_id" class="form-label note-label">Patient (Optional)</label>
+                        <select class="form-select note-select" id="patient_id" name="patient_id">
                             <option value="">General Note (No specific patient)</option>
                             @foreach($patients as $patient)
                                 <option value="{{ $patient->id }}">{{ $patient->name }} - {{ $patient->email }}</option>
@@ -79,8 +102,8 @@
                         <div class="form-text">Leave empty for general notes</div>
                     </div>
                     <div class="col-md-6">
-                        <label for="appointment_id" class="form-label">Related Appointment (Optional)</label>
-                        <select class="form-select" id="appointment_id" name="appointment_id">
+                        <label for="appointment_id" class="form-label note-label">Related Appointment (Optional)</label>
+                        <select class="form-select note-select" id="appointment_id" name="appointment_id">
                             <option value="">No specific appointment</option>
                             @foreach($appointments as $appointment)
                                 <option value="{{ $appointment->id }}">
@@ -90,87 +113,102 @@
                         </select>
                     </div>
                 </div>
+            </div>
 
-                <!-- Text Note Section -->
-                <div id="textNoteSection" class="mb-4">
-                    <label for="note_text" class="form-label fw-bold">Note Content</label>
-                    <textarea class="form-control" id="note_text" name="note_text" rows="8" placeholder="Enter your note content here..."></textarea>
+            <!-- Text Note Section -->
+            <div id="textNoteSection" class="form-section mb-4">
+                <div class="form-section-header">
+                    <div class="form-section-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">Note Content</h6>
+                        <small class="text-muted">Write the medical note details</small>
+                    </div>
                 </div>
+                <textarea class="form-control note-input" id="note_text" name="note_text" rows="8" placeholder="Enter your note content here..."></textarea>
+            </div>
 
-                <!-- Voice Note Section -->
-                <div id="voiceNoteSection" class="mb-4" style="display: none;">
-                    <label class="form-label fw-bold">Voice Note</label>
+            <!-- Voice Note Section -->
+            <div id="voiceNoteSection" class="form-section mb-4" style="display: none;">
+                <div class="form-section-header">
+                    <div class="form-section-icon">
+                        <i class="fas fa-microphone-alt"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">Voice Note</h6>
+                        <small class="text-muted">Record audio and get a formatted transcription</small>
+                    </div>
+                </div>
+                <div class="voice-recorder-container">
+                    <div class="recorder-status mb-3">
+                        <div id="recordingStatus" class="alert alert-info" style="display: none;">
+                            <i class="fas fa-microphone-alt me-2"></i>
+                            <span id="statusText">Ready to record</span>
+                            <span id="recordingTimer" class="ms-2"></span>
+                        </div>
+                    </div>
 
-                    <!-- Recording Controls -->
-                    <div class="voice-recorder-container">
-                        <div class="recorder-status mb-3">
-                            <div id="recordingStatus" class="alert alert-info" style="display: none;">
-                                <i class="fas fa-microphone-alt me-2"></i>
-                                <span id="statusText">Ready to record</span>
-                                <span id="recordingTimer" class="ms-2"></span>
+                    <div class="recorder-controls text-center mb-3">
+                        <button type="button" id="startRecording" class="btn btn-success btn-lg me-2">
+                            <i class="fas fa-microphone me-2"></i>Start Recording
+                        </button>
+                        <button type="button" id="stopRecording" class="btn btn-danger btn-lg me-2" style="display: none;">
+                            <i class="fas fa-stop me-2"></i>Stop Recording
+                        </button>
+                        <button type="button" id="playRecording" class="btn btn-info btn-lg me-2" style="display: none;">
+                            <i class="fas fa-play me-2"></i>Play
+                        </button>
+                        <button type="button" id="clearRecording" class="btn btn-warning btn-lg" style="display: none;">
+                            <i class="fas fa-trash me-2"></i>Clear
+                        </button>
+                    </div>
+
+                    <!-- Audio Player -->
+                    <div id="audioPlayerContainer" style="display: none;" class="mb-3">
+                        <audio id="audioPlayer" controls class="w-100"></audio>
+                    </div>
+
+                    <!-- Transcription Section -->
+                    <div id="transcriptionSection" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label fw-bold mb-0">Transcription</label>
+                            <button type="button" id="transcribeBtn" class="btn btn-sm btn-primary">
+                                <i class="fas fa-language me-1"></i>Transcribe & Format
+                            </button>
+                        </div>
+                        <div id="transcriptionLoading" class="text-center py-3" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Processing...</span>
+                            </div>
+                            <div class="mt-2">
+                                <div class="fw-bold">Processing audio transcription...</div>
+                                <small class="text-muted">Auto-detecting language and formatting medical content</small>
                             </div>
                         </div>
-
-                        <div class="recorder-controls text-center mb-3">
-                            <button type="button" id="startRecording" class="btn btn-success btn-lg me-2">
-                                <i class="fas fa-microphone me-2"></i>Start Recording
-                            </button>
-                            <button type="button" id="stopRecording" class="btn btn-danger btn-lg me-2" style="display: none;">
-                                <i class="fas fa-stop me-2"></i>Stop Recording
-                            </button>
-                            <button type="button" id="playRecording" class="btn btn-info btn-lg me-2" style="display: none;">
-                                <i class="fas fa-play me-2"></i>Play
-                            </button>
-                            <button type="button" id="clearRecording" class="btn btn-warning btn-lg" style="display: none;">
-                                <i class="fas fa-trash me-2"></i>Clear
-                            </button>
-                        </div>
-
-                        <!-- Audio Player -->
-                        <div id="audioPlayerContainer" style="display: none;" class="mb-3">
-                            <audio id="audioPlayer" controls class="w-100"></audio>
-                        </div>
-
-                        <!-- Transcription Section -->
-                        <div id="transcriptionSection" style="display: none;">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <label class="form-label fw-bold mb-0">Transcription</label>
-                                <button type="button" id="transcribeBtn" class="btn btn-sm btn-primary">
-                                    <i class="fas fa-language me-1"></i>Transcribe & Format
-                                </button>
-                            </div>
-                            <div id="transcriptionLoading" class="text-center py-3" style="display: none;">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Processing...</span>
-                                </div>
-                                <div class="mt-2">
-                                    <div class="fw-bold">Processing audio transcription...</div>
-                                    <small class="text-muted">Auto-detecting language and formatting medical content</small>
-                                </div>
-                            </div>
-                            <textarea class="form-control" id="transcript" name="transcript" rows="8" placeholder="Formatted medical transcription will appear here with organized sections and bullet points..."></textarea>
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                The transcription will be automatically formatted with medical sections and preserve the original language. You can edit it before saving.
-                            </div>
+                        <textarea class="form-control note-input" id="transcript" name="transcript" rows="8" placeholder="Formatted medical transcription will appear here with organized sections and bullet points..."></textarea>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            The transcription will be automatically formatted with medical sections and preserve the original language. You can edit it before saving.
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Submit Buttons -->
-                <div class="d-flex justify-content-end gap-2">
-                    <a href="{{ route('doctor.notes.index') }}" class="btn btn-secondary">Cancel</a>
-                    <button type="submit" class="btn btn-primary-custom" id="saveBtn">
-                        <i class="fas fa-save me-2"></i>Save Note
-                    </button>
-                </div>
-            </form>
-        </div>
+            <!-- Submit Buttons -->
+            <div class="form-actions d-flex justify-content-end gap-2 pt-3 border-top">
+                <a href="{{ route('doctor.notes.index') }}" class="btn btn-outline-secondary note-cancel">Cancel</a>
+                <button type="submit" class="btn btn-primary-custom" id="saveBtn">
+                    <i class="fas fa-save me-2"></i>Save Note
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 @endsection
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
 <style>
 /* Professional Dashboard Header Styling */
 .dashboard-header {
@@ -277,6 +315,137 @@
     background-color: var(--bs-primary);
     border-color: var(--bs-primary);
     color: white;
+}
+
+/* Note form panel */
+.note-form-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.note-form-body {
+    padding: 2rem;
+}
+
+.form-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.form-section-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.form-section-header h6 {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 0.95rem;
+}
+
+.form-section-header small {
+    font-size: 0.8rem;
+}
+
+.note-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.4rem;
+}
+
+.note-input,
+.note-select {
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.92rem;
+    color: #333;
+    background-color: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.note-input:focus,
+.note-select:focus {
+    border-color: #DE6262;
+    box-shadow: 0 0 0 3px rgba(222, 98, 98, 0.15);
+}
+
+.note-input::placeholder {
+    color: #adb5bd;
+}
+
+/* Note type segmented control */
+.note-type-option {
+    border: 2px solid #e0e0e0;
+    background: #fff;
+    color: #495057;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.9rem 1rem;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-align: center;
+}
+
+.note-type-option:hover {
+    border-color: #DE6262;
+    color: #DE6262;
+}
+
+.note-type-option small {
+    font-size: 0.78rem;
+    font-weight: 400;
+}
+
+.btn-check:checked + .note-type-option {
+    background: linear-gradient(135deg, #DE6262 0%, #c54545 100%);
+    border-color: #DE6262;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(222, 98, 98, 0.3);
+}
+
+.btn-check:checked + .note-type-option small {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* Voice recorder container */
+.voice-recorder-container {
+    border: 2px dashed #e0e0e0;
+    border-radius: 12px;
+    padding: 2rem;
+    background-color: #fafbfc;
+}
+
+.form-actions .btn {
+    border-radius: 50rem;
+    padding: 0.6rem 1.8rem;
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.note-cancel {
+    border-color: #dee2e6;
+    color: #6c757d;
+}
+
+.note-cancel:hover {
+    background: #f1f3f4;
+    border-color: #ced4da;
+    color: #495057;
 }
 
 #recordingTimer {

@@ -45,6 +45,10 @@ class DoctorBlogPost extends Model
         parent::boot();
 
         static::creating(function ($post) {
+            if ($post->is_published && !$post->published_at) {
+                $post->published_at = now();
+            }
+
             if (empty($post->slug)) {
                 $post->slug = Str::slug($post->title);
 

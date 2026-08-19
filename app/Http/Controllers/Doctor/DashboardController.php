@@ -244,6 +244,14 @@ class DashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'Only confirmed appointments can be completed'], 400);
         }
 
+        // Do not allow completing a future appointment before the consultation takes place
+        if (!$appointment->appointment_date || $appointment->appointment_date->isFuture()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This appointment is scheduled for a future date and cannot be completed before the consultation takes place.'
+            ], 400);
+        }
+
         $request->validate([
             'doctor_notes' => 'nullable|string|max:2000',
             'follow_up_required' => 'nullable'
@@ -841,6 +849,12 @@ class DashboardController extends Controller
                     break;
                 case 'completed':
                     if ($appointment->status === 'in_progress') {
+                        if (!$appointment->appointment_date || $appointment->appointment_date->isFuture()) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'This appointment is scheduled for a future date and cannot be completed before the consultation takes place.'
+                            ], 400);
+                        }
                         $appointment->complete();
                     }
                     break;

@@ -52,104 +52,78 @@
     </div>
 </div>
 
-<!-- New Professional Patient Summary Modal -->
+<!-- Patient Summary Modal -->
 <div class="modal fade" id="summaryModal" tabindex="-1" aria-labelledby="summaryModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <h5 class="modal-title fw-bold" id="summaryModalLabel">
+            <div class="modal-header" style="background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);">
+                <h5 class="modal-title fw-bold text-white" id="summaryModalLabel">
                     <i class="fas fa-user-md me-2"></i>Patient Medical Summary
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-0">
-                <!-- Patient Header -->
-                <div class="patient-header p-4 bg-light border-bottom">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-circle me-3">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <div>
-                                    <h4 class="mb-1 text-dark" id="patientName"></h4>
-                                    <div class="patient-details">
-                                        <span class="badge bg-primary me-2">Age: <span id="patientAge"></span></span>
-                                        <span class="badge bg-info me-2">Gender: <span id="patientGender"></span></span>
-                                        <span class="badge bg-success">Visits: <span id="patientVisits"></span></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <button class="btn btn-outline-primary btn-sm me-2">
-                                <i class="fas fa-print me-1"></i>Print
-                            </button>
-                            <button class="btn btn-primary btn-sm">
-                                <i class="fas fa-download me-1"></i>Export
-                            </button>
+            <div class="modal-body p-4">
+                <!-- Patient Info -->
+                <div class="d-flex align-items-center gap-3 mb-4 p-3 bg-light border rounded-3">
+                    <div class="d-flex align-items-center justify-content-center text-white rounded-circle flex-shrink-0" style="width: 56px; height: 56px; background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);">
+                        <i class="fas fa-user" style="font-size: 1.4rem;"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-1 text-dark" id="patientName"></h4>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge text-bg-primary">Age: <span id="patientAge"></span></span>
+                            <span class="badge text-bg-info">Gender: <span id="patientGender"></span></span>
+                            <span class="badge text-bg-success">Visits: <span id="patientVisits"></span></span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Medical Info Cards -->
-                <div class="p-4">
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <div class="info-card">
-                                <div class="info-header bg-info">
-                                    <i class="fas fa-thermometer-half"></i>
-                                    <span>Current Symptoms</span>
-                                </div>
-                                <div class="info-body" id="symptomsContent">
-                                </div>
+                <!-- Medical Info -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-header bg-white border-bottom fw-semibold">
+                                <i class="fas fa-thermometer-half me-2 text-info"></i>Current Symptoms
                             </div>
+                            <div class="card-body small" id="symptomsContent"></div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="info-card">
-                                <div class="info-header bg-primary">
-                                    <i class="fas fa-history"></i>
-                                    <span>Medical History</span>
-                                </div>
-                                <div class="info-body" id="historyContent">
-                                </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-header bg-white border-bottom fw-semibold">
+                                <i class="fas fa-history me-2 text-primary"></i>Medical History
                             </div>
+                            <div class="card-body small" id="historyContent"></div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="info-card">
-                                <div class="info-header bg-warning">
-                                    <i class="fas fa-pills"></i>
-                                    <span>Medications</span>
-                                </div>
-                                <div class="info-body" id="medicationsContent">
-                                </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-header bg-white border-bottom fw-semibold">
+                                <i class="fas fa-pills me-2 text-warning"></i>Medications
                             </div>
+                            <div class="card-body small" id="medicationsContent"></div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="info-card">
-                                <div class="info-header bg-danger">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    <span>Allergies</span>
-                                </div>
-                                <div class="info-body" id="allergiesContent">
-                                </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-header bg-white border-bottom fw-semibold">
+                                <i class="fas fa-exclamation-triangle me-2 text-danger"></i>Allergies
                             </div>
+                            <div class="card-body small" id="allergiesContent"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Visit History -->
-                <div class="px-4 pb-4">
-                    <h6 class="mb-3"><i class="fas fa-clipboard-list me-2 text-success"></i>Recent Visits</h6>
-                    <div class="visit-history" id="visitHistory">
-                    </div>
+                <div class="mb-4">
+                    <h6 class="mb-2 fw-semibold"><i class="fas fa-clipboard-list me-2 text-success"></i>Recent Visits</h6>
+                    <div id="visitHistory"></div>
                 </div>
 
                 <!-- AI Summary -->
-                <div class="px-4 pb-4">
-                    <h6 class="mb-3"><i class="fas fa-brain me-2 text-primary"></i>AI Medical Summary</h6>
-                    <div class="visit-history" id="aiSummaryContent">
-                    </div>
+                <div>
+                    <h6 class="mb-2 fw-semibold"><i class="fas fa-brain me-2 text-primary"></i>AI Medical Summary</h6>
+                    <div class="p-3 bg-light rounded-3" id="aiSummaryContent"></div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -163,51 +137,6 @@
 </div>
 
 <style>
-.avatar-circle {
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 24px;
-}
-
-.info-card {
-    border: 1px solid #e9ecef;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transition: transform 0.2s ease;
-}
-
-.info-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-}
-
-.info-header {
-    padding: 12px 16px;
-    color: white;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.info-body {
-    padding: 16px;
-    min-height: 80px;
-}
-
-.visit-history {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 16px;
-}
-
 .visit-item {
     background: white;
     border-radius: 8px;

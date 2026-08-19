@@ -4,6 +4,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/doctor-design-system.css') }}">
+<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
 <link rel="stylesheet" href="{{ asset('css/cases-overview.css') }}">
 @endpush
 
@@ -20,154 +21,79 @@
 }
 </style>
 <div class="container-fluid" style="background-color: #f8f9fa;">
-    <div class="container">
-    <div class="row">
-        <div class="col-12">
-            <div class="dashboard-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2><i class="fas fa-folder-open me-2"></i>Cases Overview</h2>
-                        <p class="text-muted mb-0">Manage and review your patient medical records</p>
-                    </div>
-                    <div class="header-actions">
-                        <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-success">
-                            <i class="fas fa-microphone me-2"></i>Start Consultation
-                        </a>
-                    </div>
+    <div class="container py-4">
+
+        <!-- Page Header -->
+        <div class="dashboard-header">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <h2 class="text-white mb-1"><i class="fas fa-folder-open me-2"></i>Cases Overview</h2>
+                    <p class="text-white-50 mb-0">Manage and review your patient medical records</p>
                 </div>
-            </div>
-        </div>
-    </div>
-    </div>
-    <div class="container">
-
-    <!-- Quick Access Navigation -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm border-0 bg-light">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <!-- Language Selector placeholder for consistency -->
-                        <div class="d-flex align-items-center">
-                            <label class="form-label me-2 mb-0 small fw-bold">Filter:</label>
-                            <select id="filterSelector" class="form-select form-select-sm" style="width: auto; min-width: 120px;">
-                                <option value="all">All Cases</option>
-                                <option value="diagnosed">Diagnosed</option>
-                                <option value="pending">Pending</option>
-                            </select>
-                        </div>
-
-                        <!-- Global Action Buttons -->
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-outline-success btn-sm">
-                                <i class="fas fa-microphone me-1"></i>New Consultation
-                            </a>
-                            <a href="{{ route('doctor.appointments.index') }}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-calendar-check me-1"></i>Appointments
-                            </a>
-                            <a href="{{ route('doctor.patients.index') }}" class="btn btn-outline-info btn-sm">
-                                <i class="fas fa-users me-1"></i>Patients
-                            </a>
-                            <a href="{{ route('diagnosis.create') }}" class="btn btn-outline-warning btn-sm">
-                                <i class="fas fa-stethoscope me-1"></i>Create Diagnosis
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-<div class="doctor-dashboard-container">
-
-        <!-- Smart Contextual Guidance -->
-        @php
-            $hasRecords = $records->count() > 0;
-        @endphp
-
-        @if(!$hasRecords)
-            <div class="alert alert-info text-center mb-4">
-                <i class="fas fa-folder-open me-2"></i>
-                <strong>No Patient Cases Yet</strong>
-                <p class="mb-2">Start your first consultation to begin building patient records.</p>
-                <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-microphone me-1"></i>Start Consultation
+                <a href="{{ route('ai.ambient-listening.index') }}" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                    <i class="fas fa-microphone me-2"></i>Start Consultation
                 </a>
             </div>
+        </div>
+
+        @if($records->count() === 0)
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-folder-open text-muted mb-3" style="font-size: 3rem;"></i>
+                    <h5 class="mb-2">No Patient Records Found</h5>
+                    <p class="text-muted mb-4">You haven't created any patient records yet. Start your first consultation to begin building patient records.</p>
+                    <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-primary">
+                        <i class="fas fa-microphone me-1"></i>Start Consultation
+                    </a>
+                </div>
+            </div>
         @else
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body p-3 d-flex align-items-center">
-                            <div class="me-3">
-                                <div class="bg-success bg-opacity-10 rounded p-2">
-                                    <i class="fas fa-calendar-plus text-success"></i>
-                                </div>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">Schedule Follow-up</h6>
-                                <small class="text-muted">Book appointments</small>
-                            </div>
-                            <a href="{{ route('doctor.appointments.create') }}" class="btn btn-success btn-sm">Schedule</a>
+            <!-- Stats Row -->
+            <div class="row mb-4">
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);">
+                            <i class="fas fa-users"></i>
                         </div>
+                        <p class="stats-number">{{ count($patientGroups) }}</p>
+                        <p class="stats-label">Total Patients</p>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body p-3 d-flex align-items-center">
-                            <div class="me-3">
-                                <div class="bg-info bg-opacity-10 rounded p-2">
-                                    <i class="fas fa-headphones text-info"></i>
-                                </div>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">Review Recordings</h6>
-                                <small class="text-muted">Listen to consultations</small>
-                            </div>
-                            <a href="{{ route('ai.ambient-listening.recorded-voices') }}" class="btn btn-info btn-sm">Listen</a>
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                            <i class="fas fa-check-circle"></i>
                         </div>
+                        <p class="stats-number">{{ collect($patientGroups)->where('category', 'diagnosed')->count() }}</p>
+                        <p class="stats-label">Diagnosed</p>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body p-3 d-flex align-items-center">
-                            <div class="me-3">
-                                <div class="bg-primary bg-opacity-10 rounded p-2">
-                                    <i class="fas fa-plus-circle text-primary"></i>
-                                </div>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">New Consultation</h6>
-                                <small class="text-muted">Start consultation</small>
-                            </div>
-                            <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-primary btn-sm">Start</a>
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                            <i class="fas fa-calendar-check"></i>
                         </div>
+                        <p class="stats-number">{{ collect($patientGroups)->sum('visit_count') }}</p>
+                        <p class="stats-label">Total Visits</p>
                     </div>
                 </div>
             </div>
-        @endif
 
-        @if($hasRecords)
-            <!-- Patient Management Panel -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-bottom">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-1"><i class="fas fa-users me-2 text-primary"></i>Patient Records</h5>
-                            <small class="text-muted">Manage and review patient cases</small>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="input-group input-group-sm" style="width: 300px;">
-                                <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                <input type="text" class="form-control" id="patientSearch" placeholder="Search patients...">
-                                <button class="btn btn-outline-secondary" type="button" id="clearSearch">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
+            <!-- Patient Records Panel -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <h5 class="mb-0"><i class="fas fa-users me-2 text-primary"></i>Patient Records</h5>
+                        <div class="input-group input-group-sm" style="width: 300px; max-width: 100%;">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" id="patientSearch" placeholder="Search patients...">
+                            <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card-body p-0">
                     <ul class="nav nav-tabs nav-fill border-0" id="patientTabs" role="tablist">
                         <li class="nav-item" role="presentation">
@@ -182,55 +108,24 @@
                                 <span class="badge bg-success ms-2">{{ collect($patientGroups)->where('category', 'diagnosed')->count() }}</span>
                             </button>
                         </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link border-0 py-3" id="insurance-tab" data-bs-toggle="tab" data-bs-target="#insurance-eligibility" type="button" role="tab">
-                                <i class="fas fa-shield-alt me-2"></i>Insurance
-                                <span class="badge bg-warning ms-2">Soon</span>
-                            </button>
-                        </li>
                     </ul>
-                </div>
-            </div>
 
-            <!-- Patient Tables -->
-            <div class="tab-content" id="patientTabContent">
-                <div class="tab-pane fade show active" id="all-patients" role="tabpanel">
-                    <div class="doctor-table-container">
-                        @include('cases.partials.patient-table', ['patients' => $patientGroups, 'category' => 'all'])
-                    </div>
-                </div>
-                <div class="tab-pane fade" id="diagnosed-patients" role="tabpanel">
-                    <div class="doctor-table-container">
-                        @include('cases.partials.patient-table', ['patients' => $patientGroups, 'category' => 'diagnosed'])
-                    </div>
-                </div>
-                <div class="tab-pane fade" id="insurance-eligibility" role="tabpanel">
-                    <div class="doctor-card">
-                        <div class="doctor-card-header">
-                            <h5><i class="fas fa-shield-alt"></i>Insurance & Eligibility</h5>
+                    <div class="tab-content" id="patientTabContent">
+                        <div class="tab-pane fade show active" id="all-patients" role="tabpanel">
+                            <div class="doctor-table-container">
+                                @include('cases.partials.patient-table', ['patients' => $patientGroups, 'category' => 'all'])
+                            </div>
                         </div>
-                        <div class="doctor-card-body">
-                            <div class="text-center py-4">
-                                <i class="fas fa-shield-alt text-muted" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                                <h6 class="text-muted">Coming Soon</h6>
-                                <p class="text-muted mb-0">Insurance and eligibility management features will be available here.</p>
+                        <div class="tab-pane fade" id="diagnosed-patients" role="tabpanel">
+                            <div class="doctor-table-container">
+                                @include('cases.partials.patient-table', ['patients' => $patientGroups, 'category' => 'diagnosed'])
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        @else
-            <div class="doctor-empty-state">
-                <i class="fas fa-user-injured"></i>
-                <h5>No Patient Records Found</h5>
-                <p>You haven't created any patient records yet.</p>
-                <a href="{{ route('ai.ambient-listening.index') }}" class="doctor-btn doctor-btn-primary">
-                    <i class="fas fa-plus"></i>Start First Consultation
-                </a>
-            </div>
         @endif
     </div>
-</div>
 </div>
 
 @include('cases.partials.modals')
@@ -304,29 +199,21 @@ document.addEventListener('DOMContentLoaded', function() {
             filterPatients('');
         });
     }
-    
+
     function filterPatients(searchTerm) {
         const rows = document.querySelectorAll('.doctor-table tbody tr.patient-row');
         const term = searchTerm.toLowerCase().trim();
         
         rows.forEach(row => {
-            const patientKey = row.dataset.patientKey;
-            const visitsRow = document.querySelector(`tr.visits-row[data-patient-key="${patientKey}"]`);
-            
             if (!term) {
                 row.style.display = '';
-                if (visitsRow) visitsRow.style.display = 'none';
                 return;
             }
             
             const text = row.textContent.toLowerCase();
-            const isVisible = text.includes(term);
-            
-            row.style.display = isVisible ? '' : 'none';
-            if (visitsRow) visitsRow.style.display = 'none';
+            row.style.display = text.includes(term) ? '' : 'none';
         });
         
-        // Update empty state
         updateEmptyState(term);
     }
     
@@ -356,6 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
     const summaryModal = document.getElementById('summaryModal');
     if (summaryModal) {
         summaryModal.addEventListener('show.bs.modal', function(event) {
@@ -433,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Generate real AI summary
                     const summaryData = {
-                        patient_id: latest.patient_id || latest.id || 1, // Use patient_id, fallback to record id, then default
+                        patient_id: latest.patient_id || latest.id || 1,
                         patient_name: name,
                         patient_age: age,
                         patient_gender: gender,
@@ -445,7 +333,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }))
                     };
 
-                    console.log('Sending patient summary request:', summaryData); // Debug log
+                    console.log('Sending patient summary request:', summaryData);
 
                     // Show loading state
                     document.getElementById('aiSummaryContent').innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Generating AI summary...</div>';
@@ -459,16 +347,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         body: JSON.stringify(summaryData)
                     })
                     .then(response => {
-                        console.log('Response status:', response.status); // Debug log
+                        console.log('Response status:', response.status);
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         return response.json();
                     })
                     .then(data => {
-                        console.log('Response data:', data); // Debug log
+                        console.log('Response data:', data);
                         if (data.success) {
-                            // Format the AI response similar to how it's done in generateAnalysisBtn
                             const formattedSummary = formatAiResponse(data.summary || data.raw_response);
                             document.getElementById('aiSummaryContent').innerHTML = formattedSummary;
                         } else {
@@ -495,7 +382,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     const latest = patientRecords[patientRecords.length - 1];
                     const patientId = latest.patient_id || latest.id;
                     
-                    // Update the href to redirect to patient profile
                     viewDetailsBtn.href = `/doctor/patients/${patientId}`;
                 }
             }

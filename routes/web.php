@@ -865,6 +865,7 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
         Route::get('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'show'])->name('show');
         Route::get('/{note}/edit', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'edit'])->name('edit');
         Route::put('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'update'])->name('update');
+        Route::delete('/{note}', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'destroy'])->name('destroy');
         Route::post('/transcribe-audio', [App\Http\Controllers\Doctor\DoctorNotesController::class, 'transcribeAudio'])->name('transcribe-audio');
     });
 

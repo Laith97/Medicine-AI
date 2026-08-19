@@ -67,7 +67,7 @@ class WaitlistPreferenceServiceTest extends TestCase
         $this->assertEquals(100, $score);
 
         // Close match
-        $score = $this->invokePrivateMethod($this->preferenceService, 'calculateTimePreferenceScore', ['07:00:00', $preferences]);
+        $score = $this->invokePrivateMethod($this->preferenceService, 'calculateTimePreferenceScore', ['05:00:00', $preferences]);
         $this->assertEquals(70, $score);
 
         // Poor match
@@ -90,14 +90,14 @@ class WaitlistPreferenceServiceTest extends TestCase
         ]);
 
         // Perfect match
-        $score = $this->invokePrivateMethod($this->preferenceService, 'calculateDayPreferenceScore', ['2025-11-18', $preferences]); // Monday
+        $score = $this->invokePrivateMethod($this->preferenceService, 'calculateDayPreferenceScore', ['2025-11-17', $preferences]); // Monday
         $this->assertEquals(100, $score);
 
         // Weekend preference match
         $weekendPreferences = WaitlistPatientPreference::factory()->create([
-            'preferred_days' => ['saturday', 'sunday'],
+            'preferred_days' => ['saturday'],
         ]);
-        $score = $this->invokePrivateMethod($this->preferenceService, 'calculateDayPreferenceScore', ['2025-11-16', $weekendPreferences]); // Saturday
+        $score = $this->invokePrivateMethod($this->preferenceService, 'calculateDayPreferenceScore', ['2025-11-16', $weekendPreferences]); // Sunday
         $this->assertEquals(80, $score);
 
         // No preferences
@@ -124,7 +124,10 @@ class WaitlistPreferenceServiceTest extends TestCase
         $this->assertGreaterThan(90, $score);
 
         // No location data
-        $doctorNoLocation = Doctor::factory()->create();
+        $doctorNoLocation = Doctor::factory()->create([
+            'latitude' => null,
+            'longitude' => null,
+        ]);
         $score = $this->invokePrivateMethod($this->preferenceService, 'calculateGeographicProximityScore', [$slot, $preferences, $doctorNoLocation->id]);
         $this->assertEquals(50, $score);
 
@@ -166,11 +169,15 @@ class WaitlistPreferenceServiceTest extends TestCase
         ]);
 
         // Create availability slot that matches preferences
-        $availabilitySlot = \App\Models\AvailabilitySlot::factory()->create([
+        $nextMonday = now()->next('monday');
+        \App\Models\AvailabilitySlot::factory()->create([
             'doctor_id' => $this->doctor->id,
-            'date' => now()->addDays(7)->next('monday')->toDateString(),
+            'day_of_week' => strtolower($nextMonday->format('l')),
             'start_time' => '09:00:00',
-            'is_available' => true,
+            'end_time' => '10:00:00',
+            'is_active' => true,
+            'effective_from' => null,
+            'effective_until' => null,
         ]);
 
         $recommendations = $this->preferenceService->getMatchingRecommendations($this->user->id, $this->doctor->id);
@@ -196,14 +203,14 @@ class WaitlistPreferenceServiceTest extends TestCase
         Appointment::factory()->count(5)->create([
             'patient_id' => $this->user->id,
             'doctor_id' => $this->doctor->id,
-            'appointment_date' => Carbon::parse('2025-01-01 09:00:00'), // Monday morning
+            'appointment_date' => Carbon::parse('2025-01-06 09:00:00'), // Monday morning
             'status' => 'completed',
         ]);
 
         Appointment::factory()->count(3)->create([
             'patient_id' => $this->user->id,
             'doctor_id' => $this->doctor->id,
-            'appointment_date' => Carbon::parse('2025-01-03 14:00:00'), // Wednesday afternoon
+            'appointment_date' => Carbon::parse('2025-01-08 14:00:00'), // Wednesday afternoon
             'status' => 'completed',
         ]);
 

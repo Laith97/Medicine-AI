@@ -9,7 +9,7 @@ $isBuilder = $isBuilder ?? false;
             background: {{ ($config['background_type'] ?? 'gradient') === 'gradient' ?
                 'linear-gradient(135deg, ' . ($config['background_color'] ?? '#3b82f6') . ', ' . ($config['gradient_end'] ?? '#10b981') . ')' :
                 ($config['background_type'] === 'image' && isset($config['background_image']) ?
-                    'url(' . Storage::url($config['background_image']) . ')' :
+                    'url(' . Storage::disk('public')->url($config['background_image']) . ')' :
                     ($config['background_color'] ?? '#3b82f6')) }};
             background-size: cover;
             background-position: center;

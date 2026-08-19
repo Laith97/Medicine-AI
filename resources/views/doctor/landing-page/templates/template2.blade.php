@@ -13,7 +13,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ $landingPage->url }}">
     @if($landingPage->hero_image)
-    <meta property="og:image" content="{{ Storage::url($landingPage->hero_image) }}">
+    <meta property="og:image" content="{{ Storage::disk('public')->url($landingPage->hero_image) }}">
     @endif
 
     <!-- Bootstrap CSS -->
@@ -365,9 +365,9 @@
                 <div class="col-lg-6">
                     <div class="text-center">
                         @if($doctor->profile_image)
-                        <img src="{{ Storage::url($doctor->profile_image) }}" alt="Dr. {{ $doctor->user->name }}" class="hero-image">
+                        <img src="{{ Storage::disk('public')->url($doctor->profile_image) }}" alt="Dr. {{ $doctor->user->name }}" class="hero-image">
                         @elseif($landingPage->hero_image)
-                        <img src="{{ Storage::url($landingPage->hero_image) }}" alt="Dr. {{ $doctor->user->name }}" class="hero-image">
+                        <img src="{{ Storage::disk('public')->url($landingPage->hero_image) }}" alt="Dr. {{ $doctor->user->name }}" class="hero-image">
                         @else
                         <div class="hero-image d-flex align-items-center justify-content-center bg-light text-muted mx-auto">
                             <i class="fas fa-user-md fa-4x"></i>
@@ -444,7 +444,7 @@
                     <div class="col-lg-4 col-md-6">
                         <div class="card h-100">
                             @if($post->featured_image)
-                                <img src="{{ Storage::url($post->featured_image) }}"
+                                <img src="{{ Storage::disk('public')->url($post->featured_image) }}"
                                      class="card-img-top"
                                      alt="{{ $post->title }}"
                                      style="height: 200px; object-fit: cover;">

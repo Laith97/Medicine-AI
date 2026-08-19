@@ -3,17 +3,6 @@
 @section('title', 'Physical Therapy - HEP Programs')
 
 @section('content')
-<style>
-.app-main {
-    background-color: #f8f9fa;
-}
-.dashboard-header {
-    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
-    border-radius: 12px;
-    padding: 2.5rem;
-    margin-bottom: 2rem;
-}
-</style>
 <div class="container-fluid" style="background-color: #f8f9fa;">
     <div class="container">
     <div class="row">
@@ -195,9 +184,6 @@
                 </div>
             @endif
         </div>
-    </div>
-</div>
-    </div></div>
 @endsection
 
 <!-- Assign Program Modal -->
@@ -233,6 +219,7 @@
 </div>
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
 <style>
 .stats-card {
     background: white;
@@ -402,4 +389,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
-@endsection

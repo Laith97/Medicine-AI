@@ -18,14 +18,13 @@ trait AuditLoggable
         $userId = $userId ?? (Auth::check() ? Auth::id() : null);
 
         $logData = [
-            'model' => static::class,
+            'model_type' => static::class,
             'model_id' => $this->getKey(),
             'action' => $action,
             'user_id' => $userId,
             'ip_address' => \request()->ip(),
             'user_agent' => \request()->userAgent(),
-            'timestamp' => now(),
-            'data' => $data,
+            'metadata' => json_encode($data),
         ];
 
         // Log to Laravel log

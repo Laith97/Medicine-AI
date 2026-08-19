@@ -206,12 +206,18 @@
                                     @endif
 
                                     @if($appointment->status == 'confirmed')
-                                        <button onclick="completeAppointment({{ $appointment->id }})" class="btn btn-primary btn-sm" title="Complete Appointment">
-                                            <i class="fas fa-check-circle me-1"></i>Complete
-                                        </button>
-                                        <button onclick="markNoShow({{ $appointment->id }})" class="btn btn-secondary btn-sm" title="Mark as No Show">
-                                            <i class="fas fa-user-times me-1"></i>No Show
-                                        </button>
+                                        @if(!$appointment->appointment_date || !$appointment->appointment_date->isFuture())
+                                            <button onclick="completeAppointment({{ $appointment->id }})" class="btn btn-primary btn-sm" title="Complete Appointment">
+                                                <i class="fas fa-check-circle me-1"></i>Complete
+                                            </button>
+                                            <button onclick="markNoShow({{ $appointment->id }})" class="btn btn-secondary btn-sm" title="Mark as No Show">
+                                                <i class="fas fa-user-times me-1"></i>No Show
+                                            </button>
+                                        @else
+                                            <span class="btn btn-primary btn-sm" title="Video call available when consultation starts">
+                                                <i class="fas fa-video me-1"></i>Video consultation available
+                                            </span>
+                                        @endif
                                     @endif
 
                                     @if(in_array($appointment->status, ['pending', 'confirmed']))

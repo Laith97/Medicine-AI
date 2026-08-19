@@ -78,7 +78,7 @@ class MenuHelper
                 'permission' => 'dashboard',
             ],
 
-            // Physical Therapy Section - Only for doctors with relevant specialties
+            // Physical Therapy Section - available to all doctors
             [
                 'name' => 'Physical Therapy',
                 'icon' => 'fas fa-dumbbell',
@@ -94,14 +94,7 @@ class MenuHelper
                     ],
                 ],
                 'visible' => function($user) {
-                    // Show only for doctors with specialties related to physical therapy
-                    $doctor = $user->doctor;
-                    if (!$doctor || !$doctor->specialty) {
-                        return false;
-                    }
-
-                    $relevantSpecialties = ['orthopedics', 'physical therapy', 'sports medicine', 'rehabilitation'];
-                    return in_array(strtolower($doctor->specialty->name), $relevantSpecialties);
+                    return $user->isDoctor();
                 }
             ],
             // Clinical Section
@@ -332,7 +325,7 @@ class MenuHelper
                 'icon' => 'fas fa-tachometer-alt',
             ],
 
-            // Physical Therapy Section - Only for doctors with relevant specialties
+            // Physical Therapy Section - available to all doctors
             [
                 'name' => 'Physical Therapy',
                 'icon' => 'fas fa-dumbbell',
@@ -347,14 +340,7 @@ class MenuHelper
                     ],
                 ],
                 'visible' => function($user) {
-                    // Show only for doctors with specialties related to physical therapy
-                    $doctor = $user->doctor;
-                    if (!$doctor || !$doctor->specialty) {
-                        return false;
-                    }
-
-                    $relevantSpecialties = ['orthopedics', 'physical therapy', 'sports medicine', 'rehabilitation'];
-                    return in_array(strtolower($doctor->specialty->name), $relevantSpecialties);
+                    return $user->isDoctor();
                 }
             ],
             // Clinical Section - Show ALL items

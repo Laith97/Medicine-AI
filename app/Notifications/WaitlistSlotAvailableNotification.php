@@ -52,7 +52,7 @@ class WaitlistSlotAvailableNotification extends Notification implements ShouldBr
         $hospitalId = $this->waitlistEntry->waitlist->doctor->hospital_id ?? 0;
 
         return [
-            'message' => "Slot available! Book now for your appointment with Dr. {$doctorName}. Position: #{$this->waitlistEntry->position}. Book: " . route('waitlist.show', $this->waitlistEntry->id),
+            'message' => "Slot available! Book now for your appointment with Dr. {$doctorName}. Position: #{$this->waitlistEntry->position}. Book: " . route('patient.waitlist.status', ['waitlist' => $this->waitlistEntry->id]),
             'options' => [
                 'doctor_id' => $doctorId,
                 'hospital_id' => $hospitalId,

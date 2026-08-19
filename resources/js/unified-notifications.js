@@ -40,8 +40,10 @@ class UnifiedNotificationSystem {
         this.initialized = true;
         
         // Create Pusher instance
-        this.pusher = new Pusher(import.meta.env.VITE_PUSHER_APP_KEY, {
-            cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
+        const pusherKey = import.meta.env.VITE_PUSHER_APP_KEY || '57bd15962a354114cb5e';
+        const pusherCluster = import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap2';
+        this.pusher = new Pusher(pusherKey, {
+            cluster: pusherCluster,
             authEndpoint: "/broadcasting/auth",
             auth: {
                 headers: {
@@ -665,51 +667,18 @@ class UnifiedNotificationSystem {
 
     playNotificationSound() {
         try {
-            // AudioContext may be suspended due to autoplay policy - need user interaction first
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (!AudioContextClass) {
-                console.log('AudioContext not available');
+            // Use existing NotificationSound singleton if available
+            if (window.notificationSound && typeof window.notificationSound.play === 'function') {
+                window.notificationSound.play();
                 return;
             }
 
-            const audioContext = new AudioContextClass();
-
-            // If suspended, try to resume (will work if called after user interaction)
-            if (audioContext.state === 'suspended') {
-                // Create and resume context on user interaction basis
-                // This may fail silently if no prior interaction
-                audioContext.resume().then(() => {
-                    this.playBeep(audioContext);
-                }).catch(() => {
-                    // Audio context can't be resumed without user gesture
-                    console.log('AudioContext requires user interaction first');
-                });
-            } else {
-                this.playBeep(audioContext);
-            }
+            // Fallback: use HTML Audio element (more reliable than Web Audio API)
+            const audio = new Audio('/sounds/notification.mp3');
+            audio.volume = 0.5;
+            audio.play().catch(e => console.log('Audio play failed:', e));
         } catch (error) {
             console.log('Audio notification failed:', error);
-        }
-    }
-
-    playBeep(audioContext) {
-        try {
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-            oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-
-            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.2);
-        } catch (error) {
-            console.log('Beep playback failed:', error);
         }
     }
 

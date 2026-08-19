@@ -14,7 +14,7 @@
     <meta property="og:title" content="{{ $blogPost->seo_title }}">
     <meta property="og:description" content="{{ $blogPost->seo_description }}">
     @if($blogPost->featured_image)
-        <meta property="og:image" content="{{ Storage::url($blogPost->featured_image) }}">
+        <meta property="og:image" content="{{ Storage::disk('public')->url($blogPost->featured_image) }}">
     @endif
 
     <!-- Twitter -->
@@ -23,7 +23,7 @@
     <meta property="twitter:title" content="{{ $blogPost->seo_title }}">
     <meta property="twitter:description" content="{{ $blogPost->seo_description }}">
     @if($blogPost->featured_image)
-        <meta property="twitter:image" content="{{ Storage::url($blogPost->featured_image) }}">
+        <meta property="twitter:image" content="{{ Storage::disk('public')->url($blogPost->featured_image) }}">
     @endif
 
     <!-- Bootstrap CSS -->
@@ -137,7 +137,7 @@
                     <div class="d-flex align-items-center text-white-50">
                         <div class="me-4">
                             <i class="fas fa-calendar me-2"></i>
-                            {{ $blogPost->published_at->format('F j, Y') }}
+                            {{ $blogPost->published_at ? $blogPost->published_at->format('F j, Y') : 'Draft' }}
                         </div>
                         <div class="me-4">
                             <i class="fas fa-clock me-2"></i>
@@ -151,7 +151,7 @@
                 </div>
                 @if($blogPost->featured_image)
                     <div class="col-md-4">
-                        <img src="{{ Storage::url($blogPost->featured_image) }}"
+                        <img src="{{ Storage::disk('public')->url($blogPost->featured_image) }}"
                              alt="{{ $blogPost->title }}"
                              class="img-fluid rounded shadow">
                     </div>
@@ -198,7 +198,7 @@
                         <div class="row align-items-center">
                             <div class="col-md-3 text-center">
                                 @if($landingPage->doctor->profile_image)
-                                    <img src="{{ Storage::url($landingPage->doctor->profile_image) }}"
+                                    <img src="{{ Storage::disk('public')->url($landingPage->doctor->profile_image) }}"
                                          alt="Dr. {{ $landingPage->doctor->user->name }}"
                                          class="rounded-circle mb-3"
                                          style="width: 100px; height: 100px; object-fit: cover;">
@@ -238,7 +238,7 @@
                                 <div class="col-md-4 mb-4">
                                     <div class="card h-100 shadow-sm">
                                         @if($post->featured_image)
-                                            <img src="{{ Storage::url($post->featured_image) }}"
+                                            <img src="{{ Storage::disk('public')->url($post->featured_image) }}"
                                                  class="card-img-top"
                                                  alt="{{ $post->title }}"
                                                  style="height: 200px; object-fit: cover;">

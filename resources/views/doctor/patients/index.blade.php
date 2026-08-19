@@ -142,11 +142,107 @@
 .app-main {
     background-color: #f8f9fa;
 }
-.dashboard-header {
-    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+
+/* Professional Filter Panel */
+.filter-card {
+    padding: 0;
+    overflow: hidden;
+    border-radius: 16px;
+}
+
+.filter-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    padding: 1.1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.filter-header-icon {
+    width: 44px;
+    height: 44px;
     border-radius: 12px;
-    padding: 2.5rem;
-    margin-bottom: 2rem;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.filter-body {
+    padding: 1.5rem;
+}
+
+.filter-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #495057;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 0.4rem;
+}
+
+.filter-card .form-control,
+.filter-card .form-select {
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.92rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filter-card .form-control:focus,
+.filter-card .form-select:focus {
+    border-color: #DE6262;
+    box-shadow: 0 0 0 3px rgba(222, 98, 98, 0.15);
+}
+
+.filter-input-group .input-group-text {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+    color: #6c757d;
+}
+
+.filter-input-group .form-control {
+    border-left: none;
+    border-radius: 0 10px 10px 0;
+}
+
+.filter-input-group .form-control:focus {
+    box-shadow: 0 0 0 3px rgba(222, 98, 98, 0.15);
+}
+
+.filter-reset {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    color: #6c757d;
+    background: #fff;
+    transition: all 0.2s ease;
+}
+
+.filter-reset:hover {
+    color: #fff;
+    background: #DE6262;
+    border-color: #DE6262;
+}
+
+.filter-body .btn-primary-custom {
+    padding: 0.6rem 1.25rem;
+    font-size: 0.92rem;
+    height: 44px;
 }
 </style>
 <div class="container-fluid" style="background-color: #f8f9fa;">
@@ -182,7 +278,7 @@
                     <div class="stats-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
                         <i class="fas fa-user-check"></i>
                     </div>
-                    <p class="stats-number">{{ collect($patients->items())->filter(fn($p) => ($p->is_active ?? true))->count() }}</p>
+                    <p class="stats-number">{{ collect($patients->items())->filter(fn($p) => $p->is_active)->count() }}</p>
                     <p class="stats-label">Active Patients</p>
                 </div>
             </div>
@@ -198,47 +294,68 @@
         </div>
 
         <!-- Search & Filters -->
-        <div class="table-card mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0"><i class="fas fa-search me-2"></i>Search & Filters</h6>
-            </div>
-            <form method="GET" action="{{ route('doctor.patients.index') }}" class="row g-3">
-                <div class="col-md-4">
-                    <input type="text" name="search" class="form-control search-box"
-                           placeholder="Search by name, email, or phone..."
-                           value="{{ request('search') }}">
+        <div class="table-card filter-card mb-4">
+            <div class="filter-header">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="filter-header-icon">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0 text-white fw-semibold">Search & Filters</h6>
+                        <small class="text-white-50">Narrow down your patient list</small>
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <select name="gender" class="form-select search-box">
-                        <option value="">All Genders</option>
-                        <option value="male" {{ request('gender') == 'male' ? 'selected' : '' }}>Male</option>
-                        <option value="female" {{ request('gender') == 'female' ? 'selected' : '' }}>Female</option>
-                        <option value="other" {{ request('gender') == 'other' ? 'selected' : '' }}>Other</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select name="status" class="form-select search-box">
-                        <option value="">All Status</option>
-                        <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
-                        <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select name="sort" class="form-select search-box">
-                        <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Newest First</option>
-                        <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Oldest First</option>
-                        <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>Name A-Z</option>
-                    </select>
-                </div>
-                <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary-custom flex-grow-1">
-                        <i class="fas fa-filter me-1"></i>Filter
-                    </button>
-                    <a href="{{ route('doctor.patients.index') }}" class="btn btn-secondary">
-                        <i class="fas fa-times"></i>
+                @if(request()->hasAny(['search', 'gender', 'status', 'sort']))
+                    <a href="{{ route('doctor.patients.index') }}" class="btn btn-light btn-sm fw-semibold">
+                        <i class="fas fa-times me-1"></i>Clear All
                     </a>
-                </div>
-            </form>
+                @endif
+            </div>
+            <div class="filter-body">
+                <form method="GET" action="{{ route('doctor.patients.index') }}" class="row g-3 align-items-end">
+                    <div class="col-md-4 col-sm-6">
+                        <label class="filter-label" for="filter-search">Search</label>
+                        <div class="input-group filter-input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" id="filter-search" name="search" class="form-control"
+                                   placeholder="Name, email, or phone..." value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-6">
+                        <label class="filter-label" for="filter-gender">Gender</label>
+                        <select id="filter-gender" name="gender" class="form-select">
+                            <option value="">All Genders</option>
+                            <option value="male" {{ request('gender') == 'male' ? 'selected' : '' }}>Male</option>
+                            <option value="female" {{ request('gender') == 'female' ? 'selected' : '' }}>Female</option>
+                            <option value="other" {{ request('gender') == 'other' ? 'selected' : '' }}>Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-sm-6">
+                        <label class="filter-label" for="filter-status">Status</label>
+                        <select id="filter-status" name="status" class="form-select">
+                            <option value="">All Status</option>
+                            <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
+                            <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-sm-6">
+                        <label class="filter-label" for="filter-sort">Sort By</label>
+                        <select id="filter-sort" name="sort" class="form-select">
+                            <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Newest First</option>
+                            <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Oldest First</option>
+                            <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>Name A-Z</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-sm-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary-custom flex-grow-1">
+                            <i class="fas fa-filter me-1"></i>Filter
+                        </button>
+                        <a href="{{ route('doctor.patients.index') }}" class="filter-reset" title="Reset filters">
+                            <i class="fas fa-rotate-left"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <!-- Patients List -->
@@ -330,7 +447,7 @@
 
                                     <!-- Status -->
                                     <td>
-                                        @if($patient->is_active ?? true)
+                                        @if($patient->is_active)
                                             <span class="badge status-active">Active</span>
                                         @else
                                             <span class="badge status-inactive">Inactive</span>

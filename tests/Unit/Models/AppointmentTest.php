@@ -37,12 +37,14 @@ class AppointmentTest extends TestCase
             'doctor_id' => $this->doctor->id,
             'appointment_date' => now()->addDay(),
             'status' => 'pending',
-            'appointment_type' => 'consultation',
+            'appointment_type' => 'in_person',
             'duration' => 30,
             'fee' => 10000, // $100.00
             'notes' => 'Initial consultation',
             'follow_up_required' => false,
-            'prescription_given' => false
+            'prescription_given' => false,
+            'reminder_sent' => false,
+            'reminder_sent_at' => null
         ]);
     }
 
@@ -327,10 +329,57 @@ class AppointmentTest extends TestCase
 
     public function test_appointment_complete_method()
     {
+        $this->appointment->appointment_date = now()->subHour();
         $this->appointment->complete();
 
         $this->assertEquals('completed', $this->appointment->status);
         $this->assertNotNull($this->appointment->completed_at);
+    }
+
+    public function test_appointment_complete_method_throws_for_future_appointment()
+    {
+        $this->expectException(\Exception::class);
+
+        $this->appointment->complete();
+    }
+
+    public function test_appointment_complete_method_throws_when_no_appointment_date()
+    {
+        $this->appointment->appointment_date = null;
+        $this->expectException(\Exception::class);
+
+        $this->appointment->complete();
+    }
+
+    public function test_appointment_complete_alias_returns_true()
+    {
+        $this->appointment->appointment_date = now()->subHour();
+        $this->appointment->status = 'confirmed';
+
+        $result = $this->appointment->completeAppointment();
+
+        $this->assertTrue($result);
+        $this->assertEquals('completed', $this->appointment->status);
+    }
+
+    public function test_appointment_confirm_alias_returns_true()
+    {
+        $this->appointment->status = 'pending';
+
+        $result = $this->appointment->confirmAppointment();
+
+        $this->assertTrue($result);
+        $this->assertEquals('confirmed', $this->appointment->status);
+    }
+
+    public function test_appointment_cancel_alias_returns_true()
+    {
+        $this->appointment->status = 'confirmed';
+
+        $result = $this->appointment->cancelAppointment('Reason', 'patient');
+
+        $this->assertTrue($result);
+        $this->assertEquals('cancelled', $this->appointment->status);
     }
 
     public function test_appointment_cancel_method()

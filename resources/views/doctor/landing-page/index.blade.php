@@ -65,7 +65,7 @@
 @endpush
 
 @section('content')
-<div class="container">
+<div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="dashboard-header">
@@ -200,7 +200,7 @@
                                             <input type="file" class="form-control" id="hero_image" name="hero_image" accept="image/*">
                                             @if($landingPage->hero_image)
                                                 <div class="mt-2">
-                                                    <img src="{{ Storage::url($landingPage->hero_image) }}" alt="Current hero image" class="img-thumbnail" style="max-height: 100px;">
+                                                    <img src="{{ Storage::disk('public')->url($landingPage->hero_image) }}" alt="Current hero image" class="img-thumbnail" style="max-height: 100px;">
                                                 </div>
                                             @endif
                                             <div class="form-text">Recommended size: 1200x600px. Max 2MB.</div>
@@ -743,7 +743,8 @@ $(document).ready(function() {
             $(`#color_${key}`).val(defaultColors[key]);
         });
 
-        setTimeout(refreshPreview, 500);
+        // Persist the defaults immediately so the saved design reverts instead of keeping the modified state
+        $('#landingPageForm').submit();
     });
 
     function updatePublishButton() {

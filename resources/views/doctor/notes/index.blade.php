@@ -7,11 +7,107 @@
 .app-main {
     background-color: #f8f9fa;
 }
-.dashboard-header {
-    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+
+/* Professional Filter Panel */
+.filter-card {
+    padding: 0;
+    overflow: hidden;
+    border-radius: 16px;
+}
+
+.filter-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    padding: 1.1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.filter-header-icon {
+    width: 44px;
+    height: 44px;
     border-radius: 12px;
-    padding: 2.5rem;
-    margin-bottom: 2rem;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.filter-body {
+    padding: 1.5rem;
+}
+
+.filter-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #495057;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 0.4rem;
+}
+
+.filter-card .form-control,
+.filter-card .form-select {
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.92rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filter-card .form-control:focus,
+.filter-card .form-select:focus {
+    border-color: #DE6262;
+    box-shadow: 0 0 0 3px rgba(222, 98, 98, 0.15);
+}
+
+.filter-input-group .input-group-text {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+    color: #6c757d;
+}
+
+.filter-input-group .form-control {
+    border-left: none;
+    border-radius: 0 10px 10px 0;
+}
+
+.filter-input-group .form-control:focus {
+    box-shadow: 0 0 0 3px rgba(222, 98, 98, 0.15);
+}
+
+.filter-reset {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    color: #6c757d;
+    background: #fff;
+    transition: all 0.2s ease;
+}
+
+.filter-reset:hover {
+    color: #fff;
+    background: #DE6262;
+    border-color: #DE6262;
+}
+
+.filter-body .btn-primary-custom {
+    padding: 0.6rem 1.25rem;
+    font-size: 0.92rem;
+    height: 44px;
 }
 </style>
 <div class="container-fluid" style="background-color: #f8f9fa;">
@@ -30,55 +126,80 @@
     <div class="container">
 
         <!-- Filters -->
-        <div class="table-card mb-4">
-            <form method="GET" action="{{ route('doctor.notes.index') }}" class="row g-3">
-                <div class="col-md-3">
-                    <label for="patient_id" class="form-label">Patient</label>
-                    <select name="patient_id" id="patient_id" class="form-select">
-                        <option value="">All Patients</option>
-                        @foreach($patients as $patient)
-                            <option value="{{ $patient->id }}" {{ request('patient_id') == $patient->id ? 'selected' : '' }}>
-                                {{ $patient->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label for="note_type" class="form-label">Type</label>
-                    <select name="note_type" id="note_type" class="form-select">
-                        <option value="">All Types</option>
-                        <option value="text" {{ request('note_type') == 'text' ? 'selected' : '' }}>Text</option>
-                        <option value="voice" {{ request('note_type') == 'voice' ? 'selected' : '' }}>Voice</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label for="date_from" class="form-label">From Date</label>
-                    <input type="date" name="date_from" id="date_from" class="form-control" value="{{ request('date_from') }}">
-                </div>
-                <div class="col-md-2">
-                    <label for="date_to" class="form-label">To Date</label>
-                    <input type="date" name="date_to" id="date_to" class="form-control" value="{{ request('date_to') }}">
-                </div>
-                <div class="col-md-2">
-                    <label for="search" class="form-label">Search</label>
-                    <input type="text" name="search" id="search" class="form-control" placeholder="Search notes..." value="{{ request('search') }}">
-                </div>
-                <div class="col-md-1">
-                    <label class="form-label">&nbsp;</label>
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-outline-primary">
-                            <i class="fas fa-search"></i>
-                        </button>
+        <div class="table-card filter-card mb-4">
+            <div class="filter-header">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="filter-header-icon">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0 text-white fw-semibold">Search & Filters</h6>
+                        <small class="text-white-50">Narrow down your notes</small>
                     </div>
                 </div>
-            </form>
+                @if(request()->hasAny(['search', 'patient_id', 'note_type', 'date_from', 'date_to']))
+                    <a href="{{ route('doctor.notes.index') }}" class="btn btn-light btn-sm fw-semibold">
+                        <i class="fas fa-times me-1"></i>Clear All
+                    </a>
+                @endif
+            </div>
+            <div class="filter-body">
+                <form method="GET" action="{{ route('doctor.notes.index') }}" class="row g-3 align-items-end">
+                    <div class="col-md-3 col-sm-6">
+                        <label class="filter-label" for="filter-search">Search</label>
+                        <div class="input-group filter-input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" id="filter-search" name="search" class="form-control"
+                                   placeholder="Search title or content..." value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <label class="filter-label" for="filter-patient">Patient</label>
+                        <select id="filter-patient" name="patient_id" class="form-select">
+                            <option value="">All Patients</option>
+                            @foreach($patients as $patient)
+                                <option value="{{ $patient->id }}" {{ request('patient_id') == $patient->id ? 'selected' : '' }}>
+                                    {{ $patient->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-sm-6">
+                        <label class="filter-label" for="filter-type">Type</label>
+                        <select id="filter-type" name="note_type" class="form-select">
+                            <option value="">All Types</option>
+                            <option value="text" {{ request('note_type') == 'text' ? 'selected' : '' }}>Text</option>
+                            <option value="voice" {{ request('note_type') == 'voice' ? 'selected' : '' }}>Voice</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-sm-6">
+                        <label class="filter-label" for="filter-from">From Date</label>
+                        <input type="date" name="date_from" id="filter-from" class="form-control" value="{{ request('date_from') }}">
+                    </div>
+                    <div class="col-md-2 col-sm-6">
+                        <label class="filter-label" for="filter-to">To Date</label>
+                        <input type="date" name="date_to" id="filter-to" class="form-control" value="{{ request('date_to') }}">
+                    </div>
+                    <div class="col-12 d-flex justify-content-end gap-2">
+                        <button type="submit" class="btn btn-primary-custom">
+                            <i class="fas fa-filter me-1"></i>Filter
+                        </button>
+                        <a href="{{ route('doctor.notes.index') }}" class="filter-reset" title="Reset filters">
+                            <i class="fas fa-rotate-left"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <!-- Notes List -->
         <div class="table-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0"><i class="fas fa-sticky-note me-2"></i>Notes ({{ $notes->total() }})</h6>
+            </div>
             @if($notes->count() > 0)
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table custom-table table-hover mb-0">
                         <thead>
                             <tr>
                                 <th>Type</th>
@@ -121,7 +242,7 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{{ route('doctor.notes.show', $note) }}" class="btn btn-sm btn-outline-primary" title="View">
+                                            <a href="{{ route('doctor.notes.show', $note) }}" class="btn btn-sm btn-outline-secondary" title="View">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             <a href="{{ route('doctor.notes.edit', $note) }}" class="btn btn-sm btn-outline-secondary" title="Edit">
@@ -155,8 +276,6 @@
         </div>
     </div>
 </div>
-</div>
-</div>
 
 <!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
@@ -179,6 +298,7 @@
 @endsection
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
 <style>
 .empty-state {
     padding: 3rem 1rem;

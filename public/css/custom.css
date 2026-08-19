@@ -196,3 +196,12 @@
 .enhanced-notification-toast.info .icon-container {
     background: #17a2b8 !important;
 }
+
+/* Modals must render above the fixed top-bar (z-index: 1070) and alerts */
+.modal {
+    z-index: 1200 !important;
+}
+
+.modal-backdrop {
+    z-index: 1190 !important;
+}

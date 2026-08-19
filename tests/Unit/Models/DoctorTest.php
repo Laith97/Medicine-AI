@@ -65,7 +65,8 @@ class DoctorTest extends TestCase
             'appointment_duration', 'auto_approve_appointments', 'allow_cancellation',
             'allow_rescheduling', 'cancellation_hours', 'average_rating',
             'total_reviews', 'is_active', 'is_verified', 'verified_at',
-            'appointment_type_preferences'
+            'appointment_type_preferences',
+            'ai_chat_enabled', 'ai_chat_settings', 'sms_provider'
         ];
 
         $this->assertEquals($fillable, $this->doctor->getFillable());
@@ -336,5 +337,36 @@ class DoctorTest extends TestCase
         $this->assertTrue($preferences['in_person']);
         $this->assertFalse($preferences['video_call']);
         $this->assertFalse($preferences['phone_call']);
+    }
+
+    public function test_doctor_profile_image_url_returns_null_when_empty()
+    {
+        $doctor = Doctor::factory()->create(['profile_image' => null]);
+
+        $this->assertNull($doctor->profile_image_url);
+    }
+
+    public function test_doctor_profile_image_url_returns_absolute_url_as_is()
+    {
+        $doctor = Doctor::factory()->create(['profile_image' => 'https://example.com/avatar.jpg']);
+
+        $this->assertEquals('https://example.com/avatar.jpg', $doctor->profile_image_url);
+    }
+
+    public function test_doctor_profile_image_url_returns_data_uri_as_is()
+    {
+        $doctor = Doctor::factory()->create(['profile_image' => 'data:image/png;base64,abc123']);
+
+        $this->assertEquals('data:image/png;base64,abc123', $doctor->profile_image_url);
+    }
+
+    public function test_doctor_profile_image_url_builds_storage_url_for_relative_path()
+    {
+        $doctor = Doctor::factory()->create(['profile_image' => 'doctors/avatar.jpg']);
+
+        $this->assertEquals(
+            \Storage::disk('public')->url('doctors/avatar.jpg'),
+            $doctor->profile_image_url
+        );
     }
 }

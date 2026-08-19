@@ -131,7 +131,15 @@ class ClaimsController extends Controller
             'service_date' => 'nullable|date',
         ]);
 
-        $claim->update($validatedData);
+        $claim->update([
+            'diagnosis_text' => $validatedData['diagnosis_text'],
+            'procedure_text' => $validatedData['procedure_text'],
+            'icd10_codes' => $validatedData['icd10_codes'] ? json_decode($validatedData['icd10_codes'], true) : null,
+            'cpt_codes' => $validatedData['cpt_codes'] ? json_decode($validatedData['cpt_codes'], true) : null,
+            'payer' => $validatedData['payer'],
+            'expected_amount' => $validatedData['expected_amount'],
+            'service_date' => $validatedData['service_date'] ?? null,
+        ]);
 
         return redirect()->route('doctor.claims.show', $claim)
             ->with('success', 'Claim updated successfully.');

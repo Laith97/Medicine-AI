@@ -112,9 +112,9 @@
                                     {{ $post->is_published ? 'Unpublish' : 'Publish' }}
                                 </button>
 
-                                @if($post->is_published)
-                                    <a href="{{ route('doctor.blog.post', [auth()->user()->doctor->landingPage->username ?? 'preview', $post->slug]) }}" 
-                                       class="btn btn-info" 
+                                @if($post->is_published && auth()->user()->getEffectiveDoctor()?->landingPage)
+                                    <a href="{{ route('doctor.blog.post', [auth()->user()->getEffectiveDoctor()->landingPage->username, $post->slug]) }}"
+                                       class="btn btn-info"
                                        target="_blank">
                                         <i class="fas fa-external-link-alt"></i> View Live Post
                                     </a>

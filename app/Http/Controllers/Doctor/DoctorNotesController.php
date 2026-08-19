@@ -29,7 +29,7 @@ class DoctorNotesController extends Controller
     {
         $doctor = $this->getEffectiveDoctor();
 
-        $query = DoctorNote::byDoctor($doctor->id)
+        $query = DoctorNote::byDoctor($doctor->user_id)
             ->with(['patient', 'appointment'])
             ->orderBy('created_at', 'desc');
 
@@ -88,7 +88,7 @@ class DoctorNotesController extends Controller
             ->get();
 
         // Get recent appointments for this doctor
-        $appointments = Appointment::where('doctor_id', $doctor->doctor->id ?? null)
+        $appointments = Appointment::where('doctor_id', $doctor->id)
             ->with('patient')
             ->where('status', 'completed')
             ->orderBy('appointment_date', 'desc')
@@ -141,7 +141,7 @@ class DoctorNotesController extends Controller
             } catch (\Exception $e) {
                 Log::error('Failed to save audio file', [
                     'error' => $e->getMessage(),
-                    'user_id' => $doctor->id,
+                    'user_id' => $doctor->user_id,
                     'trace' => $e->getTraceAsString()
                 ]);
 
@@ -168,7 +168,7 @@ class DoctorNotesController extends Controller
 
         try {
             $note = DoctorNote::create([
-                'doctor_id' => $doctor->id,
+                'doctor_id' => $doctor->user_id,
                 'patient_id' => $request->patient_id,
                 'appointment_id' => $request->appointment_id,
                 'note_type' => $request->note_type,
@@ -192,7 +192,7 @@ class DoctorNotesController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to create note', [
                 'error' => $e->getMessage(),
-                'user_id' => $doctor->id,
+                'user_id' => $doctor->user_id,
                 'request_data' => $request->except(['audio_file']),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -234,7 +234,7 @@ class DoctorNotesController extends Controller
             ->get();
 
         // Get recent appointments for this doctor
-        $appointments = Appointment::where('doctor_id', $doctor->doctor->id ?? null)
+        $appointments = Appointment::where('doctor_id', $doctor->id)
             ->with('patient')
             ->where('status', 'completed')
             ->orderBy('appointment_date', 'desc')

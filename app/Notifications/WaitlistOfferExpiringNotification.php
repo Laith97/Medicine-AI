@@ -57,7 +57,7 @@ class WaitlistOfferExpiringNotification extends Notification implements ShouldBr
             'title' => 'Appointment Offer Expiring Soon',
             'message' => "Your appointment offer with Dr. {$doctorName} expires in 1 hour",
             'icon' => 'clock',
-            'link' => $this->waitlistEntry?->id ? route('waitlist.show', $this->waitlistEntry->id) : '#',
+            'link' => $this->waitlistEntry?->id ? route('patient.waitlist.status', ['waitlist' => $this->waitlistEntry->id]) : '#',
             'link_text' => 'Book Now',
             'related_type' => 'waitlist_entry',
             'related_id' => $this->waitlistEntry?->id,
@@ -87,7 +87,7 @@ class WaitlistOfferExpiringNotification extends Notification implements ShouldBr
             ->when($expiresAt, function ($mail) use ($expiresAt) {
                 return $mail->line('Offer expires on: ' . $expiresAt->format('M j, Y g:i A'));
             })
-            ->action('Book Now', $this->waitlistEntry?->id ? route('waitlist.show', $this->waitlistEntry->id) : '#')
+            ->action('Book Now', $this->waitlistEntry?->id ? route('patient.waitlist.status', ['waitlist' => $this->waitlistEntry->id]) : '#')
             ->line('Don\'t let this opportunity slip away!');
     }
 
@@ -104,7 +104,7 @@ class WaitlistOfferExpiringNotification extends Notification implements ShouldBr
         $expiresText = $expiresAt ? 'Expires: ' . $expiresAt->format('M j, g:i A') : '';
 
         return [
-            'message' => "URGENT: Your appointment offer with Dr. {$doctorName} expires soon! {$expiresText} Book now: " . ($this->waitlistEntry?->id ? route('waitlist.show', $this->waitlistEntry->id) : '#'),
+            'message' => "URGENT: Your appointment offer with Dr. {$doctorName} expires soon! {$expiresText} Book now: " . ($this->waitlistEntry?->id ? route('patient.waitlist.status', ['waitlist' => $this->waitlistEntry->id]) : '#'),
             'options' => [
                 'doctor_id' => $doctorId,
                 'hospital_id' => $hospitalId,
@@ -130,7 +130,7 @@ class WaitlistOfferExpiringNotification extends Notification implements ShouldBr
             'message' => "Your appointment offer with Dr. {$doctorName} expires in 1 hour",
             'body' => "Your appointment offer with Dr. {$doctorName} expires in 1 hour",
             'icon' => 'clock',
-            'link' => $this->waitlistEntry?->id ? route('waitlist.show', $this->waitlistEntry->id) : '#',
+            'link' => $this->waitlistEntry?->id ? route('patient.waitlist.status', ['waitlist' => $this->waitlistEntry->id]) : '#',
             'link_text' => 'Book Now',
             'data' => [
                 'waitlist_entry_id' => $this->waitlistEntry?->id,

@@ -258,8 +258,8 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save"></i> Update Post
                         </button>
-                        @if($post->is_published)
-                            <a href="{{ route('doctor.blog.post', [auth()->user()->doctor->landingPage->username ?? 'preview', $post->slug]) }}"
+                        @if($post->is_published && auth()->user()->getEffectiveDoctor()?->landingPage)
+                            <a href="{{ route('doctor.blog.post', [auth()->user()->getEffectiveDoctor()->landingPage->username, $post->slug]) }}"
                                class="btn btn-outline-info"
                                target="_blank">
                                 <i class="fas fa-external-link-alt"></i> View Live Post

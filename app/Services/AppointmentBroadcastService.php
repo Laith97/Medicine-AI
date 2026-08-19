@@ -250,6 +250,9 @@ class AppointmentBroadcastService
 
          Cache::put($subscriptionKey, $subscription, $this->cacheTtl);
 
+         // Track in global subscription registry for stats and list broadcasts
+         $this->registerSubscription($user->id);
+
          // Audit log the subscription
          AuditLoggingService::logAppointmentSubscription(
              $user->id,
@@ -276,10 +279,13 @@ class AppointmentBroadcastService
      {
          $subscriptionKey = "appointment_sub_{$user->id}";
 
-         $subscription = Cache::get($subscriptionKey);
-         Cache::forget($subscriptionKey);
+$subscription = Cache::get($subscriptionKey);
+        Cache::forget($subscriptionKey);
 
-         // Audit log the unsubscription
+        // Remove from global subscription registry
+        $this->unregisterSubscription($user->id);
+
+        // Audit log the unsubscription
          AuditLoggingService::logAppointmentSubscription(
              $user->id,
              'appointment_updates_unsubscribed',
@@ -473,6 +479,19 @@ class AppointmentBroadcastService
      * Broadcast appointment creation with rate limiting
       */
      public function broadcastAppointmentCreated(Appointment $appointment): bool
+     {
+         try {
+             return $this->broadcastAppointmentCreatedInner($appointment);
+         } catch (\Throwable $e) {
+             Log::warning('Appointment creation broadcast failed', [
+                 'appointment_id' => $appointment->id ?? null,
+                 'error' => $e->getMessage(),
+             ]);
+             return false;
+         }
+     }
+
+     protected function broadcastAppointmentCreatedInner(Appointment $appointment): bool
      {
          // Check rate limits for appointment creation broadcasts
          if (!$this->checkBurstLimit('appointment_created') ||
@@ -732,6 +751,26 @@ class AppointmentBroadcastService
             'cache_ttl' => $this->cacheTtl,
             'last_updated' => now()
         ];
+    }
+
+    /**
+     * Register a user in the global subscription registry
+     */
+    protected function registerSubscription(int $userId): void
+    {
+        $subscriptions = Cache::get('appointment_subscriptions', []);
+        $subscriptions[$userId] = now()->toISOString();
+        Cache::put('appointment_subscriptions', $subscriptions, $this->cacheTtl);
+    }
+
+    /**
+     * Remove a user from the global subscription registry
+     */
+    protected function unregisterSubscription(int $userId): void
+    {
+        $subscriptions = Cache::get('appointment_subscriptions', []);
+        unset($subscriptions[$userId]);
+        Cache::put('appointment_subscriptions', $subscriptions, $this->cacheTtl);
     }
 
     /**

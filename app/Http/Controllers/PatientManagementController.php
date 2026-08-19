@@ -27,6 +27,31 @@ class PatientManagementController extends Controller
             });
         }
 
+        // Apply gender filter
+        if ($request->filled('gender')) {
+            $gender = $request->gender;
+            $query = $query->where('gender', $gender);
+        }
+
+        // Apply status filter
+        if ($request->filled('status')) {
+            $isActive = $request->status === 'active';
+            $query = $query->where('is_active', $isActive);
+        }
+
+        // Apply sorting
+        switch ($request->get('sort')) {
+            case 'newest':
+                $query = $query->sortByDesc('created_at');
+                break;
+            case 'oldest':
+                $query = $query->sortBy('created_at');
+                break;
+            default:
+                $query = $query->sortBy('name');
+                break;
+        }
+
         // Paginate results
         $patients = new \Illuminate\Pagination\LengthAwarePaginator(
             $query->forPage($request->page ?? 1, 15),
@@ -39,17 +64,11 @@ class PatientManagementController extends Controller
         // Calculate stats
         $totalPatients = $query->count();
         $totalVisits = 0;
-        $activePatients = 0;
+        $activePatients = $query->where('is_active', true)->count();
 
         foreach ($query as $patient) {
             $visitCount = $patient->appointments ? $patient->appointments->count() : 0;
             $totalVisits += $visitCount;
-            $lastVisit = $patient->appointments && $patient->appointments->first()
-                ? $patient->appointments->first()->appointment_date
-                : null;
-            if ($lastVisit && $lastVisit->isCurrentMonth()) {
-                $activePatients++;
-            }
         }
 
         $stats = [

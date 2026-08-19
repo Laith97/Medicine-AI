@@ -430,6 +430,11 @@ class Appointment extends Model
      */
     public function complete()
     {
+        // Do not allow completing an appointment before its scheduled start time
+        if (!$this->appointment_date || $this->appointment_date->isFuture()) {
+            throw new \Exception('This appointment has not started yet and cannot be completed before the consultation takes place.');
+        }
+
         DB::transaction(function () {
             $oldStatus = $this->status;
 
@@ -716,7 +721,8 @@ class Appointment extends Model
      */
     public function confirmAppointment()
     {
-        return $this->confirm();
+        $this->confirm();
+        return true;
     }
 
     /**
@@ -724,11 +730,24 @@ class Appointment extends Model
      *
      * @param string|null $reason Optional reason for cancellation
      * @param int|null $cancelledBy ID of the user who cancelled the appointment
-     * @return void
+     * @return bool
      * @throws \Exception If concurrent update is detected
      */
     public function cancelAppointment($reason = null, $cancelledBy = null)
     {
-        return $this->cancel($reason, $cancelledBy);
+        $this->cancel($reason, $cancelledBy);
+        return true;
+    }
+
+    /**
+     * Complete the appointment (alias for complete method for backward compatibility)
+     *
+     * @return bool
+     * @throws \Exception If concurrent update is detected or the appointment has not started yet
+     */
+    public function completeAppointment()
+    {
+        $this->complete();
+        return true;
     }
 }

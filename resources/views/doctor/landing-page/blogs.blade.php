@@ -115,7 +115,7 @@
                         <div class="col-lg-4 col-md-6">
                             <div class="card blog-card shadow-sm">
                                 @if($post->featured_image)
-                                    <img src="{{ Storage::url($post->featured_image) }}" 
+                                    <img src="{{ Storage::disk('public')->url($post->featured_image) }}" 
                                          class="card-img-top" 
                                          alt="{{ $post->title }}">
                                 @endif

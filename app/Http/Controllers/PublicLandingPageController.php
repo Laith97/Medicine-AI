@@ -158,18 +158,40 @@ class PublicLandingPageController extends Controller
     {
         $landingPage = DoctorLandingPage::with(['doctor.user', 'doctor.specialty'])
             ->byUsername($username)
-            ->published()
-            ->firstOrFail();
+            ->first();
 
-        $blogPost = $landingPage->doctor->publishedBlogPosts()
-            ->where('slug', $slug)
-            ->firstOrFail();
+        if (!$landingPage) {
+            abort(404);
+        }
 
-        // Increment views
-        $blogPost->incrementViews();
+        // Allow the owner or an admin to preview the post even when the
+        // landing page is not yet published; everyone else needs it published.
+        $isOwner = auth()->check() && (
+            auth()->user()->isAdmin()
+            || (auth()->user()->getEffectiveDoctor() && auth()->user()->getEffectiveDoctor()->id === $landingPage->doctor_id)
+        );
 
-        // Record visit
-        LandingPageVisit::recordVisit($landingPage->doctor->id, request());
+        if (!$landingPage->is_published && !$isOwner) {
+            abort(404);
+        }
+
+        $blogQuery = $isOwner
+            ? $landingPage->doctor->blogPosts()
+            : $landingPage->doctor->publishedBlogPosts();
+
+        $blogPost = $blogQuery->where('slug', $slug)->first();
+
+        if (!$blogPost || (!$blogPost->is_published && !$isOwner)) {
+            abort(404);
+        }
+
+        if (!$isOwner) {
+            // Increment views
+            $blogPost->incrementViews();
+
+            // Record visit
+            LandingPageVisit::recordVisit($landingPage->doctor->id, request());
+        }
 
         // Get related posts
         $relatedPosts = $landingPage->doctor->publishedBlogPosts()

@@ -140,6 +140,11 @@ class NotificationPreferenceWaitlistTest extends TestCase
         $this->preferences->update([
             'appointment_booked' => true,
             'appointment_reminder' => true,
+            'appointment_status_changed' => true,
+            'appointment_confirmed' => true,
+            'appointment_cancelled' => true,
+            'appointment_completed' => true,
+            'appointment_no_show' => true,
             'diagnosis_submitted' => true,
             'review_submitted' => true,
             'voice_transcription_completed' => true,
@@ -149,7 +154,13 @@ class NotificationPreferenceWaitlistTest extends TestCase
 
         $this->assertFalse($this->preferences->allNotificationsEnabled());
 
-        $this->preferences->update(['waitlist_slot_available' => true]);
+        $this->preferences->update([
+            'waitlist_slot_available' => true,
+            'waitlist_offer_expiring' => true,
+            'waitlist_position_update' => true,
+            'waitlist_auto_booked' => true,
+            'waitlist_expired' => true,
+        ]);
         $this->assertTrue($this->preferences->allNotificationsEnabled());
     }
 

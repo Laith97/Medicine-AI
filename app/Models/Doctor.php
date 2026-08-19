@@ -110,6 +110,24 @@ class Doctor extends Model
     }
 
     /**
+     * Get the fully-qualified URL for the profile image, handling both
+     * absolute URLs (e.g. legacy/seeded placeholder images) and relative
+     * storage paths uploaded by the doctor.
+     */
+    public function getProfileImageUrlAttribute(): ?string
+    {
+        if (!$this->profile_image) {
+            return null;
+        }
+
+        if (\Illuminate\Support\Str::startsWith($this->profile_image, ['http://', 'https://', 'data:'])) {
+            return $this->profile_image;
+        }
+
+        return \Storage::disk('public')->url($this->profile_image);
+    }
+
+    /**
      * Get the specialty of the doctor
      */
     public function specialty()

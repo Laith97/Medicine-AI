@@ -568,7 +568,7 @@ h1, h2, h3, h4, h5, h6 {
             <div class="col-lg-4">
                 <div class="hero-image" data-aos="fade-left" data-aos-delay="600">
                     @if($doctor->user->profile_photo_path)
-                        <img src="{{ Storage::url($doctor->user->profile_photo_path) }}"
+                        <img src="{{ Storage::disk('public')->url($doctor->user->profile_photo_path) }}"
                              alt="{{ $doctor->user->name }}"
                              class="img-fluid rounded-4 shadow-lg"
                              style="border: 5px solid rgba(255, 255, 255, 0.2);">

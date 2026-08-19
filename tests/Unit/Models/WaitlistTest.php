@@ -71,9 +71,16 @@ class WaitlistTest extends TestCase
             'doctor_id' => $this->doctor->id,
         ]);
 
-        WaitlistPatientPreference::factory()->count(2)->create([
+        $secondDoctor = \App\Models\Doctor::factory()->create();
+
+        WaitlistPatientPreference::factory()->create([
             'patient_id' => $this->user->id,
             'doctor_id' => $this->doctor->id,
+        ]);
+
+        WaitlistPatientPreference::factory()->create([
+            'patient_id' => $this->user->id,
+            'doctor_id' => $secondDoctor->id,
         ]);
 
         $this->assertCount(2, $waitlist->patientPreferences);
@@ -106,6 +113,7 @@ class WaitlistTest extends TestCase
         $waitlist = new Waitlist();
 
         $expectedCasts = [
+            'id' => 'int',
             'preferred_time_slots' => 'array',
             'preferred_days' => 'array',
             'notification_channels' => 'array',

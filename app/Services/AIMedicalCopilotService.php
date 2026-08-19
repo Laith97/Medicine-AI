@@ -84,7 +84,7 @@ class AIMedicalCopilotService
             $data = [
                 'analysis_data' => $analysisResult,
                 'generated_at' => now(),
-                'doctor_id' => $appointment->doctor_id,
+                'doctor_id' => $appointment->doctor->user_id,
                 'status' => 'active',
                 'summary' => $analysisResult['medical_case_summary'] ?? 'No summary available',
                 'considerations' => json_encode($analysisResult['differential_considerations'] ?? []),
@@ -590,7 +590,7 @@ SYS;
             AICopilotUsageLog::create([
                 'appointment_id' => $appointment->id,
                 'patient_id' => $appointment->patient_id,
-                'doctor_id' => $appointment->doctor_id,
+                'doctor_id' => $appointment->doctor->user_id,
                 'request_data' => json_encode($structuredData),
                 'requested_at' => now(),
                 'status' => 'processing',

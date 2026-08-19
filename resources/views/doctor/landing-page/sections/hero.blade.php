@@ -8,7 +8,7 @@ $isBuilder = $isBuilder ?? false;
          style="
             background-color: {{ $config['background_color'] ?? '#3b82f6' }};
             color: {{ $config['text_color'] ?? '#ffffff' }};
-            {{ isset($config['background_image']) && $config['background_image'] ? 'background-image: url(' . Storage::url($config['background_image']) . ');' : '' }}
+            {{ isset($config['background_image']) && $config['background_image'] ? 'background-image: url(' . Storage::disk('public')->url($config['background_image']) . ');' : '' }}
             background-size: cover;
             background-position: center;
             position: relative;

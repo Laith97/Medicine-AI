@@ -129,7 +129,7 @@ class LandingPageController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Landing page updated successfully!',
-            'preview_url' => route('doctor.landing.preview', $landingPage->username)
+            'preview_url' => route('doctor.landing-page.preview', $landingPage->username)
         ]);
     }
 
@@ -163,7 +163,7 @@ class LandingPageController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Hero image uploaded successfully!',
-            'image_url' => Storage::url($path)
+            'image_url' => \Illuminate\Support\Facades\Storage::disk('public')->url($path)
         ]);
     }
 
@@ -575,7 +575,7 @@ class LandingPageController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Image uploaded successfully!',
-            'image_url' => Storage::url($path),
+            'image_url' => \Illuminate\Support\Facades\Storage::disk('public')->url($path),
             'path' => $path
         ]);
     }

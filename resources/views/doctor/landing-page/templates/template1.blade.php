@@ -14,7 +14,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ $landingPage->url }}">
     @if($landingPage->hero_image)
-    <meta property="og:image" content="{{ Storage::url($landingPage->hero_image) }}">
+    <meta property="og:image" content="{{ Storage::disk('public')->url($landingPage->hero_image) }}">
     @endif
 
     <!-- Bootstrap CSS -->
@@ -567,13 +567,13 @@
 
     @if(!$hasPageSections && ($landingPage->section_visibility['hero'] ?? true))
     <!-- Hero Section -->
-    <section id="home" class="hero-section" @if($landingPage->hero_image) style="background-image: url('{{ Storage::url($landingPage->hero_image) }}'); background-size: cover; background-position: center;" @endif>
+    <section id="home" class="hero-section" @if($landingPage->hero_image) style="background-image: url('{{ Storage::disk('public')->url($landingPage->hero_image) }}'); background-size: cover; background-position: center;" @endif>
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-6 hero-content">
                     <div class="text-center text-lg-start">
                         @if($doctor->profile_image)
-                        <img src="{{ Storage::url($doctor->profile_image) }}" alt="Dr. {{ $doctor->user->name }}" class="hero-image mb-4">
+                        <img src="{{ Storage::disk('public')->url($doctor->profile_image) }}" alt="Dr. {{ $doctor->user->name }}" class="hero-image mb-4">
                         @else
                         <div class="hero-image mb-4 d-flex align-items-center justify-content-center bg-light text-dark mx-auto mx-lg-0">
                             <i class="fas fa-user-md fa-4x"></i>
@@ -704,7 +704,7 @@
                     <div class="col-lg-4 col-md-6 mb-4">
                         <div class="card h-100 shadow-sm">
                             @if($post->featured_image)
-                                <img src="{{ Storage::url($post->featured_image) }}"
+                                <img src="{{ Storage::disk('public')->url($post->featured_image) }}"
                                      class="card-img-top"
                                      alt="{{ $post->title }}"
                                      style="height: 200px; object-fit: cover;">
