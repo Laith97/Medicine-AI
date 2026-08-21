@@ -97,13 +97,19 @@
                     <div class="col-12">
                         <label class="form-label">Profile Image</label>
                         <div class="d-flex align-items-center gap-4">
-                            <div>
+                            <div style="width: 80px; height: 80px; position: relative; flex-shrink: 0;">
                                 @if($doctor->profile_image_url)
                                     <img src="{{ $doctor->profile_image_url }}"
-                                         alt="Current profile image"
+                                         alt=""
                                          class="rounded-circle border"
                                          id="profileImagePreview"
-                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                         style="width: 80px; height: 80px; object-fit: cover; overflow: hidden;"
+                                         onerror="this.style.display='none'; document.getElementById('profileImagePlaceholder').classList.remove('d-none'); document.getElementById('profileImagePlaceholder').classList.add('d-flex');">
+                                    <div id="profileImagePlaceholder"
+                                         class="rounded-circle bg-light border align-items-center justify-content-center d-none"
+                                         style="width: 80px; height: 80px; position: absolute; top: 0; left: 0;">
+                                        <i class="fas fa-user-md fs-2 text-muted"></i>
+                                    </div>
                                 @else
                                     <div id="profileImagePlaceholder"
                                          class="rounded-circle bg-light border d-flex align-items-center justify-content-center"
@@ -858,15 +864,35 @@ document.addEventListener('DOMContentLoaded', function() {
             const placeholder = document.getElementById('profileImagePlaceholder');
 
             if (preview) {
+                preview.style.display = '';
                 preview.src = e.target.result;
+                preview.alt = '';
+                preview.onerror = function() {
+                    this.style.display = 'none';
+                    if (placeholder) {
+                        placeholder.classList.remove('d-none');
+                        placeholder.classList.add('d-flex');
+                    }
+                };
+                if (placeholder) {
+                    placeholder.classList.add('d-none');
+                    placeholder.classList.remove('d-flex');
+                }
             } else if (placeholder) {
                 const img = document.createElement('img');
                 img.id = 'profileImagePreview';
                 img.src = e.target.result;
-                img.alt = 'Current profile image';
+                img.alt = '';
                 img.className = 'rounded-circle border';
-                img.style.cssText = 'width: 80px; height: 80px; object-fit: cover;';
-                placeholder.replaceWith(img);
+                img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; overflow: hidden;';
+                img.onerror = function() {
+                    this.style.display = 'none';
+                    placeholder.classList.remove('d-none');
+                    placeholder.classList.add('d-flex');
+                };
+                placeholder.parentNode.appendChild(img);
+                placeholder.classList.add('d-none');
+                placeholder.classList.remove('d-flex');
             }
         };
         reader.readAsDataURL(file);

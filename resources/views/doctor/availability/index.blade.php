@@ -119,7 +119,7 @@
 
                                                 <!-- Edit -->
                                                 <a href="{{ route('doctor.availability.edit', $slot) }}"
-                                                   class="btn btn-smbtn-primary-custom" title="Edit">
+                                                   class="btn btn-sm btn-primary-custom" title="Edit">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
 

@@ -179,7 +179,7 @@
                                         <i class="fas fa-brain me-2"></i>AI Risk Assessment
                                     </h6>
                                     @php
-                                        $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
+                                        $riskScore = $appointment->patient?->patientRiskScores?->where('appointment_id', $appointment->id)?->first();
                                     @endphp
                                     @if($riskScore)
                                         @php

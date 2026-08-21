@@ -558,7 +558,7 @@
                                     <!-- Risk -->
                                     <td>
                                         @php
-                                            $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
+                                            $riskScore = $appointment->patient?->patientRiskScores?->where('appointment_id', $appointment->id)?->first();
                                         @endphp
                                         @if($riskScore)
                                             @php
@@ -773,7 +773,7 @@ function initializeBroadcasting() {
 
     try {
         // Connect to private user channel
-        broadcastingChannel = Echo.private(`user.${{ Auth::id() }}`)
+        broadcastingChannel = Echo.private(`user.{{ Auth::id() }}`)
             .listen('.appointments.updated', handleAppointmentListUpdate)
             .listen('.appointment.created', handleAppointmentCreated)
             .listen('.appointment.updated', handleAppointmentUpdated)

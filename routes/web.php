@@ -821,7 +821,7 @@ Route::middleware(['auth', 'admin.impersonation', 'doctor', 'sub.user.permission
 
     // Availability management
     Route::resource('availability', AvailabilityController::class);
-    Route::post('/availability/{availabilitySlot}/toggle', [AvailabilityController::class, 'toggle'])->name('availability.toggle');
+    Route::post('/availability/{availability}/toggle', [AvailabilityController::class, 'toggle'])->name('availability.toggle');
     Route::post('/availability/bulk', [AvailabilityController::class, 'bulkStore'])->name('availability.bulk');
 
     // Reviews

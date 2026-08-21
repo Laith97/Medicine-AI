@@ -39,7 +39,7 @@ class ResetPasswordNotification extends Notification implements ShouldBroadcast
      */
     public function via($notifiable)
     {
-        return ['mail', 'database'];
+        return ['database'];
     }
 
     /**

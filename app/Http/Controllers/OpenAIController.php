@@ -353,12 +353,16 @@ class OpenAIController extends Controller
             return $b['last_visit'] <=> $a['last_visit'];
         });
 
+        // Unified total patients metric (assigned OR have appointments) - consistent
+        // with the main dashboard and Patients page cards.
+        $totalPatients = $user->getEffectiveDoctorUser()->getDoctorPatientsCount();
+
         // Handle AJAX requests for dynamic content loading
         if (request()->ajax()) {
-            return response()->view('cases', compact('records', 'patientGroups'))->header('Content-Type', 'text/html');
+            return response()->view('cases', compact('records', 'patientGroups', 'totalPatients'))->header('Content-Type', 'text/html');
         }
 
-        return view('cases', compact('records', 'patientGroups'));
+        return view('cases', compact('records', 'patientGroups', 'totalPatients'));
     }
 
     /**
@@ -959,8 +963,9 @@ class OpenAIController extends Controller
 
         // Doctor-specific metrics
         $doctorMetrics = null;
-        if ($user->isDoctor() && $user->doctor) {
-            $doctorId = $user->doctor->id;
+        $effectiveDoctor = $user->getEffectiveDoctor();
+        if ($user->isDoctor() && $effectiveDoctor) {
+            $doctorId = $effectiveDoctor->id;
 
             // Today's appointments
             $todayAppointments = Appointment::with(['patient'])
@@ -993,21 +998,38 @@ class OpenAIController extends Controller
                 ->where('status', 'completed')
                 ->sum('fee');
 
-            // Total patients (unique)
-            $totalPatients = Diagnosis::where('doctor_id', $user->id)
-                ->distinct('patient_id')
-                ->count('patient_id');
+            // Total patients (unified: assigned OR have appointments with this doctor)
+            // Consistent with the Patients page and Cases overview metrics.
+            $effectiveDoctorUser = $user->getEffectiveDoctorUser();
+            $totalPatients = $effectiveDoctorUser->getDoctorPatientsCount();
 
-            // New patients this month
-            $newPatientsThisMonth = Diagnosis::where('doctor_id', $user->id)
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->distinct('patient_id')
-                ->count('patient_id');
+            // New patients this month (first contact with the doctor this month)
+            $newPatientsThisMonth = 0;
+            $patientIds = $effectiveDoctorUser->doctorPatientsQuery()->pluck('users.id')->all();
+            if (!empty($patientIds)) {
+                $newPatientIds = collect()
+                    ->merge(Appointment::whereIn('patient_id', $patientIds)
+                        ->where('doctor_id', $doctorId)
+                        ->whereMonth('appointment_date', now()->month)
+                        ->whereYear('appointment_date', now()->year)
+                        ->pluck('patient_id'))
+                    ->merge(Diagnosis::whereIn('patient_id', $patientIds)
+                        ->where('doctor_id', $user->id)
+                        ->whereMonth('created_at', now()->month)
+                        ->whereYear('created_at', now()->year)
+                        ->pluck('patient_id'))
+                    ->merge(User::whereIn('id', $patientIds)
+                        ->where('primary_doctor_id', $effectiveDoctorUser->id)
+                        ->whereMonth('created_at', now()->month)
+                        ->whereYear('created_at', now()->year)
+                        ->pluck('id'));
+
+                $newPatientsThisMonth = $newPatientIds->unique()->count();
+            }
 
             // Average rating
-            $avgRating = $user->doctor->reviews()->avg('rating') ?? 0;
-            $totalReviews = $user->doctor->reviews()->count();
+            $avgRating = $effectiveDoctor->reviews()->avg('rating') ?? 0;
+            $totalReviews = $effectiveDoctor->reviews()->count();
 
             // Recent reviews
             $recentReviews = Review::with(['patient', 'appointment'])

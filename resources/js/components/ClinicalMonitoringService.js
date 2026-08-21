@@ -11,8 +11,8 @@ class ClinicalMonitoringService {
         
         if (!this.echo) {
             console.warn('Echo not found on window, initializing fallback Echo');
-            const pusherKey = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_PUSHER_APP_KEY : window.VITE_PUSHER_APP_KEY;
-            const pusherCluster = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_PUSHER_APP_CLUSTER : window.VITE_PUSHER_APP_CLUSTER;
+            const pusherKey = document.querySelector('meta[name="pusher-key"]')?.getAttribute('content') || (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_PUSHER_APP_KEY : window.VITE_PUSHER_APP_KEY);
+            const pusherCluster = document.querySelector('meta[name="pusher-cluster"]')?.getAttribute('content') || (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_PUSHER_APP_CLUSTER : window.VITE_PUSHER_APP_CLUSTER);
 
             if (pusherKey) {
                 this.echo = new Echo({

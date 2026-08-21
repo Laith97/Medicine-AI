@@ -307,7 +307,7 @@
             <div class="col-md-3">
                 <div class="quick-stat-item">
                     <div class="quick-stat-number">{{ $waitlists->total() }}</div>
-                    <div class="quick-stat-label">Total Patients</div>
+                    <div class="quick-stat-label">Waitlist Patients</div>
                 </div>
             </div>
             <div class="col-md-3">
@@ -559,8 +559,6 @@
 </div>
     </div>
 </div>
-
-@endsection
 
 <!-- Offer Slot Modal -->
 <div class="modal fade" id="offerSlotModal" tabindex="-1">

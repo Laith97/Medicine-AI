@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Doctor;
 
 use App\Http\Controllers\Controller;
 use App\Models\AvailabilitySlot;
+use App\Models\Appointment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Traits\HandlesEffectiveDoctor;
@@ -233,13 +234,20 @@ class AvailabilityController extends Controller
             abort(403);
         }
 
-        // Check if there are any future appointments using this slot
-        $futureAppointments = $doctor->appointments()
-            ->where('appointment_date', '>', now())
+        // Check if any future appointments actually fall inside this slot's weekly window
+        $hasBookedAppointments = Appointment::where('doctor_id', $availability->doctor_id)
             ->whereIn('status', ['pending', 'confirmed'])
-            ->count();
+            ->where('appointment_date', '>', now())
+            ->when($availability->effective_from, fn ($q) => $q->where('appointment_date', '>=', $availability->effective_from))
+            ->when($availability->effective_until, fn ($q) => $q->where('appointment_date', '<=', $availability->effective_until->endOfDay()))
+            ->get()
+            ->contains(function (Appointment $appointment) use ($availability) {
+                return strtolower($appointment->appointment_date->format('l')) === $availability->day_of_week
+                    && $appointment->appointment_date->format('H:i:s') >= $availability->start_time
+                    && $appointment->appointment_date->format('H:i:s') < $availability->end_time;
+            });
 
-        if ($futureAppointments > 0) {
+        if ($hasBookedAppointments) {
             return back()->withErrors(['error' => 'Cannot delete availability slot with future appointments. Please cancel or reschedule appointments first.']);
         }
 

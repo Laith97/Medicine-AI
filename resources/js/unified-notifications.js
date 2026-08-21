@@ -40,8 +40,9 @@ class UnifiedNotificationSystem {
         this.initialized = true;
         
         // Create Pusher instance
-        const pusherKey = import.meta.env.VITE_PUSHER_APP_KEY || '57bd15962a354114cb5e';
-        const pusherCluster = import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap2';
+        // Use the server's broadcasting key (from meta tag) so client and server stay in sync
+        const pusherKey = document.querySelector('meta[name="pusher-key"]')?.getAttribute('content') || import.meta.env.VITE_PUSHER_APP_KEY || '57bd15962a354114cb5e';
+        const pusherCluster = document.querySelector('meta[name="pusher-cluster"]')?.getAttribute('content') || import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap2';
         this.pusher = new Pusher(pusherKey, {
             cluster: pusherCluster,
             authEndpoint: "/broadcasting/auth",
@@ -67,12 +68,28 @@ class UnifiedNotificationSystem {
     setupChannelEvents() {
         this.channel.bind("pusher:subscription_succeeded", () => {
             console.log("✅ Unified Notification System Connected Successfully!");
-            // Don't show toast on connect - it's annoying
+            this.subscriptionRetries = 0;
         });
 
         this.channel.bind("pusher:subscription_error", (error) => {
-            console.error("❌ Notification System Error:", error);
-            // Don't show error toast on connection failure - it's handled silently
+            // Auth failures are usually transient (e.g. session/socket not ready yet).
+            // The dropdown polls /api/notifications as a fallback, so stay quiet
+            // and retry with backoff instead of spamming 403 errors to the console.
+            this.subscriptionRetries = (this.subscriptionRetries || 0) + 1;
+            const delay = Math.min(1000 * Math.pow(2, this.subscriptionRetries - 1), 30000);
+
+            if (this.subscriptionRetries <= 3) {
+                console.log(`🔌 Notification channel retry ${this.subscriptionRetries} in ${delay}ms`);
+            }
+            if (this.subscriptionRetries > 8) {
+                return;
+            }
+
+            setTimeout(() => {
+                if (this.pusher && this.pusher.connection.state === 'connected') {
+                    this.pusher.subscribe(`private-App.User.${this.userId}`);
+                }
+            }, delay);
         });
     }
 

@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
     {
         // Call the notification type seeder
         $this->call([
+            PermissionSeeder::class,
             NotificationTypeSeeder::class,
             SpecialtySeeder::class,
             PatientCasesTestSeeder::class,

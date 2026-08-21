@@ -12,9 +12,10 @@ import Echo from 'laravel-echo';
 
 window.Pusher = Pusher;
 
-// Get Pusher credentials from environment
-const pusherKey = import.meta.env.VITE_PUSHER_APP_KEY || '57bd15962a354114cb5e';
-const pusherCluster = import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap2';
+// Get Pusher credentials: prefer the key the server signs auth with (meta tag),
+// falling back to the build-time env var. Keeps client and server in sync.
+const pusherKey = document.querySelector('meta[name="pusher-key"]')?.getAttribute('content') || import.meta.env.VITE_PUSHER_APP_KEY || '57bd15962a354114cb5e';
+const pusherCluster = document.querySelector('meta[name="pusher-cluster"]')?.getAttribute('content') || import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap2';
 
 // Initialize Laravel Echo with standard Pusher configuration
 window.Echo = new Echo({

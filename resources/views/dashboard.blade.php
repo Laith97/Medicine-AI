@@ -1,9 +1,5 @@
 @extends('master')
 
-@push('styles')
-<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
-@endpush
-
 @section('content')
 <style>
 .app-main {
@@ -149,6 +145,14 @@
 .status-badge.cancelled {
     background: #fee2e2;
     color: #dc2626;
+}
+.status-badge.no-show {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+.status-badge.scheduled {
+    background: #e0e7ff;
+    color: #4f46e5;
 }
 .review-item {
     padding: 1rem 0;
@@ -318,7 +322,7 @@
                         <div class="stat-value">${{ number_format($doctorMetrics['month_revenue'], 0) }}</div>
                         <div class="stat-label">Revenue This Month</div>
                         <div class="stat-trend">
-                            <i class="fas fa-check-circle me-1"></i>{{ $doctorMetrics['month_completed'] }} completed
+                            <i class="fas fa-calendar-alt me-1"></i>This month
                         </div>
                     </div>
                 </div>
@@ -331,10 +335,14 @@
                         <div class="stat-icon" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #d97706;">
                             <i class="fas fa-star"></i>
                         </div>
-                        <div class="stat-value">{{ $doctorMetrics['avg_rating'] }}/5</div>
+                        <div class="stat-value">{{ $doctorMetrics['total_reviews'] > 0 ? $doctorMetrics['avg_rating'] . '/5' : 'N/A' }}</div>
                         <div class="stat-label">Average Rating</div>
                         <div class="stat-trend">
-                            <i class="fas fa-comment me-1"></i>{{ $doctorMetrics['total_reviews'] }} reviews
+                            @if($doctorMetrics['total_reviews'] > 0)
+                                <i class="fas fa-comment me-1"></i>{{ $doctorMetrics['total_reviews'] }} reviews
+                            @else
+                                <i class="fas fa-star-half-alt me-1"></i>No reviews yet
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -344,7 +352,7 @@
                             <i class="fas fa-clipboard-list"></i>
                         </div>
                         <div class="stat-value">{{ $records->count() }}</div>
-                        <div class="stat-label">Total Diagnoses</div>
+                        <div class="stat-label">Total Cases</div>
                         <div class="stat-trend">
                             <i class="fas fa-file-medical me-1"></i>All time
                         </div>
@@ -353,12 +361,12 @@
                 <div class="col-lg-4 col-md-6 mb-3">
                     <div class="stat-card">
                         <div class="stat-icon" style="background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); color: #db2777;">
-                            <i class="fas fa-users"></i>
+                            <i class="fas fa-calendar-check"></i>
                         </div>
-                        <div class="stat-value">{{ $doctorMetrics['week_appointments'] }}</div>
-                        <div class="stat-label">Appointments This Week</div>
+                        <div class="stat-value">{{ $doctorMetrics['month_completed'] }}</div>
+                        <div class="stat-label">Completed This Month</div>
                         <div class="stat-trend">
-                            <i class="fas fa-calendar me-1"></i>{{ now()->startOfWeek()->format('M d') }} - {{ now()->endOfWeek()->format('M d') }}
+                            <i class="fas fa-calendar me-1"></i>{{ now()->format('F Y') }}
                         </div>
                     </div>
                 </div>
@@ -381,14 +389,14 @@
                                             {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('h:i A') }}
                                         </div>
                                         <div class="appointment-info">
-                                            <div class="appointment-name">{{ $appointment->patient->name ?? 'Guest Patient' }}</div>
+                                            <div class="appointment-name">{{ $appointment->patient?->name ?? 'Guest Patient' }}</div>
                                             <div class="appointment-type">
-                                                {{ $appointment->appointment_type ?? 'Consultation' }}
+                                                {{ $appointment->appointment_type ? Str::headline($appointment->appointment_type) : 'Consultation' }}
                                                 @if($appointment->reason) - {{ Str::limit($appointment->reason, 30) }}@endif
                                             </div>
                                         </div>
                                         <span class="status-badge {{ $appointment->status }}">
-                                            {{ ucfirst($appointment->status) }}
+                                            {{ Str::headline($appointment->status) }}
                                         </span>
                                     </div>
                                 @endforeach
@@ -417,9 +425,15 @@
                                             {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('D, M d') }}
                                         </div>
                                         <div class="appointment-info">
-                                            <div class="appointment-name">{{ $appointment->patient->name ?? 'Guest' }}</div>
-                                            <div class="appointment-type">{{ \Carbon\Carbon::parse($appointment->appointment_date)->format('h:i A') }}</div>
+                                            <div class="appointment-name">{{ $appointment->patient?->name ?? 'Guest' }}</div>
+                                            <div class="appointment-type">
+                                                {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('h:i A') }}
+                                                @if($appointment->appointment_type) · {{ Str::headline($appointment->appointment_type) }}@endif
+                                            </div>
                                         </div>
+                                        @if($appointment->status)
+                                            <span class="status-badge {{ $appointment->status }}">{{ Str::headline($appointment->status) }}</span>
+                                        @endif
                                     </div>
                                 @endforeach
                             @else

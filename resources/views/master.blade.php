@@ -8,6 +8,8 @@
     <meta name="description"
         content="Create Medical Clinic & Hospital Websites with Canvas Template. Get Canvas to build powerful websites easily with the Highly Customizable & Best Selling Bootstrap Template, today.">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="pusher-key" content="{{ config('broadcasting.connections.pusher.key') }}">
+    <meta name="pusher-cluster" content="{{ config('broadcasting.connections.pusher.options.cluster', 'ap2') }}">
     <!-- Force fresh logo loading - prevent JPEG caching -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -2474,160 +2476,6 @@ function showAjaxError(message) {
         }, 500);
     });
 
-        // MOBILE NAVIGATION TOGGLE - Show/Hide navigation links
-        function initializeMobileNavigation() {
-            // Find the hamburger button
-            let mobileMenuTrigger = document.querySelector('.primary-menu-trigger .cnvs-hamburger');
-            if (!mobileMenuTrigger) {
-                mobileMenuTrigger = document.querySelector('.cnvs-hamburger');
-            }
-            if (!mobileMenuTrigger) {
-                mobileMenuTrigger = document.querySelector('button[title="Open Mobile Menu"]');
-            }
-
-            if (!mobileMenuTrigger) {
-                console.log('Hamburger button not found - checking all possible selectors');
-                console.log('Available hamburger buttons:', document.querySelectorAll('.cnvs-hamburger'));
-                console.log('Available primary-menu-trigger:', document.querySelectorAll('.primary-menu-trigger'));
-                return;
-            }
-
-            console.log('Hamburger button found:', mobileMenuTrigger);
-
-            // Find the navigation links container
-            const navLinks = document.querySelector('.d-none.d-md-flex.align-items-center.gap-3.small');
-
-            if (!navLinks) {
-                console.log('Navigation links container not found - checking all possible selectors');
-                console.log('Available navigation containers:', document.querySelectorAll('[class*="d-none"][class*="d-md-flex"]'));
-                console.log('All div elements:', document.querySelectorAll('div').length);
-                return;
-            }
-
-            console.log('Navigation links container found:', navLinks);
-            console.log('Navigation links HTML:', navLinks.innerHTML);
-
-            // Function to toggle navigation
-            function toggleMobileNav() {
-                console.log('Toggling mobile navigation');
-
-                if (navLinks.classList.contains('show-mobile-nav')) {
-                    // Hide navigation - remove the dropdown and event listeners
-                    navLinks.classList.remove('show-mobile-nav');
-                    if (navLinks._dropdown) {
-                        navLinks._dropdown.remove();
-                        navLinks._dropdown = null;
-                        console.log('Navigation dropdown removed');
-                    }
-                    // Remove any click outside listeners
-                    document.removeEventListener('click', navLinks._closeHandler);
-                    navLinks._closeHandler = null;
-                    console.log('Navigation hidden');
-                } else {
-                    // Create a professional dropdown matching site style
-                    const dropdown = document.createElement('div');
-                    dropdown.id = 'mobile-nav-dropdown';
-                    dropdown.style.cssText = `
-                        position: fixed;
-                        top: 80px;
-                        left: 0;
-                        right: 0;
-                        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-                        border-bottom: 1px solid rgba(255,255,255,0.1);
-                        padding: 20px;
-                        z-index: 99999;
-                        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    `;
-                    dropdown.innerHTML = `
-                        <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
-                            <a href="/" style="color: white; text-decoration: none; font-weight: 500; padding: 12px 20px; border-radius: 8px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); display: block; width: 100%; text-align: center; font-size: 16px;">Home</a>
-                            <a href="/about" style="color: white; text-decoration: none; font-weight: 500; padding: 12px 20px; border-radius: 8px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); display: block; width: 100%; text-align: center; font-size: 16px;">About Us</a>
-                            <a href="/contact" style="color: white; text-decoration: none; font-weight: 500; padding: 12px 20px; border-radius: 8px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); display: block; width: 100%; text-align: center; font-size: 16px;">Contact</a>
-                            <a href="/doctors" style="color: white; text-decoration: none; font-weight: 500; padding: 12px 20px; border-radius: 8px; transition: all 0.3s ease; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); display: block; width: 100%; text-align: center; font-size: 16px;">For Patients</a>
-                        </div>
-                    `;
-
-                    document.body.appendChild(dropdown);
-                    console.log('Created new visible dropdown element');
-
-                    // Store reference to remove it later
-                    navLinks._dropdown = dropdown;
-
-                    // Add click outside to close
-                    const closeDropdown = (e) => {
-                        if (!dropdown.contains(e.target) && e.target !== mobileMenuTrigger && !mobileMenuTrigger.contains(e.target)) {
-                            dropdown.remove();
-                            navLinks.classList.remove('show-mobile-nav');
-                            navLinks._dropdown = null;
-                            document.removeEventListener('click', closeDropdown);
-                            navLinks._closeHandler = null;
-                            console.log('Dropdown closed by clicking outside');
-                        }
-                    };
-
-                    // Store the handler for cleanup
-                    navLinks._closeHandler = closeDropdown;
-
-                    // Add the event listener after a short delay to avoid immediate closing
-                    setTimeout(() => {
-                        document.addEventListener('click', closeDropdown);
-                    }, 100);
-                }
-
-                console.log('Navigation links classes:', navLinks.className);
-                console.log('Navigation links style display:', navLinks.style.display);
-
-                // Update hamburger animation
-                const hamburger = mobileMenuTrigger;
-                if (hamburger) {
-                    hamburger.classList.toggle('active');
-                    console.log('Hamburger active class toggled');
-                }
-            }
-
-            // Function to close navigation
-            function closeMobileNav() {
-                console.log('Closing mobile navigation');
-                navLinks.classList.remove('show-mobile-nav');
-
-                // Reset hamburger animation
-                const hamburger = mobileMenuTrigger;
-                if (hamburger) {
-                    hamburger.classList.remove('active');
-                }
-            }
-
-            // Add click event to hamburger
-            mobileMenuTrigger.addEventListener('click', function(e) {
-                console.log('Hamburger clicked');
-                e.preventDefault();
-                e.stopPropagation();
-                toggleMobileNav();
-            });
-
-            // Close navigation when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!mobileMenuTrigger.contains(e.target) && !navLinks.contains(e.target)) {
-                    closeMobileNav();
-                }
-            });
-
-            // Close navigation on window resize to desktop
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 991) {
-                    closeMobileNav();
-                }
-            });
-
-            // Close navigation when a link is clicked
-            navLinks.addEventListener('click', function(e) {
-                if (e.target.closest('.top-link')) {
-                    closeMobileNav();
-                }
-            });
-        }
-
         // Force fresh logo loading on mobile devices
         function forceFreshLogoLoading() {
             // Check if we're on mobile
@@ -2646,51 +2494,7 @@ function showAjaxError(message) {
         document.addEventListener('DOMContentLoaded', function() {
             // Force fresh logo loading
             forceFreshLogoLoading();
-
-            // Initialize mobile navigation toggle
-            initializeMobileNavigation();
-
-            // Only log in debug mode
-            if (window.location.search.includes('debug=true')) {
-            }
         });
-
-        // Add manual test trigger (temporary for debugging)
-        window.testMobileNav = function() {
-            const navLinks = document.querySelector('.d-none.d-md-flex.align-items-center.gap-4.small');
-            if (navLinks) {
-                navLinks.classList.toggle('show-mobile-nav');
-            }
-        };
-
-        // Also initialize on page show (for back/forward navigation)
-        window.addEventListener('pageshow', function() {
-            // Re-initialize mobile navigation if needed
-            initializeMobileNavigation();
-        });
-
-        // For SPA-like navigation, reinitialize mobile navigation when needed
-        let mobileNavInitialized = false;
-
-        function initializeMobileNavIfNeeded() {
-            const mobileMenuTrigger = document.querySelector('.primary-menu-trigger .cnvs-hamburger') ||
-                                     document.querySelector('.cnvs-hamburger');
-
-            // Only reinitialize if trigger exists but we haven't initialized recently
-            if (mobileMenuTrigger && !mobileNavInitialized) {
-                initializeMobileNavigation();
-                mobileNavInitialized = true;
-
-                // Reset flag after a delay to allow re-initialization if needed
-                setTimeout(() => {
-                    mobileNavInitialized = false;
-                }, 5000);
-            }
-        }
-
-        // Check on navigation events instead of continuous polling
-        window.addEventListener('popstate', initializeMobileNavIfNeeded);
-        window.addEventListener('hashchange', initializeMobileNavIfNeeded);
 
     // Function to load notifications into dropdown
     function loadNotifications() {
@@ -3180,7 +2984,6 @@ function showAjaxError(message) {
 
 @auth
 <!-- Meta tags for notification system -->
-<meta name="user-id" content="{{ auth()->id() }}">
 <meta name="notification-sound-enabled" content="true">
 <meta name="notification-toast-enabled" content="true">
 

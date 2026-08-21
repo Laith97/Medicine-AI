@@ -24,7 +24,7 @@ class BroadcastServiceProvider extends ServiceProvider
 
         // THEN register broadcasting routes
         // Uses web and auth middleware for session and authentication
-        Broadcast::routes(['middleware' => ['web', 'auth']]);
+        Broadcast::routes(['middleware' => ['web', 'auth', \App\Http\Middleware\LogBroadcastAuth::class]]);
 
         // Log for debugging
         if (config('app.debug')) {

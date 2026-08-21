@@ -169,3 +169,24 @@ Broadcast::channel('appointment.{appointmentId}', function ($user, $appointmentI
 Broadcast::channel('clinical-alerts', function ($user) {
     return in_array($user->role, ['doctor', 'admin', 'hospital_admin', 'nurse', 'specialist']);
 });
+
+// Presence channels (used by laravel-notification-catcher.js)
+Broadcast::channel('doctors', function ($user) {
+    return in_array($user->role, ['doctor', 'admin', 'hospital_admin'])
+        ? ['id' => $user->id, 'name' => $user->name, 'role' => $user->role]
+        : false;
+});
+
+Broadcast::channel('online-doctors', function ($user) {
+    return $user->role === 'doctor'
+        ? ['id' => $user->id, 'name' => $user->name]
+        : false;
+});
+
+Broadcast::channel('doctor-room.{id}', function ($user, $id) {
+    if ((int) $user->id === (int) $id) {
+        return ['id' => $user->id, 'name' => $user->name, 'role' => $user->role];
+    }
+
+    return in_array($user->role, ['admin', 'hospital_admin']);
+});

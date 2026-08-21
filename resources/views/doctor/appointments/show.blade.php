@@ -396,7 +396,7 @@
                         <i class="fas fa-shield-alt me-2"></i>AI Risk Assessment
                     </h5>
                     @php
-                        $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
+                        $riskScore = $appointment->patient?->patientRiskScores?->where('appointment_id', $appointment->id)?->first();
                     @endphp
                     @if($riskScore)
                         @php
@@ -451,7 +451,7 @@
                     </div>
 
                     @php
-                        $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
+                        $riskScore = $appointment->patient?->patientRiskScores?->where('appointment_id', $appointment->id)?->first();
                     @endphp
                     @if($riskScore)
                         <div class="row g-4 mb-4">
@@ -2186,7 +2186,7 @@ function debugMLRiskAssessment() {
 
     // Check if risk scores exist
     @php
-        $riskScore = $appointment->patient->patientRiskScores->where('appointment_id', $appointment->id)->first();
+        $riskScore = $appointment->patient?->patientRiskScores?->where('appointment_id', $appointment->id)?->first();
     @endphp
 
     @if($riskScore)

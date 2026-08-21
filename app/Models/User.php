@@ -601,25 +601,76 @@ public function getFreshMonthlyInvoiceSetting()
      * Get all patients for this doctor (assigned OR have appointments with this doctor)
      * This is the unified method for patient queries across the system
      *
-     * @param int|null $doctorId Override the doctor ID (useful for sub-users)
+     * @param int|null $doctorId Override the doctor user ID (useful for sub-users)
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getDoctorPatients($doctorId = null)
     {
-        $effectiveDoctorId = $doctorId ?? $this->id;
-
-        return User::where('role', 'patient')
-            ->where(function($q) use ($effectiveDoctorId) {
-                $q->where('primary_doctor_id', $effectiveDoctorId)
-                  ->orWhereHas('appointments', function($q2) use ($effectiveDoctorId) {
-                      $q2->where('doctor_id', $effectiveDoctorId);
-                  });
-            })
-            ->with(['appointments' => function($q) use ($effectiveDoctorId) {
-                $q->where('doctor_id', $effectiveDoctorId)->latest()->limit(1);
+        return $this->doctorPatientsQuery($doctorId)
+            ->with(['appointments' => function($q) use ($doctorId) {
+                $profileIds = $this->doctorProfileIdsForPatientQuery($doctorId);
+                if ($profileIds->isNotEmpty()) {
+                    $q->whereIn('doctor_id', $profileIds->all());
+                }
+                $q->latest()->limit(1);
             }])
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * Count all patients for this doctor (assigned OR have appointments with this doctor).
+     * Lightweight alternative to getDoctorPatients() for dashboard metrics.
+     *
+     * @param int|null $doctorId Override the doctor user ID (useful for sub-users)
+     * @return int
+     */
+    public function getDoctorPatientsCount($doctorId = null)
+    {
+        return $this->doctorPatientsQuery($doctorId)->count();
+    }
+
+    /**
+     * Build the query for the doctor's patients (assigned OR have appointments).
+     * Appointments store the doctor profile id in `doctor_id`, so the profile id(s)
+     * are resolved from the effective user before matching.
+     *
+     * @param int|null $doctorId Override the doctor user ID (useful for sub-users)
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function doctorPatientsQuery($doctorId = null)
+    {
+        $effectiveUserId = $doctorId ?? $this->id;
+        $profileIds = $this->doctorProfileIdsForPatientQuery($doctorId);
+
+        return User::where('role', 'patient')
+            ->where(function($q) use ($effectiveUserId, $profileIds) {
+                $q->where('primary_doctor_id', $effectiveUserId);
+                if ($profileIds->isNotEmpty()) {
+                    $q->orWhereHas('appointments', function($q2) use ($profileIds) {
+                        $q2->whereIn('doctor_id', $profileIds->all());
+                    });
+                }
+            });
+    }
+
+    /**
+     * Resolve the doctor profile id(s) used by the appointments table for a user.
+     *
+     * @param int|null $doctorId Override the doctor user ID (useful for sub-users)
+     * @return \Illuminate\Support\Collection
+     */
+    protected function doctorProfileIdsForPatientQuery($doctorId = null)
+    {
+        $user = ($doctorId !== null && (int) $doctorId !== (int) $this->id)
+            ? static::find($doctorId)
+            : $this;
+
+        if (!$user || !$user->doctor) {
+            return collect();
+        }
+
+        return collect([$user->doctor->id])->filter();
     }
 
     /**
@@ -645,6 +696,22 @@ public function getFreshMonthlyInvoiceSetting()
      */
     public function sendPasswordResetNotification($token)
     {
+        $url = url(route('password.reset', ['token' => $token, 'email' => $this->email], false));
+
+        try {
+            app(\App\Services\EmailService::class)->sendEmail(
+                $this->email,
+                'Reset Your MedCura AI Password',
+                'emails.reset-password',
+                ['url' => $url, 'email' => $this->email]
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send password reset via EmailService: ' . $e->getMessage(), [
+                'email' => $this->email,
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+
         $this->notify(new ResetPasswordNotification($token));
     }
 

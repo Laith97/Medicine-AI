@@ -55,7 +55,7 @@
                         <div class="stats-icon" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);">
                             <i class="fas fa-users"></i>
                         </div>
-                        <p class="stats-number">{{ count($patientGroups) }}</p>
+                        <p class="stats-number">{{ $totalPatients ?? count($patientGroups) }}</p>
                         <p class="stats-label">Total Patients</p>
                     </div>
                 </div>

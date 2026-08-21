@@ -6,6 +6,8 @@
     <meta name="author" content="SemiColonWeb">
     <meta name="description" content="MedCura AI - Medical Clinic Management System">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="pusher-key" content="{{ config('broadcasting.connections.pusher.key') }}">
+    <meta name="pusher-cluster" content="{{ config('broadcasting.connections.pusher.options.cluster', 'ap2') }}">
     <meta name="user-id" content="{{ Auth::id() }}">
     <meta name="user-role" content="{{ Auth::user()->role ?? 'user' }}">
     @if(Auth::user()->doctor)
@@ -170,6 +172,8 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Doctor Dashboard | MedCura AI')</title>
+    @yield('styles')
+    @stack('styles')
 </head>
 <body>
     <div class="doctor-wrapper">
@@ -305,6 +309,7 @@
     @viteReactRefresh
     @vite(['resources/js/app.js', 'resources/css/app.css'])
 
+    @yield('scripts')
     @stack('scripts')
 </body>
 </html>
