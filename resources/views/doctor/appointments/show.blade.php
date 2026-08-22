@@ -284,12 +284,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-6">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-success bg-opacity-15 rounded p-2 me-3">
-                                        {{-- Fee hidden for clinic SaaS --}}
-                                </div>
-                            </div>
+                            {{-- Fee column hidden for clinic SaaS --}}
                         </div>
                     </div>
 
