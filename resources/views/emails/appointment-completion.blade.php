@@ -89,9 +89,6 @@
             <p><strong>Duration:</strong> {{ $appointment->appointment_duration ?? 30 }} minutes</p>
             <p><strong>Type:</strong> {{ ucfirst(str_replace('_', ' ', $appointment->appointment_type ?? 'general')) }}</p>
             <p><strong>Reason:</strong> {{ $appointment->reason ?? 'General consultation' }}</p>
-            @if($appointment->consultation_fee)
-            <p><strong>Fee:</strong> ${{ number_format($appointment->consultation_fee / 100, 2) }}</p>
-            @endif
         </div>
 
         @if($diagnosis)

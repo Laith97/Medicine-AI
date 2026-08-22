@@ -64,10 +64,7 @@
                                 {{ ucfirst($appointment->status) }}
                             </span>
                         </div>
-                        <div>
-                            <p class="text-sm text-gray-500 mb-1">Consultation Fee</p>
-                            <p class="font-medium text-gray-900">${{ number_format($appointment->consultation_fee / 100, 2) }}</p>
-                        </div>
+                        {{-- Consultation Fee hidden for clinic SaaS --}}
                     </div>
                 </div>
 

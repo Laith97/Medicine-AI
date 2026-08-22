@@ -287,12 +287,7 @@
                             <div class="col-6">
                                 <div class="d-flex align-items-center">
                                     <div class="bg-success bg-opacity-15 rounded p-2 me-3">
-                                        <i class="fas fa-dollar-sign text-success"></i>
-                                    </div>
-                                    <div>
-                                        <small class="text-muted d-block">Fee</small>
-                                        <span class="h6 text-success fw-bold">${{ number_format($appointment->consultation_fee / 100, 2) }}</span>
-                                    </div>
+                                        {{-- Fee hidden for clinic SaaS --}}
                                 </div>
                             </div>
                         </div>

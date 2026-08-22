@@ -194,12 +194,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4 text-end">
-                    <div class="text-white">
-                        <div class="h3 mb-1">${{ number_format($doctor->consultation_fee / 100, 2) }}</div>
-                        <div class="text-white-75">Consultation Fee</div>
-                    </div>
-                </div>
+                {{-- Consultation Fee hidden for clinic SaaS --}}
             </div>
         </div>
     </div>

@@ -89,13 +89,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="text-muted small">Amount Paid</div>
-                    <div class="h4 text-success fw-bold">
-                        ${{ number_format(($appointment->payment_amount ?? $appointment->doctor->consultation_fee) / 100, 2) }}
-                    </div>
-                    <div class="small text-muted">Paid in full</div>
-                </div>
+                {{-- Amount Paid hidden for clinic SaaS --}}
             </div>
         </div>
 

@@ -662,10 +662,37 @@ class AppointmentController extends Controller
             // ReliableAppointmentBookedNotification already implements ShouldBroadcast
             // and handles the broadcasting. Broadcasting twice would cause duplicate notifications.
 
-            // Send notification to guest about appointment confirmation
-            if ($appointment->isGuestAppointment() && $appointment->status === 'confirmed') {
-                // For guest appointments, we'll handle notifications differently
-                // This could be handled through email notifications
+            // Send confirmation email to guest (uses EmailService fallback like contact)
+            if ($appointment->isGuestAppointment()) {
+                try {
+                    $doctor = $appointment->doctor;
+                    if (!$doctor) {
+                        $appointment->load('doctor.user');
+                        $doctor = $appointment->doctor;
+                    }
+                    $emailService = app(\App\Services\EmailService::class);
+                    $emailService->sendEmail(
+                        $appointment->guest_email,
+                        'Appointment Confirmed - ' . config('app.name'),
+                        'emails.appointment-confirmation',
+                        [
+                            'appointment' => $appointment,
+                            'doctor' => $doctor,
+                            'patient' => null,
+                        ]
+                    );
+                    \Log::info('✅ Guest confirmation email sent', [
+                        'guest_email' => $appointment->guest_email,
+                        'appointment_id' => $appointment->id,
+                        'appointment_number' => $appointment->appointment_number,
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('❌ Failed to send guest confirmation email: ' . $e->getMessage(), [
+                        'appointment_id' => $appointment->id,
+                        'guest_email' => $appointment->guest_email ?? null,
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
             }
 
         } catch (\Exception $e) {

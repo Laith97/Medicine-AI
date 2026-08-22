@@ -79,13 +79,7 @@
 
                             <div class="col-md-6">
                                 <div class="d-flex align-items-center">
-                                    <div class="bg-success bg-opacity-10 rounded-3 p-3 me-3">
-                                        <i class="fas fa-dollar-sign text-success fs-4"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="fw-semibold mb-1">Consultation Fee</h6>
-                                        <p class="text-muted mb-0">${{ number_format($appointment->consultation_fee / 100, 2) }}</p>
-                                    </div>
+                                    {{-- Consultation Fee hidden for clinic SaaS --}}
                                 </div>
                             </div>
                         </div>
@@ -563,10 +557,7 @@
                                 <h6 class="fw-semibold mb-0">Summary</h6>
                             </div>
                             <div class="small">
-                                <div class="d-flex justify-content-between py-2 px-3 bg-light rounded mb-2">
-                                    <span class="text-muted">Consultation Fee</span>
-                                    <span class="fw-semibold">${{ number_format($appointment->consultation_fee / 100, 2) }}</span>
-                                </div>
+                                {{-- Consultation Fee hidden for clinic SaaS --}}
                                 <div class="d-flex justify-content-between py-2 px-3 bg-light rounded mb-2">
                                     <span class="text-muted">Booked on</span>
                                     <span class="fw-medium">{{ $appointment->created_at->format('M j, Y') }}</span>

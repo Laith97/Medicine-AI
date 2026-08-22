@@ -3,67 +3,11 @@
 @section('title', 'My Patients')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
+<link rel="stylesheet" href="{{ asset('css/doctor-design-system.css') }}">
 <link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('css/cases-overview.css') }}">
 
 <style>
-/* Professional Dashboard Header Styling */
-.dashboard-header {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    border-radius: 15px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(222, 98, 98, 0.2);
-    position: relative;
-    overflow: hidden;
-}
-
-.dashboard-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
-}
-
-.dashboard-header h2 {
-    color: #ffffff;
-    font-weight: 700;
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.dashboard-header h2::before {
-    content: '👥';
-    font-size: 2rem;
-}
-
-.dashboard-header p {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 1.1rem;
-    font-weight: 500;
-    margin-bottom: 0;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .dashboard-header {
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-    .dashboard-header h2 {
-        font-size: 1.75rem;
-    }
-    .dashboard-header p {
-        font-size: 1rem;
-    }
-}
 
 /* Patient avatar */
 .patient-avatar {
@@ -246,126 +190,103 @@
 }
 </style>
 <div class="container-fluid" style="background-color: #f8f9fa;">
-    <div class="container">
-        <div class="dashboard-header">
-            <div class="d-flex justify-content-between align-items-center flex-wrap">
+    <div class="container py-4">
+        <div class="dashboard-header cases-header-compact">
+            <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h2><i class="fas fa-users me-2"></i>My Patients</h2>
-                    <p class="text-muted mb-0">Your assigned patient profiles and records</p>
+                    <p>Your assigned patient profiles and records</p>
                 </div>
-                <a href="{{ route('doctor.appointments.create') }}" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                <a href="{{ route('doctor.appointments.create') }}" class="btn">
                     <i class="fas fa-user-plus me-2"></i>New Appointment
                 </a>
             </div>
         </div>
-    </div>
-</div>
-
-<div class="container-fluid">
-    <div class="container">
-    <div class="row mb-4">
-            <div class="col-lg-3 col-md-6 mb-3">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);">
+    <div class="row g-2 mb-3 cases-stats-compact">
+            <div class="col-lg-4 col-4">
+                <div class="stats-card stats-card--compact">
+                    <div class="stats-icon stats-icon--sm" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);">
                         <i class="fas fa-users"></i>
                     </div>
-                    <p class="stats-number">{{ $patients->total() }}</p>
-                    <p class="stats-label">Total Patients</p>
+                    <div class="stats-text">
+                        <p class="stats-number">{{ $patients->total() }}</p>
+                        <p class="stats-label">Total Patients</p>
+                    </div>
                 </div>
             </div>
-            <div class="col-lg-3 col-md-6 mb-3">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+            <div class="col-lg-4 col-4">
+                <div class="stats-card stats-card--compact">
+                    <div class="stats-icon stats-icon--sm" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
                         <i class="fas fa-user-check"></i>
                     </div>
-                    <p class="stats-number">{{ collect($patients->items())->filter(fn($p) => $p->is_active)->count() }}</p>
-                    <p class="stats-label">Active Patients</p>
+                    <div class="stats-text">
+                        <p class="stats-number">{{ collect($patients->items())->filter(fn($p) => $p->is_active)->count() }}</p>
+                        <p class="stats-label">Active Patients</p>
+                    </div>
                 </div>
             </div>
-            <div class="col-lg-3 col-md-6 mb-3">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+            <div class="col-lg-4 col-4">
+                <div class="stats-card stats-card--compact">
+                    <div class="stats-icon stats-icon--sm" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
                         <i class="fas fa-calendar-check"></i>
                     </div>
-                    <p class="stats-number">{{ collect($patients->items())->filter(fn($p) => $p->appointments->isNotEmpty())->count() }}</p>
-                    <p class="stats-label">With Appointments</p>
+                    <div class="stats-text">
+                        <p class="stats-number">{{ collect($patients->items())->filter(fn($p) => $p->appointments->isNotEmpty())->count() }}</p>
+                        <p class="stats-label">With Appointments</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Search & Filters -->
-        <div class="table-card filter-card mb-4">
-            <div class="filter-header">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="filter-header-icon">
-                        <i class="fas fa-sliders-h"></i>
+        <!-- Filters + List - unified like cases-overview -->
+        <div class="card border-0 shadow-sm cases-panel mb-4">
+            <form method="GET" action="{{ route('doctor.patients.index') }}" class="m-0">
+                <div class="cases-toolbar">
+                    <div class="cases-toolbar__title">
+                        <h6 class="mb-0 fw-semibold"><i class="fas fa-users me-2 text-primary"></i>Patients ({{ $patients->total() }})</h6>
+                        @if(request()->hasAny(['search', 'gender', 'status', 'sort']))
+                            <a href="{{ route('doctor.patients.index') }}" class="btn btn-outline-secondary btn-sm ms-2">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </a>
+                        @endif
                     </div>
-                    <div>
-                        <h6 class="mb-0 text-white fw-semibold">Search & Filters</h6>
-                        <small class="text-white-50">Narrow down your patient list</small>
-                    </div>
-                </div>
-                @if(request()->hasAny(['search', 'gender', 'status', 'sort']))
-                    <a href="{{ route('doctor.patients.index') }}" class="btn btn-light btn-sm fw-semibold">
-                        <i class="fas fa-times me-1"></i>Clear All
-                    </a>
-                @endif
-            </div>
-            <div class="filter-body">
-                <form method="GET" action="{{ route('doctor.patients.index') }}" class="row g-3 align-items-end">
-                    <div class="col-md-4 col-sm-6">
-                        <label class="filter-label" for="filter-search">Search</label>
-                        <div class="input-group filter-input-group">
+                    <div class="cases-toolbar__controls">
+                        <div class="input-group input-group-sm cases-search">
                             <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text" id="filter-search" name="search" class="form-control"
-                                   placeholder="Name, email, or phone..." value="{{ request('search') }}">
+                            <input type="text" name="search" id="patientSearch" class="form-control" placeholder="Search by name, age, gender..." value="{{ request('search') }}">
+                            <button class="btn btn-outline-secondary" type="button" id="clearSearch" title="Clear search">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
-                    </div>
-                    <div class="col-md-2 col-sm-6">
-                        <label class="filter-label" for="filter-gender">Gender</label>
-                        <select id="filter-gender" name="gender" class="form-select">
+                        <select name="gender" class="form-select form-select-sm cases-sort">
                             <option value="">All Genders</option>
                             <option value="male" {{ request('gender') == 'male' ? 'selected' : '' }}>Male</option>
                             <option value="female" {{ request('gender') == 'female' ? 'selected' : '' }}>Female</option>
                             <option value="other" {{ request('gender') == 'other' ? 'selected' : '' }}>Other</option>
                         </select>
-                    </div>
-                    <div class="col-md-2 col-sm-6">
-                        <label class="filter-label" for="filter-status">Status</label>
-                        <select id="filter-status" name="status" class="form-select">
+                        <select name="status" class="form-select form-select-sm cases-sort">
                             <option value="">All Status</option>
                             <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
                             <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
                         </select>
-                    </div>
-                    <div class="col-md-2 col-sm-6">
-                        <label class="filter-label" for="filter-sort">Sort By</label>
-                        <select id="filter-sort" name="sort" class="form-select">
-                            <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Newest First</option>
-                            <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Oldest First</option>
+                        <select name="sort" class="form-select form-select-sm cases-sort">
+                            <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Newest</option>
+                            <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Oldest</option>
                             <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>Name A-Z</option>
                         </select>
-                    </div>
-                    <div class="col-md-2 col-sm-12 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary-custom flex-grow-1">
+                        <button type="submit" class="doctor-btn doctor-btn-primary doctor-btn-sm">
                             <i class="fas fa-filter me-1"></i>Filter
                         </button>
-                        <a href="{{ route('doctor.patients.index') }}" class="filter-reset" title="Reset filters">
+                        <a href="{{ route('doctor.patients.index') }}" class="doctor-btn doctor-btn-outline doctor-btn-sm" title="Reset">
                             <i class="fas fa-rotate-left"></i>
                         </a>
                     </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Patients List -->
-        @if($patients->count() > 0)
-            <div class="table-card">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0"><i class="fas fa-users me-2"></i>Patients ({{ $patients->total() }})</h6>
                 </div>
+            </form>
+        @if($patients->count() > 0)
+            <div class="doctor-table-container">
                 <div class="table-responsive">
-                    <table class="table custom-table mb-0">
+                    <table class="doctor-table mb-0">
                         <thead>
                             <tr>
                                 <th>Patient</th>
@@ -441,16 +362,16 @@
                                                 {{ $patient->appointments->first()->appointment_date->diffForHumans() }}
                                             </small>
                                         @else
-                                            <span class="badge bg-secondary">No visits</span>
+                                            <span class="doctor-badge doctor-badge-secondary">No visits</span>
                                         @endif
                                     </td>
 
                                     <!-- Status -->
                                     <td>
                                         @if($patient->is_active)
-                                            <span class="badge status-active">Active</span>
+                                            <span class="doctor-badge doctor-badge-success"><i class="fas fa-check-circle me-1"></i>Active</span>
                                         @else
-                                            <span class="badge status-inactive">Inactive</span>
+                                            <span class="doctor-badge doctor-badge-secondary"><i class="fas fa-pause-circle me-1"></i>Inactive</span>
                                         @endif
                                     </td>
 
@@ -458,19 +379,19 @@
                                     <td>
                                         <div class="d-flex gap-1">
                                             <a href="{{ route('doctor.patients.show', $patient->id) }}"
-                                               class="btn btn-sm btn-outline-primary action-btn" title="View Details">
+                                               class="doctor-btn doctor-btn-outline doctor-btn-sm" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             <a href="{{ route('doctor.patients.edit', $patient->id) }}"
-                                               class="btn btn-sm btn-outline-warning action-btn" title="Edit">
+                                               class="doctor-btn doctor-btn-outline doctor-btn-sm" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <a href="{{ route('ai.ambient-listening.index', ['patient' => $patient->id]) }}"
-                                               class="btn btn-sm btn-outline-success action-btn" title="Start Consultation">
+                                               class="doctor-btn doctor-btn-success doctor-btn-sm" title="Start Consultation">
                                                 <i class="fas fa-microphone"></i>
                                             </a>
                                             <button type="button"
-                                                    class="btn btn-sm btn-outline-danger action-btn"
+                                                    class="doctor-btn doctor-btn-danger doctor-btn-sm"
                                                     title="Delete"
                                                     onclick="deletePatient({{ $patient->id }}, '{{ addslashes($patient->name) }}')">
                                                 <i class="fas fa-trash"></i>
@@ -491,24 +412,23 @@
                 @endif
             </div>
         @else
-            <div class="table-card text-center py-5">
-                <div class="empty-icon mb-3">
-                    <i class="fas fa-users"></i>
-                </div>
+            <div class="doctor-empty-state">
+                <i class="fas fa-users"></i>
                 <h5>No patients found</h5>
-                <p class="text-muted">
+                <p>
                     @if(request('search') || request('gender') || request('status'))
                         No patients match your search criteria.
                     @else
                         You haven't added any patients yet. Create appointments to add patients.
                     @endif
                 </p>
-                <a href="{{ route('doctor.appointments.create') }}" class="btn btn-primary-custom">
-                    <i class="fas fa-calendar-plus me-2"></i>Create Appointment
+                <a href="{{ route('doctor.appointments.create') }}" class="doctor-btn doctor-btn-primary">
+                    <i class="fas fa-calendar-plus"></i>Create Appointment
                 </a>
             </div>
         @endif
     </div>
+</div>
 </div>
 
 <!-- Delete Confirmation Modal -->
@@ -537,7 +457,6 @@
     </div>
 </div>
 </div>
-</div>
 
 <script>
 function deletePatient(id, name) {
@@ -546,5 +465,9 @@ function deletePatient(id, name) {
     const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
     modal.show();
 }
+document.addEventListener('DOMContentLoaded', function(){
+    const s=document.getElementById('patientSearch'), c=document.getElementById('clearSearch');
+    if(c && s){ c.addEventListener('click', function(){ s.value=''; s.focus(); s.form.submit(); }); }
+});
 </script>
 @endsection

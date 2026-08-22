@@ -314,6 +314,10 @@
     }
 }
 
+/* Global modal stacking fix - must be above #top-bar (1070), .sidebar (1050) and global dropdowns (9999999) */
+.modal{ z-index: 10000010 !important; }
+.modal-backdrop{ z-index: 10000000 !important; }
+
 /* Prevent horizontal scrolling in modals */
 .modal-body {
     overflow-x: hidden !important;

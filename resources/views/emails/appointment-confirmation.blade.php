@@ -82,9 +82,6 @@
             <p><strong>Duration:</strong> {{ $appointment->appointment_duration ?? 30 }} minutes</p>
             <p><strong>Type:</strong> {{ ucfirst(str_replace('_', ' ', $appointment->appointment_type ?? 'general')) }}</p>
             <p><strong>Reason:</strong> {{ $appointment->reason ?? 'General consultation' }}</p>
-            @if($appointment->consultation_fee)
-            <p><strong>Fee:</strong> ${{ number_format($appointment->consultation_fee / 100, 2) }}</p>
-            @endif
         </div>
 
         <div class="doctor-info">
@@ -108,7 +105,12 @@
 
         <h4>🔧 Manage Your Appointment:</h4>
         <div style="text-align: center; margin: 20px 0;">
-            <a href="{{ route('appointments.show', $appointment) }}" class="action-button">View Appointment</a>
+            @if($appointment->isGuestAppointment())
+                <a href="{{ route('appointments.guest.show', ['appointment' => $appointment->appointment_number, 'email' => $appointment->guest_email]) }}" class="action-button">Manage Your Appointment</a>
+                <p class="small text-muted mt-2">Save this link - it is your access to reschedule or cancel. Linked to {{ $appointment->guest_email }}.</p>
+            @else
+                <a href="{{ route('appointments.show', $appointment) }}" class="action-button">View Appointment</a>
+            @endif
         </div>
 
         <p>If you need to cancel or reschedule this appointment, please do so at least {{ $doctor->cancellation_hours ?? 24 }} hours in advance.</p>

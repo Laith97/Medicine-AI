@@ -78,25 +78,6 @@ class MenuHelper
                 'permission' => 'dashboard',
             ],
 
-            // Physical Therapy Section - available to all doctors
-            [
-                'name' => 'Physical Therapy',
-                'icon' => 'fas fa-dumbbell',
-                'dropdown' => true,
-                'header_class' => 'sidebar-header-clinical',
-                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
-                'items' => [
-                    [
-                        'name' => 'Home Exercise Programs',
-                        'route' => 'doctor.hep.index',
-                        'icon' => 'fas fa-dumbbell',
-                        'permission' => 'hep',
-                    ],
-                ],
-                'visible' => function($user) {
-                    return $user->isDoctor();
-                }
-            ],
             // Clinical Section
             [
                 'name' => 'Clinical',
@@ -193,6 +174,26 @@ class MenuHelper
                 ]
             ],
 
+            // Physical Therapy Section - Therapeutic / Rehabilitation (logically after Practice, before Analytics)
+            [
+                'name' => 'Physical Therapy',
+                'icon' => 'fas fa-dumbbell',
+                'dropdown' => true,
+                'header_class' => 'sidebar-header-clinical',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
+                'items' => [
+                    [
+                        'name' => 'Home Exercise Programs',
+                        'route' => 'doctor.hep.index',
+                        'icon' => 'fas fa-dumbbell',
+                        'permission' => 'hep',
+                    ],
+                ],
+                'visible' => function($user) {
+                    return $user->isDoctor();
+                }
+            ],
+
             // Analytics & Insights Section
             [
                 'name' => 'Analytics & Insights',
@@ -222,7 +223,7 @@ class MenuHelper
                 ]
             ],
 
-            // Account Section
+            // Account Section - Professional (clinic) profile, distinct from generic Account Settings (/profile)
             [
                 'name' => 'Account',
                 'icon' => 'fas fa-user-cog',
@@ -231,7 +232,7 @@ class MenuHelper
                 'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => [
                     [
-                        'name' => 'Doctor Profile',
+                        'name' => 'Professional Profile',
                         'route' => 'doctor.profile.edit',
                         'icon' => 'fas fa-user-md',
                         'permission' => 'profile',
@@ -325,24 +326,6 @@ class MenuHelper
                 'icon' => 'fas fa-tachometer-alt',
             ],
 
-            // Physical Therapy Section - available to all doctors
-            [
-                'name' => 'Physical Therapy',
-                'icon' => 'fas fa-dumbbell',
-                'dropdown' => true,
-                'header_class' => 'sidebar-header-clinical',
-                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
-                'items' => [
-                    [
-                        'name' => 'Home Exercise Programs',
-                        'route' => 'doctor.hep.index',
-                        'icon' => 'fas fa-dumbbell',
-                    ],
-                ],
-                'visible' => function($user) {
-                    return $user->isDoctor();
-                }
-            ],
             // Clinical Section - Show ALL items
             [
                 'name' => 'Clinical',
@@ -422,6 +405,25 @@ class MenuHelper
                 ]
             ],
 
+            // Physical Therapy Section - Therapeutic / Rehabilitation (logically after Practice, before Analytics)
+            [
+                'name' => 'Physical Therapy',
+                'icon' => 'fas fa-dumbbell',
+                'dropdown' => true,
+                'header_class' => 'sidebar-header-clinical',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
+                'items' => [
+                    [
+                        'name' => 'Home Exercise Programs',
+                        'route' => 'doctor.hep.index',
+                        'icon' => 'fas fa-dumbbell',
+                    ],
+                ],
+                'visible' => function($user) {
+                    return $user->isDoctor();
+                }
+            ],
+
             // Analytics & Insights Section
             [
                 'name' => 'Analytics & Insights',
@@ -448,7 +450,7 @@ class MenuHelper
                 ]
             ],
 
-            // Account Section
+            // Account Section - Professional (clinic) profile, distinct from generic Account Settings (/profile)
             [
                 'name' => 'Account',
                 'icon' => 'fas fa-user-cog',
@@ -457,7 +459,7 @@ class MenuHelper
                 'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
                 'items' => [
                     [
-                        'name' => 'Doctor Profile',
+                        'name' => 'Professional Profile',
                         'route' => 'doctor.profile.edit',
                         'icon' => 'fas fa-user-md',
                     ],

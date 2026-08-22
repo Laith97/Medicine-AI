@@ -267,13 +267,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4 text-end">
-                    <div class="text-white">
-                        <div class="h3 mb-1">${{ number_format($doctor->consultation_fee / 100, 2) }}</div>
-                        <div class="text-white-75">Consultation Fee</div>
-                    </div>
+                {{-- Consultation Fee hidden for clinic SaaS --}}
                 </div>
-            </div>
         </div>
     </div>
 
@@ -738,10 +733,7 @@
                                     <span class="text-muted">Type:</span>
                                     <span class="fw-medium" id="summaryType">In-Person Visit</span>
                                 </div>
-                                <div class="info-item d-flex justify-content-between fs-5">
-                                    <span class="fw-semibold">Total:</span>
-                                    <span class="fw-bold" style="color: #DE6262;">${{ number_format($doctor->consultation_fee / 100, 2) }}</span>
-                                </div>
+                                {{-- Total fee hidden for clinic SaaS --}}
                             </div>
                         </div>
 

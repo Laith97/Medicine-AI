@@ -21,17 +21,7 @@
         </p>
     </div>
 
-    <!-- Amount Display -->
-    <div class="kiosk-card mb-4">
-        <div class="text-center">
-            <div class="mb-3">
-                <span class="text-muted h5">Amount to Pay</span>
-            </div>
-            <div class="display-2 fw-bold text-success mb-3">
-                ${{ number_format(($appointment->payment_amount ?? $appointment->doctor->consultation_fee) / 100, 2) }}
-            </div>
-        </div>
-    </div>
+    {{-- Amount Display hidden for clinic SaaS --}}
 
     <!-- Card Reader Interface -->
     <div class="kiosk-card mb-4">

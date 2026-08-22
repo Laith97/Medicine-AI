@@ -347,17 +347,25 @@
 
 .nav-tabs {
     border-bottom: 1px solid #e2e8f0;
+    background: #ffffff;
 }
 
 .nav-tabs .nav-link {
     border: none;
-    color: #64748b;
+    color: #475569 !important;
+    background: #ffffff !important;
     padding: 0.75rem 1rem;
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #3b82f6 !important;
+    background: #f8fafc !important;
 }
 
 .nav-tabs .nav-link.active {
-    background: #f1f5f9;
-    color: #3b82f6;
+    background: #f1f5f9 !important;
+    color: #3b82f6 !important;
     border-bottom: 2px solid #3b82f6;
 }
 
@@ -588,6 +596,17 @@
     .device-frame {
         width: 100%;
     }
+}
+
+/* Fix modal below navbar - master header has z-index 9999999 */
+#sectionEditorModal {
+    z-index: 10000010 !important;
+}
+.modal-backdrop {
+    z-index: 10000000 !important;
+}
+.page-builder-header {
+    z-index: 900 !important;
 }
 </style>
 @endpush
@@ -822,6 +841,9 @@ class PageBuilder {
 
         // Load section editor form
         editorSidebar.innerHTML = this.generateSectionEditor(section);
+        // init background type visibility
+        const bgTypeSelect = editorSidebar.querySelector('select[name="background_type"]');
+        if (bgTypeSelect) this.toggleBackgroundFields(bgTypeSelect.value);
 
         // Load section preview
         sectionPreview.innerHTML = this.renderSectionContent(section);
@@ -849,10 +871,35 @@ class PageBuilder {
         const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
         switch (key) {
+            case 'background_type':
+                return `
+                    <div class="mb-3">
+                        <label class="form-label">${label}</label>
+                        <select class="form-select" name="${key}" data-field="background_type" onchange="window.pageBuilder && window.pageBuilder.toggleBackgroundFields(this.value)">
+                            <option value="color" ${value === 'color' ? 'selected' : ''}>Color</option>
+                            <option value="image" ${value === 'image' ? 'selected' : ''}>Image</option>
+                            <option value="gradient" ${value === 'gradient' ? 'selected' : ''}>Gradient</option>
+                        </select>
+                    </div>
+                `;
+
+            case 'background_image':
+            case 'image':
+                const hasImage = value && value.length > 0;
+                const previewUrl = hasImage ? (value.startsWith('http') || value.startsWith('/storage') ? value : '/storage/' + value) : '';
+                return `
+                    <div class="mb-3 background-image-group">
+                        <label class="form-label">${label}</label>
+                        <input type="file" class="form-control" accept="image/*" onchange="window.pageBuilder && window.pageBuilder.uploadBackgroundImage(this, '${key}')">
+                        <input type="hidden" name="${key}" value="${value || ''}">
+                        ${hasImage ? `<div class="mt-2"><img src="${previewUrl}" alt="Preview" class="img-thumbnail" style="max-height:100px;" onerror="this.style.display='none'"><small class="text-muted d-block mt-1">Current: ${value}</small></div>` : '<small class="text-muted d-block mt-1">No image selected. Choose file to upload (max 2MB).</small>'}
+                    </div>
+                `;
+
             case 'background_color':
             case 'text_color':
                 return `
-                    <div class="mb-3">
+                    <div class="mb-3 background-color-group">
                         <label class="form-label">${label}</label>
                         <input type="color" class="form-control form-control-color" name="${key}" value="${value}">
                     </div>
@@ -900,6 +947,71 @@ class PageBuilder {
                     `;
                 }
         }
+    }
+
+    toggleBackgroundFields(type) {
+        const form = document.getElementById('sectionEditorForm');
+        if (!form) return;
+        const colorGroups = form.querySelectorAll('.background-color-group');
+        const imageGroups = form.querySelectorAll('.background-image-group');
+        if (type === 'image') {
+            colorGroups.forEach(el => el.style.display = 'none');
+            imageGroups.forEach(el => el.style.display = 'block');
+        } else {
+            colorGroups.forEach(el => el.style.display = 'block');
+            imageGroups.forEach(el => el.style.display = 'none');
+        }
+    }
+
+    uploadBackgroundImage(input, fieldName) {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            this.showNotification('Please select a valid image (JPG, PNG, GIF).', 'error');
+            input.value = '';
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            this.showNotification('Image must be under 2MB.', 'error');
+            input.value = '';
+            return;
+        }
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('section_id', this.currentSection ? this.currentSection.id : 'temp');
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
+
+        const hiddenInput = input.parentElement.querySelector(`input[type="hidden"][name="${fieldName}"]`);
+        const originalLabel = input.nextElementSibling?.textContent;
+
+        fetch('{{ route("doctor.landing-page.upload-section-image") }}', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' },
+            body: formData
+        })
+        .then(res => res.json().then(data => ({ ok: res.ok, data })))
+        .then(({ ok, data }) => {
+            if (ok && data.success) {
+                if (hiddenInput) hiddenInput.value = data.path;
+                // show preview
+                let preview = input.parentElement.querySelector('img');
+                if (!preview) {
+                    preview = document.createElement('img');
+                    preview.className = 'img-thumbnail mt-2';
+                    preview.style.maxHeight = '100px';
+                    input.parentElement.appendChild(preview);
+                }
+                preview.src = data.image_url;
+                preview.style.display = 'block';
+                this.showNotification(data.message || 'Image uploaded!', 'success');
+            } else {
+                throw new Error(data.error || data.message || 'Upload failed');
+            }
+        })
+        .catch(err => {
+            this.showNotification('Error uploading image: ' + err.message, 'error');
+            console.error(err);
+        });
     }
 
     saveSectionChanges() {

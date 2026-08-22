@@ -199,8 +199,9 @@
                                             <label for="hero_image" class="form-label">Hero Image</label>
                                             <input type="file" class="form-control" id="hero_image" name="hero_image" accept="image/*">
                                             @if($landingPage->hero_image)
-                                                <div class="mt-2">
-                                                    <img src="{{ Storage::disk('public')->url($landingPage->hero_image) }}" alt="Current hero image" class="img-thumbnail" style="max-height: 100px;">
+                                                <div class="mt-2 position-relative" style="display:inline-block;">
+                                                    <img src="{{ Storage::disk('public')->url($landingPage->hero_image) }}" alt="" class="img-thumbnail" style="max-height: 100px; overflow:hidden;" onerror="this.style.display='none'; this.nextElementSibling?.classList.remove('d-none');">
+                                                    <div class="d-none align-items-center justify-content-center border rounded bg-light" style="width:200px;height:100px;"><i class="fas fa-image text-muted"></i><small class="text-muted ms-2">No preview</small></div>
                                                 </div>
                                             @endif
                                             <div class="form-text">Recommended size: 1200x600px. Max 2MB.</div>
@@ -633,11 +634,12 @@ $(document).ready(function() {
                         // Update image preview
                         const imgPreview = $('#hero_image').siblings('.mt-2').find('img');
                         if (imgPreview.length) {
-                            imgPreview.attr('src', response.image_url);
+                            imgPreview.attr('src', response.image_url).attr('alt','').css('display','').off('error').on('error', function(){ $(this).hide().next().removeClass('d-none').addClass('d-flex'); });
                         } else {
                             $('#hero_image').after(`
-                                <div class="mt-2">
-                                    <img src="${response.image_url}" alt="Current hero image" class="img-thumbnail" style="max-height: 100px;">
+                                <div class="mt-2 position-relative" style="display:inline-block;">
+                                    <img src="${response.image_url}" alt="" class="img-thumbnail" style="max-height: 100px; overflow:hidden;" onerror="this.style.display='none'; this.nextElementSibling?.classList.remove('d-none'); this.nextElementSibling?.classList.add('d-flex');">
+                                    <div class="d-none align-items-center justify-content-center border rounded bg-light" style="width:200px;height:100px;"><i class="fas fa-image text-muted"></i><small class="text-muted ms-2">No preview</small></div>
                                 </div>
                             `);
                         }

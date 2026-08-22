@@ -45,8 +45,8 @@
           @endif
         @endforeach
         <li class="nav-item" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
-          <a href="{{ route('profile.edit') }}" class="nav-link {{ request()->routeIs('profile.*') ? 'active' : '' }}">
-            <i class="fa-solid fa-user"></i><span>Profile</span>
+          <a href="{{ route('profile.edit') }}" class="nav-link {{ request()->routeIs('profile.edit') || request()->routeIs('profile.update') ? 'active' : '' }}" title="{{ auth()->user()->isDoctor() ? 'Email, password & account security' : 'Profile' }}">
+            <i class="fa-solid {{ auth()->user()->isDoctor() ? 'fa-lock' : 'fa-user' }}"></i><span>{{ auth()->user()->isDoctor() ? 'Account Settings' : 'Profile' }}</span>
           </a>
         </li>
         <li class="nav-item">

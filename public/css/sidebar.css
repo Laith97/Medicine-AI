@@ -146,3 +146,7 @@
 body.sidebar-collapsed .sidebar-pin{left:calc(var(--sidebar-collapsed) + 8px)}
 .sidebar-pin:hover{transform:translateX(2px)}
 @media (max-width:991.98px){.sidebar-pin{display:none!important}}
+
+/* Modal must appear above fixed top-bar (1070), sidebar (1050) and global dropdowns (9999999) */
+.modal{ z-index: 10000010 !important; }
+.modal-backdrop{ z-index: 10000000 !important; }

@@ -137,22 +137,8 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="consultation_fee" class="form-label fw-semibold">
-                                            Consultation Fee ($) <span class="text-danger">*</span>
-                                        </label>
-                                        <input type="number" 
-                                               class="form-control @error('consultation_fee') is-invalid @enderror" 
-                                               id="consultation_fee" 
-                                               name="consultation_fee" 
-                                               required
-                                               min="0"
-                                               step="0.01"
-                                               value="{{ $appointment->consultation_fee / 100 }}">
-                                        @error('consultation_fee')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
+                                    {{-- Consultation Fee hidden for clinic SaaS --}}
+                                    <input type="hidden" name="consultation_fee" value="{{ $appointment->consultation_fee / 100 }}">
                                 </div>
                             </div>
 

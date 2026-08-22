@@ -68,40 +68,7 @@
 
         <hr class="my-4">
 
-        <!-- Amount Display -->
-        <div class="text-center mb-4">
-            <div class="mb-3">
-                <span class="text-muted">Total Amount Due</span>
-            </div>
-            <div class="display-1 fw-bold text-success mb-3">
-                ${{ number_format(($appointment->payment_amount ?? $appointment->doctor->consultation_fee) / 100, 2) }}
-            </div>
-            <div class="text-muted">
-                <small>Consultation Fee</small>
-            </div>
-        </div>
-
-        <!-- Payment Breakdown (if applicable) -->
-        @php
-            $baseFee = $appointment->doctor->consultation_fee;
-            $totalAmount = $appointment->payment_amount ?? $baseFee;
-            $taxAmount = $totalAmount - $baseFee;
-        @endphp
-
-        @if($taxAmount > 0)
-        <div class="row text-center mb-4">
-            <div class="col-6">
-                <div class="border-end">
-                    <div class="text-muted small">Consultation</div>
-                    <div class="h6">${{ number_format($baseFee / 100, 2) }}</div>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="text-muted small">Taxes & Fees</div>
-                <div class="h6">${{ number_format($taxAmount / 100, 2) }}</div>
-            </div>
-        </div>
-        @endif
+        {{-- Amount Display hidden for clinic SaaS --}}
     </div>
 
     <!-- Payment Options -->
@@ -220,9 +187,8 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Voice guidance
-    const amount = '{{ number_format(($appointment->payment_amount ?? $appointment->doctor->consultation_fee) / 100, 2) }}';
-    speakText(`Payment required. Total amount due is ${amount} dollars. Touch card payment to proceed with payment, or touch other methods for alternative payment options.`);
+    // Voice guidance - fee hidden for clinic SaaS
+    speakText(`Please proceed with check-in. Touch card payment or other methods to continue.`);
 
     // Auto-focus on card payment button
     const cardPaymentBtn = document.querySelector('a[href*="payment/card"]');

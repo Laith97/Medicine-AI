@@ -691,7 +691,7 @@ class DashboardController extends Controller
             'bio' => 'nullable|string|max:2000',
             'phone' => 'nullable|string|max:20',
             'specialty_id' => 'required|exists:specialties,id',
-            'consultation_fee' => 'required|numeric|min:0|max:999999',
+            'consultation_fee' => 'nullable|numeric|min:0|max:999999',
             'appointment_duration' => 'required|integer|min:15|max:240',
             'languages' => 'nullable|array',
             'languages.*' => 'string|max:50',
@@ -709,8 +709,12 @@ class DashboardController extends Controller
 
         $data = $request->except(['profile_image']);
 
-        // Convert consultation fee to cents
-        $data['consultation_fee'] = $request->consultation_fee * 100;
+        // Convert consultation fee to cents (keep existing if not provided - hidden for clinic SaaS)
+        if ($request->filled('consultation_fee')) {
+            $data['consultation_fee'] = $request->consultation_fee * 100;
+        } else {
+            unset($data['consultation_fee']);
+        }
 
         // Handle profile image upload
         if ($request->hasFile('profile_image')) {

@@ -171,10 +171,10 @@ class ReviewController extends Controller
             // Update doctor's review statistics
             $this->updateDoctorReviewStats($appointment->doctor_id);
 
-            // Dispatch job to post review to Google if consent is given
-            if ($request->boolean('consent_google_posting')) {
-                PostReviewToGoogle::dispatch($review->id);
-            }
+            // Google Business posting disabled - stubbed feature not needed in production (was PostReviewToGoogle::dispatch)
+            // if ($request->boolean('consent_google_posting')) {
+            //     PostReviewToGoogle::dispatch($review->id);
+            // }
 
             return redirect()->route('reviews.show', $review)
                 ->with('success', 'Thank you for your review!');
@@ -563,10 +563,10 @@ class ReviewController extends Controller
             // Continue with the process even if email fails
         }
 
-        // Dispatch job to post review to Google if consent is given
-        if ($request->boolean('consent_google_posting')) {
-            PostReviewToGoogle::dispatch($review->id);
-        }
+        // Google Business posting disabled - stubbed feature not needed in production
+        // if ($request->boolean('consent_google_posting')) {
+        //     PostReviewToGoogle::dispatch($review->id);
+        // }
 
         return redirect()->route('appointments.guest.show', [
             'appointment' => $request->appointment_number,

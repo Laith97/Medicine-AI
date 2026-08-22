@@ -332,7 +332,7 @@
                             <option value="rating" {{ request('sort_by') == 'rating' ? 'selected' : '' }}>Rating</option>
                             <option value="name" {{ request('sort_by') == 'name' ? 'selected' : '' }}>Name</option>
                             <option value="reviews" {{ request('sort_by') == 'reviews' ? 'selected' : '' }}>Reviews</option>
-                            <option value="fee" {{ request('sort_by') == 'fee' ? 'selected' : '' }}>Consultation Fee</option>
+                            {{-- Fee sort hidden for clinic SaaS --}}
                         </select>
                     </div>
                     <div class="col-md-6 d-flex align-items-end">
@@ -409,13 +409,7 @@
                                     </div>
                                 @endif
 
-                                <!-- Fee -->
-                                <div class="d-flex align-items-center justify-content-between mt-3 mb-3">
-                                    <span class="fee-tag">
-                                        <i class="fas fa-dollar-sign me-1"></i>
-                                        {{ number_format($doctor->consultation_fee / 100, 2) }} consultation
-                                    </span>
-                                </div>
+                                {{-- Fee hidden for clinic SaaS --}}
 
                                 <!-- Bio -->
                                 <p class="doctor-bio mb-0">{{ $doctor->bio }}</p>

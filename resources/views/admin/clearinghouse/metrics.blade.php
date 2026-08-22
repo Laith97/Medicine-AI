@@ -613,20 +613,20 @@ function loadMetrics() {
 function updateKPIs(kpis) {
     document.getElementById('successRate').textContent = kpis.successRate || '98.5%';
     document.getElementById('avgProcessingTime').textContent = kpis.avgProcessingTime || '2.3s';
-    document.getElementById('totalSubmissions').textContent = (kpis.totalSubmissions || 12543).toLocaleString();
+    document.getElementById('totalSubmissions').textContent = (kpis.totalSubmissions || 12847).toLocaleString();
     document.getElementById('uptime').textContent = kpis.uptime || '99.9%';
 }
 
 function updateMetrics(metrics) {
-    document.getElementById('successfulSubmissions').textContent = (metrics.successful || 12543).toLocaleString();
-    document.getElementById('failedSubmissions').textContent = (metrics.failed || 304).toLocaleString();
+    document.getElementById('successfulSubmissions').textContent = (metrics.successful || 12600).toLocaleString();
+    document.getElementById('failedSubmissions').textContent = (metrics.failed || 247).toLocaleString();
     document.getElementById('pendingSubmissions').textContent = (metrics.pending || 156).toLocaleString();
-    document.getElementById('errorRate').textContent = metrics.errorRate || '2.4%';
+    document.getElementById('errorRate').textContent = metrics.errorRate || '1.5%';
 
     // Update status chart values
-    document.getElementById('statusSuccessful').textContent = (metrics.successful || 12543).toLocaleString();
+    document.getElementById('statusSuccessful').textContent = (metrics.successful || 12600).toLocaleString();
     document.getElementById('statusPending').textContent = (metrics.pending || 156).toLocaleString();
-    document.getElementById('statusFailed').textContent = (metrics.failed || 304).toLocaleString();
+    document.getElementById('statusFailed').textContent = (metrics.failed || 247).toLocaleString();
 }
 
 function updateCharts(charts) {
@@ -639,9 +639,9 @@ function updateCharts(charts) {
 
     // Update status chart
     statusChart.data.datasets[0].data = [
-        charts.status.successful || 12543,
+        charts.status.successful || 12600,
         charts.status.pending || 156,
-        charts.status.failed || 304
+        charts.status.failed || 247
     ];
     statusChart.update();
 }
@@ -735,7 +735,7 @@ function exportMetrics() {
     const timeRange = document.getElementById('timeRange').value;
     const link = document.createElement('a');
     link.href = `/admin/clearinghouse/metrics/export?range=${timeRange}`;
-    link.download = `metrics-${timeRange}-${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `metrics-${timeRange}-${new Date().toISOString().split('T')[0]}.xls`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

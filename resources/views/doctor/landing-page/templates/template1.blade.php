@@ -675,13 +675,7 @@
                                 <p class="text-muted mb-0">Consultation Time</p>
                             </div>
                         </div>
-                        <div class="col-sm-6">
-                            <div class="card text-center p-4">
-                                <i class="fas fa-dollar-sign text-primary fs-1 mb-3"></i>
-                                <h5>${{ $doctor->consultation_fee_dollars ?? 'Contact' }}</h5>
-                                <p class="text-muted mb-0">Consultation Fee</p>
-                            </div>
-                        </div>
+                        {{-- Consultation Fee hidden for clinic SaaS --}}
                     </div>
                 </div>
             </div>

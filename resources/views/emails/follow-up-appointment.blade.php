@@ -94,9 +94,6 @@
             <p><strong>Duration:</strong> {{ $followUpAppointment->appointment_duration ?? 30 }} minutes</p>
             <p><strong>Type:</strong> {{ ucfirst(str_replace('_', ' ', $followUpAppointment->appointment_type ?? 'follow-up')) }}</p>
             <p><strong>Reason:</strong> {{ $followUpAppointment->reason ?? 'Follow-up consultation' }}</p>
-            @if($followUpAppointment->consultation_fee)
-            <p><strong>Fee:</strong> ${{ number_format($followUpAppointment->consultation_fee / 100, 2) }}</p>
-            @endif
         </div>
 
         <div class="doctor-info">

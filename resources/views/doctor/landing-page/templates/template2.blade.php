@@ -415,11 +415,7 @@
                                 <p class="text-muted mb-0">{{ $doctor->appointment_duration ?? 30 }} Minutes</p>
                             </div>
                             <div class="col-md-4 text-center">
-                                <div class="feature-icon">
-                                    <i class="fas fa-dollar-sign"></i>
-                                </div>
-                                <h6 class="fw-bold">Fee</h6>
-                                <p class="text-muted mb-0">${{ $doctor->consultation_fee_dollars ?? 'Contact' }}</p>
+                                {{-- Fee hidden for clinic SaaS --}}
                             </div>
                         </div>
                     </div>

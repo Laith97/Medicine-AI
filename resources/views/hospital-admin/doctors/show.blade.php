@@ -90,14 +90,7 @@
 
                             @if($doctor->doctor)
                                 <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-bold">Consultation Fee</label>
-                                            <p class="form-control-plaintext">
-                                                ${{ number_format($doctor->doctor->consultation_fee ?? 0, 2) }}
-                                            </p>
-                                        </div>
-                                    </div>
+                                    {{-- Consultation Fee hidden for clinic SaaS --}}
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label fw-bold">Experience</label>
