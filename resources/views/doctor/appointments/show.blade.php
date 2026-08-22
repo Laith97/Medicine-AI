@@ -273,7 +273,7 @@
                             </div>
                         </div>
                         <div class="row g-3">
-                            <div class="col-6">
+                            <div class="col-12">
                                 <div class="d-flex align-items-center">
                                     <div class="bg-primary bg-opacity-15 rounded p-2 me-3">
                                         <i class="fas fa-calendar-alt text-primary"></i>
@@ -284,7 +284,6 @@
                                     </div>
                                 </div>
                             </div>
-                            {{-- Fee column hidden for clinic SaaS --}}
                         </div>
                     </div>
 
@@ -379,50 +378,6 @@
                 </div>
                 @endif
 
-
-                <!-- Risk Assessment Section -->
-                <div class="table-card">
-                    <h5 class="section-header">
-                        <i class="fas fa-shield-alt me-2"></i>AI Risk Assessment
-                    </h5>
-                    @php
-                        $riskScore = $appointment->patient?->patientRiskScores?->where('appointment_id', $appointment->id)?->first();
-                    @endphp
-                    @if($riskScore)
-                        @php
-                            $noShowRisk = $riskScore->no_show_risk;
-                            $hospitalizationRisk = $riskScore->hospitalization_risk;
-                            $maxRisk = max($noShowRisk, $hospitalizationRisk);
-                        @endphp
-                        <div class="risk-card {{ $maxRisk < 0.3 ? 'low-risk' : ($maxRisk < 0.7 ? 'medium-risk' : 'high-risk') }}">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1 fw-bold">
-                                        @if($maxRisk < 0.3)
-                                            <i class="fas fa-shield-alt me-2"></i>Low Risk Patient
-                                        @elseif($maxRisk < 0.7)
-                                            <i class="fas fa-exclamation-triangle me-2"></i>Medium Risk Patient
-                                        @else
-                                            <i class="fas fa-exclamation-circle me-2"></i>High Risk Patient
-                                        @endif
-                                    </h6>
-                                    <small class="text-muted">Based on patient history and patterns</small>
-                                </div>
-                                <div class="text-end">
-                                    <div class="mb-1">
-                                        <small class="d-block">No-show: <strong>{{ number_format($noShowRisk * 100, 1) }}%</strong></small>
-                                        <small class="d-block">Hospitalization: <strong>{{ number_format($hospitalizationRisk * 100, 1) }}%</strong></small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @else
-                        <div class="text-center py-4">
-                            <i class="fas fa-spinner fa-spin text-info me-2"></i>
-                            <span class="text-muted">Calculating risk assessment...</span>
-                        </div>
-                    @endif
-                </div>
 
                 <!-- AI Predictive Analytics Section -->
                 <div id="ai-analytics" class="table-card">
