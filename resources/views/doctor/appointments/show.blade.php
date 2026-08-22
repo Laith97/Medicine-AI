@@ -311,6 +311,528 @@
 </div>
 </div>
 @endsection
+<!-- Cancel Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this appointment?</p>
+                <form id="cancelForm" method="POST">
+                    @csrf
+                    <div class="mb-3">
+                        <label class="form-label">Reason for cancellation (optional)</label>
+                        <textarea name="cancellation_reason" class="form-control" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Appointment</button>
+                <button type="button" class="btn btn-danger" onclick="submitCancellation()">Cancel Appointment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Complete Appointment Modal -->
+<div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="completeModalLabel">Complete Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="completeForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="doctor_notes" class="form-label">Doctor's Notes (optional)</label>
+                        <textarea name="doctor_notes" id="doctor_notes" rows="4" class="form-control"
+                                  placeholder="Add any notes about the appointment..."></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="follow_up_required" class="form-check-input" id="follow_up_required">
+                        <label class="form-check-label" for="follow_up_required">
+                            Follow-up appointment recommended
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Complete Appointment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Prescription Modal -->
+<div class="modal fade" id="deletePrescriptionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Prescription</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the prescription for <strong id="deletePrescriptionName"></strong>?</p>
+                <p class="text-danger small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDeletePrescription()">Delete Prescription</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prescription Help Modal -->
+<div class="modal fade" id="prescriptionHelpModal" tabindex="-1" aria-labelledby="prescriptionHelpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="prescriptionHelpModalLabel">
+                    <i class="fas fa-prescription-bottle me-2"></i>How to Use the Prescription Feature
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Overview:</strong> This feature allows you to create medication prescriptions for patients. You can work manually or use AI assistance for clinical decision support.
+                </div>
+
+                <h6 class="text-success mb-3"><i class="fas fa-list-ol me-2"></i>Four Ways to Create Prescriptions:</h6>
+
+                <!-- Scenario 1 -->
+                <div class="card border-success mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-user-md me-2"></i>Scenario 1: Manual Entry (For Experienced Doctors)</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2"><strong>When to use:</strong> When you already know exactly what medication to prescribe.</p>
+                        <div class="bg-light p-3 rounded">
+                            <strong>Steps:</strong>
+                            <ol class="mb-0">
+                                <li>Fill out the prescription form manually with medication details</li>
+                                <li><strong>Do NOT press the AI button</strong></li>
+                                <li>Click "Save Prescription"</li>
+                            </ol>
+                        </div>
+                        <small class="text-muted">Example: Prescribing regular blood pressure medication for a known patient.</small>
+                    </div>
+                </div>
+
+                <!-- Scenario 2 -->
+                <div class="card border-primary mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-brain me-2"></i>Scenario 2: AI-First Approach (For Complex Cases)</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2"><strong>When to use:</strong> When you need AI suggestions before filling any form fields.</p>
+                        <div class="bg-light p-3 rounded">
+                            <strong>Steps:</strong>
+                            <ol class="mb-0">
+                                <li><strong>Click "AI Clinical Support" button first</strong> (form can be empty)</li>
+                                <li>AI analyzes patient data and shows medication suggestions</li>
+                                <li>Review suggestions and click "Use Suggestion" to auto-fill the form</li>
+                                <li>Modify the auto-filled form if needed</li>
+                                <li>Click "Save Prescription"</li>
+                            </ol>
+                        </div>
+                        <small class="text-muted">Example: Patient with "severe headache, nausea, light sensitivity" - AI suggests migraine treatment.</small>
+                    </div>
+                </div>
+
+                <!-- Scenario 3 -->
+                <div class="card border-info mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-handshake me-2"></i>Scenario 3: AI-Assisted Entry (For Guidance)</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2"><strong>When to use:</strong> When you start manually but want AI to check for issues.</p>
+                        <div class="bg-light p-3 rounded">
+                            <strong>Steps:</strong>
+                            <ol class="mb-0">
+                                <li>Fill some fields in the prescription form manually</li>
+                                <li><strong>Click "AI Clinical Support" button</strong></li>
+                                <li>AI provides suggestions, warnings, or alternative options</li>
+                                <li>Accept AI suggestions to modify your form, or continue manually</li>
+                                <li>Click "Save Prescription"</li>
+                            </ol>
+                        </div>
+                        <small class="text-muted">Example: You enter "Amoxicillin" and AI warns about penicillin allergy risk.</small>
+                    </div>
+                </div>
+
+                <!-- Scenario 4 -->
+                <div class="card border-warning mb-3">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0"><i class="fas fa-search me-2"></i>Scenario 4: AI Exploration (Research Only)</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2"><strong>When to use:</strong> When you want to see AI suggestions but plan to prescribe differently.</p>
+                        <div class="bg-light p-3 rounded">
+                            <strong>Steps:</strong>
+                            <ol class="mb-0">
+                                <li><strong>Click "AI Clinical Support" button</strong></li>
+                                <li>Review AI suggestions for educational purposes</li>
+                                <li><strong>Click "Dismiss" on all suggestions</strong></li>
+                                <li>Fill the prescription form manually with your chosen medication</li>
+                                <li>Click "Save Prescription"</li>
+                            </ol>
+                        </div>
+                        <small class="text-muted">Example: AI suggests antibiotics for viral infection, but you prescribe symptom relief instead.</small>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <h6 class="text-primary mb-3"><i class="fas fa-database me-2"></i>What Data Does the AI Use?</h6>
+                <div class="alert alert-light border">
+                    <p class="mb-2"><strong>The AI analyzes clinical data that has already been documented, independent of the prescription form:</strong></p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="mb-0">
+                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Appointment Symptoms:</strong> What patient reported</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Doctor Notes:</strong> Your clinical observations</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Patient Allergies:</strong> Known sensitivities</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Past Medications:</strong> Previous prescriptions</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="mb-0">
+                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Recent Diagnosis:</strong> Latest medical findings</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Medical History:</strong> Chronic conditions</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">
+                        <strong>Note:</strong> If no clinical documentation exists, AI provides general preventive care recommendations.
+                    </small>
+                </div>
+
+                <div class="alert alert-danger">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    <strong>⚠️ CRITICAL SAFETY INFORMATION:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>AI suggestions are <strong>clinical decision support only</strong> - not automatic prescriptions</li>
+                        <li><strong>All final prescription decisions must be made by qualified healthcare professionals</strong></li>
+                        <li>Always verify patient allergies and contraindications before prescribing</li>
+                        <li>Check current medications for potential interactions</li>
+                        <li>Consider patient age, weight, and organ function</li>
+                        <li>AI confidence levels (High/Medium/Low) help guide but don't replace clinical judgment</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>💡 Pro Tips:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Use "Reset Form" button to clear everything and start over</li>
+                        <li>AI suggestions include dosage, frequency, and duration recommendations</li>
+                        <li>You can modify any AI-suggested values before saving</li>
+                        <li>Always review AI warnings and interactions carefully</li>
+                        <li>The prescription form works independently - you can prescribe without AI</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Data Sources Modal -->
+<div class="modal fade" id="aiDataSourcesModal" tabindex="-1" aria-labelledby="aiDataSourcesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="aiDataSourcesModalLabel">
+                    <i class="fas fa-database me-2"></i>AI Clinical Data Sources
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Understanding AI Data Sources:</strong> The AI analyzes clinical information to provide medication suggestions. Data sources are prioritized by importance:
+                    <ul class="mb-0 mt-2">
+                        <li><strong class="text-danger">CRITICAL:</strong> Required for AI suggestions - AI will be BLOCKED without these</li>
+                        <li><strong class="text-warning">Important:</strong> Strongly recommended for accurate suggestions</li>
+                        <li><strong class="text-info">Helpful:</strong> Provides additional context</li>
+                        <li><strong class="text-secondary">Context:</strong> Used for background information only</li>
+                    </ul>
+                </div>
+
+                <!-- Data Sources Table -->
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-primary">
+                            <tr>
+                                <th><i class="fas fa-clipboard-list me-1"></i>Data Source & Why It's Needed</th>
+                                <th><i class="fas fa-check-circle me-1"></i>Status</th>
+                                <th><i class="fas fa-exclamation-triangle me-1"></i>Importance</th>
+                                <th><i class="fas fa-shield-alt me-1"></i>Reliability</th>
+                                <th><i class="fas fa-info-circle me-1"></i>Current Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataSourcesTableBody">
+                            <!-- Dynamic content will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Data Quality Indicators -->
+                <div class="mt-4">
+                    <h6 class="text-primary mb-3"><i class="fas fa-chart-line me-2"></i>Data Completeness</h6>
+                    <div class="progress mb-2" style="height: 25px;" id="dataCompletenessProgress">
+                        <div class="progress-bar bg-success" id="dataCompletenessBar" style="width: 0%">Calculating...</div>
+                    </div>
+                    <small class="text-muted" id="dataCompletenessText">Analyzing available clinical data...</small>
+                </div>
+
+                <!-- Action Items -->
+                <div class="mt-4">
+                    <h6 class="text-warning mb-3"><i class="fas fa-lightbulb me-2"></i>To Improve AI Suggestions:</h6>
+                    <ul class="small text-muted" id="improvementSuggestions">
+                        <li>Complete patient allergy information in Patient Management</li>
+                        <li>Update current medications regularly</li>
+                        <li>Add detailed symptoms during appointment booking</li>
+                        <li>Create diagnosis records for better clinical context</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-light border mt-4">
+                    <h6 class="text-dark mb-2"><i class="fas fa-shield-alt me-2"></i>Privacy & Security</h6>
+                    <small class="text-muted">All clinical data is encrypted and HIPAA-compliant. AI analysis occurs locally and no patient data leaves your secure environment.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="refreshDataSources()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ML Explanation Modal -->
+<div class="modal fade" id="mlExplanationModal" tabindex="-1" aria-labelledby="mlExplanationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="mlExplanationModalLabel">
+                    <i class="fas fa-brain me-2"></i>ML Risk Prediction Explanation
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>How it works:</strong> Our machine learning model analyzes patient history, appointment patterns, and medical data to predict healthcare risks.
+                </div>
+
+                <h6 class="text-primary mb-3"><i class="fas fa-chart-line me-2"></i>Features Actually Analyzed:</h6>
+                @php
+                    if ($appointment->patient) {
+                        $extractor = app(\App\Services\FeatureExtractor::class);
+                        $features = $extractor->extractFeatures($appointment->patient, $appointment);
+                        $hasHighRisk = $extractor->hasHighRiskCondition($appointment->patient);
+                    } else {
+                        $features = [0,0,0,0,0];
+                        $hasHighRisk = false;
+                    }
+                @endphp
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Feature</th>
+                                <th>Value</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>No-Show Count</strong></td>
+                                <td class="text-center"><span class="badge bg-warning">{{ $features[0] ?? 0 }}</span></td>
+                                <td>Number of previous missed appointments</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cancellation Count</strong></td>
+                                <td class="text-center"><span class="badge bg-secondary">{{ $features[1] ?? 0 }}</span></td>
+                                <td>Number of cancelled appointments</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Days Since Last Visit</strong></td>
+                                <td class="text-center"><span class="badge bg-info">{{ $features[2] ?? 0 }}</span></td>
+                                <td>Days since patient's last appointment</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Visit Frequency</strong></td>
+                                <td class="text-center"><span class="badge bg-primary">{{ number_format($features[3] ?? 0, 1) }}</span></td>
+                                <td>Average appointments per year</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Patient Age</strong></td>
+                                <td class="text-center"><span class="badge bg-primary">{{ $features[4] ?? 0 }}</span></td>
+                                <td>Patient's age in years</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Gender</strong></td>
+                                <td class="text-center">
+                                    <span class="badge {{ ($features[5] ?? 0) == 1 ? 'bg-danger' : 'bg-secondary' }}">
+                                        {{ ($features[5] ?? 0) == 1 ? 'Male' : 'Female/Other' }}
+                                    </span>
+                                </td>
+                                <td>Gender encoding (1=Male, 0=Female/Other)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Chronic Conditions</strong></td>
+                                <td class="text-center">
+                                    <span class="badge {{ ($features[6] ?? 0) > 0 ? 'bg-danger' : 'bg-success' }}">
+                                        {{ $features[6] ?? 0 }}
+                                    </span>
+                                </td>
+                                <td>Count of high-risk conditions from doctor diagnoses</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Current Medications</strong></td>
+                                <td class="text-center"><span class="badge bg-info">{{ $features[7] ?? 0 }}</span></td>
+                                <td>Number of current medications</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Appointment Lead Time</strong></td>
+                                <td class="text-center"><span class="badge bg-secondary">{{ $features[8] ?? 0 }}</span></td>
+                                <td>Days between booking and appointment</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info mt-3">
+                    <small><i class="fas fa-info-circle me-1"></i><strong>Enhanced ML Features:</strong> Now using 9 features including cancellations, visit frequency, medications, and appointment lead time for improved accuracy.</small>
+                </div>
+
+                <hr class="my-4">
+
+                <h6 class="text-primary mb-3"><i class="fas fa-cogs me-2"></i>Prediction Method Used:</h6>
+                @php
+                    $service = app(\App\Services\PredictiveAnalyticsService::class);
+                    $reflection = new ReflectionClass($service);
+                    $method = $reflection->getMethod('checkTrainingDataAdequacy');
+                    $method->setAccessible(true);
+                    $adequacy = $method->invoke($service);
+                    $usingML = $adequacy['adequate'];
+                @endphp
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-{{ $usingML ? 'success' : 'warning' }} mb-3">
+                            <div class="card-body p-3">
+                                <h6 class="card-title mb-2">
+                                    <i class="fas fa-{{ $usingML ? 'brain' : 'calculator' }} me-2"></i>
+                                    {{ $usingML ? 'Machine Learning' : 'Rule-Based' }}
+                                </h6>
+                                <p class="card-text small mb-1">
+                                    {{ $usingML ? 'Using trained ML models for predictions' : 'Using rule-based calculations (ML models not adequately trained)' }}
+                                </p>
+                                <small class="text-muted">
+                                    Training Data: {{ $adequacy['total_appointments'] }} appointments
+                                    ({{ $adequacy['no_show_count'] }} no-shows, {{ $adequacy['high_risk_count'] }} high-risk)
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-info mb-3">
+                            <div class="card-body p-3">
+                                <h6 class="card-title mb-2">
+                                    <i class="fas fa-chart-bar me-2"></i>Model Status
+                                </h6>
+                                <p class="card-text small mb-1">
+                                    @if($usingML)
+                                        <span class="text-success">✓ ML Models Active</span>
+                                    @else
+                                        <span class="text-warning">⚠ Rule-Based Fallback</span>
+                                    @endif
+                                </p>
+                                <small class="text-muted">
+                                    Minimum required: 50 appointments, 2% no-show rate, 5% high-risk rate
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <h6 class="text-primary mb-3"><i class="fas fa-calculator me-2"></i>Risk Calculations:</h6>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-warning mb-3">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0"><i class="fas fa-user-times me-2"></i>No-Show Risk</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2">Probability that the patient will miss this appointment.</p>
+                                <small class="text-muted">
+                                    <strong>Current Result:</strong>
+                                    @if(isset($riskScore))
+                                        {{ number_format($riskScore->no_show_risk * 100, 1) }}%
+                                    @else
+                                        N/A
+                                    @endif
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-danger mb-3">
+                            <div class="card-header bg-danger text-white">
+                                <h6 class="mb-0"><i class="fas fa-hospital me-2"></i>Hospitalization Risk</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2">Probability that the patient may require hospitalization based on current health indicators.</p>
+                                <small class="text-muted">
+                                    <strong>Current Result:</strong>
+                                    @if(isset($riskScore))
+                                        {{ number_format($riskScore->hospitalization_risk * 100, 1) }}%
+                                    @else
+                                        N/A
+                                    @endif
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-light border">
+                    <h6 class="text-dark mb-2"><i class="fas fa-lightbulb me-2"></i>Understanding the Results:</h6>
+                    <ul class="mb-0 small">
+                        <li><strong>Low Risk (< 30%):</strong> Patient shows strong compliance patterns and stable health indicators</li>
+                        <li><strong>Medium Risk (30-70%):</strong> Moderate concern - consider follow-up reminders or additional monitoring</li>
+                        <li><strong>High Risk (> 70%):</strong> Significant risk - immediate intervention may be needed</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Important:</strong> These predictions are statistical estimates based on historical data and should be used as a clinical decision support tool, not as definitive medical advice.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 // Enhanced appointment action functions with proper timeout and error handling
@@ -1974,24 +2496,20 @@ function displayRedFlagsSection(flags) {
     return flags.slice(0, 3).map(flag => `<li class="text-danger">${flag}</li>`).join('');
 </script>
 <script>
-// Tab-aware overrides for new design - keep old functions but also switch tabs
-(function(){
-    const origToggleDiagnosis = window.toggleDiagnosisForm;
-    window.toggleDiagnosisForm = function(){
-        document.querySelector('[data-bs-target="#tab-diagnosis"]')?.click();
-        const el=document.getElementById('diagnosis-section');
-        if(el) setTimeout(()=>el.scrollIntoView({behavior:'smooth'}),200);
-        if(typeof origToggleDiagnosis==='function' && document.getElementById('diagnosis-section')?.style.display==='none'){
-            // Old logic also toggles display, keep it visible
-            document.getElementById('diagnosis-section').style.display='block';
-        }
-    };
-    const origToggleAI = window.toggleAIMedicalCopilotForm;
-    window.toggleAIMedicalCopilotForm = function(){
-        document.querySelector('[data-bs-target="#tab-ai"]')?.click();
-        if(typeof origToggleAI==='function') try{origToggleAI();}catch(e){}
-    };
-})();
-function viewPatientAIAnalyses(pid){ window.location.href=`/ai/patients/${pid}/ai-analyses`; }
-</script>
-@endpush
+// Tab-aware overrides for new design - replace old display-toggle logic with tab switching
+window.toggleDiagnosisForm = function(){
+    const tabBtn = document.querySelector('[data-bs-target="#tab-diagnosis"]');
+    if(tabBtn) { tabBtn.click(); }
+    const el = document.getElementById('diagnosis-section');
+    if(el){
+        el.style.display = 'block';
+        setTimeout(()=> el.scrollIntoView({behavior:'smooth', block:'start'}), 250);
+        setTimeout(()=> document.getElementById('diagnosis_text')?.focus(), 400);
+    }
+};
+window.toggleAIMedicalCopilotForm = function(){
+    const tabBtn = document.querySelector('[data-bs-target="#tab-ai"]');
+    if(tabBtn) tabBtn.click();
+    const copilotEl = document.getElementById('ai-medical-copilot-section');
+    if(copilotEl){
+        copilotEl.style.display = 'block';
