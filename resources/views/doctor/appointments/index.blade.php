@@ -215,8 +215,8 @@
                                             @else<span class="text-muted small">—</span>@endif
                                         </td>
                                         <td class="d-none d-xl-table-cell"><div class="text-truncate" style="max-width:180px;" title="{{ $appointment->reason }}">{{ Str::limit($appointment->reason, 40) }}</div></td>
-                                        <td class="text-end">
-                                            <div class="d-inline-flex gap-1">
+                                        <td class="text-end" style="white-space: normal; min-width: 140px;">
+                                            <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
                                                 <a href="{{ route('doctor.appointments.show', $appointment) }}" class="doctor-btn doctor-btn-outline doctor-btn-sm" title="View"><i class="fas fa-eye"></i></a>
                                                 @if($appointment->status == 'pending')
                                                     <button onclick="confirmAppointment({{ $appointment->id }})" class="doctor-btn doctor-btn-success doctor-btn-sm" title="Confirm"><i class="fas fa-check"></i></button>
