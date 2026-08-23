@@ -217,7 +217,7 @@
                                         <td class="d-none d-xl-table-cell"><div class="text-truncate" style="max-width:180px;" title="{{ $appointment->reason }}">{{ Str::limit($appointment->reason, 40) }}</div></td>
                                         <td class="text-end" style="white-space: nowrap; min-width: 90px;">
                                             <div class="dropdown">
-                                                <button class="doctor-btn doctor-btn-outline doctor-btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid #e2e8f0; background:#fff;">
+                                                <button class="doctor-btn doctor-btn-outline doctor-btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid #e2e8f0; background:#fff;">
                                                     <i class="fas fa-ellipsis-h" style="font-size:0.85rem; color:#64748b;"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end" style="min-width: 210px; border-radius: 12px; border: 1px solid #eef0f3; padding: 0.45rem; font-size: 0.82rem; box-shadow: 0 8px 30px rgba(44,62,80,0.12), 0 2px 8px rgba(44,62,80,0.06); overflow:hidden;">
