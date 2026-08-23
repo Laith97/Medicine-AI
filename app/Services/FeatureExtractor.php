@@ -185,13 +185,25 @@ class FeatureExtractor
     // Production: true hospitalization label from appointments + diagnoses
     public function hasHospitalizationHistory(User $patient): bool
     {
-        // 1) explicit appointment flag
-        $hasHospAppointment = Appointment::where('patient_id', $patient->id)->where('was_hospitalized', true)->exists();
-        if ($hasHospAppointment) return true;
-        // 2) diagnosis with requires_hospitalization or critical severity
-        $hasHospDiagnosis = \App\Models\Diagnosis::where('patient_id', $patient->id)
-            ->where(function($q){ $q->where('requires_hospitalization', true)->orWhere('severity','critical'); })->exists();
-        return $hasHospDiagnosis || $this->hasHighRiskCondition($patient);
+        try {
+            // 1) explicit appointment flag (if column exists)
+            if (\Illuminate\Support\Facades\Schema::hasColumn('appointments', 'was_hospitalized')) {
+                $hasHospAppointment = Appointment::where('patient_id', $patient->id)->where('was_hospitalized', true)->exists();
+                if ($hasHospAppointment) return true;
+            }
+        } catch (\Exception $e) {
+            // column missing in prod before migration - fallback
+        }
+        try {
+            // 2) diagnosis with requires_hospitalization or critical severity (if columns exist)
+            if (\Illuminate\Support\Facades\Schema::hasColumn('diagnoses', 'requires_hospitalization')) {
+                $hasHospDiagnosis = \App\Models\Diagnosis::where('patient_id', $patient->id)
+                    ->where(function($q){ $q->where('requires_hospitalization', true)->orWhere('severity','critical'); })->exists();
+                if ($hasHospDiagnosis) return true;
+            }
+        } catch (\Exception $e) {
+        }
+        return $this->hasHighRiskCondition($patient);
     }
 
     private function getCancellationCount(User $patient, Appointment $appointment): int

@@ -269,11 +269,15 @@ class PredictiveAnalyticsService
         $appts = Appointment::whereNotNull('patient_id')->where('appointment_date','<',now())->get();
         $total = $appts->count();
         $noShow=0; $hosp=0;
+        $hasWasHospColumn = \Illuminate\Support\Facades\Schema::hasColumn('appointments', 'was_hospitalized');
         foreach ($appts as $a){
             if (in_array($a->status,['missed','no_show'],true)) $noShow++;
-            // production ground truth
-            if (!is_null($a->was_hospitalized) ? $a->was_hospitalized : false) $hosp++;
-            elseif ($a->patient && $this->featureExtractor->hasHospitalizationHistory($a->patient)) $hosp++;
+            // production ground truth - safe if column missing pre-migrate
+            $counted = false;
+            if ($hasWasHospColumn) {
+                try { if (!is_null($a->was_hospitalized) && $a->was_hospitalized) { $hosp++; $counted=true; } } catch (\Exception $e) {}
+            }
+            if (!$counted && $a->patient && $this->featureExtractor->hasHospitalizationHistory($a->patient)) $hosp++;
         }
         $adequate = $total >= self::MIN_APPOINTMENTS
             && ($noShow / max(1,$total)) >= self::MIN_NO_SHOW_RATE
