@@ -237,7 +237,7 @@
         @endif
     </div>
 </div>
-@endsection
+
 <!-- Professional Complete Appointment Modal -->
 <div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
