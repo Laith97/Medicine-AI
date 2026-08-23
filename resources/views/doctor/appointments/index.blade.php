@@ -26,12 +26,10 @@
     }
     .auto-approve-compact .form-check-input:checked { background-color: #10b981; border-color: #10b981; }
     .cases-panel .doctor-table thead th { font-size: 0.76rem; letter-spacing: 0.03em; }
-    .patient-avatar {
-        width: 38px; height: 38px; border-radius: 50%;
-        background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
-        display: flex; align-items: center; justify-content: center;
-        color: #fff; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
-    }
+    .patient-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+    .patient-avatar-male { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); }
+    .patient-avatar-female { background: linear-gradient(135deg, #e83e8c 0%, #c21e56 100%); }
+    .patient-avatar-default { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); }
     .badge-professional { font-size: 0.72rem; padding: 0.3rem 0.6rem; border-radius: 999px; font-weight: 700; }
 </style>
 @endpush
@@ -141,31 +139,41 @@
             </div>
         </div>
 
-        <!-- Appointments List - premium doctor-table (restored professional) -->
+        <!-- Appointments List - same as patients -->
         @if($appointments->count() > 0)
-            <div class="card border-0 shadow-sm cases-panel table-professional" style="overflow:hidden; border: 1px solid #dee2e6;">
+            <div class="card border-0 shadow-sm cases-panel">
                 <div class="doctor-table-container">
                     <div class="table-responsive">
-                        <table class="table doctor-table table-hover mb-0">
-                            <thead style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                        <table class="doctor-table mb-0">
+                            <thead>
                                 <tr>
-                                    <th style="color:#495057; font-weight:600; padding:1rem 0.75rem; border:none; font-size:0.9rem;">Patient</th>
-                                    <th style="color:#495057; font-weight:600; padding:1rem 0.75rem; border:none; font-size:0.9rem;">Date</th>
-                                    <th style="color:#495057; font-weight:600; padding:1rem 0.75rem; border:none; font-size:0.9rem;">Type</th>
-                                    <th style="color:#495057; font-weight:600; padding:1rem 0.75rem; border:none; font-size:0.9rem;">Status</th>
-                                    <th style="color:#495057; font-weight:600; padding:1rem 0.75rem; border:none; font-size:0.9rem;">Risk</th>
-                                    <th style="color:#495057; font-weight:600; padding:1rem 0.75rem; border:none; font-size:0.9rem;">Complaint</th>
-                                    <th class="text-end" style="color:#495057; font-weight:600; padding:1rem 0.75rem; border:none; font-size:0.9rem;">Actions</th>
+                                    <th>Patient</th>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Risk</th>
+                                    <th>Complaint</th>
+                                    <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($appointments as $appointment)
                                     <tr>
                                         <td>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <div class="patient-avatar">{{ substr($appointment->patient_name, 0, 1) }}</div>
+                                            <div class="d-flex align-items-center">
+                                                @php
+                                                    $avatarClass = 'patient-avatar-default';
+                                                    $initials = '??';
+                                                    $gender = strtolower($appointment->patient->gender ?? '');
+                                                    if ($gender === 'male') $avatarClass = 'patient-avatar-male';
+                                                    elseif ($gender === 'female') $avatarClass = 'patient-avatar-female';
+                                                    $initials = collect(explode(' ', $appointment->patient_name))->map(fn($w) => substr($w, 0, 1))->take(2)->join('');
+                                                    if (strlen($initials) < 2) $initials = substr($appointment->patient_name, 0, 2);
+                                                    $initials = strtoupper($initials);
+                                                @endphp
+                                                <div class="patient-avatar {{ $avatarClass }} me-3">{{ $initials }}</div>
                                                 <div class="min-w-0">
-                                                    <div class="fw-semibold text-dark text-truncate" style="max-width:160px;">{{ $appointment->patient_name }}</div>
+                                                    <div class="fw-medium text-dark text-truncate" style="max-width:160px;">{{ $appointment->patient_name }}</div>
                                                     <small class="text-muted text-truncate d-block" style="max-width:160px;">{{ $appointment->patient_email }}</small>
                                                 </div>
                                             </div>
