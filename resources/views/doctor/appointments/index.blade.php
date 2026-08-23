@@ -26,8 +26,10 @@
         width: 2.2rem; height: 1.15rem; margin: 0; cursor: pointer;
     }
     .auto-approve-compact .form-check-input:checked { background-color: #10b981; border-color: #10b981; }
-    .cases-panel .doctor-table thead th { font-size: 0.76rem; letter-spacing: 0.03em; white-space: normal; }
-    .cases-panel .doctor-table tbody td { white-space: normal; word-break: break-word; }
+    .cases-panel .doctor-table thead th { font-size: 0.76rem; letter-spacing: 0.03em; white-space: nowrap; }
+    .cases-panel .doctor-table tbody td { white-space: nowrap; vertical-align: middle; }
+    .cases-panel .doctor-table tbody td:first-child small, .cases-panel .doctor-table tbody td:nth-child(2) small { white-space: nowrap; }
+    .doctor-badge { white-space: nowrap !important; display: inline-flex; align-items: center; }
     .doctor-table { table-layout: auto; }
     .patient-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
     .patient-avatar-male { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); }
