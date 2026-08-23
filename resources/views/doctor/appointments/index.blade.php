@@ -3,677 +3,241 @@
 @section('title', 'Manage Appointments')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/custom-openai.css') }}">
 <link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
-
+<link rel="stylesheet" href="{{ asset('css/cases-overview.css') }}">
 <style>
-/* Professional Dashboard Header */
-.dashboard-header {
-    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
-    border-radius: 12px;
-    padding: 2.5rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 15px rgba(44, 90, 160, 0.15);
-    position: relative;
-    overflow: hidden;
-}
-
-.dashboard-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
-}
-
-.dashboard-header h2 {
-    color: #ffffff;
-    font-weight: 600;
-    font-size: 2.2rem;
-    margin-bottom: 0.5rem;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.dashboard-header p {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 1rem;
-    font-weight: 400;
-    margin-bottom: 0;
-}
-
-/* Professional Cards */
-.professional-card {
-    background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
-    overflow: hidden;
-}
-
-.professional-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-}
-
-.card-header-professional {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 1px solid #dee2e6;
-    padding: 1.5rem;
-    border-radius: 16px 16px 0 0;
-}
-
-.card-header-professional h6 {
-    color: #495057;
-    font-weight: 600;
-    margin: 0;
-    font-size: 1.1rem;
-}
-
-.card-body-professional {
-    padding: 1.5rem;
-}
-
-/* Enhanced Filter Section */
-.filter-section {
-    background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.filter-section .form-select,
-.filter-section .form-control {
-    border-radius: 10px;
-    border: 1px solid #e0e6ed;
-    padding: 0.75rem 1rem;
-    font-size: 0.95rem;
-    transition: all 0.3s ease;
-}
-
-.filter-section .form-select:focus,
-.filter-section .form-control:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-}
-
-/* Professional Table */
-.table-professional {
-    background: #ffffff;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.table-professional thead {
-    background-color: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
-}
-
-.table-professional thead th {
-    color: #495057;
-    font-weight: 600;
-    padding: 1rem 0.75rem;
-    border: none;
-    font-size: 0.9rem;
-    text-transform: none;
-    letter-spacing: normal;
-}
-
-.table-professional tbody tr {
-    border-bottom: 1px solid #f1f3f4;
-    transition: background-color 0.2s ease;
-}
-
-.table-professional tbody tr:hover {
-    background-color: #f8f9fa;
-}
-
-.table-professional tbody tr:last-child {
-    border-bottom: none;
-}
-
-.table-professional tbody td {
-    padding: 1rem 0.75rem;
-    vertical-align: middle;
-    border: none;
-    color: #495057;
-}
-
-/* Professional Badges */
-.badge-professional {
-    padding: 0.4rem 0.8rem;
-    border-radius: 4px;
-    font-weight: 500;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-.badge-pending {
-    background-color: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fde68a;
-}
-
-.badge-confirmed {
-    background-color: #d1fae5;
-    color: #065f46;
-    border: 1px solid #a7f3d0;
-}
-
-.badge-completed {
-    background-color: #dbeafe;
-    color: #1e40af;
-    border: 1px solid #93c5fd;
-}
-
-.badge-cancelled {
-    background-color: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
-}
-
-/* Professional Buttons */
-.btn-professional {
-    border-radius: 4px;
-    padding: 0.4rem 0.8rem;
-    font-weight: 500;
-    font-size: 0.85rem;
-    border: 1px solid transparent;
-    transition: all 0.2s ease;
-}
-
-.btn-primary-professional {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-    color: white;
-}
-
-.btn-primary-professional:hover {
-    background-color: #0b5ed7;
-    border-color: #0a58ca;
-    color: white;
-}
-
-.btn-success-professional {
-    background-color: #198754;
-    border-color: #198754;
-    color: white;
-}
-
-.btn-success-professional:hover {
-    background-color: #157347;
-    border-color: #146c43;
-    color: white;
-}
-
-.btn-danger-professional {
-    background-color: #dc3545;
-    border-color: #dc3545;
-    color: white;
-}
-
-.btn-danger-professional:hover {
-    background-color: #bb2d3b;
-    border-color: #b02a37;
-    color: white;
-}
-
-.btn-secondary-professional {
-    background-color: #6c757d;
-    border-color: #6c757d;
-    color: white;
-}
-
-.btn-secondary-professional:hover {
-    background-color: #5c636a;
-    border-color: #565e64;
-    color: white;
-}
-
-/* Patient Avatar */
-.patient-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 600;
-    font-size: 1rem;
-    border: 2px solid #cbd5e1;
-}
-
-/* Risk Indicators */
-.risk-low {
-    background-color: #d1fae5;
-    color: #065f46;
-    border: 1px solid #a7f3d0;
-}
-
-.risk-medium {
-    background-color: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fde68a;
-}
-
-.risk-high {
-    background-color: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
-}
-
-/* Auto-approve Toggle */
-.toggle-section {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.form-switch .form-check-input {
-    width: 3rem;
-    height: 1.5rem;
-    border-radius: 3rem;
-}
-
-.form-switch .form-check-input:checked {
-    background-color: #667eea;
-    border-color: #667eea;
-}
-
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.empty-state i {
-    font-size: 4rem;
-    color: #dee2e6;
-    margin-bottom: 1.5rem;
-}
-
-.empty-state h5 {
-    color: #6c757d;
-    margin-bottom: 1rem;
-}
-
-.empty-state p {
-    color: #adb5bd;
-    margin-bottom: 2rem;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .dashboard-header {
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
+    .auto-approve-compact {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 999px;
+        padding: 0.35rem 0.75rem 0.35rem 0.9rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #334155;
+        white-space: nowrap;
     }
-    
-    .dashboard-header h2 {
-        font-size: 2rem;
+    .auto-approve-compact .form-switch { margin: 0; display: flex; align-items: center; }
+    .auto-approve-compact .form-check-input {
+        width: 2.2rem; height: 1.15rem; margin: 0; cursor: pointer;
     }
-    
-    .table-professional {
-        font-size: 0.9rem;
-    }
-    
+    .auto-approve-compact .form-check-input:checked { background-color: #10b981; border-color: #10b981; }
+    .cases-panel .doctor-table thead th { font-size: 0.76rem; letter-spacing: 0.03em; }
     .patient-avatar {
-        width: 35px;
-        height: 35px;
-        font-size: 0.9rem;
+        width: 38px; height: 38px; border-radius: 50%;
+        background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
     }
-}
-
-/* Professional Pagination */
-.pagination-wrapper .pagination {
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.pagination-wrapper .page-link {
-    border: 1px solid #dee2e6;
-    padding: 0.5rem 0.75rem;
-    color: #495057;
-    background: #ffffff;
-}
-
-.pagination-wrapper .page-link:hover {
-    background-color: #e9ecef;
-    border-color: #dee2e6;
-    color: #495057;
-}
-
-.pagination-wrapper .page-item.active .page-link {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-    color: white;
-}
+    .badge-professional { font-size: 0.72rem; padding: 0.3rem 0.6rem; border-radius: 999px; font-weight: 700; }
 </style>
 @endpush
 
 @section('content')
-<style>
-.app-main {
-    background-color: #f8f9fa;
-}
-.dashboard-header {
-    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
-    border-radius: 12px;
-    padding: 2.5rem;
-    margin-bottom: 2rem;
-}
-</style>
-<div class="container-fluid" style="background-color: #f8f9fa;">
-    <div class="container">
-        <div class="dashboard-header">
+<div class="container-fluid" style="background-color: var(--bg-secondary, #f8f9fa);">
+    <div class="container py-4">
+        <div class="dashboard-header cases-header-compact">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
                     <h2><i class="fas fa-calendar-check me-2"></i>Appointments</h2>
-                    <p class="text-muted mb-0">Manage and track your patient appointments</p>
+                    <p>Manage and track your patient appointments</p>
                 </div>
-                <div class="header-actions">
-                    <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-success-professional btn-lg">
-                        <i class="fas fa-microphone me-2"></i>Start Consultation
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <a href="{{ route('ai.ambient-listening.index') }}" class="doctor-btn doctor-btn-success doctor-btn-sm">
+                        <i class="fas fa-microphone me-1"></i>Start Consultation
                     </a>
-                    <a href="{{ route('doctor.appointments.create') }}" class="btn" style="background-color: white; color: #2c5aa0; border: 2px solid white; font-weight: 600;">
-                        <i class="fas fa-plus me-2"></i>New Appointment
+                    <a href="{{ route('doctor.appointments.create') }}" class="doctor-btn doctor-btn-primary doctor-btn-sm">
+                        <i class="fas fa-plus me-1"></i>New Appointment
                     </a>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<div class="dashboard-container">
-    <div class="container">
-        <!-- Professional Auto-Approve Settings -->
-        <div class="toggle-section">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="mb-1 text-dark"><i class="fas fa-cog me-2 text-primary"></i>Appointment Approval Settings</h6>
-                    <small class="text-muted">Control how new appointment requests are handled</small>
-                </div>
-                <div class="form-check form-switch">
-                    <input class="form-check-input"
-                           type="checkbox"
-                           id="auto_approve_toggle"
-                           {{ Auth::user()->doctor->auto_approve_appointments ? 'checked' : '' }}>
-                    <label class="form-check-label" for="auto_approve_toggle">
-                        <span class="fw-medium text-dark">Auto-approve appointments</span>
-                    </label>
+        <!-- Compact stats like cases-overview -->
+        <div class="row g-2 mb-3 cases-stats-compact">
+            <div class="col-6 col-lg-3">
+                <div class="stats-card stats-card--compact">
+                    <div class="stats-icon stats-icon--sm" style="background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);"><i class="fas fa-calendar"></i></div>
+                    <div class="stats-text"><p class="stats-number">{{ $appointments->total() }}</p><p class="stats-label">Total</p></div>
                 </div>
             </div>
-            <div class="mt-3">
-                <div class="alert alert-info border-0" style="background: rgba(102, 126, 234, 0.1);">
-                    <i class="fas fa-info-circle me-2 text-primary"></i>
-                    <small class="text-dark">
-                        When enabled, new appointment requests are automatically confirmed.
-                        When disabled, you'll need to manually approve each appointment.
-                    </small>
+            <div class="col-6 col-lg-3">
+                <div class="stats-card stats-card--compact">
+                    <div class="stats-icon stats-icon--sm" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);"><i class="fas fa-clock"></i></div>
+                    <div class="stats-text"><p class="stats-number">{{ collect($appointments->items())->where('status','pending')->count() }}</p><p class="stats-label">Pending</p></div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stats-card stats-card--compact">
+                    <div class="stats-icon stats-icon--sm" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);"><i class="fas fa-check-circle"></i></div>
+                    <div class="stats-text"><p class="stats-number">{{ collect($appointments->items())->where('status','confirmed')->count() }}</p><p class="stats-label">Confirmed</p></div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stats-card stats-card--compact">
+                    <div class="stats-icon stats-icon--sm" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);"><i class="fas fa-check-double"></i></div>
+                    <div class="stats-text"><p class="stats-number">{{ collect($appointments->items())->where('status','completed')->count() }}</p><p class="stats-label">Completed</p></div>
                 </div>
             </div>
         </div>
 
-        <!-- Professional Filters -->
-        <div class="filter-section">
-            <div class="card-header-professional mb-3">
-                <h6><i class="fas fa-filter me-2"></i>Filter Appointments</h6>
-            </div>
-            <form method="GET" action="{{ route('doctor.appointments.index') }}" class="row g-3">
-                <!-- Status Filter -->
-                <div class="col-md-2">
-                    <label class="form-label fw-medium text-dark">Status</label>
-                    <select name="status" class="form-select">
-                        <option value="">All Statuses</option>
-                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                        <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                        <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                        <option value="no_show" {{ request('status') == 'no_show' ? 'selected' : '' }}>No Show</option>
-                    </select>
+        <!-- Filters + Auto-approve compact (not full-width) -->
+        <div class="card border-0 shadow-sm cases-panel mb-3">
+            <div class="cases-toolbar">
+                <div class="cases-toolbar__title">
+                    <h6 class="mb-0 fw-semibold"><i class="fas fa-filter me-2 text-primary"></i>Filter Appointments</h6>
+                    @if(request()->hasAny(['status','risk_category','date_from','date_to']))
+                        <a href="{{ route('doctor.appointments.index') }}" class="btn btn-outline-secondary btn-sm ms-2">Clear</a>
+                    @endif
                 </div>
-
-                <!-- Risk Category Filter -->
-                <div class="col-md-2">
-                    <label class="form-label fw-medium text-dark">Risk Category</label>
-                    <select name="risk_category" class="form-select">
-                        <option value="">All Risk Levels</option>
-                        <option value="low" {{ request('risk_category') == 'low' ? 'selected' : '' }}>Low Risk</option>
-                        <option value="medium" {{ request('risk_category') == 'medium' ? 'selected' : '' }}>Medium Risk</option>
-                        <option value="high" {{ request('risk_category') == 'high' ? 'selected' : '' }}>High Risk</option>
-                    </select>
-                </div>
-
-                <!-- Date Range -->
-                <div class="col-md-2">
-                    <label class="form-label fw-medium text-dark">From Date</label>
-                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control">
-                </div>
-
-                <div class="col-md-2">
-                    <label class="form-label fw-medium text-dark">To Date</label>
-                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control">
-                </div>
-
-                <!-- Buttons -->
-                <div class="col-md-4 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary-professional">
-                        <i class="fas fa-search me-2"></i>Apply Filters
-                    </button>
-                    <a href="{{ route('doctor.appointments.index') }}" class="btn btn-secondary-professional">
-                        <i class="fas fa-times me-2"></i>Clear All
-                    </a>
-                </div>
-            </form>
-        </div>
-
-        <!-- Professional Appointments List -->
-        @if($appointments->count() > 0)
-            <div class="table-professional">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th>Patient Information</th>
-                                <th>Appointment Date</th>
-                                <th>Type</th>
-                                <th>Status</th>
-                                <th>Risk Level</th>
-                                <th>Chief Complaint</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($appointments as $appointment)
-                                <tr>
-                                    <!-- Patient -->
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="patient-avatar me-3">
-                                                {{ substr($appointment->patient_name, 0, 1) }}
-                                            </div>
-                                            <div>
-                                                <div class="fw-semibold text-dark mb-1">
-                                                    {{ $appointment->patient_name }}
-                                                </div>
-                                                <div class="text-muted small">
-                                                    {{ $appointment->patient_email }}
-                                                </div>
-                                                @if($appointment->patient_phone)
-                                                <div class="text-muted small">
-                                                    {{ $appointment->patient_phone }}
-                                                </div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <!-- Date & Time -->
-                                    <td>
-                                        <div class="fw-semibold text-dark">
-                                            {{ $appointment->appointment_date->format('M j, Y') }}
-                                        </div>
-                                        <div class="text-muted small">
-                                            {{ $appointment->appointment_date->format('g:i A') }}
-                                        </div>
-                                    </td>
-
-                                    <!-- Type -->
-                                    <td>
-                                        <div class="text-capitalize">
-                                            {{ str_replace('_', ' ', $appointment->appointment_type) }}
-                                        </div>
-                                    </td>
-
-                                    <!-- Status -->
-                                    <td>
-                                        @php
-                                            $statusClasses = [
-                                                'pending' => 'badge-pending',
-                                                'confirmed' => 'badge-confirmed',
-                                                'completed' => 'badge-completed',
-                                                'cancelled' => 'badge-cancelled',
-                                                'no_show' => 'badge-cancelled'
-                                            ];
-                                        @endphp
-                                        <span class="badge badge-professional {{ $statusClasses[$appointment->status] ?? 'badge-pending' }}">
-                                            {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
-                                        </span>
-                                    </td>
-
-                                    <!-- Risk -->
-                                    <td>
-                                        @php
-                                            $riskScore = $appointment->patient?->patientRiskScores?->where('appointment_id', $appointment->id)?->first();
-                                        @endphp
-                                        @if($riskScore)
-                                            @php
-                                                $noShowRisk = $riskScore->no_show_risk;
-                                                $hospitalizationRisk = $riskScore->hospitalization_risk;
-                                                $maxRisk = max($noShowRisk, $hospitalizationRisk);
-                                            @endphp
-                                            @if($maxRisk < 0.3)
-                                                <span class="badge badge-professional risk-low">
-                                                    Low Risk
-                                                </span>
-                                            @elseif($maxRisk < 0.7)
-                                                <span class="badge badge-professional risk-medium">
-                                                    Medium Risk
-                                                </span>
-                                            @else
-                                                <span class="badge badge-professional risk-high">
-                                                    High Risk
-                                                </span>
-                                            @endif
-                                        @else
-                                            <span class="text-muted small">Not Available</span>
-                                        @endif
-                                    </td>
-
-                                    <!-- Reason -->
-                                    <td>
-                                        <div class="text-truncate" style="max-width: 200px;" title="{{ $appointment->reason }}">
-                                            {{ $appointment->reason }}
-                                        </div>
-                                    </td>
-
-                                    <!-- Actions -->
-                                    <td>
-                                        <div class="d-flex gap-1">
-                                            <a href="{{ route('doctor.appointments.show', $appointment) }}" 
-                                               class="btn btn-sm btn-primary-professional" 
-                                               title="View Details">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-
-                                            @if($appointment->status == 'pending')
-                                                <button onclick="confirmAppointment({{ $appointment->id }})" 
-                                                        class="btn btn-sm btn-success-professional" 
-                                                        title="Confirm">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                            @endif
-
-                                            @if($appointment->status == 'confirmed')
-                                                @if($appointment->appointment_type == 'video_call')
-                                                    <a href="{{ route('video.room', $appointment->id) }}" 
-                                                       target="_blank"
-                                                       class="btn btn-sm btn-info" 
-                                                       title="Start Video Call">
-                                                        <i class="fas fa-video"></i>
-                                                    </a>
-                                                @endif
-                                @if(!$appointment->appointment_date || !$appointment->appointment_date->isFuture())
-                                <button onclick="completeAppointment({{ $appointment->id }})" 
-                                        class="btn btn-sm btn-primary-professional" 
-                                        title="Complete">
-                                    <i class="fas fa-check-circle"></i>
-                                </button>
-                                <button onclick="markNoShow({{ $appointment->id }})" 
-                                        class="btn btn-sm btn-secondary-professional" 
-                                        title="No Show">
-                                    <i class="fas fa-user-times"></i>
-                                </button>
-                                @endif
-                                            @endif
-
-                                            @if(in_array($appointment->status, ['pending', 'confirmed']))
-                                                <button onclick="cancelAppointment({{ $appointment->id }})" 
-                                                        class="btn btn-sm btn-danger-professional" 
-                                                        title="Cancel">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Professional Pagination -->
-            @if($appointments->hasPages())
-                <div class="d-flex justify-content-center mt-4">
-                    <div class="pagination-wrapper">
-                        {{ $appointments->links() }}
+                <div class="cases-toolbar__controls">
+                    <!-- Compact auto-approve (not full-width toggle-section) -->
+                    <div class="auto-approve-compact" title="When enabled, new requests are auto-confirmed">
+                        <i class="fas fa-bolt text-warning"></i> Auto-approve
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="auto_approve_toggle" {{ Auth::user()->doctor->auto_approve_appointments ? 'checked' : '' }}>
+                        </div>
                     </div>
                 </div>
-            @endif
+            </div>
+            <div class="card-body p-3">
+                <form method="GET" action="{{ route('doctor.appointments.index') }}" class="row g-2 align-items-end">
+                    <div class="col-md-2 col-6">
+                        <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">Status</label>
+                        <select name="status" class="form-select form-select-sm cases-sort">
+                            <option value="">All Statuses</option>
+                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                            <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                            <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                            <option value="no_show" {{ request('status') == 'no_show' ? 'selected' : '' }}>No Show</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-6">
+                        <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">Risk</label>
+                        <select name="risk_category" class="form-select form-select-sm cases-sort">
+                            <option value="">All Risk</option>
+                            <option value="low" {{ request('risk_category') == 'low' ? 'selected' : '' }}>Low</option>
+                            <option value="medium" {{ request('risk_category') == 'medium' ? 'selected' : '' }}>Medium</option>
+                            <option value="high" {{ request('risk_category') == 'high' ? 'selected' : '' }}>High</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-6">
+                        <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">From</label>
+                        <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-2 col-6">
+                        <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">To</label>
+                        <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end gap-2">
+                        <button type="submit" class="doctor-btn doctor-btn-primary doctor-btn-sm flex-grow-1"><i class="fas fa-search me-1"></i>Apply</button>
+                        <a href="{{ route('doctor.appointments.index') }}" class="doctor-btn doctor-btn-outline doctor-btn-sm"><i class="fas fa-rotate-left"></i></a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Appointments List - premium doctor-table -->
+        @if($appointments->count() > 0)
+            <div class="card border-0 shadow-sm cases-panel">
+                <div class="doctor-table-container">
+                    <div class="table-responsive">
+                        <table class="doctor-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Risk</th>
+                                    <th>Complaint</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($appointments as $appointment)
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="patient-avatar">{{ substr($appointment->patient_name, 0, 1) }}</div>
+                                                <div class="min-w-0">
+                                                    <div class="fw-semibold text-dark text-truncate" style="max-width:160px;">{{ $appointment->patient_name }}</div>
+                                                    <small class="text-muted text-truncate d-block" style="max-width:160px;">{{ $appointment->patient_email }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-medium text-dark">{{ $appointment->appointment_date->format('M j, Y') }}</div>
+                                            <small class="text-muted">{{ $appointment->appointment_date->format('g:i A') }}</small>
+                                        </td>
+                                        <td><span class="doctor-badge doctor-badge-secondary text-capitalize">{{ str_replace('_', ' ', $appointment->appointment_type) }}</span></td>
+                                        <td>
+                                            @php $statusClasses = ['pending'=>'warning','confirmed'=>'success','completed'=>'info','cancelled'=>'danger','no_show'=>'secondary']; @endphp
+                                            <span class="doctor-badge doctor-badge-{{ $statusClasses[$appointment->status] ?? 'secondary' }}">{{ ucfirst(str_replace('_',' ',$appointment->status)) }}</span>
+                                        </td>
+                                        <td>
+                                            @php $riskScore = $appointment->patient?->patientRiskScores?->where('appointment_id', $appointment->id)?->first(); @endphp
+                                            @if($riskScore)
+                                                @php $maxRisk = max($riskScore->no_show_risk, $riskScore->hospitalization_risk); @endphp
+                                                @if($maxRisk < 0.3)<span class="doctor-badge doctor-badge-success">Low</span>
+                                                @elseif($maxRisk < 0.7)<span class="doctor-badge doctor-badge-warning">Medium</span>
+                                                @else<span class="doctor-badge doctor-badge-danger">High</span>
+                                                @endif
+                                            @else<span class="text-muted small">—</span>@endif
+                                        </td>
+                                        <td><div class="text-truncate" style="max-width:180px;" title="{{ $appointment->reason }}">{{ $appointment->reason }}</div></td>
+                                        <td class="text-end">
+                                            <div class="d-inline-flex gap-1">
+                                                <a href="{{ route('doctor.appointments.show', $appointment) }}" class="doctor-btn doctor-btn-outline doctor-btn-sm" title="View"><i class="fas fa-eye"></i></a>
+                                                @if($appointment->status == 'pending')
+                                                    <button onclick="confirmAppointment({{ $appointment->id }})" class="doctor-btn doctor-btn-success doctor-btn-sm" title="Confirm"><i class="fas fa-check"></i></button>
+                                                @endif
+                                                @if($appointment->status == 'confirmed')
+                                                    @if($appointment->appointment_type == 'video_call')
+                                                        <a href="{{ route('video.room', $appointment->id) }}" target="_blank" class="doctor-btn doctor-btn-primary doctor-btn-sm" title="Video"><i class="fas fa-video"></i></a>
+                                                    @endif
+                                                    @if(!$appointment->appointment_date || !$appointment->appointment_date->isFuture())
+                                                        <button onclick="completeAppointment({{ $appointment->id }})" class="doctor-btn doctor-btn-primary doctor-btn-sm" title="Complete"><i class="fas fa-check-circle"></i></button>
+                                                        <button onclick="markNoShow({{ $appointment->id }})" class="doctor-btn doctor-btn-outline doctor-btn-sm" title="No Show"><i class="fas fa-user-times"></i></button>
+                                                    @endif
+                                                @endif
+                                                @if(in_array($appointment->status, ['pending','confirmed']))
+                                                    <button onclick="cancelAppointment({{ $appointment->id }})" class="doctor-btn doctor-btn-danger doctor-btn-sm" title="Cancel"><i class="fas fa-times"></i></button>
+                                                @endif
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @if($appointments->hasPages())
+                        <div class="table-footer d-flex justify-content-center p-3">
+                            {{ $appointments->links() }}
+                        </div>
+                    @endif
+                </div>
+            </div>
         @else
-            <div class="empty-state">
-                <i class="fas fa-calendar-times"></i>
-                <h5>No Appointments Found</h5>
-                <p>No appointments match your current filters or you haven't scheduled any appointments yet.</p>
-                <div class="d-flex gap-2 justify-content-center">
-                    <a href="{{ route('doctor.appointments.create') }}" class="btn btn-primary-professional">
-                        <i class="fas fa-plus me-2"></i>Schedule New Appointment
-                    </a>
-                    <a href="{{ route('doctor.appointments.index') }}" class="btn btn-secondary-professional">
-                        <i class="fas fa-refresh me-2"></i>Clear Filters
-                    </a>
+            <div class="card border-0 shadow-sm cases-panel">
+                <div class="doctor-empty-state">
+                    <i class="fas fa-calendar-times"></i>
+                    <h5>No Appointments Found</h5>
+                    <p>No appointments match your filters.</p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <a href="{{ route('doctor.appointments.create') }}" class="doctor-btn doctor-btn-primary"><i class="fas fa-plus me-1"></i>Schedule New</a>
+                        <a href="{{ route('doctor.appointments.index') }}" class="doctor-btn doctor-btn-outline"><i class="fas fa-rotate-left me-1"></i>Clear Filters</a>
+                    </div>
                 </div>
             </div>
         @endif
     </div>
 </div>
-</div>
-
+@endsection
 <!-- Professional Complete Appointment Modal -->
 <div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
