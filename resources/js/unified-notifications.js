@@ -211,8 +211,10 @@ class UnifiedNotificationSystem {
         // Find the Alpine component instance
         const alpineComponent = window.notificationDropdownInstance;
 
-        // Generate unique ID upfront so it's available for both branches
-        const uniqueId = `${data.type || config.type || 'notification'}-${data.id || 'no-id'}-${Date.now()}`;
+        // Generate stable ID for deduplication: prefer DB id if available, otherwise hash title+message
+        // Using Date.now only as fallback prevents duplicate entries after bell click (api fetch)
+        const stablePart = data.id || data.data?.id || `${data.title || ''}|${data.message || ''}`.slice(0, 64) || 'no-id';
+        const uniqueId = data.id ? `${data.type || config.type || 'notification'}-${stablePart}` : `${data.type || config.type || 'notification'}-${stablePart}-${Date.now()}`;
 
         if (alpineComponent && typeof alpineComponent.handleNewNotification === 'function') {
             // The data coming from WebSocket has .title, .message directly at top level
@@ -543,6 +545,34 @@ class UnifiedNotificationSystem {
                 message: data.message || "Clinical alert triggered",
                 type: "error",
                 icon: "fas fa-exclamation-triangle",
+                color: "#e74c3c"
+            },
+            'usage_limit_reached': {
+                title: data.title || "⚠️ Usage Limit Reached",
+                message: data.message || "You have reached your monthly usage limit.",
+                type: "warning",
+                icon: "fas fa-exclamation-triangle",
+                color: "#f39c12"
+            },
+            'usage_warning': {
+                title: data.title || "⚠️ Usage Warning",
+                message: data.message || "You are approaching your monthly usage limit.",
+                type: "warning",
+                icon: "fas fa-chart-bar",
+                color: "#f39c12"
+            },
+            'subscription_created': {
+                title: data.title || "✅ Subscription Created",
+                message: data.message || "Your subscription has been created",
+                type: "success",
+                icon: "fas fa-check-circle",
+                color: "#27ae60"
+            },
+            'payment_failed': {
+                title: data.title || "💳 Payment Failed",
+                message: data.message || "Payment processing failed",
+                type: "error",
+                icon: "fas fa-credit-card",
                 color: "#e74c3c"
             },
             'generic': {

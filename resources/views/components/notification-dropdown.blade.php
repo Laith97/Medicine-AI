@@ -151,18 +151,23 @@ function notificationDropdown() {
         handleNewNotification(notification) {
             console.log('🔔 Alpine handleNewNotification called with:', notification);
 
-            // Deduplication: Use BOTH notification type AND appointment_id to prevent duplicates
-            // Different notification types (booking vs status change vs waitlist) for same appointment
-            // should ALL appear separately
+            // Deduplication: Use type + appointment_id for appointment events,
+            // otherwise use type + title + message to handle non-appointment types (e.g. usage_limit_reached)
+            // This ensures "reached" notifications show once and bell click doesn't create duplicates
             const apptId = notification.data?.appointment_id || notification.data?.data?.appointment_id || notification.data?.id;
             const notifType = notification.data?.type || notification.type;
-            // Create unique key combining type and appointment
-            const dedupKey = `${notifType}-${apptId}`;
+            const title = notification.data?.title || notification.title || '';
+            const message = notification.data?.message || notification.message || notification.data?.body || '';
+            // Create unique key: prefer appointment-based for appointment types
+            const dedupKey = apptId ? `${notifType}-${apptId}` : `${notifType}-${title}|${message}`;
 
             const existingForKey = this.notifications.find(n => {
                 const nApptId = n.data?.appointment_id || n.data?.data?.appointment_id || n.data?.id;
                 const nType = n.data?.type || n.type;
-                return `${nType}-${nApptId}` === dedupKey;
+                const nTitle = n.data?.title || n.title || '';
+                const nMessage = n.data?.message || n.message || n.data?.body || '';
+                const nKey = nApptId ? `${nType}-${nApptId}` : `${nType}-${nTitle}|${nMessage}`;
+                return nKey === dedupKey;
             });
 
             if (existingForKey) {
@@ -233,32 +238,38 @@ function notificationDropdown() {
 
                 // Build Sets of existing notification identifiers to avoid duplicates
                 const existingIds = new Set(this.notifications.map(n => n.id));
-                // Track existing type+appointment combinations for deduplication
-                // Different notification types (booking vs status change vs waitlist) for same appointment
-                // should ALL appear separately
-                const existingTypeAppointmentKeys = new Set();
+                // Track existing deduplication keys for all notification types
+                // For appointment types: key = type-appointment_id
+                // For non-appointment types (e.g. usage_limit_reached): key = type-title|message
+                // This ensures bell click (loadNotifications) doesn't duplicate "reached" toast entries
+                const existingDedupKeys = new Set();
                 this.notifications.forEach(n => {
                     const apptId = n.data?.appointment_id || n.data?.data?.appointment_id || n.data?.id;
                     const nType = n.data?.type || n.type;
-                    if (apptId && nType) {
-                        existingTypeAppointmentKeys.add(`${nType}-${apptId}`);
+                    const nTitle = n.data?.title || n.title || '';
+                    const nMessage = n.data?.message || n.message || n.data?.body || '';
+                    const key = apptId ? `${nType}-${apptId}` : `${nType}-${nTitle}|${nMessage}`;
+                    if (nType) {
+                        existingDedupKeys.add(key);
                     }
                 });
 
                 // Filter API notifications: only add if not already present
-                // This keeps local realtime notifications (they have composite IDs with hyphens)
-                // IMPORTANT: We skip API notifications if a notification for same TYPE+appointment already exists locally
+                // This keeps local realtime notifications (they have composite IDs)
+                // IMPORTANT: We skip API notifications if dedup key already exists locally
                 const newApiNotifications = (data.notifications || []).filter(n => {
                     // Skip if we already have this exact ID
                     if (existingIds.has(n.id)) {
                         return false;
                     }
-                    // Skip if we already have a local notification for same TYPE+appointment
+                    // Skip if we already have a local notification for same dedup key (covers both appointment and non-appointment types)
                     const apptId = n.data?.appointment_id || n.data?.data?.appointment_id || n.data?.id;
                     const nType = n.data?.type || n.type;
-                    const key = `${nType}-${apptId}`;
-                    if (apptId && existingTypeAppointmentKeys.has(key)) {
-                        console.log('🔔 Skipping API notification (local realtime exists for same type+appointment):', key);
+                    const nTitle = n.data?.title || n.title || '';
+                    const nMessage = n.data?.message || n.message || n.data?.body || '';
+                    const key = apptId ? `${nType}-${apptId}` : `${nType}-${nTitle}|${nMessage}`;
+                    if (existingDedupKeys.has(key)) {
+                        console.log('🔔 Skipping API notification (local realtime exists):', key);
                         return false;
                     }
                     return true;
