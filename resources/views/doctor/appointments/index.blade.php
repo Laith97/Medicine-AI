@@ -26,11 +26,7 @@
         width: 2.2rem; height: 1.15rem; margin: 0; cursor: pointer;
     }
     .auto-approve-compact .form-check-input:checked { background-color: #10b981; border-color: #10b981; }
-    .cases-panel .doctor-table thead th { font-size: 0.76rem; letter-spacing: 0.03em; white-space: nowrap; }
-    .cases-panel .doctor-table tbody td { white-space: nowrap; vertical-align: middle; }
-    .cases-panel .doctor-table tbody td:first-child small, .cases-panel .doctor-table tbody td:nth-child(2) small { white-space: nowrap; }
-    .doctor-badge { white-space: nowrap !important; display: inline-flex; align-items: center; }
-    .doctor-table { table-layout: auto; }
+    .cases-panel .doctor-table thead th { font-size: 0.76rem; letter-spacing: 0.03em; }
     .patient-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
     .patient-avatar-male { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); }
     .patient-avatar-female { background: linear-gradient(135deg, #e83e8c 0%, #c21e56 100%); }
@@ -146,10 +142,10 @@
 
         <!-- Appointments List - same as patients -->
         @if($appointments->count() > 0)
-            <div class="card border-0 shadow-sm cases-panel" style="overflow: visible;">
-                <div class="doctor-table-container" style="overflow: visible;">
-                    <div style="overflow: visible;">
-                        <table class="doctor-table mb-0 w-100" style="width:100%; table-layout:auto;">
+            <div class="card border-0 shadow-sm cases-panel">
+                <div class="doctor-table-container">
+                    <div class="table-responsive" style="overflow-x: visible;">
+                        <table class="doctor-table mb-0" style="min-width: 0;">
                             <thead>
                                 <tr>
                                     <th>Patient</th>
@@ -215,31 +211,24 @@
                                             @else<span class="text-muted small">—</span>@endif
                                         </td>
                                         <td class="d-none d-xl-table-cell"><div class="text-truncate" style="max-width:180px;" title="{{ $appointment->reason }}">{{ Str::limit($appointment->reason, 40) }}</div></td>
-                                        <td class="text-end" style="white-space: nowrap; min-width: 90px;">
-                                            <div class="dropdown">
-                                                <button class="doctor-btn doctor-btn-outline doctor-btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid #e2e8f0; background:#fff;">
-                                                    <i class="fas fa-ellipsis-h" style="font-size:0.85rem; color:#64748b;"></i>
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-end" style="min-width: 210px; border-radius: 12px; border: 1px solid #eef0f3; padding: 0.45rem; font-size: 0.82rem; box-shadow: 0 8px 30px rgba(44,62,80,0.12), 0 2px 8px rgba(44,62,80,0.06); overflow:hidden;">
-                                                    <li class="px-3 py-2" style="font-size:0.68rem; letter-spacing:0.06em; text-transform:uppercase; color:#94a3b8; font-weight:700; background:#f8fafc; margin:-0.45rem -0.45rem 0.35rem -0.45rem; border-bottom:1px solid #f1f5f9;">Appointment Actions</li>
-                                                    <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('doctor.appointments.show', $appointment) }}" style="border-radius:8px;"><span style="width:32px; height:32px; border-radius:8px; background:#eff6ff; border:1px solid #dbeafe; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="fas fa-eye text-primary" style="font-size:0.85rem;"></i></span> View Details</a></li>
-                                                    @if($appointment->status == 'pending')
-                                                        <li><button class="dropdown-item d-flex align-items-center gap-2 py-2" onclick="confirmAppointment({{ $appointment->id }})" style="border-radius:8px;"><span style="width:32px; height:32px; border-radius:8px; background:#ecfdf5; border:1px solid #a7f3d0; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="fas fa-check text-success" style="font-size:0.85rem;"></i></span> Confirm Appointment</button></li>
+                                        <td class="text-end">
+                                            <div class="d-inline-flex gap-1">
+                                                <a href="{{ route('doctor.appointments.show', $appointment) }}" class="doctor-btn doctor-btn-outline doctor-btn-sm" title="View"><i class="fas fa-eye"></i></a>
+                                                @if($appointment->status == 'pending')
+                                                    <button onclick="confirmAppointment({{ $appointment->id }})" class="doctor-btn doctor-btn-success doctor-btn-sm" title="Confirm"><i class="fas fa-check"></i></button>
+                                                @endif
+                                                @if($appointment->status == 'confirmed')
+                                                    @if($appointment->appointment_type == 'video_call')
+                                                        <a href="{{ route('video.room', $appointment->id) }}" target="_blank" class="doctor-btn doctor-btn-primary doctor-btn-sm" title="Video"><i class="fas fa-video"></i></a>
                                                     @endif
-                                                    @if($appointment->status == 'confirmed')
-                                                        @if($appointment->appointment_type == 'video_call')
-                                                            <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('video.room', $appointment->id) }}" target="_blank" style="border-radius:8px;"><span style="width:32px; height:32px; border-radius:8px; background:#ecfeff; border:1px solid #cffafe; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="fas fa-video text-info" style="font-size:0.85rem;"></i></span> Start Video Call</a></li>
-                                                        @endif
-                                                        @if(!$appointment->appointment_date || !$appointment->appointment_date->isFuture())
-                                                            <li><button class="dropdown-item d-flex align-items-center gap-2 py-2" onclick="completeAppointment({{ $appointment->id }})" style="border-radius:8px;"><span style="width:32px; height:32px; border-radius:8px; background:#eff6ff; border:1px solid #dbeafe; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="fas fa-check-circle text-primary" style="font-size:0.85rem;"></i></span> Complete</button></li>
-                                                            <li><button class="dropdown-item d-flex align-items-center gap-2 py-2" onclick="markNoShow({{ $appointment->id }})" style="border-radius:8px;"><span style="width:32px; height:32px; border-radius:8px; background:#f8fafc; border:1px solid #e2e8f0; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="fas fa-user-times" style="font-size:0.85rem; color:#64748b;"></i></span> Mark No Show</button></li>
-                                                        @endif
+                                                    @if(!$appointment->appointment_date || !$appointment->appointment_date->isFuture())
+                                                        <button onclick="completeAppointment({{ $appointment->id }})" class="doctor-btn doctor-btn-primary doctor-btn-sm" title="Complete"><i class="fas fa-check-circle"></i></button>
+                                                        <button onclick="markNoShow({{ $appointment->id }})" class="doctor-btn doctor-btn-outline doctor-btn-sm" title="No Show"><i class="fas fa-user-times"></i></button>
                                                     @endif
-                                                    @if(in_array($appointment->status, ['pending','confirmed']))
-                                                        <li><hr class="dropdown-divider" style="margin:0.35rem 0; border-color:#f1f5f9;"></li>
-                                                        <li><button class="dropdown-item d-flex align-items-center gap-2 py-2 text-danger" onclick="cancelAppointment({{ $appointment->id }})" style="border-radius:8px;"><span style="width:32px; height:32px; border-radius:8px; background:#fef2f2; border:1px solid #fecaca; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="fas fa-times" style="font-size:0.85rem; color:#dc2626;"></i></span> Cancel Appointment</button></li>
-                                                    @endif
-                                                </ul>
+                                                @endif
+                                                @if(in_array($appointment->status, ['pending','confirmed']))
+                                                    <button onclick="cancelAppointment({{ $appointment->id }})" class="doctor-btn doctor-btn-danger doctor-btn-sm" title="Cancel"><i class="fas fa-times"></i></button>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
